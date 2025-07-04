@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 import argparse
 import os
 import os.path
@@ -122,7 +121,7 @@ class UpdateDependencies:
         :param venv_directory:  containing virtual environment
         :return: False if unable to find directory
         """
-        has_bin_activate = False
+        # has_bin_activate = False
         if venv_directory and venv_directory.is_dir():
             if os.name == 'nt':
                 if os.path.isfile(f"{venv_directory}\\bin\\activate.bat"):
@@ -197,10 +196,10 @@ class UpdateDependencies:
         print(" ", end="", flush=True)
         res = call(command, shell=True)
         if res == 0:
-            print(f"✔", end=" ", flush=True)
+            print(f"✔", end=" ", flush=True)  # noqa: F541
             self.packages_installed.append(package)
         else:
-            print(f"✘", end=" ", flush=True)
+            print(f"✘", end=" ", flush=True)  # noqa: F541
             self.packages_failed.append(package)
 
     def install_packages(self):
@@ -261,16 +260,16 @@ as necessary.'''
     parser.add_argument("--create_venv", "-c",
                         default=False, required=False, action='store_true',
                         help=f"Create a virtual environment named $home/scritps/venv-{version} "
-                             "by default. Will create a symlink $home/scripts/venv to point to "
-                             "this virtual environment in the default case. "
-                             "Symlink will not be created if --venv_path is specified.")
+                        "by default. Will create a symlink $home/scripts/venv to point to "
+                        "this virtual environment in the default case. "
+                        "Symlink will not be created if --venv_path is specified.")
 
     parser.add_argument("--venv_path", "--venv",
                         type=str, default=None, required=False,
                         help=f"specify the path of the virtual environment to create. "
-                             f"Default location is $home/scripts/venv-{version}, and symlink to $home/scripts/venv. "
-                             "Specifying relative path will create named virtual environment in $home/scripts "
-                             "but will NOT create the default venv symlink.")
+                        f"Default location is $home/scripts/venv-{version}, and symlink to $home/scripts/venv. "
+                        "Specifying relative path will create named virtual environment in $home/scripts "
+                        "but will NOT create the default venv symlink.")
 
     parser.add_argument("--destroy_venv", "--remove_venv",
                         type=str, required=False, const=upgrader.venv_path, nargs='?',
@@ -313,7 +312,6 @@ as necessary.'''
                         default=None,
                         action="store_true",
                         help='Show summary of what this script does')
-
 
     args = parser.parse_args()
     if args.help_summary:
@@ -382,7 +380,7 @@ as necessary.'''
         upgrader.install_packages()
         exit(0)
     else:
-        print(f"Installing packages to system scope...")
+        print("Installing packages to system scope...")
         sysconfig_dir = sysconfig.get_path("stdlib")
         external_marker = pathlib.Path(f"{sysconfig_dir}/EXTERNALLY-MANAGED")
         if external_marker.is_file():
