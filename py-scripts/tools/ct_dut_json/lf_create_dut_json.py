@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_create_dut_json.py
 
@@ -121,7 +120,8 @@ def main():
         prog='lf_create_dut_json.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-        lf_create_dut_json.py creates lf_dut.json file for --json_dut input to lf_check.py 
+        lf_create_dut_json.py creates lf_dut.json file for --json_dut input to lf_check.py
+
         The lf_dut.json file contains dut configuration information
         NOTE: cannot have extra blank lines at the end of the json to work properly
 
@@ -168,9 +168,9 @@ INCLUDE_IN_README: False
     parser.add_argument('--dut_sw', help='--dut_sw <dut software version> ', default='dut_sw')
     parser.add_argument('--dut_model', help='--dut_model <dut model> ', default='dut_model')
     parser.add_argument('--dut_serial', help='--dut_serial <dut_serial_num> ', default='123456578')
-    parser.add_argument('--dut_upstream_port', help='--dut_upstream_port shelf.resource.<port>  example 1.1.eth3 default eth1',default='1.1.eth2')
+    parser.add_argument('--dut_upstream_port', help='--dut_upstream_port shelf.resource.<port>  example 1.1.eth3 default eth1', default='1.1.eth2')
     parser.add_argument('--dut_upstream_alias', help='--dut_upstream_alias <port>  example eth3 ', default='eth2')
-    parser.add_argument('--dut_database', help='--dut_database <db location>   example ./tools/CT_007_AXE160000_2_5_Gbps_eth1.db default ./tools/DUT_DB',default='./tools/DUT_DB')
+    parser.add_argument('--dut_database', help='--dut_database <db location>   example ./tools/CT_007_AXE160000_2_5_Gbps_eth1.db default ./tools/DUT_DB', default='./tools/DUT_DB')
 
     parser.add_argument(
         '--ssid_idx',
@@ -178,7 +178,7 @@ INCLUDE_IN_README: False
         nargs=1,
         required=True,
         help='''
-            The ssid_idx is used to enter multiple ssid, ssid password, bssid, security types 
+            The ssid_idx is used to enter multiple ssid, ssid password, bssid, security types
 
         Example:
         --ssid_idx ssid_idx==0,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
@@ -251,7 +251,7 @@ INCLUDE_IN_README: False
                         "").replace(
                         ",",
                         " ").split()))
-        except  Exception as x:
+        except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error(
                 "Check the format of the --ssid_idx , verify there is == between keys and values in ssid_idx {ssid_idx_}".format(
