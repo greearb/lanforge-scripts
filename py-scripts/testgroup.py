@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 '''
 NAME: testgroup.py
 
@@ -196,7 +195,7 @@ class TestGroup(Realm):
         # why?
         self.station_profile = None
         self.cx_profile = None
-        if self.sta_list and len(self.sta_list) >0:
+        if self.sta_list and len(self.sta_list) > 0:
             self.station_profile = self.new_station_profile()
             self.cx_profile = self.new_l3_cx_profile()
             self.station_profile.lfclient_url = self.lfclient_url
@@ -252,9 +251,9 @@ class TestGroup(Realm):
             #                             sta_names_=self.sta_list,
             #                             debug=self.debug)
             if self.station_profile.create(
-                radio=self.radio,
-                sta_names_=self.sta_list,
-                debug=self.debug):
+                    radio=self.radio,
+                    sta_names_=self.sta_list,
+                    debug=self.debug):
                 self._pass("Stations created.")
             else:
                 self._fail("Stations not properly created.")
