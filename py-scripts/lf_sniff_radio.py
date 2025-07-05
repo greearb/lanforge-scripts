@@ -50,6 +50,7 @@ import argparse
 import time
 import paramiko
 import logging
+import traceback
 
 
 logger = logging.getLogger(__name__)
@@ -460,7 +461,8 @@ def main():
                 sniff_snaplen_choice = bytesize
             else:
                 raise ValueError("bad sniff_bytes")
-        except:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             print(f"Strange sniff length [{args.sniff_bytes}], please choose a positive value")
             exit(1)
 
