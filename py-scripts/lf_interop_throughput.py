@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
     NAME: lf_interop_throughput.py
 
@@ -20,7 +19,7 @@
 
         EXAMPLE-3:
         Command Line Interface to run upload scenario with packet size
-        python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080 --security wpa2 --upstream_port eth1 --test_duration 1m --download 0 --upload 1000000 --traffic_type lf_udp --packet_size 17
+        python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080 --security wpa2 --upstream_port eth1 --test_duration 1m --download 0 --upload 1000000 --traffic_type lf_udp --packet_size 17  # noqa: E501
 
         EXAMPLE-4:
         Command Line Interface to run bi-directional scenario with load_type intended load
@@ -73,7 +72,7 @@
 
         EXAMPLE-1:
         Command Line Interface to run download scenario with desired resources
-        python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080  --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp --do_interopability --device_list 1.10,1.12
+        python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080  --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp --do_interopability --device_list 1.10,1.12  # noqa: E501
 
         EXAMPLE-2:
         Command Line Interface to run bi-directional scenario in Interop web-GUI
@@ -144,7 +143,6 @@ import pandas as pd
 import importlib
 import logging
 import json
-import pandas as pd
 import shutil
 import asyncio
 import csv
@@ -159,16 +157,16 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
-import time
-import argparse
-from LANforge import LFUtils
+import time  # noqa: E402
+import argparse  # noqa: E402
+from LANforge import LFUtils  # noqa: F401 E402
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-from lf_report import lf_report
-from lf_graph import lf_bar_graph_horizontal
-from lf_graph import lf_line_graph
+from lf_report import lf_report  # noqa: E402
+from lf_graph import lf_bar_graph_horizontal  # noqa: E402
+# from lf_graph import lf_line_graph  # noqa: E402
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta  # noqa: E402
 
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -451,7 +449,7 @@ class Throughput(Realm):
                     for (a, b) in element.items():
 
                         # Check if the resource is not phantom
-                        if b['phantom'] == False:
+                        if b['phantom'] is False:
                             self.working_resources_list.append(b["hw version"])
 
                             # Categorize based on hw version (type of device)
@@ -514,7 +512,7 @@ class Throughput(Realm):
                     self.user_list.append(device)
 
         configure_list = []
-        if len(self.device_list) == 0 and self.config == False and self.group_name is None:
+        if len(self.device_list) == 0 and self.config is False and self.group_name is None:
             logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(self.user_list))
             self.device_list = input("Enter the desired resources to run the test:").split(',')
         # If self.device_list is provided, check availability against devices_available
@@ -533,7 +531,7 @@ class Throughput(Realm):
                         available_list.append(input_device)
                         found = True
                         break
-                if found == False:
+                if found is False:
                     not_available.append(input_device)
                     if self.device_list != "all":
                         logger.warning(input_device + " is not available to run the test")
@@ -567,7 +565,7 @@ class Throughput(Realm):
 
         # Split devices_list into resource_eid_list
         resource_eid_list = devices_list.split(',')
-        logger.info("devices list {}".format(devices_list, resource_eid_list))
+        logger.info("devices list {} {}".format(devices_list, resource_eid_list))
         resource_eid_list2 = [eid + ' ' for eid in resource_eid_list]
 
         # Create resource_eid_list1 by appending dot to each eid in resource_eid_list
@@ -745,7 +743,7 @@ class Throughput(Realm):
         count = 0
 
         # creating duplicate created_cx's for precleanup of CX's if there are already existed
-        if self.precleanup == True:
+        if self.precleanup is True:
             self.cx_profile.created_cx = {k: [k + '-A', k + '-B'] for k in cx_list}
             self.pre_cleanup()
 
@@ -870,7 +868,7 @@ class Throughput(Realm):
     def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time):
         individual_df_for_webui = individual_df.copy()  # for webui
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download = {}, [], [], [], [], {}, {}
-        drop_a, drop_a_per, drop_b, drop_b_per, state, state_of_device = [], [], [], [], [], []
+        drop_a, drop_a_per, drop_b, drop_b_per, state, state_of_device = [], [], [], [], [], []  # noqa: F841
         test_stopped_by_user = False
         if (self.test_duration is None) or (int(self.test_duration) <= 1):
             raise ValueError("Monitor test duration should be > 1 second")
@@ -938,7 +936,7 @@ class Throughput(Realm):
                     connections_download_realtime.update({keys[i]: float(f"{(download_throughput[i]):.2f}")})
                 for i in range(len(upload_throughput)):
                     connections_upload_realtime.update({keys[i]: float(f"{(upload_throughput[i]):.2f}")})
-                time_difference = abs(end_time - datetime.now())
+                # time_difference = abs(end_time - datetime.now())
                 overall_time_difference = abs(overall_end_time - datetime.now())
                 overall_total_hours = overall_time_difference.total_seconds() / 3600
                 overall_remaining_minutes = (overall_total_hours % 1) * 60
@@ -1221,7 +1219,7 @@ class Throughput(Realm):
         Checks and generates a list of incremental capacities for connections.
 
         """
-        if (len(self.incremental_capacity) == 0 and self.do_interopability != True and self.incremental):
+        if (len(self.incremental_capacity) == 0 and self.do_interopability is not True and self.incremental):
             self.incremental_capacity = input("Enter the incremental load to run the test:")
 
         cx_incremental_capacity_lists = []
@@ -1415,14 +1413,14 @@ class Throughput(Realm):
             self.num_stations = selected_real_clients_names
 
         # Initialize the report object
-        if self.do_interopability == False:
+        if self.do_interopability is False:
             report = lf_report(_output_pdf="throughput.pdf", _output_html="throughput.html", _path=report_path,
                                _results_dir_name=result_dir_name)
             report_path = report.get_path()
             report_path_date_time = report.get_path_date_time()
             # df.to_csv(os.path.join(report_path_date_time, 'throughput_data.csv'))
             # For groups and profiles configuration through webgui
-            if self.dowebgui == True and self.group_name:
+            if self.dowebgui is True and self.group_name:
                 shutil.move('overall_throughput.csv', report_path_date_time)
             else:
                 shutil.move('throughput_data.csv', report_path_date_time)
@@ -1433,11 +1431,11 @@ class Throughput(Realm):
 
             # objective title and description
             report.set_obj_html(_obj_title="Objective",
-                                _obj="The Candela Client Capacity test is designed to measure an Access Point’s client capacity and performance when handling different amounts of Real clients like android, Linux,"
-                                " windows, and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for"
+                                _obj="The Candela Client Capacity test is designed to measure an Access Point’s client capacity and performance when handling different amounts of Real clients like android, Linux,"  # noqa: E501
+                                " windows, and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for"  # noqa: E501
                                 " this test, we aim to assess the capacity of network to handle high volumes of traffic while"
-                                " each trial. Along with throughput other measurements made are client connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the"
-                                " AP to be able to handle several stations (within the limitations of the AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that"
+                                " each trial. Along with throughput other measurements made are client connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the"  # noqa: E501
+                                " AP to be able to handle several stations (within the limitations of the AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that"  # noqa: E501
                                 "scales well will not show a significant overall throughput decrease as more Real clients are added.")
             report.build_objective()
             report.set_obj_html(_obj_title="Input Parameters",
@@ -1989,12 +1987,12 @@ class Throughput(Realm):
 
             # Loop through iterations and build graphs, tables for each device
             for i in range(len(iterations_before_test_stopped_by_user)):
-                rssi_signal_data = []
+                # rssi_signal_data = []
                 devices_on_running = []
                 download_data = []
                 upload_data = []
                 devices_data_to_create_bar_graph = []
-                signal_data = []
+                # signal_data = []
                 upload_drop = []
                 download_drop = []
                 direction_in_table = []
@@ -2690,7 +2688,7 @@ Copyright 2023 Candela Technologies Inc.
     required.add_argument('--tos', default="Best_Efforts")
     required.add_argument('--packet_size', help='Determine the size of the packet in which Packet Size Should be Greater than 16B or less than 64KB(65507)', default="-1")
     required.add_argument('--incremental_capacity',
-                          help='Specify the incremental values for network load testing as a comma-separated list (e.g., 10,20,30). This defines the increments in bandwidth to evaluate performance under varying load conditions.',
+                          help='Specify the incremental values for network load testing as a comma-separated list (e.g., 10,20,30). This defines the increments in bandwidth to evaluate performance under varying load conditions.',  # noqa: E501
                           default=[])
     required.add_argument('--load_type', help="Determine the type of load: < wc_intended_load | wc_per_client_load >", default="wc_per_client_load")
     required.add_argument('--do_interopability', action='store_true', help='Ensures test on devices run sequentially, capturing each device’s data individually for plotting in the final report.')
@@ -2741,7 +2739,8 @@ Copyright 2023 Candela Technologies Inc.
         if (args.download == '0'):
             args.download = '2560'
 
-    logger_config = lf_logger_config.lf_logger_config()
+    # logger_config = lf_logger_config.lf_logger_config()
+    lf_logger_config.lf_logger_config()
 
     loads = {}
     iterations_before_test_stopped_by_user = []
@@ -2869,16 +2868,16 @@ Copyright 2023 Candela Technologies Inc.
 
         check_condition, clients_to_run = throughput.phantom_check()
 
-        if check_condition == False:
+        if check_condition is False:
             return
 
         check_increment_condition = throughput.check_incremental_list()
 
-        if check_increment_condition == False:
+        if check_increment_condition is False:
             logger.error("Incremental values given for selected devices are incorrect")
             return
 
-        elif (len(args.incremental_capacity) > 0 and check_increment_condition == False):
+        elif (len(args.incremental_capacity) > 0 and check_increment_condition is False):
             logger.error("Incremental values given for selected devices are incorrect")
             return
 
@@ -2927,7 +2926,7 @@ Copyright 2023 Candela Technologies Inc.
             all_dataframes, test_stopped_by_user = throughput.monitor(i, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time)
 
             # Check if the test was stopped by the user
-            if test_stopped_by_user == False:
+            if test_stopped_by_user is False:
 
                 # Append current iteration index to iterations_before_test_stopped_by_user
                 iterations_before_test_stopped_by_user.append(i)
