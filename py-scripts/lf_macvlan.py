@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_macvlan.py
 
@@ -44,7 +43,7 @@ TO DO NOTES:
 """
 import ipaddress
 import logging
-import os
+# import os
 import sys
 import time
 
@@ -61,9 +60,9 @@ import pprint
 sys.path.insert(1, "../")
 # lanforge_client = importlib.import_module("lanforge_client")
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
-from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.lanforge_api import LFSession  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonCommand  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonQuery  # noqa: E402
 
 NA: str = "NA"
 DHCP: str = "DHCP"
@@ -125,11 +124,11 @@ class macvlan:
         if (not ip_str) or (not port):
             raise ValueError("set_ip(): requires ip and port")
         netmask: str = NA
-        gateway: str = NA
+        # gateway: str = NA
 
         existing_ports: list = self.list_ports()
         existing_eids: list = [list(entry.keys())[0] for entry in existing_ports]
-        if not port in existing_eids:
+        if port not in existing_eids:
             raise ValueError(f"port {port} not found")
         interest_flags: int = self.SetPortInterest.dhcp.value
         current_flags_mask: int = self.SetPortCurrentFlags.use_dhcp.value
@@ -225,7 +224,7 @@ class macvlan:
             # print(f"type of item_d {type(item_d)} : item_d:{item_d}")
             eid: str = list(item_d.keys())[0]
             # print(f"is EID:{eid} in {my_port_list}")
-            if not eid in my_port_list:
+            if eid not in my_port_list:
                 # print(f"ignoring port {eid}")
                 continue
             filtered_list.append(eid)
@@ -236,8 +235,7 @@ class macvlan:
         interest_flags: int = self.SetPortInterest.current_flags.value | self.SetPortInterest.ifdown.value
         current_flags: int = 0 if state == "up" else self.SetPortCurrentFlags.if_down.value
         current_flags_mask: int = self.SetPortCurrentFlags.if_down.value
-        probe_flags_i: int = self.NcShowPortsProbeFlags.GW.value \
-                             | self.NcShowPortsProbeFlags.EASY_IP_INFO.value
+        probe_flags_i: int = self.NcShowPortsProbeFlags.GW.value | self.NcShowPortsProbeFlags.EASY_IP_INFO.value
         for item in filtered_list:
             port_hunks: list = str(item).split(".")
             # pprint.pprint(["port hunks", port_hunks])
@@ -289,7 +287,7 @@ class macvlan:
                 logger.warning(f"will remove non-macvlan port {eid}")
                 included_ports.append(eid)
                 continue
-            if (port_dict[self.PHANTOM] == True) or (port_dict[self.PHANTOM] == "True"):
+            if (port_dict[self.PHANTOM] is True) or (port_dict[self.PHANTOM] == "True"):
                 logger.warning(f"will remove phantom port {eid}")
                 included_ports.append(eid)
                 continue
@@ -361,10 +359,9 @@ class macvlan:
             if debug:
                 print(f"MAX VLAN NUM: {maximum_vlan_num}")
 
-        port_cmd_flags: str = NA
+        # port_cmd_flags: str = NA
         port_current_flags: int = 0
-        port_current_flags_mask: int = self.SetPortCurrentFlags.if_down.value \
-                                       | self.SetPortCurrentFlags.use_dhcp.value
+        port_current_flags_mask: int = self.SetPortCurrentFlags.if_down.value | self.SetPortCurrentFlags.use_dhcp.value
         port_interest_flags: int = self.SetPortInterest.rpt_timer.value
 
         if state == "down":
@@ -438,8 +435,7 @@ class macvlan:
 
         parent_port_hunks: list = parent_port.split(".")
         portnum = int(maximum_vlan_num) + 1
-        probe_flags_i: int = self.NcShowPortsProbeFlags.GW.value \
-                             | self.NcShowPortsProbeFlags.EASY_IP_INFO.value
+        probe_flags_i: int = self.NcShowPortsProbeFlags.GW.value | self.NcShowPortsProbeFlags.EASY_IP_INFO.value
         while portnum <= (int(maximum_vlan_num) + int(qty)):
             # print(f"\n =====  =====  =====  =====  =====  add_m {portnum}  =====  =====  =====  =====  =====")
             self.lfcommand.post_add_mvlan(flags=self.ADD_MVLAN_FLAGS[state],
@@ -532,7 +528,7 @@ class macvlan:
                                              debug=self.debug)
         else:
             hunks = parent_port.split('.')
-            resource = f"{hunks[0]}.{hunks[1]}"
+            resource = f"{hunks[0]}.{hunks[1]}"  # noqa: F841
             resource_list = f"{hunks[0]}.{hunks[1]}.list"
             response: list = self.lfquery.get_port(eid_list=[resource_list],
                                                    requested_col_names=self.port_columns,
@@ -557,7 +553,7 @@ class macvlan:
                     filtered_response.append(response)
                 response = filtered_response
         if not response:
-            logger.error(f"* * unable to get a port list:")
+            logger.error("* * unable to get a port list:")
             pprint.pprint(self.errors_warnings)
         return response
 
@@ -632,7 +628,7 @@ def main():
     ip_str = args.ip
     if args.ip is not None:
         if args.ip == "dhcp":
-            ip_str = DHCP
+            ip_str = DHCP  # noqa: F841
 
     my_macvlan: macvlan = macvlan(session=lfsession,
                                   parent_port=args.parent_port,
