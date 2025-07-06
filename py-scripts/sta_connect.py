@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: sta_connect.py
 
@@ -137,7 +136,7 @@ class StaConnect(Realm):
     def remove_stations(self):
         for name in self.station_names:
             self.rm_port(name, check_exists=True, debug_=self.debug)
-            #LFUtils.removePort(self.resource, name, self.lfclient_url)
+            # LFUtils.removePort(self.resource, name, self.lfclient_url)
 
         if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_names, debug=self.debug):
             self._pass("All ports disappeared")
@@ -269,10 +268,10 @@ class StaConnect(Realm):
             self._fail("Not all ports came up in time")
 
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
-        duration = 0
-        maxTime = 300
-        ip = "0.0.0.0"
-        ap = ""
+        # duration = 0
+        # maxTime = 300
+        # ip = "0.0.0.0"
+        # ap = ""
 
         print("Waiting for %s stations to associate to AP: " % len(self.station_names), end="")
         if self.wait_for_ip(self.station_names):
@@ -531,8 +530,8 @@ class StaConnect(Realm):
 
 
 def main():
-    help_summary='''\
-     This script will create a station, create TCP and UDP traffic, run it a short amount of time, and verify whether 
+    help_summary = '''\
+     This script will create a station, create TCP and UDP traffic, run it a short amount of time, and verify whether
      traffic was sent and received.
     '''
     parser = Realm.create_basic_argparse(
