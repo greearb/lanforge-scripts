@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# flake8: noqa
 
 ##################################################################################
 # Run command on remote system over ssh
@@ -19,10 +18,10 @@
 ##################################################################################
 
 import paramiko
-from paramiko import SSHClient
+# from paramiko import SSHClient
 import socket
 import argparse
-import logging
+# import logging
 
 global ip
 global ssh_port
@@ -31,28 +30,28 @@ global password
 global timeout
 global prog
 
-ip="192.168.100.157"
-ssh_port=22
-username="root"
-password="lanforge"
-prog="/home/lanforge/do_ap"
-timeout=5
-remote_args=""
+ip = "192.168.100.157"
+ssh_port = 22
+username = "root"
+password = "lanforge"
+prog = "/home/lanforge/do_ap"
+timeout = 5
+remote_args = ""
 
 
 def get_info(cmd):
     try:
-        #logging.getLogger("paramiko").setLevel(logging.DEBUG)
+        # logging.getLogger("paramiko").setLevel(logging.DEBUG)
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        #print("Connecting to Remote System...")
+        # print("Connecting to Remote System...")
         client.connect(ip, username=username, password=password, port=ssh_port, timeout=timeout, allow_agent=False, look_for_keys=False)
-        #print("Running cmd: %s" %(cmd))
+        # print("Running cmd: %s" %(cmd))
         stdin, stdout, stderr = client.exec_command(cmd)
-       
+
         output = str(stdout.read(), 'utf-8')
 
-        #print("Output:\n")
+        # print("Output:\n")
         print(output)
 
     except paramiko.ssh_exception.AuthenticationException as e:
@@ -76,16 +75,16 @@ def main():
     global username
     global password
     global remote_args
-    
+
     parser = argparse.ArgumentParser(
         prog='ssh_remote.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
- Run command against remoate machine over ssh
+ Run command against remote machine over ssh
             ''',
 
         description='''
- Run command against remoate machine over ssh
+ Run command against remote machine over ssh
         ''')
 
     parser.add_argument(
@@ -120,7 +119,7 @@ def main():
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 This script is an example do_ap script on remote system.
 '''
     if args.help_summary:
@@ -130,7 +129,7 @@ This script is an example do_ap script on remote system.
     ip = args.ip
     username = args.username
     password = args.password
-    prog = args.prog;
+    prog = args.prog
 
     cmd = args.prog
     ra = args.remote_args.split()
@@ -140,6 +139,6 @@ This script is an example do_ap script on remote system.
 
     get_info(cmd)
 
+
 if __name__ == '__main__':
     main()
-
