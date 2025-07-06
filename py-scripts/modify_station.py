@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
     Script for modifying stations.
 """
@@ -328,7 +327,7 @@ def main():
     optional.add_argument('--mode',
                           default='NA',
                           help=f"set station wifi mode: "
-                               f"{', '.join(list(add_sta.add_sta_modes.keys()))}")
+                          f"{', '.join(list(add_sta.add_sta_modes.keys()))}")
     optional.add_argument('--bssid',
                           help="specify the BSSID of the AP to associate with, or DEFAULT")
     optional.add_argument('--ip',
