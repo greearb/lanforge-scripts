@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# flake8: noqa
+
 '''
 NAME: lf_rssi_process.py
 
@@ -27,8 +27,6 @@ logger = logging.getLogger(__name__)
 
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
-
-
 # Exit Codes
 # 0: Success
 # 1: Python Error
@@ -36,25 +34,26 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 # 3: Radio disconnected before exit threshold expected RSSI; PNG will still be generated
 # 4: Attempted Bandwidth HT80 used with Channel 6
 
+
 class lf_rssi_process:
     def __init__(self,
-                csv_file_list='NA',
-                png_dir='NA',
-                bandwidths_list='NA',
-                channel_list='NA',
-                antenna_list=0,
-                pathloss_list='NA'
-                ):
+                 csv_file_list='NA',
+                 png_dir='NA',
+                 bandwidths_list='NA',
+                 channel_list='NA',
+                 antenna_list=0,
+                 pathloss_list='NA'
+                 ):
         self.csv_file_list = csv_file_list
         self.num_station_csv = len(self.csv_file_list)
         self.CSV_FILE = csv_file_list  # TODO this needs to be a list for compatibility
         self.PNG_OUTPUT_DIR = png_dir
-        # TODO the args are passed in as metavar so it may be looped 
-        # for the module the looping takes place outside the loop so this 
+        # TODO the args are passed in as metavar so it may be looped
+        # for the module the looping takes place outside the loop so this
         # hack will be used for now
         self.bandwidths_list = bandwidths_list
         self.BANDWIDTH = 'NA'
-        self.channel_list= channel_list
+        self.channel_list = channel_list
         self.CHANNEL = 'NA'
         self.antenna_list = antenna_list
         self.ANTENNA = 'NA'
@@ -86,13 +85,12 @@ class lf_rssi_process:
         # TODO remove hard coded values
         # also capitalized variables
         # need to check for 2G channels
-    
+
         self.BASE_PATH_LOSS = 36
         if int(self.CHANNEL) <= 11:
             self.BASE_PATH_LOSS = float(self.pathloss_list[0])
         elif int(self.CHANNEL) >= 34 and int(self.CHANNEL) <= 177:
             self.BASE_PATH_LOSS = float(self.pathloss_list[1])
-
 
     # helper functions
     def filt(self, lst):  # filter out all instances of nan
@@ -111,7 +109,7 @@ class lf_rssi_process:
     # early exit for disconnected radio before threshold expected RSSI
     # TODO this should not be necessary as the data collection should skip
     # TODO
-    
+
     def check_data(self, signal, signal_exp):
         if self.CHANNEL <= 11:
             self.CHECK_RADIOS.remove(1)  # TODO: Make generic
@@ -134,7 +132,7 @@ class lf_rssi_process:
     def read_all_csv_files(self):
         csv_file_index = 0
         for csv_file in self.csv_file_list:
-        #self.csv_data = 
+            # self.csv_data =
             if not os.path.exists(csv_file):
                 logger.error("File not found {csv_file}".format(csv_file=csv_file))
                 sys.exit(2)
@@ -144,15 +142,14 @@ class lf_rssi_process:
                 for row in reader:
                     self.csv_data[csv_file_index].append(row)
 
-            csv_file_index += 1                    
-
+            csv_file_index += 1
 
     # Read in the data this probably should be generic
     # TODO remove not used
-    def read_csv_file(self, csv_file,index):
+    def read_csv_file(self, csv_file, index):
         self.CSV_FILE = csv_file
         # read data from file
-        #self.csv_data = 
+        # self.csv_data =
         if not os.path.exists(self.CSV_FILE):
             logger.error("File not found {csv_file}".format(csv_file=self.CSV_FILE))
             sys.exit(2)
@@ -163,13 +160,12 @@ class lf_rssi_process:
                 self.csv_data[index].append(row)
 
     def populate_signal_and_attenuation_data_create_png(self):
-        # Each station has its own csv file 
-        data_index  = (len(self.csv_file_list) - 1)
+        # Each station has its own csv file
+        data_index = (len(self.csv_file_list) - 1)
 
         for channel in self.channel_list:
             self.CHANNEL = channel
             self.set_channel_path_loss()
-
 
             for bandwidth in self.bandwidths_list:
                 # used for title
@@ -180,44 +176,45 @@ class lf_rssi_process:
 
                     self.atten_data = [[], [], [], [], [], [], []]
                     self.signal_data = [[], [], [], [], [], [], []]
-                    
+
                     # csv_index is the all the csv data for an individual station
-                    for csv_index in range (0, len(self.csv_file_list)  ):
+                    for csv_index in range(0, len(self.csv_file_list)):
                         # run index is the data collected for a specific run
                         for run_index in range(1, len(self.csv_data[csv_index])):
 
                             # attenuation data
                             # attenuation is in 1/10 dBm
                             # position 11 in csv is the attenuation location counting from zero
-                            logger.debug("bandwidth {bw} csv bandwidth {csv_bw}".format(bw=self.BANDWIDTH,csv_bw=self.csv_data[csv_index][run_index][29]))
-                            logger.debug("channel {ch} csv channel {csv_ch}".format(ch=self.CHANNEL,csv_ch=self.csv_data[csv_index][run_index][27]))
-                            logger.debug("antenna {at} csv antenna {csv_at}".format(at=self.ANTENNA,csv_at=self.csv_data[csv_index][run_index][30]))
+                            logger.debug("bandwidth {bw} csv bandwidth {csv_bw}".format(bw=self.BANDWIDTH, csv_bw=self.csv_data[csv_index][run_index][29]))
+                            logger.debug("channel {ch} csv channel {csv_ch}".format(ch=self.CHANNEL, csv_ch=self.csv_data[csv_index][run_index][27]))
+                            logger.debug("antenna {at} csv antenna {csv_at}".format(at=self.ANTENNA, csv_at=self.csv_data[csv_index][run_index][30]))
                             # neeed to compare channel, bandwidth, antenna
-                            if ((self.csv_data[csv_index][run_index][29] == self.BANDWIDTH)
-                                and (self.csv_data[csv_index][run_index][27] == self.CHANNEL)
-                                and (self.csv_data[csv_index][run_index][30] == self.ANTENNA)):
+                            if ((self.csv_data[csv_index][run_index][29] == self.BANDWIDTH) and
+                               (self.csv_data[csv_index][run_index][27] == self.CHANNEL) and
+                               (self.csv_data[csv_index][run_index][30] == self.ANTENNA)):
+
                                 self.atten_data[csv_index].append(float(self.csv_data[csv_index][run_index][11])/10)
                                 # signal data is position 17
                                 rssi = self.csv_data[csv_index][run_index][17]
 
-                                rssi = rssi.replace(' dBm','')
+                                rssi = rssi.replace(' dBm', '')
                                 rssi = float(rssi)
-                                if rssi:            
+                                if rssi:
                                     self.signal_data[csv_index].append(rssi)
                                 else:
                                     self.signal_data[csv_index].append(np.nan)
 
-                                logger.debug("csv_index: {csv} run_index: {run}".format(csv=csv_index,run=run_index))
-                                
-                        logger.debug("channel: {channel} bandwidth: {bandwidth} antenna: {antenna} atten_data: {atten_data}".format(channel=self.CHANNEL,bandwidth=self.BANDWIDTH,antenna=self.ANTENNA,atten_data=self.atten_data))
-                        logger.debug("channel: {channel} bandwidth: {bandwidth} antenna: {antenna} signal_data: {signal_data}".format(channel=self.CHANNEL,bandwidth=self.BANDWIDTH,antenna=self.ANTENNA,signal_data=self.signal_data))
+                                logger.debug("csv_index: {csv} run_index: {run}".format(csv=csv_index, run=run_index))
+
+                        logger.debug("channel: {channel} bandwidth: {bandwidth} antenna: {antenna} atten_data: {atten_data}".format(channel=self.CHANNEL, bandwidth=self.BANDWIDTH, antenna=self.ANTENNA, atten_data=self.atten_data))  # noqa: E501
+                        logger.debug("channel: {channel} bandwidth: {bandwidth} antenna: {antenna} signal_data: {signal_data}".format(channel=self.CHANNEL, bandwidth=self.BANDWIDTH, antenna=self.ANTENNA, signal_data=self.signal_data))  # noqa: E501
 
                     # all the data is now ready to create png for specific bandwidth
                     self.create_png_files(index=data_index)
-            
-    # TODO the index is actually the total number of stations that 
+
+    # TODO the index is actually the total number of stations that
     # the csv data was gathered from
-    def create_png_files(self,index):
+    def create_png_files(self, index):
         # remove empty list from lists
         self.atten_data = [ele for ele in self.atten_data if ele != []]
         self.signal_data = [ele for ele in self.signal_data if ele != []]
@@ -225,10 +222,10 @@ class lf_rssi_process:
 
         atten = np.array(self.atten_data).T
         signal = np.array(self.signal_data).T
-        signal_avg = np.array([self.avg(row) for row in signal])
+        # signal_avg = np.array([self.avg(row) for row in signal])
         signal_exp = self.expected_signal(atten[:, 0])
         signal_dev = np.array([signal[i] - signal_exp[i] for i in range(0, len(signal))])
-        signal_avg_dev = signal_exp - signal_avg
+        # signal_avg_dev = signal_exp - signal_avg
 
         COLORS = {
             'red': '#dc322f',
@@ -245,61 +242,60 @@ class lf_rssi_process:
         }
 
         color_index = {
-            1 : 'red',
-            2 : 'orange',
-            3 : 'yellow',
-            4 : 'green',
-            5 : 'blue',
-            6 : 'violet',
-            7 : 'magenta',
-            8 : 'cyan',
-            9 : 'black',
-            10 : 'gray',
-            11 : 'dark_gray'
+            1: 'red',
+            2: 'orange',
+            3: 'yellow',
+            4: 'green',
+            5: 'blue',
+            6: 'violet',
+            7: 'magenta',
+            8: 'cyan',
+            9: 'black',
+            10: 'gray',
+            11: 'dark_gray'
         }
 
         # TODO The legend needs to be dynamic.
         logger.debug("length of list of lists {length}".format(length=len(self.csv_data)))
         legend = {}
         # Use the number of lists to determing the legend
-        # should only need to read a single sample to get the radios and not 
+        # should only need to read a single sample to get the radios and not
         # loop though all
         # TODO think of a more accurate way
-        j = 0 # csv data index starting a zero
+        j = 0  # csv data index starting a zero
         while j <= index:
             # we are reading the station and radio from the csv ,
             # this should be fixed in the csv so o.k. to read from the same spot
-            legend[self.csv_data[j][1][24]] = '{station} {radio}'.format(station=self.csv_data[j][1][24],radio=self.csv_data[j][1][25] )
+            legend[self.csv_data[j][1][24]] = '{station} {radio}'.format(station=self.csv_data[j][1][24], radio=self.csv_data[j][1][25])
             #    i += 1
             logger.debug("legend {legend}".format(legend=legend))
             j += 1
-            
 
         plt.rc('font', family='Liberation Serif')
         plt.style.use('dark_background')
         fig = plt.figure(figsize=(8, 8), dpi=100)
         ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
         ax.plot(atten[:, 0], signal_exp, color=COLORS['gray'], alpha=1.0, label='Expected')
-        #if self.CHANNEL <= 6:
-        #    ax.plot(atten[:, 0], signal[:, 0], color=COLORS['red'], alpha=1.0, label=legend['sta0000'])  # TODO: Make generic
-        #if self.CHANNEL >= 34 and self.CHANNEL <= 177:
-        #  TODO Need to read the radio and creat the legend 
+        # if self.CHANNEL <= 6:
+        #     ax.plot(atten[:, 0], signal[:, 0], color=COLORS['red'], alpha=1.0, label=legend['sta0000'])  # TODO: Make generic
+        # if self.CHANNEL >= 34 and self.CHANNEL <= 177:
+        # TODO Need to read the radio and creat the legend
         # TODO needs to be dynamic Focus on 5g for now
         # TODO only capture data for radios that support the mode
         # TODO using the number of lists in self.atten_data to see how much to plot
-        # TODO look for a better way 
+        # TODO look for a better way
         # The index for self.data is incremented due to column headers
         logger.debug("length of lists of lists {length}".format(length=len(self.atten_data)))
 
         logger.info("plotting Attenuation vs. Signal ")
-        j = 0 # csv data index starting a zero, this is the number of csv files each csv file corresponds to one station
+        j = 0  # csv data index starting a zero, this is the number of csv files each csv file corresponds to one station
         while j <= index:
             ax.plot(atten[:, j], signal[:, j], color=COLORS[color_index[j+1]], alpha=1.0, label=legend[self.csv_data[j][j+1][24]])  # TODO: Make generic
             j += 1
 
         ax.set_title('Attenuation vs. Signal:\n'
                      + F'VAP={self.csv_data[0][1][19]}, '
-                     + F'VAP Radio=TODO'
+                     + 'VAP Radio=TODO'
                      + F'Channel={self.CHANNEL}, '
                      + F'Bandwidth={self.BANDWIDTH}, '
                      + F'Antenna={self.ANTENNA_LEGEND[self.ANTENNA]}')
@@ -318,10 +314,10 @@ class lf_rssi_process:
         # if self.CHANNEL <= 11:
         #     ax.plot(atten[:, 0], signal_dev[:, 0], color=COLORS['red'], label=legend['sta0000'])
         # if self.CHANNEL >= 36 and self.CHANNEL <= 177:
-        i = 0
+        # i = 0
         j = 0
         while j <= index:
-            ax.plot(atten[:, j], signal_dev[:, j], color=COLORS[color_index[j+1]], label=legend[self.csv_data[j][j+1][24]])            
+            ax.plot(atten[:, j], signal_dev[:, j], color=COLORS[color_index[j+1]], label=legend[self.csv_data[j][j+1][24]])
             j += 1
 
         ax.set_title('Atteunuation vs. Signal Deviation:\n'
@@ -342,8 +338,6 @@ class lf_rssi_process:
         # TODO the chack_data will need to be modified
         # self.check_data(signal, signal_exp)
         # sys.exit(0)
-
-
 
 # Starting point for running this from cmd line.
 # note: when adding command line delimiters : +,=@
@@ -368,14 +362,14 @@ def main():
         --------------------
         '''
     )
-    #parser = argparse.ArgumentParser(description='Input and output files.')
+    # parser = argparse.ArgumentParser(description='Input and output files.')
     parser.add_argument('--csv', action="append",  help='../output.csv')
     parser.add_argument('--png_dir', metavar='o', type=str, help='../PNGs')
     # TODO read the bandwidth from the csv data
     parser.add_argument('--bandwidths', help='--bandwidths  list of bandwidths "20 40 80 160" space separated, default : "20" ', default='20')
     parser.add_argument('--channels', help='--channels  list of channels "6 36" space separated, default: "36" ', default='36')
     parser.add_argument('--antennas', help='''
-                        --antennas list of antennas "0, 1, 4, 7, 8"  default: 
+                        --antennas list of antennas "0, 1, 4, 7, 8"  default:
                                 self.ANTENNA_LEGEND = {
                                     0: 'Diversity (All)',
                                     1: 'Fixed-A (1x1)',
@@ -384,8 +378,8 @@ def main():
                                     8: 'ABCD (4x4)'
                                 }
                                 default is 0
-                        ''', default= 0)
-    parser.add_argument('--pathloss_list', help='list of path loss for 2g, 5g, 6g default: 26.74 31.87 0',default='26.74 31.87 0')
+                        ''', default=0)
+    parser.add_argument('--pathloss_list', help='list of path loss for 2g, 5g, 6g default: 26.74 31.87 0', default='26.74 31.87 0')
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     # logging configuration
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
@@ -393,7 +387,7 @@ def main():
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 Module to Process the data that was measured during  lf_rssi_check.py , the process will take in a list of csv files
 extract the data and graph
 '''
@@ -414,11 +408,10 @@ extract the data and graph
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-    bandwidths_list = args.bandwidths.split()        
-    channel_list = args.channels.split()        
-    antenna_list = args.antennas.split()  
-    pathloss_list = args.pathloss_list.split() 
-
+    bandwidths_list = args.bandwidths.split()
+    channel_list = args.channels.split()
+    antenna_list = args.antennas.split()
+    pathloss_list = args.pathloss_list.split()
 
     # CSV_FILE = args.csv
     # PNG_OUTPUT_DIR = args.png_dir
@@ -429,20 +422,17 @@ extract the data and graph
     rssi_process = lf_rssi_process(
                                     csv_file_list=args.csv,
                                     png_dir=args.png_dir,
-                                    bandwidths_list = bandwidths_list,
-                                    channel_list = channel_list,
-                                    antenna_list = antenna_list,
-                                    pathloss_list = pathloss_list,
+                                    bandwidths_list=bandwidths_list,
+                                    channel_list=channel_list,
+                                    antenna_list=antenna_list,
+                                    pathloss_list=pathloss_list,
                                     )
 
-
-
     rssi_process.read_all_csv_files()
-    # using the csv as a count 
+    # using the csv as a count
     # process the collected csv data
     rssi_process.populate_signal_and_attenuation_data_create_png()
 
-            
 
 if __name__ == "__main__":
     main()
