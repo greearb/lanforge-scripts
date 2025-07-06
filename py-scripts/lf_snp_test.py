@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_snp_test.py  snp == Scaling and Performance
 
@@ -152,6 +151,8 @@ import subprocess
 import csv
 import random
 import logging
+import traceback
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -964,7 +965,7 @@ class CreateCtlr:
                     break
 
         logg.info("configure ap {} channel {} chan_width {}".format(self.ap, self.channel, self.chan_width))
-        # Verify channel and channel width. 
+        # Verify channel and channel width.
 
 
 ################################################################################
@@ -1419,7 +1420,7 @@ class L3VariableTime(Realm):
 
         cur_time = datetime.datetime.now()
         logg.info("Getting initial values.")
-        # the total_dl_bps and total_up_bps is for all stations 
+        # the total_dl_bps and total_up_bps is for all stations
         old_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
 
         end_time = self.parse_time(self.test_duration) + cur_time
@@ -1438,7 +1439,7 @@ class L3VariableTime(Realm):
                 time.sleep(1)
 
             self.epoch_time = int(time.time())
-            # the total_dl_bps and total_up_bps is for all stations 
+            # the total_dl_bps and total_up_bps is for all stations
             new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
 
             print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
@@ -1448,7 +1449,7 @@ class L3VariableTime(Realm):
             # __compare_vals - does the calculations
             Result, rx_bytes, csv_rx_row_data = self.__compare_vals(old_rx_values, new_rx_values, total_dl_bps,
                                                                     total_ul_bps)
-            # save the best rate for the interval 
+            # save the best rate for the interval
             if rx_bytes > best_rx_bytes:
                 best_rx_bytes = rx_bytes
 
@@ -1485,7 +1486,7 @@ class L3VariableTime(Realm):
         for station_profile in self.station_profiles:
             station_profile.cleanup()
 
-    # for details csv file                                    
+    # for details csv file
     def csv_generate_column_details_headers(self):
         # test_keys used to generate the test_id
         csv_rx_headers = self.test_keys.copy()
@@ -1569,51 +1570,51 @@ lf_snp_test.py:
 Task Description:  Ultimate Aim
 ##################################################################################
 -----------------
-Candela Scaling and Performance Test (SNP) 
+Candela Scaling and Performance Test (SNP)
 
 The Test supports configuraiton of a Controller which configures
 An AP and the Configuration of LANforge or Multiple LANforges
-configured into a "Realm". 
+configured into a "Realm".
 
 #########################################
 # Examples
-# #######################################            
-EXAMPLE: 
+# #######################################
+EXAMPLE:
 
 Use --print_test_config at end of command to see test configuration
 
 Test configurations take presidence to command line parameters
 
 Using Coded Test Configuration --controller_test_1
-    ./lf_snp_test.py --controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
+    ./lf_snp_test.py --controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123
     --controller_aps 'Vanc-e' --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "Can-SnP-9120" --controller_test_1
     --print_test_config
 
 Using Coded Test Configuration --controller_test_1
-    ./lf_snp_test.py --controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123  
+    ./lf_snp_test.py --controller_ip 10.195.197.234 --controller_user admin --controller_passwd Milpitas@123
     --controller_aps 'Vanc-e' --controller_series "9800" --endp_types 'lf_udp' --upstream_port eth2 --controller_prompt "Can-SnP-9120" --controller_test_1
     --print_test_config
 
 Using Coded Test Configuration:
-    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types 'lf_udp' --upstream_port eth2 --controller_test_3 
-    --controller_prompt "(Cisco Controller)" 
+    ./lf_snp_test.py -cc 192.168.100.112 -cu admin -cpw Cisco123 -cca APA453.0E7B.CF9C -cs "3504" --endp_types 'lf_udp' --upstream_port eth2 --controller_test_3
+    --controller_prompt "(Cisco Controller)"
     --print_test_config
 
 Using Commandline with defaults:
-    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C --controller_series "3504" 
-    --controller_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto" 
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C --controller_series "3504"
+    --controller_prompt "(Cisco Controller)" --radio "radio==1.wiphy0 stations==1  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto"
     --print_test_config
 
 Using Commandline:
-    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
-    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "a" --controller_chan_5ghz "36" 
-    --radio "radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==ac" --controller_client_densities "10"  
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C
+    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "a" --controller_chan_5ghz "36"
+    --radio "radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==ac" --controller_client_densities "10"
     --print_test_config
 
 Using Commandline: Setting --test_duration "20s" --polling_interval to 5s -ccd "2" (--controller_client_densities)
-    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C 
-    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36" 
-    --radio "radio==1.wiphy0 stations==2  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==an" --controller_client_densities "2"  
+    ./lf_snp_test.py --controller_ip 192.168.100.112 --controller_user admin --controller_passwd Cisco123 --controller_aps APA453.0E7B.CF9C
+    --controller_series "3504" --upstream_port eth2  --controller_prompt "(Cisco Controller)" --controller_wifimode "auto"  --controller_chan_5ghz "36"
+    --radio "radio==1.wiphy0 stations==2  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==an" --controller_client_densities "2"
     --print_test_config
 
 #############################################
@@ -1637,7 +1638,7 @@ ath10K(9884) - wave-2 supports 4x4  802.11an-AC  5ghz  (can act as ac , an)
 Note: wave-2 radios can act as ac, an, (802.11an-AC) or legacy a/b/g (802.11bgn-AC)
 
 #############################################
-Wifi Modes 
+Wifi Modes
 #############################################
 11ax (2.4 ghz or 5 ghz), 11ac (5 ghz only), 11n (2.4ghz or 5 ghz), 11bg (2.4 ghz)  (controller)
 
@@ -1657,12 +1658,12 @@ Radios   :  ath10K(9984)    802.11an-AC (9984 are single band)
 24 Ghz Radios and Wifi Modes
 #############################################
 Wifi mode: 11ax - 24ghz
-Radios   :  ax200 -         802.11 /b/g/n/AX     
+Radios   :  ax200 -         802.11 /b/g/n/AX
 
 Wifi mode: 11ac - 24ghz
 Radios   :  ax200           802.11 /b/g/n/AX (2.4Ghz doesn't officially support /AC, but often chips will do /AC there anyway) (invalid)
 
-Wifi mode: 11n - 24ghz 
+Wifi mode: 11n - 24ghz
 Radios   :  ax200           802.11 /b/g/n/AX
 
 Wifi mode: 11bg - 24ghz
@@ -1673,7 +1674,7 @@ Radio Mode Configuration
 ############################################
 controller_wifimode == "anAX" or controller_wifimode == "abgn" or controller_wifimode == "bg":
         radios = radio_AX200_abgn_ax_dict[controller_client_density]
-                                                
+
 controller_wifimode == "an" or controller_wifimode == "anAC":
         radios = radio_ath10K_9984_an_AC_dict[controller_client_density]
 
@@ -1689,11 +1690,11 @@ LANforge Realm Configuration
 1.wiphy5  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
 1.wiphy6  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
 1.wiphy7  802.11abgn-ax  iwlwifi(AX200)  523 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-1.wiphy8  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz 
+1.wiphy8  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 1.wiphy9  802.11an-AC    ath10k(9984)    523 - 64 stations - 5ghz
 
 2.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
-2.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn 
+2.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
 
 3.wiphy0  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
 3.wiphy1  802.11abgn-ax  iwlwifi(AX200)  521 - 1  stations - 5ghz/24ghz use only for 802.11ax - 24gz abgn
@@ -1720,15 +1721,15 @@ TECHNICAL UNDERSTANDING: LANForge
 ########################################################################################################
     LANForge Monitored Values Per Polling Interval
         'rx bytes' - bytes transmitted
-        'rx rate'  - bits per second 
+        'rx rate'  - bits per second
 
-    in DL direction: -B tx -> -A rx, (side_b_tx_min_bps) LANforge Eth endpoint transmits bytes (AP/DUT), station endpoint (Wifi) LANForge receives them.  station-end-rx-bps (bits per second) is download rx-bps (bits per second)
-    in UL direction: -A tx -> -B rx, (side_a_tx_min_bps) LANforge Eth endpoint receives bytes (AP/DUT), station endpoint (Wifi) LANForge transmits them.  ethernet-end-rx-bps (bits per second) is upload load rx-bps (bits per second)
+    in DL direction: -B tx -> -A rx, (side_b_tx_min_bps) LANforge Eth endpoint transmits bytes (AP/DUT), station endpoint (Wifi) LANForge receives them.  station-end-rx-bps (bits per second) is download rx-bps (bits per second)  # noqa: E501
+    in UL direction: -A tx -> -B rx, (side_a_tx_min_bps) LANforge Eth endpoint receives bytes (AP/DUT), station endpoint (Wifi) LANForge transmits them.  ethernet-end-rx-bps (bits per second) is upload load rx-bps (bits per second)  # noqa: E501
 
 #########################################################################################################
 LANforge GUI what is displayed in the Column and how to access the value with cli or json
 #########################################################################################################
-# NOTE: see how rx rate is used in script and can monitor any values in similiar manner 
+# NOTE: see how rx rate is used in script and can monitor any values in similiar manner
 
     GUI Column Display       Layer3_cols argument to type in (to print in report)
 
@@ -1853,7 +1854,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     # Script AP parameters for reading AP, - not used in this script
     #################################################################
     parser.add_argument('-api', '--ap_info', action='append', nargs=1, type=str,
-                        help='(enter 0 if does not apply) --ap_info \"ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password> ap_tty==<tty serial device>\" ')
+                        help='(enter 0 if does not apply) --ap_info \"ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password> ap_tty==<tty serial device>\" ')  # noqa: E501
     # --ap_info "ap_scheme==serial ap_prompt==APA53.0E7B.CF9C ap_ip==0 ap_port==0 ap_user==admin ap_pw==Admin123 ap_tty==/dev/ttyUSB2"
 
     #############################################
@@ -1905,7 +1906,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
 
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
-
     ##############################################################
     #
     #  Scaling and Performance Args Parser
@@ -1920,7 +1920,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     # Help Summary
     ###############################################################
 
-    help_summary='''\
+    help_summary = '''\
 This script is functional and is an example.
 This program is to test an AP connected to a controller.
 The AP name is configurable.
@@ -1931,7 +1931,6 @@ This currently only works with certain models of Cisco controllers.
     if args.help_summary:
         print(help_summary)
         exit(0)
-
 
     ###############################################################
     # Gather Test Data
@@ -2055,10 +2054,10 @@ This currently only works with certain models of Cisco controllers.
         ['radio==1.wiphy8 stations==10 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_020_one = [
         ['radio==1.wiphy8 stations==20 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_050_one = [
-        ['radio==1.wiphy8 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_050_one = [
-        ['radio==1.wiphy8 stations==64 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    # radio_ath10K_9984_an_AC_list_050_one = [
+    #     ['radio==1.wiphy8 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    # radio_ath10K_9984_an_AC_list_050_one = [
+    #     ['radio==1.wiphy8 stations==64 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
 
     radio_ath10K_9984_an_AC_dict_one = {'1': radio_ath10K_9984_an_AC_list_001_one,
                                         '10': radio_ath10K_9984_an_AC_list_010_one,
@@ -2074,7 +2073,7 @@ This currently only works with certain models of Cisco controllers.
 
     ############################################################
     #
-    #  Radio Dictionary for multiple LANforge in  Realm 
+    #  Radio Dictionary for multiple LANforge in  Realm
     #  Configuration used by command switch --controller_test_2
     #
     ############################################################
@@ -2093,28 +2092,28 @@ This currently only works with certain models of Cisco controllers.
         ['radio==2.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
         ['radio==2.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
 
-    radio_AX200_abgn_ax_list_020 = [
-        ['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==1.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==1.wiphy2 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==1.wiphy3 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==1.wiphy4 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==1.wiphy5 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==1.wiphy6 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==1.wiphy7 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==2.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==2.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==3.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==3.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==4.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==4.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==5.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==5.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==6.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==6.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==6.wiphy2 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==6.wiphy3 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-    ]
+    # radio_AX200_abgn_ax_list_020 = [
+    #     ['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==1.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==1.wiphy2 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==1.wiphy3 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==1.wiphy4 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==1.wiphy5 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==1.wiphy6 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==1.wiphy7 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==2.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==2.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==3.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==3.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==4.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==4.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==5.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==5.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==6.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==6.wiphy1 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==6.wiphy2 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==6.wiphy3 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    # ]
 
     radio_AX200_abgn_ax_list_024 = [
         ['radio==1.wiphy0 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
@@ -2151,13 +2150,13 @@ This currently only works with certain models of Cisco controllers.
         ['radio==1.wiphy8 stations==1 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_010 = [
         ['radio==1.wiphy8 stations==10 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_020 = [
-        ['radio==1.wiphy8 stations==20 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    # radio_ath10K_9984_an_AC_list_020 = [
+    #     ['radio==1.wiphy8 stations==20 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_050 = [
         ['radio==1.wiphy8 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_100 = [
-        ['radio==1.wiphy8 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
-        ['radio==1.wiphy9 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
+    # radio_ath10K_9984_an_AC_list_100 = [
+    #     ['radio==1.wiphy8 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
+    #     ['radio==1.wiphy9 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_200 = [
         ['radio==1.wiphy8 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
         ['radio==1.wiphy9 stations==50 ssid==test-can ssid_pw==[BLANK] security==open wifimode==auto'],
@@ -2176,7 +2175,7 @@ This currently only works with certain models of Cisco controllers.
 
     #############################################################
     #
-    #  Static dictionary for radios on 191.168.100.178  
+    #  Static dictionary for radios on 191.168.100.178
     #  Static Configuration Candela Tech Realm ()
     #  Configuration used by command switch --controller_test_3
     #
@@ -2202,18 +2201,18 @@ This currently only works with certain models of Cisco controllers.
         ['radio==1.wiphy0 stations==1   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_010 = [
         ['radio==1.wiphy0 stations==10  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_020 = [
-        ['radio==1.wiphy0 stations==20  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    # radio_ath10K_9984_an_AC_list_020 = [
+    #     ['radio==1.wiphy0 stations==20  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
     radio_ath10K_9984_an_AC_list_050 = [
         ['radio==1.wiphy0 stations==50  ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
-    radio_ath10K_9984_an_AC_list_001_wiphy0 = [
-        ['radio==1.wiphy0 stations==1    ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath10K_9984_an_AC_list_010_wiphy0 = [
-        ['radio==1.wiphy0 stations==10   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    # radio_ath10K_9984_an_AC_list_001_wiphy0 = [
+    #     ['radio==1.wiphy0 stations==1    ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    # radio_ath10K_9984_an_AC_list_010_wiphy0 = [
+    #     ['radio==1.wiphy0 stations==10   ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
-    radio_ath10K_9984_an_AC_dict_test_wiphy0 = {'1': radio_ath10K_9984_an_AC_list_001_wiphy0,
-                                                '10': radio_ath10K_9984_an_AC_list_010_wiphy0}
+    # radio_ath10K_9984_an_AC_dict_test_wiphy0 = {'1': radio_ath10K_9984_an_AC_list_001_wiphy0,
+    #                                             '10': radio_ath10K_9984_an_AC_list_010_wiphy0}
 
     radio_ath10K_9984_an_AC_dict_test = {'1': radio_ath10K_9984_an_AC_list_001,
                                          '10': radio_ath10K_9984_an_AC_list_010,
@@ -2223,22 +2222,23 @@ This currently only works with certain models of Cisco controllers.
     # Test to use ath9K
     ####################################################################
 
-    radio_ath9K_9984_abgn_list_001 = [
-        ['radio==1.wiphy1 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath9K_9984_abgn_list_010 = [
-        ['radio==1.wiphy1 stations==10 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath9K_9984_abgn_list_020 = [
-        ['radio==1.wiphy1 stations==20 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath9K_9984_abgn_list_050 = [
-        ['radio==1.wiphy1 stations==50 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
-    radio_ath9K_9984_abgn_list_200 = [
-        ['radio==1.wiphy1 stations==200 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    # radio_ath9K_9984_abgn_list_001 = [
+    #     ['radio==1.wiphy1 stations==1 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    # radio_ath9K_9984_abgn_list_010 = [
+    #     ['radio==1.wiphy1 stations==10 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    # radio_ath9K_9984_abgn_list_020 = [
+    #     ['radio==1.wiphy1 stations==20 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    # radio_ath9K_9984_abgn_list_050 = [
+    #     ['radio==1.wiphy1 stations==50 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
+    # radio_ath9K_9984_abgn_list_200 = [
+    #     ['radio==1.wiphy1 stations==200 ssid==test_candela ssid_pw==[BLANK] security==open wifimode==auto']]
 
-    radio_ath9K_9984_abgn_dict_test = {'1': radio_ath9K_9984_abgn_list_001,
-                                       '10': radio_ath9K_9984_abgn_list_010,
-                                       '20': radio_ath9K_9984_abgn_list_020,
-                                       '50': radio_ath9K_9984_abgn_list_050,
-                                       '200': radio_ath9K_9984_abgn_list_200}
+    # radio_ath9K_9984_abgn_dict_test = {'1': radio_ath9K_9984_abgn_list_001,
+    #                                   '10': radio_ath9K_9984_abgn_list_010,
+    #                                   '20': radio_ath9K_9984_abgn_list_020,
+    #                                   '50': radio_ath9K_9984_abgn_list_050,
+    #                                   '200': radio_ath9K_9984_abgn_list_200}
+
     ####################################################################
     # Test to only use teh ath9K
     ####################################################################
@@ -2441,8 +2441,9 @@ This currently only works with certain models of Cisco controllers.
         try:
             report_path = report.get_report_path()
             logg.info("Reports Directory Created: {}".format(report_path))
-        except:
-            logg.info("Reports Directory Created")
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logg.info("Reports Directory may not have been Created")
         exit(1)
 
     __ap_set = None
@@ -2476,7 +2477,7 @@ This currently only works with certain models of Cisco controllers.
                                             for controller_client_density in controller_client_densities:
                                                 radios = ""
                                                 ########################################################
-                                                # Validate radio configuration 
+                                                # Validate radio configuration
                                                 # If controller_client_density is NOT supported continue
                                                 ########################################################
 
@@ -2503,7 +2504,8 @@ This currently only works with certain models of Cisco controllers.
                                                             radios = radio_AX200_abgn_ax_dict[controller_client_density]
                                                             logg.info("controller_client_density:{} radios: {}".format(
                                                                 controller_client_density, radios))
-                                                        except:
+                                                        except Exception as x:
+                                                            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                                                             logg.info(
                                                                 "CONTROLLER DENSITY INVALID FOR RADIO DICTIONARY: controller_client_density: {} not supported for configuration".format(
                                                                     controller_client_density))
@@ -2519,7 +2521,8 @@ This currently only works with certain models of Cisco controllers.
                                                             radios = radio_ath10K_9984_an_AC_dict[
                                                                 controller_client_density]
                                                             logg.info("radios: {}".format(radios))
-                                                        except:
+                                                        except Exception as x:
+                                                            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                                                             logg.info(
                                                                 "CONTROLLER DENSITY INVALID FOR RADIO DICTIONARY: controller_client_density: {} not supported for configuration".format(
                                                                     controller_client_density))
@@ -2536,12 +2539,13 @@ This currently only works with certain models of Cisco controllers.
                                                         logg.info("##################################")
                                                         exit(1)
                                                 else:  # controller_band == "b"
-                                                    if controller_wifimode == "an" or controller_wifimode == "anAX" or controller_wifimode == "abgn" or controller_wifimode == "bg" or controller_wifimode == "auto":
+                                                    if controller_wifimode == "an" or controller_wifimode == "anAX" or controller_wifimode == "abgn" or controller_wifimode == "bg" or controller_wifimode == "auto":  # noqa: E501
                                                         # AX200 dual band
                                                         try:
                                                             radios = radio_AX200_abgn_ax_dict[controller_client_density]
                                                             logg.info("radios: {}".format(radios))
-                                                        except:
+                                                        except Exception as x:
+                                                            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                                                             logg.info(
                                                                 "CONTROLLER DENSITY INVALID FOR RADIO DICTIONARY: controller_client_density: {} not supported for configuration".format(
                                                                     controller_client_density))
@@ -2574,7 +2578,7 @@ This currently only works with certain models of Cisco controllers.
                                                                         side_b_tx_min_bps_dl))
                                                                 logg.info(
                                                                     "####################################################################")
-                                                                test_config = "AP=={} Band=={} chan_5ghz=={} chan_24ghz=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_type=={} direction=={} pdu=={}".format(
+                                                                test_config = "AP=={} Band=={} chan_5ghz=={} chan_24ghz=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_type=={} direction=={} pdu=={}".format(  # noqa: E501
                                                                     controller_ap, controller_band,
                                                                     controller_chan_5ghz, controller_chan_24ghz,
                                                                     controller_wifimode, controller_chan_width,
@@ -2705,7 +2709,7 @@ This currently only works with certain models of Cisco controllers.
                                                                         logg.info(
                                                                             "###############################################")
                                                                         logg.info(
-                                                                            "controller_ap: {} controller_band: {} controller_chan_width: {} controller_ap_mode: {} controller_tx_power: {} controller_chan_5ghz: {} controller_chan_24ghz: {}".format(
+                                                                            "controller_ap: {} controller_band: {} controller_chan_width: {} controller_ap_mode: {} controller_tx_power: {} controller_chan_5ghz: {} controller_chan_24ghz: {}".format(  # noqa: E501
                                                                                 controller_ap, controller_band,
                                                                                 controller_chan_width,
                                                                                 controller_ap_mode,
@@ -2713,7 +2717,7 @@ This currently only works with certain models of Cisco controllers.
                                                                                 controller_chan_5ghz,
                                                                                 controller_chan_24ghz))
                                                                         logg.info(
-                                                                            "__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}".format(
+                                                                            "__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}".format(  # noqa: E501
                                                                                 __ap_set, __band_set,
                                                                                 __chan_width_set, __ap_mode_set,
                                                                                 __tx_power_set, __chan_5ghz_set,
@@ -2773,7 +2777,7 @@ This currently only works with certain models of Cisco controllers.
                                                                             reset_port_enable_list.append(False)
                                                                             reset_port_time_min_list.append('0s')
                                                                             reset_port_time_max_list.append('0s')
-                                                                # no stations for testing reconfiguration of the controller - 
+                                                                # no stations for testing reconfiguration of the controller -
                                                                 if args.no_stations:
                                                                     logg.info(
                                                                         "#################################################")
@@ -2881,7 +2885,7 @@ This currently only works with certain models of Cisco controllers.
                                                                     if not ip_var_test.passes():
                                                                         logg.info("stop test failed")
                                                                         logg.info(ip_var_test.get_fail_message())
-                                                                    # clean up 
+                                                                    # clean up
                                                                     radio_name_list = []
                                                                     number_of_stations_per_radio_list = []
                                                                     ssid_list = []
@@ -2895,11 +2899,11 @@ This currently only works with certain models of Cisco controllers.
                                                                         ip_var_test.passes()
                                                                         logg.info(
                                                                             "Full test passed, all connections increased rx rate")
-    ##########################################  
+    # #########################################
     #
     # Build Results
     #
-    ##########################################
+    # #########################################
     if args.csv_outfile:
         logg.info("Report CSV Details: {}".format(csv_outfile))
         logg.info("Report CSV Results: {}".format(csv_results))
@@ -2914,8 +2918,8 @@ This currently only works with certain models of Cisco controllers.
 
     if args.log:
         logg.info("output_log: {}".format(outfile_log))
-
     # TODO:  Check pass/fail and do exit code accordingly.
+
 
 if __name__ == "__main__":
     main()
