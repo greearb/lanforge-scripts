@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 '''
 NAME: lf_json_api.py
 
@@ -39,8 +38,8 @@ import requests
 from pandas import json_normalize
 import json
 import traceback
-import csv
-import time
+# import csv
+# import time
 
 
 if sys.version_info[0] != 3:
@@ -89,7 +88,6 @@ class lf_json_api():
         # convert write to w and append to a
         self.update_csv_mode()
 
-
     """ Reporting, json, and general use functions: """
 
     def update_csv_mode(self):
@@ -107,9 +105,9 @@ class lf_json_api():
         if not self.endpoint:
             return
 
-        #logger.error("update-endpoint-info, endpoint: %s  non-endpoint: %s"%(self.endpoint, self.non_endpoint));
+        # logger.error("update-endpoint-info, endpoint: %s  non-endpoint: %s"%(self.endpoint, self.non_endpoint));
         self.shelf, self.resource, self.port_name, self.endpoint_name, *nil = LFUtils.name_to_eid(self.endpoint, non_port=True)
-        logger.debug("shelf : {shelf} , resource : {resource}, port_name : {port_name}, endpoint_name : {endpoint_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, endpoint_name=self.endpoint_name))
+        logger.debug("shelf : {shelf} , resource : {resource}, port_name : {port_name}, endpoint_name : {endpoint_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, endpoint_name=self.endpoint_name))  # noqa: E501
         # the request can change
 
     def reformat_json(self, json_data):
@@ -124,7 +122,7 @@ class lf_json_api():
                 inner_data = i[list(i.keys())[0]]  # getting the data under each device/port/object name in list
                 lines.append(pandas.json_normalize(inner_data))
             return pandas.concat(lines, ignore_index=True)
-  
+
     # TODO this is a generic one.
 
     def get_request_information(self, port=None
@@ -183,7 +181,6 @@ class lf_json_api():
 
         return lanforge_json, lanforge_text, lanforge_json_formatted
 
-
     """ Port Manager tab and station functions:  """
 
     # give information on a single station if the mac is entered.
@@ -211,7 +208,7 @@ class lf_json_api():
             request_command, auth=(
                 self.lf_user, self.lf_passwd))
 
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name}/{mac} | json_pp  ".format(
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name}/{mac} | json_pp  ".format(  # noqa: E501
             lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name, mac=self.mac
         ))
 
@@ -229,7 +226,7 @@ class lf_json_api():
         lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
         logger.info("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
 
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name}/{mac} | json_pp  ".format(
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name}/{mac} | json_pp  ".format(  # noqa: E501
             lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name, mac=self.mac
         ))
 
@@ -316,7 +313,7 @@ class lf_json_api():
         if not self.port:
             return
 
-        #logger.error("update-port-info, port: %s  non-port: %s"%(self.port, self.non_port));
+        # logger.error("update-port-info, port: %s  non-port: %s"%(self.port, self.non_port));
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.port)
         logger.debug("shelf : {shelf} , resource : {resource}, port_name : {port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name))
         # the request can change
@@ -430,7 +427,6 @@ class lf_json_api():
 
         # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
         return lanforge_json, csv_file_wifi_stats, lanforge_text, lanforge_json_formatted
-    
 
     # TODO This method is left in for an example it was taken from
 
@@ -487,7 +483,7 @@ class lf_json_api():
         logger.info("request url: {request_url}".format(request_url=request_url))
         logger.info("request status_code {status}".format(status=request.status_code))
 
-        logger_msg = ("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' -H 'Content-type: application/json' -X POST -d \"{json_data} http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
+        logger_msg = ("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' -H 'Content-type: application/json' -X POST -d \"{json_data} http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(  # noqa: E501
             json_data=json_data, lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
         ))
         logger.info(logger_msg)
@@ -554,8 +550,9 @@ class lf_json_api():
         try:
             # key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
             key = 'endpoint'
-            df = json_normalize(lanforge_json[key])
-            csv_file_layer4 = "{shelf}.{resource}.{port_name}.{endpoint_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, endpoint_name=self.endpoint_name, request=self.request)
+            # df = json_normalize(lanforge_json[key])
+            json_normalize(lanforge_json[key])
+            csv_file_layer4 = "{shelf}.{resource}.{port_name}.{endpoint_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, endpoint_name=self.endpoint_name, request=self.request)  # noqa: E501
             # TODO: self.csv_mode & self.csv_header have not been instantiated:
             # df.to_csv(csv_file_layer4, mode = self.csv_mode, header = self.csv_header, index=False)
         except Exception as x:
@@ -564,7 +561,6 @@ class lf_json_api():
 
         # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
         return lanforge_json, lanforge_text, lanforge_json_formatted, csv_file_layer4
-
 
     """Generic tab functions:"""
 
@@ -582,13 +578,13 @@ class lf_json_api():
         # https://docs.python-requests.org/en/latest/
         # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
         #
-        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/generic/generic-sta00?fields=name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type | json_pp
-        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/generic/{name}?fields=fields=name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type | json_pp
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/generic/generic-sta00?fields=name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type | json_pp  # noqa: E501
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/generic/{name}?fields=fields=name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type | json_pp  # noqa: E501
         # where --user "USERNAME:PASSWORD"
 
         # generic fields
-        #fields = 'name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type'
-        fields='all'
+        # fields = 'name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type'
+        fields = 'all'
         request_command = 'http://{lfmgr}:{lfport}/{request}/{endpoint_name}?fields={fields}'.format(
             lfmgr=self.lf_mgr, lfport=self.lf_port, request=self.request, endpoint_name=self.endpoint_name, fields=fields)
         logger.debug("request_command: {request_command}".format(request_command=request_command))
@@ -638,7 +634,7 @@ class lf_json_api():
         # http://192.168.100.116:8080/{request}/1/1/wlan4 | json_pp
         # where --user "USERNAME:PASSWORD"
         request_command = 'http://{lfmgr}:{lfport}/adb/1/{resource}/{port_name}'.format(
-            lfmgr=self.lf_mgr, lfport=self.lf_port, request=self.request, resource=self.resource, port_name=self.port_name)
+            lfmgr=self.lf_mgr, lfport=self.lf_port, resource=self.resource, port_name=self.port_name)
         request = requests.get(
             request_command, auth=(
                 self.lf_user, self.lf_passwd))
@@ -672,9 +668,11 @@ class lf_json_api():
         return lanforge_json, lanforge_text, lanforge_json_formatted
 
 # unit test
+
+
 def main():
-    lfjson_host = "localhost"
-    lfjson_port = 8080
+    # lfjson_host = "localhost"
+    # lfjson_port = 8080
     parser = argparse.ArgumentParser(
         prog="lf_json_api.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -719,10 +717,9 @@ def main():
     parser.add_argument("--csv_mode", type=str, help="--csv_mode 'write' or 'append' default: write", choices=['append', 'write'], default='write')
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
-
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 This script will is an example of using LANforge JSON API to use GET Requests to LANforge.
 '''
     if args.help_summary:
@@ -795,7 +792,8 @@ This script will is an example of using LANforge JSON API to use GET Requests to
 
             elif get_request == "alerts":
                 lf_json.request = get_request
-                lanforge_alerts_json = lf_json.get_alerts_information()
+                # lanforge_alerts_json = lf_json.get_alerts_information()
+                lf_json.get_alerts_information()
 
             elif get_request == "wifi-stats":
                 lf_json.request = get_request
