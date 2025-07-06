@@ -170,7 +170,7 @@ from lf_graph import lf_line_graph
 
 from datetime import datetime, timedelta
 
-DeviceConfig=importlib.import_module("py-scripts.DeviceConfig")
+DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
