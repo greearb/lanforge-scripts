@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_interop_port_reset_test.py
 
@@ -45,7 +44,10 @@ import importlib
 import argparse
 import time
 import datetime
-from datetime import datetime
+# When you use from datetime import datetime, you are making the
+# datetime class directly accessible in your code without
+# having to prefix it with the module name
+from datetime import datetime  # noqa: F811
 import pandas as pd
 import matplotlib.pyplot as plt
 import logging
@@ -196,7 +198,7 @@ class InteropPortReset(Realm):
         for i, y in zip(keys_list, range(len(keys_list))):
             wifi_msg_text = value[y][i]['text']
             resource = value[y][i]['resource']
-            if type(wifi_msg_text) == str:
+            if type(wifi_msg_text) is str:
                 wifi_msg_text_keyword_list = value[y][i]['text'].split(" ")
                 if device is None:
                     logging.info(f"Device {device} is None device name not existed in wifi messages...")
@@ -451,7 +453,7 @@ class InteropPortReset(Realm):
             self.windows_list = self.base_interop_profile.windows_list
             self.linux_list = self.base_interop_profile.linux_list
             self.mac_list = self.base_interop_profile.mac_list
-            logging.info(f"Final Active Devices List (Android, Windows, Linux, Mac) Which support user specified release & not in phantom : {self.adb_device_list, self.base_interop_profile.windows_list, self.base_interop_profile.linux_list, self.base_interop_profile.mac_list}")
+            logging.info(f"Final Active Devices List (Android, Windows, Linux, Mac) Which support user specified release & not in phantom : {self.adb_device_list, self.base_interop_profile.windows_list, self.base_interop_profile.linux_list, self.base_interop_profile.mac_list}")  # noqa: E501
             self.all_selected_devices = self.adb_device_list + self.windows_list + self.linux_list + self.mac_list
             self.all_laptops = self.windows_list + self.linux_list + self.mac_list
             logging.info(f"All Selected Devices: {self.all_selected_devices}")
@@ -499,7 +501,7 @@ class InteropPortReset(Realm):
                             logging.info("**** The Device is not connected to the expected ssid ****")
                     else:
                         # logging.info(f"Waiting for {self.wait_time} sec & Checking again the status of the device")
-                        logging.info(f"Waiting for 30 sec & Checking again")
+                        logging.info("Waiting for 30 sec & Checking again")
                         time.sleep(30)
                         dev_state = self.utility.get_device_state(device=i)
                         logging.info("Checking Device Status Again..." + str(dev_state))
@@ -633,7 +635,7 @@ class InteropPortReset(Realm):
 
         for j in self.all_laptops:
             local = []
-            local_2, local_3, local_4, local_5, local_6 = [], [], [], [], []
+            local_2, local_3, local_4, local_5, local_6 = [], [], [], [], []  # noqa: F841
             for i in reset_dict:
                 if j in list(reset_dict[i].keys()):
                     local.append(reset_dict[i][j]['Connected'])
@@ -929,7 +931,7 @@ class InteropPortReset(Realm):
                 "SSID": self.ssid,
                 "Security": security,
                 "Total Reset Count": self.reset,
-                "No of Clients": f"{len(self.all_selected_devices)} (Windows: {len(self.windows_list)}, Linux: {len(self.linux_list)}, Mac: {len(self.mac_list)}, Android: {len(self.adb_device_list)})",
+                "No of Clients": f"{len(self.all_selected_devices)} (Windows: {len(self.windows_list)}, Linux: {len(self.linux_list)}, Mac: {len(self.mac_list)}, Android: {len(self.adb_device_list)})",  # noqa: E501
                 # "Wait Time": str(self.wait_time) + " sec",
                 "Time intervel between resets": str(self.time_int) + " sec",
                 "Test Duration": test_dur,
@@ -978,7 +980,7 @@ class InteropPortReset(Realm):
 
             self.generate_overall_graph_table(reset_dict=reset_dict, device_list=all_devices)
 
-            d_name, device_type, model, user_name, release = [], [], [], [], []
+            d_name, device_type, model, user_name, release = [], [], [], [], []  # noqa: F841
 
             for y in all_devices:
                 if "1.1." in y:
@@ -1027,7 +1029,6 @@ class InteropPortReset(Realm):
             #                             "The table displays details of real clients which are involved in the test.")
             # self.lf_report.build_objective()
 
-
             self.lf_report.build_footer()
             self.lf_report.write_html()
             self.lf_report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
@@ -1038,38 +1039,37 @@ class InteropPortReset(Realm):
 
 def main():
     help_summary = '''\
-    The LANforge interop port reset test enables users to use real Wi-Fi stations and connect them to the Access Point 
-    being tested. It then disconnects and reconnects a given number of stations at different time intervals. 
-    This test helps evaluate how well the AP handles a dynamic and busy network environment with devices joining and 
+    The LANforge interop port reset test enables users to use real Wi-Fi stations and connect them to the Access Point
+    being tested. It then disconnects and reconnects a given number of stations at different time intervals.
+    This test helps evaluate how well the AP handles a dynamic and busy network environment with devices joining and
     leaving the network at random times.
-    
+
     The test will basically disconnect & reconnect to the same network with real devices such as android, linux, windows
     and generate a report.
         '''
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
-        description=
-        '''
+        description='''
 NAME: lf_interop_port_reset_test.py
 
 PURPOSE:
-         The LANforge interop port reset test enables users to use real Wi-Fi stations and connect them to the 
-         Access Point (AP) being tested. It then disconnects and reconnects a given number of stations at 
-         different time intervals. This test helps evaluate how well the AP handles a dynamic and busy network environment 
+         The LANforge interop port reset test enables users to use real Wi-Fi stations and connect them to the
+         Access Point (AP) being tested. It then disconnects and reconnects a given number of stations at
+         different time intervals. This test helps evaluate how well the AP handles a dynamic and busy network environment
          with devices joining and leaving the network at random times.
 
 EXAMPLE:
         # To run port-reset test on specified real devices (android, laptops)
 
-            python3 lf_interop_port_reset_test.py --host 192.168.200.63 --mgr_ip 192.168.1.61 --dut Test_Dut 
+            python3 lf_interop_port_reset_test.py --host 192.168.200.63 --mgr_ip 192.168.1.61 --dut Test_Dut
             --ssid RDT_wpa2 --passwd OpenWifi --encryp psk2 --reset 1 --time_int 5 --release 11
 
 SCRIPT_CLASSIFICATION:  Interop Port-Reset Test
 
 SCRIPT_CATEGORIES: Toggling, Report Generation, Each Reset Wifi Messages
 
-NOTES:      
+NOTES:
         The primary objective of this script is to automate the process of toggling WiFi on real devices with the
        InterOp Application, evaluating their performance with an access point. It achieves this by simulating multiple
        WiFi resets as specified by the user.
