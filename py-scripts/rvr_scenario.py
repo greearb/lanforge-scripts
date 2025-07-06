@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 # This script will set the LANforge to a BLANK database then it will load the specified database
 # and start a graphical report
 import sys
@@ -181,16 +180,14 @@ Example:
     parser.add_argument('--help_summary', action="store_true",
                         help='Show summary of what this script does')
 
-
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 LANforge Reporting Script:  Load a scenario and run a RvR report.
 '''
     if args.help_summary:
         print(help_summary)
         exit(0)
-
 
     if not args.cv_scenario or not args.cv_test or not args.test_profile:
         print("Warning: --cv_scenario , --cv_test and --test_settings required ")
