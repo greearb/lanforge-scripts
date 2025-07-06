@@ -245,7 +245,7 @@ def main():
     parser.add_argument('--bandwidth', help="(add profile) 0 (auto), 20, 40, 80 or 160")
     parser.add_argument("--eap_id", help="(add profile) EAP Identifier")
     parser.add_argument("--flags_mask", help="(add profile) Specify what flags to set.")
-    parser.add_argument("--freq", help="(add profile)WiFi frequency to be used, 0 means default.")
+    parser.add_argument("--freq", help="(add profile)WiFi frequency to be used, -1 means AUTO.")
     parser.add_argument("--instance_count", help="(add profile) Number of devices (stations, vdevs, etc)")
     parser.add_argument("--mac_pattern", help="(add profile) Optional MAC-Address pattern, for instance:  xx:xx:xx:*:*:xx")
     parser.add_argument("--name", help="(add profile) Profile Name. [R] ")
