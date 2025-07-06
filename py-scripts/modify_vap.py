@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
     Script for modifying VAPs.
 """
@@ -8,14 +7,14 @@ import os
 import importlib
 import argparse
 import logging
-from pprint import pformat
+# from pprint import pformat
 
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -25,6 +24,7 @@ Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 logger = logging.getLogger(__name__)
+
 
 class ModifyVAP(Realm):
     def __init__(self,
@@ -64,9 +64,9 @@ class ModifyVAP(Realm):
         self.dhcp = _dhcp
         self.vap_profile = self.new_vap_profile()
         shelf, resource, port, *nil = self.name_to_eid(eid=self.vap_list, debug=self.debug)
-        self.vap_profile.resource = resource      
+        self.vap_profile.resource = resource
         self.vap_profile.shelf = shelf
-        self.vap_profile.add_vap_data["resource"] = resource      
+        self.vap_profile.add_vap_data["resource"] = resource
         self.vap_profile.add_vap_data["shelf"] = shelf
         self.vap_profile.vap_name = port
         self.vap_profile.ssid = self.ssid
@@ -147,7 +147,7 @@ use-bss-transition   | 0x80000000000   # Enable BSS transition.
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 ./modify_vap.py will modify VAPs on a system. Use the enable_flag to create a flag on a VAP.
 Turn off a flag with the disable_flag option. A list of available flags are available in the
 add_vap.py file in py-json/LANforge.
@@ -161,7 +161,7 @@ add_vap.py file in py-json/LANforge.
 
     if (args.log_level):
         logger_config.set_level(level=args.log_level)
-        
+
     if args.lf_logger_config_json:
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
@@ -169,7 +169,6 @@ add_vap.py file in py-json/LANforge.
     if not args.vap:
         logger.critical("the folowing arguments are required: --vap :")
         exit(1)
-
 
     modify_vap = ModifyVAP(_host=args.mgr,
                            _port=args.mgr_port,
@@ -183,7 +182,8 @@ add_vap.py file in py-json/LANforge.
                            _radio=args.radio,
                            _proxy_str=args.proxy,
                            _debug_on=args.debug)
-    json_response = modify_vap.set_vap()
+    modify_vap.set_vap()
+    # json_response = modify_vap.set_vap()
     logger.info("modify_vap.set_vap ")
 
 
