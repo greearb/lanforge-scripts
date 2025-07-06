@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 
 """
     This script is to run check Band Steering.
@@ -18,8 +17,8 @@ if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
+# import realm
 from realm import Realm
-import realm
 import pprint
 
 from lf_report import lf_report
@@ -76,7 +75,7 @@ class BandSteering(Realm):
         self.number_template = _number_template
         self.debug = _debug_on
         self.up = _up
-        self.traffic_type=_traffic_type
+        self.traffic_type = _traffic_type
         self.set_txo_data = _set_txo_data
         self.station_profile = self.new_station_profile()
         self.cx_profile = self.new_l3_cx_profile()
@@ -111,7 +110,7 @@ class BandSteering(Realm):
 
     def build(self):
         if not self.port_exists("sta0000"):
-        # Build stations
+            # Build stations
             self.station_profile.use_security(self.security, self.ssid, self.password)
             self.station_profile.set_number_template(self.number_template)
 
@@ -141,11 +140,11 @@ class BandSteering(Realm):
 
     def run(self):
         if self.wait_for_ip(self.sta_list):
-             print("Stations got IP")
-             url = "/port/1/1/sta0000/channel?fields=channel"
-             channel = self.json_get(url, debug_=False)['interface']
+            print("Stations got IP")
+            url = "/port/1/1/sta0000/channel?fields=channel"
+            channel = self.json_get(url, debug_=False)['interface']
         else:
-          raise Exception("failed to get ip for stations")
+            raise Exception("failed to get ip for stations")
         # Build stations
         self.station_profile.use_security(self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
@@ -202,7 +201,8 @@ class BandSteering(Realm):
     def get_data(self):
         # x-axis iterations, y-axis station mode
         mode = []
-        iterations = self.iter
+        # iterations = self.iter
+        self.iter
         sta_names = self.get_station_names()
         sta_names.pop(0)
         for sta in sta_names:
@@ -328,7 +328,8 @@ Command example:
     --passwd BLANK
     --debug
             ''')
-    required = parser.add_argument_group('required arguments')
+    # required = parser.add_argument_group('required arguments')
+    parser.add_argument_group('required arguments')
     # required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
     parser.add_argument("--radio_2g", help="radio for 2.4 Ghz")
     parser.add_argument("--radio_5g", help="radio for 5 Ghz")
