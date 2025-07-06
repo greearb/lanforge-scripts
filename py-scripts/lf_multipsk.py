@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
-# flake8: noqa
 
-help_summary='''
-    This script is to test the multipsk feature in access point. Multipsk feature states connecting clients using same 
-    ssid but different passwords , here we will create two or 3 passwords with different vlan id on single ssid 
+import sys
+import os
+import importlib
+import argparse
+import time
+import logging
+
+help_summary = '''
+    This script is to test the multipsk feature in access point. Multipsk feature states connecting clients using same
+    ssid but different passwords , here we will create two or 3 passwords with different vlan id on single ssid
     and try to connect client with different passwords.
 
 '''
 
-script_description="""
+script_description = """
 NAME: lf_multipsk.py
 
 PURPOSE:
@@ -37,12 +43,6 @@ INCLUDE_IN_README
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 """
-import sys
-import os
-import importlib
-import argparse
-import time
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +171,7 @@ class MultiPsk(Realm):
             # TODO:  Properly detect if it is a real vlan interface, don't just match on a period in the name.
             if "." in i['upstream']:
                 # print(str(i['upstream']) + " is a vlan upstream port")
-                logger.info("checking VLAN upstream port: %s ip .." %(i['upstream']))
+                logger.info("checking VLAN upstream port: %s ip .." % (i['upstream']))
                 data = self.json_get("ports/list?fields=IP")
                 for val in data["interfaces"]:
                     for j in val:
@@ -363,7 +363,6 @@ def main():
     parser.add_argument('--mode', help="Mode for lf_multipsk", default=None)
     args = parser.parse_args()
 
-
     if args.help_summary:
         print(help_summary)
         exit(0)
@@ -415,7 +414,7 @@ def main():
 
     multi_obj.build()
     multi_obj.start()
-    time.sleep(60)  #TODO:  Shouldn't need this much sleep, maybe some wait_for_foo method instead?
+    time.sleep(60)  # TODO:  Shouldn't need this much sleep, maybe some wait_for_foo method instead?
     multi_obj.monitor_vlan_ip()
     if args.n_vlan == "1":
         multi_obj.get_sta_ip()
@@ -423,15 +422,18 @@ def main():
         multi_obj.get_sta_ip_for_more_vlan()
 
     logger.info("checking for vlan ips")
-    result = multi_obj.compare_ip()
+    # result = multi_obj.compare_ip()
+    multi_obj.compare_ip()
 
     logger.info("now checking ip for non vlan port")
     multi_obj.monitor_non_vlan_ip()
     multi_obj.get_non_vlan_sta_ip()
     if args.mode == "BRIDGE":
-        result1 = multi_obj.compare_nonvlan_ip_bridge()
+        # result1 = multi_obj.compare_nonvlan_ip_bridge()
+        multi_obj.compare_nonvlan_ip_bridge()
     else:
-        result1 = multi_obj.compare_nonvlan_ip_nat()
+        # result1 = multi_obj.compare_nonvlan_ip_nat()
+        multi_obj.compare_nonvlan_ip_nat()
 
     # TODO:  Verify connections were able to start and pass traffic.
 
@@ -444,6 +446,6 @@ def main():
     else:
         multi_obj.exit_fail()
 
+
 if __name__ == '__main__':
     main()
-
