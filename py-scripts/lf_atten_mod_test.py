@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME:       lf_atten_mod_test.py
 
@@ -39,7 +38,6 @@ logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
-
 class CreateAttenuator(Realm):
     def __init__(self, host, port, serno, idx, val,
                  _debug_on=False,
@@ -69,7 +67,7 @@ def main():
         description='''\
 NAME:       lf_atten_mod_test.py
 
-PURPOSE:    lf_atten_mod_test.py is used to modify and/or read the LANforge Attenuator settings. 
+PURPOSE:    lf_atten_mod_test.py is used to modify and/or read the LANforge Attenuator settings.
 
 EXAMPLE:    Set channel four (zero-indexed) of all attenuators on LANforge system \'192.168.200.12\'
             to attenuation value 220 ddB (22 dB).
@@ -84,7 +82,7 @@ EXAMPLE:    Set channel four (zero-indexed) of all attenuators on LANforge syste
     parser.add_argument('--atten_val',   help='Requested attenuation in 1/10ths of dB (ddB).',                   default=0)
 
     args = parser.parse_args()
-    help_summary='''\
+    help_summary = '''\
 lf_atten_mod_test.py is used to modify and/or read the LANforge Attenuator settings.
 '''
     if args.help_summary:
