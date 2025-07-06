@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-# flake8: noqa
 import sys
 import os
 import importlib
-import time
-import json
-from pprint import pprint
+# import time
+# import json
+# from pprint import pprint
 import logging
 import argparse
 
@@ -21,6 +20,7 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 logger = logging.getLogger(__name__)
+
 
 class cv_test_tool(Realm):
     def __init__(self,
@@ -46,7 +46,6 @@ class cv_test_tool(Realm):
         # pprint(val)
         return val[0]["LAST"]["response"] == 'StartStop::Stop'
 
-
     def run_cv_cmd(self, command):  # Send chamber view commands
         response_json = []
         req_url = "/gui-json/cmd"
@@ -63,7 +62,7 @@ def main():
             Chamberview Tool to check if chamberview test is running
 
             ''')
-    parser.add_argument("--host", "--mgr", "--lf_mgr", dest='mgr', help='specify the GUI to connect to',default='localhost')
+    parser.add_argument("--host", "--mgr", "--lf_mgr", dest='mgr', help='specify the GUI to connect to', default='localhost')
     parser.add_argument("--mgr_port", help="specify the GUI to connect to, default 8080", default="8080")
     parser.add_argument("--lf_user", help="lanforge user name default: lanforge", default="lanforge")
     parser.add_argument("--lf_passwd", help="lanforge password default: lanforge", default="lanforge")
@@ -73,7 +72,6 @@ def main():
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--debug', help='Legacy debug flag', action='store_true')
     parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
-
 
     args = parser.parse_args()
     help_summary = '''\
@@ -98,16 +96,17 @@ This script will check if chamberview test is running
         logger_config.load_lf_logger_config()
 
     cv_tool = cv_test_tool(lf_mgr=args.mgr,
-                             lf_port=args.mgr_port,
-                             lf_user=args.lf_user,
-                             lf_passwd=args.lf_passwd,
-                             debug=args.debug)
+                           lf_port=args.mgr_port,
+                           lf_user=args.lf_user,
+                           lf_passwd=args.lf_passwd,
+                           debug=args.debug)
 
     logger.debug("Instance {instance}".format(instance=args.instance))
 
     is_test_running = cv_tool.get_is_running(args.instance)
 
     logger.info("is test running {is_test_running}".format(is_test_running=is_test_running))
+
 
 if __name__ == "__main__":
     main()
