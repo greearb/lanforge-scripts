@@ -308,17 +308,17 @@ def main():
      This script is used to check the bandsteering , if the stations are getting connected to 2.4GHz and 5GHz.
     '''
     parser = LFCliBase.create_basic_argparse(
-        prog='bs_obj.py',
+        prog='bandsteering.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
          Create stations
             ''',
 
         description='''\
-        bs_obj.py
+        bandsteering.py
 --------------------
 Command example:
-./bs_obj.py
+./bandsteering.py
     --radio wiphy0
     --radio_2g wiphy1
     --radio_5g wiphy2
