@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 '''
 Name: sta_connect_bssid_mac.py
 Purpose:
@@ -89,13 +88,13 @@ def main():
     # This has --mgr, --mgr_port and --debug
     parser = LFCliBase.create_bare_argparse(prog="sta_connect_bssid_mac.py",
                                             description="""
-                                            --mgr localhost --mgr_port 8080 
-                                            --ssid "TestAP-Jitendra" 
+                                            --mgr localhost --mgr_port 8080
+                                            --ssid "TestAP-Jitendra"
                                             --radio wiphy0
                                             --security "open" // "wpa" //  "wpa2"
-                                            --passwd "BLANK" 
-                                            --bssid 78:d2:94:4f:20:c5,78:d2:94:4f:20:c5 
-                                            --sta_name "sta001,sta002" 
+                                            --passwd "BLANK"
+                                            --bssid 78:d2:94:4f:20:c5,78:d2:94:4f:20:c5
+                                            --sta_name "sta001,sta002"
                                             --mac 04:f0:21:89:3e:ea,04:f0:21:89:4e:ea
                                             --bss_trans
                                             """
@@ -116,7 +115,7 @@ def main():
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
     Work in progress.
     The script can create stations and can be used to set multiple BSSID, MAC to each individual station.
 '''
