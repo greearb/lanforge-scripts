@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_add_profile.py
 
@@ -62,16 +61,16 @@ if sys.version_info[0] != 3:
 
 import importlib
 import argparse
-from pprint import pformat
+# from pprint import pformat
 import os
 import logging
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
-from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.lanforge_api import LFSession  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonCommand  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonQuery  # noqa: E402
 
 
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -194,7 +193,7 @@ class lf_add_profile():
 
 
 def main():
-    help_summary='''\
+    help_summary = '''\
      This script is helpful to create profiles on the lanforge device
     '''
     parser = argparse.ArgumentParser(
@@ -350,7 +349,7 @@ def main():
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--debug', help='Legacy debug flag', action='store_true')
-    parser.add_argument('--help_summary',help='shows summary of the script',action='store_true')
+    parser.add_argument('--help_summary', help='shows summary of the script', action='store_true')
 
     args = parser.parse_args()
     if args.help_summary:
