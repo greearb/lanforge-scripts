@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_rssi_check.py
 
@@ -16,9 +15,9 @@ PURPOSE: Validate RSSI for specific radios
 
 
 EXAMPLE:
-    Usage something like:  rssi_check.py --channels “6 36” --antenna “0 1 4 7 8” --bw “20 40 80” --vap 1.1.vap0 --stas “1.2.wlan0 1.2.wlan1” --attenuator 1.1.xxxx --attenuation_step 1  --step_duration 
+    Usage something like:  rssi_check.py --channels “6 36” --antenna “0 1 4 7 8” --bw “20 40 80” --vap 1.1.vap0 --stas “1.2.wlan0 1.2.wlan1” --attenuator 1.1.xxxx --attenuation_step 1  --step_duration
     Skip bw that does not match selected channels.
-    
+
 increase attenuation until STA disconnects, then stop recording data there.  It should be around RSSI -88, but part of this is to verify that.
 
 Implementation should be something like:
@@ -37,7 +36,7 @@ for selected channels
          If STA is disconnected, then do not record RSSI.  Else record RSSI.
          Record theoretical RSSI (txpower minus calibrated path-loss minus attenuation)
 
- 
+
 
 
 NOTES:
@@ -148,6 +147,10 @@ Copyright 2021 Candela Technologies Inc
 
 INCLUDE_IN_README
 """
+from lanforge_client.logg import Logg
+from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFSession
 import argparse
 import csv
 import datetime
@@ -173,10 +176,6 @@ if sys.version_info[0] != 3:
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
-from lanforge_client.lanforge_api import LFJsonQuery
-from lanforge_client.logg import Logg
 
 
 lf_report = importlib.import_module("py-scripts.lf_report")
@@ -233,7 +232,7 @@ class lf_rssi_check(Realm):
                  rates_are_totals=False,
                  mconn=1,
                  vap_list='NA',
-                 pathloss_list = ['0','0','0'],
+                 pathloss_list=['0', '0', '0'],
                  channels_list='-1',
                  bandwidths_list='NA',
                  antenna_list='0',
@@ -261,8 +260,8 @@ class lf_rssi_check(Realm):
                  existing_station_lists=None,
 
                  # ap module
-                 ap_read = False,
-                 ap_module = None,
+                 ap_read=False,
+                 ap_module=None,
                  ap_test_mode=False,
                  ap_ip=None,
                  ap_user=None,
@@ -277,20 +276,20 @@ class lf_rssi_check(Realm):
                  ap_if_6g="eth8",
                  ap_report_dir="",
                  ap_file="",
-                 ap_band_list=['2g','5g','6g']):
+                 ap_band_list=['2g', '5g', '6g']):
 
         # LANforge information
-        self.lfclient_host=lfclient_host
-        self.lfclient_port=lfclient_port
+        self.lfclient_host = lfclient_host
+        self.lfclient_port = lfclient_port
         self.lf_user = lf_user
         self.lf_passwd = lf_passwd
 
         # create api_json
         self.lanforge_radio_json = None
         self.radio_json_api = lf_json_api.lf_json_api(lf_mgr=self.lfclient_host,
-                                                    lf_port=self.lfclient_port,
-                                                    lf_user=self.lf_user,
-                                                    lf_passwd=self.lf_passwd)
+                                                      lf_port=self.lfclient_port,
+                                                      lf_user=self.lf_user,
+                                                      lf_passwd=self.lf_passwd)
 
         try:
             self.lanforge_radio_json, *nil = self.radio_json_api.get_request_radio_information()
@@ -320,7 +319,6 @@ class lf_rssi_check(Realm):
         self.command = self.session.get_command()
         self.query: LFJsonQuery
         self.query = self.session.get_query()
-
 
         self.eth_endps = []
         self.total_stas = 0
@@ -451,32 +449,31 @@ class lf_rssi_check(Realm):
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
 
-        # AP information 
+        # AP information
         self.ap = None
         self.ap_obj = None
         self.ap_read = ap_read
         self.ap_module = ap_module
-        self.ap_test_mode=ap_test_mode
-        self.ap_ip=ap_ip
-        self.ap_user=ap_user
-        self.ap_passwd=ap_passwd
-        self.ap_scheme=ap_scheme
-        self.ap_serial_port=ap_serial_port
-        self.ap_ssh_port=ap_ssh_port
-        self.ap_telnet_port=ap_telnet_port
-        self.ap_serial_baud=ap_serial_baud
-        self.ap_if_2g=ap_if_2g
-        self.ap_if_5g=ap_if_5g
-        self.ap_if_6g=ap_if_6g
-        self.ap_report_dir=ap_report_dir
-        self.ap_file=ap_file
-        self.ap_band_list=ap_band_list
-
+        self.ap_test_mode = ap_test_mode
+        self.ap_ip = ap_ip
+        self.ap_user = ap_user
+        self.ap_passwd = ap_passwd
+        self.ap_scheme = ap_scheme
+        self.ap_serial_port = ap_serial_port
+        self.ap_ssh_port = ap_ssh_port
+        self.ap_telnet_port = ap_telnet_port
+        self.ap_serial_baud = ap_serial_baud
+        self.ap_if_2g = ap_if_2g
+        self.ap_if_5g = ap_if_5g
+        self.ap_if_6g = ap_if_6g
+        self.ap_report_dir = ap_report_dir
+        self.ap_file = ap_file
+        self.ap_band_list = ap_band_list
 
         # AP information import the module
         if self.ap_read and self.ap_module is not None:
             ap_module = importlib.import_module(self.ap_module)
-            self.ap = ap_module.create_ap_obj(                 
+            self.ap = ap_module.create_ap_obj(
                 ap_test_mode=self.ap_test_mode,
                 ap_ip=self.ap_ip,
                 ap_user=self.ap_user,
@@ -495,8 +492,6 @@ class lf_rssi_check(Realm):
 
             # this is needed to access the methods of the imported object
             self.ap.say_hi()
-
-
 
         else:
             logger.info("self.ap_read set to True and self.module is None,  will set self.ap_read to False")
@@ -579,7 +574,6 @@ class lf_rssi_check(Realm):
                                    report_timer=int(milliseconds),
                                    debug=self.debug)
 
-
     def get_results_csv(self):
         # print("self.csv_results_file {}".format(self.csv_results_file.name))
         return self.csv_results_file.name
@@ -653,7 +647,7 @@ class lf_rssi_check(Realm):
                     total_dl_rate += int(endp["rx rate"])
                     total_dl_rate_ll += int(endp["rx rate ll"])
                     total_dl_pkts_ll += int(endp["rx pkts ll"])
-                    dl_tx_drop_percent = round(endp["rx drop %"], 2)
+                    # dl_tx_drop_percent = round(endp["rx drop %"], 2)
                 # -B upload side
                 else:
                     total_ul_rate += int(endp["rx rate"])
@@ -900,7 +894,6 @@ class lf_rssi_check(Realm):
 
     def start(self, print_pass=False):
 
-
         # at the beginning of the test set the attenuation or the stations will not
         # get an IP
         # TODO need to index though the attenuators
@@ -909,7 +902,6 @@ class lf_rssi_check(Realm):
         atten_val = '200'
         atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
         atten_mod_test.build()
-
 
         logger.info("Bringing up stations")
         self.admin_up(self.side_b)
@@ -1015,7 +1007,7 @@ class lf_rssi_check(Realm):
 
                 if self.ap_read:
                     for band in self.ap_band_list:
-                        self.ap.clear_stats(band)        
+                        self.ap.clear_stats(band)
 
                 # for selected channels
                 # for selected bandwidths
@@ -1028,9 +1020,7 @@ class lf_rssi_check(Realm):
                 #        If STA is disconnected, then do not record RSSI.  Else record RSSI.
                 #        Record theoretical RSSI (txpower minus calibrated path-loss minus attenuation)
 
-
-
-                # selecting the vap should be here. 
+                # selecting the vap should be here.
                 for vap in self.vap_list:
                     # vap could be 'NA' in the case of a real AP
                     if vap != 'NA':
@@ -1051,15 +1041,12 @@ class lf_rssi_check(Realm):
                         self.set_port_report_timer(port=vap_radio, milliseconds=1000)
                         self.set_port_report_timer(port=vap, milliseconds=1000)
 
-
-
-
                     for channel in self.channels_list:
                         if int(channel) == -1:
                             # TODO need to set the pathloss based on channel if channel set to auto
                             logger.info("channel set to auto {channel} passloss set to self.pathloss[1]".format(channel=channel))
                             pathloss = self.pathloss_list[1]
-                        elif int(channel) <= 11: 
+                        elif int(channel) <= 11:
                             pathloss = self.pathloss_list[0]
                         elif int(channel) <= 191:
                             pathloss = self.pathloss_list[1]
@@ -1075,13 +1062,13 @@ class lf_rssi_check(Realm):
 
                         # if channel != 'NA':
                         # TODO this nees to be refactored to radio_port_list
-                        # defaulty is '-1' which is auto 
+                        # defaulty is '-1' which is auto
                         modify_radio = lf_modify_radio.lf_modify_radio(lf_mgr=self.lfclient_host,
-                                                        lf_port=self.lfclient_port,
-                                                        lf_user=self.lf_user,
-                                                        lf_passwd=self.lf_passwd,
-                                                        debug=self.debug
-                                                        )
+                                                                       lf_port=self.lfclient_port,
+                                                                       lf_user=self.lf_user,
+                                                                       lf_passwd=self.lf_passwd,
+                                                                       debug=self.debug
+                                                                       )
 
                         shelf, resource, radio, *nil = LFUtils.name_to_eid(vap_radio)
 
@@ -1094,52 +1081,51 @@ class lf_rssi_check(Realm):
                         for bandwidth in self.bandwidths_list:
                             if bandwidth == '20':
                                 lf_modify_vap = modify_vap.ModifyVAP(_host=self.lfclient_host,
-                                                                _port=self.lfclient_port,
-                                                                _vap_list=vap,
-                                                                _enable_flags = ['disable_ht80','disable_ht40'],
-                                                                _disable_flags = ['ht160_enable']
-                                                                )
+                                                                     _port=self.lfclient_port,
+                                                                     _vap_list=vap,
+                                                                     _enable_flags=['disable_ht80', 'disable_ht40'],
+                                                                     _disable_flags=['ht160_enable']
+                                                                     )
                                 lf_modify_vap.set_vap()
                             elif bandwidth == '40':
                                 lf_modify_vap = modify_vap.ModifyVAP(_host=self.lfclient_host,
-                                                                _port=self.lfclient_port,
-                                                                _vap_list=vap, # it is not a list it is a single vap 
-                                                                _enable_flags = ['disable_ht80'],
-                                                                _disable_flags = ['disable_ht40','ht160_enable'],
-                                                                )
+                                                                     _port=self.lfclient_port,
+                                                                     _vap_list=vap,  # it is not a list it is a single vap
+                                                                     _enable_flags=['disable_ht80'],
+                                                                     _disable_flags=['disable_ht40', 'ht160_enable'],
+                                                                     )
                                 lf_modify_vap.set_vap()
                             elif bandwidth == '80':
                                 lf_modify_vap = modify_vap.ModifyVAP(_host=self.lfclient_host,
-                                                                _port=self.lfclient_port,
-                                                                _vap_list=vap,
-                                                                _enable_flags = ['disable_ht40'],
-                                                                _disable_flags = ['disable_ht80','ht160_enable'],
-                                                                )
+                                                                     _port=self.lfclient_port,
+                                                                     _vap_list=vap,
+                                                                     _enable_flags=['disable_ht40'],
+                                                                     _disable_flags=['disable_ht80', 'ht160_enable'],
+                                                                     )
                                 lf_modify_vap.set_vap()
                             elif bandwidth == '160':
                                 lf_modify_vap = modify_vap.ModifyVAP(_host=self.lfclient_host,
-                                                                _port=self.lfclient_port,
-                                                                _vap_list=vap,
-                                                                _enable_flags = ['ht160_enable'],
-                                                                _disable_flags = ['disable_ht80','disable_ht40'],
-                                                                )
+                                                                     _port=self.lfclient_port,
+                                                                     _vap_list=vap,
+                                                                     _enable_flags=['ht160_enable'],
+                                                                     _disable_flags=['disable_ht80', 'disable_ht40'],
+                                                                     )
                                 lf_modify_vap.set_vap()
                             else:
                                 logger.info("No change to bw")
 
-
                             for antenna in self.antenna_list:
-                                    
+
                                 # get the parent device for the vap
 
                                 shelf, resource, radio_name, *nil = LFUtils.name_to_eid(vap_radio)
                                 # add tx_power to set_wifi_radio
                                 modify_radio.set_wifi_radio(_resource=resource,
-                                                        _radio=radio_name,
-                                                        _shelf=shelf,
-                                                        _antenna=antenna)
+                                                            _radio=radio_name,
+                                                            _shelf=shelf,
+                                                            _antenna=antenna)
 
-                                # Set the Attenuation Create the loops 
+                                # Set the Attenuation Create the loops
                                 # need to have atten start and atten step
                                 if len(self.atten_vals) == 0:
                                     atten = self.atten_start
@@ -1156,10 +1142,10 @@ class lf_rssi_check(Realm):
                                         # TODO Need to be able to work with multiple attenuators
                                         # TODO the index is currently set to all
                                         for atten_idx in self.attenuators:
-                                            atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
+                                            atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)  # noqa: E501
                                             atten_mod_test.build()
 
-                                            # TODO the realm version does not work 
+                                            # TODO the realm version does not work
                                             # self.set_atten(atten_idx, atten_val)
 
                                     logger.info("Starting multicast traffic (if any configured)")
@@ -1222,7 +1208,6 @@ class lf_rssi_check(Realm):
                                                 self.ap.read_rx_ul_stats(band)
                                                 self.ap.read_chanim_stats(band)
 
-
                                             # Query all of ports
                                             # Note: the endp eid is : shelf.resource.port.endp-id
                                             port_eids = self.gather_port_eids()
@@ -1230,7 +1215,6 @@ class lf_rssi_check(Realm):
                                             for port_eid in port_eids:
                                                 eid = self.name_to_eid(port_eid)
                                                 url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
-
 
                                                 # read LANforge to get the mac
                                                 # reads the specific information for the
@@ -1246,24 +1230,24 @@ class lf_rssi_check(Realm):
                                                     mac = port_data['mac']
                                                     logger.debug("mac : {mac}".format(mac=mac))
 
-                                                    # search for data fro the port mac 
+                                                    # search for data fro the port mac
                                                     tx_dl_mac_found, ap_row_tx_dl = self.ap.tx_dl_stats(mac)
                                                     rx_ul_mac_found, ap_row_rx_ul = self.ap.rx_ul_stats(mac)
                                                     xtop_reported, ap_row_chanim = self.ap.chanim_stats(mac)
 
                                                     self.get_endp_stats_for_port(port_data["port"], endps)
-                                                    
+
                                                 if tx_dl_mac_found:
-                                                    logger.info("mac {mac} ap_row_tx_dl {ap_row_tx_dl}".format(mac=mac,ap_row_tx_dl = ap_row_tx_dl))
+                                                    logger.info("mac {mac} ap_row_tx_dl {ap_row_tx_dl}".format(mac=mac, ap_row_tx_dl=ap_row_tx_dl))
                                                     # Find latency, jitter for connections
                                                     # using this port.
-                                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
+                                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(  # noqa: E501
                                                         port_data["port"], endps)
 
                                                     ap_row_tx_dl.append(ap_row_chanim)
 
-                                                    # port data contains RSSI and AP information 
-                                                    # note if AP is NA the information is not valid 
+                                                    # port data contains RSSI and AP information
+                                                    # note if AP is NA the information is not valid
                                                     # for RSSI testing then skip this information
                                                     # TODO only a single sample for each period or should we take more
                                                     # and do an average.
@@ -1293,15 +1277,15 @@ class lf_rssi_check(Realm):
                                                             total_dl_rate_ll,
                                                             total_dl_pkts_ll,
                                                             dl_rx_drop_percent,
-                                                            ap_row_tx_dl) # this is where the AP data is added
+                                                            ap_row_tx_dl)  # this is where the AP data is added
 
-                                                    # now report the ap_chanim_stats 
+                                                    # now report the ap_chanim_stats
 
                                                 if rx_ul_mac_found:
                                                     # Find latency, jitter for connections
                                                     # using this port.
                                                     # TODO just read and return the "port"
-                                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_tx_drop_percent = self.get_endp_stats_for_port(
+                                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_tx_drop_percent = self.get_endp_stats_for_port(  # noqa: E501
                                                         port_data["port"], endps)
                                                     self.write_ul_port_csv(
                                                         len(temp_stations_list),
@@ -1317,13 +1301,12 @@ class lf_rssi_check(Realm):
                                                         total_ul_rate,
                                                         total_ul_rate_ll,
                                                         total_ul_pkts_ll,
-                                                        ul_rx_drop_percent,                                        
+                                                        ul_rx_drop_percent,
                                                         total_dl_rate,
                                                         total_dl_rate_ll,
                                                         total_dl_pkts_ll,
                                                         dl_tx_drop_percent,
                                                         ap_row_rx_ul)  # ap_ul_row added
-
 
                                                 logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(ap_row_rx_ul=ap_row_rx_ul))
 
@@ -1342,7 +1325,7 @@ class lf_rssi_check(Realm):
                                             for port_eid in port_eids:
                                                 eid = self.name_to_eid(port_eid)
                                                 url = "/port/%s/%s/%s" % (eid[0],
-                                                                        eid[1], eid[2])
+                                                                          eid[1], eid[2])
                                                 response = self.json_get(url)
                                                 if (response is None) or (
                                                         "interface" not in response):
@@ -1351,15 +1334,13 @@ class lf_rssi_check(Realm):
                                                     pprint(response)
                                                 else:
                                                     port_data = response['interface']
-                                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
+                                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(  # noqa: E501
                                                         port_data["port"], endps)
 
                                                     # from port eid get the parent radio
 
-
-
-                                                    # port data contains RSSI and AP information 
-                                                    # note if AP is NA the information is not valid 
+                                                    # port data contains RSSI and AP information
+                                                    # note if AP is NA the information is not valid
                                                     # for RSSI testing then skip this information
                                                     if port_data['ap'] != 'NA':
                                                         self.write_port_csv(
@@ -1370,7 +1351,7 @@ class lf_rssi_check(Realm):
                                                             dl_pdu_str,
                                                             atten_val,
                                                             port_eid,
-                                                            port_data, # This has additional data 
+                                                            port_data,  # This has additional data
                                                             vap,
                                                             channel,
                                                             pathloss,
@@ -1389,38 +1370,35 @@ class lf_rssi_check(Realm):
 
                                 # TODO add collect layer 3 data
 
-                    # Process all the data into png files 
+                    # Process all the data into png files
                     port_eids = self.gather_port_eids()
                     if self.use_existing_station_lists:
                         port_eids.extend(self.existing_station_lists.copy())
-                        
+
                     for port_eid in port_eids:
                         logger.debug("csv port files: {port_file}".format(port_file=self.port_csv_files[port_eid]))
                         name = self.port_csv_files[port_eid].name
                         if 'eth' not in name:
                             self.port_csv_data.append(name)
-                    
+
                     # read an element out of the list to get the parent directory
                     self.png_directory = os.path.dirname(self.port_csv_data[0])
-                    
+
                     # all the station csv files have been gahtered
                     logger.debug("csv_file_list{port_list}".format(port_list=self.port_csv_data))
                     rssi_process = lf_rssi_process.lf_rssi_process(
-                                                    csv_file_list=self.port_csv_data,
-                                                    png_dir=self.png_directory, # TODO read parent directory 
-                                                    bandwidths_list = self.bandwidths_list,
-                                                    channel_list = self.channels_list,
-                                                    antenna_list = self.antenna_list,
-                                                    pathloss_list=self.pathloss_list
-                                                    )
+                        csv_file_list=self.port_csv_data,
+                        png_dir=self.png_directory,  # TODO read parent directory
+                        bandwidths_list=self.bandwidths_list,
+                        channel_list=self.channels_list,
+                        antenna_list=self.antenna_list,
+                        pathloss_list=self.pathloss_list
+                    )
 
                     rssi_process.read_all_csv_files()
-                    # using the csv as a count 
+                    # using the csv as a count
                     # process the collected csv data
                     rssi_process.populate_signal_and_attenuation_data_create_png()
-
-                        
-
 
                     # TODO make all port csv files into one concatinated csv files
                     # Create empty dataframe
@@ -1455,8 +1433,8 @@ class lf_rssi_check(Realm):
                     all_dl_ports_stations_df.to_csv(all_dl_port_stations_file_name)
 
                     # we should be able to add the values for each eid
-                    all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps','Tx-Bps','Rx-Latency','Rx-Jitter',
-                        'Ul-Rx-Goodput-bps','Ul-Rx-Rate-ll','Ul-Rx-Pkts-ll','Dl-Rx-Goodput-bps','Dl-Rx-Rate-ll','Dl-Rx-Pkts-ll']].sum()
+                    all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
+                                                                                                     'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()  # noqa: E501
                     all_dl_ports_stations_sum_file_name = self.outfile[:-4]
                     all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + "-dl-all-eids-sum-per-interval.csv"
 
@@ -1471,11 +1449,9 @@ class lf_rssi_check(Realm):
                     all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff()
                     all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff()
                     all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff()
-                    
+
                     # write out the data
                     all_dl_ports_stations_sum_df.to_csv(all_dl_port_stations_sum_file_name)
-
-
 
                     # if there are multiple loops then delete the df
                     del all_dl_ports_df
@@ -1499,7 +1475,7 @@ class lf_rssi_check(Realm):
 
                         # copy over all_ul_ports_df so as create a dataframe summ of the data for each iteration
                         all_ul_ports_stations_df = all_ul_ports_df.copy(deep=True)
-                        # drop rows that have eth 
+                        # drop rows that have eth
                         all_ul_ports_stations_df = all_ul_ports_stations_df[~all_ul_ports_stations_df['Name'].str.contains('eth')]
                         logger.info(pformat(all_ul_ports_stations_df))
 
@@ -1509,8 +1485,8 @@ class lf_rssi_check(Realm):
                         all_ul_ports_stations_df.to_csv(all_ul_ports_stations_file_name)
 
                         # we add all the values based on the epoch time
-                        all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps','Tx-Bps','Rx-Latency','Rx-Jitter',
-                        'Ul-Rx-Goodput-bps','Ul-Rx-Rate-ll','Ul-Rx-Pkts-ll','Dl-Rx-Goodput-bps','Dl-Rx-Rate-ll','Dl-Rx-Pkts-ll']].sum()
+                        all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
+                                                                                                         'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()  # noqa: E501
                         all_ul_ports_stations_sum_file_name = self.outfile[:-4]
                         all_ul_port_stations_sum_file_name = all_ul_ports_stations_sum_file_name + "-ul-all-eids-sum-per-interval.csv"
 
@@ -1572,6 +1548,7 @@ class lf_rssi_check(Realm):
                             "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
                             (ul, dl, ul_pdu, dl_pdu), print_pass)
     # dl_values
+
     def write_port_csv(
             self,
             sta_count,
@@ -1580,7 +1557,7 @@ class lf_rssi_check(Realm):
             ul_pdu,
             dl_pdu,
             atten,
-            port_eid, # TODO this looks to be the  alias
+            port_eid,  # TODO this looks to be the  alias
             port_data,
             vap,
             channel,
@@ -1597,23 +1574,23 @@ class lf_rssi_check(Realm):
             total_dl_rate_ll,
             total_dl_pkts_ll,
             dl_rx_drop_percent,
-            ap_row_tx_dl = ''):
+            ap_row_tx_dl=''):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, port_eid
                ]
 
-        # TODO 
+        # TODO
         # curl -XGET http://"$HOST":8080/port/1/2/"$STA_NAMES"?fields=rx-rate,signal,channel,ssid,ap,chain+rssi,avg+chain+rssi,mode | json_pp > "$OUTPUT_DIR/sta_data$TEST_INDEX.json"
 
         # find the parent radio and model of radio
         # TODO there needs to be an easier way
         port = port_data['port']
         eid = self.name_to_eid(port)
-        # TODO the eth 
-        port_eid_full = "{shelf}.{resource}.{port_name}".format(shelf=eid[0],resource=eid[1],port_name=port_data['alias'])
+        # TODO the eth
+        port_eid_full = "{shelf}.{resource}.{port_name}".format(shelf=eid[0], resource=eid[1], port_name=port_data['alias'])
         if 'eth' not in port_data['alias']:
-            parent_radio = "{shelf}.{resource}.{radio}".format(shelf=eid[0],resource=eid[1],radio=port_data['parent dev'])
+            parent_radio = "{shelf}.{resource}.{radio}".format(shelf=eid[0], resource=eid[1], radio=port_data['parent dev'])
             if self.lanforge_radio_json is not None:
                 radio_model = self.lanforge_radio_json[parent_radio]['driver'].split('Driver:', maxsplit=1)[-1].split(maxsplit=1)[0]
             else:
@@ -1622,14 +1599,13 @@ class lf_rssi_check(Realm):
             parent_radio = 'NA'
             radio_model = 'NA'
 
-
-        logger.debug("sta_port: {sta} radio: {radio} radio model: {model}".format(sta=port_eid_full,radio=parent_radio,model=radio_model))
+        logger.debug("sta_port: {sta} radio: {radio} radio model: {model}".format(sta=port_eid_full, radio=parent_radio, model=radio_model))
 
         row = row + [port_data['bps rx'],
                      port_data['bps tx'],
                      port_data['rx-rate'],
                      port_data['tx-rate'],
-                     port_data['signal'],  #RSSI
+                     port_data['signal'],  # RSSI
                      port_data['channel'],
                      port_data['ssid'],
                      port_data['ap'],
@@ -1716,7 +1692,7 @@ class lf_rssi_check(Realm):
         # Add in info queried from AP.
         if self.ap_read:
             logger.debug("ap_row_rx_ul len {ap_row_rx_ul_len} ap_stats_ul_col_titles len {rx_col_len} ap_ul_row {ap_ul_row}".format(
-                ap_row_rx_ul_len=len(ap_row_rx_ul), rx_col_len=len(self.ap_stats_ul_col_titles), ap_ul_row = ap_row_rx_ul))
+                ap_row_rx_ul_len=len(ap_row_rx_ul), rx_col_len=len(self.ap_stats_ul_col_titles), ap_ul_row=ap_row_rx_ul))
             if len(ap_row_rx_ul) == len(self.ap_stats_ul_col_titles):
                 logger.debug("ap_row_rx_ul {}".format(ap_row_rx_ul))
                 for col in ap_row_rx_ul:
@@ -1726,7 +1702,6 @@ class lf_rssi_check(Realm):
         writer = self.ul_port_csv_writers[port_eid]
         writer.writerow(row)
         self.ul_port_csv_files[port_eid].flush()
-
 
     def record_kpi_csv(
             self,
@@ -1861,7 +1836,6 @@ class lf_rssi_check(Realm):
     def set_attenuator(self, atten_val):
         atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
         atten_mod_test.build()
-
 
     @staticmethod
     def csv_generate_column_headers():
@@ -2063,8 +2037,8 @@ def valid_endp_types(_endp_type):
 # note: when adding command line delimiters : +,=@
 # https://stackoverflow.com/questions/37304799/cross-platform-safe-to-use-command-line-string-separator
 def main():
-    lfjson_host = "localhost"
-    lfjson_port = 8080
+    # lfjson_host = "localhost"
+    # lfjson_port = 8080
     endp_types = "lf_udp"
 
     parser = argparse.ArgumentParser(
@@ -2403,9 +2377,9 @@ Setting wifi_settings per radio
 
         ''')
     # the local_lf_report_dir is the parent directory of where the results are used with lf_check.py
-    parser.add_argument('--local_lf_report_dir', 
-        help='--local_lf_report_dir override the report path (lanforge/html-reports), primary used when making another directory lanforge/html-report/<test_rig>', 
-        default="")
+    parser.add_argument('--local_lf_report_dir',
+                        help='--local_lf_report_dir override the report path (lanforge/html-reports), primary used when making another directory lanforge/html-report/<test_rig>',
+                        default="")
     parser.add_argument(
         "--results_dir_name",
         default="lf_rssi_check",
@@ -2489,7 +2463,6 @@ Setting wifi_settings per radio
         '--lf_passwd',
         help='--lf_passwd <lanforge password> default : lanforge',
         default='lanforge')
-
 
     parser.add_argument(
         '--test_duration',
@@ -2577,7 +2550,7 @@ Setting wifi_settings per radio
 
     parser.add_argument(
         '--pathloss',
-        help='--pathloss,  --pathloss <2g> <5g> <6g>, 2g measured at 26.74, 5g measured at 31.87 default : 0 0 0 this can be a list <2g loss> <5g loss> <6g loss>', 
+        help='--pathloss,  --pathloss <2g> <5g> <6g>, 2g measured at 26.74, 5g measured at 31.87 default : 0 0 0 this can be a list <2g loss> <5g loss> <6g loss>',
         default='0 0 0')
 
     parser.add_argument(
@@ -2592,7 +2565,7 @@ Setting wifi_settings per radio
 
     # TODO need to know radio type
     parser.add_argument('--antennas', help='''
-                        --antennas list of antennas "0, 1, 4, 7, 8"  default: 
+                        --antennas list of antennas "0, 1, 4, 7, 8"  default:
                                 self.ANTENNA_LEGEND = {
                                     0: 'Diversity (All)',
                                     1: 'Fixed-A (1x1)',
@@ -2601,7 +2574,7 @@ Setting wifi_settings per radio
                                     8: 'ABCD (4x4)'
                                 }
                                 default is 0
-                        ''', default= 0)
+                        ''', default=0)
 
     parser.add_argument(
         '--attenuators',
@@ -2617,7 +2590,7 @@ Setting wifi_settings per radio
         '--atten_start',
         help='--atten_start,  start of attenuator settings in ddb units (1/10 of db) , 200 is 20 dBm default: 200',
         default='200')
-    
+
     parser.add_argument(
         '--atten_stop',
         help='--atten_stop,  stop of attenuator settings in ddb units (1/10 of db) , 800 is 80 dBm default: 880, this is 88 dBm where the station should disconnect',
@@ -2684,8 +2657,7 @@ Setting wifi_settings per radio
     parser.add_argument('--ap_band_list', help="--ap_band_list '2g,5g,6g' supported bands", default='2g,5g,6g')
     parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
 
-
-    help_summary='''\
+    help_summary = '''\
     This script is used to validate RSSI for specific radios, currently a work in progress put on hold.
 '''
 
@@ -2693,7 +2665,6 @@ Setting wifi_settings per radio
     if args.help_summary:
         print(help_summary)
         exit(0)
-
 
     # initialize pass / fail
     test_passed = False
@@ -2759,7 +2730,6 @@ Setting wifi_settings per radio
         radios = args.radio
     else:
         radios = None
-        
 
     # Create report, when running with the test framework (lf_check.py)
     # results need to be in the same directory
@@ -2908,7 +2878,7 @@ Setting wifi_settings per radio
                 reset_port_time_max_list.append('0s')
 
         index = 0
-        # TODO verify that is isn't a 
+        # TODO verify that is isn't a
         for (radio_name_, number_of_stations_per_radio_) in zip(
                 radio_name_list, number_of_stations_per_radio_list):
             number_of_stations = int(number_of_stations_per_radio_)
@@ -2964,7 +2934,7 @@ Setting wifi_settings per radio
 
     # Todo list of VAP
     # TODO will all the radios be tested concurrently ,  then cannot break untill
-    # all radios receive a RSSI reading. 
+    # all radios receive a RSSI reading.
     if args.vap == "":
         vap_list = []
     else:
@@ -3041,8 +3011,8 @@ Setting wifi_settings per radio
         no_cleanup=args.no_cleanup,
         use_existing_station_lists=args.use_existing_station_list,
         existing_station_lists=existing_station_lists,
-        ap_read = args.ap_read,
-        ap_module = args.ap_module,
+        ap_read=args.ap_read,
+        ap_module=args.ap_module,
         ap_test_mode=args.ap_test_mode,
         ap_ip=args.ap_ip,
         ap_user=args.ap_user,
@@ -3057,9 +3027,9 @@ Setting wifi_settings per radio
         ap_if_6g=args.ap_if_6g,
         ap_report_dir="",
         ap_file=args.ap_file,
-        ap_band_list = args.ap_band_list.split(',')
-        
-        )
+        ap_band_list=args.ap_band_list.split(',')
+
+    )
 
     if args.no_pre_cleanup or args.use_existing_station_list:
         logger.info("No station pre clean up any existing cxs on LANforge")
@@ -3100,10 +3070,9 @@ Setting wifi_settings per radio
         logger.info("--no_cleanup or --no_stop_traffic set stations will be left intack")
     else:
         ip_var_test.cleanup()
-    
+
     # put the Attenuator back to 20 dBm
     ip_var_test.set_attenuator(atten_val='200')
-        
 
     if ip_var_test.passes():
         test_passed = True
@@ -3217,5 +3186,3 @@ Setting wifi_settings per radio
 
 if __name__ == "__main__":
     main()
-
-
