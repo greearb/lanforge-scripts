@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 # Contains examples of using realm to query stations and get specific information from them
 import sys
 import os
@@ -48,7 +47,7 @@ class StationsConnected(LFCliBase):
 
 
 def main():
-    help_summary='''\
+    help_summary = '''\
      This script will return the count of the number of stations connected to a specific bssid
     '''
     parser = argparse.ArgumentParser(
