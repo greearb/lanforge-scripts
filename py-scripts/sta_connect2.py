@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-# flake8: noqa
 '''
 NAME: sta_connect2.py
 
 Purpose:
-    Test will create a station, create TCP and UDP traffic, run it a short amount of time, 
+    Test will create a station, create TCP and UDP traffic, run it a short amount of time,
     and verify whether traffic was sent and received.  It also verifies the station connected
-    to the requested BSSID if bssid is specified as an argument. 
+    to the requested BSSID if bssid is specified as an argument.
     The script will clean up the station and connections at the end of the test.
 
 EXAMPLE:
@@ -36,7 +35,7 @@ import argparse
 from pprint import pformat
 import time
 import logging
-import datetime
+# import datetime
 import platform
 
 
@@ -62,13 +61,14 @@ WEP = "wep"
 WPA = "wpa"
 WPA2 = "wpa2"
 WPA3 = "wpa3"
-OWE = "owe" # a wpa3 mode
+OWE = "owe"  # a wpa3 mode
 MODE_AUTO = 0
 BLANK = "[BLANK]"
 
+
 class StaConnect2(Realm):
     def __init__(self, host, port, _dut_ssid="jedway-open-1", _dut_passwd="NA", _dut_bssid="",
-                 _user="", _passwd="",  _radio="wiphy0", _sta_mode=0,
+                 _user="", _passwd="", _radio="wiphy0", _sta_mode=0,
                  _resource=1, _upstream_resource=1, _upstream_port="eth1",
                  _sta_name=None, _sta_prefix=None, _bringup_time_sec=300,
                  debug_=False, _dut_security=OPEN, _exit_on_error=False,
@@ -161,7 +161,7 @@ class StaConnect2(Realm):
         # logger.info("endp_list: {endp_list}".format(endp_list=endp_list))
         endp_rx_drop_map = {}
         endp_rx_map = {}
-        our_endps = {}
+        # our_endps = {}
         endps = []
 
         total_ul = 0
@@ -411,7 +411,7 @@ class StaConnect2(Realm):
                     "probe_flags": 1}
             # logger.info("start() - data1: %s", data)
             self.json_post("/cli-json/nc_show_ports", data)
-            #print("start() - ln 252 - self.j")
+            # print("start() - ln 252 - self.j")
             self.station_profile.admin_up()
             LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, self.station_names)
 
@@ -563,7 +563,6 @@ class StaConnect2(Realm):
 
         # print("self.l3_udp_profile.created_cx -ln 412-: ", self.l3_udp_profile.created_cx)
         # print("self.l3_tcp_profile.created_cx: ", self.l3_tcp_profile.created_cx)
-
 
     def cleanup(self):
         # remove all endpoints and cxs
@@ -779,14 +778,14 @@ class StaConnect2(Realm):
 
 def main():
     help_summary = '''\
-    Test will create a station, create TCP and UDP traffic, run it a short amount of time, 
+    Test will create a station, create TCP and UDP traffic, run it a short amount of time,
     and verify whether traffic was sent and received.  It also verifies the station connected
-    to the requested BSSID if bssid is specified as an argument. 
+    to the requested BSSID if bssid is specified as an argument.
     The script will clean up the station and connections at the end of the test.
     '''
 
-    lfjson_host = "localhost"
-    lfjson_port = 8080
+    # lfjson_host = "localhost"
+    # lfjson_port = 8080
     parser = argparse.ArgumentParser(
         prog="sta_connect2.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -795,23 +794,23 @@ def main():
 LANforge Unit Test:  Connect Station to AP - sta_connect2.py
 ---------------------------
 Summary:
-This will create a station, create TCP and UDP traffic, run it a short amount of time, and verify whether traffic 
-was sent and received.  It also verifies the station connected to the requested BSSID if bssid is specified 
+This will create a station, create TCP and UDP traffic, run it a short amount of time, and verify whether traffic
+was sent and received.  It also verifies the station connected to the requested BSSID if bssid is specified
 as an argument. The script will clean up the station and connections at the end of the test.
 ---------------------------
-CLI Example: 
-./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2 
+CLI Example:
+./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
 --upstream_port eth1 --radio wiphy1
 
 CLI Example for kpi.csv report output:
-./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2 
---upstream_port eth2  --csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux 
+./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
+--upstream_port eth2  --csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux
 --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234
 
 CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
-./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2 
---upstream_port eth2  --download_bps 768000 --upload_bps 256000 --side_a_pdu 300 --side_b_pdu 750 
---csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux --dut_model_num 1 
+./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
+--upstream_port eth2  --download_bps 768000 --upload_bps 256000 --side_a_pdu 300 --side_b_pdu 750
+--csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux --dut_model_num 1
 --dut_sw_version 5.4.5 --dut_serial_num 1234
 
 Note: --sta_mode use values in second column
@@ -835,15 +834,15 @@ Note: --sta_mode use values in second column
         aAX         | 15        #  802.11a-AX (6E disables /n and /ac)
 
 
---------------------------- 
-""",
-    epilog="""
 ---------------------------
-CLI Example: 
-./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2 
+""",
+        epilog="""
+---------------------------
+CLI Example:
+./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
 --upstream_port eth2 --radio wiphy1
 """
-)
+    )
     parser.add_argument("-m", "--mgr", type=str, help="address of the LANforge GUI machine (localhost is default)",
                         default='localhost')
     parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)",
@@ -915,8 +914,8 @@ CLI Example:
         help="--csv_outfile <prepend input to generated file for csv data>",
         default="")
     # logging configuration:
-    parser.add_argument('--log_level', default=None, 
-        help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument('--log_level', default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
 
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
@@ -942,7 +941,6 @@ CLI Example:
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-
 
     # for kpi.csv generation
     local_lf_report_dir = args.local_lf_report_dir
@@ -1055,7 +1053,7 @@ CLI Example:
     report.set_obj_html("Objective", "The Station Connection 2 Test is designed to test the performance of the "
                                      "Access Point with running TCP and UDP traffic for an amount of time. "
                                      "Verifies the station connected to the requested BSSID if bssid is specified."
-                                     )
+                        )
     report.build_objective()
 
     test_setup_info = {
@@ -1105,7 +1103,6 @@ CLI Example:
     if platform.system() == 'Linux':
         report.write_pdf_with_timestamp(_page_size='letter', _orientation='portrait')
 
-
     staConnect.stop()
     # exit(1)
 
@@ -1115,7 +1112,6 @@ CLI Example:
 
     # py-json/lanforge/lfcli_base.py - get_all_message():
     logger.info(staConnect.get_all_message())
-
 
     # cleanup stations
     if not args.no_cleanup:
@@ -1127,8 +1123,7 @@ CLI Example:
     if platform.system() == 'Linux':
         logger.info("Test Results PDF located: {report}".format(report=report.write_output_pdf))
 
-
-    # Added Exit codes 
+    # Added Exit codes
     if not is_passing:
         logger.info("FAIL:  Some tests failed")
         exit(1)
