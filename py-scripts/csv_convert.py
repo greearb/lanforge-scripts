@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 
  This program is used to read in a LANforge Dataplane CSV file and output
@@ -19,6 +18,8 @@
 import sys
 import os
 import argparse
+import traceback
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -37,7 +38,7 @@ class CSVParser:
         i_data_rssi = -1
         i_rx_mcs = -1
         i_tx_mcs = -1
-        rate_with_units = False
+        # rate_with_units = False
 
         fpo = open(csv_outfile, "w")
         fp = open(csv_infile)
@@ -54,14 +55,14 @@ class CSVParser:
             if fp2:
                 l2 = fp2.readline()
                 if l2:
-                    line = "%s,%s" %(line, l2)
+                    line = "%s,%s" % (line, l2)
 
             # Read in initial line, this is the CSV headers.  Parse it to find the column indices for
             # the columns we care about.
             x = line.split(",")
             cni = 0
             for cn in x:
-                #print("cn: " + cn)
+                # print("cn: " + cn)
                 # This works with the 'brief' csv output.
                 if cn == "Attenuation [dB]":
                     i_atten = cni
@@ -80,7 +81,7 @@ class CSVParser:
                 if cn == "Rotation":
                     i_rotation = cni
                 if cn == "Rx-Bps":
-                    rate_with_units = True
+                    # rate_with_units = True
                     i_rxbps = cni
                 # NOTE: Beacon RSSI does not exist in the 'full' csv
                 if cn == "RSSI":
@@ -89,11 +90,11 @@ class CSVParser:
                     i_tx_mcs = cni
                 if cn == "Rx-Rate":
                     i_rx_mcs = cni
-                    
+
                 cni += 1
 
             # Write out out header for the new file.
-            fpo.write("Test Run,Position [Deg],Attenuation 1 [dB],Pal Stats Endpoint 1 Control Rssi [dBm],Pal Stats Endpoint 1 Data Rssi [dBm] Mean,Pal Stats Endpoint 1 RX rate [Mbps] Mode,Pal Stats Endpoint 1 TX rate [Mbps] Mode\n")
+            fpo.write("Test Run,Position [Deg],Attenuation 1 [dB],Pal Stats Endpoint 1 Control Rssi [dBm],Pal Stats Endpoint 1 Data Rssi [dBm] Mean,Pal Stats Endpoint 1 RX rate [Mbps] Mode,Pal Stats Endpoint 1 TX rate [Mbps] Mode\n")  # noqa: E501
 
             # Read rest of the input lines, processing one at a time.  Covert the columns as
             # needed, and write out new data to the output file.
@@ -103,7 +104,7 @@ class CSVParser:
             if fp2:
                 l2 = fp2.readline()
                 if l2:
-                    line = "%s,%s" %(line, l2)
+                    line = "%s,%s" % (line, l2)
 
             bottom_half = "Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps]\n"
 
@@ -129,7 +130,7 @@ class CSVParser:
                 if fp2:
                     l2 = fp2.readline()
                     if l2:
-                        line = "%s,%s" %(line, l2)
+                        line = "%s,%s" % (line, l2)
 
                 step_i += 1
 
@@ -144,13 +145,15 @@ class CSVParser:
         try:
             units = tokens[1]
             if units == "Gbps":
-                rv = rv * 1000.0;
+                rv = rv * 1000.0
             if units == "Kbps":
                 rv = rv / 1000.0
             return int(rv)
-        except:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             # Assume no units and that it is already mbps
             return int(rv)
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -161,7 +164,7 @@ def main():
             ''',
 
         description='''
-csv_convert.py:  
+csv_convert.py:
     converts the candela brief csv and/or more complete csv into the data for specific customer.
     Both csv files need to be passed in order to have beacon rssi and phy rates since neither
     csv file contains all of that data.
@@ -175,7 +178,7 @@ Example:
     parser.add_argument('-o', '--outfile', help="output file in .csv format", default='outfile.csv')
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
-    help_summary='''\
+    help_summary = '''\
 csv_convert.py converts the candela brief csv and/or more complete csv into the data for specific customer.
 Both csv files need to be passed in order to have beacon rssi and phy rates since neither
 csv file contains all of that data.
@@ -185,7 +188,6 @@ csv file contains all of that data.
     if args.help_summary:
         print(help_summary)
         exit(0)
-
 
     if not args.infile or not args.infile2:
         print("error:  the following arguments are required: -i/--infile, -I/--infile2")
