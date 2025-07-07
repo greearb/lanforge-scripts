@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 import sys
 import os
 import importlib
@@ -135,11 +134,11 @@ def main():
     --------------------
     Generic command example:
     scenario.py --load db1 --action overwrite --clean_dut --clean_chambers
-    
+
     scenario.py --start test_group1
-    
+
     scenario.py --quiesce test_group1
-    
+
     scenario.py --stop test_group1
     ''')
 
@@ -165,13 +164,12 @@ def main():
     parser.add_argument('--check_phantom', help='check if these ports are phantom', default=None, nargs="+")
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 The script, scenario.py, will load a database file and control test groups.
 '''
     if args.help_summary:
         print(help_summary)
         exit(0)
-
 
     scenario = LoadScenario(mgr=args.mgr,
                             scenario=args.load,
