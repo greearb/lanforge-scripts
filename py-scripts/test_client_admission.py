@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """ This script will create one station at a time and generate downstream traffic at 5Mbps  then again create next station create layer3 and will continue doing same until Ap stops admiting client
     This script can be used for for client admission test for particular AP
 
@@ -13,7 +12,7 @@ import importlib
 import argparse
 import time
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -120,7 +119,7 @@ def main():
     # parser.add_argument()
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 Script not functional or no longer supported:
 This script will create one station at a time and generate downstream traffic at 5Mbps
 then again create next station create layer3 and will continue doing same
@@ -130,7 +129,6 @@ This script can be used for for client admission test for particular AP
     if args.help_summary:
         print(help_summary)
         exit(0)
-
 
     obj = LoadLayer3(lfclient_host=args.host, lfclient_port=8080, ssid=args.ssid, paswd=args.passwd,
                      security=args.security, radio=args.radio, num_sta=args.num_sta)
