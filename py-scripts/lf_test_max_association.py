@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_test_max_association.py
 
@@ -376,13 +375,13 @@ class max_associate(Realm):
         except ValueError:
             raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
 
-        if type(self.layer3_columns) is not list:
+        if not isinstance(self.layer3_columns, list):
             self.layer3_columns = list(self.layer3_columns.split(","))
             # send col names here to file to reformat
         else:
             self.layer3_columns = self.layer3_columns
             # send col names here to file to reformat
-        if type(self.port_mgr_columns) is not list:
+        if not isinstance(self.port_mgr_columns, list):
             self.port_mgr_columns = list(self.port_mgr_columns.split(","))
             # send col names here to file to reformat
         else:
@@ -600,13 +599,13 @@ class max_associate(Realm):
         logger.info("Stopping CX Traffic")
         self.cx_profile.stop_cx()
         end_time = time.ctime()
-        logger.info("Test End: %s",  end_time)
+        logger.info("Test End: %s", end_time)
 
     # guide script during test run & collect data
     def run(self):
         self.start_cxs()
         start_time = time.ctime()
-        logger.info("Test Start: %s",  start_time)
+        logger.info("Test Start: %s", start_time)
         # time.sleep(int(self.test_duration))
         station_names = []
         station_names.extend(self.station_profile.station_names.copy())
@@ -684,7 +683,7 @@ class max_associate(Realm):
 
         sta_list_len = len(sta_list)
         endp_list_len = len(endp_rx_map)
-        total_ul_dl_rate = total_ul_rate+total_dl_rate
+        total_ul_dl_rate = total_ul_rate + total_dl_rate
 
         # logic for Subtest-Pass & Subtest-Fail columns
         # 0 = FAIL, 1 = PASS (on kpi.csv output)
@@ -889,10 +888,10 @@ class max_associate(Realm):
 
 def main():
     help_summary = '''\
-    The Maximum Client Association Test is designed to test the capability of a newly built LANforge system. 
-    The objective of the test is to create the maximum number of virtual station interfaces on the system installed WIFI 
+    The Maximum Client Association Test is designed to test the capability of a newly built LANforge system.
+    The objective of the test is to create the maximum number of virtual station interfaces on the system installed WIFI
     radio, associate the stations to the specified AP and run a long duration layer-3 UDP bidirectional traffic test.
-    
+
     The test will create stations, create CX traffic & run traffic specified time period and generate a report.
     '''
     parser = argparse.ArgumentParser(
@@ -910,31 +909,31 @@ PURPOSE:  [LANforge Unit Test]:-  Create maximum stations per wiphy radio.
             - Create sta-to-eth Layer-3 CX for 9.6Kbps bidirectional overnight maximum-client wifi test.
 
 EXAMPLE:
-        # To run the test on specified time duration on all available radios 
+        # To run the test on specified time duration on all available radios
             [Automatically detect the available radios in lanforge & will create the max supported radios on each radios.]
-        
-            ./lf_test_max_association.py --mgr 192.168.200.64 --ssid 208NETWORK --ssid_pw lanforge --security wpa2  
-                --csv_outfile ./lf_test_max_association --test_rig CT_01 --test_tag MAX_STA --dut_hw_version 1.0 
-                --dut_model_num ct521a--dut_sw_version 5.4.6 --dut_serial_num 361c --upstream_port 1.1.eth1 
+
+            ./lf_test_max_association.py --mgr 192.168.200.64 --ssid 208NETWORK --ssid_pw lanforge --security wpa2
+                --csv_outfile ./lf_test_max_association --test_rig CT_01 --test_tag MAX_STA --dut_hw_version 1.0
+                --dut_model_num ct521a--dut_sw_version 5.4.6 --dut_serial_num 361c --upstream_port 1.1.eth1
                 --upload_bps 6200000 --download_bps 6200000 --test_duration 30s
-    
+
         # To run the test based on specified time duration and radios
-        
-            ./lf_test_max_association.py --mgr 192.168.200.64 
-                --radio 'radio==1.1.wiphy0,ssid==208NETWORK,ssid_pw==lanforge,security==wpa2' 
-                --radio 'radio==1.1.wiphy1,ssid==208NETWORK,ssid_pw==lanforge,security==wpa2' 
-                --csv_outfile ./lf_test_max_association --test_rig CT_01 --test_tag MAX_STA 
-                --dut_hw_version 1.0 --dut_model_num ct521a --dut_sw_version 5.4.6 --dut_serial_num 361c 
+
+            ./lf_test_max_association.py --mgr 192.168.200.64
+                --radio 'radio==1.1.wiphy0,ssid==208NETWORK,ssid_pw==lanforge,security==wpa2'
+                --radio 'radio==1.1.wiphy1,ssid==208NETWORK,ssid_pw==lanforge,security==wpa2'
+                --csv_outfile ./lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
+                --dut_hw_version 1.0 --dut_model_num ct521a --dut_sw_version 5.4.6 --dut_serial_num 361c
                 --test_duration 30s --upstream_port 1.1.eth1
-    
+
         # To run overnight test using chambered AP's on specified radios only.
-        
+
             ./lf_test_max_association.py --mgr <localhost>
                 --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==<password>,security==<type>'
                 --radio 'radio==1.1.wiphy1,ssid==<ssid>,ssid_pw==<password>,security==<type>'
                 --csv_outfile lf_test_max_association --test_rig CT_01 --test_tag MAX_STA
                 --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
-        
+
         # For an overnight test using chambered AP's with no security enabled:
             ./lf_test_max_association.py --mgr <localhost>
                 --radio 'radio==1.1.wiphy0,ssid==<ssid>,ssid_pw==[BLANK],security==open'
