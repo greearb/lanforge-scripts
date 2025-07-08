@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: test_ip_connection.py
 This script combines functionality of test_ipv4_connection.py and test_ipv6_connection.py.
@@ -198,22 +197,22 @@ def main():
         test_ip_connection.py
 --------------------------------------
 Generic ipv6 command example:
-python3 ./test_ip_connection.py 
-        --upstream_port eth1 
-        --radio wiphy0 
+python3 ./test_ip_connection.py
+        --upstream_port eth1
+        --radio wiphy0
         --num_stations 3
         --ipv6
         --proxy
-        --security {open|wep|wpa|wpa2|wpa3} 
-        --ssid netgear 
+        --security {open|wep|wpa|wpa2|wpa3}
+        --ssid netgear
         --passwd admin123
-        --mode   1  
+        --mode   1
         --ap "00:0e:8e:78:e1:76"
         --test_id
-        --timeout 120 
+        --timeout 120
         --debug
 
-Generic ipv4 command example: 
+Generic ipv4 command example:
 ./test_ip_connection.py
     --upstream_port eth1
     --radio wiphy0
@@ -227,20 +226,19 @@ Generic ipv4 command example:
     parser.add_argument("--ap", help="Add BSSID of access point to connect to")
     parser.add_argument('--mode', help=Realm.Help_Mode)
     parser.add_argument('--timeout',
-                            help='--timeout sets the length of time to wait until a connection is successful',
-                            default=30)
+                        help='--timeout sets the length of time to wait until a connection is successful',
+                        default=30)
     parser.add_argument('--use_existing_sta', help='Used an existing stationsto a particular AP', action='store_true')
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 ./test_ip_connection.py may not be functional , added this summary to allow the help_summary check to pass
 The script si create station then attemp to authenticate, associate, and receive IP address on the chosen SSID
 '''
     if args.help_summary:
         print(help_summary)
         exit(0)
-
 
     if args.radio is None:
         raise ValueError("--radio required")
