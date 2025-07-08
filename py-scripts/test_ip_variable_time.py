@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: test_ip_variable_time.py
 
@@ -265,6 +264,8 @@ import argparse
 import logging
 import time
 import csv
+import traceback
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -530,7 +531,8 @@ class IPVariableTime(Realm):
         self.station_profile.admin_up()
         try:
             self.csv_add_column_headers()
-        except:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.debug("csv result file is None")
         temp_stas = self.station_profile.station_names.copy()
         # logger.info("temp_stas {temp_stas}".format(temp_stas=temp_stas))
@@ -539,7 +541,7 @@ class IPVariableTime(Realm):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
-            #self.exit_fail()
+            # self.exit_fail()
         self.cx_profile.start_cx()
 
     def stop(self):
@@ -579,14 +581,15 @@ class IPVariableTime(Realm):
                 logger.info("Creating stations")
                 try:
                     self.station_profile.mode = self.mode[i]
-                except Exception as e:
+                except Exception as x:
+                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                     self.station_profile.mode = 0
                 self.station_profile.create(radio=self.radio[i], sta_names_=self.sta_list[i], debug=self.debug)
                 self._pass("PASS: Station build finished")
 
             self.cx_profile.create(endp_type=self.traffic_type, side_a=self.sta_list[i],
-                                       side_b=self.upstream[i],
-                                       sleep_time=0)
+                                   side_b=self.upstream[i],
+                                   sleep_time=0)
 
     def run(self):
         if self.report_file is None:
@@ -642,14 +645,16 @@ class IPVariableTime(Realm):
             layer3connections = ','.join([[*x.keys()][0] for x in self.json_get('endp')['endpoint']])
         except ValueError:
             raise ValueError('Unable to find layer 3 connections.')
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
 
-        if type(self.layer3_cols) is not list:
+        if not isinstance(self.layer3_cols, list):
             layer3_cols = list(self.layer3_cols.split(","))
             # send col names here to file to reformat
         else:
             layer3_cols = self.layer3_cols
             # send col names here to file to reformat
-        if type(self.port_mgr_cols) is not list:
+        if not isinstance(self.port_mgr_cols, list):
             port_mgr_cols = list(self.port_mgr_cols.split(","))
             # send col names here to file to reformat
         else:
@@ -664,8 +669,8 @@ class IPVariableTime(Realm):
         try:
             # monitor interval returns milliseconds
             monitor_interval = Realm.parse_time(self.monitor_interval).total_seconds()
-        except ValueError as error:
-            logger.critical(error)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.critical(
                 "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. ")
             return ValueError(
@@ -699,7 +704,7 @@ class IPVariableTime(Realm):
                 # logger.info(layer3endps)
         # for i in range(len(self.upstream)):
         comp_sta_list = []
-        list(map(comp_sta_list.extend,self.sta_list))
+        list(map(comp_sta_list.extend, self.sta_list))
         self.cx_profile.monitor(layer3_cols=layer3_cols,
                                 sta_list=comp_sta_list,
                                 port_mgr_cols=port_mgr_cols,
@@ -711,7 +716,7 @@ class IPVariableTime(Realm):
                                 output_format=output,
                                 compared_report=compared_rept,
                                 script_name='test_ip_variable_time',
-                                resource= self.resource,
+                                resource=self.resource,
                                 debug=self.debug)
 
         # fill out data kpi.csv and results reports
@@ -753,15 +758,17 @@ class IPVariableTime(Realm):
             layer3connections = ','.join([[*x.keys()][0] for x in self.json_get('endp')['endpoint']])
         except ValueError:
             raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
 
-        if type(self.layer3_cols) is not list:
+        if not isinstance(self.layer3_cols, list):
             layer3_cols = list(self.layer3_cols.split(","))
             # send col names here to file to reformat
         else:
             layer3_cols = self.layer3_cols
 
             # send col names here to file to reformat
-        if type(self.port_mgr_cols) is not list:
+        if not isinstance(self.port_mgr_cols, list):
             port_mgr_cols = list(self.port_mgr_cols.split(","))
             # send col names here to file to reformat
         else:
@@ -775,8 +782,8 @@ class IPVariableTime(Realm):
 
         try:
             monitor_interval = Realm.parse_time(self.monitor_interval).total_seconds()
-        except ValueError as error:
-            logger.critical(error)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.critical(
                 "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. ")
             return ValueError(
@@ -792,17 +799,16 @@ class IPVariableTime(Realm):
                 new_l3_endps_list.append(item)
                 layer3endps = ','.join(str(l3endps) for l3endps in new_l3_endps_list)
 
-
         comp_sta_list = []
         list(map(comp_sta_list.extend, self.sta_list))
         self.cx_profile.monitor_without_disturbing_other_monitor(layer3_cols=layer3_cols,
-                                sta_list=comp_sta_list,
-                                port_mgr_cols=port_mgr_cols,
-                                duration_sec=self.test_duration,
-                                monitor_interval_ms=monitor_interval,
-                                created_cx=layer3endps,
-                                script_name='test_ip_variable_time2',
-                                debug=self.debug)
+                                                                 sta_list=comp_sta_list,
+                                                                 port_mgr_cols=port_mgr_cols,
+                                                                 duration_sec=self.test_duration,
+                                                                 monitor_interval_ms=monitor_interval,
+                                                                 created_cx=layer3endps,
+                                                                 script_name='test_ip_variable_time2',
+                                                                 debug=self.debug)
 
         # fill out data kpi.csv and results reports
         temp_stations_list = []
@@ -989,34 +995,34 @@ class IPVariableTime(Realm):
     def csv_generate_results_column_headers(self):
         if self.traffic_type.endswith("tcp"):
             csv_rx_headers = [
-            'Time epoch',
-            'Time',
-            'Station-Count',
-            'UL-Min-Requested',
-            'UL-Max-Requested',
-            'DL-Min-Requested',
-            'DL-Max-Requested',
-            # 'Attenuation',
-            'TCP-Upload-bps',
-            'TCP-Download-bps',
-            'Total-TCP-Upload-bps',
-            'Total-TCP-Download-bps',
-            'Total-TCP-UL/DL-bps']
+                'Time epoch',
+                'Time',
+                'Station-Count',
+                'UL-Min-Requested',
+                'UL-Max-Requested',
+                'DL-Min-Requested',
+                'DL-Max-Requested',
+                # 'Attenuation',
+                'TCP-Upload-bps',
+                'TCP-Download-bps',
+                'Total-TCP-Upload-bps',
+                'Total-TCP-Download-bps',
+                'Total-TCP-UL/DL-bps']
         elif self.traffic_type.endswith("udp"):
             csv_rx_headers = [
-            'Time epoch',
-            'Time',
-            'Station-Count',
-            'UL-Min-Requested',
-            'UL-Max-Requested',
-            'DL-Min-Requested',
-            'DL-Max-Requested',
-            # 'Attenuation',
-            'UDP-Upload-bps',
-            'UDP-Download-bps',
-            'Total-UDP-Upload-bps',
-            'Total-UDP-Download-bps',
-            'Total-UDP-UL/DL-bps']
+                'Time epoch',
+                'Time',
+                'Station-Count',
+                'UL-Min-Requested',
+                'UL-Max-Requested',
+                'DL-Min-Requested',
+                'DL-Max-Requested',
+                # 'Attenuation',
+                'UDP-Upload-bps',
+                'UDP-Download-bps',
+                'Total-UDP-Upload-bps',
+                'Total-UDP-Download-bps',
+                'Total-UDP-UL/DL-bps']
 
         return csv_rx_headers
 
@@ -1030,9 +1036,9 @@ class IPVariableTime(Realm):
 
 def main():
     help_summary = '''\
-     This script is designed to generate a variable number (N) of stations and establish cross connections while 
-     facilitating the execution of UDP/TCP layer 3 traffic for a duration specified by the user. Additionally, it 
-     supports the utilization of existing stations and the creation of stations across multiple radios. Furthermore, 
+     This script is designed to generate a variable number (N) of stations and establish cross connections while
+     facilitating the execution of UDP/TCP layer 3 traffic for a duration specified by the user. Additionally, it
+     supports the utilization of existing stations and the creation of stations across multiple radios. Furthermore,
      stations can connect to multiple SSIDs as specified by the user.
     '''
     # Realm args parser is one directory up then traverse into /py-json/LANforge/lfcli_base.py
@@ -1078,10 +1084,10 @@ EXAMPLE:
         --a_min 600000000 --b_min 600000000  --upstream_port eth2 --mode '5'
         --layer3_cols 'name','tx rate','rx rate'  `--port_mgr_cols 'alias','channel','activity','mode'
         --num_stations 2
-    
+
     4. Create Multiple stations and run traffic with different upstream port
-    ./test_ip_variable_time.py --mgr 192.168.200.37  --radio wiphy0 wiphy0 --ssid ssid_2g ssid_5g 
-        --test_duration 60s --output_format csv  --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  
+    ./test_ip_variable_time.py --mgr 192.168.200.37  --radio wiphy0 wiphy0 --ssid ssid_2g ssid_5g
+        --test_duration 60s --output_format csv  --traffic_type lf_tcp --a_min 600000000 --b_min 600000000
         --upstream_port eth2 eth1 --mode '5' --num_stations 1 --passwd pass_2g pass_5g --security wpa2 wpa2
 
 SCRIPT_CLASSIFICATION:  Creation & Runs Traffic
@@ -1100,7 +1106,7 @@ NOTES:
 
         Mode 2:
             When station is already available,
-            
+
             This script will create layer3 cross-connects and endpoints It will then
             create layer 3 traffic over a specified amount of time, testing for increased traffic at regular intervals.
             This test will pass if all stations increase traffic over the full test duration.
@@ -1147,8 +1153,8 @@ NOTES:
             Using the layer3_cols flag:
 
             Currently the output function does not support inputting the columns in layer3_cols the way they are displayed in the GUI.
-            This quirk is under construction. To output certain columns in the GUI in your final report, please match the according 
-            GUI column displayed to it's counterpart to have the additional columns correctly displayed in your report. 
+            This quirk is under construction. To output certain columns in the GUI in your final report, please match the according
+            GUI column displayed to it's counterpart to have the additional columns correctly displayed in your report.
             Note that the report will prepend "l3-" to the supplied layer3_col flags.
 
             GUI Column Display       Layer3_cols argument to type in (to print in report)
@@ -1291,7 +1297,7 @@ NOTES:
             search for create_basic_argsparse
             --mgr --mgr_port --upstream_port --num_stations --radio --security --ssid --passwd
 
-STATUS: Functional 
+STATUS: Functional
 
 VERIFIED_ON:   15-JULY-2023,
              Build Version:  5.4.6
@@ -1340,9 +1346,9 @@ INCLUDE_IN_README: False
                           )
     optional.add_argument('--debug_log', default=None,
                           help="Specify a file to send debug output to")
-    optional.add_argument('--no_cleanup', help='Do not cleanup before exit',  action='store_true')
+    optional.add_argument('--no_cleanup', help='Do not cleanup before exit', action='store_true')
 
-    #-----required---------------
+    # -----required---------------
     required.add_argument('--radio', nargs="+", help='radio EID, e.g: --radio wiphy0 wiphy2')
     required.add_argument('--security', nargs="+", default=["open"],
                           help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >  e.g: --security open wpa')
@@ -1353,21 +1359,21 @@ INCLUDE_IN_README: False
     optional.add_argument('--mode', nargs="+", help='Used to force mode of stations e.g: --mode 11 9')
     optional.add_argument('--ap', nargs="+", help='Used to force a connection to a particular AP')
     optional.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp, udp, tcp], type will be '
-                                               'adjusted automatically between ipv4 and ipv6 based on use of --ipv6 flag')
+                          'adjusted automatically between ipv4 and ipv6 based on use of --ipv6 flag')
     optional.add_argument('--output_format', help='choose either csv or xlsx')
     optional.add_argument('--report_file', help='where you want to store results', default=None)
     optional.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
     optional.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     optional.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
     optional.add_argument('--layer3_cols', help='Additional columns wished to be monitored from the layer 3 endpoint tab for reporting',
-                        default=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'])
+                          default=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'])
     optional.add_argument('--port_mgr_cols', help='Additional columns wished to be monitored from port manager tab for reporting',
-                        default=['alias', 'ap', 'ip', 'parent dev', 'rx-rate'])
+                          default=['alias', 'ap', 'ip', 'parent dev', 'rx-rate'])
     optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',
-                        default=None)
+                          default=None)
     optional.add_argument('--monitor_interval',
-                        help='how frequently do you want your monitor function to take measurements, 35s, 2h, lowest is 250ms',
-                        default='1000ms')
+                          help='how frequently do you want your monitor function to take measurements, 35s, 2h, lowest is 250ms',
+                          default='1000ms')
     optional.add_argument('--ipv6', help='Sets the test to use IPv6 traffic instead of IPv4', action='store_true')
     parser.add_argument('--use_existing_sta', help='Used an existing stations to a particular AP', action='store_true')
     parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
@@ -1426,7 +1432,6 @@ INCLUDE_IN_README: False
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-
     # for kpi.csv generation
     local_lf_report_dir = args.local_lf_report_dir
     test_rig = args.test_rig
@@ -1483,8 +1488,8 @@ INCLUDE_IN_README: False
         logger.info("two")
         station_list = []
         for i in args.radio:
-            station_list.append(LFUtils.portNameSeries(prefix_="R"+str(args.radio.index(i))+"-sta", start_id_=0, end_id_=num_sta - 1,
-                                                  padding_number_=10000, radio=i))
+            station_list.append(LFUtils.portNameSeries(prefix_="R" + str(args.radio.index(i)) + "-sta", start_id_=0, end_id_=num_sta - 1,
+                                                       padding_number_=10000, radio=i))
     else:
         logger.info("three")
         station_list = args.sta_names.split(",")
@@ -1567,7 +1572,7 @@ INCLUDE_IN_README: False
                                      "cross-connects and enpoints. The test will then monitor for increased "
                                      "traffic at regular intervals, and if all stations increase traffic "
                                      "over the full test duration, the test will pass."
-                                     )
+                        )
     report.build_objective()
 
     test_setup_info = {
