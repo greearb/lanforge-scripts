@@ -102,7 +102,7 @@ Realm = realm.Realm
 
 # used for Attenuator and possible vap testing testing
 lf_attenuator = importlib.import_module("py-scripts.lf_atten_mod_test")
-modify_vap = importlib.import_module("py-scripts.modify_vap")
+# modify_vap = importlib.import_module("py-scripts.modify_vap")
 lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
 
 # cleanup library
