@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 # Create and modify WAN Links from the command line.
 # Written by Candela Technologies Inc.
 # Updated by: Erin Grimes
@@ -17,7 +16,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -29,7 +27,6 @@ create_wanlink = importlib.import_module("py-json.create_wanlink")
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
-
 
 
 class LANtoWAN(Realm):
@@ -80,7 +77,7 @@ def main():
         # todo: jitter A and B
 
     parseargs = parser.parse_args()
-    help_summary='''\
+    help_summary = '''\
 This script will create and modify WAN Links from the command line.
 '''
 
@@ -111,7 +108,6 @@ This script will create and modify WAN Links from the command line.
         "drop_B": (parseargs.drop_B if parseargs.drop_B is not None else parseargs.drop),
         "debug": parseargs.debug
     }
-
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
