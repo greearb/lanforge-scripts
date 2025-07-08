@@ -661,7 +661,6 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_attenuator = importlib.import_module("py-scripts.lf_atten_mod_test")
-modify_vap = importlib.import_module("py-scripts.modify_vap")
 lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
 lf_cleanup = importlib.import_module("py-scripts.lf_cleanup")
 Realm = realm.Realm
