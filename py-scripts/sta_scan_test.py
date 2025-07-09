@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 
 """
 NAME: sta_scan_test.py
@@ -85,7 +84,7 @@ class StaScan(Realm):
     def start(self):
         if self.use_existing_station:
             # bring up existing sta list
-            #print(self.sta_list)
+            # print(self.sta_list)
             for s in self.sta_list:
                 eid = LFUtils.name_to_eid(s)
                 up_request = LFUtils.port_up_request(resource_id=eid[1], port_name=eid[2])
@@ -113,7 +112,7 @@ class StaScan(Realm):
         # TODO:  Make configurable
         # Wait for scans to complete.
         if self.debug:
-            print("Waiting for %s seconds for scan to complete" %(self.scan_time))
+            print("Waiting for %s seconds for scan to complete" % (self.scan_time))
         time.sleep(self.scan_time)
 
         # Get results for all stations.
@@ -132,7 +131,7 @@ class StaScan(Realm):
             results = scan_results['scan-results']
             df = pd.DataFrame([list(result.values())[0] for result in results])
             if self.debug:
-                print("Scan results for port: %s\n%s"%(port, scan_results))
+                print("Scan results for port: %s\n%s" % (port, scan_results))
             if self.csv_output:
                 # TODO:  This clobbers output of previous station, need a way to
                 # append (and add resource and wlan to the csv output so that
@@ -177,7 +176,7 @@ def main():
         Optionally creates a station with specified ssid info (can be real or fake ssid, if fake use open for security).
         If not creating a station, it can use existing station.
         Then starts a scan and waits 15 seconds, finally scan results are printed to console.
-        
+
         Example:
         ./sta_scan_test.py --ssid test_name --security open --radio wiphy0
         ./sta_scan_test.py --sta_name 1.14.wlan0 1.1.wlan0 --use_existing_station --scan_time 5
@@ -193,7 +192,7 @@ def main():
                         default=15, type=int)
 
     args = parser.parse_args()
-    help_summary='''\
+    help_summary = '''\
 This scripts optionally creates a station with specified ssid info (can be real or fake ssid, if fake use open for security).
 If not creating a station, it can use existing station.
 Then starts a scan and waits 15 seconds, finally scan results are printed to console.
@@ -201,7 +200,6 @@ Then starts a scan and waits 15 seconds, finally scan results are printed to con
     if args.help_summary:
         print(help_summary)
         exit(0)
-
 
     station_list = args.sta_name
     sta_scan_test = StaScan(host=args.mgr,
