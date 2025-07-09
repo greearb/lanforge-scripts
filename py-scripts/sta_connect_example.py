@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-# flake8: noqa
 # Example of how to instantiate StaConnect and run the test
 import sys
 import os
 import importlib
-import time
 import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 # if you lack __init__.py in this directory you will not find sta_connect module
@@ -20,6 +18,7 @@ LFCliBase = lfcli_base.LFCliBase
 sta_connect = importlib.import_module("py-scripts.sta_connect")
 StaConnect = sta_connect.StaConnect
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+
 
 def main():
     parser = LFCliBase.create_basic_argparse(
@@ -30,13 +29,12 @@ def main():
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 This script is no longer supported:  Example of how to instantiate StaConnect and run the test.
 '''
     if args.help_summary:
         print(help_summary)
         exit(0)
-
 
     monitor_interval = LFCliBase.parse_time(args.test_duration).total_seconds()
     if args.upstream_port is None:
