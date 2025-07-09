@@ -124,7 +124,7 @@ class SetupRadiusServer:
 
 
 
-parser = argparse.ArgumentParser(prog='lf_setup_radius_server.py', description='''lf_setup_radius_server.py: Summary 
+parser = argparse.ArgumentParser(prog='lf_setup_radius_server.py', description='''lf_setup_radius_server.py: Summary
                                         :This script will be able to add a configuration provided by the user to the
                                          Radius server's users configuration. ''')
 
