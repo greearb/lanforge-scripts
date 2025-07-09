@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: chamber_ctl.py
 
@@ -29,7 +28,6 @@ import sys
 if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
-import os
 import importlib
 import argparse
 import pprint
