@@ -298,7 +298,7 @@ def main():
         Used to verify if a ssid is available in a scan of a real client(Mobile Phones)
             ''',
         description='''\
-        Verifies that wheather a station  is available in a scan of a phone with specified resource id, for each 
+        Verifies that wheather a station  is available in a scan of a phone with specified resource id, for each
         resouce id it performs a scan and compares if given ssid is present in the scan.
 
         Example:
