@@ -154,8 +154,8 @@ lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 
-ipvt = importlib.import_module("py-scripts.test_ip_variable_time")
-IPVariableTime = ipvt.IPVariableTime
+# ipvt = importlib.import_module("py-scripts.test_ip_variable_time")
+# IPVariableTime = ipvt.IPVariableTime
 
 radio_modify = importlib.import_module("py-scripts.lf_modify_radio")
 
