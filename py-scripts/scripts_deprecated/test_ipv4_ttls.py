@@ -338,7 +338,7 @@ test_ipv4_ttls.py:
  python ./test_ipv4_ttls.py
 
     --upstream_port eth1
-    --radio wiphy0 
+    --radio wiphy0
     --num_stations 3
     --ssid ssid-wpa-1
     --key ssid-wpa-1
