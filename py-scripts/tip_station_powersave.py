@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 import sys
 import os
 import importlib
@@ -12,7 +11,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -25,12 +24,12 @@ Realm = realm.Realm
 '''
 This script uses filters from realm's PacketFilter class to filter pcap output for specific packets.
 Currently it uses a filter for association packets using wlan.fc.type_subtype<=3. It is also using a filter
-for QOS Null packets using wlan.fc.type_subtype==44. Both filters are also looking for the existence of 
+for QOS Null packets using wlan.fc.type_subtype==44. Both filters are also looking for the existence of
 either the station MAC or the AP MAC in wlan.addr
 These are returned as an array of lines from the output in the format
 $subtype $mac_addresses $wlan.fc.pwrmgt
 '''
-#Currently, this test can only be applied to UDP connections
+# Currently, this test can only be applied to UDP connections
 
 
 class TIPStationPowersave(LFCliBase):
@@ -86,7 +85,7 @@ class TIPStationPowersave(LFCliBase):
         self.cx_prof_bg.side_a_max_bps = side_a_max_rate_
         self.cx_prof_bg.side_b_max_bps = side_a_min_rate_
 
-        #upload
+        # upload
         self.cx_prof_upload = self.local_realm.new_l3_cx_profile()
         self.cx_prof_upload.side_a_min_bps = side_a_min_rate_
         self.cx_prof_upload.side_b_min_bps = 0
@@ -98,7 +97,7 @@ class TIPStationPowersave(LFCliBase):
         self.cx_prof_upload.side_b_min_pdu = pdu_size_
         self.cx_prof_upload.side_b_max_pdu = 0,
 
-        #download
+        # download
         self.cx_prof_download = self.local_realm.new_l3_cx_profile()
         self.cx_prof_download.side_a_min_bps = 0
         self.cx_prof_download.side_b_min_bps = side_b_min_rate_
@@ -113,13 +112,13 @@ class TIPStationPowersave(LFCliBase):
         self.pcap_file = None
         self.test_duration = traffic_duration_
         if isinstance(self.test_duration, int):
-            self.test_duration = "%s"%traffic_duration_
+            self.test_duration = "%s" % traffic_duration_
         if isinstance(self.test_duration, str):
             self.test_duration = self.local_realm.parse_time(self.test_duration)
 
         self.pause_duration = pause_duration_
         if isinstance(self.pause_duration, int):
-            self.pause_duration = "%s"%pause_duration_
+            self.pause_duration = "%s" % pause_duration_
         if isinstance(self.pause_duration, str):
             self.pause_duration = self.local_realm.parse_time(self.pause_duration)
 
@@ -150,7 +149,7 @@ class TIPStationPowersave(LFCliBase):
                                         port_list=[self.monitor_name],
                                         debug=self.debug)
         time.sleep(0.2)
-        mon_j = self.json_get("/port/1/%s/%s"%(self.resource, self.monitor_name))
+        mon_j = self.json_get("/port/1/%s/%s" % (self.resource, self.monitor_name))
         if ("interface" not in mon_j):
             raise ValueError("No monitor found")
 
@@ -164,8 +163,8 @@ class TIPStationPowersave(LFCliBase):
                                                   debug=self.debug,
                                                   suppress_related_commands_=True)
         temp_sta_map = {}
-        for name in  self.powersave_sta_list + self.normal_sta_list:
-                temp_sta_map[name]=1
+        for name in self.powersave_sta_list + self.normal_sta_list:
+            temp_sta_map[name] = 1
         print("Stations we want:")
         pprint.pprint(temp_sta_map)
         if len(temp_sta_map) < 1:
@@ -182,18 +181,18 @@ class TIPStationPowersave(LFCliBase):
 
         bg_side_a_eids = []
         for port in self.normal_sta_list:
-            bg_side_a_eids.append( "%s.%s"%(self.resource, port))
+            bg_side_a_eids.append("%s.%s" % (self.resource, port))
 
         ul_side_a_eids = []
         for port in self.normal_sta_list:
-            ul_side_a_eids.append( "%s.%s"%(self.resource, port))
+            ul_side_a_eids.append("%s.%s" % (self.resource, port))
 
         dl_side_a_eids = []
         for port in self.normal_sta_list:
-            dl_side_a_eids.append( "%s.%s"%(self.resource, port))
+            dl_side_a_eids.append("%s.%s" % (self.resource, port))
 
         print("Creating background cx profile ")
-        self.cx_prof_bg.name_prefix= "udp_bg"
+        self.cx_prof_bg.name_prefix = "udp_bg"
         self.cx_prof_bg.create(endp_type="lf_udp",
                                side_a=bg_side_a_eids,
                                side_b="1.eth1")
@@ -211,10 +210,10 @@ class TIPStationPowersave(LFCliBase):
                                      side_b="1.eth1")
 
         print("Collecting lanforge eth0 IP...")
-        eth0_resp = self.json_get("/port/1/%s/eth0?fields=port,alias,ip"%self.resource, debug_=self.debug)
+        eth0_resp = self.json_get("/port/1/%s/eth0?fields=port,alias,ip" % self.resource, debug_=self.debug)
         # would be nice to have a not_found() kind of method
         if (eth0_resp is None) or ("items" in eth0_resp) or ("empty" in eth0_resp) or ("interface" not in eth0_resp):
-            self._fail("Unable to query %s.eth0"%self.resource, print_=True)
+            self._fail("Unable to query %s.eth0" % self.resource, print_=True)
             exit(1)
         self.eth0_ip = eth0_resp["interface"]["ip"]
         if self.eth0_ip == "0.0.0.0":
@@ -223,10 +222,9 @@ class TIPStationPowersave(LFCliBase):
 
         self.sta_mac_map = {}
 
-
     def __get_rx_values(self):
         cx_list = self.json_get("/endp/list?fields=name,rx+bytes", debug_=False)
-        #print("==============\n", cx_list, "\n==============")
+        # print("==============\n", cx_list, "\n==============")
         cx_rx_map = {}
         for cx_name in cx_list['endpoint']:
             if cx_name != 'uri' and cx_name != 'handler':
@@ -248,13 +246,13 @@ class TIPStationPowersave(LFCliBase):
         :return:
         """
 
-        #admin up on new monitor
+        # admin up on new monitor
         self.wifi_monitor_profile.admin_up()
         now = datetime.datetime.now()
         test_start = time.time()
         date_time = now.strftime("%Y-%m-%d-%H%M%S")
         curr_mon_name = self.wifi_monitor_profile.monitor_name
-        self.pcap_file = "%s/%s-%s.pcap"%(self.pcap_save_path, curr_mon_name, date_time)
+        self.pcap_file = "%s/%s-%s.pcap" % (self.pcap_save_path, curr_mon_name, date_time)
 
         capture_duration = 60 + 4 * (self.test_duration.total_seconds() + self.pause_duration.total_seconds() + 4)
         self.wifi_monitor_profile.start_sniff(self.pcap_file, capture_duration)
@@ -274,7 +272,7 @@ class TIPStationPowersave(LFCliBase):
             temp_stas.append(self.local_realm.name_to_eid(sta)[2])
         for sta in self.sta_powersave_enabled_profile.station_names:
             temp_stas.append(self.local_realm.name_to_eid(sta)[2])
-        uri = "/port/1/%s/%s?fields=alias,ip,mac,ap"%(
+        uri = "/port/1/%s/%s?fields=alias,ip,mac,ap" % (
             self.resource,
             ",".join(temp_stas)
         )
@@ -286,24 +284,23 @@ class TIPStationPowersave(LFCliBase):
         self.sta_mac_map = LFUtils.portListToAliasMap(port_info_r)
 
         self.cx_prof_bg.start_cx()
-        print("Upload starts at: %d"%time.time())
+        print("Upload starts at: %d" % time.time())
         self.cx_prof_upload.start_cx()
 
         time.sleep(self.test_duration.total_seconds())
         self.cx_prof_upload.stop_cx()
-        print("Upload ends at: %d"%time.time())
+        print("Upload ends at: %d" % time.time())
         time.sleep(float(self.pause_duration.total_seconds()))
         # here is where we should sleep long enough for station to go to sleep
-        print("Download begins at: %d"%time.time())
+        print("Download begins at: %d" % time.time())
         self.cx_prof_download.start_cx()
         time.sleep(float(self.test_duration.total_seconds()))
         self.cx_prof_download.stop_cx()
-        print("Download ends at: %d"%time.time())
+        print("Download ends at: %d" % time.time())
         print(" %d " % (time.time() - test_start))
 
-
     def stop(self):
-        #switch off new monitor
+        # switch off new monitor
         self.wifi_monitor_profile.admin_down()
         self.cx_prof_bg.stop_cx()
         self.cx_prof_download.stop_cx()
@@ -315,12 +312,12 @@ class TIPStationPowersave(LFCliBase):
         if self.pcap_file is None:
             self._fail("Did not configure pcap file", print_=True)
             exit(1)
-        homepage_url = "http://%s/"%self.eth0_ip
+        homepage_url = "http://%s/" % self.eth0_ip
         webpage = LFRequest.plain_get(url_=homepage_url, debug_=True)
         if webpage is None:
             self._fail("Unable to find wepage for LANforge", print_=True)
             exit(1)
-        homepage_url="http://%s/lf_reports/"%self.eth0_ip
+        homepage_url = "http://%s/lf_reports/" % self.eth0_ip
         webpage = LFRequest.plain_get(url_=homepage_url, debug_=True)
         if webpage is None:
             self._fail("Unable to find /lf_reports/ page", print_=True)
@@ -328,7 +325,7 @@ class TIPStationPowersave(LFCliBase):
 
         pprint.pprint(self.sta_mac_map)
         interesting_macs = {}
-        for eid,record in self.sta_mac_map.items():
+        for eid, record in self.sta_mac_map.items():
             interesting_macs[record['alias']] = [record['mac'], record['ap']]
 
         results = {}
@@ -347,7 +344,7 @@ class TIPStationPowersave(LFCliBase):
 
         total_fail = 0
         total_pass = 0
-        for station,filters in results.items():
+        for station, filters in results.items():
             for filter in filters:
                 fail_count = 0
                 pass_count = 0
@@ -372,16 +369,14 @@ class TIPStationPowersave(LFCliBase):
         self._fail("not done writing pcap logic", print_=True)
         exit(1)
 
-
-
-
     def cleanup(self):
         self.wifi_monitor_profile.cleanup(desired_ports=[self.monitor_name])
-        #self.cx_prof_download.cleanup()
+        # self.cx_prof_download.cleanup()
         self.local_realm.remove_all_cxs(remove_all_endpoints=True)
-        #self.cx_prof_upload.cleanup()
+        # self.cx_prof_upload.cleanup()
         self.sta_powersave_enabled_profile.cleanup(desired_stations=self.powersave_sta_list)
         self.sta_powersave_disabled_profile.cleanup(desired_stations=self.normal_sta_list)
+
 
 def main():
 
@@ -395,7 +390,7 @@ def main():
         description='''\
 This script uses filters from realm's PacketFilter class to filter pcap output for specific packets.
 Currently it uses a filter for association packets using wlan.fc.type_subtype<=3. It is also using a filter
-for QOS Null packets using wlan.fc.type_subtype==44. Both filters are also looking for the existence of 
+for QOS Null packets using wlan.fc.type_subtype==44. Both filters are also looking for the existence of
 either the station MAC or the AP MAC in wlan.addr
 These are returned as an array of lines from the output in the format
 $subtype $mac_addresses $wlan.fc.pwrmgt
@@ -404,10 +399,10 @@ $subtype $mac_addresses $wlan.fc.pwrmgt
         ''')
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
-    help_summary='''\
+    help_summary = '''\
 This script uses filters from realm's PacketFilter class to filter pcap output for specific packets.
 Currently it uses a filter for association packets using wlan.fc.type_subtype<=3. It is also using a filter
-for QOS Null packets using wlan.fc.type_subtype==44. Both filters are also looking for the existence of 
+for QOS Null packets using wlan.fc.type_subtype==44. Both filters are also looking for the existence of
 either the station MAC or the AP MAC in wlan.addr
 These are returned as an array of lines from the output in the format
 $subtype $mac_addresses $wlan.fc.pwrmgt
@@ -418,12 +413,11 @@ $subtype $mac_addresses $wlan.fc.pwrmgt
         print(help_summary)
         exit(0)
 
-
     lfjson_host = "localhost"
     lfjson_port = 8080
-    #station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
-    normal_station_list = ["sta1000" ]
-    powersave_station_list = ["sta0001","sta0002","sta0003","sta0004"]
+    # station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
+    normal_station_list = ["sta1000"]
+    powersave_station_list = ["sta0001", "sta0002", "sta0003", "sta0004"]
     ip_powersave_test = TIPStationPowersave(lfjson_host, lfjson_port,
                                             ssid="jedway-open-149",
                                             password="[BLANK]",
@@ -447,7 +441,6 @@ $subtype $mac_addresses $wlan.fc.pwrmgt
     ip_powersave_test.stop()
     ip_powersave_test.cleanup()
 
-if __name__ == "__main__":
-    
-    main()
 
+if __name__ == "__main__":
+    main()
