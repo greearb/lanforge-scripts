@@ -981,7 +981,7 @@ CLI Example:
 
     # if args.csv_outfile is None:
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-    csv_outfile = "{}_{}-test_ip_variable_time.csv".format(
+    csv_outfile = "{}_{}-sta_connect2.csv".format(
         args.csv_outfile, current_time)
     csv_outfile = report.file_add_path(csv_outfile)
     logger.info("csv output file : {}".format(csv_outfile))
