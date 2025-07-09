@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: test_generic.py
 
@@ -19,17 +18,17 @@ STATUS: UNDER DEVELOPMENT
 EXAMPLE:
 
     LFPING:
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net 
-        --security wpa2 --num_stations 4 --type lfping --dest 192.168.1.1 --debug --log_level info 
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net
+        --security wpa2 --num_stations 4 --type lfping --dest 192.168.1.1 --debug --log_level info
         --report_file /home/lanforge/reports/LFPING.csv --test_duration 20s --upstream_port 1.1.eth2
     LFCURL (under construction):
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv
         --num_stations 2 --ssid Logan-Test-Net --passwd Logan-Test-Net --security wpa2 --type lfcurl --dest 192.168.1.1
     GENERIC:
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --num_stations 2 --ssid Logan-Test-Net 
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --num_stations 2 --ssid Logan-Test-Net
         --report_file /home/lanforge/reports/GENERIC.csv --passwd Logan-Test-Net --security wpa2 --type generic
     SPEEDTEST:
-        ./test_generic.py --radio 1.1.wiphy0 --num_stations 2 --report_file /home/lanforge/reports/SPEEDTEST.csv 
+        ./test_generic.py --radio 1.1.wiphy0 --num_stations 2 --report_file /home/lanforge/reports/SPEEDTEST.csv
         --ssid Logan-Test-Net --passwd Logan-Test-Net --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
     IPERF3 (under construction):
         ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
@@ -123,7 +122,7 @@ class GenTest(Realm):
         else:
             return True
 
-    def generate_report(self, test_rig, test_tag, dut_hw_version, dut_sw_version, 
+    def generate_report(self, test_rig, test_tag, dut_hw_version, dut_sw_version,
                         dut_model_num, dut_serial_num, test_id, csv_outfile,
                         monitor_endps, generic_cols):
         report = lf_report.lf_report(_results_dir_name="test_generic_test")
@@ -143,7 +142,7 @@ class GenTest(Realm):
         generic_cols = [self.replace_special_char(x) for x in generic_cols]
         generic_cols.append('last results')
         generic_fields = ",".join(generic_cols)
-        
+
         gen_url = "/generic/%s?fields=%s" % (",".join(monitor_endps), generic_fields)
         endps = standardize_json_results(self.json_get(gen_url))
 
@@ -173,14 +172,14 @@ class GenTest(Realm):
                 last_results=data[endpoint]['last results'])
             kpi_csv.kpi_dict['Units'] = ""
             kpi_csv.kpi_dict['Graph-Group'] = "Endpoint Last Results"
-            kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)      
+            kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
 
         if csv_outfile is not None:
             current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
             csv_outfile = "{}_{}-sta_connect.csv".format(
                 csv_outfile, current_time)
             csv_outfile = report.file_add_path(csv_outfile)
-        print("csv output file : {}".format(csv_outfile))        
+        print("csv output file : {}".format(csv_outfile))
 
     def start(self):
         self.station_profile.admin_up()
@@ -264,7 +263,7 @@ def main():
 test_generic.py
 --------------------
 Generic command example:
-python3 ./test_generic.py 
+python3 ./test_generic.py
     --mgr localhost (optional)
     --mgr_port 4122 (optional)
     --upstream_port eth1 (optional)
@@ -275,24 +274,24 @@ python3 ./test_generic.py
     --passwd admin123 (required)
     --type lfping  {generic | lfping | iperf3-client | speedtest | lf_curl} (required)
     --dest 10.40.0.1 (required - also target for iperf3)
-    --test_duration 2m 
-    --interval 1s 
-    --debug 
+    --test_duration 2m
+    --interval 1s
+    --debug
 
 
-    Example commands: 
+    Example commands:
     LFPING:
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net 
-        --security wpa2 --num_stations 4 --type lfping --dest 192.168.1.1 --debug --log_level info 
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net
+        --security wpa2 --num_stations 4 --type lfping --dest 192.168.1.1 --debug --log_level info
         --report_file /home/lanforge/reports/LFPING.csv --test_duration 20s --upstream_port 1.1.eth2
     LFCURL:
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv
         --num_stations 2 --ssid Logan-Test-Net --passwd Logan-Test-Net --security wpa2 --type lfcurl --dest 192.168.1.1
     GENERIC:
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --num_stations 2 --ssid Logan-Test-Net 
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --num_stations 2 --ssid Logan-Test-Net
         --report_file /home/lanforge/reports/GENERIC.csv --passwd Logan-Test-Net --security wpa2 --type generic
     SPEEDTEST:
-        ./test_generic.py --radio 1.1.wiphy0 --num_stations 2 --report_file /home/lanforge/reports/SPEEDTEST.csv 
+        ./test_generic.py --radio 1.1.wiphy0 --num_stations 2 --report_file /home/lanforge/reports/SPEEDTEST.csv
         --ssid Logan-Test-Net --passwd Logan-Test-Net --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
     IPERF3 (under construction):
         ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
@@ -318,7 +317,7 @@ python3 ./test_generic.py
 
     parser.add_argument("--lf_user", type=str, help="user: lanforge")
     parser.add_argument("--lf_passwd", type=str, help="passwd: lanforge")
-    
+
     parser.add_argument("--test_rig", default="", help="test rig for kpi.csv, testbed that the tests are run on")
     parser.add_argument("--test_tag", default="",
                         help="test tag for kpi.csv,  test specific information to differentiate the test")
@@ -335,7 +334,7 @@ python3 ./test_generic.py
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 test_generic.py will create stations and endpoints to generate traffic based on a command-line specified command type.
 
 This script will create a variable number of stations to test generic endpoints. Multiple command types can be tested
@@ -359,23 +358,22 @@ speed, upload speed, and ping time, generic will test for successful generic com
         shelf = rv[0]
         resource = rv[1]
         port_name = rv[2]
-        request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
-        lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
+        request_command = 'http://{lfmgr}:{lfport}/port/{shelf}/{resource}/{port_name}'.format(
+            lfmgr=args.mgr, lfport=args.mgr_port, shelf=shelf, resource=resource, port_name=port_name)
         logger.info("port request command: {request_command}".format(request_command=request_command))
 
         request = requests.get(request_command, auth=(args.lf_user, args.lf_passwd))
         logger.info("port request status_code {status}".format(status=request.status_code))
 
         lanforge_json = request.json()
-        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)        
-        try: 
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
+        try:
             key = 'interface'
             df = json_normalize(lanforge_json[key])
             args.dest = df['ip'].iloc[0]
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
-
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
@@ -387,7 +385,6 @@ speed, upload speed, and ping time, generic will test for successful generic com
         # if file path with output file extension is not given...
         # check if home/lanforge/report-data exists. if not, save
         # in new folder based in current file's directory
-
 
     systeminfopath = None
     if args.report_file is None:
@@ -470,13 +467,13 @@ speed, upload speed, and ping time, generic will test for successful generic com
         logger.error(generic_test.get_fail_message())
         generic_test.exit_fail()
 
-    if type(args.gen_cols) is not list:
+    if not isinstance(args.gen_cols, list):
         generic_cols = list(args.gen_cols.split(","))
         # send col names here to file to reformat
     else:
         generic_cols = args.gen_cols
         # send col names here to file to reformat
-    if type(args.port_mgr_cols) is not list:
+    if not isinstance(args.port_mgr_cols, list):
         port_mgr_cols = list(args.port_mgr_cols.split(","))
         # send col names here to file to reformat
     else:
@@ -493,7 +490,7 @@ speed, upload speed, and ping time, generic will test for successful generic com
 
     logger.info("Starting connections with 5 second settle time.")
     generic_test.start()
-    time.sleep(5) # give traffic a chance to get started.
+    time.sleep(5)  # give traffic a chance to get started.
 
     resource_id = LFUtils.name_to_eid(args.radio)[1]
 
@@ -502,9 +499,9 @@ speed, upload speed, and ping time, generic will test for successful generic com
         must_increase_cols = ["rx bytes"]
     mon_endp = generic_test.generic_endps_profile.created_endp
     generic_test.generate_report(test_rig=args.test_rig, test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
-                               dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
-                               dut_serial_num=args.dut_serial_num, test_id=args.test_id, csv_outfile=args.csv_outfile,
-                               monitor_endps=mon_endp, generic_cols=generic_cols)
+                                 dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
+                                 dut_serial_num=args.dut_serial_num, test_id=args.test_id, csv_outfile=args.csv_outfile,
+                                 monitor_endps=mon_endp, generic_cols=generic_cols)
     generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
                                                must_increase_cols=must_increase_cols,
                                                sta_list=station_list,
@@ -526,7 +523,6 @@ speed, upload speed, and ping time, generic will test for successful generic com
 
     generic_test.cleanup(station_list)
 
-
     if len(generic_test.get_passed_result_list()) > 0:
         logger.info("Test-Generic Passing results:\n%s" % "\n".join(generic_test.get_passed_result_list()))
     if len(generic_test.generic_endps_profile.get_passed_result_list()) > 0:
@@ -541,6 +537,7 @@ speed, upload speed, and ping time, generic will test for successful generic com
         generic_test.exit_success()
     else:
         generic_test.exit_fail()
+
 
 if __name__ == "__main__":
     main()
