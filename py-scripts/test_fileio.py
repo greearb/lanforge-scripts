@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: test_fileio.py
 
@@ -19,10 +18,10 @@ SETUP:
 https://candelatech.atlassian.net/wiki/spaces/~261521142/pages/979435521/Lanforge+File-IO+Test+Notes
 
 EXAMPLE:
-./test_fileio.py --macvlan_parent <port> --num_ports <num ports> --use_macvlans 
+./test_fileio.py --macvlan_parent <port> --num_ports <num ports> --use_macvlans
                  --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 
-./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 
+./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13
                  --netmask 255.255.255.0 --gateway 192.168.92.1
 
 TODO: Create external document
@@ -565,22 +564,22 @@ def main():
 test_fileio.py:
 --------------------
 Generic command layout:
-./test_fileio.py --macvlan_parent <port> --num_ports <num ports> --use_macvlans 
+./test_fileio.py --macvlan_parent <port> --num_ports <num ports> --use_macvlans
                  --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 
-./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 
+./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13
                  --netmask 255.255.255.0 --gateway 192.168.92.1
-                 
-./test_fileio.py --radio 1.wiphy0 --test_duration 1m --macvlan_parent eth1 --num_ports 3 --use_macvlans  
+
+./test_fileio.py --radio 1.wiphy0 --test_duration 1m --macvlan_parent eth1 --num_ports 3 --use_macvlans
                  --use_ports eth1#0,eth1#1,eth1#2 --connections_per_port 2 --mode write
-                 
-./test_fileio.py --radio 1.wiphy0 --test_duration 1m --macvlan_parent eth1 --num_ports 3 --use_macvlans  
-                 --first_mvlan_ip 10.40.3.100 --netmask 255.255.240.0 --gateway 10.40.0.1  
-                 --use_test_groups --write_only_test_group test_wo --read_only_test_group test_ro 
+
+./test_fileio.py --radio 1.wiphy0 --test_duration 1m --macvlan_parent eth1 --num_ports 3 --use_macvlans
+                 --first_mvlan_ip 10.40.3.100 --netmask 255.255.240.0 --gateway 10.40.0.1
+                 --use_test_groups --write_only_test_group test_wo --read_only_test_group test_ro
                  --add_to_group test_wo --cxs test_wo0000,test_wo0001,test_wo0002
 
 ./test_fileio.py --radio 1.wiphy0 --test_duration 1m --macvlan_parent eth1 --num_ports 3 --use_macvlans
-                 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2 --connections_per_port 2 
+                 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2 --connections_per_port 2
                  --netmask 255.255.240.0 --gateway 10.40.0.1
 
 ''')
@@ -669,7 +668,7 @@ Generic command layout:
                         default=None)
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 test_fileio.py will create stations or macvlans with matching fileio endpoints to generate and verify  fileio related traffic.
 
 This script will create a variable number of stations or macvlans to test fileio traffic. Pre-existing stations and
@@ -684,7 +683,6 @@ otherwise it will fail.
     if args.help_summary:
         print(help_summary)
         exit(0)
-
 
     parent = LFUtils.name_to_eid(args.macvlan_parent)
     shelf = parent[0]
@@ -847,7 +845,7 @@ otherwise it will fail.
         if ip_test.compare_vals(new_rx_values):
             passes += 1
         else:
-            ip_test._fail("FAIL: Not all stations increased traffic")#, print_fail)
+            ip_test._fail("FAIL: Not all stations increased traffic")  # , print_fail)
             # break
         # old_rx_values = new_rx_values
         cur_time = datetime.datetime.now()
@@ -867,8 +865,7 @@ otherwise it will fail.
     ip_test.kpi_csv.kpi_csv_write_dict(ip_test.kpi_csv.kpi_dict)
 
     if passes == expected_passes:
-        ip_test._pass("PASS: All tests passes")#, print_pass)
-
+        ip_test._pass("PASS: All tests passes")  # , print_pass)
 
     ip_test.stop()
     if not ip_test.passes():
