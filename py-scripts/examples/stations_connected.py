@@ -36,7 +36,7 @@ class StationsConnected(LFCliBase):
     def num_associated(self, bssid):
         counter = 0
         # print("there are %d results" % len(self.station_results))
-        for eid, record in self.station_results.items():
+        for _, record in self.station_results.items():
             # print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
             # pprint(eid)
             # pprint(record)
