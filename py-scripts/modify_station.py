@@ -180,7 +180,7 @@ class ModifyStation(Realm):
             num_matching = 0
             pprint.pprint(["port_list:", port_list])
             if isinstance(port_list, dict):
-                for eid, record in port_list.items():
+                for _, record in port_list.items():
                     if not record["parent dev"]:
                         continue
                     if self.radio.endswith(record["parent dev"]):
