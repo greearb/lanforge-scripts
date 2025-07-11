@@ -93,7 +93,7 @@ class VRTest(LFCliBase):
         passes = 0
         expected_passes = 0
         if len(old_list) == len(new_list):
-            for item, value in old_list.items():
+            for item, _ in old_list.items():
                 expected_passes += 1
                 if new_list[item] > old_list[item]:
                     passes += 1
