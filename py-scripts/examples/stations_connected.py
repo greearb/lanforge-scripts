@@ -9,7 +9,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
