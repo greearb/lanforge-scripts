@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_interop_modify.py
 
@@ -27,13 +26,13 @@ import importlib
 import argparse
 import pprint
 import logging
-from pprint import pprint
+from pprint import pprint  # noqa: F811
 from urllib.parse import urlparse
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
-from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.lanforge_api import LFSession  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonCommand  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonQuery  # noqa: E402
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 realm = importlib.import_module("py-json.realm")
@@ -206,7 +205,6 @@ class InteropCommands(Realm):
                                   suppress_related_commands=True)
             # print(["Response", response_list])
 
-
         # to set adb_username
         if self.set_adb_user_name:
             self.command.post_add_adb(adb_device=None,
@@ -273,7 +271,7 @@ class InteropCommands(Realm):
         if 'SSID:' in z:
             print("yes")
             ind = z.index("SSID:")
-            ssid  = z[(int(ind) + 1)]
+            ssid = z[(int(ind) + 1)]
             ssid_ = ssid.strip()
             ssid_1 = ssid_.replace('"', "")
             ssid_2 = ssid_1.replace(",", "")
@@ -290,7 +288,7 @@ class InteropCommands(Realm):
         y = x[0]["LAST"]["callback_message"]
         z = y.split(" ")
         # print(z)
-        value = ["ConnectAttempt", "ConnectFailure", "AssocRej", "AssocTimeout" ]
+        value = ["ConnectAttempt", "ConnectFailure", "AssocRej", "AssocTimeout"]
         return_dict = dict.fromkeys(value)
         if "stats\nSSID:" in z:
             ind = z.index("stats\nSSID:")
@@ -326,16 +324,15 @@ class InteropCommands(Realm):
         return return_dict
 
 
-
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 def main():
-    desc = """modifies interop device 
-    Operations: 
-    *    Example of loading Interop GUI: 
+    desc = """modifies interop device
+    Operations:
+    *    Example of loading Interop GUI:
     lf_interop_modify.py --show_gui 192.168.100.202:1 --device 1.1.KEBE2021070849 --screensize 0.4
-    *    Example of installing APK: 
+    *    Example of installing APK:
     lf_interop_modify.py --install_g interop-5.4.5.apk --device 1.1.KEBE2021070849
-    *    Example of capturing logs 
+    *    Example of capturing logs
     lf_interop_modify.py --log_dur 5 --device 1.1.KEBE2021070849 --log_destination foo4.txt
     *    Examples of enabling/disabling wifi
     lf_interop_modify.py --wifi enable --device 1.1.KEBE2021070849
@@ -475,7 +472,7 @@ Call commands/modifications to Interop Devices
                               _debug_on=False,
                               _exit_on_error=False,
                               _exit_on_fail=False,
-                              set_adb_user_name= args.set_adb_user_name,
+                              set_adb_user_name=args.set_adb_user_name,
                               adb_username=args.adb_username,
                               list_ntwk=args.list_ntwk,
                               forget_netwrk=args.forget_netwrk,
