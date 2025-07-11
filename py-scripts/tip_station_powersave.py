@@ -325,7 +325,7 @@ class TIPStationPowersave(LFCliBase):
 
         pprint.pprint(self.sta_mac_map)
         interesting_macs = {}
-        for eid, record in self.sta_mac_map.items():
+        for _eid, record in self.sta_mac_map.items():
             interesting_macs[record['alias']] = [record['mac'], record['ap']]
 
         results = {}
@@ -344,7 +344,7 @@ class TIPStationPowersave(LFCliBase):
 
         total_fail = 0
         total_pass = 0
-        for station, filters in results.items():
+        for _station, filters in results.items():
             for filter in filters:
                 fail_count = 0
                 pass_count = 0
