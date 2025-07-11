@@ -28,11 +28,11 @@ def main():
         Creates a temporary station with specified ssid info (ssid, security, password)
         Then starts a scan, waits 15 seconds, and prints scan results to console.
         Takes 2 BSSIDs of ssids (given to temp station) and creates DUT (named what is given in dut_name argument).
-        
+
         TODO: take scan results and calculate how many unique BSSIDs are there from the scan results, and add that many ssids to the DUT (remove hardcoded 2 ssids.)
         TODO: parse scan results for more than 1 SSID name (ssid-2G, ssid-5G). Add both ssids to the dut_name.
 
-        
+
         Example:
         ./bssid_to_dut.py --ssid test_name --security open --radio wiphy0 --dut_name lanforge-AP
         ''')
@@ -101,17 +101,16 @@ Takes 2 BSSIDs of ssids (given to temp station) and creates DUT (named what is g
             for bss in ssid_df["bss"]:
                 bssid_list.append(bss)
 
-    #run create_chamberview_dut script. (WIP) This section is a bit hardcoded at the moment, 
+    # Do Not Delete , the hardcoded values are an example to create a chamberview DUT
+    # run create_chamberview_dut script. (WIP) This section is a bit hardcoded at the moment,
     # can be edited to create num ssid lines based on bssids in list, and then concat those lines to python command
 
-    ssid_line_1 = "ssid_idx=0 ssid=Dut-SSID security=WPA2 password=lanforge123 bssid=" + bssid_list[0]
-    ssid_line_2 = "ssid_idx=1 ssid=Dut-SSID-5G security=WPA2 password=lanforge123 bssid=" + bssid_list[1]
-    full_dut_command = "./create_chamberview_dut.py --lfmgr localhost -o 8080 --dut_name" + args.dut_name + "--dut_flag='DHCPD-LAN' --dut_flag='DHCPD-WAN' --ssid '" + ssid_line_1 + "' --ssid '" + ssid_line_2 + "'"
-    if (args.debug):
-        print(ssid_line_1)
-        print(ssid_line_2)
-        print(full_dut_command)
-    subprocess.run(full_dut_command, shell=True)
+    # ssid_line_1 = "ssid_idx=0 ssid=Dut-SSID security=WPA2 password=lanforge123 bssid=" + bssid_list[0]
+    # ssid_line_2 = "ssid_idx=1 ssid=Dut-SSID-5G security=WPA2 password=lanforge123 bssid=" + bssid_list[1]
+    # full_dut_command = "./create_chamberview_dut.py --lfmgr localhost -o 8080 --dut_name" + args.dut_name + "--dut_flag='DHCPD-LAN' --dut_flag='DHCPD-WAN' --ssid '" + ssid_line_1 + "' --ssid '" + ssid_line_2 + "'"
+    # if (args.debug):
+    #     print(full_dut_command)
+    # subprocess.run(full_dut_command, shell=True)
 
 
 if __name__ == "__main__":
