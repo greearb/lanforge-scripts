@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-# flake8: noqa
 import importlib
 import argparse
 import sta_scan_test
 import pandas as pd
-import subprocess
+# import subprocess
 import sys
 import os
 
@@ -16,6 +15,7 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
+
 
 def main():
     parser = Realm.create_basic_argparse(
@@ -49,7 +49,7 @@ def main():
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 bssid_to_dut.py creates a temporary station with specified ssid info (ssid, security, password)
 Then starts a scan, waits 15 seconds, and prints scan results to console.
 Takes 2 BSSIDs of ssids (given to temp station) and creates DUT (named what is given in dut_name argument).
@@ -58,24 +58,23 @@ Takes 2 BSSIDs of ssids (given to temp station) and creates DUT (named what is g
         print(help_summary)
         exit(0)
 
-
     station_list = args.sta_name
     print("about to create StaScan object...")
     sta_scan = sta_scan_test.StaScan(host=args.mgr,
-                            port=args.mgr_port,
-                            number_template="0000",
-                            sta_list=station_list,
-                            upstream=args.upstream_port,
-                            ssid=args.ssid,
-                            password=args.passwd,
-                            radio=args.radio,
-                            security=args.security,
-                            use_ht160=False,
-                            use_existing_station=args.use_existing_station,
-                            scan_time=args.scan_time,
-                            csv_output=args.csv_output,
-                            mode=args.mode,
-                            _debug_on=args.debug)
+                                     port=args.mgr_port,
+                                     number_template="0000",
+                                     sta_list=station_list,
+                                     upstream=args.upstream_port,
+                                     ssid=args.ssid,
+                                     password=args.passwd,
+                                     radio=args.radio,
+                                     security=args.security,
+                                     use_ht160=False,
+                                     use_existing_station=args.use_existing_station,
+                                     scan_time=args.scan_time,
+                                     csv_output=args.csv_output,
+                                     mode=args.mode,
+                                     _debug_on=args.debug)
 
     if (not args.use_existing_station):
         sta_scan.pre_cleanup()
@@ -91,7 +90,7 @@ Takes 2 BSSIDs of ssids (given to temp station) and creates DUT (named what is g
     if (not args.use_existing_station):
         sta_scan.cleanup()
 
-    #do dataframe manipulation
+    # do dataframe manipulation
     if not isinstance(df, pd.DataFrame):
         print("Scan results are not in dataframe form.")
     else:
@@ -107,7 +106,7 @@ Takes 2 BSSIDs of ssids (given to temp station) and creates DUT (named what is g
 
     # ssid_line_1 = "ssid_idx=0 ssid=Dut-SSID security=WPA2 password=lanforge123 bssid=" + bssid_list[0]
     # ssid_line_2 = "ssid_idx=1 ssid=Dut-SSID-5G security=WPA2 password=lanforge123 bssid=" + bssid_list[1]
-    # full_dut_command = "./create_chamberview_dut.py --lfmgr localhost -o 8080 --dut_name" + args.dut_name + "--dut_flag='DHCPD-LAN' --dut_flag='DHCPD-WAN' --ssid '" + ssid_line_1 + "' --ssid '" + ssid_line_2 + "'"
+    # full_dut_command = "./create_chamberview_dut.py --lfmgr localhost -o 8080 --dut_name" + args.dut_name + "--dut_flag='DHCPD-LAN' --dut_flag='DHCPD-WAN' --ssid '" + ssid_line_1 + "' --ssid '" + ssid_line_2 + "'"  # noqa: E501
     # if (args.debug):
     #     print(full_dut_command)
     # subprocess.run(full_dut_command, shell=True)
