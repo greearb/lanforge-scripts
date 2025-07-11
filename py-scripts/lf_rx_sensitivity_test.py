@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 Note: To Run this script gui should be opened with
 
@@ -103,13 +102,13 @@ import importlib
 import argparse
 import time
 import json
-from os import path
+# from os import path
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
@@ -188,7 +187,7 @@ class RxSensitivityTest(cv_test):
         # Test related settings
         cfg_options = []
 
-        ### HERE###
+        # ## HERE###
         self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
 
         # cmd line args take precedence and so come last in the cfg array.
@@ -227,7 +226,7 @@ def main():
     IMPORTANT: Start lanforge with socket 3990 :  ./lfclient.bash -cli-socket 3990
         lfclient.bash is located in the LANforgeGUI_X.X.X directory
 
-        On local or remote system: ./lfclient.bash -cli-socket 3990 -s LF_MGR 
+        On local or remote system: ./lfclient.bash -cli-socket 3990 -s LF_MGR
         On local system the -s LF_MGR will be local_host if not provided
 
     Open this file in an editor and read the top notes for more details.
@@ -251,42 +250,42 @@ def main():
 
     see sample json file: lf_rx_sensitivity_config.json
 
-    Sample <name>.json between using eth1 and eth2 
+    Sample <name>.json between using eth1 and eth2
     {
-	    "mgr":"192.168.0.101",
-	    "port":"8080",
-	    "lf_user":"lanforge",
-	    "lf_password":"lanforge",
-	    "instance_name":"rx-sensitivity-instance",
-	    "config_name":"test_con",
-	    "upstream":"1.1.eth1",
-	    "dut":"asus_5g",
-	    "duration":"15s",
-	    "station":"1.1.eth2",
-	    "download_speed":"85%",
-	    "upload_speed":"0",	
-	    "raw_line":  ["txo_preamble: VHT", "txo_mcs: 4 OFDM, HT, VHT;5 OFDM, HT, VHT;6 OFDM, HT, VHT;7 OFDM, HT, VHT", "spatial_streams: 3", "bandw_options: 80", "txo_sgi: ON", "txo_retries: No Retry", "txo_txpower: 17"]
+        "mgr":"192.168.0.101",
+        "port":"8080",
+        "lf_user":"lanforge",
+        "lf_password":"lanforge",
+        "instance_name":"rx-sensitivity-instance",
+        "config_name":"test_con",
+        "upstream":"1.1.eth1",
+        "dut":"asus_5g",
+        "duration":"15s",
+        "station":"1.1.eth2",
+        "download_speed":"85%",
+        "upload_speed":"0",
+        "raw_line":  ["txo_preamble: VHT", "txo_mcs: 4 OFDM, HT, VHT;5 OFDM, HT, VHT;6 OFDM, HT, VHT;7 OFDM, HT, VHT", "spatial_streams: 3", "bandw_options: 80", "txo_sgi: ON", "txo_retries: No Retry", "txo_txpower: 17"]  # noqa: E501
     }
 
     Sample <name>.json between using eth1 and station 1.1.sta0002
     {
-	    "mgr":"192.168.0.101",
-	    "port":"8080",
-	    "lf_user":"lanforge",
-	    "lf_password":"lanforge",
-	    "instance_name":"rx-sensitivity-instance",
-	    "config_name":"test_con",
-	    "upstream":"1.1.eth1",
-	    "dut":"asus_5g",
-	    "duration":"15s",
-	    "station":"1.1.sta0002",
-	    "download_speed":"85%",
-	    "upload_speed":"0",	
-	    "raw_line":  ["txo_preamble: VHT", "txo_mcs: 4 OFDM, HT, VHT;5 OFDM, HT, VHT;6 OFDM, HT, VHT;7 OFDM, HT, VHT", "spatial_streams: 3", "bandw_options: 80", "txo_sgi: ON", "txo_retries: No Retry", "txo_txpower: 17"]
+        "mgr":"192.168.0.101",
+        "port":"8080",
+        "lf_user":"lanforge",
+        "lf_password":"lanforge",
+        "instance_name":"rx-sensitivity-instance",
+        "config_name":"test_con",
+        "upstream":"1.1.eth1",
+        "dut":"asus_5g",
+        "duration":"15s",
+        "station":"1.1.sta0002",
+        "download_speed":"85%",
+        "upload_speed":"0",
+        "raw_line":  ["txo_preamble: VHT", "txo_mcs: 4 OFDM, HT, VHT;5 OFDM, HT, VHT;6 OFDM, HT, VHT;7 OFDM, HT, VHT", "spatial_streams: 3", "bandw_options: 80", "txo_sgi: ON", "txo_retries: No Retry", "txo_txpower: 17"]  # noqa: E501
     }
 
       """
-                                     )
+    )
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
@@ -308,8 +307,7 @@ def main():
     parser.add_argument("--report_dir", default="")
     parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
 
-
-    help_summary='''
+    help_summary = '''
 This script is used to automate running RX Sensitivity tests.  You
 may need to view a RX Sensitivity test configured through the GUI to understand
 the options and how best to input data.
@@ -325,7 +323,7 @@ the options and how best to input data.
         try:
             with open(args.json, 'r') as json_config:
                 json_data = json.load(json_config)
-        except:
+        except BaseException:
             print("Error reading {}".format(args.json))
         # json configuation takes presidence to command line
         # TODO see if there is easier way to search presence, look at parser args
@@ -364,26 +362,26 @@ the options and how best to input data.
     cv_base_adjust_parser(args)
 
     CV_Test = RxSensitivityTest(lf_host=args.mgr,
-                            lf_port=args.port,
-                            lf_user=args.lf_user,
-                            lf_password=args.lf_password,
-                            instance_name=args.instance_name,
-                            config_name=args.config_name,
-                            upstream=args.upstream,
-                            pull_report=args.pull_report,
-                            load_old_cfg=args.load_old_cfg,
-                            download_speed=args.download_speed,
-                            upload_speed=args.upload_speed,
-                            duration=args.duration,
-                            dut=args.dut,
-                            station=args.station,
-                            enables=args.enable,
-                            disables=args.disable,
-                            raw_lines=args.raw_line,
-                            raw_lines_file=args.raw_lines_file,
-                            sets=args.set,
-                            graph_groups=args.graph_groups
-                            )
+                                lf_port=args.port,
+                                lf_user=args.lf_user,
+                                lf_password=args.lf_password,
+                                instance_name=args.instance_name,
+                                config_name=args.config_name,
+                                upstream=args.upstream,
+                                pull_report=args.pull_report,
+                                load_old_cfg=args.load_old_cfg,
+                                download_speed=args.download_speed,
+                                upload_speed=args.upload_speed,
+                                duration=args.duration,
+                                dut=args.dut,
+                                station=args.station,
+                                enables=args.enable,
+                                disables=args.disable,
+                                raw_lines=args.raw_line,
+                                raw_lines_file=args.raw_lines_file,
+                                sets=args.set,
+                                graph_groups=args.graph_groups
+                                )
     CV_Test.setup()
     CV_Test.run()
 
