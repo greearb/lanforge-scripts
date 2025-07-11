@@ -9,7 +9,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
 # if you lack __init__.py in this directory you will not find sta_connect module
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
