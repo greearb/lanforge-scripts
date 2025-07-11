@@ -134,7 +134,7 @@ class RunCvScenario(LFCliBase):
             for event_o in events_response[pronoun]:
                 if load_completed:
                     break
-                for (key, record) in event_o.items():
+                for (_, record) in event_o.items():
                     if "event description" not in record:
                         continue
                     if not record["event description"]:
