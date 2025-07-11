@@ -30,7 +30,7 @@ jobs:
     # Tie runner to Ubuntu 22.04 LTS, as it still supports Python 3.7
     # Minimum Python version on Ubuntu 24.04 LTS is Python 3.9.
     runs-on: ubuntu-22.04
-    name: Help Check
+    name: Help and Help Summary Check
     steps:
       - name: Check out source repository
         uses: actions/checkout@v4
