@@ -232,7 +232,7 @@ class Throughput(Realm):
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None):
         super().__init__(lfclient_host=host,
-                         lfclient_port=port),
+                         lfclient_port=port)
         self.ssid_list = []
         self.signal_list = []
         self.channel_list = []
@@ -347,7 +347,7 @@ class Throughput(Realm):
         for key, value in response.items():
             if key == "resources":
                 for element in value:
-                    for a, b in element.items():
+                    for _, b in element.items():
                         if "Apple" in b['hw version']:
                             if b['kernel'] == '':
                                 self.hw_list.append('iOS')
@@ -446,7 +446,7 @@ class Throughput(Realm):
         for key, value in response.items():
             if key == "resources":
                 for element in value:
-                    for (a, b) in element.items():
+                    for (_, b) in element.items():
 
                         # Check if the resource is not phantom
                         if b['phantom'] is False:
@@ -727,12 +727,12 @@ class Throughput(Realm):
                 direction = 'UL'
         traffic_type = (self.traffic_type.strip("lf_")).upper()
         traffic_direction_list, cx_list, traffic_type_list = [], [], []
-        for client in range(len(self.real_client_list)):
+        for _ in range(len(self.real_client_list)):
             traffic_direction_list.append(direction)
             traffic_type_list.append(traffic_type)
 
         # Construct connection names
-        for ip_tos in self.tos:
+        for _ in self.tos:
             for i in self.real_client_list1:
                 for j in traffic_direction_list:
                     for k in traffic_type_list:
@@ -1025,7 +1025,7 @@ class Throughput(Realm):
 
                 # Aggregate data from throughput
 
-                for index, key in enumerate(throughput):
+                for _, key in enumerate(throughput):
                     for i in range(len(throughput[key])):
                         upload[i], download[i], drop_a[i], drop_b[i] = [], [], [], []
                         if throughput[key][i][4] != 'Run':
@@ -1086,7 +1086,7 @@ class Throughput(Realm):
 
         individual_df = individual_df[1:-1]
         individual_df_for_webui = individual_df_for_webui[1:-1]
-        for index, key in enumerate(throughput):
+        for _, key in enumerate(throughput):
             for i in range(len(throughput[key])):
                 upload[i], download[i], drop_a[i], drop_b[i] = [], [], [], []
                 if throughput[key][i][4] != 'Run':
@@ -1574,8 +1574,6 @@ class Throughput(Realm):
                     # Checking individual device download and upload rate by searching device name in dataframe
                     columns_with_substring = [col for col in data_iter.columns if k in col]
                     filtered_df = data_iter[columns_with_substring]
-                    dl_len = len(filtered_df[[col for col in filtered_df.columns if "Download" in col][0]].values.tolist()) - 1
-                    ul_len = len(filtered_df[[col for col in filtered_df.columns if "Upload" in col][0]].values.tolist()) - 1
                     download_col = filtered_df[[col for col in filtered_df.columns if "Download" in col][0]].values.tolist()
                     upload_col = filtered_df[[col for col in filtered_df.columns if "Upload" in col][0]].values.tolist()
                     upload_drop_col = filtered_df[[col for col in filtered_df.columns if "Rx % Drop B" in col][0]].values.tolist()
@@ -2016,8 +2014,6 @@ class Throughput(Realm):
                     upload_drop_col = filtered_df[[col for col in filtered_df.columns if "Rx % Drop B" in col][0]].values.tolist()
                     download_drop_col = filtered_df[[col for col in filtered_df.columns if "Rx % Drop A" in col][0]].values.tolist()
                     rssi_col = filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()
-                    # dl_len = len(filtered_df[[col for col in filtered_df.columns if "Download" in col][0]].values.tolist()) - 1
-                    # ul_len = len(filtered_df[[col for col in filtered_df.columns if "Upload" in col][0]].values.tolist()) - 1
                     if self.direction == "Bi-direction":
 
                         # Append download and upload data from filtered dataframe
@@ -2473,7 +2469,7 @@ class Throughput(Realm):
                         test_input_list.append(5)
             # when expected_pass_fail value specified
             else:
-                for val in [devices_on_running[-1]]:
+                for _ in [devices_on_running[-1]]:
                     test_input_list.append(self.expected_passfail_value)
             for k in range(len(test_input_list)):
                 if self.csv_direction.split('_')[2] == 'BiDi':
@@ -2518,7 +2514,7 @@ class Throughput(Realm):
             try:
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
-            except BaseException:
+            except Exception:
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
             logging.info(f"Upstream port IP {upstream_port}")
         else:
@@ -2757,13 +2753,13 @@ Copyright 2023 Candela Technologies Inc.
         loads_data = loads["download"]
     elif args.download:
         loads = {'upload': [], 'download': str(args.download).split(",")}
-        for i in range(len(args.download)):
+        for _ in range(len(args.download)):
             loads['upload'].append(2560)
         loads_data = loads["download"]
     else:
         if args.upload:
             loads = {'upload': str(args.upload).split(","), 'download': []}
-            for i in range(len(args.upload)):
+            for _ in range(len(args.upload)):
                 loads['download'].append(2560)
             loads_data = loads["upload"]
 
