@@ -7,6 +7,7 @@ A "help check" primarily serves as an indicator for larger issues.
 It is not meant to replace proper testing.
 """
 import argparse
+import glob
 import logging
 import os
 import subprocess
@@ -49,11 +50,12 @@ def configure_logging(debug: bool = False):
         logger.setLevel(logging.DEBUG)
 
 
-def main(scripts: list, group_size: int, **kwargs):
+def main(help_check_scripts: list, help_summary_scripts: list, group_size: int, **kwargs):
     """
-    Run help parallelized help check on provided scripts
+    Run help parallelized help checks on provided scripts
 
-    :param scripts: List of scripts to run help check
+    :param help_check_scripts: List of scripts to run help check
+    :param help_summary_scripts: List of scripts to run help summary check
     :param group_size: Maximum number of scripts to group together
                        for parallelized help checks
     :return int, list: Integer representing pass or fail (0 or 1),
@@ -62,39 +64,50 @@ def main(scripts: list, group_size: int, **kwargs):
                        scripts that failed help summary check.
     :rtype tuple:
     """
+    def report_results(result_data: dict):
+        """Internal helper function to report result data
+
+        :return: Dictionary containing script help check data, where the script
+                 name is the key and the following data are the values:
+                 'timed_out', 'return_code', 'stdout', 'stderr'
+        :return int, list: Integer representing pass or fail (0 or 1),
+                           list of failed scripts (if any).
+        """
+        any_failed = False
+        failed_scripts = []
+
+        for script, data in result_data.items():
+            if data["timed_out"] or data["return_code"] != 0:
+                any_failed = True
+                failed_scripts.append(script)
+                logger.error(f"Script \'{script}\' failed check")
+                logger.error(f"Script \'{script}\' stdout:\n{data['stdout']}")
+                logger.error(f"Script \'{script}\' stderr:\n{data['stderr']}")
+
+        return any_failed, failed_scripts
+
     any_failed = False
 
-    script_groups = generate_script_groups(scripts, group_size)
-    check_data = run_checks(script_groups)
+    help_check_script_groups = generate_script_groups(help_check_scripts, group_size)
+    help_summary_script_groups = generate_script_groups(help_summary_scripts, group_size)
 
-    help_data = check_data[0]
-    help_summary_data = check_data[1]
+    results = run_checks(help_check_script_groups, help_summary_script_groups)
 
-    failed_help_scripts = []
-    for script, data in help_data.items():
-        if data["timed_out"] or data["return_code"] != 0:
-            any_failed = True
-            failed_help_scripts.append(script)
-            logger.error(f"Script \'{script}\' failed help check")
-            logger.error(f"Script \'{script}\' stdout:\n{data['stdout']}")
-            logger.error(f"Script \'{script}\' stderr:\n{data['stderr']}")
+    # Report help check results
+    logger.info("Help check results")
+    any_failed, failed_help_check_scripts = report_results(results[0])
 
-    failed_help_summary_scripts = []
-    for script, data in help_summary_data.items():
-        if data["timed_out"] or data["return_code"] != 0:
-            any_failed = True
-            failed_help_summary_scripts.append(script)
-            logger.error(f"Script \'{script}\' failed help summary check")
-            logger.error(f"Script \'{script}\' stdout:\n{data['stdout']}")
-            logger.error(f"Script \'{script}\' stderr:\n{data['stderr']}")
+    # Report help summary check results
+    logger.info("Help summary check results")
+    any_failed, failed_help_summary_scripts = report_results(results[1])
 
     if not any_failed:
         return 0, None
     else:
-        return 1, (failed_help_scripts, failed_help_summary_scripts)
+        return 1, (failed_help_check_scripts, failed_help_summary_scripts)
 
 
-def desired_script(file):
+def desired_script(file, help_summary: bool = False):
     """
     Filtering function to match only desired scripts.
 
@@ -106,14 +119,26 @@ def desired_script(file):
     :return bool: Keep script if true, otherwise ignore
     :rtype bool:
     """
-
     if not os.path.isfile(file):
         return False
     elif not file.endswith(".py"):
+        # Recursive glob search takes care of this but leave here just in case
         return False
     elif file == THIS_SCRIPT_NAME:
         return False
     elif file == "__init__.py":
+        return False
+
+    # Only consider directory where script is located. Otherwise, may accidentally
+    # filter out all scripts if these strings are somehow used in the full path
+    directory_name = os.path.dirname(file)
+    if 'tools' in directory_name \
+            or 'sandbox' in directory_name \
+            or 'scripts_deprecated' in directory_name:
+        return False
+
+    # Don't run help summary check on examples, as many currently do not implement it
+    if help_summary and 'examples' in file:
         return False
 
     return True
@@ -148,13 +173,15 @@ def generate_script_groups(scripts: list,
     return script_groups
 
 
-def run_checks(script_groups: list) -> dict:
+def run_checks(help_check_script_groups: list, help_summary_script_groups: list) -> dict:
     """
     Run help and help summary checks on segmented script groups,
     returning post-check status after completion.
 
-    :param script_groups: List of list of strings where each sub-list
-                          contains a list of scripts to check in parallel
+    :param help_check_script_groups: List of list of strings where each sub-list
+                                     contains a list of scripts to check in parallel
+    :param help_summary_script_groups: List of list of strings where each sub-list
+                                       contains a list of scripts to check in parallel
     :return: Dictionary containing script help check data, where the script
              name is the key and the following data are the values:
              'timed_out', 'return_code', 'stdout', 'stderr'
@@ -165,14 +192,18 @@ def run_checks(script_groups: list) -> dict:
     all_start_time = time()
 
     # Run help check
-    help_data = {script: None for script in scripts}
-    for group in script_groups:
+    help_data = {}
+    for group in help_check_script_groups:
+        for script in group:
+            help_data[script] = None
         help_group_data = run_group_check(group, ["--help"])
         help_data.update(help_group_data)
 
     # Run help summary check
-    help_summary_data = {script: None for script in scripts}
-    for group in script_groups:
+    help_summary_data = {}
+    for group in help_summary_script_groups:
+        for script in group:
+            help_summary_data[script] = None
         help_summary_group_data = run_group_check(group, ["--help_summary"])
         help_summary_data.update(help_summary_group_data)
 
@@ -271,14 +302,23 @@ if __name__ == "__main__":
         logger.error("This script must be run from the 'py-scripts' directory")
         exit(2)
 
-    # Gather all Python scripts
-    scripts = [file for file in os.listdir(".") if desired_script(file)]
-    num_scripts = len(scripts)
-    logger.info(f"Running LANforge scripts \'py-scripts\' parallelized help and help summary checks on {num_scripts} scripts")
-    logger.debug(f"Running help and help summary check on the following scripts: {scripts}")
+    # Gather all Python scripts in all sub-directories
+    all_scripts = glob.glob("./*.py") + glob.glob("./**/*.py")
+
+    # Gather and report help check scripts
+    help_check_scripts = [file for file in all_scripts if desired_script(file)]
+    num_help_check_scripts = len(help_check_scripts)
+    logger.info(f"Running LANforge scripts \'py-scripts\' parallelized help checks on {num_help_check_scripts} scripts")
+    logger.debug(f"Running help check on the following scripts: {help_check_scripts}")
+
+    # Gather and report help summary check scripts
+    help_summary_scripts = [file for file in help_check_scripts if desired_script(file, help_summary=True)]
+    num_help_summary_scripts = len(help_summary_scripts)
+    logger.info(f"Running LANforge scripts \'py-scripts\' parallelized help summary checks on {num_help_summary_scripts} scripts")
+    logger.debug(f"Running help summary check on the following scripts: {help_summary_scripts}")
 
     # Run parallelized help checks
-    ret, failed_scripts = main(scripts=scripts, **vars(args))
+    ret, failed_scripts = main(help_check_scripts=help_check_scripts, help_summary_scripts=help_summary_scripts, **vars(args))
 
     # Summarize checks and exit
     if ret == 0:
