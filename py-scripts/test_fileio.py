@@ -837,7 +837,7 @@ otherwise it will fail.
             cur_time = datetime.datetime.now()
             time.sleep(1)
         new_rx_values = ip_test.get_values()
-        for key, value in new_rx_values.items():
+        for _, value in new_rx_values.items():
             write_bps += value['write-bps']
             read_bps += value['read-bps']
 
