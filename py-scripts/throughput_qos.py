@@ -478,9 +478,9 @@ class ThroughputQOS(Realm):
         keys = list(connections_download.keys())
 
         for i in range(len(download_throughput)):
-            connections_download.update({keys[i]: float(f"{(download_throughput[i] ):.2f}")})
+            connections_download.update({keys[i]: float(f"{(download_throughput[i]):.2f}")})
         for i in range(len(upload_throughput)):
-            connections_upload.update({keys[i]: float(f"{(upload_throughput[i] ):.2f}")})
+            connections_upload.update({keys[i]: float(f"{(upload_throughput[i]):.2f}")})
         return connections_download, connections_upload, drop_a_per, drop_b_per
 
     def evaluate_qos(self, connections_download, connections_upload, drop_a_per, drop_b_per):
@@ -971,7 +971,7 @@ class ThroughputQOS(Realm):
             vi_tos_list = []
             vo_tos_list = []
             traffic_type = (self.traffic_type.strip("lf_")).upper()
-            for client in range(len(self.sta_list)):
+            for _ in range(len(self.sta_list)):
                 upload_list.append(rate_up)
                 download_list.append(rate_down)
                 traffic_type_list.append(traffic_type.upper())
