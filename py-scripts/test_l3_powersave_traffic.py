@@ -188,7 +188,7 @@ Example of creating traffic on an l3 connection
     args = parser.parse_args()
 
     help_summary = '''\
-Script not functional or no longer supported: see script py-scripts/test_l3.py as replacement
+Script shows example of creating L3 connections: see script py-scripts/test_l3.py as replacement
 '''
     if args.help_summary:
         print(help_summary)
