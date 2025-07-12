@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 NAME: lf_roam_test.py
 
@@ -116,7 +115,7 @@ import importlib
 import logging
 import time
 import datetime
-from datetime import datetime
+from datetime import datetime  # noqa: F811
 import pandas as pd
 import paramiko
 from itertools import chain
@@ -1491,7 +1490,7 @@ class HardRoam(Realm):
                                                                         else:
                                                                             auth_time = self.pcap_obj.read_time(
                                                                                 pcap_file=str(file_name),
-                                                                                filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)  && (wlan.sa == %s)" % (
+                                                                                filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)  && (wlan.sa == %s)" % (  # noqa: E501
                                                                                     str(i)))
                                                                         print("Authentication Request Frame time is",
                                                                               auth_time)
@@ -1559,7 +1558,7 @@ class HardRoam(Realm):
                                                             print("Re-Association status is successful")
                                                             logging.info("Re-Association status is successful")
                                                             reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
-                                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
+                                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (  # noqa: E501
                                                                                                    str(i)))
                                                             print("Re-Association time is", reasso_t)
                                                             logging.info("Re-Association time is " + str(reasso_t))
@@ -1604,7 +1603,7 @@ class HardRoam(Realm):
                                                                             "Authentication Request is present")
                                                                         auth_time = self.pcap_obj.read_time(
                                                                             pcap_file=str(file_name),
-                                                                            filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)  && (wlan.sa == %s)" % (
+                                                                            filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)  && (wlan.sa == %s)" % (  # noqa: E501
                                                                                 str(i)))
                                                                         print("Authentication time is", auth_time)
                                                                         logging.info(
@@ -1954,18 +1953,18 @@ class HardRoam(Realm):
                                     "1. The BSSID of the station remains unchanged after roaming from one AP to another.<br>"
                                     "2. No roaming occurs, as all stations are connected to the same AP.<br>")
             else:
-                 report.set_obj_html("Pass/Fail Criteria:",
-                                "<b>The following are the criteria for PASS the test:</b><br><br>"
-                                "1. The BSSID of the station should change after roaming from one AP to another.<br>"
-                                "2. The station should not experience any disconnections during/after the roaming process.<br>"
-                                "3. The duration of the roaming process should be less than 50 ms.<br>"
-                                "<br>"
-                                "<b>The following are the criteria for FAIL the test:</b><br><br>"
-                                "1. The BSSID of the station remains unchanged after roaming from one AP to another.<br>"
-                                "2. No roaming occurs, as all stations are connected to the same AP.<br>"
-                                "3. The captured packet does not contain a Reassociation Response Frame.<br>"
-                                "4. The station experiences disconnection during/after the roaming process.<br>"
-                                "5. The duration of the roaming process exceeds 50 ms.<br>")
+                report.set_obj_html("Pass/Fail Criteria:",
+                                    "<b>The following are the criteria for PASS the test:</b><br><br>"
+                                    "1. The BSSID of the station should change after roaming from one AP to another.<br>"
+                                    "2. The station should not experience any disconnections during/after the roaming process.<br>"
+                                    "3. The duration of the roaming process should be less than 50 ms.<br>"
+                                    "<br>"
+                                    "<b>The following are the criteria for FAIL the test:</b><br><br>"
+                                    "1. The BSSID of the station remains unchanged after roaming from one AP to another.<br>"
+                                    "2. No roaming occurs, as all stations are connected to the same AP.<br>"
+                                    "3. The captured packet does not contain a Reassociation Response Frame.<br>"
+                                    "4. The station experiences disconnection during/after the roaming process.<br>"
+                                    "5. The duration of the roaming process exceeds 50 ms.<br>")
             report.build_objective()
             for i in csv_list:
                 report.move_data(directory="csv_data", _file_name=str(i))
@@ -2061,13 +2060,13 @@ class HardRoam(Realm):
 
 def main():
     help_summary = '''\
-    The script is designed to support both hard and soft roaming, ensuring a smooth transition for devices between 
-    access points (APs). Additionally, the script captures packets in two scenarios: when a device is connected to 
-    an AP and when it roams from one AP to another. These captured packets help analyze the performance and stability 
-    of the roaming process. In essence, the script serves as a thorough test for assessing how well APs handle 
+    The script is designed to support both hard and soft roaming, ensuring a smooth transition for devices between
+    access points (APs). Additionally, the script captures packets in two scenarios: when a device is connected to
+    an AP and when it roams from one AP to another. These captured packets help analyze the performance and stability
+    of the roaming process. In essence, the script serves as a thorough test for assessing how well APs handle
     roaming and the overall network stability when clients move between different access points.
-        
-    The roaming test will create stations with advanced/802.1x and 11r key management, create CX traffic between upstream 
+
+    The roaming test will create stations with advanced/802.1x and 11r key management, create CX traffic between upstream
     port and stations, run traffic and generate a report.
             '''
     parser = argparse.ArgumentParser(
@@ -2083,10 +2082,10 @@ lf_roam_test.py :
 
 Summary :
 ----------
-The primary focus of this script is to enable seamless roaming of clients/stations between two access points (APs). 
+The primary focus of this script is to enable seamless roaming of clients/stations between two access points (APs).
 The test can be conducted with a single or multiple stations, with single or multiple iterations.
 
-The script will create stations/clients with advanced/802.1x and 11r key management. By default, it will create a 
+The script will create stations/clients with advanced/802.1x and 11r key management. By default, it will create a
 single station/client. Once the stations are created, the script will generate CX traffic between the upstream port and
  the stations and run the traffic before roam.
 
@@ -2097,7 +2096,7 @@ Packet captures will be taken for each station/client in two scenarios:
 
 These packet captures will be used to analyze the performance and stability of the roaming process.
 
-Overall, this script is designed to provide a comprehensive test of the roaming functionality of the APs and the 
+Overall, this script is designed to provide a comprehensive test of the roaming functionality of the APs and the
 stability of the network when clients move between APs.
 
  The following are the criteria for PASS the test:
@@ -2116,7 +2115,7 @@ stability of the network when clients move between APs.
 
 
 ############################################
-# Examples Commands for different scenarios 
+# Examples Commands for different scenarios
 ############################################
 
 Hard Roam
@@ -2146,10 +2145,10 @@ EXAMPLE: For multiple station and multiple iteration
       --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based
 
 EXAMPLE: For  multiple station and multiple iteration with multicast traffic enable
-   python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "10:f9:20:fd:f3:4b" --ap2_bssid "14:16:9d:53:58:cb" 
+   python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "10:f9:20:fd:f3:4b" --ap2_bssid "14:16:9d:53:58:cb"
    --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 2 --ssid_name "RoamAP5g" --security "wpa2"
-     --security_key "something" --duration None --upstream "eth2" --iteration 1 --channel "36" --option "ota" 
-      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --sta_type normal --multicast True
+     --security_key "something" --duration None --upstream "eth2" --iteration 1 --channel "36" --option "ota"
+     --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --sta_type normal --multicast True
 
 
 Soft Roam
@@ -2175,7 +2174,7 @@ EXAMPLE: For multiple station and multiple iteration
     python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
      --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 10 --ssid_name "RoamAP5g" --security "wpa2"
       --security_key "something" --duration None --upstream "eth2" --iteration 10 --channel "40" --option "ota"
-      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --soft_roam True 
+      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --soft_roam True
 
 
 ===============================================================================
