@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 import sys
 import os
 import importlib
@@ -188,13 +187,12 @@ Example of creating traffic on an l3 connection
 
     args = parser.parse_args()
 
-    help_summary='''\
+    help_summary = '''\
 Script not functional or no longer supported: see script py-scripts/test_l3.py as replacement
 '''
     if args.help_summary:
         print(help_summary)
         exit(0)
-
 
     lfjson_host = args.mgr
     lfjson_port = 8080
