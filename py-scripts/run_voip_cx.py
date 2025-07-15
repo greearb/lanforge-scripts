@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# flake8: noqa
 """
 This script will start a named set of voip connections and report their data to a csv file
 
@@ -36,16 +35,16 @@ import sys
 import time
 import traceback
 # from time import sleep
-from pprint import pprint
+from pprint import pprint  # noqa:F811
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
-from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.lanforge_api import LFSession  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonCommand  # noqa: E402
+from lanforge_client.lanforge_api import LFJsonQuery  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +82,7 @@ class VoipEndp:
     @num_calls.setter
     def num_calls(self, num_calls: str):
         """Set number of calls for endpoint when in loop mode."""
-        self._num_calls= num_calls
+        self._num_calls = num_calls
 
     @property
     def phone_num(self):
@@ -220,6 +219,7 @@ class VoipReport():
             self.last_written_row = 0
         except Exception as e:
             traceback.print_exc()
+            pprint(['exception:', e])
             exit(1)
 
     def __initialize_voip_cxs(self, cx_names_str: str, **kwargs):
@@ -245,13 +245,13 @@ class VoipReport():
         # If only one CX and is 'all' or 'ALL', user specified to use all VoIP CXs.
         # Check for equality, as want to make sure user can specify
         # a cx name with string 'all' or 'ALL' in it.
-        if len(cx_list) == 1 and (cx_list[0] == "all") or (cx_list[0]== "ALL"):
-            logger.debug(f"Querying all VoIP CXs")
+        if len(cx_list) == 1 and (cx_list[0] == "all") or (cx_list[0] == "ALL"):
+            logger.debug("Querying all VoIP CXs")
         else:
             logger.debug(f"Querying parsed VoIP CXs: {cx_list}")
 
         # TODO: Don't hardcode endpoint names
-        #queried_endps = self.__query_voip_endps(endp_list=["all"])
+        # queried_endps = self.__query_voip_endps(endp_list=["all"])
 
         queried_cxs = self.__query_voip_cxs(cx_list=cx_list)
         for queried_cx in queried_cxs:
@@ -373,7 +373,6 @@ class VoipReport():
                 logger.error(f"Error configuring endpoint \'{endp.name}\'")
                 logger.error(pprint(['exception:', e, e_w_list]))
 
-
     def __query_voip_cxs(self, cx_list: list, columns: list = ["name"]):
         """Query and return all VoIP CXs."""
         e_w_list: list = []
@@ -393,7 +392,6 @@ class VoipReport():
             response = [response]
 
         return response
-
 
     def __query_voip_endps(self, endp_list: list, columns: list = ["name"]):
         """Query and return all VoIP endpoints."""
@@ -417,7 +415,7 @@ class VoipReport():
 
     def start(self):
         """Start specified VoIP CXs."""
-        logger.debug(f"Starting CXs")
+        logger.debug("Starting CXs")
 
         e_w_list: list = []
         lf_cmd: LFJsonCommand = self.lfsession.get_command()
@@ -429,10 +427,10 @@ class VoipReport():
             try:
                 logger.debug(f"Starting CX \'{cx_name}\'")
                 lf_cmd.post_set_cx_state(cx_name=cx_name,
-                                        test_mgr='ALL',
-                                        suppress_related_commands=True,
-                                        cx_state=lf_cmd.SetCxStateCxState.RUNNING.value,
-                                        errors_warnings=e_w_list)
+                                         test_mgr='ALL',
+                                         suppress_related_commands=True,
+                                         cx_state=lf_cmd.SetCxStateCxState.RUNNING.value,
+                                         errors_warnings=e_w_list)
             except Exception as e:
                 pprint(['exception:', e, "cx:", cx_name, e_w_list])
 
@@ -483,22 +481,22 @@ class VoipReport():
         # stop until endpoints actually starts the test else script terminates early.
         while wait_flag_A or wait_flag_B:
             response = lf_query.get_voip_endp(eid_list=all_endps,
-                                                  debug=False,
-                                                  errors_warnings=e_w_list)
+                                              debug=False,
+                                              errors_warnings=e_w_list)
 
             if not response:
-                    # pprint(e_w_list)
-                    raise ValueError("unable to find endpoint data")
+                # pprint(e_w_list)
+                raise ValueError("unable to find endpoint data")
 
             for entry in response:
                 name = list(entry.keys())[0]
                 record = entry[name]
 
-                if "-A" in name: # endp A
+                if "-A" in name:  # endp A
                     if "Stopped" != record['state']:
                         wait_flag_A = False
 
-                if "-B" in name: # endp B
+                if "-B" in name:  # endp B
                     if "Stopped" != record['state']:
                         wait_flag_B = False
 
@@ -522,18 +520,18 @@ class VoipReport():
                     record = entry[name]
                     # print(f"checking {name}, ", end=None)
 
-                    if "-A" in name: # endp A
+                    if "-A" in name:  # endp A
 
                         if (int(record['mos-lqo#']) == 0) and (float(record['mos-lqo']) != 0):
                             if (append_row_zero_endp_A_flag):
-                                self.append_to_csv(ep_name=name, ep_record=record) # check record
+                                self.append_to_csv(ep_name=name, ep_record=record)  # check record
                                 append_row_zero_endp_A_flag = False
 
                         if int(record['mos-lqo#']) != old_mos_value_A:
                             self.append_to_csv(ep_name=name, ep_record=record)
                             old_mos_value_A = int(record['mos-lqo#'])
 
-                    if "-B" in name: # endp B
+                    if "-B" in name:  # endp B
 
                         if (int(record['mos-lqo#']) == 0) and (float(record['mos-lqo']) != 0):
                             if append_row_zero_endp_B_flag:
@@ -619,13 +617,13 @@ def parse_args():
                              "Order and length must match the order of connections passed in the "
                              "\'--cx_list\' argument.",
                         nargs="*")
-    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')    
+    parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
 
     return parser.parse_args()
 
 
 def main():
-    help_summary='''\
+    help_summary = '''\
 This script will start a named set of voip connections and report their data to a csv file
 '''
     args = parse_args()
