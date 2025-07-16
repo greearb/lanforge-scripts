@@ -166,6 +166,8 @@ class FtpTest(LFCliBase):
                  pk_passwd=None,
                  pac_file=None,
                  expected_passfail_val=None,
+                 get_live_view=False,
+                 total_floors=0,
                  config=False,
                  csv_name=None):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
@@ -268,6 +270,8 @@ class FtpTest(LFCliBase):
         self.pass_fail_list = []
         self.test_input_list = []
         self.api_url = 'http://{}:{}'.format(self.host, self.port)
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
 
         logger.info("Test is Initialized")
 
@@ -1780,6 +1784,32 @@ class FtpTest(LFCliBase):
                 self.generate_graph_time(result_data, x_axis, b, size)
                 # self.generate_graph_throughput(result_data, x_axis, b, size)
 
+    def add_live_view_images_to_report(self):
+        """
+        This function looks for throughput and RSSI images for each floor
+        in the 'live_view_images' folder within `self.result_dir`.
+        It waits up to **60 seconds** for each image. If an image is found,
+        it's added to the `report` on a new page; otherwise, it's skipped.
+        """
+        for floor in range(0,int(self.total_floors)):
+                ftp_img_path = os.path.join(self.result_dir, "live_view_images", f"ftp_{self.test_name}_{floor+1}.png")
+                timeout = 60  # seconds
+                start_time = time.time()
+
+                while not (os.path.exists(ftp_img_path)):
+                    if time.time() - start_time > timeout:
+                        print("Timeout: Images not found within 60 seconds.")
+                        break
+                    time.sleep(1)
+                while not os.path.exists(ftp_img_path):
+                    if os.path.exists(ftp_img_path):
+                        break
+                if os.path.exists(ftp_img_path):
+                    self.report.set_custom_html('<div style="page-break-before: always;"></div>')
+                    self.report.build_custom()
+                    self.report.set_custom_html(f'<img src="file://{ftp_img_path}"></img>')
+                    self.report.build_custom()
+
     def generate_report(self, ftp_data, date, input_setup_info, test_rig, test_tag, dut_hw_version,
                         dut_sw_version, dut_model_num, dut_serial_num, test_id, bands,
                         csv_outfile, local_lf_report_dir, _results_dir_name='ftp_test', report_path='', config_devices=""):
@@ -1989,6 +2019,8 @@ class FtpTest(LFCliBase):
         self.report.set_csv_filename(graph_png)
         self.report.move_csv_file()
         self.report.build_graph()
+        if(self.dowebgui and self.get_live_view):
+            self.add_live_view_images_to_report()
         self.report.set_obj_html("File Download Time (sec)", "The below table will provide information of "
                                  "minimum, maximum and the average time taken by clients to download a file in seconds")
         self.report.build_objective()
@@ -2724,6 +2756,8 @@ INCLUDE_IN_README: False
     optional.add_argument("--pk_passwd", type=str, default='NA', help='Specify the password for the private key')
     optional.add_argument("--pac_file", type=str, default='NA', help='Specify the pac file name')
 
+    optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     # logging configuration
     optional.add_argument(
         "--lf_logger_config_json",
@@ -2852,7 +2886,9 @@ some amount of file data from the FTP server while measuring the time taken by c
                               expected_passfail_val=args.expected_passfail_value,
                               csv_name=args.device_csv_name,
                               wait_time=args.wait_time,
-                              config=args.config
+                              config=args.config,
+                              get_live_view= args.get_live_view,
+                              total_floors = args.total_floors
                               )
 
                 interation_num = interation_num + 1
