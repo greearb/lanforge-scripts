@@ -146,7 +146,7 @@ class FtpTest(LFCliBase):
                  profile_name=None, group_name=None,
                  sixg_radio=None, fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False, ap_name="",
                  direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None, kpi_results=None,
-                 lf_username="lanforge", lf_password="lanforge", clients_type="Virtual", dowebgui=False, device_list=[], test_name=None, result_dir=None,
+                 lf_username="lanforge", lf_password="lanforge", clients_type="Virtual", dowebgui=False, device_list=None, test_name=None, result_dir=None,
                  eap_method=None,
                  eap_identity=None,
                  ieee80211=None,
@@ -339,7 +339,7 @@ class FtpTest(LFCliBase):
         for key, value in response.items():
             if key == "resources":
                 for element in value:
-                    for a, b in element.items():
+                    for _, b in element.items():
                         self.hw_list.append(b['hw version'])
         for hw_version in self.hw_list:
             if "Win" in hw_version:
@@ -356,7 +356,7 @@ class FtpTest(LFCliBase):
         for key, value in response.items():
             if key == "resources":
                 for element in value:
-                    for a, b in element.items():
+                    for _, b in element.items():
                         if b['phantom'] is False:
                             self.working_resources_list.append(b["hw version"])
                             if "Win" in b['hw version']:
@@ -527,7 +527,7 @@ class FtpTest(LFCliBase):
             try:
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
-            except BaseException:
+            except Exception:
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
             logging.info(f"Upstream port IP {upstream_port}")
         else:
@@ -781,7 +781,7 @@ class FtpTest(LFCliBase):
         return response, data
 
     def start(self, print_pass=False, print_fail=False):
-        for rad in self.radio:
+        for _ in self.radio:
             self.cx_profile.start_cx()
 
         logger.info("Test Started")
@@ -1066,7 +1066,7 @@ class FtpTest(LFCliBase):
             all_l4_data = self.get_all_l4_data()
             df = pd.DataFrame(all_l4_data)
             df.to_csv("all_l4_data.csv", index=False)
-        except:
+        except Exception:
             logger.error("All l4 data not found")
 
     # Created a function to get uc-avg,uc,min,uc-max,ssid and all other details of the devices
@@ -1136,40 +1136,40 @@ class FtpTest(LFCliBase):
                 self.bytes_rd = [float(f"{(i / 1000000): .4f}") for i in dataset]
             urls_downloaded = []
             for i in range(len(self.total_err)):
-                urls_downloaded.append(self.url_data[i]-self.total_err[i])
+                urls_downloaded.append(self.url_data[i] - self.total_err[i])
             self.url_data = list(urls_downloaded)
 
-                # for cx in uc_avg_data['endpoint']:
-                #     for CX in cx:
-                #         for created_cx in self.cx_list:
-                #             if CX == created_cx:
-                #                 self.uc_avg.append(cx[CX]['uc-avg'])
-                # for cx in uc_max_data['endpoint']:
-                #     for CX in cx:
-                #         for created_cx in self.cx_list:
-                #             if CX == created_cx:
-                #                 self.uc_max.append(cx[CX]['uc-max'])
-                # for cx in uc_min_data['endpoint']:
-                #     for CX in cx:
-                #         for created_cx in self.cx_list:
-                #             if CX == created_cx:
-                #                 self.uc_min.append(cx[CX]['uc-min'])
-                # for cx in total_url_data['endpoint']:
-                #     for CX in cx:
-                #         for created_cx in self.cx_list:
-                #             if CX == created_cx:
-                #                 self.url_data.append(cx[CX]['total-urls'])
-                # for cx in bytes_rd['endpoint']:
-                #     for CX in cx:
-                #         for created_cx in self.cx_list:
-                #             if CX == created_cx:
-                #                 dataset.append(cx[CX]['bytes-rd'])
-                #                 self.bytes_rd=[float(f"{(i / 1000000): .4f}") for i in dataset]
-                # for cx in rx_rate['endpoint']:
-                #     for CX in cx:
-                #         for created_cx in self.cx_list:
-                #             if CX == created_cx:
-                #                 self.rx_rate.append(cx[CX]['rx rate'])
+            # for cx in uc_avg_data['endpoint']:
+            #     for CX in cx:
+            #         for created_cx in self.cx_list:
+            #             if CX == created_cx:
+            #                 self.uc_avg.append(cx[CX]['uc-avg'])
+            # for cx in uc_max_data['endpoint']:
+            #     for CX in cx:
+            #         for created_cx in self.cx_list:
+            #             if CX == created_cx:
+            #                 self.uc_max.append(cx[CX]['uc-max'])
+            # for cx in uc_min_data['endpoint']:
+            #     for CX in cx:
+            #         for created_cx in self.cx_list:
+            #             if CX == created_cx:
+            #                 self.uc_min.append(cx[CX]['uc-min'])
+            # for cx in total_url_data['endpoint']:
+            #     for CX in cx:
+            #         for created_cx in self.cx_list:
+            #             if CX == created_cx:
+            #                 self.url_data.append(cx[CX]['total-urls'])
+            # for cx in bytes_rd['endpoint']:
+            #     for CX in cx:
+            #         for created_cx in self.cx_list:
+            #             if CX == created_cx:
+            #                 dataset.append(cx[CX]['bytes-rd'])
+            #                 self.bytes_rd=[float(f"{(i / 1000000): .4f}") for i in dataset]
+            # for cx in rx_rate['endpoint']:
+            #     for CX in cx:
+            #         for created_cx in self.cx_list:
+            #             if CX == created_cx:
+            #                 self.rx_rate.append(cx[CX]['rx rate'])
         else:
             total_data = self.json_get("layer4/all")
             logger.info("No endpoint found")
@@ -1352,7 +1352,7 @@ class FtpTest(LFCliBase):
             self.data_for_webui = {
                 "client": self.cx_list,
                 "client_id": client_id_list,
-                "Rx Rate(1m)":self.rx_rate,
+                "Rx Rate(1m)": self.rx_rate,
                 "url_data": self.url_data,
                 "bytes rd": self.bytes_rd,
                 "uc_min": self.uc_min,
@@ -1361,7 +1361,7 @@ class FtpTest(LFCliBase):
                 "start_time": self.data["start_time"],
                 "end_time": self.data["end_time"],
                 "remaining_time": [0] * len(self.cx_list),
-                "total_err" : self.total_err
+                "total_err": self.total_err
             }
 
         logger.info("Monitoring complete")
@@ -1784,24 +1784,24 @@ class FtpTest(LFCliBase):
         It waits up to **60 seconds** for each image. If an image is found,
         it's added to the `report` on a new page; otherwise, it's skipped.
         """
-        for floor in range(0,int(self.total_floors)):
-                ftp_img_path = os.path.join(self.result_dir, "live_view_images", f"ftp_{self.test_name}_{floor+1}.png")
-                timeout = 60  # seconds
-                start_time = time.time()
+        for floor in range(0, int(self.total_floors)):
+            ftp_img_path = os.path.join(self.result_dir, "live_view_images", f"ftp_{self.test_name}_{floor + 1}.png")
+            timeout = 60  # seconds
+            start_time = time.time()
 
-                while not (os.path.exists(ftp_img_path)):
-                    if time.time() - start_time > timeout:
-                        print("Timeout: Images not found within 60 seconds.")
-                        break
-                    time.sleep(1)
-                while not os.path.exists(ftp_img_path):
-                    if os.path.exists(ftp_img_path):
-                        break
+            while not (os.path.exists(ftp_img_path)):
+                if time.time() - start_time > timeout:
+                    print("Timeout: Images not found within 60 seconds.")
+                    break
+                time.sleep(1)
+            while not os.path.exists(ftp_img_path):
                 if os.path.exists(ftp_img_path):
-                    self.report.set_custom_html('<div style="page-break-before: always;"></div>')
-                    self.report.build_custom()
-                    self.report.set_custom_html(f'<img src="file://{ftp_img_path}"></img>')
-                    self.report.build_custom()
+                    break
+            if os.path.exists(ftp_img_path):
+                self.report.set_custom_html('<div style="page-break-before: always;"></div>')
+                self.report.build_custom()
+                self.report.set_custom_html(f'<img src="file://{ftp_img_path}"></img>')
+                self.report.build_custom()
 
     def generate_report(self, ftp_data, date, input_setup_info, test_rig, test_tag, dut_hw_version,
                         dut_sw_version, dut_model_num, dut_serial_num, test_id, bands,
@@ -1871,8 +1871,8 @@ class FtpTest(LFCliBase):
         if self.clients_type == "Real":
             shutil.move('ftp_datavalues.csv', report_path_date_time)
             try:
-                shutil.move('all_l4_data.csv',report_path_date_time)
-            except:
+                shutil.move('all_l4_data.csv', report_path_date_time)
+            except Exception:
                 logger.error("failed to create all layer 4 csv")
             for csv_name in self.individual_device_csv_names:
                 shutil.move(f"{csv_name}.csv", report_path_date_time)
@@ -2012,7 +2012,7 @@ class FtpTest(LFCliBase):
         self.report.set_csv_filename(graph_png)
         self.report.move_csv_file()
         self.report.build_graph()
-        if(self.dowebgui and self.get_live_view):
+        if (self.dowebgui and self.get_live_view):
             self.add_live_view_images_to_report()
         self.report.set_obj_html("File Download Time (sec)", "The below table will provide information of "
                                  "minimum, maximum and the average time taken by clients to download a file in seconds")
@@ -2451,7 +2451,7 @@ class FtpTest(LFCliBase):
                 try:
                     _ = self.local_realm.json_get("layer4/%s/list?fields=%s" %
                                                   (created_cxs, 'status'))['endpoint']['status']
-                except BaseException:
+                except Exception:
                     logger.error(f'cx not created for {self.input_devices_list[i]}')
                     failed_cx.append(created_cxs)
                     del_device_list.append(self.device_list[i])
@@ -2880,8 +2880,8 @@ some amount of file data from the FTP server while measuring the time taken by c
                               csv_name=args.device_csv_name,
                               wait_time=args.wait_time,
                               config=args.config,
-                              get_live_view= args.get_live_view,
-                              total_floors = args.total_floors
+                              get_live_view=args.get_live_view,
+                              total_floors=args.total_floors
                               )
 
                 interation_num = interation_num + 1
