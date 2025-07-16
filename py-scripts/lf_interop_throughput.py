@@ -936,7 +936,7 @@ class Throughput(Realm):
                 temp_upload, temp_download, temp_drop_a, temp_drop_b, temp_avg_rtt = [], [], [], [], []
 
                 # Initialize temporary lists for each connection
-                [(temp_upload.append([]), temp_download.append([]), temp_drop_a.append([]), temp_drop_b.append([])) for
+                [(temp_upload.append([]), temp_download.append([]), temp_drop_a.append([]), temp_drop_b.append([]), temp_avg_rtt.append([])) for
                     i in range(len(self.cx_profile.created_cx))]
 
                 # Populate temporary lists with current throughput data
@@ -995,9 +995,9 @@ class Throughput(Realm):
                 if (current_time - previous_time).total_seconds() >= time_break:
                     individual_df_for_webui.loc[len(individual_df_for_webui)] = individual_df_data
                     if self.group_name is None:
-                        individual_df_for_webui.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
+                        individual_df.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
                     else:
-                        individual_df_for_webui.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
+                        individual_df.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
                     previous_time = current_time
 
                 # Append data to individual_df and save to CSV
@@ -1177,7 +1177,7 @@ class Throughput(Realm):
                 individual_df_for_webui.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
                 individual_df.to_csv('overall_throughput.csv', index=False)
             else:
-                individual_df_for_webui.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
+                individual_df.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
                 individual_df.to_csv('throughput_data.csv', index=False)
         else:
             individual_df.to_csv('throughput_data.csv', index=False)
