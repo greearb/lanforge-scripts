@@ -107,6 +107,11 @@
         python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
         --ssid NETGEAR_2G_wpa2 --passwd Password@123 --security wpa2 --config --device_list 1.10,1.11,1.12 --do_interopability
 
+        EXAMPLE-9:
+        Command Line Interface to run the test with individual configuration
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth0 --test_duration 30s --traffic_type lf_udp --ssid NETGEAR_2G_wpa2 
+        --passwd Password@123 --security wpa2 --do_interopability --device_list 1.15,1.400 --download 10000000 --interopability_config
+
     SCRIPT_CLASSIFICATION :  Test
 
     SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
@@ -147,6 +152,7 @@ import shutil
 import asyncio
 import csv
 import matplotlib.pyplot as plt
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -204,6 +210,7 @@ class Throughput(Realm):
                  dowebgui=False,
                  precleanup=False,
                  do_interopability=False,
+                 interopability_config = False,
                  ip="localhost",
                  csv_direction='',
                  device_csv_name=None,
@@ -333,6 +340,9 @@ class Throughput(Realm):
         self.config = config
         self.configdevices = {}
         self.group_device_map = {}
+        self.config_dict = {}
+        self.configured_devices_check = {}
+        self.interopability_config = interopability_config
 
     def os_type(self):
         """
@@ -370,6 +380,70 @@ class Throughput(Realm):
                     self.android_list.append(hw_version)
         self.laptop_list = self.windows_list + self.linux_list + self.mac_list
 
+    def disconnect_all_devices(self,devices_to_disconnect=[]):
+        """
+        Disconnects either all devices or a specific list of devices from Wi-Fi networks.
+        """
+        obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
+        # all_devices = obj.get_all_devices()
+        # GET ANDROIDS FROM DEVICE LIST
+        adb_obj = DeviceConfig.ADB_DEVICES(lanforge_ip=self.host)
+
+        async def do_disconnect():
+            all_devices = obj.get_all_devices()
+            # TO DISCONNECT ALL DEVICES
+            if len(devices_to_disconnect) == 0:
+                android_resources = [d for d in all_devices if d.get('os') == 'Android' and d.get('eid') in self.device_list]
+                if(len(android_resources)>0):
+                    # TO STOP APP FOR ALL DEVICES FOR ANDROIDS
+                    await adb_obj.stop_app(port_list=android_resources)
+                # TO FORGET ALL NETWORKS FOR ALL OS TYPES
+                await obj.connectivity(device_list=self.device_list, wifi_config=self.config_dict, disconnect=True)
+                if(len(android_resources)>0):
+                    adb_obj.set_wifi_state(port_list=android_resources, state = 'disable')
+                
+            # TO DISCONNECT SPECIFIC DEVICES
+            else:
+                android_resources = [d for d in all_devices if d.get('os') == 'Android' and d.get('eid') in devices_to_disconnect]
+                if(len(android_resources)>0):
+                    # To disable stop app for androids
+                    await adb_obj.stop_app(port_list=android_resources)
+                await obj.connectivity(device_list=devices_to_disconnect, wifi_config=self.config_dict, disconnect=True)
+                if(len(android_resources)>0):
+                    # To disable wifi for androids
+                    adb_obj.set_wifi_state(port_list=android_resources, state = 'disable')
+
+        asyncio.run(do_disconnect())
+    
+    def configure_specific(self,device_to_configure_list):
+        """
+        Configure specific devices using the provided list of device IDs or names.
+        """
+        obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
+        all_devices = obj.get_all_devices()
+        android_resources = [d for d in all_devices if (d.get('os') == 'Android') and d.get('eid') in device_to_configure_list]
+        laptop_resources = [d for d in all_devices if (d.get('os') != 'Android'  ) and '1.' + d.get('resource') in device_to_configure_list]
+        devices_connected = asyncio.run(obj.connectivity(device_list=device_to_configure_list, wifi_config=self.config_dict))
+        if len(devices_connected) > 0:
+            if android_resources:
+                self.configured_devices_check[android_resources[0]['user-name']] = True
+            elif laptop_resources:
+                self.configured_devices_check[laptop_resources[0]['hostname']] = True
+            return True
+        else:
+            if android_resources:
+                self.configured_devices_check[android_resources[0]['user-name']] = False
+            elif laptop_resources:
+                self.configured_devices_check[laptop_resources[0]['hostname']] = False
+            return False
+
+    def extract_digits_until_alpha(self,s):
+        """
+        Extracts digits (including decimals) from the start of a string until the first alphabet.
+        """
+        match = re.match(r'^[\d.]+', s)
+        return match.group() if match else ''
+
     def phantom_check(self):
         """
         Checks for non-phantom resources and ports, categorizes them, and prepares a list of available devices for testing.
@@ -380,7 +454,7 @@ class Throughput(Realm):
         obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
         upstream_port_ip = self.change_port_to_ip(self.upstream)
         config_devices = {}
-        config_dict = {
+        self.config_dict = {
             'ssid': self.ssid,
             'passwd': self.password,
             'enc': self.security,
@@ -421,7 +495,7 @@ class Throughput(Realm):
 
             self.device_list = self.device_list.split(',')
             if self.config:
-                self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=config_dict))
+                self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=self.config_dict))
         # Configuration of devices with SSID , Password and Security when the device list is not specified
         elif self.device_list == [] and self.config:
             all_devices = obj.get_all_devices()
@@ -434,7 +508,7 @@ class Throughput(Realm):
             logger.info("AVAILABLE RESOURCES", device_list)
             self.device_list = input("Enter the desired resources to run the test:").split(',')
             if self.config:
-                self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=config_dict))
+                self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=self.config_dict))
 
         # Retrieve all resources from the LANforge
         response = self.json_get("/resource/all")
@@ -885,7 +959,7 @@ class Throughput(Realm):
             i += 1
         return throughput
 
-    def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time):
+    def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured):
         individual_df_for_webui = individual_df.copy()  # for webui
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download = {}, [], [], [], [], {}, {}
         drop_a, drop_a_per, drop_b, drop_b_per, state, state_of_device, avg_rtt = [], [], [], [], [], [], [] # noqa: F841
@@ -1111,6 +1185,12 @@ class Throughput(Realm):
                 break
             if not self.background_run and self.background_run is not None:
                 break
+            # Exit the loop if the device is not connected or configured to match the provided SSID
+            if not is_device_configured and self.interopability_config:
+                break
+
+        individual_df = individual_df[1:-1]
+        individual_df_for_webui = individual_df_for_webui[1:-1]
         for _, key in enumerate(throughput):
             for i in range(len(throughput[key])):
                 upload[i], download[i], drop_a[i], drop_b[i], avg_rtt[i] = [], [], [], [], []
@@ -1428,6 +1508,15 @@ class Throughput(Realm):
         logger.debug("{}.csv".format(graph_image_name))
 
         return f"{graph_image_name}.png"
+    
+    def convert_to_table(self,configured_devices_check):
+        """
+        Returns usernames and their config status ('Pass' or 'Fail') as a dictionary.
+        """
+        return {
+            "Username": list(configured_devices_check.keys()),
+            "Configuration Status": ["Pass" if status else "Fail" for status in configured_devices_check.values()]
+        }
 
     def generate_report(self, iterations_before_test_stopped_by_user, incremental_capacity_list, data=None, data1=None, report_path='', result_dir_name='Throughput_Test_report',
                         selected_real_clients_names=None):
@@ -2021,6 +2110,17 @@ class Throughput(Realm):
             }
             report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
 
+            if(self.interopability_config):
+
+                report.set_obj_html(_obj_title="Configuration Status of Devices",
+                                    _obj="The table below shows the configuration status of each device (except iOS) with respect to the SSID connection.")
+                report.build_objective()
+
+                configured_dataframe = self.convert_to_table(self.configured_devices_check)
+                dataframe1 = pd.DataFrame(configured_dataframe)
+                report.set_table_dataframe(dataframe1)
+                report.build_table()
+
             # Loop through iterations and build graphs, tables for each device
             for i in range(len(iterations_before_test_stopped_by_user)):
                 # rssi_signal_data = []
@@ -2040,6 +2140,9 @@ class Throughput(Realm):
 
                 # Fetch devices_on_running from real_client_list
                 devices_on_running.append(self.real_client_list[data1[i][-1] - 1].split(" ")[-1])
+                # If the device fails to configure, skip its data in the report
+                if self.interopability_config and devices_on_running[0] in self.configured_devices_check and not self.configured_devices_check[devices_on_running[0]]:
+                    continue
 
                 for k in devices_on_running:
                     # individual_device_data=[]
@@ -2683,6 +2786,10 @@ python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080  --upstre
 EXAMPLE-4:
 Command Line Interface to run the test with postcleanup
 python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080  --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp --do_interopability --postcleanup
+
+EXAMPLE-5:
+Command Line Interface to run the test with individual device configuration
+python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth0 --test_duration 30s --traffic_type lf_udp --ssid NETGEAR_2G_wpa2 --passwd Password@123 --security wpa2 --do_interopability --device_list 1.15,1.400 --download 10000000 --interopability_config
 SCRIPT_CLASSIFICATION :  Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
@@ -2768,6 +2875,7 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument('--profile_name', type=str, help='Specify the profile name to apply configurations to the devices.')
     optional.add_argument("--wait_time", type=int, help='Specify the maximum time to wait for Configuration', default=60)
     optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
+    optional.add_argument("--interopability_config", action="store_true", help="To do individual configuration for each device in interoperability")
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
 
     args = parser.parse_args()
@@ -2902,7 +3010,8 @@ Copyright 2023 Candela Technologies Inc.
                                 pk_passwd=args.pk_passwd,
                                 pac_file=args.pac_file,
                                 wait_time=args.wait_time,
-                                config=args.config
+                                config=args.config,
+                                interopability_config = args.interopability_config
                                 )
 
         if gave_incremental:
@@ -2945,6 +3054,11 @@ Copyright 2023 Candela Technologies Inc.
         overall_end_time = overall_start_time + timedelta(seconds=int(args.test_duration) * len(incremental_capacity_list))
 
         for i in range(len(to_run_cxs)):
+            is_device_configured = True
+            if args.do_interopability:
+                # To get resource of device under test in interopability
+                device_to_run_resource = throughput.extract_digits_until_alpha(to_run_cxs[i][0])
+
             # Check the load type specified by the user
             if args.load_type == "wc_intended_load":
                 # Perform intended load for the current iteration
@@ -2960,14 +3074,25 @@ Copyright 2023 Candela Technologies Inc.
                 if (args.do_interopability and i != 0):
                     throughput.stop_specific(to_run_cxs[i - 1])
                     time.sleep(5)
-                throughput.start_specific(to_run_cxs[i])
+                if args.interopability_config:
+                    if (args.do_interopability and i == 0):
+                        # To disconnect all the selected devices at the starting selected 
+                        throughput.disconnect_all_devices()
+                    if args.do_interopability and "iOS" not in to_run_cxs[i][0]:
+                        logger.info("Configuring device of resource{}".format(to_run_cxs[i][0]))
+                        # To configure device which is under test
+                        is_device_configured = throughput.configure_specific([device_to_run_resource])
+                if is_device_configured:
+                    throughput.start_specific(to_run_cxs[i])
 
             # Determine device names based on the current iteration
             device_names = created_cx_lists_keys[:to_run_cxs_len[i][-1]]
 
             # Monitor throughput and capture all dataframes and test stop status
-            all_dataframes, test_stopped_by_user = throughput.monitor(i, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time)
-
+            all_dataframes, test_stopped_by_user = throughput.monitor(i, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured)
+            if args.do_interopability and "iOS" not in to_run_cxs[i][0] and args.interopability_config:
+                # Disconnecting device after running the test
+                throughput.disconnect_all_devices([device_to_run_resource])
             # Check if the test was stopped by the user
             if test_stopped_by_user is False:
 
