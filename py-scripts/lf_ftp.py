@@ -952,9 +952,13 @@ class FtpTest(LFCliBase):
         max_bytes_rd = []
         rx_rate_val = []
         individual_device_data = {}
+        client_id_list = []
         for port in self.input_devices_list:
             columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI']
             individual_device_data[port] = pd.DataFrame(columns=columns)
+            r_id = port.split('.')
+            client_id_list.append('.'.join(r_id[:2]))
+
         while (current_time < endtime):
 
             # data in json format
@@ -974,6 +978,7 @@ class FtpTest(LFCliBase):
             self.data['UC-MIN'] = self.uc_min
             self.data['UC-AVG'] = self.uc_avg
             self.data['UC-MAX'] = self.uc_max
+            self.data['client_id'] = client_id_list
             self.data['total_err'] = self.total_err
 
             rx_rate_val.append(list(self.rx_rate))
@@ -1343,8 +1348,14 @@ class FtpTest(LFCliBase):
                     self.mode_list.append(str(port_data['mode']))
                     self.ssid_list.append(str(port_data['ssid']))
         if self.dowebgui:
+            client_id_list = []
+            for port in self.input_devices_list:
+                r_id = port.split('.')
+                client_id_list.append('.'.join(r_id[:2]))
             self.data_for_webui = {
                 "client": self.cx_list,
+                "client_id": client_id_list,
+                "Rx Rate(1m)":self.rx_rate,
                 "url_data": self.url_data,
                 "bytes rd": self.bytes_rd,
                 "uc_min": self.uc_min,
