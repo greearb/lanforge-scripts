@@ -2942,6 +2942,12 @@ some amount of file data from the FTP server while measuring the time taken by c
         "Security": args.security,
         "Contact": "support@candelatech.com"
     }
+    # FOR WEB-UI // to fetch the last logs of the execution.
+    if args.dowebgui:
+        obj.data_for_webui["status"] = ["STOPPED"] * len(obj.url_data)
+
+        df1 = pd.DataFrame(obj.data_for_webui)
+        df1.to_csv('{}/ftp_datavalues.csv'.format(obj.result_dir), index=False)
     # Report generation when groups are specified
     if args.group_name:
         obj.generate_report(ftp_data, date, input_setup_info, test_rig=args.test_rig,
@@ -2956,13 +2962,8 @@ some amount of file data from the FTP server while measuring the time taken by c
                             dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
                             dut_serial_num=args.dut_serial_num, test_id=args.test_id,
                             bands=args.bands, csv_outfile=args.csv_outfile, local_lf_report_dir=args.local_lf_report_dir)
-# FOR WEB-UI // to fetch the last logs of the execution.
-    if args.dowebgui:
-        obj.data_for_webui["status"] = ["STOPPED"] * len(obj.url_data)
 
-        df1 = pd.DataFrame(obj.data_for_webui)
-        df1.to_csv('{}/ftp_datavalues.csv'.format(obj.result_dir), index=False)
-        # copying to home directory i.e home/user_name
+    if args.dowebgui:
         obj.copy_reports_to_home_dir()
 
 
