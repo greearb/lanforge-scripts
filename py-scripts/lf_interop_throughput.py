@@ -210,6 +210,8 @@ class Throughput(Realm):
                  dowebgui=False,
                  precleanup=False,
                  do_interopability=False,
+                 get_live_view=False,
+                 total_floors=0,
                  interopability_config = False,
                  ip="localhost",
                  csv_direction='',
@@ -307,6 +309,8 @@ class Throughput(Realm):
         self.overall_avg_rssi = overall_avg_rssi if overall_avg_rssi is not None else []
         self.dowebgui = dowebgui
         self.do_interopability = do_interopability
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
         self.ip = ip
         self.device_found = False
         self.gave_incremental = False
@@ -1923,6 +1927,10 @@ class Throughput(Realm):
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
                 report.build_graph()
+                if(self.dowebgui and self.get_live_view):
+                    # To add live view images coming from the Web-GUI in report
+                    self.add_live_view_images_to_report(report)
+                    
                 if self.group_name:
                     report.set_obj_html(
                         _obj_title="Detailed Result Table For Groups ",
@@ -2372,6 +2380,9 @@ class Throughput(Realm):
                 report.set_custom_html('<hr>')
                 report.build_custom()
 
+            if(self.dowebgui and self.get_live_view and self.do_interopability):
+                self.add_live_view_images_to_report(report)
+            
         # report.build_custom()
         report.build_footer()
         report.write_html()
@@ -2666,6 +2677,38 @@ class Throughput(Realm):
 
         return upstream_port
 
+    def add_live_view_images_to_report(self,report):
+        """
+        This function looks for live view images for each floor
+        in the 'live_view_images' folder within `self.result_dir`.
+        It waits up to **60 seconds** for each image. If an image is found,
+        it's added to the `report` on a new page; otherwise, it's skipped.
+        """
+        for floor in range(0,int(self.total_floors)):
+            throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{floor+1}.png")
+            rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor+1}.png")
+            timeout = 60  # seconds
+            start_time = time.time()
+
+            while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)):
+                if time.time() - start_time > timeout:
+                    print("Timeout: Images not found within 60 seconds.")
+                    break
+                time.sleep(1)
+            while not os.path.exists(throughput_image_path) and not os.path.exists(rssi_image_path):
+                if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
+                    break
+            if os.path.exists(throughput_image_path):
+                report.set_custom_html('<div style="page-break-before: always;"></div>')
+                report.build_custom()
+                report.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                report.build_custom()
+
+            if os.path.exists(rssi_image_path):
+                report.set_custom_html('<div style="page-break-before: always;"></div>')
+                report.build_custom()
+                report.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
+                report.build_custom()
 
 # To validate the input args
 def validate_args(args):
@@ -2851,6 +2894,8 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default="open")
     optional.add_argument('--test_name', help='Specify test name to store the runtime csv results', default=None)
     optional.add_argument('--result_dir', help='Specify the result dir to store the runtime logs', default='')
+    optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     optional.add_argument("--expected_passfail_value", help="Specify the expected number of urls", default=None)
     optional.add_argument("--device_csv_name", type=str, help='Specify the csv name to store expected url values', default=None)
     optional.add_argument("--eap_method", type=str, default='DEFAULT', help="Specify the EAP method for authentication.")
@@ -2986,6 +3031,8 @@ Copyright 2023 Candela Technologies Inc.
                                 do_interopability=args.do_interopability,
                                 incremental=args.incremental,
                                 precleanup=args.precleanup,
+                                get_live_view= args.get_live_view,
+                                total_floors = args.total_floors,
                                 csv_direction=csv_direction,
                                 expected_passfail_value=args.expected_passfail_value,
                                 device_csv_name=args.device_csv_name,
