@@ -235,6 +235,7 @@ class FtpTest(LFCliBase):
         self.url_data = []
         self.bytes_rd = []
         self.rx_rate = []
+        self.total_err = []
         self.channel_list = []
         self.mode_list = []
         self.cx_list = []
@@ -929,6 +930,7 @@ class FtpTest(LFCliBase):
             self.data['UC-MIN'] = self.uc_min
             self.data['UC-AVG'] = self.uc_avg
             self.data['UC-MAX'] = self.uc_max
+            self.data['total_err'] = self.total_err
 
             rx_rate_val.append(list(self.rx_rate))
             for i, port in enumerate(self.input_devices_list):
@@ -1018,6 +1020,7 @@ class FtpTest(LFCliBase):
     def get_device_details(self):
         dataset = []
         self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd, self.rx_rate = [], [], [], [], [], [], [], [], []
+        self.total_err = []
         if self.clients_type == "Real":
             self.get_port_data()
         # data in json format
@@ -1028,6 +1031,7 @@ class FtpTest(LFCliBase):
         total_url_data = self.json_get("layer4/list?fields=total-urls")
         bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
         rx_rate = self.json_get("layer4/list?fields=rx rate (1m)")
+        total_err = self.json_get("layer4/list?fields=total-err")
         if 'endpoint' in uc_avg_data.keys():
             # list of layer 4 connections name
             if type(uc_avg_data['endpoint']) is dict:
@@ -1035,6 +1039,7 @@ class FtpTest(LFCliBase):
                 self.uc_max.append(uc_max_data['endpoint']['uc-max'])
                 self.uc_min.append(uc_min_data['endpoint']['uc-min'])
                 self.rx_rate.append(rx_rate['endpoint']['rx rate (1m)'])
+                self.total_err.append(total_err['endpoint']['total-err'])
                 # reading uc-avg data in json format
                 self.url_data.append(total_url_data['endpoint']['total-urls'])
                 dataset.append(bytes_rd['endpoint']['bytes-rd'])
@@ -1070,7 +1075,18 @@ class FtpTest(LFCliBase):
                         if created_cx in cx:
                             self.rx_rate.append(cx[created_cx]['rx rate (1m)'])
                             break
+                    for cx in total_err['endpoint']:
+                        if created_cx in cx:
+                            self.total_err.append(cx[created_cx]['total-err'])
+                            break
                 self.bytes_rd = [float(f"{(i / 1000000): .4f}") for i in dataset]
+
+            # calculating the number of successfully downloaded url's by subtracting the number of failed url's
+            urls_downloaded = []
+            for i in range(len(self.total_err)):
+                urls_downloaded.append(self.url_data[i]-self.total_err[i])
+            self.url_data = list(urls_downloaded)
+
                 # for cx in uc_avg_data['endpoint']:
                 #     for CX in cx:
                 #         for created_cx in self.cx_list:
@@ -1286,7 +1302,8 @@ class FtpTest(LFCliBase):
                 "uc_avg": self.uc_avg,
                 "start_time": self.data["start_time"],
                 "end_time": self.data["end_time"],
-                "remaining_time": [0] * len(self.cx_list)
+                "remaining_time": [0] * len(self.cx_list),
+                "total_err" : self.total_err
             }
 
         logger.info("Monitoring complete")
@@ -1951,7 +1968,8 @@ class FtpTest(LFCliBase):
                     " No of times File downloaded ": self.url_data,
                     " Time Taken to Download file (ms)": self.uc_avg,
                     " Bytes-rd (Mega Bytes)": self.bytes_rd,
-                    " RX RATE (Mbps) ": self.rx_rate
+                    " RX RATE (Mbps) ": self.rx_rate,
+                    "Failed Urls": self.total_err
                 }
                 if self.expected_passfail_val or self.csv_name:
                     dataframe[" Expected output "] = self.test_input_list
