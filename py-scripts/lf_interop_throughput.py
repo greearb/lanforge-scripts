@@ -376,6 +376,7 @@ class Throughput(Realm):
 
         """
         port_eid_list, same_eid_list, original_port_list = [], [], []
+        interop_response = self.json_get("/adb")
         obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
         upstream_port_ip = self.change_port_to_ip(self.upstream)
         config_devices = {}
@@ -467,7 +468,17 @@ class Throughput(Realm):
                                 if b['kernel'] == '':
                                     self.eid_list.append(b['eid'])
                                     self.mac_list.append(b['hw version'])
-                                    self.devices_available.append(b['eid'] + " " + 'iOS' + " " + b['hostname'])
+                                    if "devices"  in interop_response.keys():
+                                        interop_devices = interop_response['devices']
+                                        # Extract usernames of devices that match the current eid
+                                        if(len([v['user-name'] for d in interop_devices for k, v in d.items() if v.get('resource-id') == b['eid']]) == 0):
+                                            self.devices_available.append(b['eid'] + " " + 'iOS' + " " + b['hostname'])
+                                        # If username is found
+                                        else:
+                                            ios_username = [v['user-name'] for d in interop_devices for k, v in d.items() if v.get('resource-id') == b['eid']][0]
+                                            self.devices_available.append(b['eid'] + " " + 'iOS' + " " + ios_username)
+                                    else:
+                                        self.devices_available.append(b['eid'] + " " + 'iOS' + " " + b['hostname'])
                                 else:
                                     self.eid_list.append(b['eid'])
                                     self.mac_list.append(b['hw version'])
