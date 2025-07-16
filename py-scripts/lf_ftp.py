@@ -891,6 +891,50 @@ class FtpTest(LFCliBase):
         # assume data is MB if no designator is on end of str
         else:
             return float(upper[:-2]) * 10 ** 6
+
+    def get_all_l4_data(self):
+        """
+        Fetches the complete set of Layer-4 data and writes it to a dictionary
+        Returns:
+            dict: A dictionary mapping each Layer 4 field to a list of values in the order of CXs.
+        """
+
+        fields = [
+            "name", "eid", "type", "status", "total-urls", "urls/s", "bytes-rd", "bytes-wr",
+            "total-buffers", "total-rebuffers", "total-wait-time", "video-format-bitrate",
+            "audio-format-bitrate", "frame-rate", "video-quality", "tx rate", "tx-rate-1m",
+            "rx rate", "rx rate (1m)", "fb-min", "fb-avg", "fb-max", "uc-min", "uc-avg",
+            "uc-max", "dns-min", "dns-avg", "dns-max", "total-err", "bad-proto", "bad-url",
+            "rslv-p", "rslv-h", "!conn", "timeout", "nf (4xx)", "http-r", "http-p", "http-t",
+            "acc. denied", "ftp-host", "ftp-stor", "ftp-port", "write", "read", "redir",
+            "login-denied", "other-err", "elapsed", "rpt timer", "time-stamp"
+        ]
+
+        data = self.json_get(f"layer4/list?fields={','.join(fields)}")
+
+        result = {field: [] for field in fields}
+
+        endpoint = data.get("endpoint", {})
+
+        if isinstance(endpoint, dict):
+            for field in fields:
+                result[field].append(endpoint.get(field, None))
+        else:
+            for created_cx in self.cx_list:
+                for cx in endpoint:
+                    if created_cx in cx:
+                        for field in fields:
+                            result[field].append(cx[created_cx].get(field, None))
+                        break
+
+        if "bytes-rd" in result:
+            result["bytes-rd"] = [
+                float(f"{int(x) / 1_000_000:.4f}") if x is not None else None
+                for x in result["bytes-rd"]
+            ]
+
+        return result
+
     # FOR WEB-UI // function usd to fetch runtime values and fill the csv.
 
     def monitor_for_runtime_csv(self):
@@ -1014,6 +1058,12 @@ class FtpTest(LFCliBase):
             df.to_csv(f"{endtime}-ftp-{port}.csv", index=False)
             individual_device_csv_names.append(f'{endtime}-ftp-{port}')
         self.individual_device_csv_names = individual_device_csv_names
+        try:
+            all_l4_data = self.get_all_l4_data()
+            df = pd.DataFrame(all_l4_data)
+            df.to_csv("all_l4_data.csv", index=False)
+        except:
+            logger.error("All l4 data not found")
 
     # Created a function to get uc-avg,uc,min,uc-max,ssid and all other details of the devices
 
@@ -1786,6 +1836,10 @@ class FtpTest(LFCliBase):
         report_path_date_time = self.report.get_path_date_time()
         if self.clients_type == "Real":
             shutil.move('ftp_datavalues.csv', report_path_date_time)
+            try:
+                shutil.move('all_l4_data.csv',report_path_date_time)
+            except:
+                logger.error("failed to create all layer 4 csv")
             for csv_name in self.individual_device_csv_names:
                 shutil.move(f"{csv_name}.csv", report_path_date_time)
         self.report.set_title("FTP Test")
