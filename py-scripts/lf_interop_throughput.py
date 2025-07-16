@@ -2921,6 +2921,7 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument("--wait_time", type=int, help='Specify the maximum time to wait for Configuration', default=60)
     optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
     optional.add_argument("--interopability_config", action="store_true", help="To do individual configuration for each device in interoperability")
+    optional.add_argument("--tput_mbps", action="store_true", help="Interpret rated download and upload values as Mbps instead of bytes")
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
 
     args = parser.parse_args()
@@ -2938,6 +2939,14 @@ Copyright 2023 Candela Technologies Inc.
     # logger_config = lf_logger_config.lf_logger_config()
     lf_logger_config.lf_logger_config()
 
+    if(args.tput_mbps):
+        if args.download != '2560' and args.download != '0' and args.upload != '0' and args.upload != '2560':
+            args.download = str(int(args.download) * 1000000)
+            args.upload = str(int(args.upload) * 1000000)
+        elif args.upload != '2560' and args.upload != '0':
+            args.upload = str(int(args.upload) * 1000000)
+        else:
+            args.download = str(int(args.download) * 1000000)
     loads = {}
     iterations_before_test_stopped_by_user = []
     gave_incremental = False
