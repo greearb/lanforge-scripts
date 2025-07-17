@@ -2032,7 +2032,7 @@ times the file is downloaded.
             uc_avg_val = http.data['uc_avg']
             url_times = http.data['url_data']
             rx_bytes_val = http.data['bytes_rd']
-            rx_rate_val = http.data['rx rate (1m)']
+            rx_rate_val = list(http.data['rx rate (1m)'])
         else:
             uc_avg_val = http.my_monitor('uc-avg')
             url_times = http.my_monitor('total-urls')
@@ -2275,6 +2275,16 @@ times the file is downloaded.
         # "": args.bands,
         # "PASS/FAIL": data
     # }
+    if args.dowebgui:
+        http.data_for_webui["status"] = ["STOPPED"] * len(http.devices_list)
+        http.data_for_webui['rx rate (1m)'] = http.data['rx rate (1m)']
+        http.data_for_webui['total_err'] = http.data['total_err']
+        http.data_for_webui["start_time"] = http.data["start_time"]
+        http.data_for_webui["end_time"] = http.data["end_time"]
+        http.data_for_webui["remaining_time"] = http.data["remaining_time"]
+        df1 = pd.DataFrame(http.data_for_webui)
+        df1.to_csv('{}/http_datavalues.csv'.format(http.result_dir), index=False)
+
     http.generate_report(date, num_stations=args.num_stations,
                          duration=args.duration, test_setup_info=test_setup_info, dataset=dataset, lis=lis,
                          bands=args.bands, threshold_2g=args.threshold_2g, threshold_5g=args.threshold_5g,
@@ -2288,13 +2298,6 @@ times the file is downloaded.
     http.postcleanup()
     # FOR WEBGUI, filling csv at the end to get the last terminal logs
     if args.dowebgui:
-        http.data_for_webui["status"] = ["STOPPED"] * len(http.devices_list)
-        http.data_for_webui["start_time"] = http.data["start_time"]
-        http.data_for_webui["end_time"] = http.data["end_time"]
-        http.data_for_webui["remaining_time"] = http.data["remaining_time"]
-        df1 = pd.DataFrame(http.data_for_webui)
-        df1.to_csv('{}/http_datavalues.csv'.format(http.result_dir), index=False)
-
         http.copy_reports_to_home_dir()
 
 
