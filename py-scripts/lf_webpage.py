@@ -119,7 +119,7 @@ class HttpDownload(Realm):
                  test_name=None, _exit_on_fail=False, client_type="", port_list=[], devices_list=[], macid_list=[], lf_username="lanforge", lf_password="lanforge", result_dir="", dowebgui=False,
                  device_list=[], get_url_from_file=None, file_path=None, device_csv_name='', expected_passfail_value=None, file_name=None, group_name=None, profile_name=None, eap_method=None,
                  eap_identity=None, ieee80211=None, ieee80211u=None, ieee80211w=None, enable_pkc=None, bss_transition=None, power_save=None, disable_ofdma=None, roam_ft_ds=None, key_management=None,
-                 pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60):
+                 pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60,get_live_view=False,total_floors=0,):
         # super().__init__(lfclient_host=lfclient_host,
         #                  lfclient_port=lfclient_port)
         self.ssid_list = []
@@ -195,6 +195,8 @@ class HttpDownload(Realm):
         self.api_url = 'http://{}:{}'.format(self.host, self.port)
         self.group_device_map = {}
         self.individual_device_csv_names = []
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
 
 # The 'phantom_check' will be handled within the 'get_real_client_list' function
     def get_real_client_list(self):
@@ -1097,6 +1099,25 @@ class HttpDownload(Realm):
                         self.mode_list.append(str(port_data['mode']))
                         self.ssid_list.append(str(port_data['ssid']))
 
+    def add_live_view_images_to_report(self,report):
+        for floor in range(0,int(self.total_floors)):
+                http_img_path = os.path.join(self.result_dir, "live_view_images", f"http_{self.test_name}_{floor+1}.png")
+                timeout = 60  # seconds
+                start_time = time.time()
+
+                while not (os.path.exists(http_img_path)):
+                    if time.time() - start_time > timeout:
+                        print("Timeout: Images not found within 60 seconds.")
+                        break
+                    time.sleep(1)
+                while not os.path.exists(http_img_path):
+                    if os.path.exists(http_img_path):
+                        break
+                if os.path.exists(http_img_path):
+                    report.set_custom_html('<div style="page-break-before: always;"></div>')
+                    report.build_custom()
+                    report.set_custom_html(f'<img src="file://{http_img_path}"></img>')
+                    report.build_custom()
     def generate_report(self, date, num_stations, duration, test_setup_info, dataset, lis, bands, threshold_2g,
                         threshold_5g, threshold_both, dataset2, dataset1,  # summary_table_value,
                         result_data, test_rig, rx_rate,
@@ -1156,6 +1177,8 @@ class HttpDownload(Realm):
         report.move_csv_file()
         report.move_graph_image()
         report.build_graph()
+        if(self.dowebgui and self.get_live_view):
+            self.add_live_view_images_to_report(report)
 
         # report.set_obj_html("Summary Table Description", "This Table shows you the summary "
         #                     "result of Webpage Download Test as PASS or FAIL criteria. If the average time taken by " +
@@ -1849,6 +1872,8 @@ def main():
     optional.add_argument("--wait_time", type=int, help='Specify the maximum time to wait for Configuration', default=60)
     optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
 
+    optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     help_summary = '''\
 lf_webpage.py will verify that N clients are connected on a specified band and can download
 some amount of file data from the HTTP server while measuring the time taken by clients to download the file and number of
@@ -1976,7 +2001,9 @@ times the file is downloaded.
                             expected_passfail_value=args.expected_passfail_value,
                             device_csv_name=args.device_csv_name,
                             wait_time=args.wait_time,
-                            config=args.config
+                            config=args.config,
+                            get_live_view= args.get_live_view,
+                            total_floors = args.total_floors
                             )
         if args.client_type == "Real":
             if not isinstance(args.device_list, list):
