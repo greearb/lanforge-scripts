@@ -116,10 +116,10 @@ logger = logging.getLogger(__name__)
 class HttpDownload(Realm):
     def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password, ap_name,
                  target_per_ten, file_size, bands, start_id=0, twog_radio=None, fiveg_radio=None, sixg_radio=None, _debug_on=False, _exit_on_error=False,
-                 test_name=None, _exit_on_fail=False, client_type="", port_list=[], devices_list=[], macid_list=[], lf_username="lanforge", lf_password="lanforge", result_dir="", dowebgui=False,
-                 device_list=[], get_url_from_file=None, file_path=None, device_csv_name='', expected_passfail_value=None, file_name=None, group_name=None, profile_name=None, eap_method=None,
+                 test_name=None, _exit_on_fail=False, client_type="", port_list=None, devices_list=None, macid_list=None, lf_username="lanforge", lf_password="lanforge", result_dir="", dowebgui=False,
+                 device_list=None, get_url_from_file=None, file_path=None, device_csv_name='', expected_passfail_value=None, file_name=None, group_name=None, profile_name=None, eap_method=None,
                  eap_identity=None, ieee80211=None, ieee80211u=None, ieee80211w=None, enable_pkc=None, bss_transition=None, power_save=None, disable_ofdma=None, roam_ft_ds=None, key_management=None,
-                 pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60,get_live_view=False,total_floors=0,):
+                 pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60, get_live_view=False, total_floors=0,):
         # super().__init__(lfclient_host=lfclient_host,
         #                  lfclient_port=lfclient_port)
         self.ssid_list = []
@@ -282,7 +282,7 @@ class HttpDownload(Realm):
         for key, value in response.items():
             if key == "resources":
                 for element in value:
-                    for a, b in element.items():
+                    for _, b in element.items():
                         if not b['phantom']:
                             working_resources_list.append(b["hw version"])
                             if "Win" in b['hw version']:
@@ -672,7 +672,7 @@ class HttpDownload(Realm):
             total_err = self.my_monitor('total-err')
             urls_downloaded = []
             for i in range(len(total_err)):
-                urls_downloaded.append(url_times[i]-total_err[i])
+                urls_downloaded.append(url_times[i] - total_err[i])
             url_times = list(urls_downloaded)
             self.data["MAC"] = self.macid_list
             self.data["SSID"] = self.ssid_list
@@ -758,15 +758,14 @@ class HttpDownload(Realm):
             all_l4_data = self.get_all_l4_data()
             df = pd.DataFrame(all_l4_data)
             df.to_csv("all_l4_data.csv", index=False)
-        except:
+        except Exception:
             logger.error("All l4 data not found")
-
 
     def get_all_l4_data(self):
         """
         Fetches the complete set of Layer-4 data and writes it to a dictionary
         Returns:
-            dict: A dictionary mapping each Layer 4 field to a list of values in the order of CXs. 
+            dict: A dictionary mapping each Layer 4 field to a list of values in the order of CXs.
         """
         fields = [
             "name", "eid", "type", "status", "total-urls", "urls/s", "bytes-rd", "bytes-wr",
@@ -868,7 +867,7 @@ class HttpDownload(Realm):
         for i in download_time:
             try:
                 download_time[i] = result_data[i]['dl_time']
-            except BaseException:
+            except Exception:
                 download_time[i] = []
         print("dl_times: ", download_time)
         lst = []
@@ -918,7 +917,7 @@ class HttpDownload(Realm):
         for i in speed:
             try:
                 speed[i] = result_data[i]['speed']
-            except BaseException:
+            except Exception:
                 speed[i] = []
         lst = []
         lst1 = []
@@ -1099,25 +1098,26 @@ class HttpDownload(Realm):
                         self.mode_list.append(str(port_data['mode']))
                         self.ssid_list.append(str(port_data['ssid']))
 
-    def add_live_view_images_to_report(self,report):
-        for floor in range(0,int(self.total_floors)):
-                http_img_path = os.path.join(self.result_dir, "live_view_images", f"http_{self.test_name}_{floor+1}.png")
-                timeout = 60  # seconds
-                start_time = time.time()
+    def add_live_view_images_to_report(self, report):
+        for floor in range(0, int(self.total_floors)):
+            http_img_path = os.path.join(self.result_dir, "live_view_images", f"http_{self.test_name}_{floor + 1}.png")
+            timeout = 60  # seconds
+            start_time = time.time()
 
-                while not (os.path.exists(http_img_path)):
-                    if time.time() - start_time > timeout:
-                        print("Timeout: Images not found within 60 seconds.")
-                        break
-                    time.sleep(1)
-                while not os.path.exists(http_img_path):
-                    if os.path.exists(http_img_path):
-                        break
+            while not (os.path.exists(http_img_path)):
+                if time.time() - start_time > timeout:
+                    print("Timeout: Images not found within 60 seconds.")
+                    break
+                time.sleep(1)
+            while not os.path.exists(http_img_path):
                 if os.path.exists(http_img_path):
-                    report.set_custom_html('<div style="page-break-before: always;"></div>')
-                    report.build_custom()
-                    report.set_custom_html(f'<img src="file://{http_img_path}"></img>')
-                    report.build_custom()
+                    break
+            if os.path.exists(http_img_path):
+                report.set_custom_html('<div style="page-break-before: always;"></div>')
+                report.build_custom()
+                report.set_custom_html(f'<img src="file://{http_img_path}"></img>')
+                report.build_custom()
+
     def generate_report(self, date, num_stations, duration, test_setup_info, dataset, lis, bands, threshold_2g,
                         threshold_5g, threshold_both, dataset2, dataset1,  # summary_table_value,
                         result_data, test_rig, rx_rate,
@@ -1137,7 +1137,7 @@ class HttpDownload(Realm):
             shutil.move('http_datavalues.csv', report_path_date_time)
             try:
                 shutil.move('all_l4_data.csv', report_path_date_time)
-            except:
+            except Exception:
                 logging.info("failed to generate all l4 data csv")
             # Moving indiviudal csv's to report directory
             for csv_name in self.individual_device_csv_names:
@@ -1177,7 +1177,7 @@ class HttpDownload(Realm):
         report.move_csv_file()
         report.move_graph_image()
         report.build_graph()
-        if(self.dowebgui and self.get_live_view):
+        if (self.dowebgui and self.get_live_view):
             self.add_live_view_images_to_report(report)
 
         # report.set_obj_html("Summary Table Description", "This Table shows you the summary "
@@ -1510,7 +1510,7 @@ class HttpDownload(Realm):
             try:
                 target_port_ip = self.local_realm.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
-            except BaseException:
+            except Exception:
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
             logging.info(f"Upstream port IP {upstream_port}")
         else:
@@ -1630,7 +1630,7 @@ class HttpDownload(Realm):
                 try:
                     _ = self.local_realm.json_get("layer4/%s/list?fields=%s" %
                                                   (created_cxs, 'status'))['endpoint']['status']
-                except BaseException:
+                except Exception:
                     logger.error(f'cx not created for {self.port_list[i]}')
                     failed_cx.append(created_cxs)
                     del_device_list.append(self.device_list[i])
@@ -2002,8 +2002,8 @@ times the file is downloaded.
                             device_csv_name=args.device_csv_name,
                             wait_time=args.wait_time,
                             config=args.config,
-                            get_live_view= args.get_live_view,
-                            total_floors = args.total_floors
+                            get_live_view=args.get_live_view,
+                            total_floors=args.total_floors
                             )
         if args.client_type == "Real":
             if not isinstance(args.device_list, list):
