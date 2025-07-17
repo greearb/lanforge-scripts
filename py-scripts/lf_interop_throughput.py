@@ -510,7 +510,7 @@ class Throughput(Realm):
                 else:
                     device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
             logger.info("AVAILABLE RESOURCES", device_list)
-            self.device_list = input("Enter the desired resources to run the test:").split(',')
+            self.device_list = input("Select the desired resources to run the test:").split(',')
             if self.config:
                 self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=self.config_dict))
 
@@ -603,7 +603,7 @@ class Throughput(Realm):
         configure_list = []
         if len(self.device_list) == 0 and self.config is False and self.group_name is None:
             logger.info("AVAILABLE DEVICES TO RUN TEST : {}".format(self.user_list))
-            self.device_list = input("Enter the desired resources to run the test:").split(',')
+            self.device_list = input("Select the desired resources to run the test:").split(',')
         # If self.device_list is provided, check availability against devices_available
         if len(self.device_list) != 0:
             devices_list = self.device_list
@@ -1554,7 +1554,7 @@ class Throughput(Realm):
             # objective title and description
             report.set_obj_html(_obj_title="Objective",
                                 _obj="The Candela Client Capacity test is designed to measure an Access Point’s client capacity and performance when handling different amounts of Real clients like android, Linux,"  # noqa: E501
-                                " windows, and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for"  # noqa: E501
+                                " windows,MacOS and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for"  # noqa: E501
                                 " this test, we aim to assess the capacity of network to handle high volumes of traffic while"
                                 " each trial. Along with throughput other measurements made are client connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the"  # noqa: E501
                                 " AP to be able to handle several stations (within the limitations of the AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that"  # noqa: E501
@@ -1697,8 +1697,8 @@ class Throughput(Realm):
                     filtered_df = data_iter[columns_with_substring]
                     download_col = filtered_df[[col for col in filtered_df.columns if "Download" in col][0]].values.tolist()
                     upload_col = filtered_df[[col for col in filtered_df.columns if "Upload" in col][0]].values.tolist()
-                    upload_drop_col = filtered_df[[col for col in filtered_df.columns if "Rx % Drop B" in col][0]].values.tolist()
-                    download_drop_col = filtered_df[[col for col in filtered_df.columns if "Rx % Drop A" in col][0]].values.tolist()
+                    upload_drop_col = filtered_df[[col for col in filtered_df.columns if "Tx % Drop" in col][0]].values.tolist()
+                    download_drop_col = filtered_df[[col for col in filtered_df.columns if "Rx % Drop " in col][0]].values.tolist()
                     rssi_col = filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()
                     if self.load_type == "wc_intended_load":
                         if self.direction == "Bi-direction":
@@ -1712,8 +1712,8 @@ class Throughput(Realm):
                             rssi_data.append(int(round(sum(rssi_col) / len(rssi_col), 2) * -1))
                             avg_rtt_data.append(filtered_df[[col for col in filtered_df.columns if "Average RTT " in col][0]].values.tolist()[-1])
                             # Calculate and append upload and download throughput to lists
-                            upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)) + "Mbps")
-                            download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)) + "Mbps")
+                            upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
+                            download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
                             if self.cx_profile.side_a_min_pdu == -1:
                                 packet_size_in_table.append('AUTO')
                             else:
@@ -1731,8 +1731,8 @@ class Throughput(Realm):
                             rssi_data.append(int(round(sum(rssi_col) / len(rssi_col), 2) * -1))
 
                             # Calculate and append upload and download throughput to lists
-                            upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)) + "Mbps")
-                            download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)) + "Mbps")
+                            upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
+                            download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
                             avg_rtt_data.append(filtered_df[[col for col in filtered_df.columns if "Average RTT " in col][0]].values.tolist()[-1])
                             # Append average download drop data from filtered dataframe
 
@@ -1746,8 +1746,8 @@ class Throughput(Realm):
                         elif self.direction == 'Upload':
 
                             # Calculate and append upload and download throughput to lists
-                            upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)) + "Mbps")
-                            download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)) + "Mbps")
+                            upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
+                            download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
 
                             rssi_data.append(int(round(sum(rssi_col) / len(rssi_col), 2) * -1))
 
@@ -1779,8 +1779,8 @@ class Throughput(Realm):
                             avg_rtt_data.append(filtered_df[[col for col in filtered_df.columns if "Average RTT " in col][0]].values.tolist()[-1])
 
                             # Calculate and append upload and download throughput to lists
-                            upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps")
-                            download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps")
+                            upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                            download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
 
                             if self.cx_profile.side_a_min_pdu == -1:
                                 packet_size_in_table.append('AUTO')
@@ -1797,8 +1797,8 @@ class Throughput(Realm):
                             avg_rtt_data.append(filtered_df[[col for col in filtered_df.columns if "Average RTT " in col][0]].values.tolist()[-1])
 
                             # Calculate and append upload and download throughput to lists
-                            upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps")
-                            download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps")
+                            upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                            download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
                             # Append average download drop data from filtered dataframe
                             download_drop.append(round(sum(download_drop_col) / len(download_drop_col), 2))
                             if self.cx_profile.side_a_min_pdu == -1:
@@ -2005,27 +2005,27 @@ class Throughput(Realm):
                         " Channel ": self.channel_list[0:int(incremental_capacity_list[i])],
                         " Mode": self.mode_list[0:int(incremental_capacity_list[i])],
                         # " Direction":direction_in_table[0:int(incremental_capacity_list[i])],
-                        " Offered download rate ": download_list[0:int(incremental_capacity_list[i])],
-                        " Observed Average download rate ": [str(n) + " Mbps" for n in download_data[0:int(incremental_capacity_list[i])]],
-                        " Offered upload rate ": upload_list[0:int(incremental_capacity_list[i])],
-                        " Observed Average upload rate ": [str(n) + " Mbps" for n in upload_data[0:int(incremental_capacity_list[i])]],
-                        " RSSI ": ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[0:int(incremental_capacity_list[i])]],
+                        " Offered download rate (Mbps) ": download_list[0:int(incremental_capacity_list[i])],
+                        " Observed Average download rate (Mbps) ": [str(n)  for n in download_data[0:int(incremental_capacity_list[i])]],
+                        " Offered upload rate (Mbps) ": upload_list[0:int(incremental_capacity_list[i])],
+                        " Observed Average upload rate (Mbps) ": [str(n)  for n in upload_data[0:int(incremental_capacity_list[i])]],
+                        " RSSI (dBm) ": ['' if n == 0 else '-' + str(n)  for n in rssi_data[0:int(incremental_capacity_list[i])]],
                         # " Link Speed ":self.link_speed_list[0:int(incremental_capacity_list[i])],
                         " Average RTT (ms)" : avg_rtt_data[0:int(incremental_capacity_list[i])],
                         " Packet Size(Bytes) ": [str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]],
                     }
                     if self.direction == "Bi-direction":
-                        bk_dataframe[" Average Rx Drop B% "] = upload_drop
-                        bk_dataframe[" Average Rx Drop A% "] = download_drop
+                        bk_dataframe[" Average Tx Drop % "] = upload_drop
+                        bk_dataframe[" Average Rx Drop % "] = download_drop
                     elif self.direction == 'Download':
-                        bk_dataframe[" Average Rx Drop A% "] = download_drop
+                        bk_dataframe[" Average Rx Drop % "] = download_drop
                         # adding rx drop while uploading as 0
-                        bk_dataframe[" Average Rx Drop B% "] = [0.0] * len(download_drop)
+                        bk_dataframe[" Average Tx Drop % "] = [0.0] * len(download_drop)
 
                     else:
-                        bk_dataframe[" Average Rx Drop B% "] = upload_drop
+                        bk_dataframe[" Average Tx Drop % "] = upload_drop
                         # adding rx drop while downloading as 0
-                        bk_dataframe[" Average Rx Drop A% "] = [0.0] * len(upload_drop)
+                        bk_dataframe[" Average Rx Drop % "] = [0.0] * len(upload_drop)
                     if self.expected_passfail_value or self.device_csv_name:
                         bk_dataframe[" Expected " + self.direction + " rate "] = [str(n) + " Mbps" for n in test_input_list]
                         bk_dataframe[" Status "] = pass_fail_list
@@ -2053,7 +2053,7 @@ class Throughput(Realm):
             # objective title and description
             report.set_obj_html(_obj_title="Objective",
                                 _obj="The Candela Interoperability test is designed to measure an Access Point’s client performance when handling different amounts of Real clients"
-                                " like android, Linux, windows, and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and"
+                                " like android, Linux, windows, MacOS and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and"
                                 " measure the per-client throughput for each trial. Along with throughput other measurements made are client connection times, Station 4-Way"
                                 " Handshake time, DHCP times, and more. The expected behavior is for the AP to be able to handle several stations (within the limitations of the"
                                 " AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that scales well will not show a"
@@ -2160,8 +2160,8 @@ class Throughput(Realm):
                     filtered_df = data_iter[columns_with_substring]
                     download_col = filtered_df[[col for col in filtered_df.columns if "Download" in col][0]].values.tolist()
                     upload_col = filtered_df[[col for col in filtered_df.columns if "Upload" in col][0]].values.tolist()
-                    upload_drop_col = filtered_df[[col for col in filtered_df.columns if "Rx % Drop B" in col][0]].values.tolist()
-                    download_drop_col = filtered_df[[col for col in filtered_df.columns if "Rx % Drop A" in col][0]].values.tolist()
+                    upload_drop_col = filtered_df[[col for col in filtered_df.columns if "Tx % Drop" in col][0]].values.tolist()
+                    download_drop_col = filtered_df[[col for col in filtered_df.columns if "Rx % Drop" in col][0]].values.tolist()
                     rssi_col = filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()
                     if self.direction == "Bi-direction":
 
@@ -2174,8 +2174,8 @@ class Throughput(Realm):
                                          len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
                         avg_rtt_data.append(filtered_df[[col for col in filtered_df.columns if "Average RTT " in col][0]].values.tolist()[-1])
                         # Calculate and append upload and download throughput to lists
-                        upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps")
-                        download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps")
+                        upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                        download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
 
                         direction_in_table.append(self.direction)
                     elif self.direction == 'Download':
@@ -2191,15 +2191,15 @@ class Throughput(Realm):
                         avg_rtt_data.append(filtered_df[[col for col in filtered_df.columns if "Average RTT " in col][0]].values.tolist()[-1])
 
                         # Calculate and append upload and download throughput to lists
-                        upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps")
-                        download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps")
+                        upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                        download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
 
                         direction_in_table.append(self.direction)
                     elif self.direction == 'Upload':
 
                         # Calculate and append upload and download throughput to lists
-                        upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps")
-                        download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps")
+                        upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                        download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
                         rssi_data.append(int(round(sum(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()) /
                                          len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
                         upload_drop.append(round(sum(upload_drop_col) / len(upload_drop_col), 2))
@@ -2353,22 +2353,21 @@ class Throughput(Realm):
                 bk_dataframe[" MAC "] = self.mac_id_list[int(incremental_capacity_list[i]) - 1]
                 bk_dataframe[" Channel "] = self.channel_list[int(incremental_capacity_list[i]) - 1]
                 bk_dataframe[" Mode"] = self.mode_list[int(incremental_capacity_list[i]) - 1]
-                bk_dataframe[" Offered download rate "] = download_list[-1]
-                bk_dataframe[" Observed Average download rate "] = [str(download_data[-1]) + " Mbps"]
-                bk_dataframe[" Offered upload rate "] = upload_list[-1]
-                bk_dataframe[" Observed Average upload rate "] = [str(upload_data[-1]) + " Mbps"]
+                bk_dataframe[" Offered download rate (Mbps)"] = download_list[-1]
+                bk_dataframe[" Observed Average download rate (Mbps)"] = [str(download_data[-1])]
+                bk_dataframe[" Offered upload rate (Mbps)"] = upload_list[-1]
+                bk_dataframe[" Observed Average upload rate (Mbps)"] = [str(upload_data[-1])]
                 bk_dataframe[" Average RTT (ms) "] = avg_rtt_data[-1]
-                bk_dataframe[" RSSI "] = ['' if rssi_data[-1] == 0 else '-' + str(rssi_data[-1]) + " dbm"]
-
+                bk_dataframe[" RSSI (dBm)"] = ['' if rssi_data[-1] == 0 else '-' + str(rssi_data[-1])]
                 if self.direction == "Bi-direction":
-                    bk_dataframe[" Average Rx Drop B% "] = upload_drop
-                    bk_dataframe[" Average Rx Drop A% "] = download_drop
+                    bk_dataframe[" Average Tx Drop % "] = upload_drop
+                    bk_dataframe[" Average Rx Drop % "] = download_drop
                 elif self.direction == 'Download':
-                    bk_dataframe[" Average Rx Drop A% "] = download_drop
-                    bk_dataframe[" Average Rx Drop B% "] = [0.0] * len(download_drop)
+                    bk_dataframe[" Average Rx Drop % "] = download_drop
+                    bk_dataframe[" Average Tx Drop % "] = [0.0] * len(download_drop)
                 else:
-                    bk_dataframe[" Average Rx Drop B% "] = upload_drop
-                    bk_dataframe[" Average Rx Drop A% "] = [0.0] * len(upload_drop)
+                    bk_dataframe[" Average Tx Drop % "] = upload_drop
+                    bk_dataframe[" Average Rx Drop % "] = [0.0] * len(upload_drop)
                 # When pass fail criteria is specified
                 if self.expected_passfail_value or self.device_csv_name:
                     bk_dataframe[" Expected " + self.direction + " rate "] = test_input_list
@@ -3099,10 +3098,10 @@ Copyright 2023 Candela Technologies Inc.
         for i in range(len(clients_to_run)):
 
             # Extend individual_dataframe_column with dynamically generated column names
-            individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop A {clients_to_run[i]}',
-                                               f'Rx % Drop B{clients_to_run[i]}', f'RSSI {clients_to_run[i]} ', f'Tx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]} '])
+            individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop  {clients_to_run[i]}',
+                                               f'Tx % Drop{clients_to_run[i]}', f'Average RTT {clients_to_run[i]} ', f'RSSI {clients_to_run[i]} ', f'Tx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]} '])
 
-        individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop A', 'Overall Rx % Drop B', 'Iteration',
+        individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop ', 'Overall Tx % Drop', 'Iteration',
                                            'TIMESTAMP', 'Start_time', 'End_time', 'Remaining_Time', 'Incremental_list', 'status'])
         individual_df = pd.DataFrame(columns=individual_dataframe_column)
 
