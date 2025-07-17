@@ -667,6 +667,11 @@ class HttpDownload(Realm):
             url_times = self.my_monitor('total-urls')
             rx_rate = self.my_monitor('rx rate (1m)')
             bytes_rd = self.my_monitor('bytes-rd')
+            total_err = self.my_monitor('total-err')
+            urls_downloaded = []
+            for i in range(len(total_err)):
+                urls_downloaded.append(url_times[i]-total_err[i])
+            url_times = list(urls_downloaded)
             self.data["MAC"] = self.macid_list
             self.data["SSID"] = self.ssid_list
             self.data["Channel"] = self.channel_list
@@ -706,6 +711,7 @@ class HttpDownload(Realm):
                 self.data["uc_avg"] = uc_avg_data
                 self.data["bytes_rd"] = bytes_rd
                 self.data["rx rate (1m)"] = rx_rate
+                self.data["total_err"] = total_err
             else:
                 self.data["status"] = ["RUNNING"] * len(self.devices_list)
                 self.data["url_data"] = [0] * len(self.devices_list)
@@ -714,6 +720,7 @@ class HttpDownload(Realm):
                 self.data["uc_min"] = [0] * len(self.devices_list)
                 self.data["bytes_rd"] = [0] * len(self.devices_list)
                 self.data["rx rate (1m)"] = [0] * len(self.devices_list)
+                self.data["total_err"] = [0] * len(self.devices_list)
             time_difference = abs(end_time - datetime.now())
             total_hours = time_difference.total_seconds() / 3600
             remaining_minutes = (total_hours % 1) * 60
@@ -1289,7 +1296,8 @@ class HttpDownload(Realm):
                     " No of times File downloaded ": dataset2,
                     " Average time taken to Download file (ms)": dataset,
                     " Bytes-rd (Mega Bytes) ": dataset1,
-                    "Rx Rate (Mbps)": rx_rate
+                    "Rx Rate (Mbps)": rx_rate,
+                    "Failed url's": self.data["total_err"]
                 }
                 if self.expected_passfail_value or self.device_csv_name:
                     dataframe[" Expected value of no of times file downloaded"] = test_input_list
