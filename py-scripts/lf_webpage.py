@@ -752,6 +752,55 @@ class HttpDownload(Realm):
             df.to_csv(f"{endtime}-http-{port}.csv", index=False)
             individual_device_csv_names.append(f'{endtime}-http-{port}')
         self.individual_device_csv_names = individual_device_csv_names
+        try:
+            all_l4_data = self.get_all_l4_data()
+            df = pd.DataFrame(all_l4_data)
+            df.to_csv("all_l4_data.csv", index=False)
+        except:
+            logger.error("All l4 data not found")
+
+
+    def get_all_l4_data(self):
+        """
+        Fetches the complete set of Layer-4 data and writes it to a dictionary
+        Returns:
+            dict: A dictionary mapping each Layer 4 field to a list of values in the order of CXs. 
+        """
+        fields = [
+            "name", "eid", "type", "status", "total-urls", "urls/s", "bytes-rd", "bytes-wr",
+            "total-buffers", "total-rebuffers", "total-wait-time", "video-format-bitrate",
+            "audio-format-bitrate", "frame-rate", "video-quality", "tx rate", "tx-rate-1m",
+            "rx rate", "rx rate (1m)", "fb-min", "fb-avg", "fb-max", "uc-min", "uc-avg",
+            "uc-max", "dns-min", "dns-avg", "dns-max", "total-err", "bad-proto", "bad-url",
+            "rslv-p", "rslv-h", "!conn", "timeout", "nf (4xx)", "http-r", "http-p", "http-t",
+            "acc. denied", "ftp-host", "ftp-stor", "ftp-port", "write", "read", "redir",
+            "login-denied", "other-err", "elapsed", "rpt timer", "time-stamp"
+        ]
+
+        data = self.local_realm.json_get(f"layer4/list?fields={','.join(fields)}")
+
+        result = {field: [] for field in fields}
+
+        endpoint = data.get("endpoint", {})
+        cx_list = self.http_profile.created_cx.keys()
+        if isinstance(endpoint, dict):
+            for field in fields:
+                result[field].append(endpoint.get(field, None))
+        else:
+            for created_cx in cx_list:
+                for cx in endpoint:
+                    if created_cx in cx:
+                        for field in fields:
+                            result[field].append(cx[created_cx].get(field, None))
+                        break
+
+        if "bytes-rd" in result:
+            result["bytes-rd"] = [
+                float(f"{int(x) / 1_000_000:.4f}") if x is not None else None
+                for x in result["bytes-rd"]
+            ]
+
+        return result
 
     def my_monitor(self, data_mon):
         # data in json format
@@ -1065,6 +1114,10 @@ class HttpDownload(Realm):
         # It ensures no blocker for virtual clients
         if self.client_type == 'Real':
             shutil.move('http_datavalues.csv', report_path_date_time)
+            try:
+                shutil.move('all_l4_data.csv', report_path_date_time)
+            except:
+                logging.info("failed to generate all l4 data csv")
             # Moving indiviudal csv's to report directory
             for csv_name in self.individual_device_csv_names:
                 shutil.move(f"{csv_name}.csv", report_path_date_time)
