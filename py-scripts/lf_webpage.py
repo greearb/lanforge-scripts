@@ -991,7 +991,7 @@ class HttpDownload(Realm):
                                         _color_name=['steelblue'],
                                         _show_bar_value=True,
                                         _enable_csv=True,
-                                        _graph_image_name="ucg-avg", _color_edge=['black'],
+                                        _graph_image_name="ucg-avg_http", _color_edge=['black'],
                                         _color=['steelblue'],
                                         _label=bands)
         graph_png = graph.build_bar_graph_horizontal()
@@ -1023,7 +1023,7 @@ class HttpDownload(Realm):
                                           _color_name=['orange'],
                                           _show_bar_value=True,
                                           _enable_csv=True,
-                                          _graph_image_name="Total-url", _color_edge=['black'],
+                                          _graph_image_name="Total-url_http", _color_edge=['black'],
                                           _color=['orange'],
                                           _label=bands)
         graph_png = graph_2.build_bar_graph_horizontal()
