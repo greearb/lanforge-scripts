@@ -1521,6 +1521,59 @@ class HttpDownload(Realm):
                 rx_rate_list.append('-')
         return signal_list, link_speed_list, rx_rate_list
 
+    def monitor_cx(self):
+        """
+        This function waits for upto 20 iterations to allow all CXs (connections) to be created.
+
+        If some CXs are still not created after 20 iterations, then the CXs related to that device are removed,
+        along with their associated client and MAC entries from all relevant lists.
+        """
+        max_retry = 20
+        current_retry = 0
+        failed_cx = []
+        flag = 0
+        idx_list = []
+        del_device_list, del_mac_list, del_port_list, del_device_list1 = [], [], [], []
+        while current_retry < max_retry:
+            failed_cx.clear()
+            idx_list.clear()
+            del_device_list.clear()
+            del_mac_list.clear()
+            del_port_list.clear()
+            del_device_list1.clear()
+            created_cx_list = list(self.http_profile.created_cx.keys())
+            for i, created_cxs in enumerate(created_cx_list):
+                try:
+                    _ = self.local_realm.json_get("layer4/%s/list?fields=%s" %
+                                                  (created_cxs, 'status'))['endpoint']['status']
+                except BaseException:
+                    logger.error(f'cx not created for {self.port_list[i]}')
+                    failed_cx.append(created_cxs)
+                    del_device_list.append(self.device_list[i])
+                    del_mac_list.append(self.macid_list[i])
+                    del_port_list.append(self.port_list[i])
+                    del_device_list1.append(self.devices_list[i])
+            if len(failed_cx) == 0:
+                flag = 1
+                break
+            logger.info(f'Try {current_retry} out of 20: Waiting for the cross-connections to be created.')
+            time.sleep(2)
+            current_retry += 1
+
+        if flag:
+            logger.info('cross connections found for all devices')
+            return
+        for cx in failed_cx:
+            del self.http_profile.created_cx[cx]
+        for i in range(len(del_port_list)):
+            self.port_list.remove(del_port_list[i])
+            self.macid_list.remove(del_mac_list[i])
+            self.device_list.remove(del_device_list[i])
+            self.devices_list.remove(del_device_list1[i])
+        if len(self.port_list) == 0:
+            logger.error('No cross connections created, aborting test')
+            exit(1)
+
 
 def validate_args(args):
     if args.expected_passfail_value and args.device_csv_name:
@@ -1886,38 +1939,6 @@ times the file is downloaded.
                         "configuration_status": "configured"
                     }
                     http.updating_webui_runningjson(obj)
-            android_devices, windows_devices, linux_devices, mac_devices = 0, 0, 0, 0
-            all_devices_names = []
-            device_type = []
-            total_devices = ""
-            for i in device_list:
-                split_device_name = i.split(" ")
-                if 'android' in split_device_name:
-                    all_devices_names.append(split_device_name[2] + ("(Android)"))
-                    device_type.append("Android")
-                    android_devices += 1
-                elif 'Win' in split_device_name:
-                    all_devices_names.append(split_device_name[2] + ("(Windows)"))
-                    device_type.append("Windows")
-                    windows_devices += 1
-                elif 'Lin' in split_device_name:
-                    all_devices_names.append(split_device_name[2] + ("(Linux)"))
-                    device_type.append("Linux")
-                    linux_devices += 1
-                elif 'Mac' in split_device_name:
-                    all_devices_names.append(split_device_name[2] + ("(Mac)"))
-                    device_type.append("Mac")
-                    mac_devices += 1
-
-            # Build total_devices string based on counts
-            if android_devices > 0:
-                total_devices += f" Android({android_devices})"
-            if windows_devices > 0:
-                total_devices += f" Windows({windows_devices})"
-            if linux_devices > 0:
-                total_devices += f" Linux({linux_devices})"
-            if mac_devices > 0:
-                total_devices += f" Mac({mac_devices})"
             args.num_stations = len(port_list)
         if not args.get_url_from_file:
             http.file_create(ssh_port=args.ssh_port)
@@ -1928,6 +1949,9 @@ times the file is downloaded.
         http.set_values()
         http.precleanup()
         http.build()
+        if args.client_type == 'Real':
+            http.monitor_cx()
+            logger.info(f'Test started on the devices : {http.port_list}')
         test_time = datetime.now()
         # Solution For Leap Year conflict changed it to %Y
         test_time = test_time.strftime("%Y %d %H:%M:%S")
@@ -2081,6 +2105,38 @@ times the file is downloaded.
             duration = str(duration / 3600) + "h"
 
     if args.client_type == "Real":
+        android_devices, windows_devices, linux_devices, mac_devices = 0, 0, 0, 0
+        all_devices_names = []
+        device_type = []
+        total_devices = ""
+        for i in http.devices_list:
+            split_device_name = i.split(" ")
+            if 'android' in split_device_name:
+                all_devices_names.append(split_device_name[2] + ("(Android)"))
+                device_type.append("Android")
+                android_devices += 1
+            elif 'Win' in split_device_name:
+                all_devices_names.append(split_device_name[2] + ("(Windows)"))
+                device_type.append("Windows")
+                windows_devices += 1
+            elif 'Lin' in split_device_name:
+                all_devices_names.append(split_device_name[2] + ("(Linux)"))
+                device_type.append("Linux")
+                linux_devices += 1
+            elif 'Mac' in split_device_name:
+                all_devices_names.append(split_device_name[2] + ("(Mac)"))
+                device_type.append("Mac")
+                mac_devices += 1
+
+        # Build total_devices string based on counts
+        if android_devices > 0:
+            total_devices += f" Android({android_devices})"
+        if windows_devices > 0:
+            total_devices += f" Windows({windows_devices})"
+        if linux_devices > 0:
+            total_devices += f" Linux({linux_devices})"
+        if mac_devices > 0:
+            total_devices += f" Mac({mac_devices})"
         if args.group_name:
             group_names = ', '.join(configuration.keys())
             profile_names = ', '.join(configuration.values())
@@ -2089,7 +2145,7 @@ times the file is downloaded.
                 "AP name": args.ap_name,
                 "Configuration": configmap,
                 "Configured Devices": ", ".join(all_devices_names),
-                "No of Devices": "Total" + f"({args.num_stations})" + total_devices,
+                "No of Devices": "Total" + f"({len(all_devices_names)})" + total_devices,
                 "Traffic Direction": "Download",
                 "Traffic Duration ": duration
             }
@@ -2099,7 +2155,7 @@ times the file is downloaded.
                 "SSID": ssid,
                 "Device List": ", ".join(all_devices_names),
                 "Security": security,
-                "No of Devices": "Total" + f"({args.num_stations})" + total_devices,
+                "No of Devices": "Total" + f"({len(all_devices_names)})" + total_devices,
                 "Traffic Direction": "Download",
                 "Traffic Duration ": duration
             }
