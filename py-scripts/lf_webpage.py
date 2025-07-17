@@ -116,10 +116,10 @@ logger = logging.getLogger(__name__)
 class HttpDownload(Realm):
     def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password, ap_name,
                  target_per_ten, file_size, bands, start_id=0, twog_radio=None, fiveg_radio=None, sixg_radio=None, _debug_on=False, _exit_on_error=False,
-                 test_name=None, _exit_on_fail=False, client_type="", port_list=[], devices_list=[], macid_list=[], lf_username="lanforge", lf_password="lanforge", result_dir="", dowebgui=False,
-                 device_list=[], get_url_from_file=None, file_path=None, device_csv_name='', expected_passfail_value=None, file_name=None, group_name=None, profile_name=None, eap_method=None,
+                 test_name=None, _exit_on_fail=False, client_type="", port_list=None, devices_list=None, macid_list=None, lf_username="lanforge", lf_password="lanforge", result_dir="", dowebgui=False,
+                 device_list=None, get_url_from_file=None, file_path=None, device_csv_name='', expected_passfail_value=None, file_name=None, group_name=None, profile_name=None, eap_method=None,
                  eap_identity=None, ieee80211=None, ieee80211u=None, ieee80211w=None, enable_pkc=None, bss_transition=None, power_save=None, disable_ofdma=None, roam_ft_ds=None, key_management=None,
-                 pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60):
+                 pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60, get_live_view=False, total_floors=0,):
         # super().__init__(lfclient_host=lfclient_host,
         #                  lfclient_port=lfclient_port)
         self.ssid_list = []
@@ -195,6 +195,8 @@ class HttpDownload(Realm):
         self.api_url = 'http://{}:{}'.format(self.host, self.port)
         self.group_device_map = {}
         self.individual_device_csv_names = []
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
 
 # The 'phantom_check' will be handled within the 'get_real_client_list' function
     def get_real_client_list(self):
@@ -280,7 +282,7 @@ class HttpDownload(Realm):
         for key, value in response.items():
             if key == "resources":
                 for element in value:
-                    for a, b in element.items():
+                    for _, b in element.items():
                         if not b['phantom']:
                             working_resources_list.append(b["hw version"])
                             if "Win" in b['hw version']:
@@ -667,6 +669,11 @@ class HttpDownload(Realm):
             url_times = self.my_monitor('total-urls')
             rx_rate = self.my_monitor('rx rate (1m)')
             bytes_rd = self.my_monitor('bytes-rd')
+            total_err = self.my_monitor('total-err')
+            urls_downloaded = []
+            for i in range(len(total_err)):
+                urls_downloaded.append(url_times[i] - total_err[i])
+            url_times = list(urls_downloaded)
             self.data["MAC"] = self.macid_list
             self.data["SSID"] = self.ssid_list
             self.data["Channel"] = self.channel_list
@@ -706,6 +713,7 @@ class HttpDownload(Realm):
                 self.data["uc_avg"] = uc_avg_data
                 self.data["bytes_rd"] = bytes_rd
                 self.data["rx rate (1m)"] = rx_rate
+                self.data["total_err"] = total_err
             else:
                 self.data["status"] = ["RUNNING"] * len(self.devices_list)
                 self.data["url_data"] = [0] * len(self.devices_list)
@@ -714,6 +722,7 @@ class HttpDownload(Realm):
                 self.data["uc_min"] = [0] * len(self.devices_list)
                 self.data["bytes_rd"] = [0] * len(self.devices_list)
                 self.data["rx rate (1m)"] = [0] * len(self.devices_list)
+                self.data["total_err"] = [0] * len(self.devices_list)
             time_difference = abs(end_time - datetime.now())
             total_hours = time_difference.total_seconds() / 3600
             remaining_minutes = (total_hours % 1) * 60
@@ -745,6 +754,52 @@ class HttpDownload(Realm):
             df.to_csv(f"{endtime}-http-{port}.csv", index=False)
             individual_device_csv_names.append(f'{endtime}-http-{port}')
         self.individual_device_csv_names = individual_device_csv_names
+        try:
+            all_l4_data = self.get_all_l4_data()
+            df = pd.DataFrame(all_l4_data)
+            df.to_csv("all_l4_data.csv", index=False)
+        except Exception:
+            logger.error("All l4 data not found")
+
+    def get_all_l4_data(self):
+        """
+        Fetches the complete set of Layer 4 data and writes it to a CSV file.
+        """
+        fields = [
+            "name", "eid", "type", "status", "total-urls", "urls/s", "bytes-rd", "bytes-wr",
+            "total-buffers", "total-rebuffers", "total-wait-time", "video-format-bitrate",
+            "audio-format-bitrate", "frame-rate", "video-quality", "tx rate", "tx-rate-1m",
+            "rx rate", "rx rate (1m)", "fb-min", "fb-avg", "fb-max", "uc-min", "uc-avg",
+            "uc-max", "dns-min", "dns-avg", "dns-max", "total-err", "bad-proto", "bad-url",
+            "rslv-p", "rslv-h", "!conn", "timeout", "nf (4xx)", "http-r", "http-p", "http-t",
+            "acc. denied", "ftp-host", "ftp-stor", "ftp-port", "write", "read", "redir",
+            "login-denied", "other-err", "elapsed", "rpt timer", "time-stamp"
+        ]
+
+        data = self.local_realm.json_get(f"layer4/list?fields={','.join(fields)}")
+
+        result = {field: [] for field in fields}
+
+        endpoint = data.get("endpoint", {})
+        cx_list = self.http_profile.created_cx.keys()
+        if isinstance(endpoint, dict):
+            for field in fields:
+                result[field].append(endpoint.get(field, None))
+        else:
+            for created_cx in cx_list:
+                for cx in endpoint:
+                    if created_cx in cx:
+                        for field in fields:
+                            result[field].append(cx[created_cx].get(field, None))
+                        break
+
+        if "bytes-rd" in result:
+            result["bytes-rd"] = [
+                float(f"{int(x) / 1_000_000:.4f}") if x is not None else None
+                for x in result["bytes-rd"]
+            ]
+
+        return result
 
     def my_monitor(self, data_mon):
         # data in json format
@@ -810,7 +865,7 @@ class HttpDownload(Realm):
         for i in download_time:
             try:
                 download_time[i] = result_data[i]['dl_time']
-            except BaseException:
+            except Exception:
                 download_time[i] = []
         print("dl_times: ", download_time)
         lst = []
@@ -860,7 +915,7 @@ class HttpDownload(Realm):
         for i in speed:
             try:
                 speed[i] = result_data[i]['speed']
-            except BaseException:
+            except Exception:
                 speed[i] = []
         lst = []
         lst1 = []
@@ -991,7 +1046,7 @@ class HttpDownload(Realm):
                                         _color_name=['steelblue'],
                                         _show_bar_value=True,
                                         _enable_csv=True,
-                                        _graph_image_name="ucg-avg", _color_edge=['black'],
+                                        _graph_image_name="ucg-avg_http", _color_edge=['black'],
                                         _color=['steelblue'],
                                         _label=bands)
         graph_png = graph.build_bar_graph_horizontal()
@@ -1023,7 +1078,7 @@ class HttpDownload(Realm):
                                           _color_name=['orange'],
                                           _show_bar_value=True,
                                           _enable_csv=True,
-                                          _graph_image_name="Total-url", _color_edge=['black'],
+                                          _graph_image_name="Total-url_http", _color_edge=['black'],
                                           _color=['orange'],
                                           _label=bands)
         graph_png = graph_2.build_bar_graph_horizontal()
@@ -1040,6 +1095,26 @@ class HttpDownload(Realm):
                         self.channel_list.append(str(port_data['channel']))
                         self.mode_list.append(str(port_data['mode']))
                         self.ssid_list.append(str(port_data['ssid']))
+
+    def add_live_view_images_to_report(self, report):
+        for floor in range(0, int(self.total_floors)):
+            http_img_path = os.path.join(self.result_dir, "live_view_images", f"http_{self.test_name}_{floor + 1}.png")
+            timeout = 60  # seconds
+            start_time = time.time()
+
+            while not (os.path.exists(http_img_path)):
+                if time.time() - start_time > timeout:
+                    print("Timeout: Images not found within 60 seconds.")
+                    break
+                time.sleep(1)
+            while not os.path.exists(http_img_path):
+                if os.path.exists(http_img_path):
+                    break
+            if os.path.exists(http_img_path):
+                report.set_custom_html('<div style="page-break-before: always;"></div>')
+                report.build_custom()
+                report.set_custom_html(f'<img src="file://{http_img_path}"></img>')
+                report.build_custom()
 
     def generate_report(self, date, num_stations, duration, test_setup_info, dataset, lis, bands, threshold_2g,
                         threshold_5g, threshold_both, dataset2, dataset1,  # summary_table_value,
@@ -1058,6 +1133,10 @@ class HttpDownload(Realm):
         # It ensures no blocker for virtual clients
         if self.client_type == 'Real':
             shutil.move('http_datavalues.csv', report_path_date_time)
+            try:
+                shutil.move('all_l4_data.csv', report_path_date_time)
+            except Exception:
+                logging.info("failed to generate all l4 data csv")
             # Moving indiviudal csv's to report directory
             for csv_name in self.individual_device_csv_names:
                 shutil.move(f"{csv_name}.csv", report_path_date_time)
@@ -1096,6 +1175,8 @@ class HttpDownload(Realm):
         report.move_csv_file()
         report.move_graph_image()
         report.build_graph()
+        if (self.dowebgui and self.get_live_view):
+            self.add_live_view_images_to_report(report)
 
         # report.set_obj_html("Summary Table Description", "This Table shows you the summary "
         #                     "result of Webpage Download Test as PASS or FAIL criteria. If the average time taken by " +
@@ -1289,7 +1370,8 @@ class HttpDownload(Realm):
                     " No of times File downloaded ": dataset2,
                     " Average time taken to Download file (ms)": dataset,
                     " Bytes-rd (Mega Bytes) ": dataset1,
-                    "Rx Rate (Mbps)": rx_rate
+                    "Rx Rate (Mbps)": rx_rate,
+                    "Failed url's": self.data["total_err"]
                 }
                 if self.expected_passfail_value or self.device_csv_name:
                     dataframe[" Expected value of no of times file downloaded"] = test_input_list
@@ -1426,7 +1508,7 @@ class HttpDownload(Realm):
             try:
                 target_port_ip = self.local_realm.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
-            except BaseException:
+            except Exception:
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
             logging.info(f"Upstream port IP {upstream_port}")
         else:
@@ -1520,6 +1602,59 @@ class HttpDownload(Realm):
             else:
                 rx_rate_list.append('-')
         return signal_list, link_speed_list, rx_rate_list
+
+    def monitor_cx(self):
+        """
+        This function waits for upto 20 iterations to allow all CXs (connections) to be created.
+
+        If some CXs are still not created after 20 iterations, then the CXs related to that device are removed,
+        along with their associated client and MAC entries from all relevant lists.
+        """
+        max_retry = 20
+        current_retry = 0
+        failed_cx = []
+        flag = 0
+        idx_list = []
+        del_device_list, del_mac_list, del_port_list, del_device_list1 = [], [], [], []
+        while current_retry < max_retry:
+            failed_cx.clear()
+            idx_list.clear()
+            del_device_list.clear()
+            del_mac_list.clear()
+            del_port_list.clear()
+            del_device_list1.clear()
+            created_cx_list = list(self.http_profile.created_cx.keys())
+            for i, created_cxs in enumerate(created_cx_list):
+                try:
+                    _ = self.local_realm.json_get("layer4/%s/list?fields=%s" %
+                                                  (created_cxs, 'status'))['endpoint']['status']
+                except Exception:
+                    logger.error(f'cx not created for {self.port_list[i]}')
+                    failed_cx.append(created_cxs)
+                    del_device_list.append(self.device_list[i])
+                    del_mac_list.append(self.macid_list[i])
+                    del_port_list.append(self.port_list[i])
+                    del_device_list1.append(self.devices_list[i])
+            if len(failed_cx) == 0:
+                flag = 1
+                break
+            logger.info(f'Try {current_retry} out of 20: Waiting for the cross-connections to be created.')
+            time.sleep(2)
+            current_retry += 1
+
+        if flag:
+            logger.info('cross connections found for all devices')
+            return
+        for cx in failed_cx:
+            del self.http_profile.created_cx[cx]
+        for i in range(len(del_port_list)):
+            self.port_list.remove(del_port_list[i])
+            self.macid_list.remove(del_mac_list[i])
+            self.device_list.remove(del_device_list[i])
+            self.devices_list.remove(del_device_list1[i])
+        if len(self.port_list) == 0:
+            logger.error('No cross connections created, aborting test')
+            exit(1)
 
 
 def validate_args(args):
@@ -1735,6 +1870,8 @@ def main():
     optional.add_argument("--wait_time", type=int, help='Specify the maximum time to wait for Configuration', default=60)
     optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
 
+    optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     help_summary = '''\
 lf_webpage.py will verify that N clients are connected on a specified band and can download
 some amount of file data from the HTTP server while measuring the time taken by clients to download the file and number of
@@ -1862,7 +1999,9 @@ times the file is downloaded.
                             expected_passfail_value=args.expected_passfail_value,
                             device_csv_name=args.device_csv_name,
                             wait_time=args.wait_time,
-                            config=args.config
+                            config=args.config,
+                            get_live_view=args.get_live_view,
+                            total_floors=args.total_floors
                             )
         if args.client_type == "Real":
             if not isinstance(args.device_list, list):
@@ -1886,38 +2025,6 @@ times the file is downloaded.
                         "configuration_status": "configured"
                     }
                     http.updating_webui_runningjson(obj)
-            android_devices, windows_devices, linux_devices, mac_devices = 0, 0, 0, 0
-            all_devices_names = []
-            device_type = []
-            total_devices = ""
-            for i in device_list:
-                split_device_name = i.split(" ")
-                if 'android' in split_device_name:
-                    all_devices_names.append(split_device_name[2] + ("(Android)"))
-                    device_type.append("Android")
-                    android_devices += 1
-                elif 'Win' in split_device_name:
-                    all_devices_names.append(split_device_name[2] + ("(Windows)"))
-                    device_type.append("Windows")
-                    windows_devices += 1
-                elif 'Lin' in split_device_name:
-                    all_devices_names.append(split_device_name[2] + ("(Linux)"))
-                    device_type.append("Linux")
-                    linux_devices += 1
-                elif 'Mac' in split_device_name:
-                    all_devices_names.append(split_device_name[2] + ("(Mac)"))
-                    device_type.append("Mac")
-                    mac_devices += 1
-
-            # Build total_devices string based on counts
-            if android_devices > 0:
-                total_devices += f" Android({android_devices})"
-            if windows_devices > 0:
-                total_devices += f" Windows({windows_devices})"
-            if linux_devices > 0:
-                total_devices += f" Linux({linux_devices})"
-            if mac_devices > 0:
-                total_devices += f" Mac({mac_devices})"
             args.num_stations = len(port_list)
         if not args.get_url_from_file:
             http.file_create(ssh_port=args.ssh_port)
@@ -1928,6 +2035,9 @@ times the file is downloaded.
         http.set_values()
         http.precleanup()
         http.build()
+        if args.client_type == 'Real':
+            http.monitor_cx()
+            logger.info(f'Test started on the devices : {http.port_list}')
         test_time = datetime.now()
         # Solution For Leap Year conflict changed it to %Y
         test_time = test_time.strftime("%Y %d %H:%M:%S")
@@ -1947,7 +2057,7 @@ times the file is downloaded.
             uc_avg_val = http.data['uc_avg']
             url_times = http.data['url_data']
             rx_bytes_val = http.data['bytes_rd']
-            rx_rate_val = http.data['rx rate (1m)']
+            rx_rate_val = list(http.data['rx rate (1m)'])
         else:
             uc_avg_val = http.my_monitor('uc-avg')
             url_times = http.my_monitor('total-urls')
@@ -2080,6 +2190,38 @@ times the file is downloaded.
         if int(duration == 3600) or (int(duration) > 3600):
             duration = str(duration / 3600) + "h"
 
+    android_devices, windows_devices, linux_devices, mac_devices = 0, 0, 0, 0
+    all_devices_names = []
+    device_type = []
+    total_devices = ""
+    for i in http.devices_list:
+        split_device_name = i.split(" ")
+        if 'android' in split_device_name:
+            all_devices_names.append(split_device_name[2] + ("(Android)"))
+            device_type.append("Android")
+            android_devices += 1
+        elif 'Win' in split_device_name:
+            all_devices_names.append(split_device_name[2] + ("(Windows)"))
+            device_type.append("Windows")
+            windows_devices += 1
+        elif 'Lin' in split_device_name:
+            all_devices_names.append(split_device_name[2] + ("(Linux)"))
+            device_type.append("Linux")
+            linux_devices += 1
+        elif 'Mac' in split_device_name:
+            all_devices_names.append(split_device_name[2] + ("(Mac)"))
+            device_type.append("Mac")
+            mac_devices += 1
+
+    # Build total_devices string based on counts
+    if android_devices > 0:
+        total_devices += f" Android({android_devices})"
+    if windows_devices > 0:
+        total_devices += f" Windows({windows_devices})"
+    if linux_devices > 0:
+        total_devices += f" Linux({linux_devices})"
+    if mac_devices > 0:
+        total_devices += f" Mac({mac_devices})"
     if args.client_type == "Real":
         if args.group_name:
             group_names = ', '.join(configuration.keys())
@@ -2089,7 +2231,7 @@ times the file is downloaded.
                 "AP name": args.ap_name,
                 "Configuration": configmap,
                 "Configured Devices": ", ".join(all_devices_names),
-                "No of Devices": "Total" + f"({args.num_stations})" + total_devices,
+                "No of Devices": "Total" + f"({len(all_devices_names)})" + total_devices,
                 "Traffic Direction": "Download",
                 "Traffic Duration ": duration
             }
@@ -2099,7 +2241,7 @@ times the file is downloaded.
                 "SSID": ssid,
                 "Device List": ", ".join(all_devices_names),
                 "Security": security,
-                "No of Devices": "Total" + f"({args.num_stations})" + total_devices,
+                "No of Devices": "Total" + f"({len(all_devices_names)})" + total_devices,
                 "Traffic Direction": "Download",
                 "Traffic Duration ": duration
             }
@@ -2158,6 +2300,16 @@ times the file is downloaded.
         # "": args.bands,
         # "PASS/FAIL": data
     # }
+    if args.dowebgui:
+        http.data_for_webui["status"] = ["STOPPED"] * len(http.devices_list)
+        http.data_for_webui['rx rate (1m)'] = http.data['rx rate (1m)']
+        http.data_for_webui['total_err'] = http.data['total_err']
+        http.data_for_webui["start_time"] = http.data["start_time"]
+        http.data_for_webui["end_time"] = http.data["end_time"]
+        http.data_for_webui["remaining_time"] = http.data["remaining_time"]
+        df1 = pd.DataFrame(http.data_for_webui)
+        df1.to_csv('{}/http_datavalues.csv'.format(http.result_dir), index=False)
+
     http.generate_report(date, num_stations=args.num_stations,
                          duration=args.duration, test_setup_info=test_setup_info, dataset=dataset, lis=lis,
                          bands=args.bands, threshold_2g=args.threshold_2g, threshold_5g=args.threshold_5g,
@@ -2171,13 +2323,6 @@ times the file is downloaded.
     http.postcleanup()
     # FOR WEBGUI, filling csv at the end to get the last terminal logs
     if args.dowebgui:
-        http.data_for_webui["status"] = ["STOPPED"] * len(http.devices_list)
-        http.data_for_webui["start_time"] = http.data["start_time"]
-        http.data_for_webui["end_time"] = http.data["end_time"]
-        http.data_for_webui["remaining_time"] = http.data["remaining_time"]
-        df1 = pd.DataFrame(http.data_for_webui)
-        df1.to_csv('{}/http_datavalues.csv'.format(http.result_dir), index=False)
-
         http.copy_reports_to_home_dir()
 
 
