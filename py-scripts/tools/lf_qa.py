@@ -914,10 +914,19 @@ class csv_sql:
                                         x="Date",
                                         y="numeric-score",
                                         custom_data=[
+                                            'Date',
+                                            'test_dir',
                                             'numeric-score',
-                                            'Subtest-Pass',
-                                            'Subtest-Fail',
-                                            'kernel'
+                                            'kernel',
+                                            'radio_fw',
+                                            'gui_ver',
+                                            'gui_build_date',
+                                            'server_ver',
+                                            'server_build_date',
+                                            'dut-hw-version',
+                                            'dut-sw-version',
+                                            'dut-model-num',
+                                            'dut-serial-num'
                                         ],
                                         color="short-description",
                                         hover_name="short-description",
@@ -926,10 +935,19 @@ class csv_sql:
 
                                 kpi_fig.update_traces(
                                     hovertemplate="<br>".join([
-                                        "kernel-version: %{customdata[4]}",
-                                        "numeric-score: %{customdata[0]}",
-                                        "Subtest-Pass: %{customdata[1]}",
-                                        "Subtest-Fail: %{customdata[2]}"
+                                        "Date: %{customdata[0]}",
+                                        "test_dir: %{customdata[1]}",
+                                        "numeric-score: %{customdata[2]}",
+                                        "kernel-version: %{customdata[3]}",
+                                        "radio-fw: %{customdata[4]}",
+                                        "gui-version: %{customdata[5]}",
+                                        "gui-build-date: %{customdata[6]}",
+                                        "server-version: %{customdata[7]}",
+                                        "server-build-date: %{customdata[8]}",
+                                        "dut-hw-version: %{customdata[9]}",
+                                        "dut-sw-version: %{customdata[10]}",
+                                        "dut-model-num: %{customdata[11]}",
+                                        "dut-serial-num: %{customdata[12]}",
                                     ])
                                 )
 
