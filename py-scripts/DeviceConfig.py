@@ -172,7 +172,7 @@ class ADB_DEVICES(Realm):
             logger.info('Port list is empty')
             return
 
-        url = 'http://{}:{}/cli-json/clear_wifi_profiles'.format(self.lanforge_ip, self.port)
+        url = 'cli-json/clear_wifi_profiles'
 
         data_list = []
         for port_data in port_list:
@@ -1565,6 +1565,9 @@ class DeviceConfig(Realm):
             res_empty = False
             device_id = android["serial"]
             resource_id = ""
+            # If only one device is present in interop tab.
+            if not isinstance(adb_resources['devices'], list):
+                adb_resources['devices'] = [{adb_resources['devices']['name']:adb_resources['devices']}]
             for device in adb_resources['devices']:
                 device_key = list(device.values())[0]["_links"]
                 resource_id = list(device.values())[0]["resource-id"]
