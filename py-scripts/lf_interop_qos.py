@@ -132,7 +132,7 @@ class ThroughputQOS(Realm):
                  group_name=None,
                  port=8080,
                  test_name=None,
-                 device_list=[],
+                 device_list=None,
                  result_dir=None,
                  ap_name="",
                  traffic_type=None,
@@ -147,9 +147,24 @@ class ThroughputQOS(Realm):
                  _exit_on_fail=False,
                  dowebgui=False,
                  ip="localhost",
-                 user_list=[], real_client_list=[], real_client_list1=[], hw_list=[], laptop_list=[], android_list=[], mac_list=[], windows_list=[], linux_list=[],
-                 total_resources_list=[], working_resources_list=[], hostname_list=[], username_list=[], eid_list=[],
-                 devices_available=[], input_devices_list=[], mac_id1_list=[], mac_id_list=[],
+                 user_list=None,
+                 real_client_list=None,
+                 real_client_list1=None,
+                 hw_list=None,
+                 laptop_list=None,
+                 android_list=None,
+                 mac_list=None,
+                 windows_list=None,
+                 linux_list=None,
+                 total_resources_list=None,
+                 working_resources_list=None,
+                 hostname_list=None,
+                 username_list=None,
+                 eid_list=None,
+                 devices_available=None,
+                 input_devices_list=None,
+                 mac_id1_list=None,
+                 mac_id_list=None,
                  eap_method=None,
                  eap_identity=None,
                  ieee80211=None,
@@ -175,13 +190,13 @@ class ThroughputQOS(Realm):
                  get_live_view=False,
                  total_floors=0):
         super().__init__(lfclient_host=host,
-                         lfclient_port=port),
+                         lfclient_port=port)
         self.ssid_list = []
         self.upstream = upstream
         self.host = host
         self.port = port
         self.test_name = test_name
-        self.device_list = device_list
+        self.device_list = device_list if device_list else []
         self.result_dir = result_dir
         self.ssid = ssid
         self.security = security
@@ -211,24 +226,24 @@ class ThroughputQOS(Realm):
         self.cx_profile.side_a_max_bps = side_a_max_rate
         self.cx_profile.side_b_min_bps = side_b_min_rate
         self.cx_profile.side_b_max_bps = side_b_max_rate
-        self.hw_list = hw_list
-        self.laptop_list = laptop_list
-        self.android_list = android_list
-        self.mac_list = mac_list
-        self.windows_list = windows_list
-        self.linux_list = linux_list
-        self.total_resources_list = total_resources_list
-        self.working_resources_list = working_resources_list
-        self.hostname_list = hostname_list
-        self.username_list = username_list
-        self.eid_list = eid_list
-        self.devices_available = devices_available
-        self.input_devices_list = input_devices_list
-        self.real_client_list = real_client_list
-        self.real_client_list1 = real_client_list1
-        self.user_list = user_list
-        self.mac_id_list = mac_id_list
-        self.mac_id1_list = mac_id1_list
+        self.hw_list = hw_list if hw_list else []
+        self.laptop_list = laptop_list if laptop_list else []
+        self.android_list = android_list if android_list else []
+        self.mac_list = mac_list if mac_list else []
+        self.windows_list = windows_list if windows_list else []
+        self.linux_list = linux_list if linux_list else []
+        self.total_resources_list = total_resources_list if total_resources_list else []
+        self.working_resources_list = working_resources_list if working_resources_list else []
+        self.hostname_list = hostname_list if hostname_list else []
+        self.username_list = username_list if username_list else []
+        self.eid_list = eid_list if eid_list else []
+        self.devices_available = devices_available if devices_available else []
+        self.input_devices_list = input_devices_list if input_devices_list else []
+        self.real_client_list = real_client_list if real_client_list else []
+        self.real_client_list1 = real_client_list1 if real_client_list1 else []
+        self.user_list = user_list if user_list else []
+        self.mac_id_list = mac_id_list if mac_id_list else []
+        self.mac_id1_list = mac_id1_list if mac_id1_list else []
         self.dowebgui = dowebgui
         self.ip = ip
         self.device_found = False
@@ -266,7 +281,7 @@ class ThroughputQOS(Realm):
         for key, value in response.items():
             if key == "resources":
                 for element in value:
-                    for a, b in element.items():
+                    for _a, b in element.items():
                         if "Apple" in b['hw version']:
                             if b['kernel'] == '':
                                 self.hw_list.append('iOS')
@@ -354,7 +369,7 @@ class ThroughputQOS(Realm):
         for key, value in response.items():
             if key == "resources":
                 for element in value:
-                    for a, b in element.items():
+                    for _a, b in element.items():
                         if b['phantom'] is False:
                             self.working_resources_list.append(b["hw version"])
                             if "Win" in b['hw version']:
@@ -500,7 +515,7 @@ class ThroughputQOS(Realm):
             try:
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
-            except BaseException:
+            except Exception:
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
             logging.info(f"Upstream port IP {upstream_port}")
         else:
@@ -548,7 +563,7 @@ class ThroughputQOS(Realm):
                 direction = 'UL'
         traffic_type = (self.traffic_type.strip("lf_")).upper()
         traffic_direction_list, cx_list, traffic_type_list = [], [], []
-        for client in range(len(self.real_client_list)):
+        for _client in range(len(self.real_client_list)):
             traffic_direction_list.append(direction)
             traffic_type_list.append(traffic_type)
         logger.info("tos: {}".format(self.tos))
@@ -762,7 +777,7 @@ class ThroughputQOS(Realm):
             temp_download = []
             temp_drop_a = []
             temp_drop_b = []
-            for i in range(len(self.cx_profile.created_cx)):
+            for _i in range(len(self.cx_profile.created_cx)):
                 temp_upload.append([])
                 temp_download.append([])
                 temp_drop_a.append([])
@@ -868,8 +883,8 @@ class ThroughputQOS(Realm):
                         self.df_for_webui.append(self.overall[-1])
                         previous_time = current_time
             if self.dowebgui == "True":
-                for key,value in t_response.items():
-                    row_data = [value[0],value[1]]
+                for key, value in t_response.items():
+                    row_data = [value[0], value[1]]
                     individual_device_data[key].loc[len(individual_device_data[key])] = row_data
                 for port, df in individual_device_data.items():
                     df.to_csv(f"{runtime_dir}/{port}.csv", index=False)
@@ -917,13 +932,13 @@ class ThroughputQOS(Realm):
             else:
                 time_break = 1
             # average upload download and drop is calculated
-            for ind, k in enumerate(throughput):
+            for ind, _k in enumerate(throughput):
                 avg_upload[ind].append(throughput[ind][1])
                 avg_download[ind].append(throughput[ind][0])
                 avg_drop_a[ind].append(throughput[ind][2])
                 avg_drop_b[ind].append(throughput[ind][3])
         # # rx_rate list is calculated
-        for index, key in enumerate(throughput):
+        for index, _key in enumerate(throughput):
             upload[index].append(throughput[index][1])
             download[index].append(throughput[index][0])
             drop_a[index].append(throughput[index][2])
@@ -1013,7 +1028,7 @@ class ThroughputQOS(Realm):
                                 tos_drop_dict['rx_drop_a'][current_tos].append(float(0))
                                 tx_b_download[current_tos].append(int(0))
                                 rx_a_download[current_tos].append(int(0))
-                        except:
+                        except Exception:
                             logger.info(f'{sta}-A/B : CX Not Found')
                             logger.info(f"Endpoint data : {endps}")
                         counter += 1
@@ -1263,19 +1278,19 @@ class ThroughputQOS(Realm):
         df_throughput = pd.DataFrame(res["throughput_table_df"])
         report.set_table_dataframe(df_throughput)
         report.build_table()
-        for key in res["graph_df"]:
+        for _key in res["graph_df"]:
             report.set_obj_html(
                 _obj_title=f"Overall {self.direction} throughput for {len(self.input_devices_list)} clients with different TOS.",
                 _obj=f"The below graph represents overall {self.direction} throughput for all "
-                     "connected stations running BK, BE, VO, VI traffic with different "
-                     f"intended loads{load} per tos")
+                "connected stations running BK, BE, VO, VI traffic with different "
+                f"intended loads{load} per tos")
         report.build_objective()
         graph = lf_bar_graph(_data_set=data_set,
                              _xaxis_name="Load per Type of Service",
                              _yaxis_name="Throughput (Mbps)",
                              _xaxis_categories=["BK,BE,VI,VO"],
                              _xaxis_label=['1 Mbps', '2 Mbps', '3 Mbps', '4 Mbps', '5 Mbps'],
-                             _graph_image_name=f"tos_download_{key}Hz",
+                             _graph_image_name=f"tos_download_{_key}Hz",
                              _label=["BK", "BE", "VI", "VO"],
                              _xaxis_step=1,
                              _graph_title=f"Overall {self.direction} throughput – BK,BE,VO,VI traffic streams",
@@ -1406,10 +1421,10 @@ class ThroughputQOS(Realm):
         in the 'live_view_images' folder within `self.result_dir`.
         It waits up to **60 seconds** for each image. If an image is found,then,
         their name/path will be stored for the report purposes,otherwise, it's skipped.
-        
+
         Parameters:
-        multicast_exists (bool): Indicates whether multicast traffic is present during the test. 
-        When running Testhouse with mixed traffic , such as both QoS and multicast, 
+        multicast_exists (bool): Indicates whether multicast traffic is present during the test.
+        When running Testhouse with mixed traffic , such as both QoS and multicast,
         the overall report may show duplicate RSSI live view images, since the RSSI values are identical for both the tests.
         """
         image_paths_by_tos = {}      # { "BE": [img1, img2, ...], "VO": [...], ... }
@@ -1419,10 +1434,10 @@ class ThroughputQOS(Realm):
             for tos in self.tos:
                 timeout = 60  # seconds
 
-                throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{tos}_{floor+1}.png")
+                throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{tos}_{floor + 1}.png")
 
                 if not multicast_exists:
-                    rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor+1}.png")
+                    rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor + 1}.png")
 
                 start_time = time.time()
 
@@ -1434,7 +1449,7 @@ class ThroughputQOS(Realm):
                         break
 
                     if time.time() - start_time > timeout:
-                        print(f"Timeout: Images for TOS '{tos}' on Floor {floor+1} not found within 60 seconds.")
+                        print(f"Timeout: Images for TOS '{tos}' on Floor {floor + 1} not found within 60 seconds.")
                         break
                     time.sleep(1)
 
@@ -1447,11 +1462,9 @@ class ThroughputQOS(Realm):
 
         return image_paths_by_tos, rssi_image_paths_by_floor
 
-
-
-    def generate_individual_graph(self, res, report, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b,totalfloors=None,multicast_exists=False):
+    def generate_individual_graph(self, res, report, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b, totalfloors=None, multicast_exists=False):
         # Required when generate_individual_graph() called explicitly from mixed traffic
-        if totalfloors!=None:
+        if totalfloors is not None:
             self.total_floors = totalfloors
         load = ""
         upload_list, download_list, individual_upload_list, individual_download_list = [], [], [], []
@@ -1461,7 +1474,7 @@ class ThroughputQOS(Realm):
         data_set = {}
         try:
             if (self.dowebgui and self.get_live_view) or multicast_exists:
-                tos_images,rssi_images = self.get_live_view_images()
+                tos_images, rssi_images = self.get_live_view_images()
         except Exception:
             logger.error("Live View images not found")
         # Initialized dictionaries to store average upload ,download and drop values with respect to tos
@@ -1499,7 +1512,7 @@ class ThroughputQOS(Realm):
         if self.direction == 'Upload':
             load = rate_up
             data_set = res['test_results'][0][1]
-            for client in range(len(self.real_client_list)):
+            for _client in range(len(self.real_client_list)):
                 individual_download_list.append('0.0')
                 individual_drop_a_list.append('0.0')
             for key, val in connections_upload_avg.items():
@@ -1512,7 +1525,7 @@ class ThroughputQOS(Realm):
             if self.direction == 'Download':
                 load = rate_down
                 data_set = res['test_results'][0][0]
-                for client in range(len(self.real_client_list)):
+                for _client in range(len(self.real_client_list)):
                     individual_upload_list.append('0.0')
                     individual_drop_b_list.append('0.0')
                 for key, val in connections_download_avg.items():
@@ -1530,7 +1543,7 @@ class ThroughputQOS(Realm):
         vi_tos_list = []
         vo_tos_list = []
         traffic_type = (self.traffic_type.strip("lf_")).upper()
-        for client in range(len(self.real_client_list)):
+        for _client in range(len(self.real_client_list)):
             upload_list.append(rate_up)
             download_list.append(rate_down)
             traffic_type_list.append(traffic_type.upper())
@@ -2089,7 +2102,7 @@ class ThroughputQOS(Realm):
                         report.build_table()
                 logger.info("Graph and table for VO tos are built")
             if self.dowebgui and self.get_live_view and not multicast_exists:
-                for floor,rssi_image_path in rssi_images.items():
+                for _floor, rssi_image_path in rssi_images.items():
                     if os.path.exists(rssi_image_path):
                         report.set_custom_html('<div style="page-break-before: always;"></div>')
                         report.build_custom()
@@ -2108,10 +2121,9 @@ class ThroughputQOS(Realm):
                     try:
                         cx_df = pd.DataFrame(self.real_time_data[cx][tos])
                         cx_df.to_csv('{}/{}_{}_realtime_data.csv'.format(report.path_date_time, cx, tos), index=False)
-                    except:
+                    except Exception:
                         logger.info(f'failed cx {cx} tos {tos}')
                         logger.info(f"overall Data {self.real_time_data}")
-                    
 
     def get_pass_fail_list(self, test_input_list, individual_avgupload_list, individual_avgdownload_list):
         pass_fail_list = []
@@ -2416,13 +2428,13 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
         loads_data = loads["download"]
     elif args.download:
         loads = {'upload': [], 'download': str(args.download).split(",")}
-        for i in range(len(args.download)):
+        for _i in range(len(args.download)):
             loads['upload'].append(0)
         loads_data = loads["download"]
     else:
         if args.upload:
             loads = {'upload': str(args.upload).split(","), 'download': []}
-            for i in range(len(args.upload)):
+            for _i in range(len(args.upload)):
                 loads['download'].append(0)
             loads_data = loads["upload"]
     if args.download and args.upload:
