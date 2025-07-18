@@ -171,7 +171,9 @@ class ThroughputQOS(Realm):
                  csv_direction=None,
                  expected_passfail_val=None,
                  csv_name=None,
-                 wait_time=60):
+                 wait_time=60,
+                 get_live_view=False,
+                 total_floors=0):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
         self.ssid_list = []
@@ -256,6 +258,8 @@ class ThroughputQOS(Realm):
         self.wait_time = wait_time
         self.group_device_map = {}
         self.config = config
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
 
     def os_type(self):
         response = self.json_get("/resource/all")
@@ -1296,7 +1300,6 @@ class ThroughputQOS(Realm):
         report.build_graph()
         self.generate_individual_graph(res, report, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b)
         report.test_setup_table(test_setup_data=input_setup_info, value="Information")
-        report.build_custom()
         report.build_footer()
         report.write_html()
         report.write_pdf()
@@ -1397,13 +1400,70 @@ class ThroughputQOS(Realm):
         else:
             return None
 
-    def generate_individual_graph(self, res, report, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b):
+    def get_live_view_images(self, multicast_exists=False):
+        """
+        This function looks for throughput and RSSI images for each floor
+        in the 'live_view_images' folder within `self.result_dir`.
+        It waits up to **60 seconds** for each image. If an image is found,then,
+        their name/path will be stored for the report purposes,otherwise, it's skipped.
+        
+        Parameters:
+        multicast_exists (bool): Indicates whether multicast traffic is present during the test. 
+        When running Testhouse with mixed traffic , such as both QoS and multicast, 
+        the overall report may show duplicate RSSI live view images, since the RSSI values are identical for both the tests.
+        """
+        image_paths_by_tos = {}      # { "BE": [img1, img2, ...], "VO": [...], ... }
+        rssi_image_paths_by_floor = {} if not multicast_exists else {}  # Empty if skipping RSSI
+
+        for floor in range(int(self.total_floors)):
+            for tos in self.tos:
+                timeout = 60  # seconds
+
+                throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{tos}_{floor+1}.png")
+
+                if not multicast_exists:
+                    rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor+1}.png")
+
+                start_time = time.time()
+
+                while True:
+                    throughput_ready = os.path.exists(throughput_image_path)
+                    rssi_ready = True if multicast_exists else os.path.exists(rssi_image_path)
+
+                    if throughput_ready and rssi_ready:
+                        break
+
+                    if time.time() - start_time > timeout:
+                        print(f"Timeout: Images for TOS '{tos}' on Floor {floor+1} not found within 60 seconds.")
+                        break
+                    time.sleep(1)
+
+                if throughput_ready:
+                    image_paths_by_tos.setdefault(tos, []).append(throughput_image_path)
+
+            # Only check and store RSSI if not multicast
+            if not multicast_exists and os.path.exists(rssi_image_path):
+                rssi_image_paths_by_floor[floor + 1] = rssi_image_path
+
+        return image_paths_by_tos, rssi_image_paths_by_floor
+
+
+
+    def generate_individual_graph(self, res, report, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b,totalfloors=None,multicast_exists=False):
+        # Required when generate_individual_graph() called explicitly from mixed traffic
+        if totalfloors!=None:
+            self.total_floors = totalfloors
         load = ""
         upload_list, download_list, individual_upload_list, individual_download_list = [], [], [], []
         individual_set, colors, labels = [], [], []
         individual_drop_a_list, individual_drop_b_list = [], []
         list1 = [[], [], [], []]
         data_set = {}
+        try:
+            if (self.dowebgui and self.get_live_view) or multicast_exists:
+                tos_images,rssi_images = self.get_live_view_images()
+        except Exception:
+            logger.error("Live View images not found")
         # Initialized dictionaries to store average upload ,download and drop values with respect to tos
         avg_res = {'Upload': {
             'VO': [],
@@ -1569,6 +1629,12 @@ class ThroughputQOS(Realm):
                     report.set_csv_filename(graph_png)
                     report.move_csv_file()
                     report.build_graph()
+                    if (self.dowebgui and self.get_live_view) or multicast_exists:
+                        for image_path in tos_images['BK']:
+                            report.set_custom_html('<div style="page-break-before: always;"></div>')
+                            report.build_custom()
+                            report.set_custom_html(f'<img src="file://{image_path}" style="width: 1200px; height: 800px;"></img>')
+                            report.build_custom()
                     individual_avgupload_list = []
                     individual_avgdownload_list = []
                     for i in range(len(individual_upload_list)):
@@ -1692,6 +1758,12 @@ class ThroughputQOS(Realm):
                     report.set_csv_filename(graph_png)
                     report.move_csv_file()
                     report.build_graph()
+                    if (self.dowebgui and self.get_live_view) or multicast_exists:
+                        for image_path in tos_images['BE']:
+                            report.set_custom_html('<div style="page-break-before: always;"></div>')
+                            report.build_custom()
+                            report.set_custom_html(f'<img src="file://{image_path}" style="width: 1200px; height: 800px;"></img>')
+                            report.build_custom()
                     individual_avgupload_list = []
                     individual_avgdownload_list = []
                     for i in range(len(individual_upload_list)):
@@ -1813,6 +1885,12 @@ class ThroughputQOS(Realm):
                     report.set_csv_filename(graph_png)
                     report.move_csv_file()
                     report.build_graph()
+                    if (self.dowebgui and self.get_live_view) or multicast_exists:
+                        for image_path in tos_images['VI']:
+                            report.set_custom_html('<div style="page-break-before: always;"></div>')
+                            report.build_custom()
+                            report.set_custom_html(f'<img src="file://{image_path}" style="width: 1200px; height: 800px;"></img>')
+                            report.build_custom()
                     individual_avgupload_list = []
                     individual_avgdownload_list = []
                     for i in range(len(individual_upload_list)):
@@ -1934,6 +2012,12 @@ class ThroughputQOS(Realm):
                     report.set_csv_filename(graph_png)
                     report.move_csv_file()
                     report.build_graph()
+                    if (self.dowebgui and self.get_live_view) or multicast_exists:
+                        for image_path in tos_images['VO']:
+                            report.set_custom_html('<div style="page-break-before: always;"></div>')
+                            report.build_custom()
+                            report.set_custom_html(f'<img src="file://{image_path}" style="width: 1200px; height: 800px;"></img>')
+                            report.build_custom()
                     individual_avgupload_list = []
                     individual_avgdownload_list = []
                     for i in range(len(individual_upload_list)):
@@ -2004,6 +2088,13 @@ class ThroughputQOS(Realm):
                         report.set_table_dataframe(dataframe4)
                         report.build_table()
                 logger.info("Graph and table for VO tos are built")
+            if self.dowebgui and self.get_live_view and not multicast_exists:
+                for floor,rssi_image_path in rssi_images.items():
+                    if os.path.exists(rssi_image_path):
+                        report.set_custom_html('<div style="page-break-before: always;"></div>')
+                        report.build_custom()
+                        report.set_custom_html(f'<img src="file://{rssi_image_path}" style="width: 1000px; height: 800px;"></img>')
+                        report.build_custom()
         else:
             print("No individual graph to generate.")
         # storing overall throughput CSV in the report directory
@@ -2301,6 +2392,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
     optional.add_argument('--device_csv_name', type=str, help='Enter the csv name to store expected values', default=None)
     optional.add_argument("--wait_time", type=int, help="Enter the maximum wait time for configurations to apply", default=60)
     optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
+    optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     args = parser.parse_args()
 
     # help summary
@@ -2395,7 +2488,9 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
                                        expected_passfail_val=args.expected_passfail_value,
                                        csv_name=args.device_csv_name,
                                        wait_time=args.wait_time,
-                                       config=args.config
+                                       config=args.config,
+                                       get_live_view=args.get_live_view,
+                                       total_floors=args.total_floors
                                        )
         throughput_qos.os_type()
         _, configured_device, _, configuration = throughput_qos.phantom_check()
