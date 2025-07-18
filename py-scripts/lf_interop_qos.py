@@ -702,6 +702,11 @@ class ThroughputQOS(Realm):
         time_break = 0
         # Added background_run to allow the test to continue running, bypassing the duration limit for nile requirement.
         rates_data = defaultdict(list)
+        individual_device_data = {}
+        cx_list = list(self.cx_profile.created_cx.keys())
+        for cx in cx_list:
+            columns = ['bps rx a', 'bps rx b']
+            individual_device_data[cx] = pd.DataFrame(columns=columns)
         while datetime.now() < end_time or getattr(self, "background_run", None):
             index += 1
             current_time = datetime.now()
@@ -859,6 +864,11 @@ class ThroughputQOS(Realm):
                         self.df_for_webui.append(self.overall[-1])
                         previous_time = current_time
             if self.dowebgui == "True":
+                for key,value in t_response.items():
+                    row_data = [value[0],value[1]]
+                    individual_device_data[key].loc[len(individual_device_data[key])] = row_data
+                for port, df in individual_device_data.items():
+                    df.to_csv(f"{runtime_dir}/{port}.csv", index=False)
                 df1 = pd.DataFrame(self.df_for_webui)
                 df1.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
 
