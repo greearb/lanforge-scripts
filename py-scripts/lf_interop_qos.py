@@ -987,16 +987,21 @@ class ThroughputQOS(Realm):
                         current_tos = temp[0].split('_')[-1]  # slicing TOS from CX name
                         temp = int(temp[1])
                         counter = 0
-                        if int(self.cx_profile.side_b_min_bps) != 0:
-                            tos_download[current_tos].append(connections_download[sta])
-                            tos_drop_dict['rx_drop_a'][current_tos].append(drop_a_per[counter])
-                            tx_b_download[current_tos].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                            rx_a_download[current_tos].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
-                        else:
-                            tos_download[current_tos].append(float(0))
-                            tos_drop_dict['rx_drop_a'][current_tos].append(float(0))
-                            tx_b_download[current_tos].append(int(0))
-                            rx_a_download[current_tos].append(int(0))
+                        # Added exception handling for occasional cx misses observed during the test, which were affecting the overall test execution.
+                        try:
+                            if int(self.cx_profile.side_b_min_bps) != 0:
+                                tos_download[current_tos].append(connections_download[sta])
+                                tos_drop_dict['rx_drop_a'][current_tos].append(drop_a_per[counter])
+                                tx_b_download[current_tos].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_download[current_tos].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                            else:
+                                tos_download[current_tos].append(float(0))
+                                tos_drop_dict['rx_drop_a'][current_tos].append(float(0))
+                                tx_b_download[current_tos].append(int(0))
+                                rx_a_download[current_tos].append(int(0))
+                        except:
+                            logger.info(f'{sta}-A/B : CX Not Found')
+                            logger.info(f"Endpoint data : {endps}")
                         counter += 1
                     tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
                     tos_download.update({"beQOS": float(f"{sum(tos_download['BE']):.2f}")})
@@ -1999,8 +2004,13 @@ class ThroughputQOS(Realm):
         for cx in self.real_time_data:
             for tos in self.real_time_data[cx]:
                 if tos in self.tos and len(self.real_time_data[cx][tos]['time']) != 0:
-                    cx_df = pd.DataFrame(self.real_time_data[cx][tos])
-                    cx_df.to_csv('{}/{}_{}_realtime_data.csv'.format(report.path_date_time, cx, tos), index=False)
+                    try:
+                        cx_df = pd.DataFrame(self.real_time_data[cx][tos])
+                        cx_df.to_csv('{}/{}_{}_realtime_data.csv'.format(report.path_date_time, cx, tos), index=False)
+                    except:
+                        logger.info(f'failed cx {cx} tos {tos}')
+                        logger.info(f"overall Data {self.real_time_data}")
+                    
 
     def get_pass_fail_list(self, test_input_list, individual_avgupload_list, individual_avgdownload_list):
         pass_fail_list = []
