@@ -2451,6 +2451,19 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
         "contact": "support@candelatech.com"
     }
     throughput_qos.cleanup()
+
+    # Update webgui running json with latest entry and test status completed
+    if throughput_qos.dowebgui == "True":
+        last_entry = throughput_qos.overall[len(throughput_qos.overall) - 1]
+        last_entry["status"] = "Stopped"
+        last_entry["timestamp"] = datetime.now().strftime("%d/%m %I:%M:%S %p")
+        last_entry["remaining_time"] = "0"
+        last_entry["end_time"] = last_entry["timestamp"]
+        throughput_qos.df_for_webui.append(
+            last_entry
+        )
+        df1 = pd.DataFrame(throughput_qos.df_for_webui)
+        df1.to_csv('{}/overall_throughput.csv'.format(args.result_dir, ), index=False)
     if args.group_name:
         throughput_qos.generate_report(
             data=data,
@@ -2472,17 +2485,6 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 
     # Update webgui running json with latest entry and test status completed
     if throughput_qos.dowebgui == "True":
-        last_entry = throughput_qos.overall[len(throughput_qos.overall) - 1]
-        last_entry["status"] = "Stopped"
-        last_entry["timestamp"] = datetime.now().strftime("%d/%m %I:%M:%S %p")
-        last_entry["remaining_time"] = "0"
-        last_entry["end_time"] = last_entry["timestamp"]
-        throughput_qos.df_for_webui.append(
-            last_entry
-        )
-        df1 = pd.DataFrame(throughput_qos.df_for_webui)
-        df1.to_csv('{}/overall_throughput.csv'.format(args.result_dir, ), index=False)
-
         # copying to home directory i.e home/user_name
         throughput_qos.copy_reports_to_home_dir()
 
