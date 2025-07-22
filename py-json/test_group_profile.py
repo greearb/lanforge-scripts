@@ -84,7 +84,7 @@ class TestGroupProfile(LFCliBase):
             # if multiple test_group type ==list
             else:
                 for group in test_groups["groups"]:
-                    for k, v in group.items():
+                    for _, v in group.items():
                         tg_list.append(v['name'])
         return tg_list
 
@@ -97,7 +97,7 @@ class TestGroupProfile(LFCliBase):
                 if test_groups['name'] == self.group_name:
                     return test_groups['cross connects']
             for group in test_groups:
-                for k, v in group.items():
+                for _, v in group.items():
                     if v['name'] == self.group_name:
                         return v['cross connects']
 
