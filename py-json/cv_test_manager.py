@@ -1,4 +1,3 @@
-# flake8: noqa
 """
 Note: This script is working as library for chamberview tests.
     It holds different commands to automate test.
@@ -9,9 +8,7 @@ import os
 import importlib
 import time
 import json
-from pprint import pprint
 import logging
-import traceback
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -151,7 +148,7 @@ class cv_test(Realm):
             "text": text
         }
 
-        logger.info("adding -:%s:- to test config: %s  blob-name: %s" %(text, config_name, blob_test_name))
+        logger.info("adding -:%s:- to test config: %s  blob-name: %s" % (text, config_name, blob_test_name))
 
         self.json_post(req_url, data)
 
@@ -459,7 +456,6 @@ class cv_test(Realm):
             else:
                 logger.info('Waiting on test completion for kpi')
 
-
             # Of if test stopped for some reason and could not generate report.
             if not self.get_is_running(instance_name):
                 logger.info("Detected test is not running %s / 5." % (not_running))
@@ -497,9 +493,9 @@ class cv_test(Realm):
         if os.path.isfile(kpi_csv):
             kpi_size = os.path.getsize(kpi_csv)
             if kpi_size < 210:
-                logger.error("kpi_csv file may only have column headers size: {kpi_size} file: {kpi_csv}".format(kpi_size=kpi_size,kpi_csv=kpi_csv))
+                logger.error(f"kpi_csv file may only have column headers size: {kpi_size} file: {kpi_csv}")
             else:
-                logger.info("kpi_csv file not empty size: {kpi_size} {kpi_csv}".format(kpi_size=kpi_size,kpi_csv=kpi_csv))
+                logger.info(f"kpi_csv file not empty size: {kpi_size} {kpi_csv}")
                 kpi_csv_data_present = True
 
         return kpi_csv_data_present
