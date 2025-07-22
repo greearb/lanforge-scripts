@@ -1,8 +1,4 @@
-"""
-Note: This script is working as library for chamberview tests.
-    It holds different commands to automate test.
-"""
-
+"""Library code for automating LANforge Chamber View tests."""
 import sys
 import os
 import importlib
@@ -26,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def cv_base_adjust_parser(args):
+    # TODO: Can we add these options to base parser?
     if args.test_rig != "":
         # TODO:  In future, can use TestRig once that GUI update has propagated
         args.set.append(["Test Rig ID:", args.test_rig])
@@ -35,6 +32,7 @@ def cv_base_adjust_parser(args):
 
 
 def cv_add_base_parser(parser):
+    """Update provided argparse argument parser with Chamber View-specific arguments."""
     parser.add_argument("-m", "--mgr",
                         dest="mgr",
                         type=str,
@@ -125,20 +123,29 @@ def cv_add_base_parser(parser):
 
 
 class cv_test(Realm):
+    """Utilities for configuring LANforge Chamber View tests and Scenarios."""
     def __init__(self,
                  lfclient_host: str = "localhost",
                  lfclient_port: int = 8080,
                  lf_report_dir: str = None,
                  debug_: bool = False):
+        """Create new session for configuring LANforge Chamber View tests and Scenarios."""
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
                          debug_=debug_)
         self.lf_report_dir = lf_report_dir
         self.report_name = None
 
-    # Add a config line to a text blob.  Will create new text blob
-    # if none exists already.
+    # ~~~ Chamber View test functions ~~~
     def create_test_config(self, config_name: str, blob_test_name: str, text: str):
+        """Create a new or update an existing Chamber View test configuration.
+
+        Recommended to use the `build_cfg()` wrapper function instead, as this function
+        does not ensure the config is active before returning.
+
+        The config name and blob test name are combined to create a unique test configuration,
+        referred to as a 'text blob'.
+        """
         req_url = "/cli-json/add_text_blob"
         data = {
             "type": "Plugin-Settings",
@@ -150,77 +157,105 @@ class cv_test(Realm):
 
         self.json_post(req_url, data)
 
-    # Tell LANforge GUI Chamber View to launch a test
     def create_test(self, test_name: str, instance: str, load_old_cfg: int):
+        """Launch test window for specified Chamber View test (does not start the test).
+
+        Recommended to use the `create_and_run_test()` function if creating
+        new test automation, as it manages process of configuring, invoking, and running
+        a Chamber View test.
+        """
         cmd = "cv create '{0}' '{1}' '{2}'".format(test_name, instance, load_old_cfg)
         return self.run_cv_cmd(str(cmd))
 
-    # Tell LANforge chamber view to load a scenario.
     def load_test_scenario(self, instance: str, scenario: str):
+        """Load Chamber View test config for specified test instance (active test window).
+
+        Recommended to use `load_test_config()` instead, as the term 'scenario' here
+        is overloaded with Chamber View Scenario, which is separate.
+
+        Recommended to use the `create_and_run_test()` function if creating
+        new test automation, as it manages process of configuring, invoking, and running
+        a Chamber View test.
+        """
         cmd = "cv load '{0}' '{1}'".format(instance, scenario)
         self.run_cv_cmd(cmd)
 
-    # load test config for a chamber view test instance.
     def load_test_config(self, test_config: str, instance: str):
+        """Load Chamber View test config for specified test instance.
+
+        Recommended to use the `create_and_run_test()` function if creating
+        new test automation, as it manages process of configuring, invoking, and running
+        a Chamber View test.
+        """
         cmd = "cv load '{0}' '{1}'".format(instance, test_config)
         self.run_cv_cmd(cmd)
 
-    # start the test
     def start_test(self, instance: str):
+        """Start the Chamber View test for specified test instance (assumes instance is active).
+
+        Recommended to use the `create_and_run_test()` function if creating
+        new test automation, as it manages process of invoking and running
+        a Chamber View test."""
         cmd = "cv click '%s' Start" % instance
         return self.run_cv_cmd(cmd)
 
-    # close test
     def close_test(self, instance: str):
+        """Close the Chamber View test window for specified test instance."""  # TODO: Assume it also stops the test?
         cmd = "cv click '%s' 'Close'" % instance
         self.run_cv_cmd(cmd)
 
-    # Cancel
     def cancel_test(self, instance: str):
+        """Cancel the Chamber View test for specified test instance."""
         cmd = "cv click '%s' Cancel" % instance
         self.run_cv_cmd(cmd)
 
-    # For auto save report
-    # NOTE:  This only changes it from current, which means it
-    # could actually turn auto-save off instead of on.  Use
-    # set_auto_save_report instead.
     def auto_save_report(self, instance: str):
+        """Toggle Chamber View test 'Auto Save' option for specified test instance.
+
+        Recommended to use `set_auto_save_report()` instead to avoid unexpected errors.
+        If the option is presently selected, this will un-select (disable) auto save functionality.
+        """
         cmd = "cv click '%s' 'Auto Save Report'" % instance
         self.run_cv_cmd(cmd)
 
-    # Set auto save report
-    # onoff:  true or 1 enables, other vlaue disables
     def set_auto_save_report(self, instance: str, onoff: int):
+        """Set Chamber View test 'Auto Save' option for specified test instance.
+
+        Specify '1' to enable the 'Auto Save' option or '0' to disable the option.
+        """
         cmd = "cv set '%s' 'Auto Save Report' %s" % (instance, onoff)
         self.run_cv_cmd(cmd)
 
-    # To get the report location
     def get_report_location(self, instance: str):
+        """Query the report location for the specified Chamber View test instance."""
         cmd = "cv get '%s' 'Report Location:'" % instance
         location = self.run_cv_cmd(cmd)
         return location
 
-    # To get if test is running or not
     def get_is_running(self, instance: str):
+        """Query test status of the specified Chamber View test instance."""
         cmd = "cv get '%s' 'StartStop'" % instance
         val = self.run_cv_cmd(cmd)
         # pprint(val)
         return val[0]["LAST"]["response"] == 'StartStop::Stop'
 
-    # To save to html
     def save_html(self, instance: str):
+        """Save the test results for the specified Chamber View test instance.
+
+        This assumes that the test has completed.
+        """
         cmd = "cv click %s 'Save HTML'" % instance
         self.run_cv_cmd(cmd)
 
-    # Check if test instance exists
     def get_exists(self, instance: str):
+        """Query existence of specified Chamber View test instance."""
         cmd = "cv exists %s" % instance
         val = self.run_cv_cmd(cmd)
         # pprint(val)
         return val[0]["LAST"]["response"] == 'YES'
 
-    # Check if chamberview is built
     def get_cv_is_built(self):
+        """Query status of specified Chamber View Scenario (built or not)."""
         cmd = "cv is_built"
         val = self.run_cv_cmd(cmd)
         # pprint(val)
@@ -228,8 +263,8 @@ class cv_test(Realm):
         logger.info("is-built: {rv} ".format(rv=rv))
         return rv
 
-    # delete the test instance
     def delete_instance(self, instance: str):
+        """Delete specified Chamber View test instance."""
         cmd = "cv delete '%s'" % instance
         self.run_cv_cmd(cmd)
 
@@ -257,12 +292,17 @@ class cv_test(Realm):
             else:
                 break
 
-    # Get port listing
     def get_ports(self, url: str = "/ports/"):
+        """Query manager for port information."""
         response = self.json_get(url)
         return response
 
     def show_text_blob(self, config_name: str, blob_test_name: str, brief: bool):
+        """Query specified Chamber View config contents.
+
+        The config name and blob test name are combined to create a unique test configuration
+        referred to as a 'text blob'.
+        """
         req_url = "/cli-json/show_text_blob"
         response_json = []
         data = {"type": "Plugin-Settings"}
@@ -276,6 +316,11 @@ class cv_test(Realm):
         return response_json
 
     def rm_text_blob(self, config_name: str, blob_test_name: str):
+        """Remove specified Chamber View config.
+
+        The config name and blob test name are combined to create a unique test configuration
+        referred to as a 'text blob'.
+        """
         req_url = "/cli-json/rm_text_blob"
         data = {
             "type": "Plugin-Settings",
@@ -283,7 +328,13 @@ class cv_test(Realm):
         }
         self.json_post(req_url, data)
 
+    # TODO: What does 'Network-Connectivity' denote?
     def rm_cv_text_blob(self, cv_type: str = "Network-Connectivity", name: str = None):
+        """Remove specified Chamber View config.
+
+        The config name and blob test name are combined to create a unique test configuration
+        referred to as a 'text blob'.
+        """
         req_url = "/cli-json/rm_text_blob"
         data = {
             "type": cv_type,
@@ -293,7 +344,7 @@ class cv_test(Realm):
 
     @staticmethod
     def apply_cfg_options(cfg_options: list, enables: list, disables: list, raw_lines: list, raw_lines_file: str):
-
+        """Update specified config options list with provided configuration."""
         # Read in calibration data and whatever else.
         if raw_lines_file != "":
             # Check that file exists before attempting to open
@@ -318,6 +369,10 @@ class cv_test(Realm):
             cfg_options.append(r[0])
 
     def build_cfg(self, config_name: str, blob_test: str, cfg_options: list):
+        """Apply and make active specified Chamber View test configuration.
+
+        This function also ensures the config is active in the GUI.
+        """
         for value in cfg_options:
             self.create_test_config(config_name, blob_test, value)
 
@@ -357,6 +412,23 @@ class cv_test(Realm):
                             local_lf_report_dir: str = None,
                             ssh_port: int = 22,
                             graph_groups_file: str = None):
+        """Create and run Chamber View test with specified configuration.
+
+            load_old_config is boolean
+            test_name is specific to the type of test being launched (Dataplane, tr398, etc)
+            ChamberViewFrame.java has list of supported test names.
+            instance_name is per-test instance, it does not matter much, just use the same name
+            throughout the entire run of the test.
+            config_name what to call the text-blob that configures the test.  Does not matter much
+            since we (re)create it during the run.
+            sets:  Arrany of [key,value] pairs.  The key is the widget name, typically the label
+            before the entry field.
+            pull_report:  Boolean, should we download the report to current working directory.
+            lf_host:  LANforge machine running the GUI.
+            lf_password:  Password for LANforge machine running the GUI.
+            cv_cmds:  Array of raw chamber-view commands, such as "cv click 'button-name'"
+            These (and the sets) are applied after the test is created and before it is started.
+        """
         load_old = "false"
         if load_old_cfg:
             load_old = "true"
@@ -488,6 +560,7 @@ class cv_test(Realm):
                 break
 
     def kpi_results_present(self) -> bool:
+        """Query whether Chamber View test KPI results are available in configured report directory."""
         kpi_csv_data_present = False
         kpi_csv = ''
 
@@ -509,7 +582,7 @@ class cv_test(Realm):
 
         return kpi_csv_data_present
 
-    # ************************** chamber view **************************
+    # ~~~ Chamber View Scenario functions ~~~
     def add_text_blob_line(self,
                            scenario_name: str = "Automation",
                            Resources: str = "1.1",
@@ -522,6 +595,10 @@ class cv_test(Realm):
                            Traffic: str = "http",
                            Freq: str = "-1",
                            VLAN: str = ""):
+        """Create and/or add configuration to specified Chamber View config.
+
+        See the more generalized `pass_raw_lines_to_cv()` function for more information.
+        """
         req_url = "/cli-json/add_text_blob"
 
         text_blob = "profile_link" + " " + Resources + " " + Profile + " " + Amount + " " + "\'DUT:" + " " + DUT \
@@ -541,6 +618,15 @@ class cv_test(Realm):
     def pass_raw_lines_to_cv(self,
                              scenario_name: str = "Automation",
                              Rawline: str = ""):
+        """Create and/or add configuration to specified Chamber View Test or Scenario config.
+
+        Each configurable in a Chamber View test corresponds to a key-value pair.
+        When saved to a config (text blob), each of these pairs is referred to as a 'rawline'.
+
+        This function is generally utilized to set options for automated Chamber View tests
+        but can be used to configure Chamber View Scenarios. It is recommended to start with
+        a dedicated Chamber View test script if you're integrating this into your own automation.
+        """
         req_url = "/cli-json/add_text_blob"
         data = {
             "type": "Network-Connectivity",
@@ -549,28 +635,59 @@ class cv_test(Realm):
         }
         self.json_post(req_url, data)
 
-        # This is for chamber view buttons
-
     def apply_cv_scenario(self, cv_scenario: str):
-        cmd = "cv apply '%s'" % cv_scenario  # To apply scenario
+        """Stage specified Chamber View Scenario for configuration in testbed.
+
+        Assumes Chamber View Scenario already exists. After applying the scenario,
+        one must build the scenario to make the configuration active on the system
+        (see `build_cv_scenario()`).
+
+        While Chamber View tests may rely on existing Chamber View Scenarios,
+        they are unique and rely on separate configuration for use in LANforge.
+        """
+        cmd = "cv apply '%s'" % cv_scenario
         self.run_cv_cmd(cmd)
         logger.info("Applying %s scenario" % cv_scenario)
 
     def build_cv_scenario(self):
+        """Make staged Chamber View Scenario active in testbed.
+
+        Assumes scenario exists and is already staged (see `apply_cv_scenario()`).
+        Status of scenario can be queried with `get_cv_build_status()`.
+
+        While Chamber View tests may rely on existing Chamber View Scenarios,
+        they are unique and rely on separate configuration for use in LANforge.
+        """
         cmd = "cv build"
         self.run_cv_cmd(cmd)
         logger.info("Building scenario")
 
-    def get_cv_build_status(self):  # check if scenario is build
+    def get_cv_build_status(self):
+        """Query whether Chamber View Scenario is active (built) in testbed.
+
+        While Chamber View tests may rely on existing Chamber View Scenarios,
+        they are unique and rely on separate configuration for use in LANforge.
+        """
         cmd = "cv is_built"
         response = self.run_cv_cmd(cmd)
         return self.check_reponse(response)
 
-    def sync_cv(self):  # sync
+    def sync_cv(self):
+        """Request GUI update Chamber View with configuration active in system.
+
+        This is generally not necessary if building a new scenario in automation.
+
+        While Chamber View tests may rely on existing Chamber View Scenarios,
+        they are unique and rely on separate configuration for use in LANforge.
+        """
         cmd = "cv sync"
         logger.info(self.run_cv_cmd(cmd))
 
-    def run_cv_cmd(self, command: str):  # Send chamber view commands
+    def run_cv_cmd(self, command: str):
+        """Send LANforge Chamber View command to GUI.
+
+        Aside from special cases, this is generally not to be used directly.
+        """
         response_json = []
         req_url = "/gui-json/cmd"
         data = {"cmd": command}
@@ -579,9 +696,11 @@ class cv_test(Realm):
 
     @staticmethod
     def get_response_string(response: list):
+        """Extract response string from specified message."""
         return response[0]["LAST"]["response"]
 
     def get_popup_info_and_close(self):
+        """Grab info from and close any pop-up dialog box in Chamber View."""
         cmd = "cv get_and_close_dialog"
         dialog = self.run_cv_cmd(cmd)
         if dialog[0]["LAST"]["response"] != "NO-DIALOG":
