@@ -247,7 +247,6 @@ class MULTICASTProfile(LFCliBase):
                 'resource': side_rx_resource,
                 'port': side_rx_port,
                 'type': endp_type,
-                'type': endp_type,
                 'ip_port': self.side_a_ip_port,
                 'is_rate_bursty': self.side_a_is_rate_bursty,
                 'min_rate': self.side_a_min_bps,
