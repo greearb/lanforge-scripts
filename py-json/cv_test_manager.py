@@ -126,21 +126,19 @@ def cv_add_base_parser(parser):
 
 class cv_test(Realm):
     def __init__(self,
-                 lfclient_host="localhost",
-                 lfclient_port=8080,
-                 lf_report_dir=None,
-                 debug_=False,
-                 ):
+                 lfclient_host: str = "localhost",
+                 lfclient_port: int = 8080,
+                 lf_report_dir: str = None,
+                 debug_: bool = False):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
-                         debug_=debug_
-                         )
+                         debug_=debug_)
         self.lf_report_dir = lf_report_dir
         self.report_name = None
 
     # Add a config line to a text blob.  Will create new text blob
     # if none exists already.
-    def create_test_config(self, config_name, blob_test_name, text):
+    def create_test_config(self, config_name: str, blob_test_name: str, text: str):
         req_url = "/cli-json/add_text_blob"
         data = {
             "type": "Plugin-Settings",
@@ -153,32 +151,32 @@ class cv_test(Realm):
         self.json_post(req_url, data)
 
     # Tell LANforge GUI Chamber View to launch a test
-    def create_test(self, test_name, instance, load_old_cfg):
+    def create_test(self, test_name: str, instance: str, load_old_cfg: int):
         cmd = "cv create '{0}' '{1}' '{2}'".format(test_name, instance, load_old_cfg)
         return self.run_cv_cmd(str(cmd))
 
     # Tell LANforge chamber view to load a scenario.
-    def load_test_scenario(self, instance, scenario):
+    def load_test_scenario(self, instance: str, scenario: str):
         cmd = "cv load '{0}' '{1}'".format(instance, scenario)
         self.run_cv_cmd(cmd)
 
     # load test config for a chamber view test instance.
-    def load_test_config(self, test_config, instance):
+    def load_test_config(self, test_config: str, instance: str):
         cmd = "cv load '{0}' '{1}'".format(instance, test_config)
         self.run_cv_cmd(cmd)
 
     # start the test
-    def start_test(self, instance):
+    def start_test(self, instance: str):
         cmd = "cv click '%s' Start" % instance
         return self.run_cv_cmd(cmd)
 
     # close test
-    def close_test(self, instance):
+    def close_test(self, instance: str):
         cmd = "cv click '%s' 'Close'" % instance
         self.run_cv_cmd(cmd)
 
     # Cancel
-    def cancel_test(self, instance):
+    def cancel_test(self, instance: str):
         cmd = "cv click '%s' Cancel" % instance
         self.run_cv_cmd(cmd)
 
@@ -186,36 +184,36 @@ class cv_test(Realm):
     # NOTE:  This only changes it from current, which means it
     # could actually turn auto-save off instead of on.  Use
     # set_auto_save_report instead.
-    def auto_save_report(self, instance):
+    def auto_save_report(self, instance: str):
         cmd = "cv click '%s' 'Auto Save Report'" % instance
         self.run_cv_cmd(cmd)
 
     # Set auto save report
     # onoff:  true or 1 enables, other vlaue disables
-    def set_auto_save_report(self, instance, onoff):
+    def set_auto_save_report(self, instance: str, onoff: int):
         cmd = "cv set '%s' 'Auto Save Report' %s" % (instance, onoff)
         self.run_cv_cmd(cmd)
 
     # To get the report location
-    def get_report_location(self, instance):
+    def get_report_location(self, instance: str):
         cmd = "cv get '%s' 'Report Location:'" % instance
         location = self.run_cv_cmd(cmd)
         return location
 
     # To get if test is running or not
-    def get_is_running(self, instance):
+    def get_is_running(self, instance: str):
         cmd = "cv get '%s' 'StartStop'" % instance
         val = self.run_cv_cmd(cmd)
         # pprint(val)
         return val[0]["LAST"]["response"] == 'StartStop::Stop'
 
     # To save to html
-    def save_html(self, instance):
+    def save_html(self, instance: str):
         cmd = "cv click %s 'Save HTML'" % instance
         self.run_cv_cmd(cmd)
 
     # Check if test instance exists
-    def get_exists(self, instance):
+    def get_exists(self, instance: str):
         cmd = "cv exists %s" % instance
         val = self.run_cv_cmd(cmd)
         # pprint(val)
@@ -231,7 +229,7 @@ class cv_test(Realm):
         return rv
 
     # delete the test instance
-    def delete_instance(self, instance):
+    def delete_instance(self, instance: str):
         cmd = "cv delete '%s'" % instance
         self.run_cv_cmd(cmd)
 
@@ -260,11 +258,11 @@ class cv_test(Realm):
                 break
 
     # Get port listing
-    def get_ports(self, url="/ports/"):
+    def get_ports(self, url: str = "/ports/"):
         response = self.json_get(url)
         return response
 
-    def show_text_blob(self, config_name, blob_test_name, brief):
+    def show_text_blob(self, config_name: str, blob_test_name: str, brief: bool):
         req_url = "/cli-json/show_text_blob"
         response_json = []
         data = {"type": "Plugin-Settings"}
@@ -277,7 +275,7 @@ class cv_test(Realm):
         self.json_post(req_url, data, response_json_list_=response_json)
         return response_json
 
-    def rm_text_blob(self, config_name, blob_test_name):
+    def rm_text_blob(self, config_name: str, blob_test_name: str):
         req_url = "/cli-json/rm_text_blob"
         data = {
             "type": "Plugin-Settings",
@@ -285,7 +283,7 @@ class cv_test(Realm):
         }
         self.json_post(req_url, data)
 
-    def rm_cv_text_blob(self, cv_type="Network-Connectivity", name=None):
+    def rm_cv_text_blob(self, cv_type: str = "Network-Connectivity", name: str = None):
         req_url = "/cli-json/rm_text_blob"
         data = {
             "type": cv_type,
@@ -294,7 +292,7 @@ class cv_test(Realm):
         self.json_post(req_url, data)
 
     @staticmethod
-    def apply_cfg_options(cfg_options, enables, disables, raw_lines, raw_lines_file):
+    def apply_cfg_options(cfg_options: list, enables: list, disables: list, raw_lines: list, raw_lines_file: str):
 
         # Read in calibration data and whatever else.
         if raw_lines_file != "":
@@ -319,7 +317,7 @@ class cv_test(Realm):
         for r in raw_lines:
             cfg_options.append(r[0])
 
-    def build_cfg(self, config_name, blob_test, cfg_options):
+    def build_cfg(self, config_name: str, blob_test: str, cfg_options: list):
         for value in cfg_options:
             self.create_test_config(config_name, blob_test, value)
 
@@ -345,9 +343,20 @@ class cv_test(Realm):
     # lf_password:  Password for LANforge machine running the GUI.
     # cv_cmds:  Array of raw chamber-view commands, such as "cv click 'button-name'"
     #    These (and the sets) are applied after the test is created and before it is started.
-    def create_and_run_test(self, load_old_cfg, test_name, instance_name, config_name, sets,
-                            pull_report, lf_host, lf_user, lf_password, cv_cmds, local_lf_report_dir=None, ssh_port=22,
-                            graph_groups_file=None):
+    def create_and_run_test(self,
+                            load_old_cfg: bool,
+                            test_name: str,
+                            instance_name: str,
+                            config_name: str,
+                            sets: list,
+                            pull_report: bool,
+                            lf_host: str,
+                            lf_user: str,
+                            lf_password: str,
+                            cv_cmds: list,
+                            local_lf_report_dir: str = None,
+                            ssh_port: int = 22,
+                            graph_groups_file: str = None):
         load_old = "false"
         if load_old_cfg:
             load_old = "true"
@@ -478,7 +487,7 @@ class cv_test(Realm):
             else:
                 break
 
-    def kpi_results_present(self):
+    def kpi_results_present(self) -> bool:
         kpi_csv_data_present = False
         kpi_csv = ''
 
@@ -502,17 +511,17 @@ class cv_test(Realm):
 
     # ************************** chamber view **************************
     def add_text_blob_line(self,
-                           scenario_name="Automation",
-                           Resources="1.1",
-                           Profile="STA-AC",
-                           Amount="1",
-                           DUT="DUT",
-                           Dut_Radio="Radio-1",
-                           Uses1="wiphy0",
-                           Uses2="AUTO",
-                           Traffic="http",
-                           Freq="-1",
-                           VLAN=""):
+                           scenario_name: str = "Automation",
+                           Resources: str = "1.1",
+                           Profile: str = "STA-AC",
+                           Amount: str = "1",
+                           DUT: str = "DUT",
+                           Dut_Radio: str = "Radio-1",
+                           Uses1: str = "wiphy0",
+                           Uses2: str = "AUTO",
+                           Traffic: str = "http",
+                           Freq: str = "-1",
+                           VLAN: str = ""):
         req_url = "/cli-json/add_text_blob"
 
         text_blob = "profile_link" + " " + Resources + " " + Profile + " " + Amount + " " + "\'DUT:" + " " + DUT \
@@ -530,8 +539,8 @@ class cv_test(Realm):
         self.json_post(req_url, data)
 
     def pass_raw_lines_to_cv(self,
-                             scenario_name="Automation",
-                             Rawline=""):
+                             scenario_name: str = "Automation",
+                             Rawline: str = ""):
         req_url = "/cli-json/add_text_blob"
         data = {
             "type": "Network-Connectivity",
@@ -542,12 +551,12 @@ class cv_test(Realm):
 
         # This is for chamber view buttons
 
-    def apply_cv_scenario(self, cv_scenario):
+    def apply_cv_scenario(self, cv_scenario: str):
         cmd = "cv apply '%s'" % cv_scenario  # To apply scenario
         self.run_cv_cmd(cmd)
         logger.info("Applying %s scenario" % cv_scenario)
 
-    def build_cv_scenario(self):  # build chamber view scenario
+    def build_cv_scenario(self):
         cmd = "cv build"
         self.run_cv_cmd(cmd)
         logger.info("Building scenario")
@@ -561,7 +570,7 @@ class cv_test(Realm):
         cmd = "cv sync"
         logger.info(self.run_cv_cmd(cmd))
 
-    def run_cv_cmd(self, command):  # Send chamber view commands
+    def run_cv_cmd(self, command: str):  # Send chamber view commands
         response_json = []
         req_url = "/gui-json/cmd"
         data = {"cmd": command}
@@ -569,7 +578,7 @@ class cv_test(Realm):
         return response_json
 
     @staticmethod
-    def get_response_string(response):
+    def get_response_string(response: list):
         return response[0]["LAST"]["response"]
 
     def get_popup_info_and_close(self):
