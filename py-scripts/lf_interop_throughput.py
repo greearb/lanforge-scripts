@@ -109,7 +109,7 @@
 
         EXAMPLE-9:
         Command Line Interface to run the test with individual configuration
-        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth0 --test_duration 30s --traffic_type lf_udp --ssid NETGEAR_2G_wpa2 
+        python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth0 --test_duration 30s --traffic_type lf_udp --ssid NETGEAR_2G_wpa2
         --passwd Password@123 --security wpa2 --do_interopability --device_list 1.15,1.400 --download 10000000 --interopability_config
 
     SCRIPT_CLASSIFICATION :  Test
@@ -212,7 +212,7 @@ class Throughput(Realm):
                  do_interopability=False,
                  get_live_view=False,
                  total_floors=0,
-                 interopability_config = False,
+                 interopability_config=False,
                  ip="localhost",
                  csv_direction='',
                  device_csv_name=None,
@@ -384,7 +384,7 @@ class Throughput(Realm):
                     self.android_list.append(hw_version)
         self.laptop_list = self.windows_list + self.linux_list + self.mac_list
 
-    def disconnect_all_devices(self,devices_to_disconnect=[]):
+    def disconnect_all_devices(self, devices_to_disconnect=None):
         """
         Disconnects either all devices or a specific list of devices from Wi-Fi networks.
         """
@@ -396,37 +396,37 @@ class Throughput(Realm):
         async def do_disconnect():
             all_devices = obj.get_all_devices()
             # TO DISCONNECT ALL DEVICES
-            if len(devices_to_disconnect) == 0:
+            if devices_to_disconnect is None:
                 android_resources = [d for d in all_devices if d.get('os') == 'Android' and d.get('eid') in self.device_list]
-                if(len(android_resources)>0):
+                if (len(android_resources) > 0):
                     # TO STOP APP FOR ALL DEVICES FOR ANDROIDS
                     await adb_obj.stop_app(port_list=android_resources)
                 # TO FORGET ALL NETWORKS FOR ALL OS TYPES
                 await obj.connectivity(device_list=self.device_list, wifi_config=self.config_dict, disconnect=True)
-                if(len(android_resources)>0):
-                    adb_obj.set_wifi_state(port_list=android_resources, state = 'disable')
-                
+                if (len(android_resources) > 0):
+                    adb_obj.set_wifi_state(port_list=android_resources, state='disable')
+
             # TO DISCONNECT SPECIFIC DEVICES
             else:
                 android_resources = [d for d in all_devices if d.get('os') == 'Android' and d.get('eid') in devices_to_disconnect]
-                if(len(android_resources)>0):
+                if (len(android_resources) > 0):
                     # To disable stop app for androids
                     await adb_obj.stop_app(port_list=android_resources)
                 await obj.connectivity(device_list=devices_to_disconnect, wifi_config=self.config_dict, disconnect=True)
-                if(len(android_resources)>0):
+                if (len(android_resources) > 0):
                     # To disable wifi for androids
-                    adb_obj.set_wifi_state(port_list=android_resources, state = 'disable')
+                    adb_obj.set_wifi_state(port_list=android_resources, state='disable')
 
         asyncio.run(do_disconnect())
-    
-    def configure_specific(self,device_to_configure_list):
+
+    def configure_specific(self, device_to_configure_list):
         """
         Configure specific devices using the provided list of device IDs or names.
         """
         obj = DeviceConfig.DeviceConfig(lanforge_ip=self.host, file_name=self.file_name, wait_time=self.wait_time)
         all_devices = obj.get_all_devices()
         android_resources = [d for d in all_devices if (d.get('os') == 'Android') and d.get('eid') in device_to_configure_list]
-        laptop_resources = [d for d in all_devices if (d.get('os') != 'Android'  ) and '1.' + d.get('resource') in device_to_configure_list]
+        laptop_resources = [d for d in all_devices if (d.get('os') != 'Android') and '1.' + d.get('resource') in device_to_configure_list]
         devices_connected = asyncio.run(obj.connectivity(device_list=device_to_configure_list, wifi_config=self.config_dict))
         if len(devices_connected) > 0:
             if android_resources:
@@ -441,7 +441,7 @@ class Throughput(Realm):
                 self.configured_devices_check[laptop_resources[0]['hostname']] = False
             return False
 
-    def extract_digits_until_alpha(self,s):
+    def extract_digits_until_alpha(self, s):
         """
         Extracts digits (including decimals) from the start of a string until the first alphabet.
         """
@@ -546,10 +546,10 @@ class Throughput(Realm):
                                 if b['kernel'] == '':
                                     self.eid_list.append(b['eid'])
                                     self.mac_list.append(b['hw version'])
-                                    if "devices"  in interop_response.keys():
+                                    if "devices" in interop_response.keys():
                                         interop_devices = interop_response['devices']
                                         # Extract usernames of devices that match the current eid
-                                        if(len([v['user-name'] for d in interop_devices for k, v in d.items() if v.get('resource-id') == b['eid']]) == 0):
+                                        if (len([v['user-name'] for d in interop_devices for k, v in d.items() if v.get('resource-id') == b['eid']]) == 0):
                                             self.devices_available.append(b['eid'] + " " + 'iOS' + " " + b['hostname'])
                                         # If username is found
                                         else:
@@ -941,7 +941,7 @@ class Throughput(Realm):
         throughput = {}
         # mapping the data based upon the cx_list order
         for cx in cx_list:
-            throughput[i] = [0, 0, 0, 0, "Stopped",0]
+            throughput[i] = [0, 0, 0, 0, "Stopped", 0]
             for j in l3_endp_data:
                 key, value = next(iter(j.items()))
                 endp_a = cx + '-A'
@@ -956,7 +956,7 @@ class Throughput(Realm):
                     throughput[i][4] = 'Run' if value['run'] else 'Stopped'
             # To add average RTT
             for j in l3_cx_data:
-                if(j == "handler" or j == "uri"):
+                if (j == "handler" or j == "uri"):
                     continue
                 if cx == l3_cx_data[j]['name']:
                     throughput[i][5] = l3_cx_data[j]['avg rtt']
@@ -966,7 +966,7 @@ class Throughput(Realm):
     def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured):
         individual_df_for_webui = individual_df.copy()  # for webui
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download = {}, [], [], [], [], {}, {}
-        drop_a, drop_a_per, drop_b, drop_b_per, state, state_of_device, avg_rtt = [], [], [], [], [], [], [] # noqa: F841
+        drop_a, drop_a_per, drop_b, drop_b_per, state, state_of_device, avg_rtt = [], [], [], [], [], [], []  # noqa: F841
         test_stopped_by_user = False
         if (self.test_duration is None) or (int(self.test_duration) <= 1):
             raise ValueError("Monitor test duration should be > 1 second")
@@ -1053,7 +1053,8 @@ class Throughput(Realm):
                     remaining_minutes_instrf = str(overall_time_difference).split(".")[0]
                 # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe
                 for i in range(len(download_throughput)):
-                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], temp_avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
+                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i],
+                                              temp_avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
 
                 # Storing Overall throughput data for all devices and also start time, end time, remaining time and status of test running
                 individual_df_data.extend([round(sum(download_throughput),
@@ -1512,8 +1513,8 @@ class Throughput(Realm):
         logger.debug("{}.csv".format(graph_image_name))
 
         return f"{graph_image_name}.png"
-    
-    def convert_to_table(self,configured_devices_check):
+
+    def convert_to_table(self, configured_devices_check):
         """
         Returns usernames and their config status ('Pass' or 'Fail') as a dictionary.
         """
@@ -1927,10 +1928,10 @@ class Throughput(Realm):
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
                 report.build_graph()
-                if(self.dowebgui and self.get_live_view):
+                if (self.dowebgui and self.get_live_view):
                     # To add live view images coming from the Web-GUI in report
                     self.add_live_view_images_to_report(report)
-                    
+
                 if self.group_name:
                     report.set_obj_html(
                         _obj_title="Detailed Result Table For Groups ",
@@ -2006,12 +2007,12 @@ class Throughput(Realm):
                         " Mode": self.mode_list[0:int(incremental_capacity_list[i])],
                         # " Direction":direction_in_table[0:int(incremental_capacity_list[i])],
                         " Offered download rate (Mbps) ": download_list[0:int(incremental_capacity_list[i])],
-                        " Observed Average download rate (Mbps) ": [str(n)  for n in download_data[0:int(incremental_capacity_list[i])]],
+                        " Observed Average download rate (Mbps) ": [str(n) for n in download_data[0:int(incremental_capacity_list[i])]],
                         " Offered upload rate (Mbps) ": upload_list[0:int(incremental_capacity_list[i])],
-                        " Observed Average upload rate (Mbps) ": [str(n)  for n in upload_data[0:int(incremental_capacity_list[i])]],
-                        " RSSI (dBm) ": ['' if n == 0 else '-' + str(n)  for n in rssi_data[0:int(incremental_capacity_list[i])]],
+                        " Observed Average upload rate (Mbps) ": [str(n) for n in upload_data[0:int(incremental_capacity_list[i])]],
+                        " RSSI (dBm) ": ['' if n == 0 else '-' + str(n) for n in rssi_data[0:int(incremental_capacity_list[i])]],
                         # " Link Speed ":self.link_speed_list[0:int(incremental_capacity_list[i])],
-                        " Average RTT (ms)" : avg_rtt_data[0:int(incremental_capacity_list[i])],
+                        " Average RTT (ms)": avg_rtt_data[0:int(incremental_capacity_list[i])],
                         " Packet Size(Bytes) ": [str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]],
                     }
                     if self.direction == "Bi-direction":
@@ -2118,7 +2119,7 @@ class Throughput(Realm):
             }
             report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
 
-            if(self.interopability_config):
+            if (self.interopability_config):
 
                 report.set_obj_html(_obj_title="Configuration Status of Devices",
                                     _obj="The table below shows the configuration status of each device (except iOS) with respect to the SSID connection.")
@@ -2379,9 +2380,9 @@ class Throughput(Realm):
                 report.set_custom_html('<hr>')
                 report.build_custom()
 
-            if(self.dowebgui and self.get_live_view and self.do_interopability):
+            if (self.dowebgui and self.get_live_view and self.do_interopability):
                 self.add_live_view_images_to_report(report)
-            
+
         # report.build_custom()
         report.build_footer()
         report.write_html()
@@ -2676,16 +2677,16 @@ class Throughput(Realm):
 
         return upstream_port
 
-    def add_live_view_images_to_report(self,report):
+    def add_live_view_images_to_report(self, report):
         """
         This function looks for live view images for each floor
         in the 'live_view_images' folder within `self.result_dir`.
         It waits up to **60 seconds** for each image. If an image is found,
         it's added to the `report` on a new page; otherwise, it's skipped.
         """
-        for floor in range(0,int(self.total_floors)):
-            throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{floor+1}.png")
-            rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor+1}.png")
+        for floor in range(0, int(self.total_floors)):
+            throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{floor + 1}.png")
+            rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor + 1}.png")
             timeout = 60  # seconds
             start_time = time.time()
 
@@ -2710,6 +2711,8 @@ class Throughput(Realm):
                 report.build_custom()
 
 # To validate the input args
+
+
 def validate_args(args):
     if args.group_name:
         selected_groups = args.group_name.split(',')
@@ -2831,7 +2834,8 @@ python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080  --upstre
 
 EXAMPLE-5:
 Command Line Interface to run the test with individual device configuration
-python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth0 --test_duration 30s --traffic_type lf_udp --ssid NETGEAR_2G_wpa2 --passwd Password@123 --security wpa2 --do_interopability --device_list 1.15,1.400 --download 10000000 --interopability_config
+python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth0 --test_duration 30s --traffic_type lf_udp --ssid NETGEAR_2G_wpa2 --passwd Password@123
+--security wpa2 --do_interopability --device_list 1.15,1.400 --download 10000000 --interopability_config
 SCRIPT_CLASSIFICATION :  Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
@@ -3039,8 +3043,8 @@ Copyright 2023 Candela Technologies Inc.
                                 do_interopability=args.do_interopability,
                                 incremental=args.incremental,
                                 precleanup=args.precleanup,
-                                get_live_view= args.get_live_view,
-                                total_floors = args.total_floors,
+                                get_live_view=args.get_live_view,
+                                total_floors=args.total_floors,
                                 csv_direction=csv_direction,
                                 expected_passfail_value=args.expected_passfail_value,
                                 device_csv_name=args.device_csv_name,
@@ -3066,7 +3070,7 @@ Copyright 2023 Candela Technologies Inc.
                                 pac_file=args.pac_file,
                                 wait_time=args.wait_time,
                                 config=args.config,
-                                interopability_config = args.interopability_config
+                                interopability_config=args.interopability_config
                                 )
 
         if gave_incremental:
@@ -3099,7 +3103,8 @@ Copyright 2023 Candela Technologies Inc.
 
             # Extend individual_dataframe_column with dynamically generated column names
             individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop  {clients_to_run[i]}',
-                                               f'Tx % Drop{clients_to_run[i]}', f'Average RTT {clients_to_run[i]} ', f'RSSI {clients_to_run[i]} ', f'Tx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]} '])
+                                                f'Tx % Drop{clients_to_run[i]}', f'Average RTT {clients_to_run[i]}', f'RSSI {clients_to_run[i]}',
+                                                f'Tx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]}'])
 
         individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop ', 'Overall Tx % Drop', 'Iteration',
                                            'TIMESTAMP', 'Start_time', 'End_time', 'Remaining_Time', 'Incremental_list', 'status'])
@@ -3131,7 +3136,7 @@ Copyright 2023 Candela Technologies Inc.
                     time.sleep(5)
                 if args.interopability_config:
                     if (args.do_interopability and i == 0):
-                        # To disconnect all the selected devices at the starting selected 
+                        # To disconnect all the selected devices at the starting selected
                         throughput.disconnect_all_devices()
                     if args.do_interopability and "iOS" not in to_run_cxs[i][0]:
                         logger.info("Configuring device of resource{}".format(to_run_cxs[i][0]))
