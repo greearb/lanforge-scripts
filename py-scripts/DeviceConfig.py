@@ -1567,7 +1567,7 @@ class DeviceConfig(Realm):
             resource_id = ""
             # If only one device is present in interop tab.
             if not isinstance(adb_resources['devices'], list):
-                adb_resources['devices'] = [{adb_resources['devices']['name']:adb_resources['devices']}]
+                adb_resources['devices'] = [{adb_resources['devices']['name']: adb_resources['devices']}]
             for device in adb_resources['devices']:
                 device_key = list(device.values())[0]["_links"]
                 resource_id = list(device.values())[0]["resource-id"]
