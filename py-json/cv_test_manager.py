@@ -430,7 +430,6 @@ class cv_test(Realm):
         start_try = 0
         while True:
             response = self.create_test(test_name, instance_name, load_old)
-            logger.debug(f"Create test response data: {response}")
 
             # Check response data to see if test creation was successful
             if response and len(response) > 0:
@@ -447,7 +446,7 @@ class cv_test(Realm):
 
             start_try += 1
             if start_try > 60:
-                logger.error("ERROR:  Could not start within 60 tries, aborting.")
+                logger.critical("Could not start within 60 tries, aborting.")
                 exit(1)
             time.sleep(1)
 
@@ -457,11 +456,9 @@ class cv_test(Realm):
 
         for kv in sets:
             cmd = "cv set '%s' '%s' '%s'" % (instance_name, kv[0], kv[1])
-            logger.info("Running CV set command:{cmd}".format(cmd=cmd))
             self.run_cv_cmd(cmd)
 
         for cmd in cv_cmds:
-            logger.info("Running CV set command:{cmd}".format(cmd=cmd))
             self.run_cv_cmd(cmd)
 
         # 3. Start test
@@ -478,8 +475,7 @@ class cv_test(Realm):
             cmd = "cv get_and_close_dialog"
             dialog = self.run_cv_cmd(cmd)
             if dialog[0]["LAST"]["response"] != "NO-DIALOG":
-                logger.info("Popup Dialog:\n")
-                logger.info(dialog[0]["LAST"]["response"])
+                logger.warning(f"Popup Dialog: {dialog[0]["LAST"]["response"]}")
 
             # Query test status
             if ok_status:
@@ -685,10 +681,15 @@ class cv_test(Realm):
 
         Aside from special cases, this is generally not to be used directly.
         """
+        logger.debug(f"Running CV command: {command}")
+
         response_json = []
-        req_url = "/gui-json/cmd"
-        data = {"cmd": command}
-        self.json_post(req_url, data, debug_=False, response_json_list_=response_json)
+        self.json_post("/gui-json/cmd",
+                       {"cmd": command},
+                       debug_=False,
+                       response_json_list_=response_json)
+
+        logger.debug(f"CV command response: {command}")
         return response_json
 
     @staticmethod
