@@ -676,6 +676,12 @@ class cv_test(Realm):
         cmd = "cv sync"
         logger.info(self.run_cv_cmd(cmd))
 
+    # ~~~ Chamber View command helpers ~~~
+    @staticmethod
+    def get_response_string(response: list):
+        """Extract response string from specified message."""
+        return response[0]["LAST"]["response"]
+
     def run_cv_cmd(self, command: str):
         """Send LANforge Chamber View command to GUI.
 
@@ -691,11 +697,6 @@ class cv_test(Realm):
 
         logger.debug(f"CV command response: {command}")
         return response_json
-
-    @staticmethod
-    def get_response_string(response: list):
-        """Extract response string from specified message."""
-        return response[0]["LAST"]["response"]
 
     def get_popup_info_and_close(self):
         """Grab info from and close any pop-up dialog box in Chamber View."""
