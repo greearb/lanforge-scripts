@@ -164,8 +164,7 @@ class cv_test(Realm):
         new test automation, as it manages process of configuring, invoking, and running
         a Chamber View test.
         """
-        cmd = "cv create '{0}' '{1}' '{2}'".format(test_name, instance, load_old_cfg)
-        return self.run_cv_cmd(str(cmd))
+        return self.run_cv_cmd(f"cv create '{test_name}' '{instance}' '{load_old_cfg}'")
 
     def load_test_scenario(self, instance: str, scenario: str):
         """Load Chamber View test config for specified test instance (active test window).
@@ -177,8 +176,7 @@ class cv_test(Realm):
         new test automation, as it manages process of configuring, invoking, and running
         a Chamber View test.
         """
-        cmd = "cv load '{0}' '{1}'".format(instance, scenario)
-        self.run_cv_cmd(cmd)
+        self.run_cv_cmd(f"cv load '{instance}' '{scenario}'")
 
     def load_test_config(self, test_config: str, instance: str):
         """Load Chamber View test config for specified test instance.
@@ -187,8 +185,7 @@ class cv_test(Realm):
         new test automation, as it manages process of configuring, invoking, and running
         a Chamber View test.
         """
-        cmd = "cv load '{0}' '{1}'".format(instance, test_config)
-        self.run_cv_cmd(cmd)
+        self.run_cv_cmd(f"cv load '{instance}' '{test_config}'")
 
     def start_test(self, instance: str):
         """Start the Chamber View test for specified test instance (assumes instance is active).
@@ -196,18 +193,15 @@ class cv_test(Realm):
         Recommended to use the `create_and_run_test()` function if creating
         new test automation, as it manages process of invoking and running
         a Chamber View test."""
-        cmd = "cv click '%s' Start" % instance
-        return self.run_cv_cmd(cmd)
+        return self.run_cv_cmd(f"cv click '{instance}' Start")
 
     def close_test(self, instance: str):
         """Close the Chamber View test window for specified test instance."""  # TODO: Assume it also stops the test?
-        cmd = "cv click '%s' 'Close'" % instance
-        self.run_cv_cmd(cmd)
+        self.run_cv_cmd(f"cv click '{instance}' 'Close'")
 
     def cancel_test(self, instance: str):
         """Cancel the Chamber View test for specified test instance."""
-        cmd = "cv click '%s' Cancel" % instance
-        self.run_cv_cmd(cmd)
+        self.run_cv_cmd(f"cv click '{instance}' Cancel")
 
     def auto_save_report(self, instance: str):
         """Toggle Chamber View test 'Auto Save' option for specified test instance.
@@ -215,16 +209,14 @@ class cv_test(Realm):
         Recommended to use `set_auto_save_report()` instead to avoid unexpected errors.
         If the option is presently selected, this will un-select (disable) auto save functionality.
         """
-        cmd = "cv click '%s' 'Auto Save Report'" % instance
-        self.run_cv_cmd(cmd)
+        self.run_cv_cmd(f"cv click '{instance}' 'Auto Save Report'")
 
     def set_auto_save_report(self, instance: str, onoff: int):
         """Set Chamber View test 'Auto Save' option for specified test instance.
 
         Specify '1' to enable the 'Auto Save' option or '0' to disable the option.
         """
-        cmd = "cv set '%s' 'Auto Save Report' %s" % (instance, onoff)
-        self.run_cv_cmd(cmd)
+        self.run_cv_cmd(f"cv set '{instance}' 'Auto Save Report' {onoff}")
 
     def get_report_location(self, instance: str):
         """Query the report location for the specified Chamber View test instance."""
@@ -234,9 +226,7 @@ class cv_test(Realm):
 
     def get_is_running(self, instance: str):
         """Query test status of the specified Chamber View test instance."""
-        cmd = "cv get '%s' 'StartStop'" % instance
-        val = self.run_cv_cmd(cmd)
-        # pprint(val)
+        val = self.run_cv_cmd(f"cv get '{instance}' 'StartStop'")
         return val[0]["LAST"]["response"] == 'StartStop::Stop'
 
     def save_html(self, instance: str):
@@ -244,29 +234,23 @@ class cv_test(Realm):
 
         This assumes that the test has completed.
         """
-        cmd = "cv click %s 'Save HTML'" % instance
-        self.run_cv_cmd(cmd)
+        self.run_cv_cmd(f"cv click {instance} 'Save HTML'")
 
     def get_exists(self, instance: str):
         """Query existence of specified Chamber View test instance."""
-        cmd = "cv exists %s" % instance
-        val = self.run_cv_cmd(cmd)
-        # pprint(val)
+        val = self.run_cv_cmd(f"cv exists {instance}")
         return val[0]["LAST"]["response"] == 'YES'
 
     def get_cv_is_built(self):
         """Query status of specified Chamber View Scenario (built or not)."""
-        cmd = "cv is_built"
-        val = self.run_cv_cmd(cmd)
-        # pprint(val)
+        val = self.run_cv_cmd("cv is_built")
         rv = val[0]["LAST"]["response"] == 'YES'
         logger.info("is-built: {rv} ".format(rv=rv))
         return rv
 
     def delete_instance(self, instance: str):
         """Delete specified Chamber View test instance."""
-        cmd = "cv delete '%s'" % instance
-        self.run_cv_cmd(cmd)
+        self.run_cv_cmd(f"cv delete '{instance}'")
 
         # It can take a while, some test rebuild the old scenario upon exit, for instance.
         tries = 0
@@ -638,8 +622,7 @@ class cv_test(Realm):
         While Chamber View tests may rely on existing Chamber View Scenarios,
         they are unique and rely on separate configuration for use in LANforge.
         """
-        cmd = "cv apply '%s'" % cv_scenario
-        self.run_cv_cmd(cmd)
+        self.run_cv_cmd(f"cv apply '{cv_scenario}'")
         logger.info("Applying %s scenario" % cv_scenario)
 
     def build_cv_scenario(self):
@@ -651,8 +634,7 @@ class cv_test(Realm):
         While Chamber View tests may rely on existing Chamber View Scenarios,
         they are unique and rely on separate configuration for use in LANforge.
         """
-        cmd = "cv build"
-        self.run_cv_cmd(cmd)
+        self.run_cv_cmd("cv build")
         logger.info("Building scenario")
 
     def get_cv_build_status(self):
@@ -661,8 +643,7 @@ class cv_test(Realm):
         While Chamber View tests may rely on existing Chamber View Scenarios,
         they are unique and rely on separate configuration for use in LANforge.
         """
-        cmd = "cv is_built"
-        response = self.run_cv_cmd(cmd)
+        response = self.run_cv_cmd("cv is_built")
         return self.check_reponse(response)
 
     def sync_cv(self):
@@ -673,8 +654,7 @@ class cv_test(Realm):
         While Chamber View tests may rely on existing Chamber View Scenarios,
         they are unique and rely on separate configuration for use in LANforge.
         """
-        cmd = "cv sync"
-        logger.info(self.run_cv_cmd(cmd))
+        logger.info(self.run_cv_cmd("cv sync"))
 
     # ~~~ Chamber View command helpers ~~~
     @staticmethod
@@ -700,8 +680,8 @@ class cv_test(Realm):
 
     def get_popup_info_and_close(self):
         """Grab info from and close any pop-up dialog box in Chamber View."""
-        cmd = "cv get_and_close_dialog"
-        dialog = self.run_cv_cmd(cmd)
+        dialog = self.run_cv_cmd("cv get_and_close_dialog")
+
         if dialog[0]["LAST"]["response"] != "NO-DIALOG":
             logger.info("Popup Dialog:\n")
             logger.info(dialog[0]["LAST"]["response"])
