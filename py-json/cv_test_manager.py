@@ -121,6 +121,16 @@ def cv_add_base_parser(parser):
                         default="",
                         help="Specify the test tag info for reporting purposes, for instance:  testbed-01")
 
+    parser.add_argument("-f", "--force",
+                        dest="force",
+                        action="store_true",
+                        help="Force removal of any conflicting test instances. "
+                             "Exercise caution with this option, as it will ungracefully stop "
+                             "any present (and running) test instances, if any. This operation "
+                             "may rebuild the currently-selected Chamber View Scenario as well. "
+                             "Presently this only removes test instances with the same name, "
+                             "but in the future it may remove all instances.")
+
 
 class cv_test(Realm):
     """Utilities for configuring LANforge Chamber View tests and Scenarios."""
@@ -381,7 +391,9 @@ class cv_test(Realm):
                             cv_cmds: list,
                             local_lf_report_dir: str = None,
                             ssh_port: int = 22,
-                            graph_groups_file: str = None):
+                            graph_groups_file: str = None,
+                            force: bool = False,
+                            **kwargs):
         """Create and run Chamber View test with specified configuration.
 
             load_old_config is boolean
@@ -427,6 +439,9 @@ class cv_test(Realm):
 
             # Failed to create test, try again until our try counter expires
             logger.warning(f"Could not create test, try: {start_try}/60:")
+
+            if force:
+                self.delete_instance(instance_name)
 
             start_try += 1
             if start_try > 60:
