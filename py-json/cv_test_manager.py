@@ -384,20 +384,6 @@ class cv_test(Realm):
         # the text blob.
         time.sleep(5)
 
-    # load_old_config is boolean
-    # test_name is specific to the type of test being launched (Dataplane, tr398, etc)
-    #    ChamberViewFrame.java has list of supported test names.
-    # instance_name is per-test instance, it does not matter much, just use the same name
-    #    throughout the entire run of the test.
-    # config_name what to call the text-blob that configures the test.  Does not matter much
-    #    since we (re)create it during the run.
-    # sets:  Arrany of [key,value] pairs.  The key is the widget name, typically the label
-    #    before the entry field.
-    # pull_report:  Boolean, should we download the report to current working directory.
-    # lf_host:  LANforge machine running the GUI.
-    # lf_password:  Password for LANforge machine running the GUI.
-    # cv_cmds:  Array of raw chamber-view commands, such as "cv click 'button-name'"
-    #    These (and the sets) are applied after the test is created and before it is started.
     def create_and_run_test(self,
                             load_old_cfg: bool,
                             test_name: str,
@@ -433,16 +419,16 @@ class cv_test(Realm):
         if load_old_cfg:
             load_old = "true"
 
+        # 1. Attempt to create test as configured (does not start yet)
+        #
+        # This may fail for a number of reasons, including there
+        # already being an active test instance with the same name
+        #
+        # Note that this logic only checks for test instance with same name.
+        # It currently has no logic to detect any *other* active tests
+        # with a different test instance name
         start_try = 0
         while True:
-            # Attempt to create test as configured
-            #
-            # This may fail for a number of reasons, including there
-            # already being an active test instance with the same name
-            #
-            # Note that this logic only checks for test instance with same name.
-            # It currently has no logic to detect any *other* active tests
-            # with a different test instance name
             response = self.create_test(test_name, instance_name, load_old)
             logger.debug(f"Create test response data: {response}")
 
@@ -465,6 +451,7 @@ class cv_test(Realm):
                 exit(1)
             time.sleep(1)
 
+        # 2. Configure test
         self.load_test_config(config_name, instance_name)
         self.set_auto_save_report(instance_name, "true")
 
@@ -477,21 +464,24 @@ class cv_test(Realm):
             logger.info("Running CV set command:{cmd}".format(cmd=cmd))
             self.run_cv_cmd(cmd)
 
+        # 3. Start test
         response = self.start_test(instance_name)
         if response[0]["LAST"]["response"].__contains__("Could not find instance:"):
             logger.error("ERROR:  start_test failed: ", response[0]["LAST"]["response"], "\n")
-            # pprint(response)
             exit(1)
 
+        # 4. Poll test while it runs
         not_running = 0
         ok_status = 1
         while True:
+            # Report and close any dialogs
             cmd = "cv get_and_close_dialog"
             dialog = self.run_cv_cmd(cmd)
             if dialog[0]["LAST"]["response"] != "NO-DIALOG":
                 logger.info("Popup Dialog:\n")
                 logger.info(dialog[0]["LAST"]["response"])
 
+            # Query test status
             if ok_status:
                 cmd = "cv get_status '%s'" % (instance_name)
                 status = self.run_cv_cmd(cmd)
@@ -503,6 +493,8 @@ class cv_test(Realm):
                         logger.info("Status:\n")
                         logger.info(status[0]["LAST"]["response"])
 
+            # TODO: Only need to check this once. Maybe moving this to the end of the function
+            #       where we already set report location
             check = self.get_report_location(instance_name)
             location = json.dumps(check[0]["LAST"]["response"])
             if location != '\"Report Location:::\"':
@@ -537,7 +529,9 @@ class cv_test(Realm):
             else:
                 logger.info('Waiting on test completion for kpi')
 
-            # Of if test stopped for some reason and could not generate report.
+            # Stop polling CV test if it's not running after five tries
+            # This includes both issues during test run (after successful creation)
+            # as well as normal stop logic
             if not self.get_is_running(instance_name):
                 logger.info("Detected test is not running %s / 5." % (not_running))
                 not_running += 1
@@ -545,11 +539,14 @@ class cv_test(Realm):
                     break
 
             time.sleep(1)
+
+        # 5. Test complete, gather reports and cleanup
+        #
+        # This closes the test and any present pop-ups
         self.report_name = self.get_report_location(instance_name)
-        # Ensure test is closed and cleaned up
         self.delete_instance(instance_name)
 
-        # Clean up any remaining popups.
+        # Clean up any remaining popups
         while True:
             cmd = "cv get_and_close_dialog"
             dialog = self.run_cv_cmd(cmd)
