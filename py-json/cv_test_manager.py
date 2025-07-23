@@ -456,10 +456,7 @@ class cv_test(Realm):
         ok_status = 1
         while True:
             # Report and close any dialogs
-            cmd = "cv get_and_close_dialog"
-            dialog = self.run_cv_cmd(cmd)
-            if dialog[0]["LAST"]["response"] != "NO-DIALOG":
-                logger.warning(f"Popup Dialog: {dialog[0]["LAST"]["response"]}")
+            self.get_popup_info_and_close()
 
             # Query test status
             if ok_status:
@@ -528,12 +525,9 @@ class cv_test(Realm):
 
         # Clean up any remaining popups
         while True:
-            cmd = "cv get_and_close_dialog"
-            dialog = self.run_cv_cmd(cmd)
-            if dialog[0]["LAST"]["response"] != "NO-DIALOG":
-                logger.info("Popup Dialog:\n")
-                logger.info(dialog[0]["LAST"]["response"])
-            else:
+            # Just need to check if there is any dialog to complete, helper logs dialog for us
+            response = self.get_popup_info_and_close()
+            if self.get_response_string(response) == "NO-DIALOG":
                 break
 
     def kpi_results_present(self) -> bool:
@@ -680,8 +674,11 @@ class cv_test(Realm):
 
     def get_popup_info_and_close(self):
         """Grab info from and close any pop-up dialog box in Chamber View."""
-        dialog = self.run_cv_cmd("cv get_and_close_dialog")
+        response = self.run_cv_cmd("cv get_and_close_dialog")
 
-        if dialog[0]["LAST"]["response"] != "NO-DIALOG":
-            logger.info("Popup Dialog:\n")
-            logger.info(dialog[0]["LAST"]["response"])
+        # Always good to log the pop-up dialog string
+        response_str = self.get_response_string(response)
+        if response_str != "NO-DIALOG":
+            logger.info(f"Popup Dialog: {response_str}")
+
+        return response
