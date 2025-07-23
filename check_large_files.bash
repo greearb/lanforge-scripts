@@ -289,6 +289,7 @@ kernel_to_relnum() {
     for i in 0 1 2; do
         if (( $i < 2 )); then
             #1>&2 echo "HUNK $i: [${hunks[$i]}]"
+            # there is some condition that turns hunks[i] into a hex value
             expandos+=( $(( 100 + ${hunks[$i]} )) )
         else
             tmpstr="00000000${hunks[i]}"
@@ -694,6 +695,7 @@ survey_kernel_files() {
             # sleep 2
             continue
         else
+            # there is a condition on a debug kernel where we get a bad subscript here: ser is out of range
             ser=$( kernel_to_relnum ${fiile#*ct} )
             kernel_sort_serial[$ser]=1
             # debug "file[$file] ser[$ser]"
