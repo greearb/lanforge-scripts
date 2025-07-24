@@ -16,23 +16,28 @@ EXAMPLE:    # Run 60 second default DL/UL-rate UDP IPv4 traffic-based test with
                 ./lf_wifi_capacity_test.py \
                     --mgr           192.168.1.101 \
                     --pull_report   \
-                    --config_name   wifi_config \
                     --upstream      1.1.eth1 \
                     --stations      1.1.sta0000 \
                     --protocol      UDP \
-                    --duration      6000
+                    --duration      60s
 
             # Run 5 minute second 1 Gbps DL rate TCP IPv4 traffic-based test with
             # pre-existing and pre-configured stations 'sta0000' and 'sta0001'
             # together
                 ./lf_wifi_capacity_test.py \
                     --pull_report   \
-                    --config_name   wifi_config \
                     --upstream      1.1.eth1 \
                     --stations      1.1.sta0000,1.1.sta0001 \
                     --protocol      TCP \
-                    --duration      30000 \
+                    --duration      5m \
                     --batch_size    2
+
+            # Run test using values and options as defined in pre-existing config
+            # Can use additional options like '--duration', '--batch_size', etc.
+            # to override those in config
+                ./lf_wifi_capacity_test.py \
+                    --pull_report   \
+                    --config_name   existing_wct_config
 
 SCRIPT_CLASSIFICATION:
             Test
@@ -294,23 +299,28 @@ EXAMPLE:    # Run 60 second default DL/UL-rate UDP IPv4 traffic-based test with
                 ./lf_wifi_capacity_test.py \
                     --mgr           192.168.1.101 \
                     --pull_report   \
-                    --config_name   wifi_config \
                     --upstream      1.1.eth1 \
                     --stations      1.1.sta0000 \
                     --protocol      UDP \
-                    --duration      6000
+                    --duration      60s
 
             # Run 5 minute second 1 Gbps DL rate TCP IPv4 traffic-based test with
             # pre-existing and pre-configured stations 'sta0000' and 'sta0001'
             # together
                 ./lf_wifi_capacity_test.py \
                     --pull_report   \
-                    --config_name   wifi_config \
                     --upstream      1.1.eth1 \
                     --stations      1.1.sta0000,1.1.sta0001 \
                     --protocol      TCP \
-                    --duration      30000 \
+                    --duration      5m \
                     --batch_size    2
+
+            # Run test using values and options as defined in pre-existing config
+            # Can use additional options like '--duration', '--batch_size', etc.
+            # to override those in config
+                ./lf_wifi_capacity_test.py \
+                    --pull_report   \
+                    --config_name   existing_wct_config
 
 SCRIPT_CLASSIFICATION:
             Test
