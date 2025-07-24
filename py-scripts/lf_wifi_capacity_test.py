@@ -110,6 +110,7 @@ class WiFiCapacityTest(cv_test):
                  local_lf_report_dir="",
                  sta_list="",
                  verbosity="5",
+                 force: bool = False,
                  **kwargs):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -158,6 +159,7 @@ class WiFiCapacityTest(cv_test):
         self.local_lf_report_dir = local_lf_report_dir
         self.stations_list = sta_list
         self.verbosity = verbosity
+        self.force = force
 
     def setup(self):
         if self.create_stations and self.stations != "":
