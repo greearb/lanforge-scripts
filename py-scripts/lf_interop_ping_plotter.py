@@ -1697,15 +1697,25 @@ connectivity problems.
                     'pac_file': pac_file,
                     'server_ip': server_ip,
                 }
-                for device in all_devices:
-                    if device["type"] == 'laptop':
-                        device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
-                    else:
-                        device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
+                # If the test is triggered from the webUI, use the provided resources
+                if webUI_resources is not None:
+                    webUI_resources = webUI_resources.split(',')
+                    print(f"WebUI resources: {webUI_resources}")
+                    devices_list = []
+                    for device in webUI_resources:
+                        devices_list.append(device.split('.')[0] + '.' + device.split('.')[1])
+                    dev_list = asyncio.run(obj.connectivity(device_list=devices_list, wifi_config=config_dict))
+                else:
+                    # print(f"Available devices: {all_devices}")
+                    for device in all_devices:
+                        if device["type"] == 'laptop':
+                            device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+                        else:
+                            device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
 
-                logger.info(f"Available devices: {device_list}")
-                dev_list = input("Enter the desired resources to run the test:").split(',')
-                dev_list = asyncio.run(obj.connectivity(device_list=dev_list, wifi_config=config_dict))
+                    logger.info(f"Available devices: {device_list}")
+                    dev_list = input("Enter the desired resources to run the test:").split(',')
+                    dev_list = asyncio.run(obj.connectivity(device_list=dev_list, wifi_config=config_dict))
                 ping.select_real_devices(real_devices=Devices, device_list=dev_list)
         # Case 3: Config is False, no device list is provided, and no group is selected
         else:
