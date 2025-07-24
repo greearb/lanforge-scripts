@@ -110,7 +110,7 @@ class WiFiCapacityTest(cv_test):
                  local_lf_report_dir="",
                  sta_list="",
                  verbosity="5",
-                 ):
+                 **kwargs):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
         if enables is None:
@@ -250,10 +250,9 @@ class WiFiCapacityTest(cv_test):
             cmd = "cv click '%s' 'Interleave Sort'" % self.instance_name
             cv_cmds.append(cmd)
 
-        self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
-                                 self.config_name, self.sets,
-                                 self.pull_report, self.lfclient_host, self.lf_user, self.lf_password,
-                                 cv_cmds, ssh_port=self.ssh_port, graph_groups_file=self.graph_groups, local_lf_report_dir=self.local_lf_report_dir)
+        self.create_and_run_test(lf_host=self.lfclient_host,
+                                 cv_cmds=cv_cmds,
+                                 **vars(self))
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
@@ -410,37 +409,12 @@ INCLUDE_IN_README:
 
     WFC_Test = WiFiCapacityTest(lfclient_host=args.mgr,
                                 lf_port=args.port,
-                                lf_user=args.lf_user,
-                                lf_password=args.lf_password,
-                                instance_name=args.instance_name,
-                                config_name=args.config_name,
-                                upstream=args.upstream,
-                                batch_size=args.batch_size,
-                                loop_iter=args.loop_iter,
-                                protocol=args.protocol,
-                                duration=args.duration,
-                                pull_report=args.pull_report,
-                                load_old_cfg=args.load_old_cfg,
-                                download_rate=args.download_rate,
-                                upload_rate=args.upload_rate,
-                                sort=args.sort,
-                                stations=args.stations,
-                                create_stations=args.create_stations,
-                                radio=args.radio,
-                                ssid=args.ssid,
-                                security=args.security,
-                                paswd=args.paswd,
                                 enables=args.enable,
                                 disables=args.disable,
                                 raw_lines=args.raw_line,
-                                raw_lines_file=args.raw_lines_file,
                                 sets=args.set,
-                                graph_groups=args.graph_groups,
-                                test_rig=args.test_rig,
-                                test_tag=args.test_tag,
-                                local_lf_report_dir=args.local_lf_report_dir,
                                 sta_list=station_list,
-                                verbosity=args.verbosity)
+                                **vars(args))
     WFC_Test.setup()
     WFC_Test.run()
 
