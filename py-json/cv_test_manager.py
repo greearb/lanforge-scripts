@@ -631,8 +631,8 @@ class cv_test(Realm):
         While Chamber View tests may rely on existing Chamber View Scenarios,
         they are unique and rely on separate configuration for use in LANforge.
         """
+        logger.info(f"Applying {cv_scenario} Chamber View Scenario")
         self.run_cv_cmd(f"cv apply '{cv_scenario}'")
-        logger.info("Applying %s scenario" % cv_scenario)
 
     def build_cv_scenario(self):
         """Make staged Chamber View Scenario active in testbed.
@@ -643,8 +643,8 @@ class cv_test(Realm):
         While Chamber View tests may rely on existing Chamber View Scenarios,
         they are unique and rely on separate configuration for use in LANforge.
         """
+        logger.info("Building Chamber View Scenario")
         self.run_cv_cmd("cv build")
-        logger.info("Building scenario")
 
     def get_cv_build_status(self):
         """Query whether Chamber View Scenario is active (built) in testbed.
@@ -663,7 +663,8 @@ class cv_test(Realm):
         While Chamber View tests may rely on existing Chamber View Scenarios,
         they are unique and rely on separate configuration for use in LANforge.
         """
-        logger.info(self.run_cv_cmd("cv sync"))
+        logger.info("Syncing Chamber View")
+        self.run_cv_cmd("cv sync")
 
     # ~~~ Chamber View command helpers ~~~
     @staticmethod
