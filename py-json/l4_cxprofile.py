@@ -40,14 +40,24 @@ class L4CXProfile(LFCliBase):
         debug_info = {}
         if endp_list is not None and endp_list['endpoint'] is not None:
             endp_list = endp_list['endpoint']
-            expected_passes = len(endp_list)
-            passes = len(endp_list)
-            for item in range(len(endp_list)):
-                for name, info in endp_list[item].items():
-                    for field in fields_list:
-                        if info[field.replace("+", " ")] > 0:
-                            passes -= 1
-                            debug_info[name] = {field: info[field.replace("+", " ")]}
+            if isinstance(endp_list, dict):
+                # if endp_list is a dict, then it is just a single endpoint, not a list
+                expected_passes = 1
+                passes = 1
+                info = endp_list
+                for field in fields_list:
+                    if info[field.replace("+", " ")] > 0:
+                        passes -= 1
+                        debug_info[info["name"]] = {field: info[field.replace("+", " ")]}
+            else:
+                expected_passes = len(endp_list)
+                passes = len(endp_list)
+                for item in range(len(endp_list)):
+                    for name, info in endp_list[item].items():
+                        for field in fields_list:
+                            if info[field.replace("+", " ")] > 0:
+                                passes -= 1
+                                debug_info[name] = {field: info[field.replace("+", " ")]}
             if debug:
                 logger.debug(debug_info)
             if passes == expected_passes:
@@ -104,7 +114,7 @@ class L4CXProfile(LFCliBase):
             if cx_name != 'uri' and cx_name != 'handler':
                 # single CX
                 if (type(cx_name) is str):
-                    # single CX (str) 
+                    # single CX (str)
                     # create a dictionary
                     cx_name_dict = {cx_list['endpoint']['name'] : cx_list['endpoint']}
                     for item, value in cx_name_dict.items():
@@ -112,8 +122,8 @@ class L4CXProfile(LFCliBase):
                             if item in self.created_cx.keys() and value_name == self.test_type:
                                 cx_map[item] = value_rx
                     # break is needed for cx_name is not the cx_names
-                    # {'_links': '/layer4/451', 'entity id': '1.1.12.451.11', 'name': 'sta0000_l4'} 
-                    # 
+                    # {'_links': '/layer4/451', 'entity id': '1.1.12.451.11', 'name': 'sta0000_l4'}
+                    #
                     break
                 else:
                     # multipe CX (dict)
@@ -132,13 +142,21 @@ class L4CXProfile(LFCliBase):
         #    raise NameError("check request rate: missing self.target_requests_per_ten")
         if endp_list is not None and endp_list['endpoint'] is not None:
             endp_list = endp_list['endpoint']
-            for item in endp_list:
-                for name, info in item.items():
+            if isinstance(endp_list, dict):
+                # if endp_list is a dict, then there is only a single endpoint, not a list of them
+                for name, item in endp_list.items():
                     if name in self.created_cx.keys():
                         expected_passes += 1
-                        if info['urls/s'] * self.requests_per_ten >= self.target_requests_per_ten * .9:
-                            # logger.info(name, info['urls/s'], info['urls/s'] * self.requests_per_ten, self.target_requests_per_ten * .9)
+                        if info['url/s'] * self.requests_per_ten >= self.target_requests_per_ten * .9:
                             passes += 1
+            else:
+                for item in endp_list:
+                    for name, info in item.items():
+                        if name in self.created_cx.keys():
+                            expected_passes += 1
+                            if info['urls/s'] * self.requests_per_ten >= self.target_requests_per_ten * .9:
+                                # logger.info(name, info['urls/s'], info['urls/s'] * self.requests_per_ten, self.target_requests_per_ten * .9)
+                                passes += 1
 
         return passes == expected_passes
 
@@ -238,7 +256,7 @@ class L4CXProfile(LFCliBase):
         if (monitor_interval is None) or (monitor_interval < 1):
             logger.critical("L4CXProfile::monitor wants monitor_interval >= 1 second")
             raise ValueError("L4CXProfile::monitor wants monitor_interval >= 1 second")
-        # verify that the file extension matches the output format    
+        # verify that the file extension matches the output format
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
                 logger.info('File extension %s does not match output format %s changing file extension to match output format' % (report_file, output_format))
@@ -247,7 +265,7 @@ class L4CXProfile(LFCliBase):
         else:
             output_format = report_file.split('.')[-1]
 
-        # Step 1 - Assign column names 
+        # Step 1 - Assign column names
 
         if col_names is not None and len(col_names) > 0:
             header_row = col_names
@@ -333,7 +351,7 @@ class L4CXProfile(LFCliBase):
                         logger.debug(endpoint_data)
                         endpoint_data["Timestamp"] = test_timestamp
                         full_test_data_list.append(endpoint_data)
-                    # break is needed ,  there is a single CX the json is formatted 
+                    # break is needed ,  there is a single CX the json is formatted
                     break
 
                 else:
