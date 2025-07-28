@@ -903,6 +903,13 @@ class Throughput(Realm):
             signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
             signal_list = [int(i) if i != "" else 0 for i in signal_list]
             throughput[index] = self.get_layer3_endp_data()
+            # Check if next sleep would overshoot the end_time
+            is_last_iteration = ((current_time + timedelta(seconds=1 if self.dowebgui else self.report_timer)) >= end_time)
+            # For the WebUI, data is appended as "STOPPED" outside the loop.
+            # To prevent the last record from being duplicated, break before exiting the loop.
+            if is_last_iteration:
+                break
+
             if self.dowebgui:
                 time.sleep(1)  # for each second data in csv while ensuring webgui
                 individual_df_data = []
@@ -1083,9 +1090,6 @@ class Throughput(Realm):
                 break
             if not self.background_run and self.background_run is not None:
                 break
-
-        individual_df = individual_df[1:-1]
-        individual_df_for_webui = individual_df_for_webui[1:-1]
         for _, key in enumerate(throughput):
             for i in range(len(throughput[key])):
                 upload[i], download[i], drop_a[i], drop_b[i] = [], [], [], []
