@@ -154,7 +154,9 @@ class Ping(Realm):
                  server_ip=None,
                  expected_passfail_val=None,
                  csv_name=None,
-                 wait_time=60):
+                 wait_time=60,
+                 floors=None,
+                 get_live_view=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.host = host
@@ -199,6 +201,8 @@ class Ping(Realm):
         self.expected_passfail_val = expected_passfail_val
         self.csv_name = csv_name
         self.wait_time = wait_time
+        self.floors = floors
+        self.get_live_view = get_live_view
 
     def change_target_to_ip(self):
 
@@ -1052,7 +1056,8 @@ class Ping(Realm):
         report.set_csv_filename(graph_png)
         report.move_csv_file()
         report.build_graph()
-
+        if self.do_webUI and self.get_live_view:
+            self.add_ping_packet_images(report=report)
         dataframe1 = pd.DataFrame({
             'Wireless Client': self.device_names,
             'MAC': self.device_mac,
@@ -1135,7 +1140,6 @@ class Ping(Realm):
             report.build_table()
 
         # closing
-        report.build_custom()
         report.build_footer()
         report.write_html()
         report.write_pdf()
@@ -1241,6 +1245,39 @@ class Ping(Realm):
             return dataframe
         else:
             return None
+
+    def add_ping_packet_images(self, report):
+        """
+        Adds Ping Packet Sent, Received, and Loss heatmap images for each floor into the report.
+        Waits up to 60 seconds for each set of images to be generated.
+        """
+        if self.do_webUI and self.get_live_view:
+            test_name = os.path.basename(self.ui_report_dir)
+
+            for floor in range(int(self.floors)):
+                # Construct expected image paths
+                packet_sent_image = os.path.join(self.ui_report_dir, "live_view_images", f"{test_name}_ping_packet_sent_{floor + 1}.png")
+                packet_recv_image = os.path.join(self.ui_report_dir, "live_view_images", f"{test_name}_ping_packet_recv_{floor + 1}.png")
+                packet_loss_image = os.path.join(self.ui_report_dir, "live_view_images", f"{test_name}_ping_packet_loss_{floor + 1}.png")
+
+                # Wait for all required images to be generated (up to timeout)
+                timeout = 60  # seconds
+                start_time = time.time()
+
+                while not (os.path.exists(packet_sent_image) and os.path.exists(packet_recv_image) and os.path.exists(packet_loss_image)):
+                    if time.time() - start_time > timeout:
+                        print(f"Timeout: Heatmap images for floor {floor + 1} not found within {timeout} seconds.")
+                        break
+                    time.sleep(1)
+
+                # Only proceed if all three images exist after waiting
+                if os.path.exists(packet_sent_image) and os.path.exists(packet_recv_image) and os.path.exists(packet_loss_image):
+                    report.set_custom_html(f"<h2>Floor {floor + 1} - Ping Packet Sent vs Received vs Lost:</h2>")
+                    report.build_custom()
+
+                    for image_path in [packet_sent_image, packet_recv_image, packet_loss_image]:
+                        report.set_custom_html(f'<img src="file://{image_path}" style="width:1200px; height:800px;"></img>')
+                        report.build_custom()
 
 
 def validate_args(args):
@@ -1529,6 +1566,16 @@ connectivity problems.
     parser.add_argument('--device_csv_name', type=str, help='Enter the csv name to store expected values', default=None)
     parser.add_argument('--wait_time', type=int, help='Enter the maximum wait time for configurations to apply', default=60)
 
+    # Arguments Related to Testhouse
+    optional.add_argument('--get_live_view',
+                          action="store_true",
+                          help='specify this flag to get the liveview of the devices')
+
+    optional.add_argument('--floors',
+                          type=int,
+                          default=0,
+                          help='specify the Number of floors there in the house')
+
     args = parser.parse_args()
 
     if args.help_summary:
@@ -1637,7 +1684,8 @@ connectivity problems.
     # ping object creation
     ping = Ping(host=mgr_ip, port=mgr_port, ssid=ssid, security=security, password=password, radio=radio,
                 lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=report_duration, do_webUI=do_webUI, debug=debug,
-                ui_report_dir=ui_report_dir, csv_name=args.device_csv_name, expected_passfail_val=args.expected_passfail_value, wait_time=args.wait_time, group_name=group_name)
+                ui_report_dir=ui_report_dir, csv_name=args.device_csv_name, expected_passfail_val=args.expected_passfail_value, wait_time=args.wait_time, group_name=group_name,
+                floors=args.floors, get_live_view=args.get_live_view)
 
     # creating virtual stations if --virtual flag is specified
     if args.virtual:
@@ -2210,6 +2258,10 @@ connectivity problems.
 
     logging.info(ping.result_json)
 
+    if ping.do_webUI:
+        ping.copy_reports_to_home_dir()
+        ping.set_webUI_stop()
+
     if args.local_lf_report_dir == "":
         if args.group_name:
             ping.generate_report(config_devices=config_devices, group_device_map=group_device_map)
@@ -2221,11 +2273,6 @@ connectivity problems.
         else:
             ping.generate_report(report_path=args.local_lf_report_dir)
 
-    if ping.do_webUI:
-        # copying to home directory i.e home/user_name
-        ping.copy_reports_to_home_dir()
-    if ping.do_webUI:
-        ping.set_webUI_stop()
     # print('----',rtts)
     # station post cleanup
     if not args.no_cleanup:
