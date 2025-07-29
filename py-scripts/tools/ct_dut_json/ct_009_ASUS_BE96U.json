@@ -1,4 +1,5 @@
-"ct_009_ASUS_BE96U_dut":{
+{
+   "ct_009_ASUS_BE96U_dut":{
         "Notes":[
             "This json file describes device under test run configuration used as input for --dut_json for lf_check.py"
 
