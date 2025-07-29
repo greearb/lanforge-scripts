@@ -125,7 +125,9 @@ DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 class VideoStreamingTest(Realm):
     def __init__(self, host, ssid, passwd, encryp, media_source, media_quality, suporrted_release=None, max_speed=None, url=None,
                  urls_per_tenm=None, duration=None, resource_ids=None, dowebgui=False, result_dir="", test_name=None, incremental=None, postcleanup=False, precleanup=False,
-                 pass_fail_val=None, csv_name=None, groups=None, profiles=None, config=None, file_name=None):
+                 pass_fail_val=None, csv_name=None, groups=None, profiles=None, config=None, file_name=None,
+                 floors=None,
+                 get_live_view=None):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         self.adb_device_list = None
         self.host = host
@@ -183,6 +185,8 @@ class VideoStreamingTest(Realm):
         self.selected_profiles = profiles
         self.config = config
         self.file_name = file_name
+        self.floors = floors
+        self.get_live_view = get_live_view
 
     @property
     def run(self):
@@ -1435,6 +1439,7 @@ class VideoStreamingTest(Realm):
             report.set_graph_image(graph_png)
             report.move_graph_image()
             report.build_graph()
+            self.add_buffer_and_wait_time_images(report=report)
 
             # Table 1
             report.set_obj_html("Overall - Detailed Result Table", "The below tables provides detailed information for the Video Streaming test.")
@@ -1607,6 +1612,33 @@ class VideoStreamingTest(Realm):
             logging.error("Please provide ssid password and security for configuration of devices")
             exit(1)
 
+    def add_buffer_and_wait_time_images(self, report):
+        """
+        Adds VS buffer and wait time heatmap images to the report for each floor.
+        Waits for image generation and inserts them into the report if available.
+        """
+        if self.dowebgui and self.get_live_view:
+            report.set_custom_html("<h2>No of Buffers and Wait Time %</h2>")
+            report.build_custom()
+
+            for floor in range(int(self.floors)):
+                vs_buffer_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_vs_buffer_{floor + 1}.png")
+                vs_wait_time_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_vs_wait_time_{floor + 1}.png")
+
+                timeout = 60  # seconds
+                start_time = time.time()
+
+                while not (os.path.exists(vs_buffer_image) and os.path.exists(vs_wait_time_image)):
+                    if time.time() - start_time > timeout:
+                        print(f"Timeout: Heatmap images for floor {floor + 1} not found within {timeout} seconds.")
+                        break
+                    time.sleep(1)
+
+                for image_path in [vs_buffer_image, vs_wait_time_image]:
+                    if os.path.exists(image_path):
+                        report.set_custom_html(f'<img src="file://{image_path}"  style="width:1200px; height:800px;"></img>')
+                        report.build_custom()
+
 
 def main():
     help_summary = '''\
@@ -1762,6 +1794,15 @@ def main():
     parser.add_argument("--wait_time", type=int, help="Specify the time for configuration", default=60)
     parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
     parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
+
+    # Arguments Related to Testhouse
+    parser.add_argument('--get_live_view',
+                        action="store_true",
+                        help='specify this flag to get the liveview of the devices')
+    parser.add_argument('--floors',
+                        type=int,
+                        default=0,
+                        help='specify the Number of floors there in the house')
     args = parser.parse_args()
 
     if args.help_summary:
@@ -1826,7 +1867,9 @@ def main():
                              groups=args.group_name,
                              profiles=args.profile_name,
                              config=args.config,
-                             file_name=args.file_name
+                             file_name=args.file_name,
+                             floors=args.floors,
+                             get_live_view=args.get_live_view
                              )
     args.upstream_port = obj.change_port_to_ip(args.upstream_port)
     obj.validate_args()
