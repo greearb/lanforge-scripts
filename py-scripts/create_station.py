@@ -824,6 +824,16 @@ EXAMPLE:    # Create a single station
                 --security          wpa2 \
                 --custom_wifi_cmd   'bgscan="simple:50:-65:300"'
 
+            #    Create station with bw 320 need to also enable 160
+            ./create_station.py\
+                --mgr 192.168.102.197\
+                --radio 1.1.wiphy11\
+                --ssid TP-Link_CE22_6G\
+                --passwd 79814096\
+                --station_flags "be320-enable,ht160_enable"\
+                --security wpa3\
+                --num_stations 1
+
 SCRIPT_CLASSIFICATION:
             Creation
 
