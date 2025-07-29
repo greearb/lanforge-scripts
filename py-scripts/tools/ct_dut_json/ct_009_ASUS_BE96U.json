@@ -1,0 +1,26 @@
+"ct_009_ASUS_BE96U_dut":{
+        "Notes":[
+            "This json file describes device under test run configuration used as input for --dut_json for lf_check.py"
+
+        ]
+    },
+    "test_dut":{
+        "DUT_SET_NAME": "DUT_NAME ASUS_BE96U",
+        "USE_DUT_NAME": "ASUS_BE96U",
+        "DUT_HW":"'QNC9224_2g_QNC9274_5g_6g'",
+        "DUT_SW":"'1.2.3 Build 20250314 rel.45415(5553)'",
+        "DUT_MODEL":"'QNC9224_2g_QNC9274_5g_6g'",
+        "DUT_SERIAL":"serial_1.1",
+        "UPSTREAM_PORT":"1.1.eth3",
+        "UPSTREAM_ALIAS":"eth3",
+        "DATABASE_SQLITE":"ct_009_asus_be96u_db.db",
+        "wireless_network_dict":{
+                    "ssid_idx=0":{"ssid_idx":"0", "SSID_USED":"be96u","SSID_PW_USED":"hello123","BSSID_TO_USE":"7a:9c:25:a0:b3:31","SECURITY_USED":"wpa2"},
+                    "ssid_idx=1":{"ssid_idx":"1", "SSID_USED":"be96u_5G","SSID_PW_USED":"hello123","BSSID_TO_USE":"9a:9c:25:a0:be:35","SECURITY_USED":"wpa2"},
+                    "ssid_idx=2":{"ssid_idx":"2", "SSID_USED":"be96u_6G","SSID_PW_USED":"hello123","BSSID_TO_USE":"e8:9c:25:a0:b3:39","SECURITY_USED":"wpa3"},
+                    "ssid_idx=3":{"ssid_idx":"3", "SSID_USED":"ASUS_MLO","SSID_PW_USED":"lanforge","BSSID_TO_USE":"7a:9c:25:a0:b3:32","SECURITY_USED":"wpa3"},
+                    "ssid_idx=4":{"ssid_idx":"4", "SSID_USED":"ASUS_MLO","SSID_PW_USED":"lanforge","BSSID_TO_USE":"9a:9c:25:a0:b3:36 ","SECURITY_USED":"wpa3"},
+                    "ssid_idx=5":{"ssid_idx":"5", "SSID_USED":"ASUS_MLO","SSID_PW_USED":"lanforge","BSSID_TO_USE":"e8:9c:25:A0:B3:3A","SECURITY_USED":"wpa3"}
+        }
+    }
+}
