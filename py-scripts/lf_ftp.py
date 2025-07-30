@@ -698,7 +698,6 @@ class FtpTest(LFCliBase):
 
             # if Both band then another 20 stations will connects to 2.4G
             self.station_profile.mode = 6
-        logger.info("Test Build done")
 
         if self.clients_type == "Real":
             if self.direction == "Download":
