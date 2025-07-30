@@ -146,7 +146,7 @@ class FtpTest(LFCliBase):
                  profile_name=None, group_name=None,
                  sixg_radio=None, fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False, ap_name="",
                  direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None, kpi_results=None,
-                 lf_username="lanforge", lf_password="lanforge", clients_type="Virtual", dowebgui=False, device_list=[], test_name=None, result_dir=None,
+                 lf_username="lanforge", lf_password="lanforge", clients_type="Virtual", dowebgui=False, device_list=None, test_name=None, result_dir=None,
                  eap_method=None,
                  eap_identity=None,
                  ieee80211=None,
@@ -169,6 +169,10 @@ class FtpTest(LFCliBase):
                  config=False,
                  csv_name=None):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+
+        if not device_list:
+            device_list = []
+
         logger.info("Test is about to start")
         self.ssid_list = []
         self.host = lfclient_host
@@ -334,7 +338,7 @@ class FtpTest(LFCliBase):
         for key, value in response.items():
             if key == "resources":
                 for element in value:
-                    for a, b in element.items():
+                    for _, b in element.items():
                         self.hw_list.append(b['hw version'])
         for hw_version in self.hw_list:
             if "Win" in hw_version:
@@ -351,7 +355,7 @@ class FtpTest(LFCliBase):
         for key, value in response.items():
             if key == "resources":
                 for element in value:
-                    for a, b in element.items():
+                    for _, b in element.items():
                         if b['phantom'] is False:
                             self.working_resources_list.append(b["hw version"])
                             if "Win" in b['hw version']:
@@ -522,7 +526,7 @@ class FtpTest(LFCliBase):
             try:
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
-            except BaseException:
+            except BaseException:  # noqa: B036
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
             logging.info(f"Upstream port IP {upstream_port}")
         else:
@@ -776,7 +780,7 @@ class FtpTest(LFCliBase):
         return response, data
 
     def start(self, print_pass=False, print_fail=False):
-        for rad in self.radio:
+        for _ in self.radio:
             self.cx_profile.start_cx()
 
         logger.info("Test Started")
@@ -2340,7 +2344,7 @@ class FtpTest(LFCliBase):
                 try:
                     _ = self.local_realm.json_get("layer4/%s/list?fields=%s" %
                                                   (created_cxs, 'status'))['endpoint']['status']
-                except BaseException:
+                except BaseException:  # noqa: B036
                     logger.error(f'cx not created for {self.input_devices_list[i]}')
                     failed_cx.append(created_cxs)
                     del_device_list.append(self.device_list[i])
