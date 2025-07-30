@@ -113,7 +113,7 @@ class lf_add_profile():
                     _name: str = None,                         # Profile Name. [R]
                     _passwd: str = None,                       # WiFi Password to be used (AP Mode), [BLANK] means no password.
                     _profile_flags: str = None,                # Flags for this profile, see above.
-                    _profile_flags_list: list = [],            # Flags for the profile passed as list
+                    _profile_flags_list: list = None,          # Flags for the profile passed as list
                     _profile_type: str = None,                 # Profile type: See above. [W]
                     _ssid: str = None,                         # WiFi SSID to be used, [BLANK] means any.
                     _vid: str = None,                          # Vlan-ID (only valid for vlan profiles).
@@ -121,6 +121,8 @@ class lf_add_profile():
                     _response_json_list: list = None,
                     _errors_warnings: list = None,
                     _suppress_related_commands: bool = False):
+        if not _profile_flags_list:
+            _profile_flags_list = []
 
         flag_val = 0
         if _profile_flags is not None:
