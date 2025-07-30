@@ -160,7 +160,6 @@ class lf_add_profile():
 
     # This text will be added to the end of the notes field for Profiles.
     # The text must be entered one line at a time, primarily due to CLI parsing limitations.
-
     # http://www.candelatech.com/lfcli_ug.php#add_profile_notes
     def add_profile_notes(self,
                           _dut: str = None,                          # Profile Name. [R]
@@ -176,11 +175,6 @@ class lf_add_profile():
             debug=self.debug,
             errors_warnings=_errors_warnings,
             suppress_related_commands=_suppress_related_commands)
-
-
-# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
-
-# ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 
 
 def main():
@@ -363,16 +357,14 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
         print(help_summary)
         exit(0)
 
-    # set up logger
+    # Configure logging
     logger_config = lf_logger_config.lf_logger_config()
 
-    # set the logger level to debug
     if args.log_level:
         logger_config.set_level(level=args.log_level)
 
-    # lf_logger_config_json will take presidence to changing debug levels
+    # Logger JSON config takes precedence over command line
     if args.lf_logger_config_json:
-        # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
@@ -388,10 +380,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
     else:
         profile_flags_list = []
 
-    # parameters for add_profile
-    # alias
-    # create side A
-    print("args.alias_prefix {}".format(args.alias_prefix))
+    logger.info(f"Adding profile '{args.name}' to LANforge manager '{args.mgr}'")
+    logger.debug("args.alias_prefix {}".format(args.alias_prefix))
     profile.add_profile(
         _alias_prefix=args.alias_prefix,                    # Port alias prefix, aka hostname prefix.
         _antenna=args.antenna,                              # Antenna count for this profile.
@@ -415,6 +405,7 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
         for text in args.text:
             profile.add_profile_notes(_dut=args.name,
                                       _text=text)
+    logger.info(f"Added profile '{args.name}'")
 
 
 if __name__ == "__main__":
