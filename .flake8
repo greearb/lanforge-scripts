@@ -10,3 +10,5 @@ exclude =
     venv
     .virtualenv
     virtualenv
+    py-scripts/sandbox
+    py-scripts/scripts_deprecated
