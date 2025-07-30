@@ -1,26 +1,21 @@
 #!/usr/bin/env python3
 '''
-NAME: lf_csv.py
+NAME:       lf_csv.py
 
-PURPOSE:
-Common Library for generating csv for LANforge output
-KPI - Key Performance Indicators
+PURPOSE:    Library code for generating CSV from LANforge output KPI data
 
-SETUP:
-/lanforge/html-reports directory needs to be present or output generated in local file
+NOTES:      Assumes '/home/lanforge/html-reports/' directory present
 
-EXAMPLE:
-see: /py-scripts/lf_report_test.py for example
+EXAMPLE:    See 'lf_report_test.py' for example usage
 
-COPYRIGHT:
-    Copyright 2021 Candela Technologies Inc
-    License: Free to distribute and modify. LANforge systems must be licensed.
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
 
-INCLUDE_IN_README
+INCLUDE_IN_README:
+            False
 '''
 
 import pandas as pd
-# from pandas import *
 from csv import reader
 import csv
 import argparse
@@ -98,15 +93,19 @@ def main():
                 The lf_csv is used to generate csv report of the lanforge test results
                 ''',
         description='''
-NAME: lf_csv.py
+NAME:       lf_csv.py
 
-PURPOSE:
-        The purpose of this test is to create a csv file for the lanforge output of a test
-        This file should should be imported by the file running the test and data can be passed while creating the object
+PURPOSE:    Library code for generating CSV from LANforge output KPI data
 
-EXAMPLE:
-        # CLI To run the lf_csv to generate the csv file
-        python3 lf_csv.py
+NOTES:      Assumes '/home/lanforge/html-reports/' directory present
+
+EXAMPLE:    See 'lf_report_test.py' for example usage
+
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
+
+INCLUDE_IN_README:
+            False
     ''')
     parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
                         action="store_true")
