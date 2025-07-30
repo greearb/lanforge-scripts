@@ -51,17 +51,15 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             Copyright 2025 Candela Technologies Inc
 """
 
+import argparse
+import importlib
+import logging
+import os
 import sys
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
-
-import importlib
-import argparse
-# from pprint import pformat
-import os
-import logging
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
@@ -70,13 +68,8 @@ from lanforge_client.lanforge_api import LFSession  # noqa: E402
 from lanforge_client.lanforge_api import LFJsonCommand  # noqa: E402
 from lanforge_client.lanforge_api import LFJsonQuery  # noqa: E402
 
-
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
-
 logger = logging.getLogger(__name__)
-
-# add_wanpath
-# http://www.candelatech.com/lfcli_ug.php#add_wanpath
 
 
 class lf_add_profile():
