@@ -28,15 +28,20 @@ import argparse
 
 class lf_csv:
     def __init__(self,
-                 _columns=['Stations', 'bk', 'be', 'vi', 'vo'],
-                 _rows=[['sta0001', 'sta0002', 'sta0003', 'sta0004', 'sta0005'],
-                        [1, 2, 3, 4, 5],
-                        [11, 22, 33, 44, 55],
-                        [6, 7, 8, 9, 10],
-                        [66, 77, 88, 99, 100]],
-                 _filename='test.csv'):
-        self.rows = _rows
-        self.columns = _columns
+                 _columns: list = None,
+                 _rows: list = None,
+                 _filename: str = 'test.csv'):
+        DEFAULT_ROWS = [
+            ['sta0001', 'sta0002', 'sta0003', 'sta0004', 'sta0005'],
+            [1, 2, 3, 4, 5],
+            [11, 22, 33, 44, 55],
+            [6, 7, 8, 9, 10],
+            [66, 77, 88, 99, 100],
+        ]
+        DEFAULT_COLUMNS = ['Stations', 'bk', 'be', 'vi', 'vo']
+
+        self.rows = _rows if _rows is not None else DEFAULT_ROWS
+        self.columns = _columns if _columns is not None else DEFAULT_COLUMNS
         self.filename = _filename
 
     def generate_csv(self):
