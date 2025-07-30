@@ -252,6 +252,11 @@ or deselect to remove from the test json''')
         self.lanforge_radio_json.pop("uri")
         self.lanforge_radio_json.pop("warnings")
         self.sorted_lanforge_radio_json = {}
+        # remove wiphy radios that contain 'c'
+        letter_to_remove = 'c'
+        for key in list(self.lanforge_radio_json.keys()):
+            if letter_to_remove in key:
+                del self.lanforge_radio_json[key]
         for key in sorted(self.lanforge_radio_json, key=lambda key: (key.split('y')[0], int(key.split('y')[1]))):
             self.sorted_lanforge_radio_json[key] = self.lanforge_radio_json[key]
         self.lanforge_radio_json = self.sorted_lanforge_radio_json
