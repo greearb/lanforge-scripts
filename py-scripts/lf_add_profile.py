@@ -1,56 +1,54 @@
 #!/usr/bin/env python3
 """
-NAME: lf_add_profile.py
+NAME:       lf_add_profile.py
 
-PURPOSE:    Add a LANforge device profile. This can give a high level description of how the LANforge system should act.
-            The profile can then be selected in higher-level test cases to auto-generate lower level configuration.
+PURPOSE:    Create and configure a template LANforge device profile for use in
+            Chamber View Scenario automation.
 
-EXAMPLE:
-
-lf_add_profile.py , the --name refers to the profile name
-
-    vscode sample:
-            "args":[
-            "--mgr","192.168.0.104",
-            "--mgr_port","8080",
-            "--lf_user","lanforge",
-            "--lf_passwd","lanforge",
-            "--antenna","4",
-            "--instance_count","1",
-            // see http://www.candelatech.com/lfcli_ug.php#add_profile for the profile flags
-            //"--profile_flags","DHCP_SERVER,SKIP_DHCP_ROAM,NAT,ENABLE_POWERSAVE",
-            "--profile_flags","4105",
-            "--name","Routed-AP-QA13",
-            "--profile_type","routed_ap",
-            "--ssid","vap",
-            "--passwd","hello123",
-            "--dut","Routed-AP-13",
-            "--text","Making a Routed-AP-13",
-            "--log_level","debug",
-            "--debug"]
-
-    Command line:
-    see http://www.candelatech.com/lfcli_ug.php#add_profile for the profile flags:
-    ./lf_add_profile.py --mgr 192.168.0.104 --mgr_port 8080 --lf_user lanforge --lf_passwd lanforge --antenna 4
-        --instance_count 1 --profile_flags 4105 --name Routed-AP-QA13 --profile_type routed_ap
-        --ssid vap --passwd hello123 --dut Routed-AP-13 --text 'Making a Routed-AP-13 profile'
-        --log_level debug --debug
-
-    Once the profile is created a chamberview scenario needs to be created based off that profile:
-    ./create_chamberview.py --lfmgr 192.168.0.104 --port 8080 --create_scenario QA13-2
-    --raw_line 'profile_link 1.1 Routed-AP-QA13 1 NA NA wiphy1,AUTO -1 NA' --raw_line 'resource 1.1.0 0'
-
-    The --raw_line are determined by applying the profile above
+NOTES:      The profile is not made active on the system until  it is configured into
+            a Chamber View Scenario (e.g. via 'create_chamberview.py') and the
+            Chamber View Scenario is built.
 
 
-NOTES:
+EXAMPLE:    # Add routed vAP with following configuration:
+            #   - DHCP server
+            #   - NAT enabled (when configured in virtual router)
+            #   - Admin up on creation (active)
+            #   - WPA2 security
+            #
+            # Note that the '--profile_flags' are specified in hexadecimal format
+            # See http://www.candelatech.com/lfcli_ug.php#add_profile for profile flags
+            ./lf_add_profile.py \
+                --instance_count    1 \
+                --profile_flags     4109 \
+                --name              "routed-AP-custom" \
+                --profile_type      routed_ap \
+                --freq              2412 \
+                --ssid              LF-routed-AP \
+                --passwd            lanforge
 
-Tested on 02/20/2023:
-         kernel version: 5.19.17+
-         gui version: 5.4.6
+            # Same example but using VSCode launch.json to specify CLI
+            # As this will likely be run from a secondary system, you'll
+            # need to add the "--mgr" argument and IP in that case
+            "args": [
+                "instance_count",   "1",
+                "profile_flags"     "4109",
+                "name",             "routed-AP-custom",
+                "profile_type",     "routed_ap",
+                "freq",             "2412",
+                "ssid",             "LF-routed-AP",
+                "passwd",           "lanforge",
+            ]
 
-TO DO NOTES:
+            # This configuration can be made active in a Chamber View Scenario as follows
+            # This example uses 'wiphy0' on LANforge resource 1
+            ./create_chamberview.py \
+                --create_scenario   "LF-routed-AP-scenario" \
+                --raw_line          'profile_link 1.1 LF-routed-AP 1 NA NA wiphy1,AUTO -1 NA' \
+                --raw_line          'resource 1.1.0 0'
 
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
 """
 
 import sys
@@ -193,45 +191,61 @@ class lf_add_profile():
 
 
 def main():
-    help_summary = '''\
-     This script is helpful to create profiles on the lanforge device
-    '''
+    help_summary = "This script is helpful to create profiles on the lanforge device"
+
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
-        description='''\
-            adds a chamberview profile
+        description=r'''\
+NAME:       lf_add_profile.py
 
-            add_profile Routed-AP-QA Routed-AP 0 4 1 0 vap hello123 4105
+PURPOSE:    Create and configure a template LANforge device profile for use in
+            Chamber View Scenario automation.
 
-            profile flags
-            4105 = 0x1009
+NOTES:      The profile is not made active on the system until  it is configured into
+            a Chamber View Scenario (e.g. via 'create_chamberview.py') and the
+            Chamber View Scenario is built.
 
-            DHCP_SERVER = 0x1           # This should provide DHCP server.
-            WPA2        = 0x8
-            ENABLE_POWERSAVE = 0x1000   # Enable power-save when creating stations.
 
-            pass in --profile_flags 'DHCP_SERVER,WPA2,ENABLE_POWERSAVE'
+EXAMPLE:    # Add routed vAP with following configuration:
+            #   - DHCP server
+            #   - NAT enabled (when configured in virtual router)
+            #   - Admin up on creation (active)
+            #   - WPA2 security
+            #
+            # Note that the '--profile_flags' are specified in hexadecimal format
+            # See http://www.candelatech.com/lfcli_ug.php#add_profile for profile flags
+            ./lf_add_profile.py \
+                --instance_count    1 \
+                --profile_flags     4109 \
+                --name              "routed-AP-custom" \
+                --profile_type      routed_ap \
+                --freq              2412 \
+                --ssid              LF-routed-AP \
+                --passwd            lanforge
 
-    Example:
-        Command line:
-        see http://www.candelatech.com/lfcli_ug.php#add_profile for the profile flags:
-        ./lf_add_profile.py --mgr 192.168.0.104 --mgr_port 8080 --lf_user lanforge --lf_passwd lanforge --antenna 4\
-            --instance_count 1 --profile_flags 4105 --name Routed-AP-QA13 --profile_type routed_ap\
-            --ssid vap --passwd hello123 --dut Routed-AP-13 --text 'Making a Routed-AP-13 profile'\
-            --log_level debug --debug
+            # Same example but using VSCode launch.json to specify CLI
+            # As this will likely be run from a secondary system, you'll
+            # need to add the "--mgr" argument and IP in that case
+            "args": [
+                "instance_count",   "1",
+                "profile_flags"     "4109",
+                "name",             "routed-AP-custom",
+                "profile_type",     "routed_ap",
+                "freq",             "2412",
+                "ssid",             "LF-routed-AP",
+                "passwd",           "lanforge",
+            ]
 
-        Once the profile is created a chamberview scenario needs to be created based off that profile:
-        ./create_chamberview.py --lfmgr 192.168.0.104 --port 8080 --delete_scenario --create_scenario QA13-2\
-        --raw_line 'profile_link 1.1 Routed-AP-QA13 1 NA NA wiphy1,AUTO -1 NA' --raw_line 'resource 1.1.0 0'\
+            # This configuration can be made active in a Chamber View Scenario as follows
+            # This example uses 'wiphy0' on LANforge resource 1
+            ./create_chamberview.py \
+                --create_scenario   "LF-routed-AP-scenario" \
+                --raw_line          'profile_link 1.1 LF-routed-AP 1 NA NA wiphy1,AUTO -1 NA' \
+                --raw_line          'resource 1.1.0 0'
 
-        The --raw_line are determined by applying the profile above
-
-    NOTES:
-        Tested on 02/20/2023:
-        kernel version: 5.19.17+
-        gui version: 5.4.6
-
+LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
+            Copyright 2025 Candela Technologies Inc
             ''')
     # http://www.candelatech.com/lfcli_ug.php#add_profile
     parser.add_argument("--host", "--mgr", dest='mgr', help='specify the GUI to connect to')
