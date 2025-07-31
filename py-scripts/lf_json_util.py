@@ -11,9 +11,7 @@ The script will read column data from lanforge GUI using request
 
 
 def standardize_json_results(results):
-    f'''{help_summary}
-    TODO: Add functionality to handle other plural vs singular data representations
-    '''
+    # TODO: Add functionality to handle other plural vs singular data representations
     if 'endpoints' not in results:
         tmp_results = {}
         print(results)
@@ -26,10 +24,10 @@ def standardize_json_results(results):
     return results['endpoints']
 
 
-# used so help summary may work
 def main():
+    # Only print help summary when invoked from command line
     parser = argparse.ArgumentParser(
-        prog="lf_json_api.py",
+        prog="lf_json_util.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"""{help_summary}""")
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
