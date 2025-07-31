@@ -155,7 +155,14 @@ class IPV4L4(Realm):
                  test_type=None,
                  _exit_on_error=False,
                  _exit_on_fail=False,
-                 l4_7_port=None):
+                 l4_7_port=None,
+                 use_macvlans=False,
+                 macvlan_parent=None,
+                 num_macvlans=0,
+                 first_mvlan_ip=None,
+                 netmask=None,
+                 gateway=None,
+                 dhcp=True):
         super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on)
 
         self.host = host
@@ -193,12 +200,29 @@ class IPV4L4(Realm):
                                  require_session=True,
                                  exit_on_error=True)
         self.command = self.session.get_command()
+
         self.station_profile.lfclient_url = self.lfclient_url
+        self.mvlan_profile = self.new_mvlan_profile()
+        self.use_macvlans = bool(use_macvlans)
+
+        if self.use_macvlans:
+            if macvlan_parent and num_macvlans and first_mvlan_ip and netmask and gateway:
+                self.mvlan_profile.num_macvlans = int(num_macvlans)
+                self.mvlan_profile.desired_macvlans = station_list
+                self.mvlan_profile.macvlan_parent = macvlan_parent
+                self.mvlan_profile.first_ip_addr = first_mvlan_ip
+                self.mvlan_profile.netmask = netmask
+                self.mvlan_profile.gateway = gateway
+                self.mvlan_profile.dhcp = dhcp
+            else:
+                raise ValueError("To use MACVLANS macvlan_parent, num_macvlans, first_mvlan_ip, netmask, and gateway must be provided")
+
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
         self.station_profile.mode = self.mode
+
         self.test_type = test_type
         self.ftp_user = ftp_user
         self.ftp_passwd = ftp_passwd
@@ -367,14 +391,19 @@ class IPV4L4(Realm):
         if 'ftp' in self.url:
             self.port_util.set_ftp(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=True)
         if len(self.sta_list) > 0:
-            # Build stations
-            self.station_profile.use_security(self.security, self.ssid, self.password)
-            logger.info("Creating stations")
-            self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-            self.station_profile.set_command_param("set_port", "report_timer", 1500)
-            self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-            self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
-            self._pass("PASS: Station build finished")
+            if not self.use_macvlans:
+                # Build stations
+                self.station_profile.use_security(self.security, self.ssid, self.password)
+                logger.info("Creating stations")
+                self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+                self.station_profile.set_command_param("set_port", "report_timer", 1500)
+                self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+                self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+                self._pass("PASS: Station build finished")
+            else:
+                logger.info("Creating MACVLANS")
+                self.mvlan_profile.create(admin_down=False, sleep_time=.5, debug=self.debug)
+                self._pass("PASS: MACVLAN build finished")
         if (self.l4_7_port is not None):
             # eg: l4_7_port = 'eth2'
             # checking l4_7_port is equal to any of the port name in lanforge port_mgr to get the right port_name for creating l4_5 traffic
@@ -402,16 +431,25 @@ class IPV4L4(Realm):
                 sleep_time=.5, debug_=self.debug, suppress_related_commands_=True)
         else:
             # If port name is None, station names will be taken as port name
-            self.cx_profile.create(
-                ports=l4_7_port_lst if len(l4_7_port_lst) > 0 else self.station_profile.station_names,
-                sleep_time=.5, debug_=self.debug, suppress_related_commands_=None)
+            if not self.use_macvlans:
+                self.cx_profile.create(
+                    ports=l4_7_port_lst if len(l4_7_port_lst) > 0 else self.station_profile.station_names,
+                    sleep_time=.5, debug_=self.debug, suppress_related_commands_=None)
+            else:
+                self.cx_profile.create(ports=self.sta_list, sleep_time=.5, debug_=self.debug, suppress_related_commands_=None)
 
     def start(self, print_pass=False, print_fail=False):
         if self.ftp:
             self.port_util.set_ftp(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=True)
-        temp_stas = self.sta_list.copy()
+        temp_stas = None
 
-        self.station_profile.admin_up()
+        if not self.use_macvlans:
+            temp_stas = self.sta_list.copy()
+            self.station_profile.admin_up()
+        else:
+            temp_stas = self.mvlan_profile.created_macvlans.copy()
+            self.mvlan_profile.admin_up()
+
         if len(temp_stas) > 0:
             if self.wait_for_ip(temp_stas):
                 self._pass("All stations got IPs", print_pass)
@@ -431,7 +469,10 @@ class IPV4L4(Realm):
             self.port_util.set_ftp(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=False)
         if self.http:
             self.port_util.set_http(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=False)
-        self.station_profile.admin_down()
+        if not self.use_macvlans:
+            self.station_profile.admin_down()
+        else:
+            self.mvlan_profile.admin_down()
 
     def cleanup(self, sta_list, clean_all_sta=False, clean_all_l4_7=False):
         if clean_all_l4_7:
@@ -454,9 +495,15 @@ class IPV4L4(Realm):
             for u in self.json_get("/port/?fields=port+type,alias")['interfaces']:
                 if list(u.values())[0]['port type'] not in ['Ethernet', 'WIFI-Radio', 'NA']:
                     exist_sta.append(list(u.values())[0]['alias'])
-            self.station_profile.cleanup(desired_stations=exist_sta)
+            if not self.use_macvlans:
+                self.station_profile.cleanup(desired_stations=exist_sta)
+            else:
+                self.mvlan_profile.cleanup()
         else:
-            self.station_profile.cleanup(sta_list)
+            if not self.use_macvlans:
+                self.station_profile.cleanup(sta_list)
+            else:
+                self.mvlan_profile.cleanup()
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
@@ -689,6 +736,14 @@ Generic command example:
     test_l4_parser.add_argument("--lf_user", type=str, help="--lf_user lanforge user name ", )
     test_l4_parser.add_argument("--lf_passwd", type=str, help="--lf_passwd lanforge password ")
 
+    # macvlan arguments
+    test_l4_parser.add_argument('--use_macvlans', help='will create macvlans', action='store_true', default=False)
+    test_l4_parser.add_argument('--macvlan_parent', help='specifies parent port for macvlan creation', default=None)
+    test_l4_parser.add_argument('--num_macvlans', help='number of macvlans to create', default=0)
+    test_l4_parser.add_argument('--first_mvlan_ip', help='specifies first static ip address to be used or dhcp', default=None)
+    test_l4_parser.add_argument('--netmask', help='specifies netmask to be used with static ip addresses', default=None)
+    test_l4_parser.add_argument('--gateway', help='specifies default gateway to be used with static addressing', default=None)
+
     # kpi_csv arguments
     test_l4_parser.add_argument(
         "--test_rig",
@@ -913,8 +968,22 @@ This script will create stations and endpoints to generate and verify layer-4 tr
     if (args.l4_7_port_name is not None) and (int(args.num_stations) == 0):
         num_sta = 0
 
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
-                                          radio=args.radio)
+    macvlan_parent = None
+    if not bool(args.use_macvlans):
+        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000, radio=args.radio)
+    else:
+        parent = LFUtils.name_to_eid(args.macvlan_parent)
+        macvlan_parent = parent[2]
+        # create the "station list" of macvlans
+        station_list = LFUtils.portNameSeries(prefix_=macvlan_parent + '#', start_id_=0,
+                                              end_id_=int(args.num_macvlans) - 1, padding_number_=100000,
+                                              radio=args.radio)
+    dhcp = None
+    if args.first_mvlan_ip:
+        if args.first_mvlan_ip.lower() == "dhcp":
+            dhcp = True
+    else:
+        dhcp = False
 
     ip_test = IPV4L4(host=args.mgr, port=args.mgr_port,
                      ssid=args.ssid,
@@ -940,7 +1009,14 @@ This script will create stations and endpoints to generate and verify layer-4 tr
                      target_requests_per_ten=args.target_per_ten,
                      requests_per_ten=args.requests_per_ten,
                      rpt_timer=args.rpt_timer,
-                     l4_7_port=args.l4_7_port_name)
+                     l4_7_port=args.l4_7_port_name,
+                     use_macvlans=args.use_macvlans,
+                     macvlan_parent=macvlan_parent,
+                     num_macvlans=args.num_macvlans,
+                     first_mvlan_ip=args.first_mvlan_ip,
+                     netmask=args.netmask,
+                     gateway=args.gateway,
+                     dhcp=dhcp)
     ip_test.cleanup(station_list, clean_all_sta=False if num_sta else True, clean_all_l4_7=False if num_sta else True)
     ip_test.build()
     ip_test.start()
