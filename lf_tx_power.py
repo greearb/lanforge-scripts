@@ -639,7 +639,7 @@ def main():
 
     # Need to get regulatory domain for title
     # Read the country code and regulatory domain
-    #
+
     cs.console_setup()
 
     cs.read_country_code_and_regulatory_domain()
@@ -652,6 +652,7 @@ def main():
     # end setup logging and paths
     # put in test information in title name
     # this only works for single test passed in.
+    # TODO adjustments to module
     if args.tx_power_adjust_6E and args.band == '6g':
         txpowers = args.txpower.split()
         if args.bandwidth == '20':
@@ -1732,6 +1733,8 @@ def main():
                     time.sleep(3)
                     loop_count = 0
                     cc_dbm_rcv = False
+
+                    # TODO this needs to be moved to the module
                     if args.series == "9800":
                         while cc_dbm_rcv is False and loop_count <= 3:
                             logg.info("9800 read controller dBm")
@@ -1864,7 +1867,12 @@ def main():
                             else:
                                 cc_dbm_rcv = True
                         cs.show_wlan_summary()
-                    else:
+                        # read the AP Tx Power
+                        cs.get_ap_tx_power_config()
+                        ap_dbm = cs.ap_tx_power_dbm
+                        ap_power = "{pw} of {pw_levels}".format(pw=cs.ap_current_tx_power_level, pw_levels=cs.ap_num_power_levels)
+
+                    elif args.series == "3540":
                         pss = cs.show_ap_dot11_5gz_summary()
                         logg.info(pss)
                         pss = cs.show_ap_dot11_24gz_summary()
@@ -1913,6 +1921,26 @@ def main():
                         logg.info("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
                         logg.info("3504 test_parameters cc_ch: read : {}".format(cc_ch))
 
+                        # read the AP Tx Power
+                        cs.get_ap_tx_power_config()
+                        ap_dbm = cs.ap_tx_power_dbm
+                        ap_power = "{pw} of {pw_levels}".format(pw=cs.ap_current_tx_power_level, pw_levels=cs.ap_num_power_levels)
+
+                    # Generic Modules
+                    else:
+                        cs.get_config_summary()
+                        cc_mac = cs.mac
+                        cc_ch = cs.channel
+                        cc_power = cs.tx_power
+                        cc_dbm = cs.tx_power_dbm
+                        ch_count = cs.channel_count
+                        cc_bw = cs.bandwidth
+
+                        # read the AP Tx Power
+                        cs.get_ap_tx_power_config()
+                        ap_dbm = cs.ap_tx_power_dbm
+                        ap_power = "{pw} of {pw_levels}".format(pw=cs.ap_current_tx_power_level, pw_levels=cs.ap_num_power_levels)
+
                     # the mtk7921 needs to have the radio channel set and not be auto
                     if args.mtk7921k:
                         if args.band == '6g' or args.band == 'dual_band_6g':
@@ -1938,10 +1966,6 @@ def main():
                             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                             logger.warning("mtk7921 after tx_power change failed to set channel {chan}".format(chan=ch))
 
-                    # read the AP Tx Power
-                    cs.get_ap_tx_power_config()
-                    ap_dbm = cs.ap_tx_power_dbm
-                    ap_power = "{pw} of {pw_levels}".format(pw=cs.ap_current_tx_power_level, pw_levels=cs.ap_num_power_levels)
 
                     # Up station
                     subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
@@ -1996,8 +2020,8 @@ def main():
                                                     allow_agent=False, look_for_keys=False, banner_timeout=600)
 
                                         # Enable beachon rssi debug logs once per boot
-                                        # echo1 > /sys/module/mac80211/parameters/debug_beacon_rssi 
-                                        # then 'journalctl -f' or dmesg should show deabon info 
+                                        # echo1 > /sys/module/mac80211/parameters/debug_beacon_rssi
+                                        # then 'journalctl -f' or dmesg should show deabon info
 
                                         # command = 'echo lanforge | sudo echo 0 > /debug/ieee80211/{radio}/mt76/runtime-pm'.format(radio=args.radio)
                                         # may have to do sudo -s , the cd ~root to execute the command
@@ -2947,6 +2971,8 @@ def main():
                     col += 1
                     worksheet.write(row, col, total_run_duration_str, green)
                     col += 1
+                    if not cc_dbm :
+                        cc_dbm = 0
                     if (int(cc_dbm) != int(ap_dbm)):
                         err = "ERROR:  Controller dBm : %s != AP dBm: %s.  " % (cc_dbm, ap_dbm)
                         logg.info(err)
