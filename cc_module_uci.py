@@ -375,6 +375,7 @@ class create_controller_series_object:
     def get_mgmt(self) -> "Generator[GenericDriver]":  # noqa:
         if getattr(self, "conn", None) == None:  # noqa:
             #  ./vrf_exec.bash eth1 ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa root@192.168.215.113
+            # Jump Host config
             c = {
                 "host":'192.168.215.213',  # noqa:
                 "auth_username":'root',  # noqa:
@@ -387,13 +388,14 @@ class create_controller_series_object:
 
             # if not getattr(self, "jump_host", None) == None:
             jump_function = get_jump_function(c)
+            # LANforge config
             c = {
                 "host": '192.168.214.93',
                 "auth_username": 'lanforge',
                 "auth_password": 'lanforge',
                 "auth_strict_key": False,
                 "comms_prompt_pattern": "^[\\S\\7\\x1b]*\\[.*\\]\\$",
-                "on_open": jump_function,
+                "on_open": jump_function,  # on logging into LANforge will run the jump_function
                 "timeout_ops": 40,
                 "timeout_transport": 40,
                 "ssh_config_file": True,
