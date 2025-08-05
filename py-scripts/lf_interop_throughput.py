@@ -398,22 +398,22 @@ class Throughput(Realm):
             # TO DISCONNECT ALL DEVICES
             if devices_to_disconnect is None:
                 android_resources = [d for d in all_devices if d.get('os') == 'Android' and d.get('eid') in self.device_list]
-                if (len(android_resources) > 0):
+                if len(android_resources) > 0:
                     # TO STOP APP FOR ALL DEVICES FOR ANDROIDS
                     await adb_obj.stop_app(port_list=android_resources)
                 # TO FORGET ALL NETWORKS FOR ALL OS TYPES
                 await obj.connectivity(device_list=self.device_list, wifi_config=self.config_dict, disconnect=True)
-                if (len(android_resources) > 0):
+                if len(android_resources) > 0:
                     adb_obj.set_wifi_state(port_list=android_resources, state='disable')
 
             # TO DISCONNECT SPECIFIC DEVICES
             else:
                 android_resources = [d for d in all_devices if d.get('os') == 'Android' and d.get('eid') in devices_to_disconnect]
-                if (len(android_resources) > 0):
+                if len(android_resources) > 0:
                     # To disable stop app for androids
                     await adb_obj.stop_app(port_list=android_resources)
                 await obj.connectivity(device_list=devices_to_disconnect, wifi_config=self.config_dict, disconnect=True)
-                if (len(android_resources) > 0):
+                if len(android_resources) > 0:
                     # To disable wifi for androids
                     adb_obj.set_wifi_state(port_list=android_resources, state='disable')
 
@@ -549,7 +549,7 @@ class Throughput(Realm):
                                     if "devices" in interop_response.keys():
                                         interop_devices = interop_response['devices']
                                         # Extract usernames of devices that match the current eid
-                                        if (len([v['user-name'] for d in interop_devices for k, v in d.items() if v.get('resource-id') == b['eid']]) == 0):
+                                        if len([v['user-name'] for d in interop_devices for k, v in d.items() if v.get('resource-id') == b['eid']]) == 0:
                                             self.devices_available.append(b['eid'] + " " + 'iOS' + " " + b['hostname'])
                                         # If username is found
                                         else:
@@ -1345,7 +1345,7 @@ class Throughput(Realm):
         if len(self.incremental_capacity) == 0:
             incremental_capacity_1 = [device_list_length]
 
-        elif (device_list_length != 0 and len(self.incremental_capacity.split(",")) > 0):
+        elif device_list_length != 0 and len(self.incremental_capacity.split(",")) > 0:
             device_list_length = len(self.mac_id_list)
             incremental_capacity_length = len(self.incremental_capacity.split(","))
 
@@ -1407,7 +1407,7 @@ class Throughput(Realm):
             incremental_capacity_1 = [device_list_length]
 
         # Check if device list is not empty and incremental capacity is provided
-        elif (device_list_length != 0 and len(self.incremental_capacity.split(",")) > 0):
+        elif device_list_length != 0 and len(self.incremental_capacity.split(",")) > 0:
             device_list_length = len(created_cx_lists_keys)
             incremental_capacity_length = len(self.incremental_capacity.split(","))
 
@@ -1928,7 +1928,7 @@ class Throughput(Realm):
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
                 report.build_graph()
-                if (self.dowebgui and self.get_live_view):
+                if self.dowebgui and self.get_live_view:
                     # To add live view images coming from the Web-GUI in report
                     self.add_live_view_images_to_report(report)
 
@@ -2119,7 +2119,7 @@ class Throughput(Realm):
             }
             report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
 
-            if (self.interopability_config):
+            if self.interopability_config:
 
                 report.set_obj_html(_obj_title="Configuration Status of Devices",
                                     _obj="The table below shows the configuration status of each device (except iOS) with respect to the SSID connection.")
@@ -2380,7 +2380,7 @@ class Throughput(Realm):
                 report.set_custom_html('<hr>')
                 report.build_custom()
 
-            if (self.dowebgui and self.get_live_view and self.do_interopability):
+            if self.dowebgui and self.get_live_view and self.do_interopability:
                 self.add_live_view_images_to_report(report)
 
         # report.build_custom()
@@ -2942,7 +2942,7 @@ Copyright 2023 Candela Technologies Inc.
     # logger_config = lf_logger_config.lf_logger_config()
     lf_logger_config.lf_logger_config()
 
-    if(args.tput_mbps):
+    if args.tput_mbps:
         if args.download != '2560' and args.download != '0' and args.upload != '0' and args.upload != '2560':
             args.download = str(int(args.download) * 1000000)
             args.upload = str(int(args.upload) * 1000000)
@@ -3131,11 +3131,11 @@ Copyright 2023 Candela Technologies Inc.
                 # Start specific connections for the current iteration
                 throughput.start_specific(created_cx_lists_keys[:incremental_capacity_list[i]])
             else:
-                if (args.do_interopability and i != 0):
+                if args.do_interopability and i != 0:
                     throughput.stop_specific(to_run_cxs[i - 1])
                     time.sleep(5)
                 if args.interopability_config:
-                    if (args.do_interopability and i == 0):
+                    if args.do_interopability and i == 0:
                         # To disconnect all the selected devices at the starting selected
                         throughput.disconnect_all_devices()
                     if args.do_interopability and "iOS" not in to_run_cxs[i][0]:
