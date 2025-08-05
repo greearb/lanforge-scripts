@@ -83,14 +83,15 @@ EXAMPLE (ftp bytes-rd):
                  --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
 EXAMPLE (using existing stations):
-    ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --use_ports "sta000 sta0001"
-                 --security {open|web|wpa|wpa2|wpa3} --ssid <ssid> --test_duration 1m --url "dl http://192.168/-.103/ /dev/null"
-                 --requests_per_ten 600 --test_type 'urls' --test_rig Test-Lab --dut_hw_version Linux --test_id "L4 data"
+    ./test_l4.py --mgr localhost --upstream_port eth1 --use_ports "sta000 sta0001"
+                 --test_duration 1m --url "dl http://192.168/-.103/ /dev/null"
+                 --requests_per_ten 600 --test_type 'urls' --test_rig Test-Lab
+                 --dut_hw_version Linux --test_id "L4 data"
 
 EXAMPLE (using existing MACVLANS):
-    ./test_l4.py --mgr localhost --upstream_port eth1 --use_ports eth1#0 --security {open|web|wpa|wpa2|wpa3}
-                 --ssid <ssid> --test_duration 1m --url "dl http://192.168/-.103/ /dev/null"
-                 --requests_per_ten 600 --test_type 'urls' --test_rig Test-Lab --dut_hw_version Linux --test_id "L4 data"
+    ./test_l4.py --mgr localhost --upstream_port eth1 --use_ports eth1#0 --test_duration 1m
+                 --url "dl http://192.168/-.103/ /dev/null" --requests_per_ten 600 --test_type 'urls'
+                 --test_rig Test-Lab --dut_hw_version Linux --test_id "L4 data"
 
 STATUS: UNDER DEVELOPMENT
 
@@ -724,6 +725,8 @@ Generic command example:
     test_l4_parser.add_argument('--use_ports', help='list of comma separated ports to use with ips, \'=\' separates name and ip'
                                 '{ port_name1=ip_addr1,port_name1=ip_addr2 }. '
                                 'Ports without ips will be left alone', default=None)
+    test_l4_parser.add_argument('--force_port_cleanup', help='causes the test to delete the passed-in ports created by the user',
+                                default=False, action='store_true')
 
     # kpi_csv arguments
     test_l4_parser.add_argument(
@@ -1094,7 +1097,8 @@ This script will create stations and endpoints to generate and verify layer-4 tr
 
     if not args.no_cleanup:
         # time.sleep(15)
-        ip_test.cleanup(station_list)
+        if port_list is None or args.force_port_cleanup:
+            ip_test.cleanup(station_list)
 
     if not is_passing:
         logger.info(ip_test.get_fail_message())
