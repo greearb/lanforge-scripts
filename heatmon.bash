@@ -32,9 +32,9 @@ JQ_FORMULA=$( cat <<- 'EOF'
 EOF
 )
 if [[ -n "${1:-}" ]] && [[ -r "$1" ]]; then
-    jq -c "$JQ_FORMULA" < "$1"
+    grep -v ERROR < "$1" | jq -c "$JQ_FORMULA"
 fi
-/usr/bin/sensors -u -j \
+/usr/bin/sensors -u -j 2>/dev/null \
   | jq -c "$JQ_FORMULA"
 
 #
