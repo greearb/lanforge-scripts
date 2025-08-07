@@ -12,7 +12,29 @@ if [[ ! -x /usr/bin/sensors ]]; then
     echo "Unable to find sensors"
     exit 1
 fi
+# JQ_FORMULA='[.| to_entries |.[] | {A: .key, T: .value.temp1.temp1_input}]'
+JQ_FORMULA=$( cat <<- 'EOF'
+[ to_entries[]
+  | .key as $chip
+  | .value
+  | to_entries[]
+  | select(.value | type == "object")
+  | .key as $core
+  | .value
+  | to_entries[]
+  | select(.key | test("temp.*input"))
+  | {
+      # ($chip +"."+ $core):(.value),
+      A: ($chip +"."+ $core+"."+.key),
+      T: .value
+    }
+]
+EOF
+)
+if [[ -n "${1:-}" ]] && [[ -r "$1" ]]; then
+    jq -c "$JQ_FORMULA" < "$1"
+fi
 /usr/bin/sensors -u -j \
-  | jq -c '[.| to_entries |.[] | {A: .key, T: .value.temp1.temp1_input}]'
+  | jq -c "$JQ_FORMULA"
 
 #
