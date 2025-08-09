@@ -3,7 +3,7 @@
 # allow commands to be printed to the terminal
 set -x
 
-echo "Running RVR tests"
+echo "Running Dataplane tests"
 ./lf_check.py \
 --db_override ./tools/ct_us_009_DP_PERF_BE19000.db \
 --json_rig ./ct_rig_json/ct_us_009_rig_TP_BE19000.json \
