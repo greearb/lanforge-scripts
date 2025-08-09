@@ -20,6 +20,6 @@ echo "Running Rate vs Range tests"
 ./ct_tests_json/ct_us_009/ct_perf_rvr/ct_perf_rvr_6g_TP_LINK_W0_W1_W2_W3_W4_W5_W6_W7_W10_TCP_tx.json:ct_perf_rvr_6g_W0_W1_W2_W3_W4_W5_W6_W7_W10_TCP_tx,\
 ./ct_tests_json/ct_us_009/ct_perf_rvr/ct_perf_rvr_2g_TP_LINK_W0_W1_W2_W3_W4_W5_W6_W7_W8_TCP_rx.json:ct_perf_rvr_2g_W0_W1_W2_W3_W4_W5_W6_W7_W8_TCP_rx,\
 ./ct_tests_json/ct_us_009/ct_perf_rvr/ct_perf_rvr_5g_TP_LINK_W0_W1_W2_W3_W4_W5_W6_W7_W9_TCP_rx.json:ct_perf_rvr_5g_W0_W1_W2_W3_W4_W5_W6_W7_W9_TCP_rx,\
-./ct_tests_json/ct_us_009/ct_perf_rvr/ct_perf_rvr_6g_TP_LINK_W0_W1_W2_W3_W4_W5_W6_W7_W10_TCP_rx.json:ct_perf_rvr_6g_W0_W1_W2_W3_W4_W5_W6_W7_W10_TCP_rx,\
+./ct_tests_json/ct_us_009/ct_perf_rvr/ct_perf_rvr_6g_TP_LINK_W0_W1_W2_W3_W4_W5_W6_W7_W10_TCP_rx.json:ct_perf_rvr_6g_W0_W1_W2_W3_W4_W5_W6_W7_W10_TCP_rx\
 --path /home/lanforge/html-reports/ct_us_009 \
 --log_level debug
