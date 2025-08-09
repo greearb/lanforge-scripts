@@ -5,9 +5,9 @@ set -x
 
 echo "Running Rate vs Range tests"
 ./lf_check.py \
---db_override ./tools/ct_us_009_RVR_PERF_BE19000.db \
---json_rig ./ct_rig_json/ct_us_009_rig_TP_BE19000.json \
---json_dut ./ct_dut_json/ct_008_TP_BE19000_dut.json \
+--db_override ./tools/ct_us_009_RVR_PERF_BE800.db \
+--json_rig ./ct_rig_json/ct_us_009_TP_BE800_rig.json \
+--json_dut ./ct_dut_json/ct_009_TP_LINK_BE800_dut.json \
 --json_test \
 ./ct_tests_json/ct_us_009/ct_perf_rvr/ct_perf_rvr_2g_TP_LINK_W0_W1_W2_W3_W4_W5_W6_W7_W8_UDP_tx.json:ct_perf_rvr_2g_W0_W1_W2_W3_W4_W5_W6_W7_W8_UDP_tx,\
 ./ct_tests_json/ct_us_009/ct_perf_rvr/ct_perf_rvr_5g_TP_LINK_W0_W1_W2_W3_W4_W5_W6_W7_W9_UDP_tx.json:ct_perf_rvr_5g_W0_W1_W2_W3_W4_W5_W6_W7_W9_UDP_tx,\
