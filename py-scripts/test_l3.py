@@ -2022,6 +2022,12 @@ class L3VariableTime(Realm):
         for station_profile in self.station_profiles:
             self.station_names_list.extend(station_profile.station_names)
 
+        # with changes that came in around 3/2025 the station_names_list was moved
+        # from start to build, since test l3 can do a rebuild due to being able to run
+        # multiple iterations thus the station list would grow there is a need
+        # on build to remove duplicates
+        self.station_names_list = list(set(self.station_names_list))
+
         if self.dataplane:
             self._pass(
                 "PASS: CX build finished: created/updated:  %s connections." %
