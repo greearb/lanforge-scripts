@@ -1,7 +1,28 @@
 #!/bin/env python3
 """
-Small program that parses temperature data from an input file,
-then saves the data in a clean csv file and presents a graph of it.
+NAME: temp_graph.py
+
+PURPOSE:
+temp_graph.py will take heatmon temperature logs and create parsed CSVs
+and optional graphical reports.
+
+EXAMPLE (only creating CSVs):
+    ./temp_graph.py -i heat_log.txt
+
+EXAMPLE (rendering an interactive graph of the data):
+    ./temp_graph.py -i heat_log.txt -g
+
+EXAMPLE (creating an html report page):
+    ./temp_graph.py -i heat_log.txt -r
+
+EXAMPLE (reporting with a band chart):
+    ./temp_graph.py -i heat_log.txt -r -m band
+
+STATUS: UNDER DEVELOPMENT
+
+COPYRIGHT:
+    Copyright 2025 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
 """
 import argparse
 import re
