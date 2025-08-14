@@ -5,6 +5,7 @@ NAME: temp_graph.py
 PURPOSE:
 temp_graph.py will take heatmon temperature logs and create parsed CSVs
 and optional graphical reports.
+First obtain heatmon output from journalctl -t heatmon > log.txt
 
 EXAMPLE (only creating CSVs):
     ./temp_graph.py -i heat_log.txt
@@ -76,7 +77,7 @@ def main():
     help_summary = '''\
 temp_graph creates a graph of device temperature data over time using
 a log file passed with -i that can be generated
-using the shell command 'journalctl -t heatmon'
+using the shell command 'journalctl -t heatmon > log.txt'
 
 This file is then parsed into a series of CSVs and optionally:
 -a set of graph pngs (-s)
