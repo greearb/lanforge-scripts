@@ -9,9 +9,6 @@ and optional graphical reports.
 EXAMPLE (only creating CSVs):
     ./temp_graph.py -i heat_log.txt
 
-EXAMPLE (rendering an interactive graph of the data):
-    ./temp_graph.py -i heat_log.txt -g
-
 EXAMPLE (creating an html report page):
     ./temp_graph.py -i heat_log.txt -r
 
@@ -82,15 +79,12 @@ a log file passed with -i that can be generated
 using the shell command 'journalctl -t heatmon'
 
 This file is then parsed into a series of CSVs and optionally:
--an interactive graph (-g)
 -a set of graph pngs (-s)
 -an html report page (-r)
 '''
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--inputfile", help="The path to the input file",
                         default=None)
-    parser.add_argument("-g", "--graph", help="display a graph of the data",
-                        default=False, action="store_true")
     parser.add_argument("-m", "--mode", help="change style of graph created",
                         default="all")
     parser.add_argument("-s", "--save_output",
@@ -215,8 +209,6 @@ This file is then parsed into a series of CSVs and optionally:
             plt.gca().get_legend().remove()
         if args.save_output or args.report:
             plt.savefig(_out_dir + _tstamp + "/" + _next_png_name(file_num))
-        if args.graph:
-            plt.show()
 
     if args.report:
         # write a report.html page with the graphs we made
