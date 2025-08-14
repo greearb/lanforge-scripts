@@ -18,7 +18,13 @@ EXAMPLE (creating an html report page):
 EXAMPLE (reporting with a band chart):
     ./temp_graph.py -i heat_log.txt -r -m band
 
-STATUS: UNDER DEVELOPMENT
+SCRIPT_CATEGORIES: Report Generation
+
+STATUS: Under Development
+
+VERIFIED_ON: AUGUST 2025,
+             GUI Version: 5.5.1
+             Kernel Version: 6.11.12+
 
 COPYRIGHT:
     Copyright 2025 Candela Technologies Inc
@@ -70,6 +76,16 @@ def _get_graph_title(df, num, rig):
 
 
 def main():
+    help_summary = '''\
+temp_graph creates a graph of device temperature data over time using
+a log file passed with -i that can be generated
+using the shell command 'journalctl -t heatmon'
+
+This file is then parsed into a series of CSVs and optionally:
+-an interactive graph (-g)
+-a set of graph pngs (-s)
+-an html report page (-r)
+'''
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--inputfile", help="The path to the input file",
                         default=None)
@@ -81,12 +97,17 @@ def main():
                         help="saves the output graphs as PNGs",
                         default=False, action="store_true")
     parser.add_argument("-r", "--report",
-                        help="create an index.html page with the graph(s)",
+                        help="create a report.html page with the graph(s)",
                         default=False, action="store_true")
     parser.add_argument("-c", "--cutoff", default=20,
                         help="max time in minutes between two table entries")
-    # TODO: ADD A --HELP ARGUMENT
+    parser.add_argument("--help_summary", default=False, action="store_true")
+
     args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
 
     # Try to safely open the files passed to us
     try:
@@ -102,7 +123,7 @@ def main():
         print("Error creating output directory")
         exit(1)
     """
-    TODO: update this documentation to explain the multi-charting process
+    todo: update this documentation to explain the multi-charting process
 
     Look through each line of the input file. Each line should be in the form:
     MON DD HH:MM:SS .(*?) [({"A":"DEVICENAME", "T":(TEMP|null)})*?]
@@ -198,7 +219,7 @@ def main():
             plt.show()
 
     if args.report:
-        # write an index.html page with the graphs we made
+        # write a report.html page with the graphs we made
         with open(_out_dir + _tstamp + '/report' + '.html', 'w') as f:
             f.write("<!DOCTYPE HTML> \n <html> \n <b>")
             for file_num in range(len(out_tables)):
@@ -207,9 +228,9 @@ def main():
                         '\" alt=\"graph 1\">')
                 f.write('<table><tr><th>Min </th>')
                 f.write('<th> Max </th><th> Avg</th></tr>')
-                f.write(f'<td>{table_stats[file_num]['min']}</td>')
-                f.write(f'<td>{table_stats[file_num]['max']}</td>')
-                f.write(f'<td>{table_stats[file_num]['avg']}</td>')
+                f.write(f'<td>{table_stats[file_num]["min"]}</td>')
+                f.write(f'<td>{table_stats[file_num]["max"]}</td>')
+                f.write(f'<td>{table_stats[file_num]["avg"]}</td>')
                 f.write('</table>')
             f.write("</b> \n </html>")
 
