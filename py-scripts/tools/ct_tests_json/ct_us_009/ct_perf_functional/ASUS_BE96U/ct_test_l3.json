@@ -1,0 +1,115 @@
+{
+    "ct_tests_009_scripts":{
+        "Notes":[
+            "This json file describes tests to be run by LANforge system",
+            "When doing a create_chamberview.py --create_scenario <name> ",
+            "has no correlation to the --instance_name , instance name is used ",
+            "as a unique identifier for tha chamber-view test run"
+        ]
+    },
+    "test_suites":{
+        "ct_test_l3":{
+            "TEST_L3_2G_BE200_STA_1_W0":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"test_l3.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
+                    " use_ssid_idx=0 --radio 'radio==1.1.wiphy0,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp,lf_tcp --rates_are_totals --side_a_min_bps=1000000,500000 --side_b_min_bps=300000",
+                    " --test_rig TEST_RIG --test_tag 'TEST_L3_2G_BE200_STA_1_W0'",
+                    " --tos BK,BE,VI,VO",
+                    " --side_a_min_pdu=1024,MTU",
+                    " --side_b_min_pdu=1024,MTU",
+                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
+                ]
+            },
+            "TEST_L3_5G_BE200_STA_1_W0":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"test_l3.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
+                    " use_ssid_idx=1 --radio 'radio==1.1.wiphy0,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=10000000 --side_b_min_bps 10000000",
+                    " --test_rig TEST_RIG --test_tag 'TEST_L3_5G_BE200_STA_1_W0'",
+                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
+                ]
+            },
+            "TEST_L3_6G_BE200_STA_1_W0":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"test_l3.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
+                    " use_ssid_idx=2 --radio 'radio==1.1.wiphy0,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=10000000 --side_b_min_bps=10000000",
+                    " --test_rig TEST_RIG --test_tag 'TEST_L3_6G_BE200_STA_1_W0'",
+                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
+                ]
+            },
+            "TEST_L3_2G_MT7996E_STA_34_W8":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"test_l3.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
+                    " use_ssid_idx=0 --radio 'radio==1.1.wiphy8,stations==34,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=10000000 --side_b_min_bps=10000000",
+                    " --test_rig TEST_RIG --test_tag 'TEST_L3_2G_MT7996E_STA_1_W8'",
+                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
+                ]
+            },
+            "TEST_L3_5G_MT7996E_STA_34_W9":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"test_l3.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
+                    " use_ssid_idx=1 --radio 'radio==1.1.wiphy9,stations==34,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=10000000 --side_b_min_bps 10000000",
+                    " --test_rig TEST_RIG --test_tag 'TEST_L3_5G_MT7996E_STA_1_W9'",
+                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
+                ]
+            },
+            "TEST_L3_6G_MT7996E_STA_34_W10":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"test_l3.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
+                    " use_ssid_idx=2 --radio 'radio==1.1.wiphy10,stations==34,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=10000000 --side_b_min_bps=10000000",
+                    " --test_rig TEST_RIG --test_tag 'TEST_L3_6G_MT7996E_STA_1_W10'",
+                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
+                ]
+            },
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE --test_suite  TEST_SUITE"
+                ]
+            },
+            "lf_inspect":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_inspect.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
+                ]
+            }
+        }
+    }
+}
