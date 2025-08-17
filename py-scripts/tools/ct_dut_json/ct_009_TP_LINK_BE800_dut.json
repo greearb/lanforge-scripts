@@ -16,12 +16,12 @@
         "UPSTREAM_ALIAS":"eth2",
         "DATABASE_SQLITE":"ct_009_TP_Link_db.db",
         "wireless_network_dict":{
-                    "ssid_idx=0":{"ssid_idx":"0", "SSID_USED":"TP-Link_3C7E","SSID_PW_USED":"25520545","BSSID_TO_USE":"92:90:2d:0d:3c:80","SECURITY_USED":"wpa2"},
-                    "ssid_idx=1":{"ssid_idx":"1", "SSID_USED":"TP-Link_3C7E_5G","SSID_PW_USED":"25520545","BSSID_TO_USE":"92:90:2d:0d:3c:81","SECURITY_USED":"wpa2"},
-                    "ssid_idx=2":{"ssid_idx":"2", "SSID_USED":"TP-Link_3C7E_6G","SSID_PW_USED":"25520545","BSSID_TO_USE":"92:90:2d:0d:3c:82","SECURITY_USED":"wpa3"},
-                    "ssid_idx=3":{"ssid_idx":"3", "SSID_USED":"TP-Link_3C7E_MLO","SSID_PW_USED":"25520545","BSSID_TO_USE":"92:90:2d:0d:3c:80","SECURITY_USED":"wpa3"},
-                    "ssid_idx=4":{"ssid_idx":"4", "SSID_USED":"TP-Link_3C7E_MLO","SSID_PW_USED":"25520545","BSSID_TO_USE":"92:90:2d:0d:3c:81","SECURITY_USED":"wpa3"},
-                    "ssid_idx=5":{"ssid_idx":"5", "SSID_USED":"TP-Link_3C7E_MLO","SSID_PW_USED":"25520545","BSSID_TO_USE":"92:90:2d:0d:3c:84","SECURITY_USED":"wpa3"}
+                    "ssid_idx=0":{"ssid_idx":"0", "SSID_USED":"TP-Link_3C7E","SSID_PW_USED":"25520545","BSSID_TO_USE":"8c:90:2d:0d:3c:80","SECURITY_USED":"wpa2"},
+                    "ssid_idx=1":{"ssid_idx":"1", "SSID_USED":"TP-Link_3C7E_5G","SSID_PW_USED":"25520545","BSSID_TO_USE":"8c:90:2d:0d:3c:81","SECURITY_USED":"wpa2"},
+                    "ssid_idx=2":{"ssid_idx":"2", "SSID_USED":"TP-Link_3C7E_6G","SSID_PW_USED":"25520545","BSSID_TO_USE":"96:90:2d:0d:3c:82","SECURITY_USED":"wpa3"},
+                    "ssid_idx=3":{"ssid_idx":"3", "SSID_USED":"TP-Link_3C7E_MLO","SSID_PW_USED":"25520545","BSSID_TO_USE":"de:90:2d:0d:3c:80","SECURITY_USED":"wpa3"},
+                    "ssid_idx=4":{"ssid_idx":"4", "SSID_USED":"TP-Link_3C7E_MLO","SSID_PW_USED":"25520545","BSSID_TO_USE":"de:90:2d:0d:3c:81","SECURITY_USED":"wpa3"},
+                    "ssid_idx=5":{"ssid_idx":"5", "SSID_USED":"TP-Link_3C7E_MLO","SSID_PW_USED":"25520545","BSSID_TO_USE":"96:90:2d:0d:3c:83","SECURITY_USED":"wpa3"}
         }
     }
 }
