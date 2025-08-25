@@ -77,9 +77,7 @@ class SniffRadio(Realm):
         self.lfclient_host = lfclient_host
         self.lfclient_port = lfclient_port
         self.debug = debug_on_
-        # self.local_realm = realm.Realm(lfclient_host=self.lfclient_host,
-        #                                lfclient_port=self.lfclient_port,
-        #                                debug_=self.debug)
+
         self.monitor = self.new_wifi_monitor_profile()
         self.outfile = outfile
         self.radio = radio
@@ -94,41 +92,44 @@ class SniffRadio(Realm):
         self.sniff_snapshot_bytes = sniff_snapshot_bytes  # default to max size
         self.sniff_flags = sniff_flags  # will default to dumpcap, see wifi_monitor_profile::SNIFF_X constants
 
-        # TODO allow the channel_frequency to be entered
-        # if self.channel is None and self.channel_freq is None:
-        #    print("either --channel or --channel_freq needs to be set")
-        #    exit(1)
-        # elif self.channel_freq is not None:
-        #    self.freq = self.channel_freq
+        # User should enter either channel frequency in MHz or the channel number
         if self.channel_freq is not None:
             self.freq = self.channel_freq
             logger.info("channel frequency {freq}".format(freq=self.channel_freq))
-        # conversion of 6e channel to frequency
-        # ch_6e = (f - 5000 )  / 5
-        # f = (ch_6e * 5) + 5000
-        elif self.channel is not None:
-            if self.channel != 'AUTO':
-                if 'e' in self.channel:
-                    channel_6e = self.channel.replace('e', '')
-                    self.freq = ((int(channel_6e) + 190) * 5) + 5000
-                    lf_6e_chan = int(channel_6e) + 190
-                    logger.info("6e_chan: {chan} lf_6e_chan: {lf_chan} frequency: {freq}".format(chan=self.channel, lf_chan=lf_6e_chan, freq=self.freq))
-                    self.channel = lf_6e_chan
-                else:
-                    if int(self.channel) <= 13:
-                        # channel 1 is 2412 ,
-                        self.freq = 2407 + int(self.channel) * 5
-                    elif int(self.channel) == 14:
-                        self.freq = 2484
-                    # 5g or 6g Candela numbering
-                    else:
-                        self.freq = int(self.channel) * 5 + 5000
-                    logger.info("channel: {chan}  frequency: {freq}".format(chan=self.channel, freq=self.freq))
 
-        if self.channel_bw != '20':
-            if self.center_freq is None:
-                logger.info("--center_freq need to be set for bw greater the 20")
-                exit(1)
+        elif self.channel and self.channel != "AUTO":
+            if 'e' in self.channel:
+                # 6 GHz channel specified per-specification
+                #
+                # Conversion formulas between 6 GHz channel and frequency (in MHz):
+                #   Channel   = (Frequency - 5000) / 5
+                #   Frequency = (Channel * 5) + 5000
+                channel_6e = self.channel.replace('e', '')
+                self.freq = ((int(channel_6e) + 190) * 5) + 5000
+                self.channel = int(channel_6e) + 190
+
+                logger.debug(f"User input channel: {channel_6e}e, Calculated channel: {self.channel}, Calculated frequency: {self.freq}")
+            else:
+                if int(self.channel) <= 13:
+                    # Standard 2.4 GHz channel
+                    self.freq = 2407 + int(self.channel) * 5
+                elif int(self.channel) == 14:
+                    # Channel 14 in 2.4 GHz band is a special case. It doesn't follow formula
+                    # for other 2.4 GHz channels and is only permitted in Japan for legacy modes
+                    # (DSSS and CCK, aka 802.11b)
+                    self.freq = 2484
+                else:
+                    # Either 5 GHz channel specified per-specification or 6 GHz channel specified per-Candela numbering
+                    self.freq = int(self.channel) * 5 + 5000
+
+                logger.debug(f"User input channel: {channel}, Calculated frequency: {self.freq}")
+
+        # Presently center frequency is needed for channel widths larger than 20 MHz
+        # TODO: Permit omission of center frequency and implement calculation in script
+        if self.channel_bw != '20' and not self.center_freq:
+            logger.error("Center frequency must be specified for channel widths larger than 20 MHz "
+                         "using the '--center_freq' parameter. Run with '--help' for more information")
+            exit(1)
 
     def setup(self, ht40_value, ht80_value, ht160_value):
         # TODO: Store original channel settings so that radio can be set back to original values.
