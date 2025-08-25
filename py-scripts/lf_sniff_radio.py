@@ -139,23 +139,38 @@ class SniffRadio(Realm):
         self.monitor.create(radio_=self.radio, channel=self.channel, frequency=self.freq, mode=self.mode, name_=self.monitor_name)
 
     def start(self):
-        self.monitor.admin_up()
+        """Run packet capture."""
         monitor_eid = "1." + str(self.monitor.resource) + "." + self.monitor_name
-        logger.debug("Monitor name: " + self.monitor_name + ", monitor_eid:  " + monitor_eid)
+
+        # Configure monitor to active state
+        logger.info(f"Configuring packet capture interface '{monitor_eid}'")
+        self.monitor.admin_up()
+
+        # Wait for monitor to exist
+        # TODO: Handle error from 'wait_until_ports_appear()', if any
+        # TODO: Change to use 'wait_until_ports_admin_up()' or similar if exists for this port type
         LFUtils.wait_until_ports_appear(self.lfclient_url, monitor_eid, debug=self.debug)
-        # TODO:  Use LFUtils.wait_until_ports_admin_up instead of sleep, check return code.
-        # time.sleep(5)
-        self.set_freq(ssh_root=self.lfclient_host, ssh_passwd='lanforge', freq=self.freq)
+
+        # Configure monitor frequency
+        self._set_freq(ssh_root=self.lfclient_host, ssh_passwd='lanforge', freq=self.freq)
+
+        # Run packet capture for specified duration
+        logger.info(f"Running packet capture with interface '{monitor_eid}'")
         self.monitor.start_sniff(capname=self.outfile, duration_sec=self.duration, flags=self.sniff_flags,
                                  snap_len_bytes=self.sniff_snapshot_bytes)
         for i in range(0, self.duration):
-            logger.info("running sniffer for {duration} more seconds".format(duration=(self.duration - i)))
+            sec_remaining = self.duration - i
+            logger.debug(f"Running capture sniffer for {sec_remaining} more seconds")
             time.sleep(1)
-        logger.info("Sniffing Completed Success Check {outfile}".format(outfile=self.outfile))
+
+        # Capture complete
+        # Log location of output capture file and set monitor to inactive state
+        logger.info(f"Packet capture complete. Capture file available at '{self.outfile}' "
+                    f"on remote system '{self.lfclient_host}'")
         self.monitor.admin_down()
         time.sleep(2)
 
-    def set_freq(self, ssh_root, ssh_passwd, freq=0):
+    def _set_freq(self, ssh_root, ssh_passwd, freq=0):
         """Configure existing WiFi monitor interface via SSH."""
 
         if self.channel_bw == '20':
