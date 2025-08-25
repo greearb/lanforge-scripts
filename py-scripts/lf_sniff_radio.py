@@ -95,7 +95,7 @@ class SniffRadio(Realm):
         # User should enter either channel frequency in MHz or the channel number
         if self.channel_freq is not None:
             self.freq = self.channel_freq
-            logger.info("channel frequency {freq}".format(freq=self.channel_freq))
+            logger.debug(f"User input frequency: {self.channel_freq}")
 
         elif self.channel and self.channel != "AUTO":
             if 'e' in self.channel:
@@ -155,40 +155,49 @@ class SniffRadio(Realm):
         self.monitor.admin_down()
         time.sleep(2)
 
-    # for 6E
-    # For example for channel 7 with 80Mhz bw , here are the monitor commands possible
-    # iw dev moni10a set freq 5955 80 5985
-    # iw dev moni10a set freq 5975 80 5985
-    # iw dev moni10a set freq 5995 80 5985
-    # iw dev moni10a set freq 6015 80 5985
-
-    # for 20 MHz the center frequency does not need to be entered since it is the same
-
     def set_freq(self, ssh_root, ssh_passwd, freq=0):
+        """Configure existing WiFi monitor interface via SSH."""
+
         if self.channel_bw == '20':
+            # Don't need to specify center frequency for 20 MHz channels, as only one possible
             cmd = f'. lanforge.profile\nsudo iw dev {self.monitor_name} set freq {freq}\n'
         else:
+            # Channel widths larger than 20 MHz require specifying center frequency with this CLI, as multiple possible
+            #
+            # For example, channel 7 (80 MHz channel in 6 GHz band) has four possible center frequencies:
+            #   iw dev moni10a set freq 5955 80 5985
+            #   iw dev moni10a set freq 5975 80 5985
+            #   iw dev moni10a set freq 5995 80 5985
+            #   iw dev moni10a set freq 6015 80 5985
             cmd = f'. lanforge.profile\nsudo iw dev {self.monitor_name} set freq {freq} {self.channel_bw} {self.center_freq}\n'
 
         cmd1 = f'iw dev {self.monitor_name} info'
         try:
+            # Initiate SSH connection to LANforge system
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(ssh_root, 22, 'lanforge', ssh_passwd)
             time.sleep(10)
+
+            # Configure channel/frequency
             stdout = ssh.exec_command(cmd, get_pty=True)
             stdout[0].write(f"{ssh_passwd}\n")
             stdout[0].flush()
+
             stdout = (stdout[1].readlines())
-            print(stdout, "----- set channel frequency")
+            logger.info(f"Set channel/frequency output: {stdout}")
+
+            # Query channel/frequency
             stdout = ssh.exec_command(cmd1)
             stdout = (stdout[1].readlines())
-            print(stdout, "----- channel frequency info")
+            logger.info(f"Query channel/frequency output: {stdout}")
+
         except paramiko.ssh_exception.NoValidConnectionsError as e:
-            print("####", e, "####")
+            logger.error(f"Failed to connect over SSH to system '{ssh_root}': {e}")
             exit(1)
+
         except TimeoutError as e:
-            print("####", e, "####")
+            logger.error(f"SSH connection timed out: {e}")
             exit(1)
 
         ssh.close()
@@ -458,10 +467,11 @@ def main():
             if bytesize > -1:
                 sniff_snaplen_choice = bytesize
             else:
-                raise ValueError("bad sniff_bytes")
+                raise ValueError("bad '--sniff_bytes'")
+
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            print(f"Strange sniff length [{args.sniff_bytes}], please choose a positive value")
+            logger.error(f"Unsupported/bad sniff length '{args.sniff_bytes}', please choose a positive whole number")
             exit(1)
 
     # The '**vars(args)' unpacks arguments into named parameters
