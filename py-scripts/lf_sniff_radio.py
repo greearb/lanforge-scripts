@@ -240,81 +240,126 @@ NOTES:      Configuration utilizes the 'iw' utility to some extent
             commands like 'iw moni0 info' may be useful to verify configuration.
         """)
 
-    parser.add_argument('--mgr', type=str, help='IP Address of LANforge',
+    parser.add_argument('--mgr',
+                        type=str,
+                        help='IP Address of LANforge',
                         default="localhost")
-    parser.add_argument('--mgr_port', type=int, help='HTTP Port of LANforge',
+    parser.add_argument('--mgr_port',
+                        type=int,
+                        help='HTTP Port of LANforge',
                         default=8080)
-    parser.add_argument('--radio', type=str, help='Radio to sniff with',
+
+    parser.add_argument('--radio',
+                        type=str,
+                        help='Radio to sniff with',
                         default="wiphy0")
-    parser.add_argument('--outfile', type=str, help='Give the filename with path',
+    parser.add_argument('--outfile',
+                        type=str,
+                        help='Give the filename with path',
                         default="/home/lanforge/test_pcap.pcap")
-    parser.add_argument('--duration', type=int, help='Duration in sec for which you want to capture',
+    parser.add_argument('--duration',
+                        type=int,
+                        help='Duration in sec for which you want to capture',
                         default=60)
-    parser.add_argument('--channel', type=str,
+    parser.add_argument('--channel',
+                        type=str,
                         help='Set channel pn selected Radio, the channel [52, 56 ...]\n'
                              'channel will get converted to the control frequency.\n'
                              'Must enter Channel',
                         default='36')
-    parser.add_argument('--channel_freq', type=str,
+    parser.add_argument('--channel_freq',
+                        type=str,
                         help='Frequency that the channel operates at\n'
                              'Must enter --channel or --channel_freq\n'
                              '--channel_freq takes presidence if both entered if value not zero')
-    parser.add_argument('--channel_bw', type=str, help='Select the bandwidth to be monitored, [ [20|40|80|80+80|160]], default=20',
+    parser.add_argument('--channel_bw',
+                        type=str,
+                        help='Select the bandwidth to be monitored, [ [20|40|80|80+80|160]], default=20',
                         default='20')
-    parser.add_argument('--center_freq', type=str,
+    parser.add_argument('--center_freq',
+                        type=str,
                         help='Select the bandwidth to be monitored\n'
                              '(not needed if channel width is 20MHz',
                         default=None)
-    parser.add_argument('--radio_mode', type=str, help='Select the radio mode [AUTO, 802.11a, 802.11b, 802.11ab ...]',
+    parser.add_argument('--radio_mode',
+                        type=str,
+                        help='Select the radio mode [AUTO, 802.11a, 802.11b, 802.11ab ...]',
                         default="AUTO")
-    parser.add_argument('--monitor_name', type=str, help='Wi-Fi monitor name',
+    parser.add_argument('--monitor_name',
+                        type=str,
+                        help='Wi-Fi monitor name',
                         default="sniffer0")
-    parser.add_argument('--disable_ht40', type=str, help='Enable/Disable \"disable_ht40\" [0-disable,1-enable]',
+    parser.add_argument('--disable_ht40',
+                        type=str,
+                        help='Enable/Disable \"disable_ht40\" [0-disable,1-enable]',
                         default=0)
-    parser.add_argument('--disable_ht80', type=str, help='Enable/Disable \"disable_ht80\" [0-disable,1-enable]',
+    parser.add_argument('--disable_ht80',
+                        type=str,
+                        help='Enable/Disable \"disable_ht80\" [0-disable,1-enable]',
                         default=0)
-    parser.add_argument('--ht160_enable', type=str, help='Enable/Disable \"ht160_enable\\ [0-disable,1-enable]" ',
+    parser.add_argument('--ht160_enable',
+                        type=str,
+                        help='Enable/Disable \"ht160_enable\\ [0-disable,1-enable]" ',
                         default=0)
+
+    # 6 GHz Intel AX210/BE200 workaround options
+    # TODO: Highlight in help that these arguments are for 6 GHz workaround only
     parser.add_argument('--6ghz_workaround', '--ax210',
+                        dest='do_6ghz_workaround',
                         help='Perform workaround for Intel AX210 or BE200 radio 6GHz monitor mode firmware limitation\n'
                              'before sniffing packets. Radio firmware requires a scan of 6GHz-capable regulatory domain\n'
                              'before granting access to 6GHz channels on a monitor mode interface.\n',
-                        dest='do_6ghz_workaround',
                         action='store_true')
-    parser.add_argument('--6ghz_workaround_scan_time', '--ax210_scan_time', help='Time to wait for scan in 6GHz workaround',
+    parser.add_argument('--6ghz_workaround_scan_time', '--ax210_scan_time',
                         dest='do_6ghz_workaround_scan_time',
+                        help='Time to wait for scan in 6GHz workaround',
                         default='20')
-    parser.add_argument('--num_stations', type=int, help='Number of stations to create default 1 for AX210 sniffing',
+    parser.add_argument('--num_stations',  # TODO: Make into dummy arg, only one permitted on Intel radios
+                        type=int,
+                        help='Number of stations to create default 1 for AX210 sniffing',
                         default=1)
-    parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000',
+    parser.add_argument('--number_template',
+                        help='Start the station numbering with a particular number. Default is 0000',
                         default=0000)
-    parser.add_argument('--station_list', help='Optional: User defined station names, can be a comma or space separated list', nargs='+',
+    parser.add_argument('--station_list',
+                        help='Optional: User defined station names, can be a comma or space-separated list',
+                        nargs='+',
                         default=None)
-    parser.add_argument('--upstream_port', help='Upstream port',
+    parser.add_argument('--upstream_port',
+                        help='Upstream port',
                         default='eth2')
-    parser.add_argument('--side_a_min_rate', help='bps rate minimum for side_a default: 1024000',
+    parser.add_argument('--side_a_min_rate',
+                        help='bps rate minimum for side_a default: 1024000',
                         default=1024000)
-    parser.add_argument('--side_b_min_rate', help='bps rate minimum for side_b default: 1024000',
+    parser.add_argument('--side_b_min_rate',
+                        help='bps rate minimum for side_b default: 1024000',
                         default=1024000)
-    parser.add_argument('--sta_prefix', help='Prefix used when creating station',
+    parser.add_argument('--sta_prefix',
+                        help='Prefix used when creating station',
                         default='wlan')
-    parser.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >',
+    parser.add_argument('--security',
+                        help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >',
                         default='open')
-    parser.add_argument('--ssid', help='WiFi SSID for script objects to associate to',
+    parser.add_argument('--ssid',
+                        help='WiFi SSID for script objects to associate to',
                         default='axe11000_5g')
-    parser.add_argument('--password', help='WiFi passphrase/password/key',
+    parser.add_argument('--password',
+                        help='WiFi passphrase/password/key',
                         default='[BLANK]')
-    parser.add_argument('--mode', help='Used to force mode of stations default: 0 (auto)',
+    parser.add_argument('--mode',
+                        help='Used to force mode of stations default: 0 (auto)',
                         default=0)
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
 
     # Logging information
-    # logging configuration
-    parser.add_argument('--log_level', help='Set logging level: debug | info | warning | error | critical',
+    parser.add_argument('--log_level',
+                        help='Set logging level: debug | info | warning | error | critical',
                         default=None)
-    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument("--lf_logger_config_json",
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
 
-    parser.add_argument('--sniff_bytes', help='keep this many bytes per packet, helps to reduce overall capture size',
+    parser.add_argument('--sniff_bytes',
+                        help='keep this many bytes per packet, helps to reduce overall capture size',
                         default=None)
     parser.add_argument('--sniff_using',
                         help='Default sniffer is Wireshark, which is only useful from a desktop setting.\n'
@@ -325,7 +370,9 @@ NOTES:      Configuration utilizes the 'iw' utility to some extent
                              'mate_xterm:         make tshark/dumpcap interactive in an xterm\n'
                              'mate_kill_dumpcap:  kill previously issued dumpcap',
                         default=None)
-    parser.add_argument('--help_summary', help='shows summary of the script', action='store_true')
+    parser.add_argument('--help_summary',
+                        help='shows summary of the script',
+                        action='store_true')
 
     return parser.parse_args()
 
