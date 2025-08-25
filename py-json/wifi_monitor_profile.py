@@ -7,7 +7,7 @@ import os
 import importlib
 import time
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -67,12 +67,16 @@ class WifiMonitor:
         self.aid = "NA"  # used when sniffing /ax radios
         self.bssid = "00:00:00:00:00:00"  # used when sniffing on /ax radios
 
+    # NOTE: Resource is parsed from the '_radio' argument which is an EID (e.g. '1.1.wiphy0' or '1.wiphy0')
     def create(self, resource_=1, channel=None, frequency=None, mode="AUTO", radio_="wiphy0", name_="moni0"):
         radio_eid = self.local_realm.name_to_eid(radio_)
         radio_shelf = radio_eid[0]
         self.resource = radio_eid[1]
         radio_ = radio_eid[2]
-        print("Creating monitor " + name_)
+
+        if self.debug:
+            print("Creating monitor " + name_)
+
         self.monitor_name = name_
         computed_flags = 0
         for flag_n in self.flag_names:
@@ -132,7 +136,9 @@ class WifiMonitor:
             self.flags_mask |= add_monitor.flags[param_name]
 
     def cleanup(self, desired_ports=None):
-        print("Cleaning up monitors")
+        if self.debug:
+            print("Cleaning up monitors")
+
         if (desired_ports is None) or (len(desired_ports) < 1):
             if (self.monitor_name is None) or (self.monitor_name == ""):
                 print("No monitor name set to delete")
