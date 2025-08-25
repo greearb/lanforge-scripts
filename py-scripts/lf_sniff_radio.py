@@ -378,11 +378,12 @@ def do_6ghz_workaround(args):
 
 
 def main():
-    args = parse_args()
+    help_summary = "This script performs WiFi packet capture using the radio and channel specified " \
+                   "by the user for the configured duration. When performing 6 GHz packet capture " \
+                   "using an Intel AX210 or BE200 2x2 radio, a workaround is required. See the output " \
+                   "when run with '--help' or the header of the script for example usage."
 
-    help_summary = '''\
-     This script is intended to sniff the radio specified by the user on a particular channel for a specified duration.
-    '''
+    args = parse_args()
     if args.help_summary:
         print(help_summary)
         exit(0)
@@ -423,22 +424,20 @@ def main():
                      sniff_flags=sniff_flags_choice,
                      sniff_snapshot_bytes=sniff_snaplen_choice,
                      **vars(args))
-    obj.setup(int(args.disable_ht40), int(args.disable_ht80), int(args.ht160_enable))
 
+    # Perform pre-capture configuration
+    obj.setup(int(args.disable_ht40), int(args.disable_ht80), int(args.ht160_enable))
     if args.do_6ghz_workaround:
         workaround_cx.stop()
+    time.sleep(5)  # TODO: Add wait-for logic instead of a sleep
 
-    # TODO: Add wait-for logic instead of a sleep
-    time.sleep(5)
-
-    # check
+    # Run capture
     obj.start()
-    obj.cleanup()
 
+    # Capture complete, perform cleanup
+    obj.cleanup()
     if args.do_6ghz_workaround:
         workaround_cx.cleanup()
-
-    # TODO:  Check if passed or not.
 
 
 if __name__ == '__main__':
