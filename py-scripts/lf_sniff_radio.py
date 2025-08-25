@@ -1,46 +1,38 @@
 #!/usr/bin/env python3
+# TODO: Multiple sniffers, grab AID from LANforge station for use in OFDMA sniffing
 """
-    NAME:       lf_sniff_radio.py
-    PURPOSE:    This script will sniff a Radio after changing the Radio settings.
+NAME:       lf_sniff_radio.py
 
-                Radio settings: channel radio mode  AUTO, 802.11a, 802.11b, etc... refer
-                                        py-json/LANforge/set_wifi_radio.py for different modes
+PURPOSE:    This script runs a WiFi packet capture using the provided radio, creating the capture
+            interface as specified.
 
-    EXAMPLE:    python3 lf_sniff_radio.py
-                        --mgr localhost
-                        --mgr_port 8080
-                        --outfile /home/lanforge/test_sniff.pcap
-                        --duration 20
-                        --channel 52
-                        --radio_mode AUTO
-                        --monitor_name moni0a
+EXAMPLE:    # Capture on specified channel for 20 seconds, saving output to file
+            ./lf_sniff_radio.py \
+                --radio     1.1.wiphy0 \
+                --channel   52 \
+                --duration  20 \
+                --outfile   /home/lanforge/wifi_capture.pcap \
 
-    NOTES:
+            # Capture 6 GHz channels on AX210/BE200 radios
+            # This requires workaround for firmware limitation, where radio must detect supported
+            # regulatory domain before enabling 6 GHz channels
+            ./lf_sniff_radio.py \
+                --radio                     1.1.wiphy0 \
+                --duration                  20 \
+                --channel_bw                80 \
+                --channel_freq              5955 \
+                --center_freq               5985 \
+                --6ghz_workaround           \
+                --num_stations              1 \
+                --security                  wpa2 \
+                --ssid                      test_ssid \
+                --password                  lf_axe11000_5g \
+                --6ghz_workaround_scan_time 1
 
-    The configuration of the monitor is: sudo iw dev <monitor> info
-    Sample:
+NOTES:      Configuration utilizes the 'iw' utility to some extent
 
-    [lanforge@ct523c-3b7b ~]$ sudo iw dev SNIFF_5G_40 info
-    Interface SNIFF_5G_40
-    ifindex 2413
-    wdev 0x900000002
-    addr 04:f0:21:85:62:22
-    type monitor
-    wiphy 9
-    channel 36 (5180 MHz), width: 20 MHz (no HT), center1: 5180 MHz
-    txpower 0.00 dBm
-    [lanforge@ct523c-3b7b ~]$
-
-    # manual way to set the center frequency
-     iw dev moni10a set freq <control frequency> <Band width> <center frequency>
-
-    # sometimes the radio wiphy 9 (above) may not match the wiphy radio
-        when iw parent is not matching, can be show with command:
-        cat /sys/class/ieee80211/wiphy0/index
-
-    IK:  two features from lf_sniff that are needed for ofdma sniffing is obtaining the AID
-    and using multiple sniffer radios for targeting multiple stations
-
+            While monitor configuration may largely be viewed through the LANforge GUI,
+            commands like 'iw moni0 info' may be useful to verify configuration.
 """
 import sys
 import os
@@ -212,84 +204,40 @@ def parse_args():
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='lf_sniff_radio.py will create a monitor on LANforge (cli command add_monitor)',
 
-        description='''\
-        This script will sniff a Radio following modifications to its settings.
-         lf_sniff_radio.py will create a monitor and be able to capture wireshark pcap files:
+        description=r"""
+NAME:       lf_sniff_radio.py
 
-        The monitor also uses iw commands to set up the proper bw and frequency to be monitored
+PURPOSE:    This script runs a WiFi packet capture using the provided radio, creating the capture
+            interface as specified.
 
-        Note:
+EXAMPLE:    # Capture on specified channel for 20 seconds, saving output to file
+            ./lf_sniff_radio.py \
+                --radio     1.1.wiphy0 \
+                --channel   52 \
+                --duration  20 \
+                --outfile   /home/lanforge/wifi_capture.pcap \
 
-        iw [options] dev <devname> set freq <freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]
-        dev <devname> set freq <control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]
+            # Capture 6 GHz channels on AX210/BE200 radios
+            # This requires workaround for firmware limitation, where radio must detect supported
+            # regulatory domain before enabling 6 GHz channels
+            ./lf_sniff_radio.py \
+                --radio                     1.1.wiphy0 \
+                --duration                  20 \
+                --channel_bw                80 \
+                --channel_freq              5955 \
+                --center_freq               5985 \
+                --6ghz_workaround           \
+                --num_stations              1 \
+                --security                  wpa2 \
+                --ssid                      test_ssid \
+                --password                  lf_axe11000_5g \
+                --6ghz_workaround_scan_time 1
 
-        Example to monitor channel 36 (5180)
-        sudo iw dev <monitor/devname> set freq 5180 40 5190
+NOTES:      Configuration utilizes the 'iw' utility to some extent
 
-        for bw of 20 do not need to set the control frequency
-
-        Verify the configuration with :(need to do sudo)
-        iw dev <monitor/devname> info
-
-        example:
-        [lanforge@ct523c-3ba3 ~]$ sudo iw dev SNIFF_5G_40 info
-        [sudo] password for lanforge:
-        Interface SNIFF_5G_40
-            ifindex 49
-            wdev 0x2
-            addr d8:f8:83:36:4c:a0
-            type monitor
-            wiphy 0
-            channel 36 (5180 MHz), width: 20 MHz, center1: 5180 MHz
-            txpower 0.00 dBm
-        [lanforge@ct523c-3ba3 ~]$
-
-
-        Help: 5Ghz frequencies
-
-        Tested on 02/16/2023:
-         kernel version: 5.19.17+
-         gui version: 5.4.6
-         the script modified a radio and created a pcap file as expected when ran directly on a lanforge system (ct523c & ct521a).
-
-        ''',
-
-        usage='\n'
-              'Creating a sniffer generally:\n'
-              '\t./lf_sniff_radio.py\n'
-              '\t     --mgr localhost\n'
-              '\t     --mgr_port 8080\n'
-              '\t     --radio wiphy0\n'
-              '\t     --outfile /home/lanforge/test_sniff.pcap\n'
-              '\t     --duration 1\n'
-              '\t     --channel 36\n'
-              '\t     --channel_bw 40\n'
-              '\t     --center_freq 5190\n'
-              '\t     --radio_mode AUTO\n'
-              '\t     --monitor_name moni0\n'
-              '\t\n'
-              'Creating a 6GHz sniffer on AX210/BE200 radios:\n'
-              '\t./lf_sniff_radio.py\n'
-              '\t     --mgr 192.168.0.104\n'
-              '\t     --mgr_port 8080\n'
-              '\t     --radio wiphy7\n'
-              '\t     --outfile /home/lanforge/sniff_6G_80.pcap\n'
-              '\t     --duration 20\n'
-              '\t     //--channel 1e\n'
-              '\t     --channel_bw 80\n'
-              '\t     --channel_freq 5955\n'
-              '\t     --center_freq 5985\n'
-              '\t     --radio_mode AUTO\n'
-              '\t     --monitor_name moni0\n'
-              '\t     --disable_ht40 0\n'
-              '\t     --disable_ht80 0\n'
-              '\t     --ht160_enable 0\n'
-              '\t     --6ghz_workaround\n'
-              '\t     --num_stations 1\n'
-              '\t     --security wpa2\n'
-              '\t     --ssid axe11000_5g\n'
-              '\t     --password lf_axe11000_5g\n'
-              '\t     --6ghz_workaround_scan_time 10')
+            While monitor configuration may largely be viewed through the LANforge GUI,
+            commands like 'iw moni0 info' may be useful to verify configuration.
+        """)
 
     parser.add_argument('--mgr', type=str, help='IP Address of LANforge',
                         default="localhost")
