@@ -148,7 +148,7 @@ class SniffRadio(Realm):
     def start(self):
         self.monitor.admin_up()
         monitor_eid = "1." + str(self.monitor.resource) + "." + self.monitor_name
-        #print("Monitor name: " + self.monitor_name + ", monitor_eid:  " + monitor_eid)
+        logger.debug("Monitor name: " + self.monitor_name + ", monitor_eid:  " + monitor_eid)
         LFUtils.wait_until_ports_appear(self.lfclient_url, monitor_eid, debug=self.debug)
         # TODO:  Use LFUtils.wait_until_ports_admin_up instead of sleep, check return code.
         # time.sleep(5)
