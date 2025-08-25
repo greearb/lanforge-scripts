@@ -199,13 +199,13 @@ class SniffRadio(Realm):
             stdout[0].write(f"{ssh_passwd}\n")
             stdout[0].flush()
 
-            stdout = (stdout[1].readlines())
-            logger.info(f"Set channel/frequency output: {stdout}")
+            stdout = ''.join(stdout[1].readlines())
+            logger.info(f"Set channel/frequency output:\n{stdout}")  # NOTE: This prints out password
 
             # Query channel/frequency
             stdout = ssh.exec_command(cmd1)
-            stdout = (stdout[1].readlines())
-            logger.info(f"Query channel/frequency output: {stdout}")
+            stdout = ''.join(stdout[1].readlines())
+            logger.info(f"Query channel/frequency output:\n{stdout}")
 
         except paramiko.ssh_exception.NoValidConnectionsError as e:
             logger.error(f"Failed to connect over SSH to system '{ssh_root}': {e}")
