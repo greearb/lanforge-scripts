@@ -68,7 +68,7 @@ class SniffRadio(Realm):
                  channel_bw=None,
                  center_freq=None,
                  radio_mode="AUTO",
-                 debug_on_=True,
+                 debug_on_=False,
                  monitor_name=None,
                  sniff_snapshot_bytes=None,
                  sniff_flags=None,
