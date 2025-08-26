@@ -17,11 +17,11 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
                     " use_ssid_idx=0 --radio 'radio==1.1.wiphy0,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
-                    " --endp_type lf_udp,lf_tcp --rates_are_totals --side_a_min_bps=1000000,500000 --side_b_min_bps=300000",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=400000000 --side_b_min_bps=1147000000",
                     " --test_rig TEST_RIG --test_tag 'TEST_L3_2G_BE200_STA_1_W0'",
                     " --tos BK,BE,VI,VO",
-                    " --side_a_min_pdu=1024,MTU",
-                    " --side_b_min_pdu=1024,MTU",
+                    " --side_a_min_pdu=MTU",
+                    " --side_b_min_pdu=MTU",
                     " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
                 ]
             },
@@ -33,8 +33,11 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
                     " use_ssid_idx=1 --radio 'radio==1.1.wiphy0,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
-                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=10000000 --side_b_min_bps 10000000",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=4803800000 --side_b_min_bps=4804000000",
                     " --test_rig TEST_RIG --test_tag 'TEST_L3_5G_BE200_STA_1_W0'",
+                    " --tos BK,BE,VI,VO",
+                    " --side_a_min_pdu=MTU",
+                    " --side_b_min_pdu=MTU",
                     " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
                 ]
             },
@@ -46,11 +49,63 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
                     " use_ssid_idx=2 --radio 'radio==1.1.wiphy0,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
-                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=10000000 --side_b_min_bps=10000000",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=4803800000 --side_b_min_bps=4804000000",
                     " --test_rig TEST_RIG --test_tag 'TEST_L3_6G_BE200_STA_1_W0'",
+                    " --tos BK,BE,VI,VO",
+                    " --side_a_min_pdu=MTU",
+                    " --side_b_min_pdu=MTU",
                     " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
                 ]
             },
+            "TEST_L3_2G_MT7996E_STA_1_W8":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"test_l3.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
+                    " use_ssid_idx=0 --radio 'radio==1.1.wiphy8,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=826000000 --side_b_min_bps=1147000000",
+                    " --test_rig TEST_RIG --test_tag 'TEST_L3_2G_MT7996E_STA_1_W8'",
+                    " --tos BK,BE,VI,VO",
+                    " --side_a_min_pdu=MTU",
+                    " --side_b_min_pdu=MTU",
+                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
+                ]
+            },
+            "TEST_L3_5G_MT7996E_STA_1_W9":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"test_l3.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
+                    " use_ssid_idx=1 --radio 'radio==1.1.wiphy9,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=3843100000 --side_b_min_bps=4804000000",
+                    " --test_rig TEST_RIG --test_tag 'TEST_L3_5G_MT7996E_STA_1_W9'",
+                    " --tos BK,BE,VI,VO",
+                    " --side_a_min_pdu=MTU",
+                    " --side_b_min_pdu=MTU",
+                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
+                ]
+            },
+            "TEST_L3_6G_MT7996E_STA_1_W10":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"test_l3.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
+                    " use_ssid_idx=2 --radio 'radio==1.1.wiphy10,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=9607700000 --side_b_min_bps=9608000000",
+                    " --test_rig TEST_RIG --test_tag 'TEST_L3_6G_MT7996E_STA_1_W10'",
+                    " --tos BK,BE,VI,VO",
+                    " --side_a_min_pdu=MTU",
+                    " --side_b_min_pdu=MTU",
+                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
+                ]
+            },
+
             "TEST_L3_2G_MT7996E_STA_34_W8":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -59,8 +114,11 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
                     " use_ssid_idx=0 --radio 'radio==1.1.wiphy8,stations==34,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
-                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=10000000 --side_b_min_bps=10000000",
-                    " --test_rig TEST_RIG --test_tag 'TEST_L3_2G_MT7996E_STA_1_W8'",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=826000000 --side_b_min_bps=1147000000",
+                    " --test_rig TEST_RIG --test_tag 'TEST_L3_2G_MT7996E_STA_34_W8'",
+                    " --tos BK,BE,VI,VO",
+                    " --side_a_min_pdu=MTU",
+                    " --side_b_min_pdu=MTU",
                     " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
                 ]
             },
@@ -72,8 +130,11 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
                     " use_ssid_idx=1 --radio 'radio==1.1.wiphy9,stations==34,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
-                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=10000000 --side_b_min_bps 10000000",
-                    " --test_rig TEST_RIG --test_tag 'TEST_L3_5G_MT7996E_STA_1_W9'",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=3843100000 --side_b_min_bps=4804000000",
+                    " --test_rig TEST_RIG --test_tag 'TEST_L3_5G_MT7996E_STA_34_W9'",
+                    " --tos BK,BE,VI,VO",
+                    " --side_a_min_pdu=MTU",
+                    " --side_b_min_pdu=MTU",
                     " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
                 ]
             },
@@ -85,8 +146,11 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
                     " use_ssid_idx=2 --radio 'radio==1.1.wiphy10,stations==34,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
-                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=10000000 --side_b_min_bps=10000000",
-                    " --test_rig TEST_RIG --test_tag 'TEST_L3_6G_MT7996E_STA_1_W10'",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=9607700000 --side_b_min_bps=9608000000",
+                    " --test_rig TEST_RIG --test_tag 'TEST_L3_6G_MT7996E_STA_34_W10'",
+                    " --tos BK,BE,VI,VO",
+                    " --side_a_min_pdu=MTU",
+                    " --side_b_min_pdu=MTU",
                     " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
                 ]
             },
