@@ -20,7 +20,6 @@ Scripts will be kept backwards and forwards compatible with LANforge releases as
 - [Quick Tips](#quick-tips)
   - [Documentation Links](#documentation-links)
   - [Basic Terminology](#basic-terminology)
-  - [Exploring LANforge JSON API/Crafting CLI Commands](#exploring-lanforge-json-apicrafting-cli-commands)
 - [Scripts/Automation by Type](#scriptsautomation-by-type)
   - [Creation/Configuration Scripts](#creationconfiguration-scripts)
   - [Chamber View Scripts](#chamber-view-scripts)
@@ -28,6 +27,7 @@ Scripts will be kept backwards and forwards compatible with LANforge releases as
   - [Utility Scripts](#utility-scripts)
   - [Library Code Scripts](#library-code-scripts) (Not suggested)
   - [Unsorted or Older Scripts](#unsorted-or-older-scripts)
+- [Exploring LANforge HTTP API/Crafting CLI Commands](#exploring-lanforge-http-apicrafting-cli-commands)
 - [License](#license)
 
 ## Setup and Installation
@@ -82,33 +82,6 @@ If you would like to contribute to LANforge scripts, please read the [`CONTRIBUT
 | EID                  | Entity identifier. Uniquely identifies LANforge object with meaning depending on context (e.g. in 'Port Mgr' tab, EID identifies a port)                                |
 | Port EID             | Comes in format shelf, resource, port number/name, e.g. '1.1.wiphy0'. For automation pourposes, shelf and even resource may be omitted. Assumed to be '1' in that case. |
 | STA, Station, Client | Interchangable terms used to refer to a WiFi device (emulated or real)                                                                                                  |
-
-### Exploring LANforge JSON API/Crafting CLI Commands
-
-When the LANforge GUI is running, a user can use the web-based LANforge Command Composer tool to generate CLI commands, either for use directly through the telnet interface (port 4001) or indirectly through the `cli-json/` LANFORGE JSON API endpoint.
-
-To access this tool, perform the following steps:
-
-1. Navigate to the Help page (either from the LANforge or remotely)
-
-   - From the LANforge system (e.g. through VNC): [`http://localhost:8080/help`](http://localhost:8080/help)
-   - Remotely:
-     - Directly by IP address: `http://192.168.1.101:8080/help`
-     - If your network supports DNS resolution: `http://ct523c-cafe:8080/help`
-
-2. Click on the link for your desired command, e.g. `add_sta`
-
-   - Each CLI command will display two links. The link _on the left side_ takes you to the Command Composer tool
-
-3. Set the desired fields for the command
-
-4. Click the `Parse Command` at the top
-   - This generates CLI output for the fields you configured at the top of the webpage
-   - Generated output includes:
-     - CLI command for use in the telnet interface
-     - Commands to manually send data to the `cli-json/` LANFORGE JSON API endpoint
-
-More information on other LANforge JSON API endpoints can be by navigating to the main (root) endpoint `http://localhost:8080/` or querying it through `curl` (very verbose, e.g. `curl http://localhost:8080 | jq`).
 
 ## Scripts/Automation by Type
 
@@ -249,6 +222,53 @@ Unsorted and generally older scripts. These are generally not regularly used and
 | `test_refcnt.pl`                | creates MAC-VLANs and curl requests for each                                                                                                                         |
 | `wait_on_ports.pl`              | waits on ports to have IP addresses, can up/down port to stimulate new DHCP lease                                                                                    |
 | `wifi-roaming-times.pl`         | parses `wpa_supplicant_log.wiphyX` file to determine roaming times                                                                                                   |
+
+## Exploring LANforge HTTP API/Crafting CLI Commands
+
+**NOTE:** The term endpoint may be confusing, as you may also see the term 'endpoint' refer to traffic generation endpoints. In this section, all reference to 'endpoint' refers
+to the HTTP version unless indicated otherwise.
+
+### HTTP API/CLI Commands Overview
+
+When the LANforge GUI is running, a user can query and configure their LANforge system using the LANforge HTTP API. This service runs on port 8080 *wherever the LANforge GUI runs*
+and exposes HTTP API endpoints for various uses. Additionally, the manager exposes the direct CLI via a telnet-like interface on port 4001. However, for all but the most advanced
+users, we recommend the HTTP API.
+
+Most HTTP endpoints exist to query the system and generally match 1:1 with tabs in the LANforge GUI. The data available from query HTTP endpoints is returned as JSON and matches the data
+available in the respective GUI tab (in the table). By default, though, only a limited set of data is returned for each endpoint. However, more specific fields may be queried as needed.
+HTTP endpoints for configuration include `/cli-json/` and `/cli-form/`, both of which accept CLI commands in JSON and URL-encoded formats, respectively.
+
+Information on available HTTP API endpoints is available at the main/root HTTP endpoint `http://GUI_SYSTEM_IP_HERE:8080/`, accessible via browser or by querying it
+through `curl` (very verbose, e.g. `curl http://GUI_SYSTEM_IP_HERE:8080 | jq`). Additional information is available in our online documentation as well as in the HTTP
+API help page `http://GUI_SYSTEM_IP_HERE:8080/help`.
+
+### System Configuration with Command Composer
+
+In order to better understand and use the HTTP API and CLI commands for system *configuration*, LANforge offers the web-based LANforge Command Composer. With this tool, a user can
+dynamically generate CLI commands, either for use via the HTTP API via the `/cli-json/` and `/cli-form/` endpoints or directly through the telnet interface (port 4001).
+
+To access and use this tool, perform the following steps:
+
+1. Navigate to the 'Help' page (either from the LANforge or remotely)
+
+   - Note that the IP or hostname should be the system where the *GUI* is running
+   - From the LANforge system (e.g. through VNC): `http://localhost:8080/help`
+   - Remotely:
+     - Directly by IP address: `http://192.168.1.101:8080/help`
+     - Via DNS resolution, if supported by your network: `http://ct523c-cafe:8080/help`
+
+2. Click on the link on the _left_ for your desired command, e.g. `add_sta`
+
+   - Each CLI command will display two links. The link _on the left side_ takes you to the Command Composer tool.
+     The right link takes you to the command in our CLI reference documentation.
+
+3. Set the desired fields for the command
+
+4. Click the `Parse Command` at the top
+   - This generates CLI output for the fields you configured at the top of the webpage
+   - Generated output includes:
+     - CLI command for use in the telnet interface
+     - Commands to manually send data to the `/cli-json/` and `/cli-form/` LANforge HTTP API endpoints
 
 ## License
 
