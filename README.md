@@ -20,14 +20,13 @@ Please contact [`support@candelatech.com`](mailto:support@candelatech.com) if yo
 
 - [Overview](#overview)
 - [Contents](#contents)
+- [Quick Tips](#quick-tips)
+  - [Documentation Links](#documentation-links)
+  - [Basic Terminology](#basic-terminology)
 - [Setup and Installation](#setup-and-installation)
   - [Installing from Source Prerequisites](#installing-from-source-prerequisites)
   - [Installing from Source Setup](#installing-from-source-setup)
   - [Installing from Source Perl Scripts/Automation Setup](#installing-from-source-perl-scriptsautomation-setup)
-- [Advanced Usage/Library-style Code](#advanced-usage-library-style-code)
-- [Quick Tips](#quick-tips)
-  - [Documentation Links](#documentation-links)
-  - [Basic Terminology](#basic-terminology)
 - [Scripts/Automation by Type](#scriptsautomation-by-type)
   - [Creation/Configuration Scripts](#creationconfiguration-scripts)
   - [Chamber View Scripts](#chamber-view-scripts)
@@ -35,9 +34,33 @@ Please contact [`support@candelatech.com`](mailto:support@candelatech.com) if yo
   - [Utility Scripts](#utility-scripts)
   - [Library Code Scripts](#library-code-scripts) (Not suggested)
   - [Unsorted or Older Scripts](#unsorted-or-older-scripts)
-- [Exploring LANforge HTTP API/Crafting CLI Commands](#exploring-lanforge-http-apicrafting-cli-commands)
-- [Configure Non-Root Serial Access](#configure-non-root-serial-access)
+- [Advanced Usage/Library-style Code](#advanced-usage-library-style-code)
+  - [LANforge HTTP API and Telnet CLI](#lanforge-http-api-and-telnet-cli)
+    - [LANforge HTTP API and Telnet CLI Commands Overview](#lanforge-http-api-and-telnet-cli-commands-overview)
+    - [LANforge Command Composer (Interactive HTTP API and CLI Tool)](#lanforge-command-composer-interactive-http-api-and-cli-tool)
+- [Additional System Configuration](#additional-system-configuration)
+  - [Configure Non-Root Serial Access](#configure-non-root-serial-access)
 - [License](#license)
+
+## Quick Tips
+
+### Documentation Links
+
+- [LANforge Scripts/Automation Installation](#setup-and-installation)
+- [LANforge CLI Users Guide](https://www.candelatech.com/lfcli_ug.php)
+- [LANforge Scripting Cookbook](http://www.candelatech.com/scripting_cookbook.php)
+- [Querying the LANforge JSON API using Python Cookbook](https://www.candelatech.com/cookbook/cli/json-python)
+
+### Basic Terminology
+
+| Name                 | Definition                                                                                                                                                              |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Port                 | Network interface (station, 802.1Q VLAN, Ethernet), WiFi radio, etc.                                                                                                    |
+| Resource             | LANforge system ID. For example, a two LANforge system testbed would have two LANforge resources.                                                                       |
+| Shelf                | Generally can be omitted for automation purposes (e.g. '1.1.wlan0' same as '1.wlan0'), but some scripts/automation may not permit this.                                 |
+| EID                  | Entity identifier. Uniquely identifies LANforge object with meaning depending on context (e.g. in 'Port Mgr' tab, EID identifies a port)                                |
+| Port EID             | Comes in format shelf, resource, port number/name, e.g. '1.1.wiphy0'. For automation pourposes, shelf and even resource may be omitted. Assumed to be '1' in that case. |
+| STA, Station, Client | Interchangable terms used to refer to a WiFi device (emulated or real)                                                                                                  |
 
 ## Setup and Installation
 
@@ -81,7 +104,7 @@ Please ensure the following criteria are met before installing LANforge scripts 
 3. Known target LANforge software version
 
    - **We strongly encourage matching the version of LANforge scripts to the version installed on your LANforge**, unless there is a specific need
-   (e.g. new feature or bug fix). While not recommended, it is possible to use the latest version as well.
+     (e.g. new feature or bug fix). While not recommended, it is possible to use the latest version as well.
 
 #### Installing from Source Setup
 
@@ -155,39 +178,6 @@ To use LANforge Perl automation, the system which will run the scripts must have
 | JSON::PrettyPrint | perl-JSON-PP       | No, but useful for debugging |
 | Pexpect           | python3-pexpect    | Yes                          |
 | XlsxWriter        | python3-xlsxwriter | Yes, for Xlsx output         |
-
-## Advanced Usage, Library-style Code
-
-For more advanced users wanting to develop their own automation, we offer the following:
-
-- Auto-generated Python library in [`lanforge_client/`](./lanforge_client/)
-  - **NOTE: This library is under development and subject to change as it progresses.**
-  - Designed to make LANforge CLI commands and LANforge JSON API endpoints available in Python.
-  - See the [`README`](./lanforge_client/README.md) for more details.
-- Perl modules in [`LANforge/`](./LANforge/)
-  - See the [`README`](./LANforge/README.md) for more details.
-
-If you would like to contribute to LANforge scripts, please read the [`CONTRIBUTING.md`](./CONTRIBUTING.md) document for more information.
-
-## Quick Tips
-
-### Documentation Links
-
-- [Python Automation Setup](./py-scripts/README.md) (requires Python 3.7+, which is backwards compatible to Fedora 27 systems)
-- [LANforge CLI Users Guide](https://www.candelatech.com/lfcli_ug.php)
-- [LANforge Scripting Cookbook](http://www.candelatech.com/scripting_cookbook.php)
-- [Querying the LANforge JSON API using Python Cookbook](https://www.candelatech.com/cookbook/cli/json-python)
-
-### Basic Terminology
-
-| Name                 | Definition                                                                                                                                                              |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Port                 | Network interface (station, 802.1Q VLAN, Ethernet), WiFi radio, etc.                                                                                                    |
-| Resource             | LANforge system ID. For example, a two LANforge system testbed would have two LANforge resources.                                                                       |
-| Shelf                | Now unused identifier for a set of LANforge resources. Generally can be omitted for automation purposes (e.g. '1.1.wlan0' same as '1.wlan0')                            |
-| EID                  | Entity identifier. Uniquely identifies LANforge object with meaning depending on context (e.g. in 'Port Mgr' tab, EID identifies a port)                                |
-| Port EID             | Comes in format shelf, resource, port number/name, e.g. '1.1.wiphy0'. For automation pourposes, shelf and even resource may be omitted. Assumed to be '1' in that case. |
-| STA, Station, Client | Interchangable terms used to refer to a WiFi device (emulated or real)                                                                                                  |
 
 ## Scripts/Automation by Type
 
@@ -332,16 +322,35 @@ Unsorted and generally older scripts. These are generally not regularly used and
 | `wait_on_ports.pl`              | waits on ports to have IP addresses, can up/down port to stimulate new DHCP lease                                                                                    |
 | `wifi-roaming-times.pl`         | parses `wpa_supplicant_log.wiphyX` file to determine roaming times                                                                                                   |
 
-## Exploring LANforge HTTP API/Crafting CLI Commands
+## Advanced Usage, Library-style Code
+
+For more advanced users wanting to looking their own automation, we offer the following:
+
+- Auto-generated Python library in [`lanforge_client/`](./lanforge_client/)
+
+  - **NOTE: This library is under development and subject to change as it progresses.**
+  - Designed to make LANforge CLI commands and LANforge JSON API endpoints available in Python.
+
+  - See the [`README`](./lanforge_client/README.md) for more details.
+
+- Perl modules in [`LANforge/`](./LANforge/)
+
+  - See the [`README`](./LANforge/README.md) for more details.
+
+If you would like to contribute to LANforge scripts, please read the [`CONTRIBUTING.md`](./CONTRIBUTING.md) document for more information.
+
+### LANforge HTTP API and Telnet CLI
 
 **NOTE:** The term endpoint may be confusing, as you may also see the term 'endpoint' refer to traffic generation endpoints. In this section, all reference to 'endpoint' refers
 to the HTTP version unless indicated otherwise.
 
-### HTTP API/CLI Commands Overview
+#### LANforge HTTP API and Telnet CLI Commands Overview
 
-When the LANforge GUI is running, a user can query and configure their LANforge system using the LANforge HTTP API. This service runs on port 8080 _wherever the LANforge GUI runs_
-and exposes HTTP API endpoints for various uses. Additionally, the manager exposes the direct CLI via a telnet-like interface on port 4001. However, for all but the most advanced
-users, we recommend the HTTP API.
+When the LANforge GUI is running, a user can query and configure their LANforge system using the LANforge HTTP API and/or the telnet CLI.
+
+The HTTP API (recommended) service runs on port 8080 _wherever the LANforge GUI runs_ and exposes HTTP API endpoints for various uses.
+Separately, the LANforge testbed manager exposes direct LANforge CLI access via a telnet-like interface on port 4001. However, we recommend
+the HTTP API for most use cases.
 
 Most HTTP endpoints exist to query the system and generally match 1:1 with tabs in the LANforge GUI. The data available from query HTTP endpoints is returned as JSON and matches the data
 available in the respective GUI tab (in the table). By default, though, only a limited set of data is returned for each endpoint. However, more specific fields may be queried as needed.
@@ -351,7 +360,7 @@ Information on available HTTP API endpoints is available at the main/root HTTP e
 through `curl` (very verbose, e.g. `curl http://GUI_SYSTEM_IP_HERE:8080 | jq`). Additional information is available in our online documentation as well as in the HTTP
 API help page `http://GUI_SYSTEM_IP_HERE:8080/help`.
 
-### System Configuration with Command Composer
+#### LANforge Command Composer (Interactive HTTP API and CLI Tool)
 
 In order to better understand and use the HTTP API and CLI commands for system _configuration_, LANforge offers the web-based LANforge Command Composer. With this tool, a user can
 dynamically generate CLI commands, either for use via the HTTP API via the `/cli-json/` and `/cli-form/` endpoints or directly through the telnet interface (port 4001).
@@ -379,7 +388,9 @@ To access and use this tool, perform the following steps:
      - CLI command for use in the telnet interface
      - Commands to manually send data to the `/cli-json/` and `/cli-form/` LANforge HTTP API endpoints
 
-## Configure Non-Root Serial Access
+## Additional System Configuration
+
+### Configure Non-Root Serial Access
 
 Some automation requires accessing a DUT over a USB serial port (e.g. `/dev/ttyUSB0`). By default, you must explicitly allow users to access serial devices
 on Linux. Otherwise, using a USB serial device requires root permissions (e.g. have to use `sudo`). For automation, we generally suggest _not_ running with
