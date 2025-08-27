@@ -1,3 +1,4 @@
 # LANforge Scripts Sandbox
 
 Staging area for new LANforge scripts, in various states of functionality.
+These scripts generally are not included in automated code quality checks.
