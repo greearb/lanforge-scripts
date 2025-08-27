@@ -37,6 +37,7 @@ Please contact [`support@candelatech.com`](mailto:support@candelatech.com) if yo
 - [Advanced Usage/Library-style Code](#advanced-usage-library-style-code)
   - [LANforge HTTP API and Telnet CLI](#lanforge-http-api-and-telnet-cli)
     - [LANforge HTTP API and Telnet CLI Commands Overview](#lanforge-http-api-and-telnet-cli-commands-overview)
+    - [Querying LANforge HTTP API](#querying-lanforge-http-api)
     - [LANforge Command Composer (Interactive HTTP API and CLI Tool)](#lanforge-command-composer-interactive-http-api-and-cli-tool)
 - [Additional System Configuration](#additional-system-configuration)
   - [Configure Non-Root Serial Access](#configure-non-root-serial-access)
@@ -59,8 +60,10 @@ Please contact [`support@candelatech.com`](mailto:support@candelatech.com) if yo
 | Resource             | LANforge system ID. For example, a two LANforge system testbed would have two LANforge resources.                                                                       |
 | Shelf                | Generally can be omitted for automation purposes (e.g. '1.1.wlan0' same as '1.wlan0'), but some scripts/automation may not permit this.                                 |
 | EID                  | Entity identifier. Uniquely identifies LANforge object with meaning depending on context (e.g. in 'Port Mgr' tab, EID identifies a port)                                |
-| Port EID             | Comes in format shelf, resource, port number/name, e.g. '1.1.wiphy0'. For automation pourposes, shelf and even resource may be omitted. Assumed to be '1' in that case. |
+| Port EID             | Comes in format shelf, resource, port number/name, e.g. '1.1.wiphy0'. For automation pourposes, shelf and even resource may be omitted. Assumed to be '1' in such case. |
+| Attenuator EID       | Comes in format shelf, resource, attenuator serial, e.g. '1.1.4314'. For automation pourposes, shelf and even resource may be omitted. Assumed to be '1' in such case.  |
 | STA, Station, Client | Interchangable terms used to refer to a WiFi device (emulated or real)                                                                                                  |
+| Endpoint             | Overloaded term which can refer to traffic generation endpoint or LANforge HTTP API endpoint. Meaning depends on context.                                               |
 
 ## Setup and Installation
 
@@ -342,23 +345,91 @@ If you would like to contribute to LANforge scripts, please read the [`CONTRIBUT
 ### LANforge HTTP API and Telnet CLI
 
 **NOTE:** The term endpoint may be confusing, as you may also see the term 'endpoint' refer to traffic generation endpoints. In this section, all reference to 'endpoint' refers
-to the HTTP version unless indicated otherwise.
+to the HTTP version unless indicated otherwise. Please see [this section](#basic-terminology) for more commonly-used LANforge terminology.
 
 #### LANforge HTTP API and Telnet CLI Commands Overview
 
-When the LANforge GUI is running, a user can query and configure their LANforge system using the LANforge HTTP API and/or the telnet CLI.
+When the LANforge GUI is running, a user can query and configure their LANforge system using the LANforge HTTP API and/or the [telnet LANforge CLI](https://www.candelatech.com/lfcli_ug.php).
 
-The HTTP API (recommended) service runs on port 8080 _wherever the LANforge GUI runs_ and exposes HTTP API endpoints for various uses.
-Separately, the LANforge testbed manager exposes direct LANforge CLI access via a telnet-like interface on port 4001. However, we recommend
-the HTTP API for most use cases.
+The HTTP API service runs on port 8080 _wherever the LANforge GUI runs_ and exposes HTTP API endpoints for various uses. Separately, the
+LANforge testbed manager exposes direct LANforge CLI access via a telnet-like interface on port 4001. We recommend the HTTP API for most use cases.
 
-Most HTTP endpoints exist to query the system and generally match 1:1 with tabs in the LANforge GUI. The data available from query HTTP endpoints is returned as JSON and matches the data
-available in the respective GUI tab (in the table). By default, though, only a limited set of data is returned for each endpoint. However, more specific fields may be queried as needed.
-HTTP endpoints for configuration include `/cli-json/` and `/cli-form/`, both of which accept CLI commands in JSON and URL-encoded formats, respectively.
+Most HTTP endpoints exist to query the system and generally match 1:1 with tabs in the LANforge GUI. The data available from query HTTP endpoints is
+returned as JSON and corresponds to the data available in the respective GUI tab (in the table). By default, only a limited set of data is returned
+for each endpoint. However, more specific fields may be queried as needed. HTTP endpoints for configuration include `/cli-json/` and `/cli-form/`,
+both of which accept CLI commands in JSON and URL-encoded formats, respectively.
 
 Information on available HTTP API endpoints is available at the main/root HTTP endpoint `http://GUI_SYSTEM_IP_HERE:8080/`, accessible via browser or by querying it
 through `curl` (very verbose, e.g. `curl http://GUI_SYSTEM_IP_HERE:8080 | jq`). Additional information is available in our online documentation as well as in the HTTP
 API help page `http://GUI_SYSTEM_IP_HERE:8080/help`.
+
+#### Querying LANforge HTTP API
+
+**For users developing automation directly in Python, the LANforge HTTP API Python code available [here](./lanforge_client/) may be easier to use (less boilerplate).**
+Reference automation for querying the LANforge HTTP API in Python directly (not recommended) is available [here](./py-scripts/examples/README.md).
+
+For most users, the existing scripts/automation are sufficient for configuring the LANforge system. However, often times users may want to query system
+state while a test is running (e.g. get station statistics). What follows is a quick walk through of querying the HTTP API directly. **This section
+uses a specific example, but the concepts apply to all LANforge HTTP API endpoints for querying data.**
+
+As detailed in [the previous section](#lanforge-http-api-and-telnet-cli-commands-overview), the LANforge HTTP API endpoints for querying system state
+generally correspond 1:1 with LANforge GUI tabs. Data returned by invoking the endpoints corresponds to the data present in the respective tab (including
+data not shown in hidden columns).
+
+Take for example a use case like querying station statistics. This data is present in the 'Port Mgr' tab and includes fields like IP address, SSID, BSSID,
+link rates, mode, and much more. Through the LANforge HTTP API, this data is available by querying the `/ports/` HTTP API endpoint, specifically using an
+HTTP GET request. In this example, we will perform several different queries depending on the data desired beginning with the simplest example and working
+up to a more complicated query.
+
+1. **Querying basic data for all ports**
+
+   Let's first start by running a query for basic data on all ports. The following `curl` command line CLI will return some basic information (keep the `| jq`
+   portion to pretty print the data). Notably, though, _this will only return a small portion of all available data for each port_.
+
+   ```Bash
+   # Assumes LANforge GUI running at IP 192.168.1.101 (e.g. LANforge system)
+   # The '-s' flag means silent limiting output to only returned data
+   curl -s 192.168.1.101:8080/ports | jq
+   ```
+
+   As you may see, this command line CLI will only return a portion of available data data for all available ports in the testbed.
+
+2. **Query verbose data for a specific port**
+
+   Say instead, we would like to query for data for the specific port `1.1.wlan0` (recall that the format of this EID is shelf, resource, and port name/number).
+   In this case, the following CLI command will query data for only this specific port. However, since it only queries one port, the LANforge HTTP API _will return more
+   verbose data than when querying all ports_.
+
+   ```Bash
+   # Query basic data for only port '1.1.wlan0'
+   curl -s 192.168.1.101:8080/ports | jq
+   ```
+
+3. **Query specific data for both all ports and a specific port**
+
+   Now that we've queried basic data for all ports and more verbose data for a specific port, let's finish by running a **query for specific data from all ports**.
+   Keep in mind that _when querying specific data, we must specify all desired fields_. The data returned in a basic query will not be returned here unless
+   we specify it.
+
+   For querying specific data, we must specify the desired data using the `?fields=` portion of the URL and comma-separate the values. These fields match the
+   columns in a given tab, in this case the 'Port Mgr' tab. Generally, you can take the name and convert it to lowercase to query it. For example, to query the
+   fields 'Alias', 'Down, 'Phantom', and 'Signal, you would add the following to the LANforge HTTP API URL `?fields=alias,down,phantom,signal`. That said, fields
+   with special characters require an additional step.
+
+   Since fields are specified via URL and URLs have specific format requirements, **special characters like spaces must be _percent-encoded_**. For example, the field
+   'Rx Bytes' is specified like `rx%20bytes` when URL-encoded (or `rx+bytes` with shorthand). Adding a space to a URL, for example `?fields=rx bytes` results in an
+   _invalid URL_. See [this webpage](https://en.wikipedia.org/wiki/Percent-encoding) for more information on percent-encoding.
+
+   Taking all these concepts, the following command line CLI examples will query specific fields for all ports and the `1.1.wlan0` port. The specific fields queried
+   here are the basic fields in addition to `IP`, `SSID`, `AP` (BSSID), `Signal`, `Mode`, `Rx-Rate`, `Tx-Rate`, `Rx Bytes`, and `Tx Bytes`.
+
+   ```Bash
+   # Query specific data for all ports
+   curl -s 192.168.1.101:8080/ports?fields=alias,down,phantom,ip,ssid,ap,signal,mode,rx-rate,tx-rate,rx+bytes,tx+bytes | jq
+
+   # Query specific data for only port '1.1.wlan0'
+   curl -s 192.168.1.101:8080/ports/1/1/wlan0?fields=alias,down,phantom,ip,ssid,ap,signal,mode,rx-rate,tx-rate,rx+bytes,tx+bytes | jq
+   ```
 
 #### LANforge Command Composer (Interactive HTTP API and CLI Tool)
 
@@ -367,26 +438,50 @@ dynamically generate CLI commands, either for use via the HTTP API via the `/cli
 
 To access and use this tool, perform the following steps:
 
-1. Navigate to the 'Help' page (either from the LANforge or remotely)
+1. In a browser, navigate to the LANforge HTTP API 'Help' page
 
    - Note that the IP or hostname should be the system where the _GUI_ is running
-   - From the LANforge system (e.g. through VNC): `http://localhost:8080/help`
-   - Remotely:
-     - Directly by IP address: `http://192.168.1.101:8080/help`
-     - Via DNS resolution, if supported by your network: `http://ct523c-cafe:8080/help`
+   - If the GUI is running on the LANforge system (assume LANforge IP address `192.168.1.101`):
 
-2. Click on the link on the _left_ for your desired command, e.g. `add_sta`
+     - Access from the LANforge system (e.g. in Firefox through VNC session):
+
+       `http://localhost:8080/help`
+
+     - Remotely (e.g. from your laptop):
+
+       - Directly by IP address:
+
+         `http://192.168.1.101:8080/help`
+
+       - Via DNS resolution, if supported by your network:
+
+         `http://ct523c-cafe:8080/help`
+
+2. For the desired command (e.g. `add_sta`), click the _left_ link
 
    - Each CLI command will display two links. The link _on the left side_ takes you to the Command Composer tool.
      The right link takes you to the command in our CLI reference documentation.
 
 3. Set the desired fields for the command
 
+   - You'll likely need to reference the [LANforge CLI](https://www.candelatech.com/lfcli_ug.php) for this
+
 4. Click the `Parse Command` at the top
-   - This generates CLI output for the fields you configured at the top of the webpage
+
+   - This generates multiple outputs at the top of the webpage, all of which perform the same operation
    - Generated output includes:
-     - CLI command for use in the telnet interface
-     - Commands to manually send data to the `/cli-json/` and `/cli-form/` LANforge HTTP API endpoints
+     - Command line CLI (via `curl`) to manually invoke the `/cli-json/` and `/cli-form/` LANforge HTTP API endpoints
+       - The `/cli-json/` and `/cli-form/` HTTP API endpoints accept JSON and URL-encoded LANforge CLI data, respectively, both via HTTP POST
+     - [LANforge CLI](https://www.candelatech.com/lfcli_ug.php) command for use in the telnet interface
+
+5. Test the generated command line CLIs through the LANforge HTTP API
+
+   - Use one of the `curl` CLI commands for use in command line. The other generated output is for the telnet LANforge CLI interface
+   - For example, the following command will delete the port `1.1.wlan0`:
+
+     ```Bash
+     curl -sqv -H "Accept: application/json" -H "Content-type: application/json" -X POST -d '@/tmp/json_data' http://localhost:8080/cli-json/rm_vlan`
+     ```
 
 ## Additional System Configuration
 
