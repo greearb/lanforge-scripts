@@ -102,19 +102,3 @@ For Python scripts in `py-scripts/`, run the script with the `--help_summary` op
 Additionally, Python scripts support a `--help` option which prints all arguments supported by a given script.
 
 To learn more about automating Chamber View tests like TR-398, WiFi Capacity Test, and others, see the [Chamber View Examples](./cv_examples/README.md) subdirectory for more information.
-
-## Scripts accessing Serial ports.
-
-On Linux, you must explicitly allow users to access serial devices. Otherwise, using a USB serial device requires root permissions (e.g. have to use `sudo`).
-
-There are several methods to do so, each depending on the distribution (all requiring root access to the system). Often the easiest is to perform the following:
-
-1. Add your user to the `dialout` and `tty` groups
-
-   ```Bash
-   sudo usermod -a -G dialout,tty $USER
-   ```
-
-2. Log out and log back in (full logout required, not just closing the terminal)
-
-   - Can also run the `newgrp` command, but this will only affect the currently running login session (i.e. that shell)
