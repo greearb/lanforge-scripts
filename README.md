@@ -28,6 +28,7 @@ Scripts will be kept backwards and forwards compatible with LANforge releases as
   - [Library Code Scripts](#library-code-scripts) (Not suggested)
   - [Unsorted or Older Scripts](#unsorted-or-older-scripts)
 - [Exploring LANforge HTTP API/Crafting CLI Commands](#exploring-lanforge-http-apicrafting-cli-commands)
+- [Configure Non-Root Serial Access](#configure-non-root-serial-access)
 - [License](#license)
 
 ## Setup and Installation
@@ -158,7 +159,7 @@ Scripts/automation to perform small tasks on the system but not run tests or con
 | [`check_large_files.sh`](./check_large_files.bash)              | Utility script to increase available disk space by removing old kernels, logs, etc. as prompted                                                         |
 | [`csv_convert.py`](./py-scripts/csv_convert.py)                 | Python script to read in a LANforge Dataplane CSV file and output a csv file that works with a customer's RvRvO visualization tool.                     |
 | [`csv_processor.py`](./py-scripts/csv_processor.py)             | Python script to assist processing csv files                                                                                                            |
-| [`lf_log_parse.pl](./lf_log_parse.pl)                           | Convert the timestamp in LANforge logs (it is in unix-time, miliseconds) to readable date                                                               |
+| [`lf_log_parse.pl`](./lf_log_parse.pl)                          | Convert the timestamp in LANforge logs (it is in unix-time, miliseconds) to readable date                                                               |
 | [`lf_monitor.pl`](./lf_monitor.pl)                              | Monitor L4 connections                                                                                                                                  |
 | [`lf_parse_tshark_log.pl`](./lf_parse_tshark_log.pl)            | Basic parsing of tshark logs                                                                                                                            |
 | [`print_udev.sh`](./print_udev.sh)                              | Prints out Linux `udev` rules describing how to name ports by MAC address                                                                               |
@@ -269,6 +270,25 @@ To access and use this tool, perform the following steps:
    - Generated output includes:
      - CLI command for use in the telnet interface
      - Commands to manually send data to the `/cli-json/` and `/cli-form/` LANforge HTTP API endpoints
+
+## Configure Non-Root Serial Access
+
+Some automation requires accessing a DUT over a USB serial port (e.g. `/dev/ttyUSB0`). By default, you must explicitly allow users to access serial devices
+on Linux. Otherwise, using a USB serial device requires root permissions (e.g. have to use `sudo`). For automation, we generally suggest _not_ running with
+root permissions where possible.
+
+There are several methods to configure this, each depending on the distribution (all require root access to the system). Often the easiest is to perform
+the following:
+
+1. Add your user to the `dialout` and `tty` groups
+
+   ```Bash
+   sudo usermod -a -G dialout,tty $USER
+   ```
+
+2. Log out and log back in (full logout required, not just closing the terminal)
+
+   - Can also run the `newgrp` command, but this will only affect the currently running login session (i.e. that shell)
 
 ## License
 
