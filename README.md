@@ -1,21 +1,29 @@
 # LANforge Perl, Python, and Shell Scripts
 
-**This repository contains a collection of scripts and Python and Perl-based scripting libraries designed to automate LANforge systems.**
-
-Please contact [`support@candelatech.com`](mailto:support@candelatech.com) if you have any questions or encounter issues.
-
 ## Overview
 
-These scripts span a variety of use cases, including automating Chamber View tests, configuring LANforge ports and traffic pairs, and much more.
+**This repository contains a collection of scripts and Python and Perl-based scripting libraries designed to automate LANforge systems.**
 
+These scripts span a variety of use cases, including automating Chamber View tests, configuring LANforge ports and traffic pairs, and much more.
 Scripts will be kept backwards and forwards compatible with LANforge releases as much as possible.
+
+**No additional setup is required to run these scripts on a system with LANforge pre-installed**. On your LANforge system, you can find this repository in the
+`/home/lanforge/scripts/` directory. The contents of the directory match the version of LANforge installed on your system (see the
+[tagged releases](https://github.com/greearb/lanforge-scripts/tags) for tagged versions of scripts/automation).
+
+As currently implemented, scripts in this repository require the directory structure as present. Many scripts import from and call into each other (primarily Python),
+so modifying script location will likely break script assumptions. Things that may break assumptions and prevent script usage include moving the script to another directory.
+
+Please contact [`support@candelatech.com`](mailto:support@candelatech.com) if you have any questions or encounter issues.
 
 ## Contents
 
 - [Overview](#overview)
 - [Contents](#contents)
 - [Setup and Installation](#setup-and-installation)
-  - [Perl Scripts](#perl-scripts)
+  - [Installing from Source Prerequisites](#installing-from-source-prerequisites)
+  - [Installing from Source Setup](#installing-from-source-setup)
+  - [Installing from Source Perl Scripts/Automation Setup](#installing-from-source-perl-scriptsautomation-setup)
 - [Advanced Usage/Library-style Code](#advanced-usage-library-style-code)
 - [Quick Tips](#quick-tips)
   - [Documentation Links](#documentation-links)
@@ -33,13 +41,110 @@ Scripts will be kept backwards and forwards compatible with LANforge releases as
 
 ## Setup and Installation
 
-**No additional setup is required to run these scripts on a system with LANforge pre-installed**. On your LANforge system, you can find this repository in the `/home/lanforge/scripts/` directory. (e.g. CT523c, CT521b). The contents of the directory match the version of LANforge installed on your system (see the [tagged releases](https://github.com/greearb/lanforge-scripts/tags) for tagged versions of scripts/automation).
+There are two primary methods to use LANforge scripts:
 
-To setup and use these scripts on a system without LANforge pre-installed or to use a specific version (e.g. specific LANforge release), please follow the instructions outlined in the [LANforge Python Scripts README](./py-scripts/README.md).
+1. Using the version available on your pre-installed LANforge system (**no setup required**)
 
-As currently implemented, scripts in this repository require the directory structure as present. Many scripts import from and call into each other (primarily Python), so modifying script location will likely break script assumptions. Things that may break assumptions and prevent script usage include moving the script to another directory.
+   On pre-installed LANforge systems, LANforge scripts are installed in `/home/lanforge/scripts/py-scripts/`. No setup is required
+   (dependencies come pre-installed), as this is done for you during install/upgrades.
 
-### Perl Scripts
+   Pre-installed scripts in `/home/lanforge/scripts/py-scripts/` match the LANforge software version already installed on the system.
+
+2. By installing from the Git repository (repository [here](https://github.com/greearb/lanforge-scripts))
+
+   Installation from source is generally required for users looking to configure LANforge automation on a system where LANforge isn't pre-installed,
+   install a specific version, or more advanced use cases, installation/setup is required.
+
+   Instructions for this are detailed in [this section](#installing-from-source).
+
+### Installing from Source
+
+#### Installing from Source Prerequisites
+
+For users who clone or download these scripts from the Git repo, some setup is required. This process is generally for more advanced users or developers.
+However, if you have questions, please email [`support@candelatech.com`](mailto:support@candelatech.com), and we can guide you through.
+
+Please ensure the following criteria are met before installing LANforge scripts (installation steps [here](#installing-from-source-setup)):
+
+1. Familiarity with the command line (e.g. `bash`)
+
+   - Installation will require running commands, most likely on a Linux system
+
+2. Python 3.7+ and Git installed on system
+
+   - **LANforge Python automation requires Python 3.7+**. Most systems and Linux distributions should have a newer version available for install.
+     However, Python 3.7 continues to be our minimum supported version to ensure backwards compatibility with older LANforge systems.
+
+   - How this is completed will depend on the system used. Generally, we encourage installing Python and Git through the
+     system (e.g. `apt` on Ubuntu) and installing Python libraries/dependencies in a virtual environment (detailed in instructions)
+
+3. Known target LANforge software version
+
+   - **We strongly encourage matching the version of LANforge scripts to the version installed on your LANforge**, unless there is a specific need
+   (e.g. new feature or bug fix). While not recommended, it is possible to use the latest version as well.
+
+#### Installing from Source Setup
+
+**NOTE:** Developers and anyone looking to contribute to LANforge scripts should also familiarize themselves with the information outlined
+in the [`CONBTRIBUTING.md` document](../CONTRIBUTING.md).
+
+**NOTE:** **For usage directly on a LANforge system, these steps are not necessary**, as the scripts/automation are already fully installed in
+`/home/lanforge/scripts/` and match the version of LANforge already installed on the system.
+
+This section details how to setup LANforge scripts/automation using a specific version (e.g. 5.4.9). To use Perl-based scripts/automation,
+please complete the below instructions then proceed to [this section](#installing-from-source-perl-scriptsautomation-setup).
+
+1. Open a shell and clone LANforge scripts
+
+   ```Bash
+   git clone https://github.com/greearb/lanforge-scripts
+   ```
+
+2. Get the version-tagged commits of the repository
+
+   ```Bash
+   git fetch --tags
+   ```
+
+3. List the version-tagged commits available
+
+   ```Bash
+   git tag
+   ```
+
+4. Select the matching tag for your LANforge system's version
+
+   ```Bash
+   # Checkout LANforge 5.4.9 version of LANforge scripts.
+   git checkout lf-5.4.9
+   ```
+
+5. Create and source a Python virtual environment (optional but **strongly suggested**)
+
+   We suggest Python's [builtin virtual environment tool](https://docs.python.org/3/tutorial/venv.html) for simplicity, although other
+   tools requiring more configuration like [Anaconda](https://anaconda.org/) will work as well.
+
+   ```Bash
+   # Create Python virtual environment named 'venv'
+   virtualenv venv
+
+   # Enter the Python virtual environment (Linux)
+   source venv/bin/activate
+   ```
+
+6. Enter the `lanforge-scripts/py-scripts/` directory
+
+7. Run the dependency installation script
+
+   ```Bash
+   # This step may take a moment to complete
+   ./update_dependencies.py
+   ```
+
+Once you have successfully completed these steps, you can now use the LANforge Python scripts.
+To use Perl scripts/automation, please proceed to [this section](#installing-from-source-perl-scriptsautomation-setup)
+
+#### Installing from Source Perl Scripts/Automation Setup
 
 To use LANforge Perl automation, the system which will run the scripts must have the following packages installed. On Linux systems, most of these packages are available through your system's package manager as `.deb` or `.rpm` packages.
 
@@ -87,6 +192,9 @@ If you would like to contribute to LANforge scripts, please read the [`CONTRIBUT
 ## Scripts/Automation by Type
 
 LANforge scripts and automation offerings vary widely, including test scripts, "toolbox" scripts (i.e. perform one task like creating stations), library code which may be imported by other scripts, and utility scripts. Given the large number of available scripts and automation, the following sections aim to guide a user to their desired script/automation based on their needs.
+
+For Python scripts in `py-scripts/`, run the script with the `--help_summary` option to list a summary of script functionality and purpose.
+Generally, Python scripts support a `--help` option which prints all arguments supported by a given script.
 
 Should a script or automation not exist for your needs, please reach out to [`support@candelatech.com`](mailto:support@candelatech.com) detailing general requirements for your desired use case.
 
@@ -231,7 +339,7 @@ to the HTTP version unless indicated otherwise.
 
 ### HTTP API/CLI Commands Overview
 
-When the LANforge GUI is running, a user can query and configure their LANforge system using the LANforge HTTP API. This service runs on port 8080 *wherever the LANforge GUI runs*
+When the LANforge GUI is running, a user can query and configure their LANforge system using the LANforge HTTP API. This service runs on port 8080 _wherever the LANforge GUI runs_
 and exposes HTTP API endpoints for various uses. Additionally, the manager exposes the direct CLI via a telnet-like interface on port 4001. However, for all but the most advanced
 users, we recommend the HTTP API.
 
@@ -245,14 +353,14 @@ API help page `http://GUI_SYSTEM_IP_HERE:8080/help`.
 
 ### System Configuration with Command Composer
 
-In order to better understand and use the HTTP API and CLI commands for system *configuration*, LANforge offers the web-based LANforge Command Composer. With this tool, a user can
+In order to better understand and use the HTTP API and CLI commands for system _configuration_, LANforge offers the web-based LANforge Command Composer. With this tool, a user can
 dynamically generate CLI commands, either for use via the HTTP API via the `/cli-json/` and `/cli-form/` endpoints or directly through the telnet interface (port 4001).
 
 To access and use this tool, perform the following steps:
 
 1. Navigate to the 'Help' page (either from the LANforge or remotely)
 
-   - Note that the IP or hostname should be the system where the *GUI* is running
+   - Note that the IP or hostname should be the system where the _GUI_ is running
    - From the LANforge system (e.g. through VNC): `http://localhost:8080/help`
    - Remotely:
      - Directly by IP address: `http://192.168.1.101:8080/help`
