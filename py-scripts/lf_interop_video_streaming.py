@@ -1698,7 +1698,7 @@ class VideoStreamingTest(Realm):
                 dev1_list = self.device_list.split(',')
                 self.device_list = asyncio.run(self.config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict, upstream=self.upstream_port))
         return self.device_list
-    
+
 
     def process_incremental_capacity(self, incremental_capacity_list_values, available_resources, gave_incremental):
         if incremental_capacity_list_values[-1] != len(available_resources):
@@ -1732,7 +1732,7 @@ class VideoStreamingTest(Realm):
             elif gave_incremental:
                 self.test_setup_info_incremental_values = "No Incremental Value provided"
             self.total_duration = test_setup_info_total_duration
-    
+
 
     def create_test_setup_info(self):
         if self.resource_ids:
@@ -1767,6 +1767,24 @@ class VideoStreamingTest(Realm):
             test_setup_info['Incremental Values'] = self.test_setup_info_incremental_values
             # test_setup_info['Total Duration (min)'] = str(self.test_setup_info_total_duration)
             return test_setup_info
+    
+
+    def updating_webui_running_json(self):
+        data = {}
+        data_dict = {
+            'configured_devices': [self.device_list_str],
+            'configuration_status': "configured"
+        }
+        file_path = self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name)
+
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+
+        for key in data_dict:
+            data[key] = data_dict[key]
+
+        with open(file_path, 'w') as file:
+            json.dump(data, file, indent=4)
 
 
 def main():
@@ -2202,6 +2220,8 @@ def main():
     actual_start_time = datetime.now()
     iterations_before_test_stopped_by_user = []
     test_setup_info = obj.create_test_setup_info()
+    if args.dowebgui:
+        obj.updating_webui_running_json()
 
     # Calculate and manage cx_order_list ( list of cross connections to run ) based on incremental values
     if obj.resource_ids:
