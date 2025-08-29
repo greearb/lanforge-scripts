@@ -1732,6 +1732,41 @@ class VideoStreamingTest(Realm):
             elif gave_incremental:
                 self.test_setup_info_incremental_values = "No Incremental Value provided"
             self.total_duration = test_setup_info_total_duration
+    
+
+    def create_test_setup_info(self):
+        if self.resource_ids:
+            username = []
+
+            try:
+                eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,ssid,signal")
+            except KeyError:
+                logger.error("Error: 'interfaces' key not found in port data")
+                exit(1)
+
+            resource_ids = list(map(int, self.resource_ids.split(',')))
+            for alias in eid_data["interfaces"]:
+                for i in alias:
+                    if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
+                        resource_hw_data = self.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
+                        hw_version = resource_hw_data['resource']['hw version']
+                        if not hw_version.startswith(('Win', 'Linux', 'Apple')) and int(resource_hw_data['resource']['eid'].split('.')[1]) in resource_ids:
+                            username.append(resource_hw_data['resource']['user'])
+
+            self.device_list_str = ','.join([f"{name} ( Android )" for name in username])
+
+            test_setup_info = {
+                "Testname": self.test_name,
+                "Device List": self.device_list_str,
+                "No of Devices": "Total" + "( " + str(len(username)) + " ): Android(" + str(len(username)) + ")",
+                "Incremental Values": "",
+                "URL": self.url,
+                "Media Source": self.media_source.upper(),
+                "Media Quality": self.media_quality
+            }
+            test_setup_info['Incremental Values'] = self.test_setup_info_incremental_values
+            # test_setup_info['Total Duration (min)'] = str(self.test_setup_info_total_duration)
+            return test_setup_info
 
 
 def main():
@@ -2164,10 +2199,9 @@ def main():
 
     incremental_capacity_list_values = obj.get_incremental_capacity_list()
     obj.process_incremental_capacity(incremental_capacity_list_values, available_resources, gave_incremental)
-
     actual_start_time = datetime.now()
-
     iterations_before_test_stopped_by_user = []
+    test_setup_info = obj.create_test_setup_info()
 
     # Calculate and manage cx_order_list ( list of cross connections to run ) based on incremental values
     if obj.resource_ids:
@@ -2241,42 +2275,7 @@ def main():
                     iterations_before_test_stopped_by_user.append(i)
                     break
     obj.stop()
-
-    if obj.resource_ids:
-
-        date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
-        username = []
-
-        try:
-            eid_data = obj.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,ssid,signal")
-        except KeyError:
-            logger.error("Error: 'interfaces' key not found in port data")
-            exit(1)
-
-        resource_ids = list(map(int, obj.resource_ids.split(',')))
-        for alias in eid_data["interfaces"]:
-            for i in alias:
-                if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
-                    resource_hw_data = obj.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
-                    hw_version = resource_hw_data['resource']['hw version']
-                    if not hw_version.startswith(('Win', 'Linux', 'Apple')) and int(resource_hw_data['resource']['eid'].split('.')[1]) in resource_ids:
-                        username.append(resource_hw_data['resource']['user'])
-
-        device_list_str = ','.join([f"{name} ( Android )" for name in username])
-
-        test_setup_info = {
-            "Testname": args.test_name,
-            "Device List": device_list_str,
-            "No of Devices": "Total" + "( " + str(len(keys)) + " ): Android(" + str(len(keys)) + ")",
-            "Incremental Values": "",
-            "URL": args.url,
-            "Media Source": media_source.upper(),
-            "Media Quality": media_quality
-        }
-        test_setup_info['Incremental Values'] = test_setup_info_incremental_values
-        test_setup_info['Total Duration (min)'] = str(test_setup_info_total_duration)
-
-    logging.info("Test Completed")
+    date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
 
     # prev_inc_value = 0
     if obj.resource_ids and obj.incremental:
