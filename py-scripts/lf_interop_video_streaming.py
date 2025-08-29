@@ -1674,7 +1674,7 @@ class VideoStreamingTest(Realm):
                             eid_list.append(all_res[j])
         device_list = ",".join(id for id in eid_list)
         return device_list
-    
+
 
     def handle_ssid_based_device_config(self, config_dict):
         # When group/profile are not provided
@@ -1698,6 +1698,40 @@ class VideoStreamingTest(Realm):
                 dev1_list = self.device_list.split(',')
                 self.device_list = asyncio.run(self.config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict, upstream=self.upstream_port))
         return self.device_list
+    
+
+    def process_incremental_capacity(self, incremental_capacity_list_values, available_resources, gave_incremental):
+        if incremental_capacity_list_values[-1] != len(available_resources):
+            logger.error("Incremental capacity doesnt match available devices")
+            if self.postcleanup:
+                self.postcleanup()
+            exit(1)
+        # Process resource IDs and incremental values if specified
+        if self.resource_ids:
+            if self.incremental:
+                self.test_setup_info_incremental_values = ','.join([str(n) for n in incremental_capacity_list_values])
+                if len(self.incremental) == len(available_resources):
+                    test_setup_info_total_duration = self.duration
+                elif len(self.incremental) == 1 and len(available_resources) > 1:
+                    if self.incremental[0] == len(available_resources):
+                        test_setup_info_total_duration = self.duration
+                    else:
+                        div = len(available_resources) // self.incremental[0]
+                        mod = len(available_resources) % self.incremental[0]
+                        if mod == 0:
+                            test_setup_info_total_duration = self.duration * (div)
+                        else:
+                            test_setup_info_total_duration = self.duration * (div + 1)
+                else:
+                    test_setup_info_total_duration = self.duration * len(incremental_capacity_list_values)
+            else:
+                test_setup_info_total_duration = self.duration
+
+            if self.webgui_incremental:
+                self.test_setup_info_incremental_values = ','.join([str(n) for n in incremental_capacity_list_values])
+            elif gave_incremental:
+                self.test_setup_info_incremental_values = "No Incremental Value provided"
+            self.total_duration = test_setup_info_total_duration
 
 
 def main():
@@ -1974,7 +2008,7 @@ def main():
         }
 
         args.device_list = obj.handle_ssid_based_device_config(config_dict)
-        
+
 
     # process devices when test is run through webui
     if args.dowebgui:
@@ -2129,37 +2163,7 @@ def main():
         args.duration = int(args.duration)
 
     incremental_capacity_list_values = obj.get_incremental_capacity_list()
-    if incremental_capacity_list_values[-1] != len(available_resources):
-        logger.error("Incremental capacity doesnt match available devices")
-        if args.postcleanup:
-            obj.postcleanup()
-        exit(1)
-    # Process resource IDs and incremental values if specified
-    if obj.resource_ids:
-        if obj.incremental:
-            test_setup_info_incremental_values = ','.join([str(n) for n in incremental_capacity_list_values])
-            if len(obj.incremental) == len(available_resources):
-                test_setup_info_total_duration = args.duration
-            elif len(obj.incremental) == 1 and len(available_resources) > 1:
-                if obj.incremental[0] == len(available_resources):
-                    test_setup_info_total_duration = args.duration
-                else:
-                    div = len(available_resources) // obj.incremental[0]
-                    mod = len(available_resources) % obj.incremental[0]
-                    if mod == 0:
-                        test_setup_info_total_duration = args.duration * (div)
-                    else:
-                        test_setup_info_total_duration = args.duration * (div + 1)
-            else:
-                test_setup_info_total_duration = args.duration * len(incremental_capacity_list_values)
-        else:
-            test_setup_info_total_duration = args.duration
-
-        if args.webgui_incremental:
-            test_setup_info_incremental_values = ','.join([str(n) for n in incremental_capacity_list_values])
-        elif gave_incremental:
-            test_setup_info_incremental_values = "No Incremental Value provided"
-        obj.total_duration = test_setup_info_total_duration
+    obj.process_incremental_capacity(incremental_capacity_list_values, available_resources, gave_incremental)
 
     actual_start_time = datetime.now()
 
@@ -2201,7 +2205,7 @@ def main():
             for i in range(len(cx_order_list)):
                 if i == 0:
                     obj.data["start_time_webGUI"] = [datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
-                    end_time_webGUI = (datetime.now() + timedelta(minutes=obj.total_duration)).strftime('%Y-%m-%d %H:%M:%S')
+                    end_time_webGUI = (datetime.now() + timedelta(minutes=int(args.duration))).strftime('%Y-%m-%d %H:%M:%S')
                     obj.data['end_time_webGUI'] = [end_time_webGUI]
 
                 # time.sleep(10)
