@@ -1976,19 +1976,26 @@ def main():
         args.device_list = obj.handle_ssid_based_device_config(config_dict)
         
 
+    # process devices when test is run through webui
     if args.dowebgui:
-        resource_ids_sm = args.device_list.split(',')
-        resource_set = set(resource_ids_sm)
+        resource_set = set(args.device_list)
         resource_list = sorted(resource_set)
-        resource_ids_generated = ','.join(resource_list)
+        resource_ids_generated = ",".join(resource_list)
         resource_list_sorted = resource_list
-        selected_devices, report_labels, selected_macs = obj.devices.query_user(dowebgui=args.dowebgui, device_list=resource_ids_generated)
-        obj.resource_ids = ",".join(id.split(".")[1] for id in args.device_list.split(","))
-        available_resources = [int(num) for num in obj.resource_ids.split(',')]
+
+        selected_devices, report_labels, selected_macs = obj.devices.query_user(
+            dowebgui=args.dowebgui,
+            device_list=resource_ids_generated
+        )
+
+        obj.resource_ids = ",".join(id.split(".")[1] for id in args.device_list)
+
+        available_resources = [int(num) for num in obj.resource_ids.split(",")]
+
     else:
         obj.android_devices = obj.devices.get_devices(only_androids=True)
         if args.device_list:
-            device_list = args.device_list.split(',')
+            device_list = args.device_list
             # Extract resource IDs (after the dot), remove duplicates, and sort them
             resource_ids = sorted(set(int(item.split('.')[1]) for item in device_list if '.' in item))
             resource_list_sorted = resource_ids
@@ -2003,6 +2010,38 @@ def main():
                     logger.info(f"{dev} device is not available")
             # Final list of available Android resource IDs
             available_resources = sorted(set(int(dev.split('.')[1]) for dev in obj.android_list))
+        else:
+            obj.android_devices = obj.devices.get_devices(only_androids=True)
+            selected_devices, report_labels, selected_macs = obj.devices.query_user()
+            if not selected_devices:
+                logging.info("devices donot exist..!!")
+                return
+
+            obj.android_list = selected_devices
+            # Verify if all resource IDs are valid for Android devices
+            if obj.android_list:
+                resource_ids = ",".join([item.split(".")[1] for item in obj.android_list])
+
+                num_list = list(map(int, resource_ids.split(',')))
+
+                # Sort the list
+                num_list.sort()
+
+                # Join the sorted list back into a string
+                sorted_string = ','.join(map(str, num_list))
+
+                obj.resource_ids = sorted_string
+                resource_ids1 = list(map(int, sorted_string.split(',')))
+                modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
+                if not all(x in modified_list for x in resource_ids1):
+                    logging.info("Verify Resource ids, as few are invalid...!!")
+                    exit()
+                resource_ids_sm = obj.resource_ids
+                resource_list = resource_ids_sm.split(',')
+                resource_set = set(resource_list)
+                resource_list_sorted = sorted(resource_set)
+                resource_ids_generated = ','.join(resource_list_sorted)
+                available_resources = list(resource_set)
             logger.info(f"Available devices: {available_resources}")
     if len(available_resources) != 0:
         available_resources = obj.filter_ios_devices(available_resources)
