@@ -136,6 +136,7 @@ class VideoStreamingTest(Realm):
         self.host = host
         self.phn_name = []
         self.ssid = ssid
+        self.test_setup_info_ssid = ssid
         self.passwd = passwd
         self.encryp = encryp
         self.media_source = media_source
@@ -1224,7 +1225,7 @@ class VideoStreamingTest(Realm):
         report.set_table_title("Input Parameters")
         report.build_table_title()
         if self.config:
-            test_setup_info["SSID"] = self.ssid
+            test_setup_info["SSID"] = self.test_setup_info_ssid
             test_setup_info["Password"] = self.passwd
             test_setup_info["ENCRYPTION"] = self.encryp
         elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
@@ -1672,9 +1673,8 @@ class VideoStreamingTest(Realm):
                             eid_list.append(group_devices[j])
                         elif j in all_res.keys():
                             eid_list.append(all_res[j])
-        device_list = ",".join(id for id in eid_list)
+        device_list = ",".join(eid_list)
         return device_list
-
 
     def handle_ssid_based_device_config(self, config_dict):
         # When group/profile are not provided
@@ -1697,8 +1697,7 @@ class VideoStreamingTest(Realm):
                 self.device_list = input("Enter the desired resources to run the test:")
                 dev1_list = self.device_list.split(',')
                 self.device_list = asyncio.run(self.config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict, upstream=self.upstream_port))
-        return self.device_list
-
+        return ",".join(self.device_list)
 
     def process_incremental_capacity(self, incremental_capacity_list_values, available_resources, gave_incremental):
         if incremental_capacity_list_values[-1] != len(available_resources):
@@ -1733,8 +1732,7 @@ class VideoStreamingTest(Realm):
                 self.test_setup_info_incremental_values = "No Incremental Value provided"
             self.total_duration = test_setup_info_total_duration
 
-
-    def create_test_setup_info(self):
+    def create_test_setup_info(self, media_source, media_quality):
         if self.resource_ids:
             username = []
 
@@ -1761,13 +1759,12 @@ class VideoStreamingTest(Realm):
                 "No of Devices": "Total" + "( " + str(len(username)) + " ): Android(" + str(len(username)) + ")",
                 "Incremental Values": "",
                 "URL": self.url,
-                "Media Source": self.media_source.upper(),
-                "Media Quality": self.media_quality
+                "Media Source": media_source,
+                "Media Quality": media_quality
             }
             test_setup_info['Incremental Values'] = self.test_setup_info_incremental_values
             # test_setup_info['Total Duration (min)'] = str(self.test_setup_info_total_duration)
             return test_setup_info
-    
 
     def updating_webui_running_json(self):
         data = {}
@@ -2021,7 +2018,7 @@ def main():
     args.upstream_port = obj.change_port_to_ip(args.upstream_port)
     obj.upstream_port = args.upstream_port
     obj.validate_args()
-    obj.config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.host, file_name=args.file_name)
+    obj.config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.host, file_name=args.file_name, wait_time=args.wait_time)
     if not args.expected_passfail_value and args.device_csv_name is None:
         obj.config_obj.device_csv_file(csv_name="device.csv")
 
@@ -2032,7 +2029,6 @@ def main():
 
     if args.group_name and args.file_name and args.profile_name:
         args.device_list = obj.handle_groups_profiles_config()
-        args.device_list = args.device_list.split(',')
 
     elif args.config:
         # When group/profile are not provided
@@ -2059,9 +2055,9 @@ def main():
             'pac_file': args.pac_file,
             'server_ip': args.upstream_port
         }
+        obj.device_list = args.device_list
 
         args.device_list = obj.handle_ssid_based_device_config(config_dict)
-
 
     # process devices when test is run through webui
     if args.dowebgui:
@@ -2069,11 +2065,13 @@ def main():
         resource_list = sorted(resource_set)
         resource_ids_generated = ",".join(resource_list)
         resource_list_sorted = resource_list
+        obj.android_devices = obj.devices.get_devices(only_androids=True)
 
         selected_devices, report_labels, selected_macs = obj.devices.query_user(
             dowebgui=args.dowebgui,
             device_list=resource_ids_generated
         )
+        args.device_list = args.device_list.split(',')
 
         obj.resource_ids = ",".join(id.split(".")[1] for id in args.device_list)
 
@@ -2082,7 +2080,7 @@ def main():
     else:
         obj.android_devices = obj.devices.get_devices(only_androids=True)
         if args.device_list:
-            device_list = args.device_list
+            device_list = args.device_list.split(',')
             # Extract resource IDs (after the dot), remove duplicates, and sort them
             resource_ids = sorted(set(int(item.split('.')[1]) for item in device_list if '.' in item))
             resource_list_sorted = resource_ids
@@ -2219,7 +2217,7 @@ def main():
     obj.process_incremental_capacity(incremental_capacity_list_values, available_resources, gave_incremental)
     actual_start_time = datetime.now()
     iterations_before_test_stopped_by_user = []
-    test_setup_info = obj.create_test_setup_info()
+    test_setup_info = obj.create_test_setup_info(media_source=media_source, media_quality=media_quality)
     if args.dowebgui:
         obj.updating_webui_running_json()
 
