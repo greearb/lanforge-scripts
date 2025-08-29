@@ -1674,6 +1674,30 @@ class VideoStreamingTest(Realm):
                             eid_list.append(all_res[j])
         device_list = ",".join(id for id in eid_list)
         return device_list
+    
+
+    def handle_ssid_based_device_config(self, config_dict):
+        # When group/profile are not provided
+        if self.device_list:
+            all_devices = self.config_obj.get_all_devices()
+            dev_list = self.device_list.split(',')
+            self.device_list = asyncio.run(self.config_obj.connectivity(device_list=dev_list, wifi_config=config_dict, upstream=self.upstream_port))
+        else:
+            if self.config:
+                all_devices = self.config_obj.get_all_devices()
+                device_list = []
+                for device in all_devices:
+                    if device["type"] != 'laptop':
+                        device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
+                    elif device["type"] == 'laptop':
+                        device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+                print("Available devices:")
+                for device in device_list:
+                    print(device)
+                self.device_list = input("Enter the desired resources to run the test:")
+                dev1_list = self.device_list.split(',')
+                self.device_list = asyncio.run(self.config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict, upstream=self.upstream_port))
+        return self.device_list
 
 
 def main():
@@ -1922,8 +1946,8 @@ def main():
     if args.group_name and args.file_name and args.profile_name:
         args.device_list = obj.handle_groups_profiles_config()
         args.device_list = args.device_list.split(',')
-        
-    else:
+
+    elif args.config:
         # When group/profile are not provided
         config_dict = {
             'ssid': args.ssid,
@@ -1948,59 +1972,9 @@ def main():
             'pac_file': args.pac_file,
             'server_ip': args.upstream_port
         }
-        if args.device_list:
-            all_devices = config_obj.get_all_devices()
-            if args.group_name is None and args.file_name is None and args.profile_name is None:
-                dev_list = args.device_list.split(',')
-                if args.config:
-                    asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
-        else:
-            if args.config:
-                all_devices = config_obj.get_all_devices()
-                device_list = []
-                for device in all_devices:
-                    if device["type"] != 'laptop':
-                        device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
-                    elif device["type"] == 'laptop':
-                        device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
-                print("Available devices:")
-                for device in device_list:
-                    print(device)
-                args.device_list = input("Enter the desired resources to run the test:")
-                dev1_list = args.device_list.split(',')
-                asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict))
-            else:
-                obj.android_devices = obj.devices.get_devices(only_androids=True)
-                selected_devices, report_labels, selected_macs = obj.devices.query_user()
-                if not selected_devices:
-                    logging.info("devices donot exist..!!")
-                    return
 
-                obj.android_list = selected_devices
-                # Verify if all resource IDs are valid for Android devices
-                if obj.android_list:
-                    resource_ids = ",".join([item.split(".")[1] for item in obj.android_list])
-
-                    num_list = list(map(int, resource_ids.split(',')))
-
-                    # Sort the list
-                    num_list.sort()
-
-                    # Join the sorted list back into a string
-                    sorted_string = ','.join(map(str, num_list))
-
-                    obj.resource_ids = sorted_string
-                    resource_ids1 = list(map(int, sorted_string.split(',')))
-                    modified_list = list(map(lambda item: int(item.split('.')[1]), obj.android_devices))
-                    if not all(x in modified_list for x in resource_ids1):
-                        logging.info("Verify Resource ids, as few are invalid...!!")
-                        exit()
-                    resource_ids_sm = obj.resource_ids
-                    resource_list = resource_ids_sm.split(',')
-                    resource_set = set(resource_list)
-                    resource_list_sorted = sorted(resource_set)
-                    resource_ids_generated = ','.join(resource_list_sorted)
-                    available_resources = list(resource_set)
+        args.device_list = obj.handle_ssid_based_device_config(config_dict)
+        
 
     if args.dowebgui:
         resource_ids_sm = args.device_list.split(',')
