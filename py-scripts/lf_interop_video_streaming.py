@@ -127,7 +127,10 @@ class VideoStreamingTest(Realm):
                  urls_per_tenm=None, duration=None, resource_ids=None, dowebgui=False, result_dir="", test_name=None, incremental=None, postcleanup=False, precleanup=False,
                  pass_fail_val=None, csv_name=None, groups=None, profiles=None, config=None, file_name=None,
                  floors=None,
-                 get_live_view=None):
+                 get_live_view=None,
+                 upstream_port=None,
+                 device_list=None,
+                 webgui_incremental=None):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         self.adb_device_list = None
         self.host = host
@@ -187,6 +190,10 @@ class VideoStreamingTest(Realm):
         self.file_name = file_name
         self.floors = floors
         self.get_live_view = get_live_view
+        self.config_obj = None
+        self.upstream_port = upstream_port
+        self.device_list = device_list
+        self.webgui_incremental = webgui_incremental
 
     @property
     def run(self):
@@ -1639,6 +1646,35 @@ class VideoStreamingTest(Realm):
                         report.set_custom_html(f'<img src="file://{image_path}"  style="width:1200px; height:800px;"></img>')
                         report.build_custom()
 
+    def handle_groups_profiles_config(self):
+        config_devices = {}
+        for i in range(len(self.selected_groups)):
+            config_devices[self.selected_groups[i]] = self.selected_profiles[i]
+        self.config_obj.initiate_group()
+        asyncio.run(self.config_obj.connectivity(config_devices, upstream=self.upstream_port))
+
+        adbresponse = self.config_obj.adb_obj.get_devices()
+        resource_manager = self.config_obj.laptop_obj.get_devices()
+        all_res = {}
+        df1 = self.config_obj.display_groups(self.config_obj.groups)
+        groups_list = df1.to_dict(orient='list')
+        group_devices = {}
+        for adb in adbresponse:
+            group_devices[adb['serial']] = adb['eid']
+        for res in resource_manager:
+            all_res[res['hostname']] = res['shelf'] + '.' + res['resource']
+        eid_list = []
+        for grp_name in groups_list.keys():
+            for g_name in self.selected_groups:
+                if grp_name == g_name:
+                    for j in groups_list[grp_name]:
+                        if j in group_devices.keys():
+                            eid_list.append(group_devices[j])
+                        elif j in all_res.keys():
+                            eid_list.append(all_res[j])
+        device_list = ",".join(id for id in eid_list)
+        return device_list
+
 
 def main():
     help_summary = '''\
@@ -1872,10 +1908,11 @@ def main():
                              get_live_view=args.get_live_view
                              )
     args.upstream_port = obj.change_port_to_ip(args.upstream_port)
+    obj.upstream_port = args.upstream_port
     obj.validate_args()
-    config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.host, file_name=args.file_name)
+    obj.config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.host, file_name=args.file_name)
     if not args.expected_passfail_value and args.device_csv_name is None:
-        config_obj.device_csv_file(csv_name="device.csv")
+        obj.config_obj.device_csv_file(csv_name="device.csv")
 
     resource_ids_sm = []
     resource_set = set()
@@ -1883,34 +1920,9 @@ def main():
     resource_ids_generated = ""
 
     if args.group_name and args.file_name and args.profile_name:
-        selected_groups = args.group_name.split(',')
-        selected_profiles = args.profile_name.split(',')
-        config_devices = {}
-        for i in range(len(selected_groups)):
-            config_devices[selected_groups[i]] = selected_profiles[i]
-        config_obj.initiate_group()
-        asyncio.run(config_obj.connectivity(config_devices, upstream=args.upstream_port))
-
-        adbresponse = config_obj.adb_obj.get_devices()
-        resource_manager = config_obj.laptop_obj.get_devices()
-        all_res = {}
-        df1 = config_obj.display_groups(config_obj.groups)
-        groups_list = df1.to_dict(orient='list')
-        group_devices = {}
-        for adb in adbresponse:
-            group_devices[adb['serial']] = adb['eid']
-        for res in resource_manager:
-            all_res[res['hostname']] = res['shelf'] + '.' + res['resource']
-        eid_list = []
-        for grp_name in groups_list.keys():
-            for g_name in selected_groups:
-                if grp_name == g_name:
-                    for j in groups_list[grp_name]:
-                        if j in group_devices.keys():
-                            eid_list.append(group_devices[j])
-                        elif j in all_res.keys():
-                            eid_list.append(all_res[j])
-        args.device_list = ",".join(id for id in eid_list)
+        args.device_list = obj.handle_groups_profiles_config()
+        args.device_list = args.device_list.split(',')
+        
     else:
         # When group/profile are not provided
         config_dict = {
