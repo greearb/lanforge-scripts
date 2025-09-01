@@ -1482,9 +1482,11 @@ junit.xml path: allure serve {junit_path}
                 self.logger.info("Script returned non-zero return code: {return_code} for test: {command}".format(
                     return_code=return_code, command=command_to_run))
 
-        except BaseException as err:
+        except Exception as x:
+            traceback.print_exception(
+                Exception, x, x.__traceback__, chain=True)
             self.logger.info(
-                "issue reading return code err:{err}".format(err=err))
+                "issue reading return code, test runner will continue")
 
         self.logger.info(summary_output)
         stdout_log.write(summary_output)
@@ -1600,12 +1602,10 @@ junit.xml path: allure serve {junit_path}
                         lanforge_server_version_full=self.lanforge_server_version_full[0]))
 
                 meta_data_fd.close()
-            except ValueError as err:
-                self.logger.critical("unable to write meta {meta_data_path} : {err})".format(
-                    meta_data_path=meta_data_path, err=err))
-            except BaseException as err:
-                self.logger.critical("BaseException unable to write meta {meta_data_path} : {err}".format(
-                    meta_data_path=meta_data_path, err=err))
+            except Exception as x:
+                traceback.print_exception(
+                    Exception, x, x.__traceback__, chain=True)
+                self.logger.critical(f"unable to write meta {meta_data_path}")
 
         # Code for checking if the script passed or failed much of the
         # code is checking the output.
@@ -1891,7 +1891,8 @@ junit.xml path: allure serve {junit_path}
         self.start_junit_testsuite()
 
         # Configure Tests
-        for self.test in self.test_dict:
+        for test in self.test_dict:
+            self.test = test
 
             if ((self.test_dict[self.test]['enabled'] == "TRUE" and self.use_test_list is False) or
                     (self.use_test_list is True and self.test in self.test_list)):
@@ -1951,16 +1952,19 @@ junit.xml path: allure serve {junit_path}
                 # in python an empty list returns false .
                 # If channel_list and bandwidth_list are populated then
                 if self.channel_list and self.nss_list and self.bandwidth_list and self.tx_power_list:
-                    for self.channel in self.channel_list:
-                        for self.nss in self.nss_list:
-                            for self.bandwidth in self.bandwidth_list:
+                    for channel in self.channel_list:
+                        self.channel = channel
+                        for nss in self.nss_list:
+                            self.nss = nss
+                            for bandwidth in self.bandwidth_list:
+                                self.bandwidth = bandwidth
                                 # tx_power is passed in as
-                                for self.tx_power in self.tx_power_list:
+                                for tx_power in self.tx_power_list:
+                                    self.tx_power = tx_power
                                     # log may contain multiple runs - this helps put the meta.txt
                                     # in right directory
-                                    self.iteration = 0
                                     self.report_index = 0
-                                    for self.iteration in range(self.test_iterations):
+                                    for _ in range(self.test_iterations):
                                         self.iteration += 1
                                         # Runs the scripts
                                         self.run_script()
@@ -1971,15 +1975,17 @@ junit.xml path: allure serve {junit_path}
                     self.bandwidth_list = []
                     self.tx_power_list = []
                 elif self.channel_list and self.nss_list and self.bandwidth_list and not self.tx_power_list:
-                    for self.channel in self.channel_list:
-                        for self.nss in self.nss_list:
-                            for self.bandwidth in self.bandwidth_list:
+                    for channel in self.channel_list:
+                        self.channel = channel
+                        for nss in self.nss_list:
+                            self.nss = nss
+                            for bandwidth in self.bandwidth_list:
+                                self.bandwidth = bandwidth
                                 # tx_power is passed in so run will contain all tx powers from command line
                                 # log may contain multiple runs - this helps put the meta.txt
                                 # in right directory
-                                self.iteration = 0
                                 self.report_index = 0
-                                for self.iteration in range(self.test_iterations):
+                                for _ in range(self.test_iterations):
                                     # in batch mode need to set the VARIABLES back into the test
                                     self.iteration += 1
                                     # Runs the scripts
@@ -1991,15 +1997,16 @@ junit.xml path: allure serve {junit_path}
                     self.tx_power_list = []
 
                 elif self.channel_list and self.nss_list and not self.bandwidth_list and not self.tx_power_list:
-                    for self.channel in self.channel_list:
-                        for self.nss in self.nss_list:
+                    for channel in self.channel_list:
+                        self.channel = channel
+                        for nss in self.nss_list:
+                            self.nss = nss
                             # use bandwidth tx_power is passed in from command line
                             # one run will contain all the bandwiths and tx_power settings
                             # log may contain multiple runs - this helps put the meta.txt
                             # in right directory
-                            self.iteration = 0
                             self.report_index = 0
-                            for self.iteration in range(self.test_iterations):
+                            for _ in range(self.test_iterations):
                                 self.iteration += 1
                                 # Runs the scripts
                                 self.run_script()
@@ -2012,9 +2019,8 @@ junit.xml path: allure serve {junit_path}
 
                     # log may contain multiple runs - this helps put the meta.txt
                     # in right directory
-                    self.iteration = 0
                     self.report_index = 0
-                    for self.iteration in range(self.test_iterations):
+                    for _ in range(self.test_iterations):
                         # Runs the scripts
                         self.iteration += 1
                         self.run_script()
@@ -2247,13 +2253,13 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
     # Determine the number of iterations
     total_iterations = 0
     # for rig json (lanforge)
-    for json_rig_name in json_rig_list:
+    for _ in json_rig_list:
 
         # for test json and suite
-        for (json_test_name, suite_name) in zip(json_test_list, suite_list):
+        for (_, _) in zip(json_test_list, suite_list):
 
             # for dut json
-            for (json_dut_name) in json_dut_list:
+            for _ in json_dut_list:
                 total_iterations += 1
 
     iteration = 0
@@ -2426,9 +2432,10 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
                 try:
                     scripts_git_sha = check.get_scripts_git_sha()
                     logger.info("git_sha {sha}".format(sha=scripts_git_sha))
-                except BaseException:
-                    logger.warning(
-                        "WARNING: git_sha read exception unable to read")
+                except Exception as x:
+                    traceback.print_exception(
+                        Exception, x, x.__traceback__, chain=True)
+                    logger.warning("git_sha read exception unable to read")
 
                 try:
                     lanforge_system_node_version = check.get_lanforge_system_node_version()
@@ -2932,10 +2939,13 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
 
     try:
         new_allure_latest_dir = shutil.copytree(report.allure_report_dir, allure_latest_dir, dirs_exist_ok=True)
-    except BaseException:
-        # fedora 27 does no except the directory being present
+    except Exception as x:
+        traceback.print_exception(
+            Exception, x, x.__traceback__, chain=True)
+        logger.info("Fedora 26 does not expcet the directory being present for allurewill create")
         shutil.rmtree(allure_latest_dir, ignore_errors=True)
         new_allure_latest_dir = shutil.copytree(report.allure_report_dir, allure_latest_dir)
+
     logger.debug("allure report directory copied to {latest}".format(latest=new_allure_latest_dir))
 
     # copy the allure-report-latest into the epoch time stamp
@@ -2945,7 +2955,10 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
 
     try:
         new_allure_epoch_latest_dir = shutil.copytree(report.allure_report_dir, new_allure_epoch_dir, dirs_exist_ok=True)
-    except BaseException:
+    except Exception as x:
+        traceback.print_exception(
+            Exception, x, x.__traceback__, chain=True)
+        logger.info("Fedora 26 does not expcet the directory being present for allurewill create")
         # fedora 27 does no except the directory being present
         shutil.rmtree(new_allure_epoch_dir, ignore_errors=True)
         new_allure_epoch_latest_dir = shutil.copytree(report.allure_report_dir, new_allure_epoch_dir)
