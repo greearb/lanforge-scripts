@@ -37,9 +37,9 @@ class inspect_sql:
     def __init__(self,
                  _path='.',
                  _dir='',
-                 _database_list=[],
-                 _element_list=[],
-                 _db_index_list=[],
+                 _database_list=None,
+                 _element_list=None,
+                 _db_index_list=None,
                  _csv_results='',
                  _table=None,
                  _outfile='',
@@ -58,6 +58,15 @@ class inspect_sql:
         # report information
         self.lf_inspect_report_url = ""
         self.report_path = ""
+
+        if _database_list is None:
+            _database_list = []
+
+        if _element_list is None:
+            _element_list = []
+
+        if _db_index_list is None:
+            _db_index_list = []
 
         if _outfile is not None:
             self.report_path = _outfile
