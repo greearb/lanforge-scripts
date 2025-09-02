@@ -8,10 +8,14 @@ import sys
 import os
 import logging
 import argparse
+import traceback
+
 
 try:
     import Pmw
-except BaseException:
+except Exception as x:
+    traceback.print_exception(
+        Exception, x, x.__traceback__, chain=True)
     print("Pmw module needed, Please do: pip install Pmw ")
     exit(1)
 
