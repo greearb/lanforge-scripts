@@ -82,13 +82,7 @@ def get_info(cmd):
     return
 
 
-def main():
-    global ip
-    global prog
-    global username
-    global password
-    global remote_args
-
+def parse_args():
     parser = argparse.ArgumentParser(
         prog='ssh_remote.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -130,7 +124,16 @@ def main():
         action="store_true",
         help='Show summary of what this script does')
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    global ip
+    global prog
+    global username
+    global password
+
+    args = parse_args()
 
     help_summary = '''\
 This script is an example do_ap script on remote system.
