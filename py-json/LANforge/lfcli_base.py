@@ -439,7 +439,7 @@ class LFCliBase:
 
                         # Have actual license data (not only whitespace or newline)
                         # Split it by whitespace into separate components
-                        hunks = re.split("\s+", line)
+                        hunks = re.split("\\s+", line)
 
                         # Two types of licenses regular and node-locked. The only difference is
                         # that the node-locked license also contains a MAC address of the system
