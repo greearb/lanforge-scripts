@@ -36,6 +36,9 @@ import socket
 import argparse
 # import logging
 
+HELP_SUMMARY = "Runs a command on a remote system over SSH. Useful for DUT automation " \
+               "in LANforge Chamber View tests"
+
 global ip
 global ssh_port
 global user_name
@@ -134,12 +137,8 @@ def main():
     global password
 
     args = parse_args()
-
-    help_summary = '''\
-This script is an example do_ap script on remote system.
-'''
     if args.help_summary:
-        print(help_summary)
+        print(HELP_SUMMARY)
         exit(0)
 
     ip = args.ip
