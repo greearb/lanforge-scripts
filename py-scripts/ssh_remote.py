@@ -80,54 +80,42 @@ def get_info(cmd: str, ip: str, ssh_port: int, username: str, password: str, tim
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        prog='ssh_remote.py',
+        prog="ssh_remote.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''\
- Run command against remote machine over ssh
-            ''',
+        description="Run command on remote system over SSH")
 
-        description='''
- Run command against remote machine over ssh
-        ''')
+    # Command and command argument options
+    parser.add_argument("--prog",
+                        help="Remote command to execute",
+                        default=prog)
+    parser.add_argument("--remote_args",
+                        help="Arguments for remote command",
+                        default="")
 
-    parser.add_argument(
-        '--prog',
-        help='Remote command to execute',
-        default=prog)
-
-    parser.add_argument(
-        '--remote_args',
-        help='Arguments for remote command',
-        default="")
-
-    parser.add_argument(
-        '--ip',
-        help='IP address of remote system',
-        default=ip)
-
-    parser.add_argument('--port', '--ssh_port',
-                        dest='ssh_port',
-                        help='SSH port for remote system',
+    # SSH options
+    parser.add_argument("--ip",
+                        help="IP address of remote system",
+                        default=ip)
+    parser.add_argument("-p", "--port", "--ssh_port",
+                        dest="ssh_port",
+                        help="SSH port for remote system",
                         default=ssh_port)
+    parser.add_argument("--user", "--username",
+                        dest="username",
+                        help="Username for remote machine",
+                        default=username)
 
-    parser.add_argument(
-        '--username',
-        help='User-name for remote machine',
-        default=username)
-
-    parser.add_argument(
-        '--password',
-        help='Password for remote machine',
-        default=password)
-
-    parser.add_argument('--timeout',
-                        help='SSH timeout for connection failures',
+    parser.add_argument("--passwd", "--password",
+                        dest="password",
+                        help="Password for remote machine",
+                        default=password)
+    parser.add_argument("--timeout",
+                        help="SSH timeout for connection failures",
                         default=timeout)
 
-    parser.add_argument(
-        '--help_summary',
-        action="store_true",
-        help='Show summary of what this script does')
+    parser.add_argument("--help_summary",
+                        action="store_true",
+                        help="Show summary of what this script does")
 
     return parser.parse_args()
 
