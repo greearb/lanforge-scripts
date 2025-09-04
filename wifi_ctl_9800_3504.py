@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # flake8: noqa
 '''
 LANforge 172.19.27.91
