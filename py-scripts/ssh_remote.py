@@ -1,21 +1,34 @@
 #!/usr/bin/python3
+"""
+NAME:       ssh_remote.py
 
-##################################################################################
-# Run command on remote system over ssh
-#
-# Example:
-# /home/greearb/ssh_remote.py --remote_args " r5g bssid=d8:f8:83:35:db:e9"
-#
-# example do_ap script on remote system:
-#
-# #!/bin/bash
-#
-# cd /home/lanforge
-# . lanforge.profile
-# ./vrf_exec.bash eth2 python3 foo_ap.py $*
-#
-# foo_ap.py knows how to log into AP and grab stats.
-##################################################################################
+PURPOSE:    Run command on a remote system over SSH
+
+NOTES:      By default, the program runs with user 'root' and password 'lanforge'.
+
+EXAMPLE:    # Run command with no arguments using test port over SSH
+            ./ssh_remote.py \
+                --ip    192.168.1.101 \
+                --prog  ls
+
+            # Run command 'ls --recursive'
+            ./ssh_remote.py \
+                --ip            192.168.1.101 \
+                --prog          ls \
+                --remote_args   'recursive'
+
+            # Run command 'ls -r' (recursive but with shorter '-r' flag)
+            ./ssh_remote.py \
+                --ip            192.168.1.101 \
+                --prog          "ls -r"
+
+            # Run command with non-default user and password
+            ./ssh_remote.py \
+                --ip            192.168.1.101 \
+                --username      lanforge \
+                --password      egrofnal \
+                --prog          ls
+"""
 
 import paramiko
 # from paramiko import SSHClient
