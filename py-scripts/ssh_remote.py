@@ -66,7 +66,7 @@ def get_info(cmd: str, ip: str, ssh_port: int, username: str, password: str, tim
         # Print output from command (both in debug and non-debug mode. This is grabbed by automation)
         output = str(stdout.read(), 'utf-8')
         logger.debug("Command output:\n")
-        logger.info(output)
+        print(output)  # Using 'logger.info()' here will result in timeout for large command output
 
     except paramiko.ssh_exception.AuthenticationException as e:
         logger.error(e)
