@@ -29,11 +29,10 @@ EXAMPLE:    # Run command with no arguments using test port over SSH
                 --password      egrofnal \
                 --prog          ls
 """
-
+import argparse
+import logging
 import paramiko
 import socket
-import argparse
-# import logging
 
 HELP_SUMMARY = "Runs a command on a remote system over SSH. Useful for DUT automation " \
                "in LANforge Chamber View tests"
@@ -47,33 +46,39 @@ prog = "/home/lanforge/do_ap"
 timeout = 5
 remote_args = ""
 
+# Grab logger for this module for easy usage
+logger = logging.getLogger(__name__)
+
 
 def get_info(cmd: str, ip: str, ssh_port: int, username: str, password: str, timeout: int, **kwargs):
     try:
-        # logging.getLogger("paramiko").setLevel(logging.DEBUG)
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        # print("Connecting to Remote System...")
+
+        # Connect to remote system
+        logger.debug(f"Connecting to remote system '{ip}:{ssh_port}' with username '{username}' and password '{password}'")
         client.connect(ip, username=username, password=password, port=ssh_port, timeout=timeout, allow_agent=False, look_for_keys=False)
-        # print("Running cmd: %s" %(cmd))
+
+        # Run command on remote system
+        logger.debug(f"Running command on remote system: {cmd}")
         stdin, stdout, stderr = client.exec_command(cmd)
 
+        # Print output from command (both in debug and non-debug mode. This is grabbed by automation)
         output = str(stdout.read(), 'utf-8')
-
-        # print("Output:\n")
-        print(output)
+        logger.debug("Command output:\n")
+        logger.info(output)
 
     except paramiko.ssh_exception.AuthenticationException as e:
-        print(e)
-        print("Authentication Error, Check Credentials")
+        logger.error(e)
+        logger.error("Authentication error, check credentials")
         return
     except paramiko.SSHException as e:
-        print(e)
-        print("Cannot SSH to the remote system: %s:%i user: %s  password: %s" % (ip, ssh_port, username, password))
+        logger.error(e)
+        logger.error(f"Failed to connect to remote system '{ip}:{ssh_port}' with username '{username}' and password '{password}'")
         return
     except socket.timeout as e:
-        print(e)
-        print("AP Unreachable")
+        logger.error(e)
+        logger.error("AP Unreachable")
         return
     return
 
@@ -116,8 +121,37 @@ def parse_args():
     parser.add_argument("--help_summary",
                         action="store_true",
                         help="Show summary of what this script does")
+    parser.add_argument("--debug",
+                        action="store_true",
+                        help="Run in debugging mode with logging enabled and in verbose mode.")
 
     return parser.parse_args()
+
+
+def configure_logging(debug: bool):
+    """Configure logging based on user configuration.
+
+    Since the output of this script is parsed in other automation, configure default
+    logging to output with no timestamp. When debug mode is enabled, add back the timestamp
+    and output more verbose logs.
+    """
+    # Configure SSH client library logging
+    paramiko_logger = logging.getLogger("paramiko")
+    paramiko_logger.setLevel(logging.ERROR)
+
+    if not debug:
+        # Configure logging with no timestamp format. Only permit this module to log at INFO level.
+        # Set all others to ERROR level to ensure other automation, which output of this script,
+        # does not break unnecessarily
+        logging.basicConfig(level=logging.ERROR, format="")
+        logging.getLogger(__name__).setLevel(logging.INFO)
+
+    else:
+        # Configure logging with timestamp format. Permit this module and SSH client module to
+        # log at DEBUG level. Set all other modules to INFO level
+        logging.basicConfig(level=logging.INFO)
+        logging.getLogger(__name__).setLevel(logging.DEBUG)
+        logging.getLogger("paramiko").setLevel(logging.DEBUG)
 
 
 def main():
@@ -125,6 +159,8 @@ def main():
     if args.help_summary:
         print(HELP_SUMMARY)
         exit(0)
+
+    configure_logging(args.debug)
 
     cmd = args.prog
     ra = args.remote_args.split()
