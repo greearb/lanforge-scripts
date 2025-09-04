@@ -31,7 +31,6 @@ EXAMPLE:    # Run command with no arguments using test port over SSH
 """
 
 import paramiko
-# from paramiko import SSHClient
 import socket
 import argparse
 # import logging
@@ -39,13 +38,7 @@ import argparse
 HELP_SUMMARY = "Runs a command on a remote system over SSH. Useful for DUT automation " \
                "in LANforge Chamber View tests"
 
-global ip
-global ssh_port
-global user_name
-global password
-global timeout
-global prog
-
+# Default values
 ip = "192.168.100.157"
 ssh_port = 22
 username = "root"
@@ -55,7 +48,7 @@ timeout = 5
 remote_args = ""
 
 
-def get_info(cmd):
+def get_info(cmd: str, ip: str, ssh_port: int, username: str, password: str, timeout: int, **kwargs):
     try:
         # logging.getLogger("paramiko").setLevel(logging.DEBUG)
         client = paramiko.SSHClient()
@@ -112,6 +105,11 @@ def parse_args():
         help='IP address of remote system',
         default=ip)
 
+    parser.add_argument('--port', '--ssh_port',
+                        dest='ssh_port',
+                        help='SSH port for remote system',
+                        default=ssh_port)
+
     parser.add_argument(
         '--username',
         help='User-name for remote machine',
@@ -122,6 +120,10 @@ def parse_args():
         help='Password for remote machine',
         default=password)
 
+    parser.add_argument('--timeout',
+                        help='SSH timeout for connection failures',
+                        default=timeout)
+
     parser.add_argument(
         '--help_summary',
         action="store_true",
@@ -131,20 +133,10 @@ def parse_args():
 
 
 def main():
-    global ip
-    global prog
-    global username
-    global password
-
     args = parse_args()
     if args.help_summary:
         print(HELP_SUMMARY)
         exit(0)
-
-    ip = args.ip
-    username = args.username
-    password = args.password
-    prog = args.prog
 
     cmd = args.prog
     ra = args.remote_args.split()
@@ -152,7 +144,9 @@ def main():
         cmd += " --"
         cmd += a
 
-    get_info(cmd)
+    # **vars(args) unpacks the arguments dict into arguments to function
+    # with all non-argument key-value pairs set in the '**kwargs' variable
+    get_info(cmd=cmd, **vars(args))
 
 
 if __name__ == '__main__':
