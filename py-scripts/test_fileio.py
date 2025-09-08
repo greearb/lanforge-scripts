@@ -26,14 +26,14 @@ EXAMPLE:
 
 EXAMPLE (creating a scenario without running it):
 ./test_fileio.py --macvlan_parent <port> --num_port <num ports> --use_macvlans
-		 --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
-		 --use_test_groups --write_only_test_group <write group name>
-		 --read_only_test_group <read group name> --save_config
+                 --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
+                 --use_test_groups --write_only_test_group <write group name>
+                 --read_only_test_group <read group name> --save_config
 
 ./test_fileio.py --macvlan_parent eth1 --num_port 2 --use_macvlans
-		 --first_mvlan_ip 192.168.0.34 --netmask 255.255.255.0 --gateway 192.168.0.105
-		 --use_test_groups --write_only_test_group write_group_0
-		 --read_only_test_group read_group_0 --save_config
+         --first_mvlan_ip 192.168.0.34 --netmask 255.255.255.0 --gateway 192.168.0.105
+         --use_test_groups --write_only_test_group write_group_0
+         --read_only_test_group read_group_0 --save_config
 
 TODO: Create external document
 
@@ -635,7 +635,7 @@ Generic command layout:
     parser.add_argument('--write_only_test_group', help='specifies name to use for write only test group', default=None)
     parser.add_argument('--mode', help='write,read,both', default='both', type=str)
     parser.add_argument('--save_config', help='save test setup as scenario without running',
-			default=False, action='store_true')
+                        default=False, action='store_true')
     # kpi_csv arguments
     parser.add_argument(
         "--test_rig",
@@ -829,7 +829,7 @@ otherwise it will fail.
             if args.read_only_test_group:
                 print(f'Saving read-only connections as {args.read_only_test_group}')
         exit(0)
-            
+
     ip_test.start(False, False)
 
     ip_test.report = lf_report.lf_report(_results_dir_name="test_fileio", _output_html="fileio_test.html",
