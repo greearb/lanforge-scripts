@@ -39,6 +39,7 @@ USAGE="$0 # Check for large files and purge many of the most inconsequencial
  -r   # compress /home/lanforge report data and pcap files
  -s   # empty the trash
  -t   # remove /var/tmp files
+ -u   # remove backed up LANforge database archives (DB-pre.20250512_202020.tar.gz)
  -v   # verbose
  -z   # compressed files in /home/lanforge
 "
@@ -127,7 +128,7 @@ function disk_space_below() {
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
 #opts=""
-opts="abcdehklmpqrtv"
+opts="abcdehklmpqrtuv"
 while getopts $opts opt; do
   case "$opt" in
     a)
@@ -182,6 +183,9 @@ while getopts $opts opt; do
     t)
       selections+=($opt)
       ;;
+    u)
+      selections+=($opt)
+      ;;
     v)
       quiet=0
       verbose=1
@@ -219,6 +223,7 @@ declare -A totals=(
     [r]=0
     [s]=0
     [t]=0
+    [u]=0
     [z]=0
 )
 declare -A desc=(
@@ -234,6 +239,7 @@ declare -A desc=(
     [r]="report data"
     [s]="trash can"
     [t]="/var/tmp"
+    [u]="test configuration backups (DB-pre\*.tar.gz)"
     [z]="compressed files"
 )
 declare -A surveyors_map=(
@@ -249,6 +255,7 @@ declare -A surveyors_map=(
     [r]="survey_report_data"
     [s]="survey_trash_can"
     [t]="survey_var_tmp"
+    [u]="survey_db_files"
     [z]="survey_compressed_files"
 )
 
@@ -265,6 +272,7 @@ declare -A cleaners_map=(
     [r]="compress_report_data"
     [s]="empty_trash_can"
     [t]="clean_var_tmp"
+    [u]="clean_db_files"
     [z]="clean_compressed_files"
 )
 
@@ -626,6 +634,24 @@ compress_report_data() {
     totals[r]=0
     cd -
     echo ""
+}
+
+clean_db_files() {
+    note "clean configuration backups"
+    if [[ ! -s /tmp/db-pre_files.txt ]]; then
+        note "  no files surveyed"
+        return
+    fi
+    mapfile -d '' db_pre_files < /tmp/db-pre_files.txt
+    if (( $verbose > 0 )); then
+        printf "    %s\n" "${db_pre_files[@]}"
+        sleep 1
+    fi
+    for f in "${db_pre_files[@]}"; do
+        rm -f "$f"
+        echo -n '.'
+        sleep 0.05
+    done
 }
 
 clean_var_tmp() {
@@ -1133,6 +1159,25 @@ survey_report_data() {
     cd "$starting_dir"
 }
 
+survey_db_files() {
+    debug "Surveying DB-pre configuration backups"
+    cd /home/lanforge
+    local fsiz=0
+    local fnum=0
+    find -type f -iname "DB-pre-*.tar.gz" -print0 \
+        > /tmp/db-pre_files.txt 2>/dev/null ||:
+
+    local fnum=$(grep -zc $'\0' /tmp/db-pre_files.txt)
+    if (( $fnum > 0 )); then
+        fsiz=$(du -hc \
+            --files0-from=/tmp/db-pre_files.txt \
+            | awk '/total/{print $1}' )
+    fi
+    totals[u]="$fnum files ($fsiz)"
+    [[ x${totals[u]} = x ]] && totals[u]=0
+    cd "$starting_dir"
+}
+
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 #       gather usage areas
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
@@ -1266,6 +1311,7 @@ while [[ $choice != q ]]; do
     echo "  r) report data                : ${totals[r]}"
     echo "  s) trash cans                 : ${totals[s]}"
     echo "  t) clean /var/tmp             : ${totals[t]}"
+    echo "  u) DB configuration backups   : ${totals[u]}"
     echo "  z) list compressed files      : ${totals[z]}"
     echo "  q) quit"
     read -p "> " choice
@@ -1313,6 +1359,10 @@ while [[ $choice != q ]]; do
         ;;
     t )
         clean_var_tmp
+        refresh=1
+        ;;
+    u )
+        clean_db_files
         refresh=1
         ;;
     z )
