@@ -159,7 +159,7 @@ def main():
     group.add_argument('--start', help='name of test group to start', default=None)
     group.add_argument('--quiesce', help='name of test group to quiesce', default=None)
     group.add_argument('--stop', help='name of test group to stop', default=None)
-    parser.add_argument('--timeout', help='Stop trying to load scenario after this many seconds', default=120)
+    parser.add_argument('--timeout', help='Stop trying to load scenario after this many seconds', default=120, type=int)
     parser.add_argument('--quit_on_phantom', help='do not load the database if a phantom port is present', action='store_true')
     parser.add_argument('--check_phantom', help='check if these ports are phantom', default=None, nargs="+")
     args = parser.parse_args()
@@ -201,7 +201,7 @@ The script, scenario.py, will load a database file and control test groups.
         print('sleeping 30 seconds, please upgrade your LANforge for a better experience, more information at https://www.candelatech.com/downloads.php#releases')
         time.sleep(30)
 
-    if build_version >= [5, 4, 4]:
+    if build_version >= [5, 4, 4] and args.load:
         scenario.check_if_complete()
 
     # scenario_loader.load_scenario()
