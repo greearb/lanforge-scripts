@@ -1759,20 +1759,55 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#add_adb
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    class AddAdbFlags(IntFlag):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            This class is stateless. It can do binary flag math, returning the integer value.
+            Example Usage: 
+                int:flag_val = 0
+                flag_val = LFPost.set_flags(AddAdbFlags, 0, flag_names=['bridge', 'dhcp'])
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+        AUTO_CONNECT_WIFI = 0x80           # Attempt to reconfigure Interop device in case it connects to wrong
+        # +ssid
+        NO_AUDIO_SCRCPY = 0x2              # Disable scrcpy audio forwarding
+        OMX_H264_ENCODER_SCRCPY = 0x4      # Use non-default OMX.google.h264.encoder scrcpy video encoder
+        USE_SCRCPY = 0x1                   # Use scrcpy instead of MonkeyRemote
+
+        # use to get in value of flag
+        @classmethod
+        def valueof(cls, name=None):
+            if name is None:
+                return name
+            if name not in cls.__members__:
+                raise ValueError("AddAdbFlags has no member:[%s]" % name)
+            return (cls[member].value for member in cls.__members__ if member == name)
+
     def post_add_adb(self, 
                      adb_device: str = None,                   # Android device device ID
                      adb_id: str = None,                       # Android device identifier (serial number).
                      adb_model: str = None,                    # Android device model ID
                      adb_product: str = None,                  # Android device product ID
                      app_identifier: str = None,               # Identifier that App and adb can both query (mac of wlan0)
+                     auth: str = None,                         # WiFi Authentication to be used.
                      bt_ctrl_dev: str = None,                  # Filepath of device's assigned BT adapter
                      bt_mac: str = None,                       # Device's BT MAC address
                      device_type: str = None,                  # Interop device type
+                     eap_method: str = None,                   # WiFi EAP method: EAP-TTLS, EAP-PEAP
+                     eap_user: str = None,                     # WiFi EAP identity.
+                     flags: str = None,                        # See above
+                     flags_mask: str = None,                   # Which bits in the flags value to apply.
                      lf_username: str = None,                  # LANforge Interop app user-name
+                     password: str = None,                     # WiFi password.
+                     realm: str = None,                        # Realm this Interop device should use. Default is server's
+                     # realm.
                      resource: int = None,                     # Resource number. [W]
+                     resource_id: str = None,                  # Resource-ID this Interop device should use when connecting
+                     # to LANforge Manager.
                      sdk_release: str = None,                  # Android sdk release (example: 4.4.2)
                      sdk_version: str = None,                  # Android sdk version (example: 19)
                      shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                     ssid: str = None,                         # WiFi SSID to which this device should connect
                      response_json_list: list = None,
                      debug: bool = False,
                      errors_warnings: list = None,
@@ -1795,22 +1830,40 @@ class LFJsonCommand(JsonCommand):
             data["adb_product"] = adb_product
         if app_identifier is not None:
             data["app_identifier"] = app_identifier
+        if auth is not None:
+            data["auth"] = auth
         if bt_ctrl_dev is not None:
             data["bt_ctrl_dev"] = bt_ctrl_dev
         if bt_mac is not None:
             data["bt_mac"] = bt_mac
         if device_type is not None:
             data["device_type"] = device_type
+        if eap_method is not None:
+            data["eap_method"] = eap_method
+        if eap_user is not None:
+            data["eap_user"] = eap_user
+        if flags is not None:
+            data["flags"] = flags
+        if flags_mask is not None:
+            data["flags_mask"] = flags_mask
         if lf_username is not None:
             data["lf_username"] = lf_username
+        if password is not None:
+            data["password"] = password
+        if realm is not None:
+            data["realm"] = realm
         if resource is not None:
             data["resource"] = resource
+        if resource_id is not None:
+            data["resource_id"] = resource_id
         if sdk_release is not None:
             data["sdk_release"] = sdk_release
         if sdk_version is not None:
             data["sdk_version"] = sdk_version
         if shelf is not None:
             data["shelf"] = shelf
+        if ssid is not None:
+            data["ssid"] = ssid
         if len(data) < 1:
             raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_adb",
@@ -1836,14 +1889,23 @@ class LFJsonCommand(JsonCommand):
                           adb_model=param_map.get("adb_model"),
                           adb_product=param_map.get("adb_product"),
                           app_identifier=param_map.get("app_identifier"),
+                          auth=param_map.get("auth"),
                           bt_ctrl_dev=param_map.get("bt_ctrl_dev"),
                           bt_mac=param_map.get("bt_mac"),
                           device_type=param_map.get("device_type"),
+                          eap_method=param_map.get("eap_method"),
+                          eap_user=param_map.get("eap_user"),
+                          flags=param_map.get("flags"),
+                          flags_mask=param_map.get("flags_mask"),
                           lf_username=param_map.get("lf_username"),
+                          password=param_map.get("password"),
+                          realm=param_map.get("realm"),
                           resource=param_map.get("resource"),
+                          resource_id=param_map.get("resource_id"),
                           sdk_release=param_map.get("sdk_release"),
                           sdk_version=param_map.get("sdk_version"),
                           shelf=param_map.get("shelf"),
+                          ssid=param_map.get("ssid"),
                           )
         """
 
@@ -2454,6 +2516,7 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(AddChamberChamberFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
+        CC_ACTIVE = 0x2000        # (14) Start/stop climate control in the chamber.
         OPEN = 0x4                # (3) Door is open, no real isolation right now.
         PHANTOM = 0x1             # (1) Chamber is not actually here right now.
         TT_OVERRIDE = 0x800       # (11) LANforge should override manual turntable control
@@ -2492,6 +2555,7 @@ class LFJsonCommand(JsonCommand):
 
     def post_add_chamber(self, 
                          chamber_type: str = None,                 # Chamber type, see above. Use 1 for Medium if uncertain.
+                         climate_controller_type: str = None,      # Type of climate controller for this chamber.
                          dut_name1: str = None,                    # Name of first DUT in this chamber or NA
                          dut_name2: str = None,                    # Name of second DUT in this chamber or NA
                          dut_name3: str = None,                    # Name of third DUT in this chamber or NA
@@ -2527,6 +2591,8 @@ class LFJsonCommand(JsonCommand):
         data = {}
         if chamber_type is not None:
             data["chamber_type"] = chamber_type
+        if climate_controller_type is not None:
+            data["climate_controller_type"] = climate_controller_type
         if dut_name1 is not None:
             data["dut_name1"] = dut_name1
         if dut_name2 is not None:
@@ -2586,6 +2652,7 @@ class LFJsonCommand(JsonCommand):
         TODO: check for default argument values
         TODO: fix comma counting
         self.post_add_chamber(chamber_type=param_map.get("chamber_type"),
+                              climate_controller_type=param_map.get("climate_controller_type"),
                               dut_name1=param_map.get("dut_name1"),
                               dut_name2=param_map.get("dut_name2"),
                               dut_name3=param_map.get("dut_name3"),
@@ -4087,6 +4154,91 @@ class LFJsonCommand(JsonCommand):
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/ADD_MLD_LINK> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#add_mld_link
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    class AddMldLinkFlags(Enum):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        skip_flush = 1      # Do not reconfigure VAP (now).
+
+    def post_add_mld_link(self, 
+                          ap_name: str = None,                      # Name for this Virtual AP, for example: vap0
+                          bandwidth: str = None,                    # Requested bandwidth: AUTO, 20, 40, 80, 160, or 320.
+                          bss_color: str = None,                    # The BSS color for this link, use Zero for AUTO.
+                          bssid: str = None,                        # The BSSID address, can also use parent-radio-pattern:
+                          # <tt>xx:xx:xx:*:*:xx</tt>
+                          flags: str = None,                        # Flags for this interface (see above.)
+                          flags_mask: str = None,                   # Flags for this interface (see above.)
+                          link_id: str = None,                      # Link index (0-2 inclusive).
+                          resource: int = None,                     # Resource number. [W]
+                          shelf: int = 1,                           # Shelf number. [R][D:1]
+                          response_json_list: list = None,
+                          debug: bool = False,
+                          errors_warnings: list = None,
+                          suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                response_json = []
+                result = post_add_mld_link(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if ap_name is not None:
+            data["ap_name"] = ap_name
+        if bandwidth is not None:
+            data["bandwidth"] = bandwidth
+        if bss_color is not None:
+            data["bss_color"] = bss_color
+        if bssid is not None:
+            data["bssid"] = bssid
+        if flags is not None:
+            data["flags"] = flags
+        if flags_mask is not None:
+            data["flags_mask"] = flags_mask
+        if link_id is not None:
+            data["link_id"] = link_id
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__ + ": no parameters to submit")
+        response = self.json_post(url="/cli-json/add_mld_link",
+                                  post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+
+    def post_add_mld_link_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_mld_link(ap_name=param_map.get("ap_name"),
+                               bandwidth=param_map.get("bandwidth"),
+                               bss_color=param_map.get("bss_color"),
+                               bssid=param_map.get("bssid"),
+                               flags=param_map.get("flags"),
+                               flags_mask=param_map.get("flags_mask"),
+                               link_id=param_map.get("link_id"),
+                               resource=param_map.get("resource"),
+                               shelf=param_map.get("shelf"),
+                               )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_MONITOR> type requests
 
         https://www.candelatech.com/lfcli_ug.php#add_monitor
@@ -4418,9 +4570,9 @@ class LFJsonCommand(JsonCommand):
         EAP_TTLS = 0x80                     # Use 802.1x EAP-TTLS
         ENABLE_POWERSAVE = 0x1000           # Enable power-save when creating stations.
         NAT = 0x100                         # Enable NAT if this object is in a virtual router
+        OWE = 0x10000                       # Use OWE encryption.
         RRM_IGNORE_BEACON_REQ = 0x2000      # Request station ignore RRM beacon measurement request.
         SKIP_DHCP_ROAM = 0x10               # Ask station to not re-do DHCP on roam.
-        SPATIAL_REUSE = 0x10000             # VAP with spatial-reuse enabled (wifi-7 only).
         WEP = 0x2                           # Use WEP encryption
         WPA = 0x4                           # Use WPA encryption
         WPA2 = 0x8                          # Use WPA2 encryption
@@ -5559,6 +5711,7 @@ class LFJsonCommand(JsonCommand):
         ht160_enable = 0x100000000                # Enable HT160 mode.
         mcast_to_ucast = 0x80000000               # Request AP to translate multicats to unicast before sending
         # +to STAs
+        mld_sub_vap = 0x400000000000              # 'Fake' VAP to store per-link info for other MLD AP.
         osen_enable = 0x40000000                  # Enable OSEN protocol (OSU Server-only Authentication)
         pri_sec_ch_enable = 0x100                 # Enable Primary/Secondary channel switch.
         short_preamble = 0x80                     # Allow short-preamble
@@ -12496,11 +12649,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_chamber(self, 
                          chamber: str = None,                      # Chamber name [W]
+                         climate_control_device: str = None,       # Device information to identify climate controller, such
+                         # as IP address, or device file handle.
                          cur_rotation: str = None,                 # Primarily used to store the last known rotation for
                          # turntables that do not report absolute position. Use NA
                          # or leave blank if unsure.
+                         humidity: str = None,                     # Humidity, as a percent.
                          position: str = None,                     # Absolute position in degrees.
                          speed_rpm: str = None,                    # Speed in rpm (floating point number is accepted
+                         temperature: str = None,                  # Temperature, in celcius.
                          tilt: str = None,                         # Absolute tilt in degrees.
                          turntable: str = None,                    # Turn-table address, for instance: 192.168.1.22:3001
                          response_json_list: list = None,
@@ -12517,12 +12674,18 @@ class LFJsonCommand(JsonCommand):
         data = {}
         if chamber is not None:
             data["chamber"] = chamber
+        if climate_control_device is not None:
+            data["climate_control_device"] = climate_control_device
         if cur_rotation is not None:
             data["cur_rotation"] = cur_rotation
+        if humidity is not None:
+            data["humidity"] = humidity
         if position is not None:
             data["position"] = position
         if speed_rpm is not None:
             data["speed_rpm"] = speed_rpm
+        if temperature is not None:
+            data["temperature"] = temperature
         if tilt is not None:
             data["tilt"] = tilt
         if turntable is not None:
@@ -12548,9 +12711,12 @@ class LFJsonCommand(JsonCommand):
         TODO: check for default argument values
         TODO: fix comma counting
         self.post_set_chamber(chamber=param_map.get("chamber"),
+                              climate_control_device=param_map.get("climate_control_device"),
                               cur_rotation=param_map.get("cur_rotation"),
+                              humidity=param_map.get("humidity"),
                               position=param_map.get("position"),
                               speed_rpm=param_map.get("speed_rpm"),
+                              temperature=param_map.get("temperature"),
                               tilt=param_map.get("tilt"),
                               turntable=param_map.get("turntable"),
                               )
@@ -16126,6 +16292,7 @@ class LFJsonCommand(JsonCommand):
         MSG_TYPE_EAPOL_4_OF_4 = 0x20            # EAPOL message 4/4
         MSG_TYPE_EAPOL_ASSOC = 0x200            # EAP Association
         MSG_TYPE_EAPOL_KEY_REQ = 0x100          # EAP Key Request (not sure if this works properly)
+        MSG_TYPE_PMKID = 0x4000                 # PMKID field corruption (applied as a percentage)
         MST_TYPE_EAPOL_ID_REQ = 0x400           # EAP Identity request
         MST_TYPE_EAPOL_ID_RESP = 0x800          # EAP Identity response
         MST_TYPE_EAPOL_OTHER_REQ = 0x1000       # EAP Requests that do not match other things.
@@ -16159,6 +16326,8 @@ class LFJsonCommand(JsonCommand):
                                   # above).
                                   ignore_per_mil: str = None,               # Per-million: Station to randomly ignore
                                   # selected message types by this amount.
+                                  pmkid: str = None,                        # PMKID Override. Provide in hex (without '0x').
+                                  # Up to 16-bytes (32 characters).
                                   port: str = None,                         # WiFi interface name or number. [W]
                                   req_flush: str = None,                    # Set to 1 if you wish to flush changes to
                                   # kernel now.
@@ -16194,6 +16363,8 @@ class LFJsonCommand(JsonCommand):
             data["ignore_flags"] = ignore_flags
         if ignore_per_mil is not None:
             data["ignore_per_mil"] = ignore_per_mil
+        if pmkid is not None:
+            data["pmkid"] = pmkid
         if port is not None:
             data["port"] = port
         if req_flush is not None:
@@ -16231,6 +16402,7 @@ class LFJsonCommand(JsonCommand):
                                        dup_per_65535=param_map.get("dup_per_65535"),
                                        ignore_flags=param_map.get("ignore_flags"),
                                        ignore_per_mil=param_map.get("ignore_per_mil"),
+                                       pmkid=param_map.get("pmkid"),
                                        port=param_map.get("port"),
                                        req_flush=param_map.get("req_flush"),
                                        resource=param_map.get("resource"),
@@ -18147,6 +18319,64 @@ class LFJsonCommand(JsonCommand):
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/SHOW_MLD_LINK> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#show_mld_link
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_show_mld_link(self, 
+                           link_id: str = None,                      # MLD Link index, 0-2 inclusive or 'ALL'.
+                           port: str = None,                         # Name of network device (Port) to which olds the MLD
+                           # Links.
+                           resource: int = None,                     # Resource number.
+                           shelf: int = 1,                           # Shelf number. [D:1]
+                           response_json_list: list = None,
+                           debug: bool = False,
+                           errors_warnings: list = None,
+                           suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                response_json = []
+                result = post_show_mld_link(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if link_id is not None:
+            data["link_id"] = link_id
+        if port is not None:
+            data["port"] = port
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__ + ": no parameters to submit")
+        response = self.json_post(url="/cli-json/show_mld_link",
+                                  post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+
+    def post_show_mld_link_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_mld_link(link_id=param_map.get("link_id"),
+                                port=param_map.get("port"),
+                                resource=param_map.get("resource"),
+                                shelf=param_map.get("shelf"),
+                                )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_MLO_LINK> type requests
 
         https://www.candelatech.com/lfcli_ug.php#show_mlo_link
@@ -20041,9 +20271,10 @@ class LFJsonQuery(JsonQuery):
         /adb/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        api, app-id, bt+ctrl, bt+mac, device, device-type, model, name, phantom, 
-        product, release, resource-id, timed-out, unauth, user-name, wifi+mac
-    Example URL: /adb?fields=api,app-id
+        a-wifi, api, app-id, bt+ctrl, bt+mac, device, device-type, eap-method, eap-user, 
+        encryption, model, name, password, phantom, product, release, resource-id, 
+        ssid, timed-out, unauth, user-name, wifi+mac
+    Example URL: /adb?fields=a-wifi,api
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_adb(eid_list=['1.234', '1.344'],
@@ -20052,19 +20283,28 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
+        'a-wifi':      # Android phones may roam to other saved WiFi profiles if the preferred
+                       # WiFi connection disconnects.If you enable this option, the LANforge
+                       # system will attempt to detect this and force it back to the preferred
+                       # WiFi SSID.
         'api':         # SDK API Version
         'app-id':      # Interop app identifier.
         'bt ctrl':     # LANforge bluetooth control device.
         'bt mac':      # Bluetooth MAC address
         'device':      # Interop device identifier.
         'device-type': # Interop device type
+        'eap-method':  # WiFi EAP Method for Enterprise Authentication.
+        'eap-user':    # WiFi EAP User for Enterprise Authentication.
+        'encryption':  # WiFi authentication type for the WiFi connection.
         'model':       # Interop device model identifier.
         'name':        # Interop device serial number and LANforge Resource location.
+        'password':    # WiFi password.
         'phantom':     # LANforge is unable to communicate with this device. Maybe it is
                        # unplugged?
         'product':     # Interop device product identifier.
         'release':     # SDK Release
         'resource-id': # Identifier for the Resource this Interop device is associated.
+        'ssid':        # WiFi SSID to which this device should connect.
         'timed-out':   # The device has timed out too many times while running commands. It may
                        # need to be reconnected.
         'unauth':      # The device is un-authorized. Enable debugging on device to use it.
@@ -22288,9 +22528,10 @@ class LFJsonQuery(JsonQuery):
         dns-avg, dns-max, dns-min, eid, elapsed, entity+id, fb-avg, fb-max, fb-min, 
         frame-rate, ftp-host, ftp-port, ftp-stor, http-p, http-r, http-t, login-denied, 
         name, nf+%284xx%29, other-err, read, redir, rpt+timer, rslv-h, rslv-p, rx+rate, 
-        rx+rate+%281m%29, status, time-stamp, timeout, total-buffers, total-err, total-rebuffers, 
-        total-urls, total-wait-time, tx+rate, tx+rate+%281%C2%A0min%29, type, uc-avg, 
-        uc-max, uc-min, urls%2Fs, video-format-bitrate, video-quality, write        # hidden columns:
+        rx+rate+%281m%29, rx+rate+%28last%29, status, time-stamp, timeout, total-buffers, 
+        total-err, total-rebuffers, total-urls, total-wait-time, tx+rate, tx+rate+%281%C2%A0min%29, 
+        tx+rate+%28last%29, type, uc-avg, uc-max, uc-min, urls%2Fs, video-format-bitrate, 
+        video-quality, write        # hidden columns:
         rpt-time
     Example URL: /layer4?fields=%21conn,acc.+denied
 
@@ -22351,6 +22592,8 @@ class LFJsonQuery(JsonQuery):
         'rslv-p':               # Couldn't resolve Proxy.
         'rx rate':              # Payload receive rate (bps).
         'rx rate (1m)':         # Payload receive rate over the last minute (bps).
+        'rx rate (last)':       # Real receive rate (bps) over the last report interval.This includes only
+                                # the protocol payload (goodput).
         'status':               # Current State of the connection.UninitializedHas not yet been
                                 # started/stopped.InitializingBeing set up.StartingStarting the
                                 # test.RunningTest is actively running.StoppedTest has been
@@ -22369,6 +22612,8 @@ class LFJsonQuery(JsonQuery):
                                 # Playback during Join Time and playback Buffering in Video Resume State.
         'tx rate':              # Payload transmit rate (bps).
         'tx rate (1&nbsp;min)': # Payload transmit rate over the last minute (bps).
+        'tx rate (last)':       # Real transmit rate (bps) over the last report interval.This includes
+                                # only the protocol payload (goodput).
         'type':                 # The specific type of this Layer 4-7 Endpoint.
         'uc-avg':               # Average time in milliseconds to complete processing of the URLfor the
                                 # last 100 requests.
@@ -22451,11 +22696,12 @@ class LFJsonQuery(JsonQuery):
         /mlo/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        active, activity, avg+chain+rssi, beacon+signal, chain+rssi, channel, disabled+reason, 
-        dormant, dup+pkts, eid, entity+id, esr+active, last+exit, noise, parent+dev, 
-        retry+failed, rx+bytes, rx+drop, rx+pkts, rx+rate, rx+rate+%281m%29, rx+signal, 
-        rx-rate, time-stamp, tx+bytes, tx+pkts, tx+rate, tx+rate+%281%C2%A0min%29, tx-rate, 
-        wifi+retries        # hidden columns:
+        active, activity, avg+chain+rssi, bandwidth, beacon+signal, chain+rssi, channel, 
+        disabled+reason, dormant, dup+pkts, eid, entity+id, esr+active, last+exit, 
+        noise, nss, our+address, parent+dev, peer+address, retry+failed, rx+bytes, 
+        rx+drop, rx+pkts, rx+rate, rx+rate+%281m%29, rx+signal, rx-rate, time-stamp, 
+        tx+bytes, tx+pkts, tx+rate, tx+rate+%281%C2%A0min%29, tx-rate, wifi+retries, 
+              # hidden columns:
         resource
     Example URL: /mlo?fields=active,activity
 
@@ -22471,6 +22717,7 @@ class LFJsonQuery(JsonQuery):
                                 # includes locally generated traffic as well as anyother systems active on
                                 # this channel.This is a per-radio value.
         'avg chain rssi':       # Wireless signal Average per-chain RSSI.
+        'bandwidth':            # Current negotiated bandwidth for the link.
         'beacon signal':        # Wireless signal strength (RSSI) for received beacons.
         'chain rssi':           # Wireless signal per-chain RSSI.
         'channel':              # Channel at the MLO link is currently using, if known.
@@ -22482,7 +22729,10 @@ class LFJsonQuery(JsonQuery):
         'esr active':           # MLO Link is currently active.
         'last exit':            # Reasons that ESR MLO mode was last exited by the driver.
         'noise':                # Wireless noise level.
+        'nss':                  # Current negotiated number of spatial streams for the link.
+        'our address':          # Our MAC address for this MLO link
         'parent dev':           # 
+        'peer address':         # Peer MAC address for this MLO link
         'retry failed':         # Number of Wireless packets that the MLO Link failed to send due to
                                 # excessive retries.
         'rx bytes':             # Number of bytes received by this MLO Link.
@@ -22642,7 +22892,7 @@ class LFJsonQuery(JsonQuery):
     When requesting specific column names, they need to be URL encoded:
         4way+time+%28us%29, activity, aid, alias, anqp+time+%28us%29, ap, avg+chain+rssi, 
         beacon, bps+rx, bps+rx+ll, bps+tx, bps+tx+ll, bss+color, bytes+rx+ll, bytes+tx+ll, 
-        centerfrequency, chain+rssi, channel, collisions, connections, crypt, cx+ago, 
+        center+frequency, chain+rssi, channel, collisions, connections, crypt, cx+ago, 
         cx+time+%28us%29, device, dhcp+%28ms%29, down, entity+id, gateway+ip, hardware, ip, 
         ipv6+address, ipv6+gateway, key%2Fphrase, login-fail, login-ok, logout-fail, 
         logout-ok, mac, mask, misc, mode, mtu, no+cx+%28us%29, noise, parent+dev, phantom, 
@@ -22662,119 +22912,119 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        '4way time (us)':  # TIme (in micro-seconds) it took to complete the last WiFi 4-way
-                           # authentication.
-        'activity':        # Percent of the channel that is utilized over the last minute.This
-                           # includes locally generated traffic as well as anyother systems active on
-                           # this channel.This is a per-radio value.
-        'aid':             # Reported STA association ID (AID)
-        'alias':           # User-specified alias for this Port.
-        'anqp time (us)':  # Time (in micro-seconds) it took to complete the last WiFi ANQP
-                           # request/response session.
-        'ap':              # BSSID of AP for connected stations.
-        'avg chain rssi':  # Wireless signal Average per-chain RSSI.
-        'beacon':          # Number of Wireless beacons from Cell or AP that have been missed.
-        'bps rx':          # Average bits per second received for the last 30 seconds.
-        'bps rx ll':       # Bits per second received, including low-level framing (Ethernet Only).
-        'bps tx':          # Average bits per second transmitted for the last 30 seconds.
-        'bps tx ll':       # Bits per second transmitted, including low-level framing (Ethernet
-                           # Only).
-        'bss color':       # Reported Wireless BSS Color
-        'bytes rx ll':     # Bytes received, including low-level framing (Ethernet Only).
-        'bytes tx ll':     # Bytes transmitted, including low-level framing (Ethernet Only).
-        'centerfrequency': # Center channel which the devices is communicating on.
-        'chain rssi':      # Wireless signal per-chain RSSI.
-        'channel':         # Channel at the device is currently on, if known.
-        'collisions':      # Total number of collisions reported by this Interface.For WiFi devices,
-                           # this is number of re-transmit attempts.
-        'connections':     # Number of wireless connections completed.
-        'crypt':           # Number of Wireless packets dropped due to inability to decrypt.
-        'cx ago':          # How long ago was the last WiFi connection attempt started?This relates
-                           # only to the network interface, not any higher level protocol traffic
-                           # upon it.
-        'cx time (us)':    # Time (in micro-seconds) it took to completethe last WiFi connection to
-                           # the AP.If the connection is encrypted, this measurement includesthe
-                           # value of 4way time (us)
-        'device':          # Ethernet device name, as seen by the kernel.
-        'dhcp (ms)':       # Time (in milliseconds) it took to acquire DHCP lease,or to time out
-                           # while trying to acquire lease.
-        'down':            # The interface is configured DOWN.  It must be configured UP to be in
-                           # active use.
-        'entity id':       # Entity ID
-        'gateway ip':      # Default Router/Gateway IP for the Interface.
-        'hardware':        # Port hardware type.
-        'ip':              # IP Address of the Interface.
-        'ipv6 address':    # IPv6 Address for this interface.  If global-scope address exists, it
-                           # will be displayed,otherwise link-local will be displayed.
-        'ipv6 gateway':    # IPv6 default gateway.
-        'key/phrase':      # WEP Key or WPA Phrase (if enabled).
-        'login-fail':      # The 'ifup-post' script reported failure.  This is usually used for WiFi
-                           # portallogins, but may be customized by the user for other needs.
-        'login-ok':        # The 'ifup-post' script reported OK.  This is usually used for WiFi
-                           # portallogins, but may be customized by the user for other needs.
-        'logout-fail':     # The 'ifup-post --logout' script reported failure.  This is usually used
-                           # for WiFi portallogouts, but may be customized by the user for other
-                           # needs.
-        'logout-ok':       # The 'ifup-post --logout' script reported OK.  This is usually used for
-                           # WiFi portallogouts, but may be customized by the user for other needs.
-        'mac':             # Ethernet MAC address of the Interface.
-        'mask':            # IP Mask of the Interface.
-        'misc':            # Number of Wireless packets dropped on receive due to unspecified
-                           # reasons.
-        'mode':            # Wireless radio mode (802.11a/b/g).
-        'mtu':             # MTU (Maximum Transmit Unit) size, in bytes.
-        'no cx (us)':      # How long was the WiFi disconnect duration for the last disconnection?
-        'noise':           # Wireless noise level.
-        'parent dev':      # Parent device or port of this port. Blank if this device is not a child
-                           # of another device or port.
-        'phantom':         # Is the port PHANTOM (no hardware found) or not.
-        'port':            # Entity ID
-        'port type':       # Ports can be Ethernet, Radio, vAP, vSTA, Redirect, or Bridges
-        'pps rx':          # Average packets per second received for the last 30 seconds.
-        'pps tx':          # Average packets per second transmitted for the last 30 seconds.
-        'qlen':            # "Transmit Queue Length for this Interface.
-        'reset':           # Current Reset-State.
-        'retry failed':    # Number of Wireless packets that the interface failed to send due to
-                           # excessive retries.
-        'rf loss':         # Amount of RX/RX RF Loss in 1/2 dB from SMA port to the internal
-                           # Radio.Some radios can report this, and it can be used in calibration
-                           # toincrease calibration accuracy.
-        'rx bytes':        # Total number of bytes received by this Interface.
-        'rx crc':          # Total number of packets dropped because of a bad CRC/FCS.
-        'rx drop':         # Total number of dropped packets on recieve.  Usually means driver/kernel
-                           # is being over-worked.
-        'rx errors':       # Total number of all types of Receive Errors.
-        'rx fifo':         # Total number of packets dropped because driver/kernel queues are full.
-        'rx frame':        # Total number of packets dropped because of framing errors at the
-                           # physical layer.
-        'rx length':       # Total number of packets dropped because their length was invalid.
-        'rx miss':         # Total number of packets dropped because of a missed interrupt.
-        'rx over':         # Total number of packets dropped because of framing errors at the
-                           # physical layer.
-        'rx pkts':         # Total number of packets received by this Interface.
-        'rx-rate':         # Reported network device RX link speed.
-        'sec':             # Number of secondary IP addresses configured or detected.
-        'security':        # WiFi Security Protocol Configured
-        'signal':          # Wireless signal strength (RSSI).
-        'ssid':            # WiFi SSID identifier.Use [BLANK] for empty SSID, which means use any
-                           # available SSID when associating.
-        'status':          # Wireless link status.
-        'time-stamp':      # Time-Stamp
-        'tx abort':        # Total packets dropped on transmit because of driver abort.
-        'tx bytes':        # Total number of bytes sent by this Interface.
-        'tx crr':          # Total packets dropped on transmit because of carrier error.
-        'tx errors':       # Total number of all types of Transmit Errors.
-        'tx fifo':         # Total packets dropped on transmit because outgoing queue was full.
-        'tx hb':           # Total packets dropped on transmit because of transceiver heartbeat
-                           # errors.
-        'tx pkts':         # Total number of packets sent by this Interface.
-        'tx wind':         # Total number dropped on transmit because of Out-of-Window collision.
-        'tx-failed %':     # Percentage of transmitted Wireless packets that were not ACKed.They
-                           # might have succeeded on retry.
-        'tx-rate':         # Reported network device TX link speed.
-        'wifi retries':    # Number of Wireless packets that the wifi radio retried.One packet may be
-                           # tried multiple times and each try would be counted in this stat.Not all
-                           # radios can properly report this statistic.
+        '4way time (us)':   # TIme (in micro-seconds) it took to complete the last WiFi 4-way
+                            # authentication.
+        'activity':         # Percent of the channel that is utilized over the last minute.This
+                            # includes locally generated traffic as well as anyother systems active on
+                            # this channel.This is a per-radio value.
+        'aid':              # Reported STA association ID (AID)
+        'alias':            # User-specified alias for this Port.
+        'anqp time (us)':   # Time (in micro-seconds) it took to complete the last WiFi ANQP
+                            # request/response session.
+        'ap':               # BSSID of AP for connected stations.
+        'avg chain rssi':   # Wireless signal Average per-chain RSSI.
+        'beacon':           # Number of Wireless beacons from Cell or AP that have been missed.
+        'bps rx':           # Average bits per second received for the last 30 seconds.
+        'bps rx ll':        # Bits per second received, including low-level framing (Ethernet Only).
+        'bps tx':           # Average bits per second transmitted for the last 30 seconds.
+        'bps tx ll':        # Bits per second transmitted, including low-level framing (Ethernet
+                            # Only).
+        'bss color':        # Reported Wireless BSS Color
+        'bytes rx ll':      # Bytes received, including low-level framing (Ethernet Only).
+        'bytes tx ll':      # Bytes transmitted, including low-level framing (Ethernet Only).
+        'center frequency': # Center channel which the devices is communicating on.
+        'chain rssi':       # Wireless signal per-chain RSSI.
+        'channel':          # Channel at the device is currently on, if known.
+        'collisions':       # Total number of collisions reported by this Interface.For WiFi devices,
+                            # this is number of re-transmit attempts.
+        'connections':      # Number of wireless connections completed.
+        'crypt':            # Number of Wireless packets dropped due to inability to decrypt.
+        'cx ago':           # How long ago was the last WiFi connection attempt started?This relates
+                            # only to the network interface, not any higher level protocol traffic
+                            # upon it.
+        'cx time (us)':     # Time (in micro-seconds) it took to completethe last WiFi connection to
+                            # the AP.If the connection is encrypted, this measurement includesthe
+                            # value of 4way time (us)
+        'device':           # Ethernet device name, as seen by the kernel.
+        'dhcp (ms)':        # Time (in milliseconds) it took to acquire DHCP lease,or to time out
+                            # while trying to acquire lease.
+        'down':             # The interface is configured DOWN.  It must be configured UP to be in
+                            # active use.
+        'entity id':        # Entity ID
+        'gateway ip':       # Default Router/Gateway IP for the Interface.
+        'hardware':         # Port hardware type.
+        'ip':               # IP Address of the Interface.
+        'ipv6 address':     # IPv6 Address for this interface.  If global-scope address exists, it
+                            # will be displayed,otherwise link-local will be displayed.
+        'ipv6 gateway':     # IPv6 default gateway.
+        'key/phrase':       # WEP Key or WPA Phrase (if enabled).
+        'login-fail':       # The 'ifup-post' script reported failure.  This is usually used for WiFi
+                            # portallogins, but may be customized by the user for other needs.
+        'login-ok':         # The 'ifup-post' script reported OK.  This is usually used for WiFi
+                            # portallogins, but may be customized by the user for other needs.
+        'logout-fail':      # The 'ifup-post --logout' script reported failure.  This is usually used
+                            # for WiFi portallogouts, but may be customized by the user for other
+                            # needs.
+        'logout-ok':        # The 'ifup-post --logout' script reported OK.  This is usually used for
+                            # WiFi portallogouts, but may be customized by the user for other needs.
+        'mac':              # Ethernet MAC address of the Interface.
+        'mask':             # IP Mask of the Interface.
+        'misc':             # Number of Wireless packets dropped on receive due to unspecified
+                            # reasons.
+        'mode':             # Wireless radio mode (802.11a/b/g).
+        'mtu':              # MTU (Maximum Transmit Unit) size, in bytes.
+        'no cx (us)':       # How long was the WiFi disconnect duration for the last disconnection?
+        'noise':            # Wireless noise level.
+        'parent dev':       # Parent device or port of this port. Blank if this device is not a child
+                            # of another device or port.
+        'phantom':          # Is the port PHANTOM (no hardware found) or not.
+        'port':             # Entity ID
+        'port type':        # Ports can be Ethernet, Radio, vAP, vSTA, Redirect, or Bridges
+        'pps rx':           # Average packets per second received for the last 30 seconds.
+        'pps tx':           # Average packets per second transmitted for the last 30 seconds.
+        'qlen':             # "Transmit Queue Length for this Interface.
+        'reset':            # Current Reset-State.
+        'retry failed':     # Number of Wireless packets that the interface failed to send due to
+                            # excessive retries.
+        'rf loss':          # Amount of RX/RX RF Loss in 1/2 dB from SMA port to the internal
+                            # Radio.Some radios can report this, and it can be used in calibration
+                            # toincrease calibration accuracy.
+        'rx bytes':         # Total number of bytes received by this Interface.
+        'rx crc':           # Total number of packets dropped because of a bad CRC/FCS.
+        'rx drop':          # Total number of dropped packets on recieve.  Usually means driver/kernel
+                            # is being over-worked.
+        'rx errors':        # Total number of all types of Receive Errors.
+        'rx fifo':          # Total number of packets dropped because driver/kernel queues are full.
+        'rx frame':         # Total number of packets dropped because of framing errors at the
+                            # physical layer.
+        'rx length':        # Total number of packets dropped because their length was invalid.
+        'rx miss':          # Total number of packets dropped because of a missed interrupt.
+        'rx over':          # Total number of packets dropped because of framing errors at the
+                            # physical layer.
+        'rx pkts':          # Total number of packets received by this Interface.
+        'rx-rate':          # Reported network device RX link speed.
+        'sec':              # Number of secondary IP addresses configured or detected.
+        'security':         # WiFi Security Protocol Configured
+        'signal':           # Wireless signal strength (RSSI).
+        'ssid':             # WiFi SSID identifier.Use [BLANK] for empty SSID, which means use any
+                            # available SSID when associating.
+        'status':           # Wireless link status.
+        'time-stamp':       # Time-Stamp
+        'tx abort':         # Total packets dropped on transmit because of driver abort.
+        'tx bytes':         # Total number of bytes sent by this Interface.
+        'tx crr':           # Total packets dropped on transmit because of carrier error.
+        'tx errors':        # Total number of all types of Transmit Errors.
+        'tx fifo':          # Total packets dropped on transmit because outgoing queue was full.
+        'tx hb':            # Total packets dropped on transmit because of transceiver heartbeat
+                            # errors.
+        'tx pkts':          # Total number of packets sent by this Interface.
+        'tx wind':          # Total number dropped on transmit because of Out-of-Window collision.
+        'tx-failed %':      # Percentage of transmitted Wireless packets that were not ACKed.They
+                            # might have succeeded on retry.
+        'tx-rate':          # Reported network device TX link speed.
+        'wifi retries':     # Number of Wireless packets that the wifi radio retried.One packet may be
+                            # tried multiple times and each try would be counted in this stat.Not all
+                            # radios can properly report this statistic.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -23405,7 +23655,7 @@ class LFJsonQuery(JsonQuery):
         pulse+repetition+frequency+3, pulse+width, sample+rate, state, status, sweep+time, 
         time+period+1+off, time+period+1+on, time+period+2+off, time+period+2+on, 
         time+period+3+off, time+period+3+on, trials+center, trials+high, trials+low, 
-        trigger+amp, trigger+dbm, uut+channel
+        trigger+amp, trigger+dbm, uut+channel+bandwidth
     Example URL: /rfgen?fields=bb-gain,burst+offset
 
     Example py-json call (it knows the URL):
@@ -23456,7 +23706,7 @@ class LFJsonQuery(JsonQuery):
         'trigger amp':                  # Trigger amplitude, the amplitude threshold needed for the  pulse detect
                                         # tool to detect a pulse.  In 1/100ths of an amp units.
         'trigger dbm':                  # Trigger dBm for pulse-detect tool.
-        'uut channel':                  # UUT Channel for FCC5 configuration.
+        'uut channel bandwidth':        # UUT Channel for FCC5 configuration.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -25247,6 +25497,7 @@ class LFSession(BaseSession):
                 "add_gre": self.command_instance.post_add_gre,
                 "add_group": self.command_instance.post_add_group,
                 "add_l4_endp": self.command_instance.post_add_l4_endp,
+                "add_mld_link": self.command_instance.post_add_mld_link,
                 "add_monitor": self.command_instance.post_add_monitor,
                 "add_mvlan": self.command_instance.post_add_mvlan,
                 "add_ppp_link": self.command_instance.post_add_ppp_link,
@@ -25440,6 +25691,7 @@ class LFSession(BaseSession):
                 "show_events": self.command_instance.post_show_events,
                 "show_files": self.command_instance.post_show_files,
                 "show_group": self.command_instance.post_show_group,
+                "show_mld_link": self.command_instance.post_show_mld_link,
                 "show_mlo_link": self.command_instance.post_show_mlo_link,
                 "show_pesq": self.command_instance.post_show_pesq,
                 "show_ports": self.command_instance.post_show_ports,
