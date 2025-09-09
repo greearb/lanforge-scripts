@@ -693,7 +693,7 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
         # get the Fedora platform
         if (self.email_title_txt != ""):
 
-            self.mail_subject = "{iteration} of {total_iterations} Suites  [{finished} Tests_Completed] [{fail} Fail] [{partial} Partial Fail] [{timeout} Timeout] DUT: {dut} QA Server IP: {hostname}  Rig: {email}  Suite: {suite} Duration: {duration}  Tests:{tests}  DB: {db} Server Ver:{server_ver} Date: {date}".format(  # noqa: E501
+            self.mail_subject = "{iteration} of {total_iterations} Suites [Suite: {suite}] [{finished} Tests_Completed] [{fail} Fail] [{partial} Partial Fail] [{timeout} Timeout] DUT: {dut} QA Server IP: {hostname}  Rig: {email}  Duration: {duration}  Tests:{tests}  DB: {db} Server Ver:{server_ver} Date: {date}".format(  # noqa: E501
                 iteration=self.iteration,
                 total_iterations=self.total_iterations,
                 hostname=self.server_ip,
@@ -710,7 +710,7 @@ QA Report Dashboard: lf_inspect.py was not run as last script of test suite"""
                 db=self.database_sqlite,
                 date=datetime.datetime.now())
         else:
-            self.mail_subject = "[{finished} Tests_Completed] [{fail} Fail] [{partial} Partial Fail] [{timeout} Timeout] DUT: {dut} Suite: {suite} Duration: {duration}  Suite: {suite} Tests:{tests}  Server IP:{hostname}  DB:{db} Server Ver:{server_ver}  Date: {date} ".format(  # noqa: E501
+            self.mail_subject = "[Suite: {suite}] [{finished} Tests_Completed] [{fail} Fail] [{partial} Partial Fail] [{timeout} Timeout] DUT: {dut} Suite: {suite} Duration: {duration}  Tests:{tests}  Server IP:{hostname}  DB:{db} Server Ver:{server_ver}  Date: {date} ".format(  # noqa: E501
                 # email=self.email_title_txt,
                 duration=self.suite_duration,
                 suite=self.test_suite,
