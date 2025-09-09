@@ -743,7 +743,7 @@ survey_kernel_files() {
         done < <(echo  "${!kernel_sort_names[@]}" | sort | head -n -1)
     fi
 
-    debug "Module directories elegible for removal: "
+    debug "Module directories eligible for removal: "
     for file in "${lib_module_dirs[@]}"; do
         file=${file#/lib/modules/}
         # debug "/lib/modules/ ... $file"
@@ -779,7 +779,11 @@ survey_kernel_files() {
     #fi
     # set +veux
 
-    local boot_image_sz=$(du -hc "${kernel_files[@]}" | awk '/total/{print $1}')
+    local boot_image_sz=0
+    # On AT7 there will be none of these files
+    if (( ${#kernel_files[@]} > 0 )); then
+        boot_image_sz=$(du -hc "${kernel_files[@]}" | awk '/total/{print $1}')
+    fi
     local lib_dir_sz=$(du -hc "${lib_module_dirs[@]}" | awk '/total/{print $1}')
     totals[b]="kernels: $boot_image_sz, modules: $lib_dir_sz"
 
