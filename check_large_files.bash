@@ -1092,6 +1092,11 @@ survey_lflogs() {
     if [[ -d .l3helper ]]; then
       directories="$directories ./l3helper/"
     fi
+    if [[ -d /var/log/httpd ]]; then
+        directories="$directories  /var/log/httpd/"
+    elif [[ -d /var/log/apache2 ]]; then
+        directories="$directories  /var/log/apache2/"
+    fi
     mapfile -d '' removable_lflogs < <( find $directories \
         -type f -a \( \
                -iname 'error.log'                \
