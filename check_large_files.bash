@@ -1084,11 +1084,11 @@ survey_pcap_files() {
 
 removable_lflogs=()
 survey_lflogs() {
-    debug "Surveying lanforge, wpa_supplicant nginx and hostapd logs"
+    debug "Surveying hostapd, lanforge, nginx, vnc and wpa_supplicant logs"
     local fsiz=0
     local fnum=0
     cd /home/lanforge
-    local directories="./vr_conf/ ./wifi/ ./l4logs/ /usr/local/lanforge/nginx/ /var/log/httpd/"
+    local directories=".vnc/ ./vr_conf/ ./wifi/ ./l4logs/ /usr/local/lanforge/nginx/"
     if [[ -d .l3helper ]]; then
       directories="$directories ./l3helper/"
     fi
@@ -1112,6 +1112,7 @@ survey_lflogs() {
             -o -iname 'wpa_supplicant_log_*'     \
             -o -iname 'gnuforge_log_*'           \
             -o -iname 'helper_shared_log_*'      \
+            -o -iname '*:1.log'                  \
         \) -print0 > /tmp/removable_lflogs.txt ||:)
     fnum=$( grep -cz '' /tmp/removable_lflogs.txt )
     #printf '      %s\n' "${removable_lflogs[@]}"
