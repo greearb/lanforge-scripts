@@ -329,7 +329,7 @@ class create_lanforge_object:
             raise Exception(r.result)
         print(f"command: {command}: {r.result}")
 
-    def cmd_killall_lfclient(self):
+    def killall_lfclient(self):
         command = "killall lfclient.bash"
         r = self.send_lf_command(command)
         if r.failed:
@@ -375,7 +375,7 @@ class create_lanforge_object:
 
         self.cmd_ls()
 
-        self.cmd_killall_lfclient()
+        self.killall_lfclient()
 
         self.killall_java()
 
@@ -423,9 +423,9 @@ class create_lanforge_object:
                 "comms_prompt_pattern": "^\\S[a-z]*\\@[a-zA-Z0-9]+[-][a-zA-Z0-9]+[\\s\\S]\\S\\S[\\#\\$\\>]",
                 # "on_open": jump_function, # on logging into LANforge will run the jump_function
                 # "auth_password_pattern": "Password:",
-                "timeout_ops": 840,
-                "timeout_transport": 840,
-                "timeout_socket": 840,
+                "timeout_ops": 10,
+                "timeout_transport": 10,
+                "timeout_socket": 10,
                 "ssh_config_file": True,
             }
 
