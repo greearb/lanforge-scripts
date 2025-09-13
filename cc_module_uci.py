@@ -22,8 +22,9 @@ def get_jump_function(params: dict):
     def jump_through_vrf(conn: Driver):
         # ./vrf_exec.bash eth1 ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa root@192.168.215.113
 
+        # jump_cmd = f'./vrf_exec.bash eth1 ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa root@192.168.215.198'
         # jump_cmd = f'./vrf_exec.bash eth1 ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa root@192.168.215.113'
-        jump_cmd = f'./vrf_exec.bash {params['upstream_port']} ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa {params['auth_username']}@{params['host']}'
+        jump_cmd = f"./vrf_exec.bash {params['upstream_port']} ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa {params['auth_username']}@{params['host']}"
 
         # This happens after login completes
         conn.channel.send_input(jump_cmd, eager=True, strip_prompt=False)
