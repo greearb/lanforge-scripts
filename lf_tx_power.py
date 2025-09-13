@@ -421,6 +421,7 @@ def main():
     parser.add_argument("--series", type=str, help="[controller configuration] controller series --series 9800", required=True)
     parser.add_argument("--band", type=str, help="band testing --band 6g", choices=["5g", "24g", "6g", "dual_band_5g", "dual_band_6g"])
     parser.add_argument("--module", type=str, help="[controller configuration] series module (cc_module_9800_3504.py)  --module cc_module_9800_3504 ", required=True)
+    parser.add_argument("--module_scrapli", help="[controller configuration] the module is a scrapli module so needs lanforge information for jump host ", action='store_true')
     parser.add_argument("--timeout", type=str, help="[controller configuration] controller command timeout --timeout 3 ", default=3)
 
     # AP configuration
@@ -617,19 +618,38 @@ def main():
     # dynamic import of the controller module
     series = importlib.import_module(args.module)
 
-    # create the controller , cs is controller scheme
-    cs = series.create_controller_series_object(
-        scheme=args.scheme,
-        dest=args.dest,
-        user=args.user,
-        passwd=args.passwd,
-        prompt=args.prompt,
-        series=args.series,
-        ap=args.ap,
-        ap_band_slot_6g=args.ap_band_slot_6g,
-        port=args.port,
-        band=args.band,
-        timeout=args.timeout)
+    if args.module_scrapli:
+        # create the controller , cs is controller scheme
+        cs = series.create_controller_series_object(
+            scheme=args.scheme,
+            dest=args.dest,
+            user=args.user,
+            passwd=args.passwd,
+            prompt=args.prompt,
+            series=args.series,
+            ap=args.ap,
+            ap_band_slot_6g=args.ap_band_slot_6g,
+            port=args.port,
+            band=args.band,
+            timeout=args.timeout,
+            lfmgr=args.lfmgr,
+            lfuser=args.lfuser,
+            lfpasswd=args.lfpasswd,
+            upstream_port=args.upstream_port)
+    else:
+        # create the controller , cs is controller scheme
+        cs = series.create_controller_series_object(
+            scheme=args.scheme,
+            dest=args.dest,
+            user=args.user,
+            passwd=args.passwd,
+            prompt=args.prompt,
+            series=args.series,
+            ap=args.ap,
+            ap_band_slot_6g=args.ap_band_slot_6g,
+            port=args.port,
+            band=args.band,
+            timeout=args.timeout)
     cs.wlan = args.wlan
     cs.wlanID = args.wlanID
     cs.wlanSSID = args.wlanSSID
