@@ -12,6 +12,7 @@ import json
 
 import scrapli
 from scrapli.driver import GenericDriver, Driver
+
 # from scrapli.response import Response
 
 # from typing import Generator, Optional, Union
@@ -22,7 +23,7 @@ def get_jump_function(params: dict):
         # ./vrf_exec.bash eth1 ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa root@192.168.215.113
 
         # jump_cmd = f'./vrf_exec.bash eth1 ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa root@192.168.215.113'
-        jump_cmd = './vrf_exec.bash eth1 ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa root@192.168.215.113'
+        jump_cmd = f'./vrf_exec.bash {params['upstream_port']} ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa {params['auth_username']}@{params['host']}'
 
         # This happens after login completes
         conn.channel.send_input(jump_cmd, eager=True, strip_prompt=False)
@@ -75,8 +76,33 @@ class create_controller_series_object:
                  ap_dual_band_slot_6g=2,
                  port=22,
                  timeout=3,
-                 pwd=None
+                 pwd=None,
+                 lfmgr=None,
+                 lfuser=None,
+                 lfpasswd=None,
+                 upstream_port=None
                  ):
+
+        if lfmgr is None:
+            self.lfmgr = "127.0.0.1"
+        else:
+            self.lfmgr = lfmgr
+
+        if lfuser is None:
+            self.lfuser = "lanforge"
+        else:
+            self.lfuser = lfuser
+
+        if lfpasswd is None:
+            self.lfpasswd = "lanforge"
+        else:
+            self.lfpasswd = lfpasswd
+
+        if upstream_port is None:
+            print("upstream_port not set, exiting")
+            exit(0)
+        else:
+            self.upstream_port = upstream_port
 
         self.dest = dest
         self.user = user
@@ -377,22 +403,25 @@ class create_controller_series_object:
             #  ./vrf_exec.bash eth1 ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa root@192.168.215.113
             # Jump Host config
             c = {
-                "host":'192.168.215.213',  # noqa:
-                "auth_username":'root',  # noqa:
-                "auth_password":'hfcl!@ion',  # noqa:
+                # "host":'192.168.215.198',  # noqa:
+                "host": self.dest,  # noqa:
+                "auth_username":self.user,  # noqa:
+                "auth_password":self.passwd,  # noqa:
                 "ssh_config_file": True,
                 "comms_prompt_pattern":"^root@HFCL:~\\#", # noqa: 231
                 "timeout_ops": 120,
-                "timeout_transport": 240
+                "timeout_transport": 240,
+                "upstream_port": self.upstream_port
             }
 
             # if not getattr(self, "jump_host", None) == None:
             jump_function = get_jump_function(c)
             # LANforge config
             c = {
-                "host": '192.168.214.93',
-                "auth_username": 'lanforge',
-                "auth_password": 'lanforge',
+                # "host": '192.168.212.55',
+                "host": self.lfmgr,
+                "auth_username": self.lfuser,
+                "auth_password": self.lfpasswd,
                 "auth_strict_key": False,
                 "comms_prompt_pattern": "^[\\S\\7\\x1b]*\\[.*\\]\\$",
                 "on_open": jump_function,  # on logging into LANforge will run the jump_function
@@ -406,8 +435,7 @@ class create_controller_series_object:
                 self.conn.open()
             except scrapli.exceptions.ScrapliAuthenticationFailed as e:
                 raise Exception(
-                    f"Failed to open connection to {self.dest} ({e.message})"
-                ) from e
+                    f"Failed to open connection to {self.dest} ({e})")
         yield self.conn
 
     def send_ap_command(self, command: "str"):
