@@ -735,7 +735,7 @@ This example may be directly modified and executed from the command line
             "--mgr_ssh_port", "22",
             "--log_level","info",
             "--lfver","5.5.1",
-            "--kver","6.15.6+"
+            "--kver","6.15.6+",
             "--log_level","info"
             ]
 '''
