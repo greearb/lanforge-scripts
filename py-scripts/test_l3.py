@@ -2042,13 +2042,13 @@ class L3VariableTime(Realm):
                 "PASS: Stations & CX build finished: created/updated: %s stations and %s connections." %
                 (self.station_count, self.cx_count))
 
-    def l3_endp_port_data(self,tos):
+    def l3_endp_port_data(self, tos):
         """
         Args:
             tos (str): Type of Service (TOS) value to filter endpoints.
 
         Returns:
-            dict: Collected client data for the given TOS, including clients, 
+            dict: Collected client data for the given TOS, including clients,
                 uplink/downlink rates, resource aliases, and port signals.
         """
         port_data = self.json_get('port/all?fields=signal,signal')
@@ -2100,8 +2100,8 @@ class L3VariableTime(Realm):
 
             # Process only if TOS matches or name contains TOS for non-Mcast types
             if (endp_type_present and endp_info['type'] == 'Mcast' and endp_info['tos'] == tos) or \
-            (endp_type_present and endp_info['type'] in ['LF/TCP', 'LF/UDP'] and endp_info['tos'] == tos) or \
-            (not endp_type_present and tos in endp_info['name']):
+                (endp_type_present and endp_info['type'] in ['LF/TCP', 'LF/UDP'] and endp_info['tos'] == tos) or \
+                    (not endp_type_present and tos in endp_info['name']):
 
                 # Resource lookup (for alias)
                 eid_tmp_resource = f"{self.name_to_eid(endp_info['eid'])[0]}.{self.name_to_eid(endp_info['eid'])[1]}"
@@ -2140,7 +2140,7 @@ class L3VariableTime(Realm):
                         tos_ul_B.append(endp_info["rx rate"])
                         resource_alias_B.append(alias)
                         port_signal_B.append(signal)
-                else: # Covers LF/TCP, LF/UDP, or no type field
+                else:  # Covers LF/TCP, LF/UDP, or no type field
                     if endp_info['a/b'] == "A":
                         clients_A.append(endp_info['name'])
                         tos_ul_A.append(endp_info["tx rate"])
@@ -2343,12 +2343,12 @@ class L3VariableTime(Realm):
                                     columns = ['download_rate_A', 'upload_rate_A', 'RSSI']
                                     individual_device_data[r_id] = pd.DataFrame(columns=columns)
                             for i in range(len(l3_port_data['resource_alias_A'])):
-                                row_data = [l3_port_data['dl_A'][i],l3_port_data['ul_A'][i],l3_port_data['port_signal_A'][i]]
+                                row_data = [l3_port_data['dl_A'][i], l3_port_data['ul_A'][i], l3_port_data['port_signal_A'][i]]
                                 r_id = l3_port_data['resource_alias_A'][i].split('_')[0]
                                 # Append new row to the device-specific DataFrame
                                 individual_device_data[r_id].loc[len(individual_device_data[r_id])] = row_data
                                 # for each resource individual csv will be created here
-                                individual_device_data[r_id].to_csv(f'{self.result_dir}/individual_device_data_{r_id}.csv',index=False)
+                                individual_device_data[r_id].to_csv(f'{self.result_dir}/individual_device_data_{r_id}.csv', index=False)
                             time_difference = abs(end_time - datetime.datetime.now())
                             total_hours = time_difference.total_seconds() / 3600
                             remaining_minutes = (total_hours % 1) * 60
@@ -5980,9 +5980,9 @@ class L3VariableTime(Realm):
         It waits up to **60 seconds** for each image. If an image is found,
         it's added to the `report` on a new page; otherwise, it's skipped.
         """
-        for floor in range(0,int(self.total_floors)):
-            throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{floor+1}.png")
-            rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor+1}.png")
+        for floor in range(0, int(self.total_floors)):
+            throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{floor + 1}.png")
+            rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor + 1}.png")
             timeout = 60  # seconds
             start_time = time.time()
 
@@ -6005,7 +6005,6 @@ class L3VariableTime(Realm):
                 self.report.build_custom()
                 self.report.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
                 self.report.build_custom()
-
 
     def generate_report(self, config_devices=None, group_device_map=None):
         self.report.set_obj_html("Objective", "The Layer 3 Traffic Generation Test is designed to test the performance of the "
@@ -6124,7 +6123,6 @@ class L3VariableTime(Realm):
             #  As of now for real devices added filter_mlt_data() filters the data considering MLT in cx and avoiding other cx's in l3 endps tab(QOS,THROUGHPUT) and get updated in self.client_dict_A.
             # so the same will be copied to self.client_dict_B for report purposes
             self.client_dict_B = copy.deepcopy(self.client_dict_A)
-
 
         # graph BK A
         # try to do as a loop
@@ -6554,7 +6552,6 @@ class L3VariableTime(Realm):
         df1 = pd.DataFrame(self.overall)
         df1.to_csv('{}/overall_multicast_throughput.csv'.format(self.result_dir), index=False)
 
-
     def get_pass_fail_list(self, tos, up, down):
         res_list = []
         test_input_list = []
@@ -6738,8 +6735,6 @@ def query_real_clients(args):
         'pac_file': args.pac_file,
         'server_ip': upstream_port_ip,
     }
-    if not args.expected_passfail_value and args.device_csv_name is None:
-        config_obj.device_csv_file(csv_name="device.csv")
     # Configuration of devices with groups and profiles
     if args.group_name and args.file_name and args.profile_name:
         selected_groups = args.group_name.split(',')
@@ -8525,8 +8520,8 @@ and generate a report.
         test_name=test_name,
         dowebgui=args.dowebgui,
         ip=ip,
-        get_live_view= args.get_live_view,
-        total_floors = args.total_floors,
+        get_live_view=args.get_live_view,
+        total_floors=args.total_floors,
         # for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
         result_dir=args.local_lf_report_dir,
 
