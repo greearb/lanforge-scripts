@@ -751,6 +751,8 @@ class L3VariableTime(Realm):
                  dowebgui=False,
                  test_name="",
                  ip="",
+                 get_live_view=False,
+                 total_floors=0,
                  # for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
                  result_dir="",
                  # wifi extra configuration
@@ -845,6 +847,8 @@ class L3VariableTime(Realm):
         else:
             self.dataplane = False
         self.ssid_list = ssid_list
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
         self.ssid_password_list = ssid_password_list
         self.wifi_mode_list = wifi_mode_list
         self.enable_flags_list = enable_flags_list
@@ -5969,6 +5973,38 @@ class L3VariableTime(Realm):
                 self.client_dict_A[tos]["offered_download_rate_B"] = offered_dl_rates_B
                 self.client_dict_A[tos]["offered_upload_rate_B"] = offered_ul_rates_B
 
+    def add_live_view_images_to_report(self):
+        """
+        This function looks for throughput and RSSI images for each floor
+        in the 'live_view_images' folder within `self.result_dir`.
+        It waits up to **60 seconds** for each image. If an image is found,
+        it's added to the `report` on a new page; otherwise, it's skipped.
+        """
+        for floor in range(0,int(self.total_floors)):
+            throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{floor+1}.png")
+            rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor+1}.png")
+            timeout = 60  # seconds
+            start_time = time.time()
+
+            while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)):
+                if time.time() - start_time > timeout:
+                    print("Timeout: Images not found within 60 seconds.")
+                    break
+                time.sleep(1)
+            while not os.path.exists(throughput_image_path) and not os.path.exists(rssi_image_path):
+                if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
+                    break
+            if os.path.exists(throughput_image_path):
+                self.report.set_custom_html('<div style="page-break-before: always;"></div>')
+                self.report.build_custom()
+                self.report.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                self.report.build_custom()
+
+            if os.path.exists(rssi_image_path):
+                self.report.set_custom_html('<div style="page-break-before: always;"></div>')
+                self.report.build_custom()
+                self.report.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
+                self.report.build_custom()
 
 
     def generate_report(self, config_devices=None, group_device_map=None):
@@ -6152,7 +6188,8 @@ class L3VariableTime(Realm):
                 self.report.build_graph()
                 self.report.set_csv_filename(graph_png)
                 self.report.move_csv_file()
-
+                if self.dowebgui and self.get_live_view:
+                    self.add_live_view_images_to_report()
                 # For real devices appending the required data for pass fail criteria
                 if self.real:
                     up, down, off_up, off_down = [], [], [], []
@@ -7878,6 +7915,8 @@ INCLUDE_IN_README: False
     test_l3_parser.add_argument("--config", action="store_true", help="Specify for configuring the devices")
     test_l3_parser.add_argument("--wait_time", type=int, help='Specify the maximum time to wait for Configuration', default=60)
     test_l3_parser.add_argument("--real", action="store_true", help='For testing on real devies')
+    test_l3_parser.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    test_l3_parser.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     parser.add_argument('--help_summary',
                         default=None,
                         action="store_true",
@@ -8486,6 +8525,8 @@ and generate a report.
         test_name=test_name,
         dowebgui=args.dowebgui,
         ip=ip,
+        get_live_view= args.get_live_view,
+        total_floors = args.total_floors,
         # for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
         result_dir=args.local_lf_report_dir,
 
