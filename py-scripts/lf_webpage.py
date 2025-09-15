@@ -90,7 +90,7 @@ import requests
 import shutil
 import json
 from lf_graph import lf_bar_graph_horizontal
-
+import traceback
 import asyncio
 from typing import List, Optional
 import csv
@@ -165,6 +165,8 @@ class HttpDownload(Realm):
         self.created_cx = {}
         self.station_list = []
         self.radio = []
+        self.failed_cx = []
+        self.tracking_map = {}
         self.get_url_from_file = get_url_from_file
         self.file_path = file_path
         self.file_name = file_name
@@ -632,6 +634,59 @@ class HttpDownload(Realm):
             df1 = pd.DataFrame(self.data)
             df1.to_csv("http_datavalues.csv", index=False)
 
+    def get_layer4_data(self):
+        """
+        Fetch Layer 4 stats (uc-avg, uc-min, uc-max, urls, rx rate, bytes read, errors)
+        for all connections in self.cx_list.
+        Returns:
+            dict: mapping of metric names to lists of values, one per CX.
+        """
+        cx_list = list(self.http_profile.created_cx.keys())
+        try:
+            url_str = 'layer4/{}/list?fields=uc-avg,uc-max,uc-min,total-urls,rx rate (1m),bytes-rd,total-err'.format(','.join(cx_list))
+            l4_data = self.local_realm.json_get(url_str)['endpoint']
+        except Exception:
+            logger.error("l4 DATA not found")
+            exit(1)
+        l4_dict = {
+            'uc_avg_data': [],
+            'uc_max_data': [],
+            'uc_min_data': [],
+            'url_times': [],
+            'rx_rate': [],
+            'bytes_rd': [],
+            'total_err': []
+        }
+        if not isinstance(l4_data, list):
+            l4_data = [{l4_data['name']: l4_data}]
+        idx = 0
+        for cx in cx_list:
+            cx_found = False
+            for i in l4_data:
+                for cx_name, value in i.items():
+                    if cx == cx_name:
+                        l4_dict['uc_avg_data'].append(value['uc-avg'])
+                        l4_dict['uc_max_data'].append(value['uc-max'])
+                        l4_dict['uc_min_data'].append(value['uc-min'])
+                        l4_dict['url_times'].append(value['total-urls'])
+                        l4_dict['rx_rate'].append(value['rx rate (1m)'])
+                        l4_dict['bytes_rd'].append(value['bytes-rd'])
+                        l4_dict['total_err'].append(value['total-err'])
+                        cx_found = True
+            if not cx_found:
+                self.failed_cx.append(cx)
+                l4_dict['uc_avg_data'].append(0 if not self.tracking_map else self.tracking_map['uc_avg_data'][idx])
+                l4_dict['uc_max_data'].append(0 if not self.tracking_map else self.tracking_map['uc_max_data'][idx])
+                l4_dict['uc_min_data'].append(0 if not self.tracking_map else self.tracking_map['uc_min_data'][idx])
+                l4_dict['url_times'].append(0 if not self.tracking_map else self.tracking_map['url_times'][idx])
+                l4_dict['rx_rate'].append(0 if not self.tracking_map else self.tracking_map['rx_rate'][idx])
+                l4_dict['bytes_rd'].append(0 if not self.tracking_map else self.tracking_map['bytes_rd'][idx])
+                l4_dict['total_err'].append(0 if not self.tracking_map else self.tracking_map['total_err'][idx])
+            idx += 1
+        self.tracking_map = l4_dict.copy()
+
+        return l4_dict
+
     def monitor_for_runtime_csv(self, duration):
 
         time_now = datetime.now()
@@ -663,13 +718,14 @@ class HttpDownload(Realm):
             # uc_min_data = self.json_get("layer4/list?fields=uc-min")
             # total_url_data = self.json_get("layer4/list?fields=total-urls")
             # bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
-            uc_avg_data = self.my_monitor('uc-avg')
-            uc_max_data = self.my_monitor('uc-max')
-            uc_min_data = self.my_monitor('uc-min')
-            url_times = self.my_monitor('total-urls')
-            rx_rate = self.my_monitor('rx rate (1m)')
-            bytes_rd = self.my_monitor('bytes-rd')
-            total_err = self.my_monitor('total-err')
+            l4_dict = self.get_layer4_data()
+            uc_avg_data = l4_dict['uc_avg_data']
+            uc_max_data = l4_dict['uc_max_data']
+            uc_min_data = l4_dict['uc_min_data']
+            url_times = l4_dict['url_times']
+            rx_rate = l4_dict['rx_rate']
+            bytes_rd = l4_dict['bytes_rd']
+            total_err = l4_dict['total_err']
             urls_downloaded = []
             for i in range(len(total_err)):
                 urls_downloaded.append(url_times[i] - total_err[i])
@@ -682,9 +738,16 @@ class HttpDownload(Realm):
             individual_rx_data = []
             individual_rx_data.extend([current_time])
             for i, port in enumerate(self.port_list):
-                row_data = [current_time, bytes_rd[i], url_times[i], rx_rate[i], rx_rate_list[i], tx_rate_list[i], rssi_list[i]]
-                individual_device_data[port].loc[len(individual_device_data[port])] = row_data
+                # logger.info(f"row data HTTP",row_data)
 
+                try:
+                    row_data = [current_time, bytes_rd[i], url_times[i], rx_rate[i], rx_rate_list[i], tx_rate_list[i], rssi_list[i]]
+                    individual_device_data[port].loc[len(individual_device_data[port])] = row_data
+                except Exception:
+                    # Fail-safe: if any list index/key mismatch occurs while adding row_data,
+                    # stop execution to avoid inconsistent results.
+                    traceback.print_exc()
+                    exit(1)
             if len(max_bytes_rd) == 0:
                 max_bytes_rd = list(bytes_rd)
             for i in range(len(max_bytes_rd)):
@@ -731,7 +794,11 @@ class HttpDownload(Realm):
             self.data["remaining_time"] = [[str(int(total_hours)) + " hr and " + str(
                 int(remaining_minutes)) + " min" if int(total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][
                 0]] * len(self.devices_list)
-            df1 = pd.DataFrame(self.data)
+            try:
+                df1 = pd.DataFrame(self.data)
+            except Exception:
+                traceback.print_exc()
+                exit(1)
             if self.dowebgui:
                 df1.to_csv('{}/http_datavalues.csv'.format(self.result_dir), index=False)
             elif self.client_type == 'Real':
@@ -753,7 +820,7 @@ class HttpDownload(Realm):
         for port, df in individual_device_data.items():
             df.to_csv(f"{endtime}-http-{port}.csv", index=False)
             individual_device_csv_names.append(f'{endtime}-http-{port}')
-        self.individual_device_csv_names = individual_device_csv_names
+        self.individual_device_csv_names = individual_device_csv_names.copy()
         try:
             all_l4_data = self.get_all_l4_data()
             df = pd.DataFrame(all_l4_data)
@@ -2192,6 +2259,38 @@ times the file is downloaded.
         if int(duration == 3600) or (int(duration) > 3600):
             duration = str(duration / 3600) + "h"
 
+    android_devices, windows_devices, linux_devices, mac_devices = 0, 0, 0, 0
+    all_devices_names = []
+    device_type = []
+    total_devices = ""
+    for i in http.devices_list:
+        split_device_name = i.split(" ")
+        if 'android' in split_device_name:
+            all_devices_names.append(split_device_name[2] + ("(Android)"))
+            device_type.append("Android")
+            android_devices += 1
+        elif 'Win' in split_device_name:
+            all_devices_names.append(split_device_name[2] + ("(Windows)"))
+            device_type.append("Windows")
+            windows_devices += 1
+        elif 'Lin' in split_device_name:
+            all_devices_names.append(split_device_name[2] + ("(Linux)"))
+            device_type.append("Linux")
+            linux_devices += 1
+        elif 'Mac' in split_device_name:
+            all_devices_names.append(split_device_name[2] + ("(Mac)"))
+            device_type.append("Mac")
+            mac_devices += 1
+
+    # Build total_devices string based on counts
+    if android_devices > 0:
+        total_devices += f" Android({android_devices})"
+    if windows_devices > 0:
+        total_devices += f" Windows({windows_devices})"
+    if linux_devices > 0:
+        total_devices += f" Linux({linux_devices})"
+    if mac_devices > 0:
+        total_devices += f" Mac({mac_devices})"
     if args.client_type == "Real":
         android_devices, windows_devices, linux_devices, mac_devices = 0, 0, 0, 0
         all_devices_names = []
@@ -2272,6 +2371,8 @@ times the file is downloaded.
         test_input_infor["File size"] = args.file_size
     else:
         test_setup_info["File location (URLs from the File)"] = args.file_path
+    if args.client_type == "Real":
+        test_setup_info["failed_cx's"] = http.failed_cx if http.failed_cx else "NONE"
     # dataset = http.download_time_in_sec(result_data=result_data)
     rx_rate = []
     for i in result_data:
