@@ -2037,6 +2037,136 @@ class L3VariableTime(Realm):
                 "PASS: Stations & CX build finished: created/updated: %s stations and %s connections." %
                 (self.station_count, self.cx_count))
 
+    def l3_endp_port_data(self,tos):
+        """
+        Args:
+            tos (str): Type of Service (TOS) value to filter endpoints.
+
+        Returns:
+            dict: Collected client data for the given TOS, including clients, 
+                uplink/downlink rates, resource aliases, and port signals.
+        """
+        port_data = self.json_get('port/all?fields=signal,signal')
+        port_data.pop("handler", None)
+        port_data.pop("uri", None)
+        port_data.pop("warnings", None)
+
+        # Gather resource data (only need hostname for alias)
+        resource_data = self.json_get('resource/all?fields=eid,hostname')
+        resource_data.pop("handler", None)
+        resource_data.pop("uri", None)
+        if not self.dowebgui:
+            logger.info("resource_data type: {dtype}".format(dtype=type(port_data)))
+
+        # Handle single resource case
+        if "resource" in resource_data.keys():
+            resource_data["resources"] = [{'1.1': resource_data['resource']}]
+            resource_data.pop("resource")
+
+        # Gather endpoint data (name, tx/rx rate, a/b, tos, eid, type)
+        endp_type_present = False
+        endp_data = self.json_get('endp/all?fields=name,tx+rate,rx+rate,a/b,tos,eid,type')
+        if endp_data is not None:
+            endp_type_present = True
+        else:
+            logger.info(
+                "Consider upgrading to 5.4.7 + endp field type not supported in LANforge GUI version results for Multicast reversed in graphs and tables")
+            endp_data = self.json_get('endp/all?fields=name,tx+rate,rx+rate,a/b,eid')
+            endp_type_present = False
+        endp_data.pop("handler", None)
+        endp_data.pop("uri", None)
+
+        # Initialize lists for the single TOS
+        clients_A = []
+        tos_ul_A = []
+        tos_dl_A = []
+        resource_alias_A = []
+        port_signal_A = []
+
+        clients_B = []
+        tos_ul_B = []
+        tos_dl_B = []
+        resource_alias_B = []
+        port_signal_B = []
+
+        for endp in endp_data['endpoint']:
+            endp_key = list(endp.keys())[0]
+            endp_info = endp[endp_key]
+
+            # Process only if TOS matches or name contains TOS for non-Mcast types
+            if (endp_type_present and endp_info['type'] == 'Mcast' and endp_info['tos'] == tos) or \
+            (endp_type_present and endp_info['type'] in ['LF/TCP', 'LF/UDP'] and endp_info['tos'] == tos) or \
+            (not endp_type_present and tos in endp_info['name']):
+
+                # Resource lookup (for alias)
+                eid_tmp_resource = f"{self.name_to_eid(endp_info['eid'])[0]}.{self.name_to_eid(endp_info['eid'])[1]}"
+                alias = 'NA'
+                for res in resource_data['resources']:
+                    res_key = list(res.keys())[0]
+                    if res_key == eid_tmp_resource:
+                        # resource_found = True
+                        alias = self.create_resource_alias(
+                            eid=res[res_key]['eid'],
+                            host=res[res_key]['hostname'],
+                            hw_version='',
+                            kernel='')
+                        break
+
+                # Port lookup (for signal)
+                eid_info = endp_info['name'].split('-')
+                eid_tmp_port = f"{eid_tmp_resource}.{eid_info[3 if endp_type_present and endp_info['type'] == 'Mcast' else 1]}"
+                signal = 'NA'
+                for port in port_data['interfaces']:
+                    port_key = list(port.keys())[0]
+                    if port_key == eid_tmp_port:
+                        signal = port[port_key]['signal']
+                        break
+
+                if endp_type_present and endp_info['type'] == 'Mcast':
+                    if endp_info['a/b'] == "B":
+                        clients_A.append(endp_info['name'])
+                        tos_ul_A.append(endp_info["tx rate"])
+                        tos_dl_A.append(endp_info["rx rate"])
+                        resource_alias_A.append(alias)
+                        port_signal_A.append(signal)
+                    elif endp_info['a/b'] == "A":
+                        clients_B.append(endp_info['name'])
+                        tos_dl_B.append(endp_info["tx rate"])
+                        tos_ul_B.append(endp_info["rx rate"])
+                        resource_alias_B.append(alias)
+                        port_signal_B.append(signal)
+                else: # Covers LF/TCP, LF/UDP, or no type field
+                    if endp_info['a/b'] == "A":
+                        clients_A.append(endp_info['name'])
+                        tos_ul_A.append(endp_info["tx rate"])
+                        tos_dl_A.append(endp_info["rx rate"])
+                        resource_alias_A.append(alias)
+                        port_signal_A.append(signal)
+                    elif endp_info['a/b'] == "B":
+                        clients_B.append(endp_info['name'])
+                        tos_dl_B.append(endp_info["tx rate"])
+                        tos_ul_B.append(endp_info["rx rate"])
+                        resource_alias_B.append(alias)
+                        port_signal_B.append(signal)
+
+        # Construct the client dictionary for the single TOS
+        client_dict_A = {
+            tos: {
+                "clients_A": clients_A,
+                "ul_A": tos_ul_A,
+                "dl_A": tos_dl_A,
+                "resource_alias_A": resource_alias_A,
+                "port_signal_A": port_signal_A,
+                "clients_B": clients_B,
+                "ul_B": tos_ul_B,
+                "dl_B": tos_dl_B,
+                "resource_alias_B": resource_alias_B,
+                "port_signal_B": port_signal_B,
+            }
+        }
+
+        return client_dict_A
+
     def start(self, print_pass=False) -> int:
         """Run configured Layer-3 variable time test.
 
@@ -2170,7 +2300,7 @@ class L3VariableTime(Realm):
                     total_ul_ll_bps = 0
                     reset_timer = 0
                     self.overall = []
-
+                    individual_device_data = {}
                     # Monitor loop
                     while cur_time < end_time:
                         # interval_time = cur_time + datetime.timedelta(seconds=5)
@@ -2196,6 +2326,24 @@ class L3VariableTime(Realm):
                             total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total_dl_ll_bps=total_dl_ll_bps)
                         # Added logic creating a csv file for webGUI to get runtime data
                         if self.dowebgui:
+                            # Fetch L3 endpoint and port data for the given ToS
+                            real_client_endpoint_data = self.l3_endp_port_data(self.tos[0])
+                            l3_port_data = real_client_endpoint_data[self.tos[0]]
+                            # Initialize empty DataFrames for each device (based on resource alias)
+                            for name in l3_port_data['resource_alias_A']:
+                                # Extract device/resource ID from alias
+                                r_id = name.split('_')[0]
+                                if r_id not in individual_device_data:
+                                    # Create a DataFrame with columns for download rate, upload rate, and RSSI
+                                    columns = ['download_rate_A', 'upload_rate_A', 'RSSI']
+                                    individual_device_data[r_id] = pd.DataFrame(columns=columns)
+                            for i in range(len(l3_port_data['resource_alias_A'])):
+                                row_data = [l3_port_data['dl_A'][i],l3_port_data['ul_A'][i],l3_port_data['port_signal_A'][i]]
+                                r_id = l3_port_data['resource_alias_A'][i].split('_')[0]
+                                # Append new row to the device-specific DataFrame
+                                individual_device_data[r_id].loc[len(individual_device_data[r_id])] = row_data
+                                # for each resource individual csv will be created here
+                                individual_device_data[r_id].to_csv(f'{self.result_dir}/individual_device_data_{r_id}.csv',index=False)
                             time_difference = abs(end_time - datetime.datetime.now())
                             total_hours = time_difference.total_seconds() / 3600
                             remaining_minutes = (total_hours % 1) * 60
