@@ -322,6 +322,14 @@ class create_lanforge_object:
             raise Exception(r.result)
         print(f"result {command}: {r.result}")
 
+    def cmd_uptime(self):
+        command = "uptime"
+        print(f"command: {command}")
+        r = self.send_lf_command(command)
+        if r.failed:
+            raise Exception(r.result)
+        print(f"result {command}: {r.result}")
+
     def cmd_ls(self):
         command = "ls"
         r = self.send_lf_command(command)
@@ -381,9 +389,9 @@ class create_lanforge_object:
 
         self.lf_kinstall()
 
-        self.reboot_lanforge()
+        # self.reboot_lanforge()
 
-        # self.reboot_lf_with_paramiko() # leave in if paramiko needs to be in reboot
+        self.reboot_lf_with_paramiko()  # leave in if paramiko needs to be in reboot
 
         # take down connection so as to reconnect
         self.tear_down_mgmt()
@@ -727,7 +735,7 @@ This example may be directly modified and executed from the command line
             "--mgr_ssh_port", "22",
             "--log_level","info",
             "--lfver","5.5.1",
-            "--kver","6.15.6+"
+            "--kver","6.15.6+",
             "--log_level","info"
             ]
 '''
