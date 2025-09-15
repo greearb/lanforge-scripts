@@ -646,6 +646,7 @@ import json
 import shutil
 
 import asyncio
+import copy
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
@@ -5831,6 +5832,145 @@ class L3VariableTime(Realm):
         self.dut_sw_version = dut_sw_version
         self.dut_serial_num = dut_serial_num
 
+    def filter_mlt_data(self):
+        """
+            This function filters client_dict_A to include only CXs with "MLT", excluding other CXs (throughput, QoS). This way, we can exclude 'NA' entries from the dict.
+        """
+        tos_list = ['BK', 'BE', 'VI', 'VO']
+        for tos in tos_list:
+            if tos in self.client_dict_A and self.client_dict_A[tos]["ul_A"] and self.client_dict_A[tos]["dl_A"]:
+                clients_list = []
+                client_names = []
+                client_ul_A_data = []
+                client_dl_A_data = []
+                hw_versions = []
+                endp_names = []
+                port_names = []
+                modes = []
+                mac_list = []
+                ssid_list = []
+                channel_list = []
+                traffic_types = []
+                traffic_protocols = []
+                per_client_download_rate = []
+                download_rx_drop_percentages = []
+                resource_hosts = []
+                resource_eids = []
+                resource_kernels = []
+                offered_dl_rates = []
+                offered_ul_rates = []
+
+                # Process A side
+                for client_index in range(len(self.client_dict_A[tos]["clients_A"])):
+                    if self.client_dict_A[tos]["clients_A"][client_index].startswith('MLT'):
+                        clients_list.append(self.client_dict_A[tos]["clients_A"][client_index])
+                        client_names.append(self.client_dict_A[tos]['resource_alias_A'][client_index])
+                        client_ul_A_data.append(self.client_dict_A[tos]["ul_A"][client_index])
+                        client_dl_A_data.append(self.client_dict_A[tos]["dl_A"][client_index])
+                        hw_versions.append(self.client_dict_A[tos]['resource_hw_ver_A'][client_index])
+                        endp_names.append(self.client_dict_A[tos]["clients_A"][client_index])
+                        port_names.append(self.client_dict_A[tos]['port_A'][client_index])
+                        modes.append(self.client_dict_A[tos]['mode_A'][client_index])
+                        mac_list.append(self.client_dict_A[tos]['mac_A'][client_index])
+                        ssid_list.append(self.client_dict_A[tos]['ssid_A'][client_index])
+                        channel_list.append(self.client_dict_A[tos]['channel_A'][client_index])
+                        traffic_types.append(self.client_dict_A[tos]['traffic_type_A'][client_index])
+                        traffic_protocols.append(self.client_dict_A[tos]['traffic_protocol_A'][client_index])
+                        per_client_download_rate.append(self.client_dict_A[tos]['dl_A'][client_index])
+                        download_rx_drop_percentages.append(self.client_dict_A[tos]['download_rx_drop_percent_A'][client_index])
+                        resource_hosts.append(self.client_dict_A[tos]['resource_host_A'][client_index])
+                        resource_eids.append(self.client_dict_A[tos]['resource_eid_A'][client_index])
+                        resource_kernels.append(self.client_dict_A[tos]['resource_kernel_A'][client_index])
+                        offered_dl_rates.append(self.client_dict_A[tos]['offered_download_rate_A'][client_index])
+                        offered_ul_rates.append(self.client_dict_A[tos]['offered_upload_rate_A'][client_index])
+
+                # Process B side
+                clients_list_B = []
+                client_names_B = []
+                client_ul_B_data = []
+                client_dl_B_data = []
+                hw_versions_B = []
+                endp_names_B = []
+                port_names_B = []
+                modes_B = []
+                mac_list_B = []
+                ssid_list_B = []
+                channel_list_B = []
+                traffic_types_B = []
+                traffic_protocols_B = []
+                per_client_download_rate_B = []
+                download_rx_drop_percentages_B = []
+                resource_hosts_B = []
+                resource_eids_B = []
+                resource_kernels_B = []
+                offered_dl_rates_B = []
+                offered_ul_rates_B = []
+
+                for client_index in range(len(self.client_dict_A[tos]["clients_B"])):
+                    if self.client_dict_A[tos]["clients_B"][client_index].startswith('MLT'):
+                        clients_list_B.append(self.client_dict_A[tos]["clients_B"][client_index])
+                        client_names_B.append(self.client_dict_A[tos]['resource_alias_B'][client_index])
+                        client_ul_B_data.append(self.client_dict_A[tos]["ul_B"][client_index])
+                        client_dl_B_data.append(self.client_dict_A[tos]["dl_B"][client_index])
+                        hw_versions_B.append(self.client_dict_A[tos]['resource_hw_ver_B'][client_index])
+                        endp_names_B.append(self.client_dict_A[tos]["clients_B"][client_index])
+                        port_names_B.append(self.client_dict_A[tos]['port_B'][client_index])
+                        modes_B.append(self.client_dict_A[tos]['mode_B'][client_index])
+                        mac_list_B.append(self.client_dict_A[tos]['mac_B'][client_index])
+                        ssid_list_B.append(self.client_dict_A[tos]['ssid_B'][client_index])
+                        channel_list_B.append(self.client_dict_A[tos]['channel_B'][client_index])
+                        traffic_types_B.append(self.client_dict_A[tos]['traffic_type_B'][client_index])
+                        traffic_protocols_B.append(self.client_dict_A[tos]['traffic_protocol_B'][client_index])
+                        per_client_download_rate_B.append(self.client_dict_A[tos]['dl_B'][client_index])
+                        download_rx_drop_percentages_B.append(self.client_dict_A[tos]['download_rx_drop_percent_B'][client_index])
+                        resource_hosts_B.append(self.client_dict_A[tos]['resource_host_B'][client_index])
+                        resource_eids_B.append(self.client_dict_A[tos]['resource_eid_B'][client_index])
+                        resource_kernels_B.append(self.client_dict_A[tos]['resource_kernel_B'][client_index])
+                        offered_dl_rates_B.append(self.client_dict_A[tos]['offered_download_rate_B'][client_index])
+                        offered_ul_rates_B.append(self.client_dict_A[tos]['offered_upload_rate_B'][client_index])
+
+                # Update the dict with filtered A-side data
+                self.client_dict_A[tos]["clients_A"] = clients_list
+                self.client_dict_A[tos]["resource_alias_A"] = client_names
+                self.client_dict_A[tos]["ul_A"] = client_ul_A_data
+                self.client_dict_A[tos]["dl_A"] = client_dl_A_data
+                self.client_dict_A[tos]["resource_hw_ver_A"] = hw_versions
+                self.client_dict_A[tos]["port_A"] = port_names
+                self.client_dict_A[tos]["mode_A"] = modes
+                self.client_dict_A[tos]["mac_A"] = mac_list
+                self.client_dict_A[tos]["ssid_A"] = ssid_list
+                self.client_dict_A[tos]["channel_A"] = channel_list
+                self.client_dict_A[tos]["traffic_type_A"] = traffic_types
+                self.client_dict_A[tos]["traffic_protocol_A"] = traffic_protocols
+                self.client_dict_A[tos]["download_rx_drop_percent_A"] = download_rx_drop_percentages
+                self.client_dict_A[tos]["resource_host_A"] = resource_hosts
+                self.client_dict_A[tos]["resource_eid_A"] = resource_eids
+                self.client_dict_A[tos]["resource_kernel_A"] = resource_kernels
+                self.client_dict_A[tos]["offered_download_rate_A"] = offered_dl_rates
+                self.client_dict_A[tos]["offered_upload_rate_A"] = offered_ul_rates
+
+                # Update the dict with filtered B-side data
+                self.client_dict_A[tos]["clients_B"] = clients_list_B
+                self.client_dict_A[tos]["resource_alias_B"] = client_names_B
+                self.client_dict_A[tos]["ul_B"] = client_ul_B_data
+                self.client_dict_A[tos]["dl_B"] = client_dl_B_data
+                self.client_dict_A[tos]["resource_hw_ver_B"] = hw_versions_B
+                self.client_dict_A[tos]["port_B"] = port_names_B
+                self.client_dict_A[tos]["mode_B"] = modes_B
+                self.client_dict_A[tos]["mac_B"] = mac_list_B
+                self.client_dict_A[tos]["ssid_B"] = ssid_list_B
+                self.client_dict_A[tos]["channel_B"] = channel_list_B
+                self.client_dict_A[tos]["traffic_type_B"] = traffic_types_B
+                self.client_dict_A[tos]["traffic_protocol_B"] = traffic_protocols_B
+                self.client_dict_A[tos]["download_rx_drop_percent_B"] = download_rx_drop_percentages_B
+                self.client_dict_A[tos]["resource_host_B"] = resource_hosts_B
+                self.client_dict_A[tos]["resource_eid_B"] = resource_eids_B
+                self.client_dict_A[tos]["resource_kernel_B"] = resource_kernels_B
+                self.client_dict_A[tos]["offered_download_rate_B"] = offered_dl_rates_B
+                self.client_dict_A[tos]["offered_upload_rate_B"] = offered_ul_rates_B
+
+
+
     def generate_report(self, config_devices=None, group_device_map=None):
         self.report.set_obj_html("Objective", "The Layer 3 Traffic Generation Test is designed to test the performance of the "
                                  "Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream "
@@ -5838,7 +5978,6 @@ class L3VariableTime(Realm):
                                  "each of which is associated with a particular Port (physical or virtual interface).")
 
         self.report.build_objective()
-
         test_setup_info = {
             "DUT Name": self.dut_model_num,
             "DUT Hardware Version": self.dut_hw_version,
@@ -5943,11 +6082,22 @@ class L3VariableTime(Realm):
         # if the traffic is still running will gather the running traffic
         self.evaluate_qos()
 
+        if self.dowebgui or self.real:
+            self.filter_mlt_data()
+            # currently reporting uses both client dict A and client dict B, but they consists same data.
+            #  As of now for real devices added filter_mlt_data() filters the data considering MLT in cx and avoiding other cx's in l3 endps tab(QOS,THROUGHPUT) and get updated in self.client_dict_A.
+            # so the same will be copied to self.client_dict_B for report purposes
+            self.client_dict_B = copy.deepcopy(self.client_dict_A)
+
+
         # graph BK A
         # try to do as a loop
         tos_list = ['BK', 'BE', 'VI', 'VO']
 
         for tos in tos_list:
+            # processing tos's which are included in test for real_clients ensuring no blocker for virtual
+            if (self.real or self.dowebgui) and tos not in self.tos:
+                continue
             if (self.client_dict_A[tos]["ul_A"] and self.client_dict_A[tos]["dl_A"]):
                 min_bps_a = self.client_dict_A["min_bps_a"]
                 min_bps_b = self.client_dict_A["min_bps_b"]
