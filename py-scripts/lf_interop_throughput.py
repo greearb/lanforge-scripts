@@ -509,7 +509,7 @@ class Throughput(Realm):
                     device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
                 else:
                     device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
-            logger.info("AVAILABLE RESOURCES", device_list)
+            logger.info("AVAILABLE RESOURCES {}".format(device_list))
             self.device_list = input("Select the desired resources to run the test:").split(',')
             if self.config:
                 self.device_list = asyncio.run(obj.connectivity(device_list=self.device_list, wifi_config=self.config_dict))
@@ -579,8 +579,10 @@ class Throughput(Realm):
         for interface in response_port['interfaces']:
             for port, port_data in interface.items():
 
-                # Check conditions for non-phantom ports
-                if (not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0'):
+                # Select valid Wi-Fi ports: must be non-phantom, parent dev 'wiphy0', alias not 'p2p0';
+                # include down ports only when interopability_config is enabled
+                if (not port_data['phantom'] and ((not self.interopability_config and not port_data['down']) or (
+                        self.interopability_config)) and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0'):
                     # Check if the port's parent device matches with an eid in the eid_list
                     for id in self.eid_list:
                         if id + '.' in port:
@@ -686,7 +688,7 @@ class Throughput(Realm):
                 if eid in i:
                     self.mac_id_list.append(i.strip(eid + ' '))
         # Runtime data for webui for configuration
-        if self.dowebgui:
+        if self.dowebgui and not self.interopability_config:
             if len(configure_list) == 0:
                 logger.info("No device is available to run the test")
                 obj = {
@@ -694,7 +696,7 @@ class Throughput(Realm):
                     "configuration_status": "configured"
                 }
                 self.updating_webui_runningjson(obj)
-                return
+                return False, self.real_client_list
             else:
                 obj = {
                     "configured_devices": configure_list,
@@ -704,9 +706,18 @@ class Throughput(Realm):
 
         # Check if incremental_capacity is provided and ensure selected devices are sufficient
         if (len(self.incremental_capacity) > 0 and int(self.incremental_capacity.split(',')[-1]) > len(self.mac_id_list)):
-            logger.error("Devices selected is less than given incremental capacity")
-            return False, self.real_client_list
+            if not self.config and not self.interopability_config:
+                logger.error("Devices selected is less than given incremental capacity")
+                return False, self.real_client_list
+            elif (self.config and not self.do_interopability):
+                configured_devices = len(self.mac_id_list)
+                given_capacity = list(map(int, self.incremental_capacity.split(",")))
+                adjusted_capacity = [cap for cap in given_capacity if cap <= configured_devices]
+                if configured_devices not in adjusted_capacity:
+                    adjusted_capacity.append(configured_devices)
 
+                self.incremental_capacity = ",".join(map(str, adjusted_capacity))
+                return True, self.real_client_list
         else:
             return True, self.real_client_list
 
@@ -1194,8 +1205,8 @@ class Throughput(Realm):
             if not is_device_configured and self.interopability_config:
                 break
 
-        individual_df = individual_df[1:-1]
-        individual_df_for_webui = individual_df_for_webui[1:-1]
+        # individual_df = individual_df[1:-1]
+        # individual_df_for_webui = individual_df_for_webui[1:-1]
         for _, key in enumerate(throughput):
             for i in range(len(throughput[key])):
                 upload[i], download[i], drop_a[i], drop_b[i], avg_rtt[i] = [], [], [], [], []
@@ -2389,7 +2400,7 @@ class Throughput(Realm):
         report.write_pdf(_orientation="Landscape")
 
     # Creates a separate DataFrame for each group of devices.
-    def generate_dataframe(self, groupdevlist, typeofdevice, devusername, devssid, devmac, devchannel, devmode, devdirection, devofdownload, devobsdownload,
+    def generate_dataframe(self, groupdevlist, typeofdevice, devusername, devssid, devmac, devchannel, devmode, devdirection, devofdownload, devrtt, devobsdownload,
                            devoffupload, devobsupload, devrssi, devExpected, devlinkspeed, devpacketsize, devstatus, upload_drop, download_drop):
         """
         Creates a separate DataFrame for each group of devices.
@@ -2417,6 +2428,7 @@ class Throughput(Realm):
         statuslist = []
         avg_updrop = []
         avg_dndrop = []
+        avgrtt = []
         interop_tab_data = self.json_get('/adb/')["devices"]
         for i in range(len(typeofdevice)):
             for j in groupdevlist:
@@ -2434,6 +2446,7 @@ class Throughput(Realm):
                     obsupload.append(devobsupload[i])
                     rssi.append(devrssi[i])
                     linkspeed.append(devlinkspeed[i])
+                    avgrtt.append(devrtt[i])
                     if len(upload_drop) != 0:
                         avg_updrop.append(upload_drop[i])
                     if len(download_drop) != 0:
@@ -2460,7 +2473,7 @@ class Throughput(Realm):
                                 offupload.append(devoffupload[i])
                                 obsupload.append(devobsupload[i])
                                 rssi.append(devrssi[i])
-
+                                avgrtt.append(devrtt[i])
                                 linkspeed.append(devlinkspeed[i])
                                 if len(upload_drop) != 0:
                                     avg_updrop.append(upload_drop[i])
@@ -2488,6 +2501,7 @@ class Throughput(Realm):
                     " RSSI ": rssi,
                     " Link Speed ": linkspeed,
                     " Packet Size(Bytes) ": packetsize,
+                    " RTT ": avgrtt
                 }
 
                 if self.direction == "Bi-direction":
@@ -2523,6 +2537,7 @@ class Throughput(Realm):
                     " Observed upload rate ": obsupload,
                     " RSSI ": rssi,
                     " Link Speed ": linkspeed,
+                    " RTT ": avgrtt
                 }
                 if self.direction == "Bi-direction":
                     dataframe[" Average Rx Drop B% "] = avg_updrop
