@@ -153,9 +153,9 @@ class Ping(Realm):
                  expected_passfail_val=None,
                  csv_name=None,
                  wait_time=60,
-                 total_floors: int=None,
-                 get_live_view: bool=None,
-                 result_dir: str=None):
+                 total_floors: int = None,
+                 get_live_view: bool = None,
+                 result_dir: str = None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -420,7 +420,7 @@ class Ping(Realm):
             try:
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
-            except BaseException:
+            except Exception:
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
             logging.info(f"Upstream port IP {upstream_port}")
         else:
@@ -525,7 +525,7 @@ class Ping(Realm):
                     report.set_custom_html(f'<img src="file://{image_path}"  style="width:1200px; height:800px;"></img>')
                     report.build_custom()
 
-    def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path='', config_devices='', group_device_map={}):
+    def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path='', config_devices='', group_device_map=None):
         if result_json is not None:
             self.result_json = result_json
         logging.info('Generating Report')
@@ -1384,7 +1384,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                 'last_result': [result_data['last results'].split('\n')[-2] if len(result_data['last results']) != 0 else ""][0]
                             }
                             ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
-                        except BaseException:
+                        except Exception:
                             logging.error('Failed parsing the result for the station {}'.format(station))
 
         else:
@@ -1429,7 +1429,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                     'last_result': [ping_data['last results'].split('\n')[-2] if len(ping_data['last results']) != 0 else ""][0]
                                 }
                                 ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
-                            except BaseException:
+                            except Exception:
                                 logging.error('Failed parsing the result for the station {}'.format(station))
 
     if (args.real):
@@ -1458,7 +1458,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                             'last_result': [result_data['last results'].split('\n')[-2] if len(result_data['last results']) != 0 else ""][0]
                         }
                         ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
-                    except BaseException:
+                    except Exception:
                         logging.error('Failed parsing the result for the station {}'.format(station))
         else:
             for station in ping.real_sta_list:
@@ -1486,7 +1486,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                 'last_result': [ping_data['last results'].split('\n')[-2] if len(ping_data['last results']) != 0 else ""][0]
                             }
                             ping.result_json[station]['remarks'] = ping.generate_remarks(ping.result_json[station])
-                        except BaseException:
+                        except Exception:
                             logging.error('Failed parsing the result for the station {}'.format(station))
 
     logging.info(ping.result_json)
