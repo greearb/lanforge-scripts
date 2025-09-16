@@ -3208,8 +3208,6 @@ INCLUDE_IN_README: False
                                 if not mixed_obj.stopped:
                                     overall_status['qos'] = "started"
                                     overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
-                                    if overall_status['ping'] == "stopped":
-                                        overall_status['ping'] == "completed"
                                     overall_csv.append(overall_status.copy())
                                     df1 = pd.DataFrame(overall_csv)
                                     df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
@@ -3243,10 +3241,6 @@ INCLUDE_IN_README: False
                                         mixed_obj.stopped = True
                                 if not mixed_obj.stopped:
                                     overall_status['ftp'] = "started"
-                                    if overall_status['ping'] == "stopped":
-                                        overall_status['ping'] == "completed"
-                                    if overall_status['qos'] == "stopped":
-                                        overall_status['qos'] == "completed"
                                     overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
                                     overall_csv.append(overall_status.copy())
                                     df1 = pd.DataFrame(overall_csv)
@@ -3277,12 +3271,6 @@ INCLUDE_IN_README: False
                                         mixed_obj.stopped = True
                                 if not mixed_obj.stopped:
                                     overall_status['http'] = "started"
-                                    if overall_status['ping'] == "stopped":
-                                        overall_status['ping'] == "completed"
-                                    if overall_status['qos'] == "stopped":
-                                        overall_status['qos'] == "completed"
-                                    if overall_status['ftp'] == "stopped":
-                                        overall_status['ftp'] == "completed"
                                     overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
                                     overall_csv.append(overall_status.copy())
                                     df1 = pd.DataFrame(overall_csv)
@@ -3315,14 +3303,6 @@ INCLUDE_IN_README: False
                                         mixed_obj.stopped = True
                                 if not mixed_obj.stopped:
                                     overall_status['mc'] = "started"
-                                    if overall_status['ping'] == "stopped":
-                                        overall_status['ping'] == "completed"
-                                    if overall_status['qos'] == "stopped":
-                                        overall_status['qos'] == "completed"
-                                    if overall_status['ftp'] == "stopped":
-                                        overall_status['ftp'] == "completed"
-                                    if overall_status['http'] == "stopped":
-                                        overall_status['http'] == "completed"
                                     overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
                                     overall_csv.append(overall_status.copy())
                                     df1 = pd.DataFrame(overall_csv)
@@ -3351,16 +3331,6 @@ INCLUDE_IN_README: False
                 if mixed_obj.dowebgui:
                     try:
                         overall_status["status"] = "completed"
-                        if overall_status['ping'] == "stopped":
-                            overall_status['ping'] == "completed"
-                        if overall_status['qos'] == "stopped":
-                            overall_status['qos'] == "completed"
-                        if overall_status['ftp'] == "stopped":
-                            overall_status['ftp'] == "completed"
-                        if overall_status['http'] == "stopped":
-                            overall_status['http'] == "completed"
-                        if overall_status['mc'] == "stopped":
-                            overall_status['mc'] == "completed"
                         overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
                         overall_csv.append(overall_status.copy())
                         df1 = pd.DataFrame(overall_csv)
