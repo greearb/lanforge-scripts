@@ -130,6 +130,12 @@ class create_lanforge_object:
         if "kver" in kwargs:
             self.kver = kwargs["kver"]
 
+        if "user_timeout" in kwargs:
+            self.user_timeout = kwargs["user_timeout"]
+
+        if "root_timeout" in kwargs:
+            self.root_timeout = kwargs["root_timeout"]
+
         self.gui_resourse = kwargs["gui_resourse"]
 
         self.lanforge_system_node_version = None
@@ -431,9 +437,9 @@ class create_lanforge_object:
                 "comms_prompt_pattern": "^\\S[a-z]*\\@[a-zA-Z0-9]+[-][a-zA-Z0-9]+[\\s\\S]\\S\\S[\\#\\$\\>]",
                 # "on_open": jump_function, # on logging into LANforge will run the jump_function
                 # "auth_password_pattern": "Password:",
-                "timeout_ops": 10,
-                "timeout_transport": 10,
-                "timeout_socket": 10,
+                "timeout_ops": int(self.user_timeout),
+                "timeout_transport": int(self.user_timeout),
+                "timeout_socket": int(self.user_timeout),
                 "ssh_config_file": True,
             }
 
@@ -476,9 +482,9 @@ class create_lanforge_object:
                 "comms_prompt_pattern": "^\\S[a-z]*\\@[a-zA-Z0-9]+[-][a-zA-Z0-9]+[\\s\\S]\\S\\S[\\#\\$\\>]",
                 # "on_open": jump_function, # on logging into LANforge will run the jump_function
                 # "auth_password_pattern": "Password:",
-                "timeout_ops": 840,
-                "timeout_transport": 840,
-                "timeout_socket": 840,
+                "timeout_ops": int(self.root_timeout),
+                "timeout_transport": int(self.root_timeout),
+                "timeout_socket": int(self.root_timeout),
                 "ssh_config_file": True,
             }
 
@@ -558,6 +564,14 @@ def validate_args(args):
 
     if "+" not in args.kver:
         logger.error("kver needs to have a '+'")
+
+    if args.user_timeout is None:
+        logger.error("--user_timeout required")
+        exit(1)
+
+    if args.root_timeout is None:
+        logger.error("--root_timeout required")
+        exit(1)
 
 
 def parse_args():
@@ -672,6 +686,28 @@ INCLUDE_IN_README
         dest='lfver')
 
     parser.add_argument(
+        '--user_timeout',
+        help=''' lanforge update timeout for user login seconds, suggested time:
+        523c  =  10 sec
+        AT7   =  10 sec
+        Noah2 = 20 sec
+        APU2  = 25 sec
+        example: --user_timeout 1320
+        ''',
+        dest='user_timeout')
+
+    parser.add_argument(
+        '--root_timeout',
+        help=''' lanforge update timeout for root login seconds, suggested time:
+        523c  =  300 sec
+        AT7   =  300 sec
+        Noah2 = 720 sec
+        APU2  = 1320 sec
+        example: --timeout 1320
+        ''',
+        dest='root_timeout')
+
+    parser.add_argument(
         '--action',
         help='action for remote machine')
 
@@ -717,6 +753,8 @@ This example may be directly modified and executed from the command line
     --mgr_ssh_port 22\
     --lfver 5.5.1\
     --kver 6.15.6+\
+    --user_timeout 10\
+    --root_timeout 300\
     --log_level info
 '''
 
@@ -736,6 +774,8 @@ This example may be directly modified and executed from the command line
             "--log_level","info",
             "--lfver","5.5.1",
             "--kver","6.15.6+",
+            "--user_timeout","10",
+            "--root_timeout","300",
             "--log_level","info"
             ]
 '''
