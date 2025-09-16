@@ -208,6 +208,8 @@ class Mixed_Traffic(Realm):
                  result_dir=None,
                  test_name=None,
                  device_list=None,
+                 get_live_view: bool=False,
+                 total_floors: int=0,
                  debug=False):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
@@ -342,6 +344,8 @@ class Mixed_Traffic(Realm):
         self.http_dev = []
         self.http_mac = []
         self.rx_rate = []
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
         if self.dowebgui:
             self.stopped = False
             self.ping_execution = False
@@ -687,7 +691,7 @@ class Mixed_Traffic(Realm):
             self.ping_test_obj = ping_test.Ping(host=self.host, port=self.port, ssid=ssid, security=security,
                                                 password=password, lanforge_password="lanforge", target=self.target,
                                                 interval=self.interval, sta_list=[], virtual=self.virtual, real=self.real,
-                                                duration=ping_test_duration)
+                                                duration=ping_test_duration,result_dir=self.result_dir)
             if not self.ping_test_obj.check_tab_exists():
                 print('Generic Tab is not available for Ping Test.\nAborting the test.')
                 exit(0)
@@ -1873,6 +1877,32 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.set_csv_filename(graph_png)
                 self.lf_report_mt.move_csv_file()
                 self.lf_report_mt.build_graph()
+                if self.dowebgui and self.get_live_view:
+
+                    for floor in range(int(self.total_floors)):
+                        # Construct expected image paths
+                        packet_sent_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_ping_packet_sent_{floor+1}.png")
+                        packet_recv_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_ping_packet_recv_{floor+1}.png")
+                        packet_loss_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_ping_packet_loss_{floor+1}.png")
+
+                        # Wait for all required images to be generated (up to timeout)
+                        timeout = 120  # seconds
+                        start_time = time.time()
+
+                        while not (os.path.exists(packet_sent_image) and os.path.exists(packet_recv_image) and os.path.exists(packet_loss_image)):
+                            if time.time() - start_time > timeout:
+                                print(f"Timeout: Heatmap images for floor {floor + 1} not found within {timeout} seconds.")
+                                break
+                            time.sleep(1)
+
+                        self.lf_report_mt.set_custom_html("<h2>Ping Packet Sent vs Recevied vs Lost: </h2>")
+                        self.lf_report_mt.build_custom()
+
+                        # Generate report sections for each image if it exists
+                        for image_path in [packet_sent_image, packet_recv_image, packet_loss_image]:
+                            if os.path.exists(image_path):
+                                self.lf_report_mt.set_custom_html(f'<img src="file://{image_path}"  style="width:1200px; height:800px;"></img>')
+                                self.lf_report_mt.build_custom()
                 dataframe1 = pd.DataFrame({
                     'Wireless Client': self.ping_test_obj.device_names,
                     'MAC': self.ping_test_obj.device_mac,
@@ -1985,7 +2015,10 @@ class Mixed_Traffic(Realm):
                     self.lf_report_mt.set_csv_filename(graph_png)
                     self.lf_report_mt.move_csv_file()
                     self.lf_report_mt.build_graph()
-                    qos_obj.generate_individual_graph(self.res, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a, qos_obj.avg_drop_b)
+                    # Helpful for testhouse when both QoS and multicast are checked, to avoid generating redundant RSSI heatmaps.
+                    multicast_exists = "5" in self.tests and self.get_live_view
+                    qos_obj.generate_individual_graph(self.res, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a,
+                                                      qos_obj.avg_drop_b, self.total_floors, multicast_exists)
             if "3" in self.tests and self.ftp_test_status:
                 # 3.FTP test reporting in mixed traffic
                 self.lf_report_mt.set_obj_html(_obj_title="3. File Transfer Protocol (FTP) Test", _obj="")
@@ -2065,6 +2098,26 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.set_csv_filename(ftp_graph2)
                 self.lf_report_mt.move_csv_file()
                 self.lf_report_mt.build_graph()
+                if self.dowebgui and self.get_live_view:
+                    for floor in range(0,int(self.total_floors)):
+                        script_dir = os.path.dirname(os.path.abspath(__file__))
+                        throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"ftp_{self.test_name}_{floor+1}.png")
+                        timeout = 60  # seconds
+                        start_time = time.time()
+
+                        while not (os.path.exists(throughput_image_path)):
+                            if time.time() - start_time > timeout:
+                                print("Timeout: Images not found within 60 seconds.")
+                                break
+                            time.sleep(1)
+                        while not os.path.exists(throughput_image_path):
+                            if os.path.exists(throughput_image_path):
+                                break
+                        if os.path.exists(throughput_image_path):
+                           self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
+                           self.lf_report_mt.build_custom()
+                           self.lf_report_mt.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                           self.lf_report_mt.build_custom()
                 self.lf_report_mt.set_table_title("Overall Results")
                 self.lf_report_mt.build_table_title()
                 dataframe = {
@@ -2115,6 +2168,25 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.move_csv_file()
                 self.lf_report_mt.move_graph_image()
                 self.lf_report_mt.build_graph()
+                if self.dowebgui and self.get_live_view:
+                    for floor in range(0,int(self.total_floors)):
+                        throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"http_{self.test_name}_{floor+1}.png")
+                        timeout = 60  # seconds
+                        start_time = time.time()
+
+                        while not (os.path.exists(throughput_image_path)):
+                            if time.time() - start_time > timeout:
+                                print("Timeout: Images not found within 60 seconds.")
+                                break
+                            time.sleep(1)
+                        while not os.path.exists(throughput_image_path):
+                            if os.path.exists(throughput_image_path):
+                                break
+                        if os.path.exists(throughput_image_path):
+                            self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
+                            self.lf_report_mt.build_custom()
+                            self.lf_report_mt.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                            self.lf_report_mt.build_custom()
                 self.lf_report_mt.set_table_title("Overall Results")
                 self.lf_report_mt.build_table_title()
                 dataframe = {
@@ -2227,6 +2299,32 @@ class Mixed_Traffic(Realm):
                         self.lf_report_mt.set_graph_image(graph_png)
                         self.lf_report_mt.move_graph_image()
                         self.lf_report_mt.build_graph()
+                        if self.dowebgui and self.get_live_view:
+                            for floor in range(0,int(self.total_floors)):
+                                throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{floor+1}.png")
+                                rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor+1}.png")
+                                timeout = 60  # seconds
+                                start_time = time.time()
+
+                                while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)):
+                                    if time.time() - start_time > timeout:
+                                        print("Timeout: Images not found within 60 seconds.")
+                                        break
+                                    time.sleep(1)
+                                while not os.path.exists(throughput_image_path) and not os.path.exists(rssi_image_path):
+                                    if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
+                                        break
+                                if os.path.exists(throughput_image_path):
+                                     self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
+                                     self.lf_report_mt.build_custom()
+                                     self.lf_report_mt.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                                     self.lf_report_mt.build_custom()
+
+                                if os.path.exists(rssi_image_path):
+                                     self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
+                                     self.lf_report_mt.build_custom()
+                                     self.lf_report_mt.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
+                                     self.lf_report_mt.build_custom()
                         tos_dataframe_A = {
                             " Client Name ": client_names,
                             " Endp Name": endp_names,
@@ -2250,7 +2348,8 @@ class Mixed_Traffic(Realm):
                         self.lf_report_mt.build_table()
             overall_setup_info = {"contact": "support@candelatech.com"}
             self.lf_report_mt.test_setup_table(test_setup_data=overall_setup_info, value="Overall Info")
-            self.lf_report_mt.build_custom()
+            if not self.get_live_view:
+                self.lf_report_mt.build_custom()
             self.lf_report_mt.build_footer()
             self.lf_report_mt.write_html()
             self.lf_report_mt.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
@@ -2520,6 +2619,8 @@ INCLUDE_IN_README: False
 
     parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
                         action="store_true")
+    optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
 
     args = parser.parse_args()
 
@@ -2676,6 +2777,8 @@ INCLUDE_IN_README: False
                               device_list=args.device_list,
                               test_name=args.test_name,
                               result_dir=args.result_dir,
+                              get_live_view= args.get_live_view,
+                              total_floors = args.total_floors,
                               # path=path
                               )
     # pre-cleaning & creating / selecting clients for both real and virtual
