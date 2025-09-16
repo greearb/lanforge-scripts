@@ -691,7 +691,7 @@ class Mixed_Traffic(Realm):
             self.ping_test_obj = ping_test.Ping(host=self.host, port=self.port, ssid=ssid, security=security,
                                                 password=password, lanforge_password="lanforge", target=self.target,
                                                 interval=self.interval, sta_list=[], virtual=self.virtual, real=self.real,
-                                                duration=ping_test_duration,result_dir=self.result_dir)
+                                                duration=ping_test_duration, result_dir=self.result_dir)
             if not self.ping_test_obj.check_tab_exists():
                 print('Generic Tab is not available for Ping Test.\nAborting the test.')
                 exit(0)
@@ -779,7 +779,7 @@ class Mixed_Traffic(Realm):
                             if data["status"] != "Running":
                                 logging.info('Test is stopped by the user')
                                 break
-                    except BaseException:
+                    except Exception:
                         logging.info("execption while reading running json in ping")
                     time.sleep(3)
             else:
@@ -1881,9 +1881,9 @@ class Mixed_Traffic(Realm):
 
                     for floor in range(int(self.total_floors)):
                         # Construct expected image paths
-                        packet_sent_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_ping_packet_sent_{floor+1}.png")
-                        packet_recv_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_ping_packet_recv_{floor+1}.png")
-                        packet_loss_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_ping_packet_loss_{floor+1}.png")
+                        packet_sent_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_ping_packet_sent_{floor + 1}.png")
+                        packet_recv_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_ping_packet_recv_{floor + 1}.png")
+                        packet_loss_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_ping_packet_loss_{floor + 1}.png")
 
                         # Wait for all required images to be generated (up to timeout)
                         timeout = 120  # seconds
@@ -2015,7 +2015,8 @@ class Mixed_Traffic(Realm):
                     self.lf_report_mt.set_csv_filename(graph_png)
                     self.lf_report_mt.move_csv_file()
                     self.lf_report_mt.build_graph()
-                    qos_obj.generate_individual_graph(self.res, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a, qos_obj.avg_drop_b,self.total_floors,multicast_exists=True if "5" in self.tests and self.get_live_view else False)
+                    qos_obj.generate_individual_graph(self.res, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a,
+                                                      qos_obj.avg_drop_b, self.total_floors, multicast_exists=True if "5" in self.tests and self.get_live_view else False)
             if "3" in self.tests and self.ftp_test_status:
                 # 3.FTP test reporting in mixed traffic
                 self.lf_report_mt.set_obj_html(_obj_title="3. File Transfer Protocol (FTP) Test", _obj="")
@@ -2096,9 +2097,8 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.move_csv_file()
                 self.lf_report_mt.build_graph()
                 if self.dowebgui and self.get_live_view:
-                    for floor in range(0,int(self.total_floors)):
-                        script_dir = os.path.dirname(os.path.abspath(__file__))
-                        throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"ftp_{self.test_name}_{floor+1}.png")
+                    for floor in range(0, int(self.total_floors)):
+                        throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"ftp_{self.test_name}_{floor + 1}.png")
                         timeout = 60  # seconds
                         start_time = time.time()
 
@@ -2111,10 +2111,10 @@ class Mixed_Traffic(Realm):
                             if os.path.exists(throughput_image_path):
                                 break
                         if os.path.exists(throughput_image_path):
-                           self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
-                           self.lf_report_mt.build_custom()
-                           self.lf_report_mt.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
-                           self.lf_report_mt.build_custom()
+                            self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
+                            self.lf_report_mt.build_custom()
+                            self.lf_report_mt.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                            self.lf_report_mt.build_custom()
                 self.lf_report_mt.set_table_title("Overall Results")
                 self.lf_report_mt.build_table_title()
                 dataframe = {
@@ -2166,8 +2166,8 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.move_graph_image()
                 self.lf_report_mt.build_graph()
                 if self.dowebgui and self.get_live_view:
-                    for floor in range(0,int(self.total_floors)):
-                        throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"http_{self.test_name}_{floor+1}.png")
+                    for floor in range(0, int(self.total_floors)):
+                        throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"http_{self.test_name}_{floor + 1}.png")
                         timeout = 60  # seconds
                         start_time = time.time()
 
@@ -2297,9 +2297,9 @@ class Mixed_Traffic(Realm):
                         self.lf_report_mt.move_graph_image()
                         self.lf_report_mt.build_graph()
                         if self.dowebgui and self.get_live_view:
-                            for floor in range(0,int(self.total_floors)):
-                                throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{floor+1}.png")
-                                rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor+1}.png")
+                            for floor in range(0, int(self.total_floors)):
+                                throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{floor + 1}.png")
+                                rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor + 1}.png")
                                 timeout = 60  # seconds
                                 start_time = time.time()
 
@@ -2312,16 +2312,16 @@ class Mixed_Traffic(Realm):
                                     if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
                                         break
                                 if os.path.exists(throughput_image_path):
-                                     self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
-                                     self.lf_report_mt.build_custom()
-                                     self.lf_report_mt.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
-                                     self.lf_report_mt.build_custom()
+                                    self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
+                                    self.lf_report_mt.build_custom()
+                                    self.lf_report_mt.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                                    self.lf_report_mt.build_custom()
 
                                 if os.path.exists(rssi_image_path):
-                                     self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
-                                     self.lf_report_mt.build_custom()
-                                     self.lf_report_mt.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
-                                     self.lf_report_mt.build_custom()
+                                    self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
+                                    self.lf_report_mt.build_custom()
+                                    self.lf_report_mt.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
+                                    self.lf_report_mt.build_custom()
                         tos_dataframe_A = {
                             " Client Name ": client_names,
                             " Endp Name": endp_names,
@@ -2774,8 +2774,8 @@ INCLUDE_IN_README: False
                               device_list=args.device_list,
                               test_name=args.test_name,
                               result_dir=args.result_dir,
-                              get_live_view= args.get_live_view,
-                              total_floors = args.total_floors,
+                              get_live_view=args.get_live_view,
+                              total_floors=args.total_floors,
                               # path=path
                               )
     # pre-cleaning & creating / selecting clients for both real and virtual
@@ -3181,7 +3181,7 @@ INCLUDE_IN_README: False
                                     mixed_obj.ping_execution = True
                                     mixed_obj.ping_test(ssid=ssid, password=password, security=security, target=args.target,
                                                         interval=args.ping_interval, all_bands=True)
-                            except BaseException:
+                            except Exception:
                                 logger.info("Error while running for webui during ping execution")
                             try:
                                 overall_status['ping'] = "stopped"
@@ -3213,7 +3213,7 @@ INCLUDE_IN_README: False
                                                        upstream=args.upstream_port, tos=args.tos, traffic_type=args.traffic_type,
                                                        side_a_min=args.side_a_min, side_b_min=args.side_b_min,
                                                        side_a_max=args.side_a_max, side_b_max=args.side_b_min, all_bands=True)
-                            except BaseException:
+                            except Exception:
                                 logger.info("Error while running for webui during qos execution")
                             try:
                                 overall_status['qos'] = "stopped"
@@ -3245,7 +3245,7 @@ INCLUDE_IN_README: False
                                     mixed_obj.ftp_execution = True
                                     mixed_obj.ftp_test(ssid=ssid, password=password, security=security, bands=Bands,
                                                        directions=args.direction, file_sizes=args.ftp_file_sizes, all_bands=True)
-                            except BaseException:
+                            except Exception:
                                 logger.info("Error while running for webui during ftp execution")
                             try:
                                 overall_status['ftp'] = "stopped"
@@ -3276,7 +3276,7 @@ INCLUDE_IN_README: False
                                     mixed_obj.http_test(ssid=ssid, password=password, security=security,
                                                         http_file_size=args.http_file_size, target_per_ten=args.target_per_ten,
                                                         all_bands=True)
-                            except BaseException:
+                            except Exception:
                                 logger.info("Error while running for webui during http execution")
                             try:
                                 overall_status['http'] = "stopped"
