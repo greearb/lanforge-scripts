@@ -9,6 +9,7 @@ if sys.version_info[0] != 3:
 # from time import sleep
 from contextlib import contextmanager
 import json
+import time
 
 import scrapli
 from scrapli.driver import GenericDriver, Driver
@@ -43,11 +44,10 @@ def get_jump_function(params: dict):
     return jump_through_vrf
 
 
-def is_cac_done(channel, list):
-    good_things = ['{"state": "cac_completed"}', '{"state":"allowed"}']
-    for status in list:
-        if status[0] == channel and status[1] in good_things:
-            return True
+def is_cac_done(result):
+    good_things = "get_cac_state:0"
+    if good_things in result:
+        return True
     else:
         return False
 
@@ -349,13 +349,13 @@ class create_controller_series_object:
         print(f"Channel set {r.result}")
 
         # need to wait for cac to be done
-        # for _ in range(120):
-        #     r = self._show_ap_dot11_summary()
-        #     if is_cac_done(self.channel, r["channels"][1]) == True:
-        #         return
-        #     sleep(1)
-        # else:
-        #     raise Exception("CAC is not okay")
+        for _ in range(120):
+            r = self.get_cac_state()
+            if is_cac_done(r.result):
+                return
+            time.sleep(1)
+        else:
+            raise Exception("CAC is not okay")
 
     def config_dot11_5ghz_channel(self):
         self._config_dot11_channel(self.radio_name_5g, self.ap_name_5g)
@@ -381,6 +381,16 @@ class create_controller_series_object:
             return
 
         results = self.parse_network_interfaces(r.result)
+
+        return results
+
+    def get_cac_state(self) -> "dict[str]":
+        command = "cfg80211tool ath04 get_cac_state"
+        results = self.send_ap_command(command)
+
+        if results.failed:
+            logging.info("error checking cac timer")
+            return
 
         return results
 
