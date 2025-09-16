@@ -152,7 +152,10 @@ class Ping(Realm):
                  server_ip=None,
                  expected_passfail_val=None,
                  csv_name=None,
-                 wait_time=60):
+                 wait_time=60,
+                 total_floors: int=None,
+                 get_live_view: bool=None,
+                 result_dir: str=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -185,6 +188,9 @@ class Ping(Realm):
         self.generic_endps_profile.dest = self.target
         self.generic_endps_profile.interval = self.interval
         self.Devices = None
+        self.total_floors = total_floors
+        self.get_live_view = get_live_view
+        self.result_dir = result_dir
         self.eap_method = eap_method
         self.eap_identity = eap_identity
         self.ieee80211 = ieee80211
@@ -486,6 +492,39 @@ class Ping(Realm):
                     pass_fail_list.append("FAIL")
             self.pass_fail_list = pass_fail_list
 
+    def add_live_view_images_to_report(self, report: lf_report, report_path: str):
+        """
+        This function looks for throughput and RSSI images for each floor
+        in the 'live_view_images' folder within `self.result_dir`.
+        It waits up to **60 seconds** for each image. If an image is found,
+        it's added to the `report` on a new page; otherwise, it's skipped.
+        """
+        test_name = os.path.basename(report_path)
+        for floor in range(int(self.total_floors)):
+            # Construct expected image paths
+            packet_sent_image = os.path.join(self.result_dir, "heatmap_images", f"{test_name}_ping_packet_sent_{floor + 1}.png")
+            packet_recv_image = os.path.join(self.result_dir, "heatmap_images", f"{test_name}_ping_packet_recv_{floor + 1}.png")
+            packet_loss_image = os.path.join(self.result_dir, "heatmap_images", f"{test_name}_ping_packet_loss_{floor + 1}.png")
+
+            # Wait for all required images to be generated (up to timeout)
+            timeout = 60  # seconds
+            start_time = time.time()
+
+            while not (os.path.exists(packet_sent_image) and os.path.exists(packet_recv_image) and os.path.exists(packet_loss_image)):
+                if time.time() - start_time > timeout:
+                    print(f"Timeout: Heatmap images for floor {floor + 1} not found within {timeout} seconds.")
+                    break
+                time.sleep(1)
+
+            report.set_custom_html("<h2>Ping Packet Sent vs Recevied vs Lost: </h2>")
+            report.build_custom()
+
+            # Generate report sections for each image if it exists
+            for image_path in [packet_sent_image, packet_recv_image, packet_loss_image]:
+                if os.path.exists(image_path):
+                    report.set_custom_html(f'<img src="file://{image_path}"  style="width:1200px; height:800px;"></img>')
+                    report.build_custom()
+
     def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path='', config_devices='', group_device_map={}):
         if result_json is not None:
             self.result_json = result_json
@@ -678,6 +717,9 @@ class Ping(Realm):
                     dataframe1['Status'] = self.pass_fail_list
                 report.set_table_dataframe(dataframe1)
                 report.build_table()
+            if self.get_live_view:
+                self.add_live_view_images_to_report(report=report, report_path=report_path)
+
         else:
             dataframe1 = pd.DataFrame({
                 'Wireless Client': self.device_names,
