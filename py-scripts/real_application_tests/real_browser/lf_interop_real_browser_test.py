@@ -460,10 +460,10 @@ class RealBrowserTest(Realm):
             if (url is None) or (url == ""):
                 raise ValueError("HTTPProfile::create: url unset")
             if ftp:
-                cx_name = name + "_ftp"
+                cx_name = 'rb_' + name + "_ftp"
             else:
 
-                cx_name = name + "_http"
+                cx_name = 'rb_' + name + "_http"
 
             if interop is None:
                 if upload_name is None:
