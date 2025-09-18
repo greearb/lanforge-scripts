@@ -371,7 +371,9 @@ class RealBrowserTest(Realm):
 
     def create_real(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False, real=False,
                     https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None,
-                    https_ip=None, interop=None, media_source=None, media_quality=None, timeout=10, proxy_auth_type=0x2200, windows_list=[], get_url_from_file=False):
+                    https_ip=None, interop=None, media_source=None, media_quality=None, timeout=10, proxy_auth_type=0x2200, windows_list=None, get_url_from_file=False):
+        if windows_list is None:
+            windows_list = []
         if ports is None:
             ports = []
         cx_post_data = []
@@ -622,7 +624,7 @@ class RealBrowserTest(Realm):
             div = len(keys) // incremental_value
             mod = len(keys) % incremental_value
 
-            for i in range(div):
+            for _i in range(div):
                 if len(incremental_temp):
                     incremental_temp.append(incremental_temp[-1] + incremental_value)
                 else:
@@ -1266,7 +1268,7 @@ class RealBrowserTest(Realm):
                             if len(self.created_cx.keys()) > 1:
                                 data = mobile_data['endpoint']
                                 for endpoint in data:
-                                    for key, value in endpoint.items():
+                                    for _key, value in endpoint.items():
                                         if True:
                                             cx_name = value.get('name', 'NA')
                                             match = re.search(r'http(\d+)', cx_name)
@@ -1423,7 +1425,7 @@ class RealBrowserTest(Realm):
             try:
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 self.upstream_port = target_port_ip
-            except BaseException:
+            except Exception:
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {self.upstream_port}.')
             logging.info(f"Upstream port IP {self.upstream_port}")
         else:
@@ -1855,7 +1857,7 @@ class RealBrowserTest(Realm):
 
         for i in range(0, len(device_names)):
             for resource in rm_data['resources']:
-                for key, value in resource.items():
+                for _key, value in resource.items():
                     if value['hostname'] == device_names[i] and device_type_data[i] == "laptop":
                         final_eid_data.append(value['eid'])
                         device_type_data[i] = value["device type"]
