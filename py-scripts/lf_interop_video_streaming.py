@@ -474,10 +474,10 @@ class VideoStreamingTest(Realm):
             if (url is None) or (url == ""):
                 raise ValueError("HTTPProfile::create: url unset")
             if ftp:
-                cx_name = name + "_ftp"
+                cx_name = 'vs_' + name + "_ftp"
             else:
 
-                cx_name = name + "_http"
+                cx_name = 'vs_' + name + "_http"
 
             if interop is None:
                 if upload_name is None:
@@ -1361,7 +1361,7 @@ class VideoStreamingTest(Realm):
                                   _xaxis_categories=self.trim_data(len(realtime_dataset['timestamp'][realtime_dataset['iteration'] == iter + 1].values.tolist()),
                                                                    realtime_dataset['timestamp'][realtime_dataset['iteration'] == iter + 1].values.tolist()),
                                   _label=['Rate'],
-                                  _graph_image_name=f"line_graph{iter}"
+                                  _graph_image_name=f"vs_line_graph{iter}"
                                   )
             graph_png = graph.build_line_graph()
             logger.info("graph name {}".format(graph_png))
