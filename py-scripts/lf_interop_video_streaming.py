@@ -271,7 +271,7 @@ class VideoStreamingTest(Realm):
             try:
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
-            except BaseException:
+            except Exception:
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
             logging.info(f"Upstream port IP {upstream_port}")
         else:
@@ -392,9 +392,11 @@ class VideoStreamingTest(Realm):
 
     def create_real(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False, real=False,
                     https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None,
-                    https_ip=None, interop=None, media_source=None, media_quality=None, timeout=10, proxy_auth_type=0x2200, windows_list=[], get_url_from_file=False):
+                    https_ip=None, interop=None, media_source=None, media_quality=None, timeout=10, proxy_auth_type=0x2200, windows_list=None, get_url_from_file=False):
         if ports is None:
             ports = []
+        if windows_list is None:
+            windows_list = []
         cx_post_data = []
         self.map_sta_ips_real(ports)
         logger.info("Create HTTP CXs..." + __name__)
@@ -666,7 +668,7 @@ class VideoStreamingTest(Realm):
             if len(self.created_cx.keys()) > 1:
                 data = data['endpoint']
                 for endpoint in data:
-                    for key, value in endpoint.items():
+                    for _key, value in endpoint.items():
                         names.append(value['name'])
                         statuses.append(value['status'])
                         total_urls.append(value['total-urls'])
@@ -819,9 +821,10 @@ class VideoStreamingTest(Realm):
         rssi = [0 if i.strip() == "" else int(i) for i in rssi]
         return rssi, tx_rate
 
-    def monitor_for_runtime_csv(self, duration, file_path, individual_df, iteration, actual_start_time, resource_list_sorted=[], cx_list=[]):
+    def monitor_for_runtime_csv(self, duration, file_path, individual_df, iteration, actual_start_time, cx_list=None):
         try:
-
+            if cx_list is None:
+                cx_list = []
             self.all_cx_list.extend(cx_list)
             test_stopped_by_user = False
             resource_ids = list(map(int, self.resource_ids.split(',')))
@@ -1041,7 +1044,7 @@ class VideoStreamingTest(Realm):
             div = len(keys) // incremental_value
             mod = len(keys) % incremental_value
 
-            for i in range(div):
+            for _i in range(div):
                 if len(incremental_temp):
                     incremental_temp.append(incremental_temp[-1] + incremental_value)
                 else:
@@ -1192,7 +1195,7 @@ class VideoStreamingTest(Realm):
             'Average Rx Rate (Mbps)': avg_rx_rate_list
         }
 
-    def generate_report(self, date, iterations_before_test_stopped_by_user, test_setup_info, realtime_dataset, report_path='', cx_order_list=[]):
+    def generate_report(self, date, iterations_before_test_stopped_by_user, test_setup_info, realtime_dataset, report_path=''):
         logging.info("Creating Reports")
         # Initialize the report object
         if self.dowebgui and report_path == '':
@@ -2282,9 +2285,9 @@ def main():
                             data = json.load(file)
                             if data["status"] != "Running":
                                 break
-                    test_stopped_by_user = obj.monitor_for_runtime_csv(args.duration, file_path, individual_df, i, actual_start_time, resource_list_sorted, cx_order_list[i])
+                    test_stopped_by_user = obj.monitor_for_runtime_csv(args.duration, file_path, individual_df, i, actual_start_time, cx_order_list[i])
                 else:
-                    test_stopped_by_user = obj.monitor_for_runtime_csv(args.duration, file_path, individual_df, i, actual_start_time, resource_list_sorted, cx_order_list[i])
+                    test_stopped_by_user = obj.monitor_for_runtime_csv(args.duration, file_path, individual_df, i, actual_start_time, cx_order_list[i])
                 if not test_stopped_by_user:
                     # Append current iteration index to iterations_before_test_stopped_by_user
                     iterations_before_test_stopped_by_user.append(i)
@@ -2297,7 +2300,7 @@ def main():
 
     # prev_inc_value = 0
     if obj.resource_ids and obj.incremental:
-        obj.generate_report(date, list(set(iterations_before_test_stopped_by_user)), test_setup_info=test_setup_info, realtime_dataset=individual_df, cx_order_list=cx_order_list)
+        obj.generate_report(date, list(set(iterations_before_test_stopped_by_user)), test_setup_info=test_setup_info, realtime_dataset=individual_df)
     elif obj.resource_ids:
         obj.generate_report(date, list(set(iterations_before_test_stopped_by_user)), test_setup_info=test_setup_info, realtime_dataset=individual_df)
 
