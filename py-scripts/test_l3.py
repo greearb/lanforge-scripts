@@ -646,6 +646,7 @@ import json
 import shutil
 
 import asyncio
+import copy
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
@@ -750,6 +751,8 @@ class L3VariableTime(Realm):
                  dowebgui=False,
                  test_name="",
                  ip="",
+                 get_live_view=False,
+                 total_floors=0,
                  # for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
                  result_dir="",
                  # wifi extra configuration
@@ -844,6 +847,8 @@ class L3VariableTime(Realm):
         else:
             self.dataplane = False
         self.ssid_list = ssid_list
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
         self.ssid_password_list = ssid_password_list
         self.wifi_mode_list = wifi_mode_list
         self.enable_flags_list = enable_flags_list
@@ -2037,6 +2042,136 @@ class L3VariableTime(Realm):
                 "PASS: Stations & CX build finished: created/updated: %s stations and %s connections." %
                 (self.station_count, self.cx_count))
 
+    def l3_endp_port_data(self, tos):
+        """
+        Args:
+            tos (str): Type of Service (TOS) value to filter endpoints.
+
+        Returns:
+            dict: Collected client data for the given TOS, including clients,
+                uplink/downlink rates, resource aliases, and port signals.
+        """
+        port_data = self.json_get('port/all?fields=signal,signal')
+        port_data.pop("handler", None)
+        port_data.pop("uri", None)
+        port_data.pop("warnings", None)
+
+        # Gather resource data (only need hostname for alias)
+        resource_data = self.json_get('resource/all?fields=eid,hostname')
+        resource_data.pop("handler", None)
+        resource_data.pop("uri", None)
+        if not self.dowebgui:
+            logger.info("resource_data type: {dtype}".format(dtype=type(port_data)))
+
+        # Handle single resource case
+        if "resource" in resource_data.keys():
+            resource_data["resources"] = [{'1.1': resource_data['resource']}]
+            resource_data.pop("resource")
+
+        # Gather endpoint data (name, tx/rx rate, a/b, tos, eid, type)
+        endp_type_present = False
+        endp_data = self.json_get('endp/all?fields=name,tx+rate,rx+rate,a/b,tos,eid,type')
+        if endp_data is not None:
+            endp_type_present = True
+        else:
+            logger.info(
+                "Consider upgrading to 5.4.7 + endp field type not supported in LANforge GUI version results for Multicast reversed in graphs and tables")
+            endp_data = self.json_get('endp/all?fields=name,tx+rate,rx+rate,a/b,eid')
+            endp_type_present = False
+        endp_data.pop("handler", None)
+        endp_data.pop("uri", None)
+
+        # Initialize lists for the single TOS
+        clients_A = []
+        tos_ul_A = []
+        tos_dl_A = []
+        resource_alias_A = []
+        port_signal_A = []
+
+        clients_B = []
+        tos_ul_B = []
+        tos_dl_B = []
+        resource_alias_B = []
+        port_signal_B = []
+
+        for endp in endp_data['endpoint']:
+            endp_key = list(endp.keys())[0]
+            endp_info = endp[endp_key]
+
+            # Process only if TOS matches or name contains TOS for non-Mcast types
+            if (endp_type_present and endp_info['type'] == 'Mcast' and endp_info['tos'] == tos) or \
+                (endp_type_present and endp_info['type'] in ['LF/TCP', 'LF/UDP'] and endp_info['tos'] == tos) or \
+                    (not endp_type_present and tos in endp_info['name']):
+
+                # Resource lookup (for alias)
+                eid_tmp_resource = f"{self.name_to_eid(endp_info['eid'])[0]}.{self.name_to_eid(endp_info['eid'])[1]}"
+                alias = 'NA'
+                for res in resource_data['resources']:
+                    res_key = list(res.keys())[0]
+                    if res_key == eid_tmp_resource:
+                        # resource_found = True
+                        alias = self.create_resource_alias(
+                            eid=res[res_key]['eid'],
+                            host=res[res_key]['hostname'],
+                            hw_version='',
+                            kernel='')
+                        break
+
+                # Port lookup (for signal)
+                eid_info = endp_info['name'].split('-')
+                eid_tmp_port = f"{eid_tmp_resource}.{eid_info[3 if endp_type_present and endp_info['type'] == 'Mcast' else 1]}"
+                signal = 'NA'
+                for port in port_data['interfaces']:
+                    port_key = list(port.keys())[0]
+                    if port_key == eid_tmp_port:
+                        signal = port[port_key]['signal']
+                        break
+
+                if endp_type_present and endp_info['type'] == 'Mcast':
+                    if endp_info['a/b'] == "B":
+                        clients_A.append(endp_info['name'])
+                        tos_ul_A.append(endp_info["tx rate"])
+                        tos_dl_A.append(endp_info["rx rate"])
+                        resource_alias_A.append(alias)
+                        port_signal_A.append(signal)
+                    elif endp_info['a/b'] == "A":
+                        clients_B.append(endp_info['name'])
+                        tos_dl_B.append(endp_info["tx rate"])
+                        tos_ul_B.append(endp_info["rx rate"])
+                        resource_alias_B.append(alias)
+                        port_signal_B.append(signal)
+                else:  # Covers LF/TCP, LF/UDP, or no type field
+                    if endp_info['a/b'] == "A":
+                        clients_A.append(endp_info['name'])
+                        tos_ul_A.append(endp_info["tx rate"])
+                        tos_dl_A.append(endp_info["rx rate"])
+                        resource_alias_A.append(alias)
+                        port_signal_A.append(signal)
+                    elif endp_info['a/b'] == "B":
+                        clients_B.append(endp_info['name'])
+                        tos_dl_B.append(endp_info["tx rate"])
+                        tos_ul_B.append(endp_info["rx rate"])
+                        resource_alias_B.append(alias)
+                        port_signal_B.append(signal)
+
+        # Construct the client dictionary for the single TOS
+        client_dict_A = {
+            tos: {
+                "clients_A": clients_A,
+                "ul_A": tos_ul_A,
+                "dl_A": tos_dl_A,
+                "resource_alias_A": resource_alias_A,
+                "port_signal_A": port_signal_A,
+                "clients_B": clients_B,
+                "ul_B": tos_ul_B,
+                "dl_B": tos_dl_B,
+                "resource_alias_B": resource_alias_B,
+                "port_signal_B": port_signal_B,
+            }
+        }
+
+        return client_dict_A
+
     def start(self, print_pass=False) -> int:
         """Run configured Layer-3 variable time test.
 
@@ -2170,7 +2305,7 @@ class L3VariableTime(Realm):
                     total_ul_ll_bps = 0
                     reset_timer = 0
                     self.overall = []
-
+                    individual_device_data = {}
                     # Monitor loop
                     while cur_time < end_time:
                         # interval_time = cur_time + datetime.timedelta(seconds=5)
@@ -2196,6 +2331,24 @@ class L3VariableTime(Realm):
                             total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total_dl_ll_bps=total_dl_ll_bps)
                         # Added logic creating a csv file for webGUI to get runtime data
                         if self.dowebgui:
+                            # Fetch L3 endpoint and port data for the given ToS
+                            real_client_endpoint_data = self.l3_endp_port_data(self.tos[0])
+                            l3_port_data = real_client_endpoint_data[self.tos[0]]
+                            # Initialize empty DataFrames for each device (based on resource alias)
+                            for name in l3_port_data['resource_alias_A']:
+                                # Extract device/resource ID from alias
+                                r_id = name.split('_')[0]
+                                if r_id not in individual_device_data:
+                                    # Create a DataFrame with columns for download rate, upload rate, and RSSI
+                                    columns = ['download_rate_A', 'upload_rate_A', 'RSSI']
+                                    individual_device_data[r_id] = pd.DataFrame(columns=columns)
+                            for i in range(len(l3_port_data['resource_alias_A'])):
+                                row_data = [l3_port_data['dl_A'][i], l3_port_data['ul_A'][i], l3_port_data['port_signal_A'][i]]
+                                r_id = l3_port_data['resource_alias_A'][i].split('_')[0]
+                                # Append new row to the device-specific DataFrame
+                                individual_device_data[r_id].loc[len(individual_device_data[r_id])] = row_data
+                                # for each resource individual csv will be created here
+                                individual_device_data[r_id].to_csv(f'{self.result_dir}/individual_device_data_{r_id}.csv', index=False)
                             time_difference = abs(end_time - datetime.datetime.now())
                             total_hours = time_difference.total_seconds() / 3600
                             remaining_minutes = (total_hours % 1) * 60
@@ -5683,6 +5836,176 @@ class L3VariableTime(Realm):
         self.dut_sw_version = dut_sw_version
         self.dut_serial_num = dut_serial_num
 
+    def filter_mlt_data(self):
+        """
+            This function filters client_dict_A to include only CXs with "MLT", excluding other CXs (throughput, QoS). This way, we can exclude 'NA' entries from the dict.
+        """
+        tos_list = ['BK', 'BE', 'VI', 'VO']
+        for tos in tos_list:
+            if tos in self.client_dict_A and self.client_dict_A[tos]["ul_A"] and self.client_dict_A[tos]["dl_A"]:
+                clients_list = []
+                client_names = []
+                client_ul_A_data = []
+                client_dl_A_data = []
+                hw_versions = []
+                endp_names = []
+                port_names = []
+                modes = []
+                mac_list = []
+                ssid_list = []
+                channel_list = []
+                traffic_types = []
+                traffic_protocols = []
+                per_client_download_rate = []
+                download_rx_drop_percentages = []
+                resource_hosts = []
+                resource_eids = []
+                resource_kernels = []
+                offered_dl_rates = []
+                offered_ul_rates = []
+
+                # Process A side
+                for client_index in range(len(self.client_dict_A[tos]["clients_A"])):
+                    if self.client_dict_A[tos]["clients_A"][client_index].startswith('MLT'):
+                        clients_list.append(self.client_dict_A[tos]["clients_A"][client_index])
+                        client_names.append(self.client_dict_A[tos]['resource_alias_A'][client_index])
+                        client_ul_A_data.append(self.client_dict_A[tos]["ul_A"][client_index])
+                        client_dl_A_data.append(self.client_dict_A[tos]["dl_A"][client_index])
+                        hw_versions.append(self.client_dict_A[tos]['resource_hw_ver_A'][client_index])
+                        endp_names.append(self.client_dict_A[tos]["clients_A"][client_index])
+                        port_names.append(self.client_dict_A[tos]['port_A'][client_index])
+                        modes.append(self.client_dict_A[tos]['mode_A'][client_index])
+                        mac_list.append(self.client_dict_A[tos]['mac_A'][client_index])
+                        ssid_list.append(self.client_dict_A[tos]['ssid_A'][client_index])
+                        channel_list.append(self.client_dict_A[tos]['channel_A'][client_index])
+                        traffic_types.append(self.client_dict_A[tos]['traffic_type_A'][client_index])
+                        traffic_protocols.append(self.client_dict_A[tos]['traffic_protocol_A'][client_index])
+                        per_client_download_rate.append(self.client_dict_A[tos]['dl_A'][client_index])
+                        download_rx_drop_percentages.append(self.client_dict_A[tos]['download_rx_drop_percent_A'][client_index])
+                        resource_hosts.append(self.client_dict_A[tos]['resource_host_A'][client_index])
+                        resource_eids.append(self.client_dict_A[tos]['resource_eid_A'][client_index])
+                        resource_kernels.append(self.client_dict_A[tos]['resource_kernel_A'][client_index])
+                        offered_dl_rates.append(self.client_dict_A[tos]['offered_download_rate_A'][client_index])
+                        offered_ul_rates.append(self.client_dict_A[tos]['offered_upload_rate_A'][client_index])
+
+                # Process B side
+                clients_list_B = []
+                client_names_B = []
+                client_ul_B_data = []
+                client_dl_B_data = []
+                hw_versions_B = []
+                endp_names_B = []
+                port_names_B = []
+                modes_B = []
+                mac_list_B = []
+                ssid_list_B = []
+                channel_list_B = []
+                traffic_types_B = []
+                traffic_protocols_B = []
+                per_client_download_rate_B = []
+                download_rx_drop_percentages_B = []
+                resource_hosts_B = []
+                resource_eids_B = []
+                resource_kernels_B = []
+                offered_dl_rates_B = []
+                offered_ul_rates_B = []
+
+                for client_index in range(len(self.client_dict_A[tos]["clients_B"])):
+                    if self.client_dict_A[tos]["clients_B"][client_index].startswith('MLT'):
+                        clients_list_B.append(self.client_dict_A[tos]["clients_B"][client_index])
+                        client_names_B.append(self.client_dict_A[tos]['resource_alias_B'][client_index])
+                        client_ul_B_data.append(self.client_dict_A[tos]["ul_B"][client_index])
+                        client_dl_B_data.append(self.client_dict_A[tos]["dl_B"][client_index])
+                        hw_versions_B.append(self.client_dict_A[tos]['resource_hw_ver_B'][client_index])
+                        endp_names_B.append(self.client_dict_A[tos]["clients_B"][client_index])
+                        port_names_B.append(self.client_dict_A[tos]['port_B'][client_index])
+                        modes_B.append(self.client_dict_A[tos]['mode_B'][client_index])
+                        mac_list_B.append(self.client_dict_A[tos]['mac_B'][client_index])
+                        ssid_list_B.append(self.client_dict_A[tos]['ssid_B'][client_index])
+                        channel_list_B.append(self.client_dict_A[tos]['channel_B'][client_index])
+                        traffic_types_B.append(self.client_dict_A[tos]['traffic_type_B'][client_index])
+                        traffic_protocols_B.append(self.client_dict_A[tos]['traffic_protocol_B'][client_index])
+                        per_client_download_rate_B.append(self.client_dict_A[tos]['dl_B'][client_index])
+                        download_rx_drop_percentages_B.append(self.client_dict_A[tos]['download_rx_drop_percent_B'][client_index])
+                        resource_hosts_B.append(self.client_dict_A[tos]['resource_host_B'][client_index])
+                        resource_eids_B.append(self.client_dict_A[tos]['resource_eid_B'][client_index])
+                        resource_kernels_B.append(self.client_dict_A[tos]['resource_kernel_B'][client_index])
+                        offered_dl_rates_B.append(self.client_dict_A[tos]['offered_download_rate_B'][client_index])
+                        offered_ul_rates_B.append(self.client_dict_A[tos]['offered_upload_rate_B'][client_index])
+
+                # Update the dict with filtered A-side data
+                self.client_dict_A[tos]["clients_A"] = clients_list
+                self.client_dict_A[tos]["resource_alias_A"] = client_names
+                self.client_dict_A[tos]["ul_A"] = client_ul_A_data
+                self.client_dict_A[tos]["dl_A"] = client_dl_A_data
+                self.client_dict_A[tos]["resource_hw_ver_A"] = hw_versions
+                self.client_dict_A[tos]["port_A"] = port_names
+                self.client_dict_A[tos]["mode_A"] = modes
+                self.client_dict_A[tos]["mac_A"] = mac_list
+                self.client_dict_A[tos]["ssid_A"] = ssid_list
+                self.client_dict_A[tos]["channel_A"] = channel_list
+                self.client_dict_A[tos]["traffic_type_A"] = traffic_types
+                self.client_dict_A[tos]["traffic_protocol_A"] = traffic_protocols
+                self.client_dict_A[tos]["download_rx_drop_percent_A"] = download_rx_drop_percentages
+                self.client_dict_A[tos]["resource_host_A"] = resource_hosts
+                self.client_dict_A[tos]["resource_eid_A"] = resource_eids
+                self.client_dict_A[tos]["resource_kernel_A"] = resource_kernels
+                self.client_dict_A[tos]["offered_download_rate_A"] = offered_dl_rates
+                self.client_dict_A[tos]["offered_upload_rate_A"] = offered_ul_rates
+
+                # Update the dict with filtered B-side data
+                self.client_dict_A[tos]["clients_B"] = clients_list_B
+                self.client_dict_A[tos]["resource_alias_B"] = client_names_B
+                self.client_dict_A[tos]["ul_B"] = client_ul_B_data
+                self.client_dict_A[tos]["dl_B"] = client_dl_B_data
+                self.client_dict_A[tos]["resource_hw_ver_B"] = hw_versions_B
+                self.client_dict_A[tos]["port_B"] = port_names_B
+                self.client_dict_A[tos]["mode_B"] = modes_B
+                self.client_dict_A[tos]["mac_B"] = mac_list_B
+                self.client_dict_A[tos]["ssid_B"] = ssid_list_B
+                self.client_dict_A[tos]["channel_B"] = channel_list_B
+                self.client_dict_A[tos]["traffic_type_B"] = traffic_types_B
+                self.client_dict_A[tos]["traffic_protocol_B"] = traffic_protocols_B
+                self.client_dict_A[tos]["download_rx_drop_percent_B"] = download_rx_drop_percentages_B
+                self.client_dict_A[tos]["resource_host_B"] = resource_hosts_B
+                self.client_dict_A[tos]["resource_eid_B"] = resource_eids_B
+                self.client_dict_A[tos]["resource_kernel_B"] = resource_kernels_B
+                self.client_dict_A[tos]["offered_download_rate_B"] = offered_dl_rates_B
+                self.client_dict_A[tos]["offered_upload_rate_B"] = offered_ul_rates_B
+
+    def add_live_view_images_to_report(self):
+        """
+        This function looks for throughput and RSSI images for each floor
+        in the 'live_view_images' folder within `self.result_dir`.
+        It waits up to **60 seconds** for each image. If an image is found,
+        it's added to the `report` on a new page; otherwise, it's skipped.
+        """
+        for floor in range(0, int(self.total_floors)):
+            throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{floor + 1}.png")
+            rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor + 1}.png")
+            timeout = 60  # seconds
+            start_time = time.time()
+
+            while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)):
+                if time.time() - start_time > timeout:
+                    print("Timeout: Images not found within 60 seconds.")
+                    break
+                time.sleep(1)
+            while not os.path.exists(throughput_image_path) and not os.path.exists(rssi_image_path):
+                if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
+                    break
+            if os.path.exists(throughput_image_path):
+                self.report.set_custom_html('<div style="page-break-before: always;"></div>')
+                self.report.build_custom()
+                self.report.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                self.report.build_custom()
+
+            if os.path.exists(rssi_image_path):
+                self.report.set_custom_html('<div style="page-break-before: always;"></div>')
+                self.report.build_custom()
+                self.report.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
+                self.report.build_custom()
+
     def generate_report(self, config_devices=None, group_device_map=None):
         self.report.set_obj_html("Objective", "The Layer 3 Traffic Generation Test is designed to test the performance of the "
                                  "Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream "
@@ -5690,7 +6013,6 @@ class L3VariableTime(Realm):
                                  "each of which is associated with a particular Port (physical or virtual interface).")
 
         self.report.build_objective()
-
         test_setup_info = {
             "DUT Name": self.dut_model_num,
             "DUT Hardware Version": self.dut_hw_version,
@@ -5795,11 +6117,21 @@ class L3VariableTime(Realm):
         # if the traffic is still running will gather the running traffic
         self.evaluate_qos()
 
+        if self.dowebgui or self.real:
+            self.filter_mlt_data()
+            # currently reporting uses both client dict A and client dict B, but they consists same data.
+            #  As of now for real devices added filter_mlt_data() filters the data considering MLT in cx and avoiding other cx's in l3 endps tab(QOS,THROUGHPUT) and get updated in self.client_dict_A.
+            # so the same will be copied to self.client_dict_B for report purposes
+            self.client_dict_B = copy.deepcopy(self.client_dict_A)
+
         # graph BK A
         # try to do as a loop
         tos_list = ['BK', 'BE', 'VI', 'VO']
 
         for tos in tos_list:
+            # processing tos's which are included in test for real_clients ensuring no blocker for virtual
+            if (self.real or self.dowebgui) and tos not in self.tos:
+                continue
             if (self.client_dict_A[tos]["ul_A"] and self.client_dict_A[tos]["dl_A"]):
                 min_bps_a = self.client_dict_A["min_bps_a"]
                 min_bps_b = self.client_dict_A["min_bps_b"]
@@ -5854,7 +6186,8 @@ class L3VariableTime(Realm):
                 self.report.build_graph()
                 self.report.set_csv_filename(graph_png)
                 self.report.move_csv_file()
-
+                if self.dowebgui and self.get_live_view:
+                    self.add_live_view_images_to_report()
                 # For real devices appending the required data for pass fail criteria
                 if self.real:
                     up, down, off_up, off_down = [], [], [], []
@@ -6219,8 +6552,6 @@ class L3VariableTime(Realm):
         df1 = pd.DataFrame(self.overall)
         df1.to_csv('{}/overall_multicast_throughput.csv'.format(self.result_dir), index=False)
 
-        self.copy_reports_to_home_dir()
-
     def get_pass_fail_list(self, tos, up, down):
         res_list = []
         test_input_list = []
@@ -6404,8 +6735,6 @@ def query_real_clients(args):
         'pac_file': args.pac_file,
         'server_ip': upstream_port_ip,
     }
-    if not args.expected_passfail_value and args.device_csv_name is None:
-        config_obj.device_csv_file(csv_name="device.csv")
     # Configuration of devices with groups and profiles
     if args.group_name and args.file_name and args.profile_name:
         selected_groups = args.group_name.split(',')
@@ -7581,6 +7910,8 @@ INCLUDE_IN_README: False
     test_l3_parser.add_argument("--config", action="store_true", help="Specify for configuring the devices")
     test_l3_parser.add_argument("--wait_time", type=int, help='Specify the maximum time to wait for Configuration', default=60)
     test_l3_parser.add_argument("--real", action="store_true", help='For testing on real devies')
+    test_l3_parser.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    test_l3_parser.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     parser.add_argument('--help_summary',
                         default=None,
                         action="store_true",
@@ -8189,6 +8520,8 @@ and generate a report.
         test_name=test_name,
         dowebgui=args.dowebgui,
         ip=ip,
+        get_live_view=args.get_live_view,
+        total_floors=args.total_floors,
         # for uniformity from webGUI result_dir as variable is used insead of local_lf_report_dir
         result_dir=args.local_lf_report_dir,
 
@@ -8276,7 +8609,8 @@ and generate a report.
         dut_sw_version=args.dut_sw_version,
         dut_serial_num=args.dut_serial_num)
     ip_var_test.set_report_obj(report=report)
-
+    if args.dowebgui:
+        ip_var_test.webgui_finalize()
     # Generate and write out test report
     logger.info("Generating test report")
     if args.real:
@@ -8309,7 +8643,7 @@ and generate a report.
 
     # Run WebGUI-specific post test logic
     if args.dowebgui:
-        ip_var_test.webgui_finalize()
+        ip_var_test.copy_reports_to_home_dir()
 
     if test_passed:
         ip_var_test.exit_success()
