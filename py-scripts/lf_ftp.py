@@ -955,7 +955,6 @@ class FtpTest(LFCliBase):
         current_time = datetime.now().isoformat()[0:19]
         self.data = {}
         self.data["url_data"] = []
-        temp_data = {}
         max_bytes_rd = []
         rx_rate_val = []
         individual_device_data = {}
@@ -973,7 +972,7 @@ class FtpTest(LFCliBase):
             # uc_avg_data = self.json_get("layer4/list?fields=uc-avg")
             # uc_max_data = self.json_get("layer4/list?fields=uc-max")
             # uc_min_data = self.json_get("layer4/list?fields=uc-min")
-            total_url_data = self.json_get("layer4/list?fields=total-urls")
+            # total_url_data = self.json_get("layer4/list?fields=total-urls")
             # bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
             # Calling function to get devices data to append in ftp_datavalues.csv during runtime
             self.get_device_details()
@@ -1021,51 +1020,45 @@ class FtpTest(LFCliBase):
 
             self.data['Bytes RD'] = self.bytes_rd
 
-            if 'endpoint' in total_url_data.keys():
-                # list of layer 4 connections name
-                # temp_data can be used to check data as well as check whether the endpoint has data
-                if type(total_url_data['endpoint']) is dict:
-                    temp_data[self.cx_list[0]] = total_url_data['endpoint']['total-urls']
-                else:
-                    for cx in total_url_data['endpoint']:
-                        for CX in cx:
-                            for created_cx in self.cx_list:
-                                if CX == created_cx:
-                                    temp_data[created_cx] = cx[CX]['total-urls']
+            # list of layer 4 connections name
+            # temp_data can be used to check data as well as check whether the endpoint has data
+            # if type(total_url_data['endpoint']) is dict:
+            #     temp_data[self.cx_list[0]] = total_url_data['endpoint']['total-urls']
+            # else:
+            #     for cx in total_url_data['endpoint']:
+            #         for CX in cx:
+            #             for created_cx in self.cx_list:
+            #                 if CX == created_cx:
+            #                     temp_data[created_cx] = cx[CX]['total-urls']
 
-                if temp_data != {}:
+            if self.url_data != []:
 
-                    self.data["status"] = ["RUNNING"] * len(list(temp_data.keys()))
-                    # self.data["url_data"] = list(temp_data.values())
-                    self.data["url_data"] = self.url_data
-                else:
-                    self.data["status"] = ["RUNNING"] * len(self.cx_list)
-                    self.data["url_data"] = [0] * len(self.cx_list)
-                time_difference = abs(end_time - datetime.now())
-                total_hours = time_difference.total_seconds() / 3600
-                remaining_minutes = (total_hours % 1) * 60
-                self.data["start_time"] = [start_time] * len(self.cx_list)
-                self.data["end_time"] = [end_time.strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
-                self.data["remaining_time"] = [[str(int(total_hours)) + " hr and " + str(
-                    int(remaining_minutes)) + " min" if int(total_hours) != 0 or int(
-                    remaining_minutes) != 0 else '<1 min'][0]] * len(self.cx_list)
-                try:
-                    df1 = pd.DataFrame(self.data)
-                except Exception:
-                    # Print the problematic data and error before exiting
-                    logger.info("Failed to create DataFrame from self.data")
-                    logger.info("self.data: %s", self.data)
-                    traceback.print_exc()
-                    exit(1)
-                if self.dowebgui:
-                    df1.to_csv('{}/ftp_datavalues.csv'.format(self.result_dir), index=False)
-                if self.clients_type == 'Real':
-                    df1.to_csv("ftp_datavalues.csv", index=False)
-
+                self.data["status"] = ["RUNNING"] * len(self.url_data)
+                # self.data["url_data"] = list(temp_data.values())
+                self.data["url_data"] = self.url_data
             else:
-
-                logger.info("No layer 4-7 endpoints - No endpoint in reponse")
-
+                self.data["status"] = ["RUNNING"] * len(self.cx_list)
+                self.data["url_data"] = [0] * len(self.cx_list)
+            time_difference = abs(end_time - datetime.now())
+            total_hours = time_difference.total_seconds() / 3600
+            remaining_minutes = (total_hours % 1) * 60
+            self.data["start_time"] = [start_time] * len(self.cx_list)
+            self.data["end_time"] = [end_time.strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
+            self.data["remaining_time"] = [[str(int(total_hours)) + " hr and " + str(
+                int(remaining_minutes)) + " min" if int(total_hours) != 0 or int(
+                remaining_minutes) != 0 else '<1 min'][0]] * len(self.cx_list)
+            try:
+                df1 = pd.DataFrame(self.data)
+            except Exception:
+                # Print the problematic data and error before exiting
+                logger.info("Failed to create DataFrame from self.data")
+                logger.info("self.data: %s", self.data)
+                traceback.print_exc()
+                exit(1)
+            if self.dowebgui:
+                df1.to_csv('{}/ftp_datavalues.csv'.format(self.result_dir), index=False)
+            if self.clients_type == 'Real':
+                df1.to_csv("ftp_datavalues.csv", index=False)
             time.sleep(5)
             if self.dowebgui == "True":
                 with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
