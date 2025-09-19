@@ -282,7 +282,6 @@ class create_lanforge_object:
 
     def start_gui(self):
         # creating shh client object we use this object to connect to router
-
         command = 'nohup /home/lanforge/LANforgeGUI_5.1.1/lfclient.bash -s localhost &'
         r = self.send_lf_command(command)
         if r.failed:
@@ -384,6 +383,9 @@ class create_lanforge_object:
         print(f"{command}: {r.result}")
 
     def update_lanforge(self):
+
+        # this should reconnect
+        self.check_system_up()
 
         self.cmd_pwd()
 
