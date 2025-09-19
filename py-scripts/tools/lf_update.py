@@ -437,7 +437,7 @@ class create_lanforge_object:
                 "auth_password": self.user_password,  # noqa:
                 "auth_strict_key": False,
                 # "comms_prompt_pattern": "^\\S[a-z]*\\@[a-zA-Z0-9]+[-][a-zA-Z0-9]+[\\s\\S]\\S\\S[\\#\\$\\>]",
-                "comms_prompt_pattern": r"^(?:\([a-z]+[-][0-9]+\.[0-9]+\)|)(?:\s|\S)(?:\[|)[a-z]*\@[a-zA-Z0-9]+(?:[-][a-zA-Z0-9]+|)[-][a-zA-Z0-9]+[\s\S]\S(?:\:|\s)\S\S[\\#\\$\\>]",
+                "comms_prompt_pattern": r"^(?:\([a-z]+[-][0-9]+\.[0-9]+\)|)(?:\s|\S)(?:\[|)[a-z]*\@[a-zA-Z0-9]+(?:[-][a-zA-Z0-9]+|)[-][a-zA-Z0-9]+[\s\S]\S(?:\:|\s)(?:\S|\S\S)[\\#\\$\\>]",
                 # "on_open": jump_function, # on logging into LANforge will run the jump_function
                 # "auth_password_pattern": "Password:",
                 "timeout_ops": int(self.user_timeout),
@@ -483,7 +483,7 @@ class create_lanforge_object:
                 "auth_password": self.root_password,  # noqa:
                 "auth_strict_key": False,
                 # "comms_prompt_pattern": "^\\S[a-z]*\\@[a-zA-Z0-9]+[-][a-zA-Z0-9]+[\\s\\S]\\S\\S[\\#\\$\\>]",
-                "comms_prompt_pattern": r"^(?:\([a-z]+[-][0-9]+\.[0-9]+\)|)(?:\s|\S)(?:\[|)[a-z]*\@[a-zA-Z0-9]+(?:[-][a-zA-Z0-9]+|)[-][a-zA-Z0-9]+[\s\S]\S(?:\:|\s)\S\S[\\#\\$\\>]",
+                "comms_prompt_pattern": r"^(?:\([a-z]+[-][0-9]+\.[0-9]+\)|)(?:\s|\S)(?:\[|)[a-z]*\@[a-zA-Z0-9]+(?:[-][a-zA-Z0-9]+|)[-][a-zA-Z0-9]+[\s\S]\S(?:\:|\s)(?:\S|\S\S)[\\#\\$\\>]",
                 # "on_open": jump_function, # on logging into LANforge will run the jump_function
                 # "auth_password_pattern": "Password:",
                 "timeout_ops": int(self.root_timeout),
