@@ -24,7 +24,7 @@ jobs:
       - name: flake8 Lint
         uses: py-actions/flake8@v2
         with:
-          plugins: "flake8-bugbear"
+          plugins: "flake8-bugbear flake8-unused-arguments"
 
   help-check:
     # Tie runner to Ubuntu 22.04 LTS, as it still supports Python 3.7
