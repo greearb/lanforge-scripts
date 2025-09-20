@@ -1964,7 +1964,9 @@ junit.xml path: allure serve {junit_path}
                                     # log may contain multiple runs - this helps put the meta.txt
                                     # in right directory
                                     self.report_index = 0
-                                    for _ in range(self.test_iterations):
+                                    # for _ in range(self.test_iterations):
+                                    #     self.iteration += 1
+                                    for self.iteration in range(self.test_iterations):
                                         self.iteration += 1
                                         # Runs the scripts
                                         self.run_script()
@@ -1985,7 +1987,8 @@ junit.xml path: allure serve {junit_path}
                                 # log may contain multiple runs - this helps put the meta.txt
                                 # in right directory
                                 self.report_index = 0
-                                for _ in range(self.test_iterations):
+                                # for _ in range(self.test_iterations):
+                                for self.iteration in range(self.test_iterations):
                                     # in batch mode need to set the VARIABLES back into the test
                                     self.iteration += 1
                                     # Runs the scripts
@@ -2006,7 +2009,8 @@ junit.xml path: allure serve {junit_path}
                             # log may contain multiple runs - this helps put the meta.txt
                             # in right directory
                             self.report_index = 0
-                            for _ in range(self.test_iterations):
+                            # for _ in range(self.test_iterations):
+                            for self.iteration in range(self.test_iterations):
                                 self.iteration += 1
                                 # Runs the scripts
                                 self.run_script()
@@ -2020,7 +2024,8 @@ junit.xml path: allure serve {junit_path}
                     # log may contain multiple runs - this helps put the meta.txt
                     # in right directory
                     self.report_index = 0
-                    for _ in range(self.test_iterations):
+                    # for _ in range(self.test_iterations):
+                    for self.iteration in range(self.test_iterations):
                         # Runs the scripts
                         self.iteration += 1
                         self.run_script()
@@ -2253,14 +2258,22 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
     # Determine the number of iterations
     total_iterations = 0
     # for rig json (lanforge)
-    for _ in json_rig_list:
+    # for _ in json_rig_list:
+    #     # for test json and suite
+    #     for (_, _) in zip(json_test_list, suite_list):
+    #         # for dut json
+    #         for _ in json_dut_list:
+    #             total_iterations += 1
 
+    # for rig json (lanforge)
+    for json_rig_name in json_rig_list:
         # for test json and suite
-        for (_, _) in zip(json_test_list, suite_list):
-
+        for (json_test_name, suite_name) in zip(json_test_list, suite_list):
             # for dut json
-            for _ in json_dut_list:
+            for (json_dut_name) in json_dut_list:
                 total_iterations += 1
+
+    logger.info(f"######### HERE ############# total_iterations: {total_iterations}")
 
     iteration = 0
 
