@@ -239,6 +239,25 @@ class create_lanforge_object:
                 self.lanforge_gui_build_data = "NA"
                 self.lanforge_gui_get_shaw = "NA"
 
+    # example of sending multiple commands
+    def rm_DB_files_paramiko(self):
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=self.mgr, port=self.mgr_ssh_port, username=self.root_user, password=self.root_password,
+                    allow_agent=False, look_for_keys=False, banner_timeout=600)
+        # Open an interactive shell
+        shell = ssh.invoke_shell()
+        # Send commands
+        commands = ['cd /home/lanforge/', 'pwd', 'ls DB*.gz', 'rm DB*.gz', 'ls DB*.gz']
+        for command in commands:
+            shell.send(command + '\n')
+            time.sleep(1)  # Wait for the command to execute
+        # Read output
+        output = shell.recv(1024).decode('utf-8')
+        print(output)
+        # Close the connection
+        ssh.close()
+
     def check_system_status(self):
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -264,7 +283,7 @@ class create_lanforge_object:
 
     # TODO move to using scrapli and check for prompt
     def check_large_files(self):
-        command = "'/home/lanforge/scripts/check_large_files.bash -d -t -a'"
+        command = "/home/lanforge/scripts/check_large_files.bash -d -t -u -a"
         r = self.send_lf_command(command)
         if r.failed:
             raise Exception(r.result)
@@ -397,8 +416,6 @@ class create_lanforge_object:
 
         self.lf_kinstall()
 
-        # self.reboot_lanforge()
-
         self.reboot_lf_with_paramiko()  # leave in if paramiko needs to be in reboot
 
         # take down connection so as to reconnect
@@ -406,6 +423,16 @@ class create_lanforge_object:
 
         # this should reconnect
         self.check_system_up()
+
+        # pwd
+        self.cmd_pwd()
+
+        # rm DB files
+        # self.remove_DB_gz()
+        # self.rm_DB_files_paramiko()
+
+        # pwd
+        self.cmd_pwd()
 
         # check large files
         self.check_large_files()
