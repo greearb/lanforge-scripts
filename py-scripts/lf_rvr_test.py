@@ -549,7 +549,14 @@ def main():
     if CV_Test.kpi_results_present():
         logger.info("lf_rvr_test_test generated kpi.csv")
     else:
-        logger.info("FAILED: lf_rvr_test did not generate kpi.csv)")
+        logger.error('''\
+        The test has finished but did not complete successfully,
+        and no KPI.csv file could be generated. Possible causes
+        could be displayed by the GUI CV test, a station could
+        have the wrong SSID, passphrase or attempting to connect
+        to the wrong BSSID. Please check error messages outputted
+        earlier by this script, or check for exceptions in journalctl.
+        ''')
         exit(1)
 
 
