@@ -208,6 +208,8 @@ class Mixed_Traffic(Realm):
                  result_dir=None,
                  test_name=None,
                  device_list=None,
+                 get_live_view=False,
+                 total_floors=0,
                  debug=False):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
@@ -342,6 +344,8 @@ class Mixed_Traffic(Realm):
         self.http_dev = []
         self.http_mac = []
         self.rx_rate = []
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
         if self.dowebgui:
             self.stopped = False
             self.ping_execution = False
@@ -687,7 +691,7 @@ class Mixed_Traffic(Realm):
             self.ping_test_obj = ping_test.Ping(host=self.host, port=self.port, ssid=ssid, security=security,
                                                 password=password, lanforge_password="lanforge", target=self.target,
                                                 interval=self.interval, sta_list=[], virtual=self.virtual, real=self.real,
-                                                duration=ping_test_duration)
+                                                duration=ping_test_duration, result_dir=self.result_dir)
             if not self.ping_test_obj.check_tab_exists():
                 print('Generic Tab is not available for Ping Test.\nAborting the test.')
                 exit(0)
@@ -775,7 +779,7 @@ class Mixed_Traffic(Realm):
                             if data["status"] != "Running":
                                 logging.info('Test is stopped by the user')
                                 break
-                    except BaseException:
+                    except Exception:
                         logging.info("execption while reading running json in ping")
                     time.sleep(3)
             else:
@@ -950,7 +954,8 @@ class Mixed_Traffic(Realm):
                 self.qos_test_obj.real_client_list1 = self.user_query[1]
                 self.qos_test_obj.mac_id_list = self.user_query[2]
                 self.qos_test_obj.build()
-                time.sleep(20)
+                if self.real:
+                    self.qos_test_obj.monitor_cx()
                 self.qos_test_obj.start()
                 self.qos_test_obj.connections_download_avg = []
                 self.qos_test_obj.connections_upload_avg = []
@@ -1206,6 +1211,8 @@ class Mixed_Traffic(Realm):
                     time1 = datetime.datetime.now()
                     time.sleep(20)
                     logger.info("FTP Traffic started running at {}".format(time1))
+                    if self.real:
+                        self.ftp_test_obj.monitor_cx()
                     self.ftp_test_obj.start(False, False)
                     if self.dowebgui or self.real:
                         self.ftp_test_obj.monitor_for_runtime_csv()
@@ -1357,6 +1364,8 @@ class Mixed_Traffic(Realm):
             test_time = datetime.datetime.now().strftime("%b %d %H:%M:%S")
             time.sleep(20)
             logger.info("HTTP Test started at {}".format(test_time))
+            if self.real:
+                self.http_obj.monitor_cx()
             self.http_obj.start()
             if self.dowebgui or self.real:
                 self.http_obj.monitor_for_runtime_csv(self.http_test_duration)
@@ -1868,6 +1877,32 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.set_csv_filename(graph_png)
                 self.lf_report_mt.move_csv_file()
                 self.lf_report_mt.build_graph()
+                if self.dowebgui and self.get_live_view:
+
+                    for floor in range(int(self.total_floors)):
+                        # Construct expected image paths
+                        packet_sent_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_ping_packet_sent_{floor + 1}.png")
+                        packet_recv_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_ping_packet_recv_{floor + 1}.png")
+                        packet_loss_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_ping_packet_loss_{floor + 1}.png")
+
+                        # Wait for all required images to be generated (up to timeout)
+                        timeout = 120  # seconds
+                        start_time = time.time()
+
+                        while not (os.path.exists(packet_sent_image) and os.path.exists(packet_recv_image) and os.path.exists(packet_loss_image)):
+                            if time.time() - start_time > timeout:
+                                print(f"Timeout: Heatmap images for floor {floor + 1} not found within {timeout} seconds.")
+                                break
+                            time.sleep(1)
+
+                        self.lf_report_mt.set_custom_html("<h2>Ping Packet Sent vs Recevied vs Lost: </h2>")
+                        self.lf_report_mt.build_custom()
+
+                        # Generate report sections for each image if it exists
+                        for image_path in [packet_sent_image, packet_recv_image, packet_loss_image]:
+                            if os.path.exists(image_path):
+                                self.lf_report_mt.set_custom_html(f'<img src="file://{image_path}"  style="width:1200px; height:800px;"></img>')
+                                self.lf_report_mt.build_custom()
                 dataframe1 = pd.DataFrame({
                     'Wireless Client': self.ping_test_obj.device_names,
                     'MAC': self.ping_test_obj.device_mac,
@@ -1980,7 +2015,8 @@ class Mixed_Traffic(Realm):
                     self.lf_report_mt.set_csv_filename(graph_png)
                     self.lf_report_mt.move_csv_file()
                     self.lf_report_mt.build_graph()
-                    qos_obj.generate_individual_graph(self.res, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a, qos_obj.avg_drop_b)
+                    qos_obj.generate_individual_graph(self.res, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a,
+                                                      qos_obj.avg_drop_b, self.total_floors, multicast_exists=True if "5" in self.tests and self.get_live_view else False)
             if "3" in self.tests and self.ftp_test_status:
                 # 3.FTP test reporting in mixed traffic
                 self.lf_report_mt.set_obj_html(_obj_title="3. File Transfer Protocol (FTP) Test", _obj="")
@@ -2060,6 +2096,25 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.set_csv_filename(ftp_graph2)
                 self.lf_report_mt.move_csv_file()
                 self.lf_report_mt.build_graph()
+                if self.dowebgui and self.get_live_view:
+                    for floor in range(0, int(self.total_floors)):
+                        throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"ftp_{self.test_name}_{floor + 1}.png")
+                        timeout = 60  # seconds
+                        start_time = time.time()
+
+                        while not (os.path.exists(throughput_image_path)):
+                            if time.time() - start_time > timeout:
+                                print("Timeout: Images not found within 60 seconds.")
+                                break
+                            time.sleep(1)
+                        while not os.path.exists(throughput_image_path):
+                            if os.path.exists(throughput_image_path):
+                                break
+                        if os.path.exists(throughput_image_path):
+                            self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
+                            self.lf_report_mt.build_custom()
+                            self.lf_report_mt.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                            self.lf_report_mt.build_custom()
                 self.lf_report_mt.set_table_title("Overall Results")
                 self.lf_report_mt.build_table_title()
                 dataframe = {
@@ -2110,6 +2165,25 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.move_csv_file()
                 self.lf_report_mt.move_graph_image()
                 self.lf_report_mt.build_graph()
+                if self.dowebgui and self.get_live_view:
+                    for floor in range(0, int(self.total_floors)):
+                        throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"http_{self.test_name}_{floor + 1}.png")
+                        timeout = 60  # seconds
+                        start_time = time.time()
+
+                        while not (os.path.exists(throughput_image_path)):
+                            if time.time() - start_time > timeout:
+                                print("Timeout: Images not found within 60 seconds.")
+                                break
+                            time.sleep(1)
+                        while not os.path.exists(throughput_image_path):
+                            if os.path.exists(throughput_image_path):
+                                break
+                        if os.path.exists(throughput_image_path):
+                            self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
+                            self.lf_report_mt.build_custom()
+                            self.lf_report_mt.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                            self.lf_report_mt.build_custom()
                 self.lf_report_mt.set_table_title("Overall Results")
                 self.lf_report_mt.build_table_title()
                 dataframe = {
@@ -2222,6 +2296,32 @@ class Mixed_Traffic(Realm):
                         self.lf_report_mt.set_graph_image(graph_png)
                         self.lf_report_mt.move_graph_image()
                         self.lf_report_mt.build_graph()
+                        if self.dowebgui and self.get_live_view:
+                            for floor in range(0, int(self.total_floors)):
+                                throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput_{floor + 1}.png")
+                                rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi_{floor + 1}.png")
+                                timeout = 60  # seconds
+                                start_time = time.time()
+
+                                while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)):
+                                    if time.time() - start_time > timeout:
+                                        print("Timeout: Images not found within 60 seconds.")
+                                        break
+                                    time.sleep(1)
+                                while not os.path.exists(throughput_image_path) and not os.path.exists(rssi_image_path):
+                                    if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
+                                        break
+                                if os.path.exists(throughput_image_path):
+                                    self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
+                                    self.lf_report_mt.build_custom()
+                                    self.lf_report_mt.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
+                                    self.lf_report_mt.build_custom()
+
+                                if os.path.exists(rssi_image_path):
+                                    self.lf_report_mt.set_custom_html('<div style="page-break-before: always;"></div>')
+                                    self.lf_report_mt.build_custom()
+                                    self.lf_report_mt.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
+                                    self.lf_report_mt.build_custom()
                         tos_dataframe_A = {
                             " Client Name ": client_names,
                             " Endp Name": endp_names,
@@ -2245,7 +2345,8 @@ class Mixed_Traffic(Realm):
                         self.lf_report_mt.build_table()
             overall_setup_info = {"contact": "support@candelatech.com"}
             self.lf_report_mt.test_setup_table(test_setup_data=overall_setup_info, value="Overall Info")
-            self.lf_report_mt.build_custom()
+            if not self.get_live_view:
+                self.lf_report_mt.build_custom()
             self.lf_report_mt.build_footer()
             self.lf_report_mt.write_html()
             self.lf_report_mt.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
@@ -2515,6 +2616,8 @@ INCLUDE_IN_README: False
 
     parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
                         action="store_true")
+    optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
 
     args = parser.parse_args()
 
@@ -2671,6 +2774,8 @@ INCLUDE_IN_README: False
                               device_list=args.device_list,
                               test_name=args.test_name,
                               result_dir=args.result_dir,
+                              get_live_view=args.get_live_view,
+                              total_floors=args.total_floors,
                               # path=path
                               )
     # pre-cleaning & creating / selecting clients for both real and virtual
@@ -3076,7 +3181,7 @@ INCLUDE_IN_README: False
                                     mixed_obj.ping_execution = True
                                     mixed_obj.ping_test(ssid=ssid, password=password, security=security, target=args.target,
                                                         interval=args.ping_interval, all_bands=True)
-                            except BaseException:
+                            except Exception:
                                 logger.info("Error while running for webui during ping execution")
                             try:
                                 overall_status['ping'] = "stopped"
@@ -3100,8 +3205,6 @@ INCLUDE_IN_README: False
                                 if not mixed_obj.stopped:
                                     overall_status['qos'] = "started"
                                     overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
-                                    if overall_status['ping'] == "stopped":
-                                        overall_status['ping'] == "completed"
                                     overall_csv.append(overall_status.copy())
                                     df1 = pd.DataFrame(overall_csv)
                                     df1.to_csv('{}/overall_status.csv'.format(mixed_obj.result_dir), index=False)
@@ -3110,7 +3213,7 @@ INCLUDE_IN_README: False
                                                        upstream=args.upstream_port, tos=args.tos, traffic_type=args.traffic_type,
                                                        side_a_min=args.side_a_min, side_b_min=args.side_b_min,
                                                        side_a_max=args.side_a_max, side_b_max=args.side_b_min, all_bands=True)
-                            except BaseException:
+                            except Exception:
                                 logger.info("Error while running for webui during qos execution")
                             try:
                                 overall_status['qos'] = "stopped"
@@ -3135,10 +3238,6 @@ INCLUDE_IN_README: False
                                         mixed_obj.stopped = True
                                 if not mixed_obj.stopped:
                                     overall_status['ftp'] = "started"
-                                    if overall_status['ping'] == "stopped":
-                                        overall_status['ping'] == "completed"
-                                    if overall_status['qos'] == "stopped":
-                                        overall_status['qos'] == "completed"
                                     overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
                                     overall_csv.append(overall_status.copy())
                                     df1 = pd.DataFrame(overall_csv)
@@ -3146,7 +3245,7 @@ INCLUDE_IN_README: False
                                     mixed_obj.ftp_execution = True
                                     mixed_obj.ftp_test(ssid=ssid, password=password, security=security, bands=Bands,
                                                        directions=args.direction, file_sizes=args.ftp_file_sizes, all_bands=True)
-                            except BaseException:
+                            except Exception:
                                 logger.info("Error while running for webui during ftp execution")
                             try:
                                 overall_status['ftp'] = "stopped"
@@ -3169,12 +3268,6 @@ INCLUDE_IN_README: False
                                         mixed_obj.stopped = True
                                 if not mixed_obj.stopped:
                                     overall_status['http'] = "started"
-                                    if overall_status['ping'] == "stopped":
-                                        overall_status['ping'] == "completed"
-                                    if overall_status['qos'] == "stopped":
-                                        overall_status['qos'] == "completed"
-                                    if overall_status['ftp'] == "stopped":
-                                        overall_status['ftp'] == "completed"
                                     overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
                                     overall_csv.append(overall_status.copy())
                                     df1 = pd.DataFrame(overall_csv)
@@ -3183,7 +3276,7 @@ INCLUDE_IN_README: False
                                     mixed_obj.http_test(ssid=ssid, password=password, security=security,
                                                         http_file_size=args.http_file_size, target_per_ten=args.target_per_ten,
                                                         all_bands=True)
-                            except BaseException:
+                            except Exception:
                                 logger.info("Error while running for webui during http execution")
                             try:
                                 overall_status['http'] = "stopped"
@@ -3207,14 +3300,6 @@ INCLUDE_IN_README: False
                                         mixed_obj.stopped = True
                                 if not mixed_obj.stopped:
                                     overall_status['mc'] = "started"
-                                    if overall_status['ping'] == "stopped":
-                                        overall_status['ping'] == "completed"
-                                    if overall_status['qos'] == "stopped":
-                                        overall_status['qos'] == "completed"
-                                    if overall_status['ftp'] == "stopped":
-                                        overall_status['ftp'] == "completed"
-                                    if overall_status['http'] == "stopped":
-                                        overall_status['http'] == "completed"
                                     overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
                                     overall_csv.append(overall_status.copy())
                                     df1 = pd.DataFrame(overall_csv)
@@ -3240,20 +3325,9 @@ INCLUDE_IN_README: False
                                                      side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu,
                                                      all_bands=True)
                 # generating overall report
-                mixed_obj.generate_all_report()
                 if mixed_obj.dowebgui:
                     try:
                         overall_status["status"] = "completed"
-                        if overall_status['ping'] == "stopped":
-                            overall_status['ping'] == "completed"
-                        if overall_status['qos'] == "stopped":
-                            overall_status['qos'] == "completed"
-                        if overall_status['ftp'] == "stopped":
-                            overall_status['ftp'] == "completed"
-                        if overall_status['http'] == "stopped":
-                            overall_status['http'] == "completed"
-                        if overall_status['mc'] == "stopped":
-                            overall_status['mc'] == "completed"
                         overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
                         overall_csv.append(overall_status.copy())
                         df1 = pd.DataFrame(overall_csv)
@@ -3261,6 +3335,8 @@ INCLUDE_IN_README: False
                     except Exception as e:
                         logging.info("Error while wrinting status file for webui", e)
 
+                mixed_obj.generate_all_report()
+                if mixed_obj.dowebgui:
                     # copying to home directory i.e home/user_name
                     mixed_obj.copy_reports_to_home_dir()
             else:
