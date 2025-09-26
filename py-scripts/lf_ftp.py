@@ -2023,10 +2023,10 @@ class FtpTest(LFCliBase):
                 for key, val in self.group_device_map.items():
                     if self.expected_passfail_val or self.csv_name:
                         dataframe = self.generate_dataframe(val, client_list, self.mac_id_list, self.channel_list, self.ssid_list, self.mode_list,
-                                                            self.url_data, self.test_input_list, self.uc_avg, self.bytes_rd, self.rx_rate, self.pass_fail_list)
+                                                            self.url_data, self.test_input_list, self.uc_avg, self.bytes_rd, self.rx_rate, self.pass_fail_list, self.total_err)
                     else:
                         dataframe = self.generate_dataframe(val, client_list, self.mac_id_list, self.channel_list, self.ssid_list,
-                                                            self.mode_list, self.url_data, [], self.uc_avg, self.bytes_rd, self.rx_rate, [])
+                                                            self.mode_list, self.url_data, [], self.uc_avg, self.bytes_rd, self.rx_rate, [], self.total_err)
 
                     if dataframe:
                         self.report.set_obj_html("", "Group: {}".format(key))
@@ -2328,7 +2328,7 @@ class FtpTest(LFCliBase):
             self.pass_fail_list = pass_fail_list
 
     def generate_dataframe(self, groupdevlist: List[str], clients_list: List[str], mac: List[str], channel: List[str], ssid: List[str], mode: List[str], file_download: List[int],
-                           test_input: List[int], averagetime: List[float], bytes_read: List[float], rx_rate: List[float], status: List[str]) -> Optional[pd.DataFrame]:
+                           test_input: List[int], averagetime: List[float], bytes_read: List[float], rx_rate: List[float], status: List[str], failedurls: List[int]) -> Optional[pd.DataFrame]:
         """
         Creates a separate DataFrame for each group of devices.
 
@@ -2347,6 +2347,7 @@ class FtpTest(LFCliBase):
         readbytes = []
         statuslist = []
         rate_rx = []
+        urls_failed = []
         interop_tab_data = self.json_get('/adb/')["devices"]
         for i in range(len(clients_list)):
             for j in groupdevlist:
@@ -2364,6 +2365,7 @@ class FtpTest(LFCliBase):
                     avgtimes.append(averagetime[i])
                     readbytes.append(bytes_read[i])
                     rate_rx.append(rx_rate[i])
+                    urls_failed.append(failedurls[i])
                     if self.expected_passfail_val or self.csv_name:
                         input_list.append(test_input[i])
                         statuslist.append(status[i])
@@ -2384,6 +2386,7 @@ class FtpTest(LFCliBase):
                                 avgtimes.append(averagetime[i])
                                 readbytes.append(bytes_read[i])
                                 rate_rx.append(rx_rate[i])
+                                urls_failed.append(failedurls[i])
                                 if self.expected_passfail_val or self.csv_name:
                                     input_list.append(test_input[i])
                                     statuslist.append(status[i])
@@ -2397,7 +2400,8 @@ class FtpTest(LFCliBase):
                 " No of times File downloaded ": downloadtimes,
                 " Average time taken to Download file (ms)": avgtimes,
                 " Bytes-rd (Mega Bytes) ": readbytes,
-                " RX RATE (Mbps) ": rate_rx
+                " RX RATE (Mbps) ": rate_rx,
+                "Failed Urls": urls_failed
             }
             if self.expected_passfail_val or self.csv_name:
                 dataframe[" Expected value of no of times file downloaded"] = input_list
