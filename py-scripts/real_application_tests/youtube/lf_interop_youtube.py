@@ -951,9 +951,6 @@ class Youtube(Realm):
                 continue
 
             data = data.drop_duplicates(subset='TimeStamp', keep='first')
-
-            data = data.sort_values(by='TimeStamp')
-
             timestamps = data['TimeStamp'].apply(lambda t: t.strftime('%H:%M:%S'))
             buffer_health = data['BufferHealth']
 
