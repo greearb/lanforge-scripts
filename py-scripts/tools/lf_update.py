@@ -186,7 +186,7 @@ class create_lanforge_object:
         ssh.connect(hostname=self.mgr, port=self.mgr_ssh_port, username=self.user, password=self.user_password,
                     allow_agent=False, look_for_keys=False, banner_timeout=600)
         stdin, stdout, stderr = ssh.exec_command(
-            './btserver --version | grep  Version')
+            '. lanforge.profile; ./btserver --version | grep  Version')
         self.lanforge_server_version_full = stdout.readlines()
         self.lanforge_server_version_full = [line.replace(
             '\n', '') for line in self.lanforge_server_version_full]
