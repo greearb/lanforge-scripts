@@ -14,9 +14,9 @@ EXAMPLE:    # Updating a LANforge cli
             --root_password lanforge \
             --user lanforge \
             --user_password lanforge \
-            --mgr_ssh_port 22\
-            --lfver 5.5.1\
-            --kver 6.15.6+\
+            --mgr_ssh_port 22 \
+            --lfver 5.5.1 \
+            --kver 6.15.6+ \
             --log_level info
 
             # Updating a LANforge Vscode json
@@ -293,7 +293,7 @@ class create_lanforge_object:
     def remove_DB_gz(self):
 
         command = "rm DB*.gz"
-        r = self.send_lf_command(command)
+        r = self.send_lf_command_user(command)
         if r.failed:
             raise Exception(r.result)
 
@@ -384,7 +384,6 @@ class create_lanforge_object:
         # Done.
 
         # command = "curl -o lf_kinstall.pl www.candelatech.com/lf_kinstall.txt" # leave in for testing
-        # command = "curl -o lf_kinstall.pl www.candelatech.com/lf_kinstall.txt; ./lf_kinstall.pl --lfver 5.5.1 --kver 6.15.6+ --do_noaer 1 --do_upgrade"
         command = f"curl -o lf_kinstall.pl www.candelatech.com/lf_kinstall.txt; chmod +x lf_kinstall.pl; ./lf_kinstall.pl --lfver {self.lfver} --kver {self.kver} --do_noaer 1 --do_upgrade"
         r = self.send_lf_command(command)
         if r.failed:
@@ -428,7 +427,7 @@ class create_lanforge_object:
         self.cmd_pwd()
 
         # rm DB files
-        # self.remove_DB_gz()
+        self.remove_DB_gz()
         # self.rm_DB_files_paramiko()
 
         # pwd
@@ -473,7 +472,7 @@ class create_lanforge_object:
                 "ssh_config_file": True,
             }
 
-            self.conn_user = GenericDriver(**root) # noqa
+            self.conn_user = GenericDriver(**user) # noqa
             try:
                 self.conn_user.open()
             except scrapli.exceptions.ScrapliAuthenticationFailed as e:
