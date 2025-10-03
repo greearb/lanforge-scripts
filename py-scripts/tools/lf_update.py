@@ -853,6 +853,9 @@ def main():
 
     logger.info(f"gui_version = {gui_version}")
 
+    logger.info(f"Kernel Version Config: {args.kver}  Read: {kernel_version}")
+    logger.info(f"Server Version Config: {args.lfver} Read: {server_version}")
+
 
 if __name__ == '__main__':
     main()
