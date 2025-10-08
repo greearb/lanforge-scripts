@@ -722,7 +722,7 @@ INCLUDE_IN_README
         AT7   =  10 sec
         Noah2 = 20 sec
         APU2  = 25 sec
-        example: --user_timeout 1320
+        example: --user_timeout 25
         ''',
         dest='user_timeout')
 
@@ -732,8 +732,8 @@ INCLUDE_IN_README
         523c  =  300 sec
         AT7   =  300 sec
         Noah2 = 720 sec
-        APU2  = 1320 sec
-        example: --timeout 1320
+        APU2  = 1800 sec
+        example: --timeout 1800
         ''',
         dest='root_timeout')
 
