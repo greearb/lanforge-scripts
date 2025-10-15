@@ -1248,7 +1248,13 @@ class RealDevice(Realm):
                 curr_ssid = self.ssid_6g
 
             # get resource id for the android device from interop tab
-            resource_id = self.json_get('/adb/1/1/{}'.format(android[2]))['devices']['resource-id']
+            print(android)
+            resource_id = ''
+            for device_data in self.json_get('/adb/')['devices']:
+                device_name, device_info = list(device_data.keys())[0], list(device_data.values())[0]
+                if android[2] in device_name:
+                    resource_id = device_info['resource-id']
+                    break
 
             # if there is no resource id in interop tab
             if (resource_id == ''):
