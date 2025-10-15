@@ -208,7 +208,7 @@ class create_controller_series_object:
     def get_config_summary(self):
 
         config_summary = self._show_ap_dot11_summary()
-        if '2g' in self.band:
+        if '2g' in self.band or '24g' in self.band:
             self.mac = config_summary[self.phy_24g][self.ap_name_24g]['addr']
             self.channel = config_summary[self.phy_24g][self.ap_name_24g]['channel']['number']
             self.tx_power = config_summary[self.phy_24g][self.ap_name_24g]['txpower'].split('.')[0]
