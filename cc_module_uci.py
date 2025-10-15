@@ -316,7 +316,7 @@ class create_controller_series_object:
     # TODO
     def get_ap_tx_power_config(self):
         # TODO need to separate out the 2g and 5g power
-        if '2g' in self.band:
+        if '2g' in self.band or '24g' in self.band:
             ap_tx_power_dbm = self.ap_current_tx_power_level = self._show_ap_dot11_summary()[self.phy_24g][self.ap_name_24g]['txpower']
         elif '5g' in self.band:
             ap_tx_power_dbm = self.ap_current_tx_power_level = self._show_ap_dot11_summary()[self.phy_5g][self.ap_name_5g]['txpower']
