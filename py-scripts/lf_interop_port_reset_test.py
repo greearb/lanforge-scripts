@@ -81,7 +81,8 @@ class InteropPortReset(Realm):
                  time_int=None,
                  wait_time=None,
                  device_list=None,
-                 suporrted_release=None
+                 suporrted_release=None,
+                 forget_network=True
                  ):
         super().__init__(lfclient_host=host,
                          lfclient_port=8080)
@@ -113,6 +114,7 @@ class InteropPortReset(Realm):
         self.reset = reset
         self.time_int = time_int
         self.device_list = device_list
+        self.forget_network = forget_network
         # self.wait_time = wait_time
         self.supported_release = suporrted_release
         self.device_name = []
@@ -121,8 +123,8 @@ class InteropPortReset(Realm):
                                                  _output_pdf="port_reset_test.pdf")
         self.report_path = self.lf_report.get_report_path()
 
-        self.base_interop_profile = base.RealDevice(manager_ip=self.host, server_ip=self.mgr_ip, ssid=self.ssid,
-                                                    encryption=self.encryp, passwd=self.passwd)
+        self.base_interop_profile = base.RealDevice(manager_ip=self.host, server_ip=self.mgr_ip, ssid_5g=self.ssid,
+                                                    encryption_5g=self.encryp, passwd_5g=self.passwd, disconnect_devices=self.forget_network, reboot=False, selected_bands=["5g"])
 
         self.utility = base.UtilityInteropWifi(host_ip=self.host)
         # logging.basicConfig(filename='port_reset.log', filemode='w', format='%(asctime)s - %(message)s',
@@ -1125,6 +1127,10 @@ INCLUDE_IN_README: False
     
     parser.add_argument('--device_list', help='Enter the devices on which the test should be run', default=None)
 
+    parser.add_argument('--no_forget_networks',
+                        help='Currently enterprise authentication does not support forget all networks.'
+                        'So, mention this argument when enterprise securities are selected.', default=None,
+                        action="store_true")
     # parser.add_argument("--wait_time", type=int, default=20,
     #                     help='Specify the wait time in seconds for WIFI Supplicant Logs.')
 
@@ -1171,7 +1177,8 @@ INCLUDE_IN_README: False
                            # wait_time=args.wait_time,
                            suporrted_release=args.release,
                            mgr_ip=args.mgr_ip,
-                           device_list=args.device_list
+                           device_list=args.device_list,
+                           forget_network=not args.no_forget_networks
                            )
     obj.selecting_devices_from_available()
     reset_dict, duration = obj.run()
