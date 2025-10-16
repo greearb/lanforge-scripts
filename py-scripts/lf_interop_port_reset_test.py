@@ -280,8 +280,14 @@ class InteropPortReset(Realm):
         for i in range(len(values)):
             keys_list.append(list(values[i].keys())[0])
         # print("Key list", keys_list)
-
-        if "1.1." in phn_name:
+        # android (flag) check for clustered lanforge cases
+        android = False
+        for device_data in self.json_get('/adb/')['devices']:
+                device_name, device_info = list(device_data.keys())[0], list(device_data.values())[0]
+                if phn_name in device_name:
+                    android = True
+                    break
+        if "1.1." in phn_name or android:
             # disconnects
             adb_disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
                                                   filter="Terminating...")  # Todo: need to rename the method
