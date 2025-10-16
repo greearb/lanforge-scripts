@@ -80,6 +80,7 @@ class InteropPortReset(Realm):
                  mgr_ip=None,
                  time_int=None,
                  wait_time=None,
+                 device_list=None,
                  suporrted_release=None
                  ):
         super().__init__(lfclient_host=host,
@@ -111,6 +112,7 @@ class InteropPortReset(Realm):
         self.mgr_ip = mgr_ip
         self.reset = reset
         self.time_int = time_int
+        self.device_list = device_list
         # self.wait_time = wait_time
         self.supported_release = suporrted_release
         self.device_name = []
@@ -127,8 +129,14 @@ class InteropPortReset(Realm):
         #                     level=logging.INFO, force=True)
 
     def selecting_devices_from_available(self):
-        asyncio.run(self.base_interop_profile.query_all_devices_to_configure_wifi())
+        #If device list is not provided by user, then it shows the available devices to choose from
+        if self.device_list is None:
+            devices = self.base_interop_profile.query_all_devices_to_configure_wifi()
+        else:
+            devices = self.base_interop_profile.query_all_devices_to_configure_wifi(device_list=self.device_list.split(','))
+        asyncio.run(self.base_interop_profile.configure_wifi(devices[0] + devices[1] + devices[2]))
         self.real_sta_list = self.base_interop_profile.station_list
+        logger.info(self.real_sta_list)
         real_device_data = self.base_interop_profile.devices_data
         if len(self.real_sta_list) == 0:
             logging.error('There are no real devices in this testbed. Aborting the test.')
@@ -1114,6 +1122,8 @@ INCLUDE_IN_README: False
 
     parser.add_argument("--time_int", type=int, default=5,
                         help='Specify the time interval in seconds after which reset should happen.')
+    
+    parser.add_argument('--device_list', help='Enter the devices on which the test should be run', default=None)
 
     # parser.add_argument("--wait_time", type=int, default=20,
     #                     help='Specify the wait time in seconds for WIFI Supplicant Logs.')
@@ -1160,7 +1170,8 @@ INCLUDE_IN_README: False
                            time_int=args.time_int,
                            # wait_time=args.wait_time,
                            suporrted_release=args.release,
-                           mgr_ip=args.mgr_ip
+                           mgr_ip=args.mgr_ip,
+                           device_list=args.device_list
                            )
     obj.selecting_devices_from_available()
     reset_dict, duration = obj.run()
