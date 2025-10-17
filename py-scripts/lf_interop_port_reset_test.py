@@ -340,6 +340,16 @@ class InteropPortReset(Realm):
             if adb_association_attempt > adb_connected_count:
                 adb_association_rejection = adb_association_attempt - adb_connected_count
             local_dict[str(phn_name)]["Association Rejection"] = adb_association_rejection
+            if adb_connected_count > 0:
+                _, shelf, serial = phn_name.split('.')
+                resource_id = self.json_get('/adb/1/{}/{}?fields=resource-id'.format(shelf, serial))
+                resource_id = resource_id['devices']['resource-id']
+
+                port_ssid_query = self.json_get('port/1/{}/wlan0?fields=cx time (us)'.format(resource_id.split('.')[1]))
+                uptime = port_ssid_query['interface']['cx time (us)']
+                local_dict[str(phn_name)]['cx time (us)'] = uptime
+            else:
+                local_dict[str(phn_name)]['cx time (us)'] = 'NA'
         else:
             if phn_name in self.windows_list:  # for windows
                 win_disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
@@ -397,6 +407,13 @@ class InteropPortReset(Realm):
                 elif win_disconnect_count >= 1 and win_connected_count == 0:
                     remarks = "The Disconnections are seen but Client did not connected to user given SSID."
                 local_dict[str(phn_name)]["Remarks"] = remarks
+                if win_connected_count > 0:
+                    port_name = phn_name.split(".")
+                    port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=cx time (us)")
+                    uptime = port_ssid_query['interface']['cx time (us)']
+                    local_dict[str(phn_name)]['cx time (us)'] = uptime
+                else:
+                    local_dict[str(phn_name)]['cx time (us)'] = 'NA'
             else:  # other means (for linux, mac)
                 other_disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
                                                         filter="disconnected")
@@ -454,6 +471,13 @@ class InteropPortReset(Realm):
                 elif other_disconnect_count >= 1 and other_connected_count == 0:
                     remarks = "The Disconnections are seen but Client did not connected to user given SSID."
                 local_dict[str(phn_name)]["Remarks"] = remarks
+                if other_connected_count > 0:
+                    port_name = phn_name.split(".")
+                    port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=cx time (us)")
+                    uptime = port_ssid_query['interface']['cx time (us)']
+                    local_dict[str(phn_name)]['cx time (us)'] = uptime
+                else:
+                    local_dict[str(phn_name)]['cx time (us)'] = 'NA'
         logging.info("local_dict " + str(local_dict))
 
         return local_dict
@@ -842,7 +866,7 @@ class InteropPortReset(Realm):
             reset_count = []
             for i in reset_count_:
                 reset_count.append(int(i) + 1)
-            asso_attempts, disconnected, scanning, connected, assorej, remarks = [], [], [], [], [], []
+            asso_attempts, disconnected, scanning, connected, assorej, remarks, cx_times = [], [], [], [], [], [], []
 
             for i in reset_dict:
                 asso_attempts.append(reset_dict[i][y]["ConnectAttempt"])
@@ -851,6 +875,7 @@ class InteropPortReset(Realm):
                 connected.append(reset_dict[i][y]["Connected"])
                 assorej.append(reset_dict[i][y]["Association Rejection"])
                 remarks.append(reset_dict[i][y]["Remarks"])
+                cx_times.append(reset_dict[i][y]["cx time (us)"])
 
             # graph calculation
             dict_ = ['Port Resets', 'Disconnects', 'Scans', 'Association Attempts', "Association Rejections",
@@ -918,11 +943,13 @@ class InteropPortReset(Realm):
                 "Association attempts": asso_attempts,
                 "Association Rejection": assorej,
                 "Connected": connected,
+                "Connection Time (us)": cx_times,
                 "Remarks": remarks
             }
             test_setup = pd.DataFrame(table_1)
             self.lf_report.set_table_dataframe(test_setup)
             self.lf_report.build_table()
+            self.lf_report.save_csv('overall_report.csv', test_setup)
 
     def generate_report(self, reset_dict=None, test_dur=None):
         try:
