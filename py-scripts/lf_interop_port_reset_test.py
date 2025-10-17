@@ -1182,7 +1182,7 @@ INCLUDE_IN_README: False
     # parser.add_argument("--wait_time", type=int, default=20,
     #                     help='Specify the wait time in seconds for WIFI Supplicant Logs.')
 
-    parser.add_argument("--release", nargs='+', default=["12"],
+    parser.add_argument("--release", nargs='*', default=["12"],
                         help='Specify the SDK release version (Android Version) of real clients to be supported in test.'
                              'eg:- --release 11 12 13')
     # logging configuration:
