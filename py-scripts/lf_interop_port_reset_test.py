@@ -1040,7 +1040,7 @@ class InteropPortReset(Realm):
                         dev_type = "Linux"
                     elif "Win" in hw_version:
                         dev_type = "Windows"
-                    elif "Mac" in hw_version:
+                    elif "Apple" in hw_version:
                         dev_type = "Apple"
                     else:
                         dev_type = ""
