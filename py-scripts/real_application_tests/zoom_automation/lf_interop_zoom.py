@@ -1607,7 +1607,8 @@ def main():
             logging.info("Test Completed Sucessfully")
     except Exception as e:
         logging.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
-        traceback.print_exc()
+        tb_str = traceback.format_exc()  # capture traceback as string
+        logger.error("An exception occurred:\n%s", tb_str)
     finally:
         if not ('--help' in sys.argv or '-h' in sys.argv):
             if args.do_webUI:
