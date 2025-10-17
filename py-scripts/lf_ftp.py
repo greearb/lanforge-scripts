@@ -995,7 +995,8 @@ class FtpTest(LFCliBase):
                 except Exception:
                     # Fail-safe: if any list index/key mismatch occurs while adding row_data,
                     # stop execution to avoid inconsistent results.
-                    traceback.print_exc()
+                    tb_str = traceback.format_exc()  # capture traceback as string
+                    logger.error("An exception occurred:\n%s", tb_str)
                     exit(1)
             # calculating average for rx_rate
             for j in range(len(rx_rate_val[0])):
@@ -1053,7 +1054,8 @@ class FtpTest(LFCliBase):
                 # Print the problematic data and error before exiting
                 logger.info("Failed to create DataFrame from self.data")
                 logger.info("self.data: %s", self.data)
-                traceback.print_exc()
+                tb_str = traceback.format_exc()  # capture traceback as string
+                logger.error("An exception occurred:\n%s", tb_str)
                 exit(1)
             if self.dowebgui:
                 df1.to_csv('{}/ftp_datavalues.csv'.format(self.result_dir), index=False)
