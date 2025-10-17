@@ -746,7 +746,8 @@ class HttpDownload(Realm):
                 except Exception:
                     # Fail-safe: if any list index/key mismatch occurs while adding row_data,
                     # stop execution to avoid inconsistent results.
-                    traceback.print_exc()
+                    tb_str = traceback.format_exc()  # capture traceback as string
+                    logger.error("An exception occurred:\n%s", tb_str)
                     exit(1)
             if len(max_bytes_rd) == 0:
                 max_bytes_rd = list(bytes_rd)
@@ -797,7 +798,8 @@ class HttpDownload(Realm):
             try:
                 df1 = pd.DataFrame(self.data)
             except Exception:
-                traceback.print_exc()
+                tb_str = traceback.format_exc()  # capture traceback as string
+                logger.error("An exception occurred:\n%s", tb_str)
                 exit(1)
             if self.dowebgui:
                 df1.to_csv('{}/http_datavalues.csv'.format(self.result_dir), index=False)
