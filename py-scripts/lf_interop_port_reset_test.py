@@ -120,7 +120,7 @@ class InteropPortReset(Realm):
         self.forget_network = forget_network
         self.result_dir = result_dir
         self.dowebgui = dowebgui
-        self.test_name=test_name
+        self.test_name = test_name
         self.result_df = {}
         # self.wait_time = wait_time
         self.supported_release = suporrted_release
@@ -138,7 +138,7 @@ class InteropPortReset(Realm):
         #                     level=logging.INFO, force=True)
 
     def selecting_devices_from_available(self):
-        #If device list is not provided by user, then it shows the available devices to choose from
+        # If device list is not provided by user, then it shows the available devices to choose from
         if self.device_list is None:
             devices = self.base_interop_profile.query_all_devices_to_configure_wifi()
         else:
@@ -268,7 +268,7 @@ class InteropPortReset(Realm):
         counting = count_.count("YES")
         return counting
 
-    def get_time_from_wifi_msgs(self, local_dict=None, phn_name=None, timee=None, file_name="dummy.json",reset_cnt=None):
+    def get_time_from_wifi_msgs(self, local_dict=None, phn_name=None, timee=None, file_name="dummy.json", reset_cnt=None):
         # print("Waiting for 20 sec to fetch the logs...")
         # time.sleep(20)
         a = self.json_get("/wifi-msgs/since=time/" + str(timee), debug_=True)
@@ -290,10 +290,10 @@ class InteropPortReset(Realm):
         # android (flag) check for clustered lanforge cases
         android = False
         for device_data in self.json_get('/adb/')['devices']:
-                device_name, device_info = list(device_data.keys())[0], list(device_data.values())[0]
-                if phn_name in device_name:
-                    android = True
-                    break
+            device_name, _ = list(device_data.keys())[0], list(device_data.values())[0]
+            if phn_name in device_name:
+                android = True
+                break
         if "1.1." in phn_name or android:
             # disconnects
             adb_disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
@@ -486,7 +486,7 @@ class InteropPortReset(Realm):
                 else:
                     local_dict[str(phn_name)]['cx time (us)'] = 'NA'
         logging.info("local_dict " + str(local_dict))
-        #storing results in csv file for each reset
+        # storing results in csv file for each reset
         for interface_name, metrics in local_dict.items():
             df = pd.DataFrame([metrics])
             filename = f"{self.report_path}/{interface_name}_{reset_cnt}.csv"
@@ -586,7 +586,7 @@ class InteropPortReset(Realm):
                 logging.info("Reset list:" + str(reset_list))
                 reset_dict = dict.fromkeys(reset_list)
                 test_stopped = False
-                for r, final in zip(range(self.reset), reset_dict):
+                for r, _ in zip(range(self.reset), reset_dict):
                     logging.info("Waiting until given %s sec time intervel to finish..." % self.time_int)
                     time.sleep(int(self.time_int))  # sleeping until time interval finish
                     logging.info(f"Iteration :- {r}")
@@ -642,13 +642,13 @@ class InteropPortReset(Realm):
                     time.sleep(30)
                     for i in self.all_selected_devices:
                         get_dicct = self.get_time_from_wifi_msgs(local_dict=local_dict, phn_name=i, timee=timee,
-                                                                 file_name=f"reset_{r}_log.json",reset_cnt=r)
+                                                                 file_name=f"reset_{r}_log.json", reset_cnt=r)
                         reset_dict[r] = get_dicct
                         self.create_dict_csv(reset_dict)
                         if self.dowebgui:
                             with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
-                                                                                                            self.test_name),
-                                    'r') as file:
+                                                                                                             self.test_name),
+                                      'r') as file:
                                 data = json.load(file)
                                 if data["status"] != "Running":
                                     logging.info('Test is stopped by the user')
@@ -662,7 +662,7 @@ class InteropPortReset(Realm):
                             'Scanning': 0,
                             'Association Rejection': 0,
                             'Connected': 0,
-                            'Remarks' : "Test stopped by user",
+                            'Remarks': "Test stopped by user",
                             'cx time (us)': 0
                         }
                         keys_to_delete = []
@@ -750,14 +750,14 @@ class InteropPortReset(Realm):
 
         # count connects and disconnects
         scan, ass_atmpt = 0, 0
-        for i, y in zip(range(len(scan_state)), range(len(asso_attempt))):
+        for i, _ in zip(range(len(scan_state)), range(len(asso_attempt))):
             for m in scan_state[i]:
                 scan = scan + m
             for n in asso_attempt[i]:
                 ass_atmpt = ass_atmpt + int(n)
 
         conects, disconnects = 0, 0
-        for i, y in zip(range(len(conected_list)), range(len(disconnected_list))):
+        for i, _ in zip(range(len(conected_list)), range(len(disconnected_list))):
             for m in conected_list[i]:
                 conects = conects + m
             for n in disconnected_list[i]:
@@ -860,7 +860,7 @@ class InteropPortReset(Realm):
 
     def generate_overall_graph_table(self, reset_dict, device_list):
         # self.total_resets, self.total_disconnects, self.total_scans, self.total_ass_attemst, self.total_ass_rejects, self.total_connects = [], [], [], [], [], []
-        for y, z in zip(device_list, range(len(device_list))):
+        for y, _ in zip(device_list, range(len(device_list))):
             reset_count_ = list(reset_dict.keys())
             reset_count = []
             for i in reset_count_:
@@ -1140,14 +1140,14 @@ class InteropPortReset(Realm):
             # self.lf_report.move_data(directory="log", _file_name="port_reset.log")
         except Exception as e:
             logging.warning(str(e))
-    
+
     def create_dict_csv(self, port_reset_dict):
         """
         Aggregate client connection stats from all iterations and save a summary CSV (overall_reset.csv).
         """
         i_df = {}
 
-        for iteration, devices in port_reset_dict.items():
+        for _, devices in port_reset_dict.items():
             if devices is None:
                 continue
             for client, stats in devices.items():
@@ -1196,6 +1196,7 @@ def change_port_to_ip(upstream_port, lfclient_host, lfclient_port):
         logging.info(f"Upstream port IP {upstream_port}")
 
     return upstream_port
+
 
 def main():
     help_summary = '''\
@@ -1274,7 +1275,7 @@ INCLUDE_IN_README: False
 
     parser.add_argument("--time_int", type=int, default=5,
                         help='Specify the time interval in seconds after which reset should happen.')
-    
+
     parser.add_argument('--device_list', help='Enter the devices on which the test should be run', default=None)
 
     parser.add_argument('--no_forget_networks',
@@ -1296,7 +1297,7 @@ INCLUDE_IN_README: False
 
     parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
                         action="store_true")
-    
+
     parser.add_argument('--dowebgui', help="If true will execute script for webgui", action='store_true')
 
     parser.add_argument('--result_dir', help='Specify the result dir to store the runtime logs', default='')
@@ -1313,7 +1314,7 @@ INCLUDE_IN_README: False
 
     if args.log_level:
         logger_config.set_level(level=args.log_level)
-    args.mgr_ip = change_port_to_ip(args.mgr_ip,args.host,args.port)
+    args.mgr_ip = change_port_to_ip(args.mgr_ip, args.host, args.port)
     print(args.mgr_ip)
     if args.lf_logger_config_json:
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
@@ -1346,6 +1347,7 @@ INCLUDE_IN_README: False
         obj.result_df['Status'] = 'stopped'
         obj.result_df.to_csv(f"{obj.report_path}/overall_reset.csv", index=False)
         obj.result_df.to_csv(f"{obj.result_dir}/overall_reset.csv", index=False)
+
 
 if __name__ == '__main__':
     main()
