@@ -2131,7 +2131,8 @@ def main():
 
     except Exception as e:
         logging.error("Error occured", e)
-        traceback.print_exc()
+        tb_str = traceback.format_exc()  # capture traceback as string
+        logger.error("An exception occurred:\n%s", tb_str)
     finally:
         if '--help' not in sys.argv and '-h' not in sys.argv:
             obj.create_report()
