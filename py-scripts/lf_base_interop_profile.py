@@ -427,7 +427,7 @@ class BaseInteropWifi(Realm):
                 resource = list(lf_query_resource['resources'])[i].get(id)["phantom"]
                 logging.info(f"The {id} port is in PHANTOM:- {resource}")
                 while resource:
-                    logging.info('Deleting the resource', id)
+                    logging.info(f'Deleting the resource {id}')
                     info = id.split('.')
                     req_url = "cli-json/rm_resource"
                     data = {
@@ -1215,7 +1215,7 @@ class RealDevice(Realm):
                     exclude_laptops_1.append(laptop)
                     continue
             if (exclude_laptops_1 != []):
-                logging.info("RETRY FOR: ", exclude_laptops_1)
+                logging.info(f"RETRY FOR:  {exclude_laptops_1}")
                 await self.laptops_obj.set_port_1(port_list=exclude_laptops_1)
                 time.sleep(10)
                 await self.laptops_obj.add_station(port_list=exclude_laptops_1)
@@ -1231,7 +1231,7 @@ class RealDevice(Realm):
                     exclude_laptops_2.append(laptop)
                     continue
             if (exclude_laptops_2 != []):
-                logging.info("RETRY-2 FOR: ", exclude_laptops_2)
+                logging.info(f"RETRY-2 FOR:  {exclude_laptops_2}")
                 await self.laptops_obj.add_station(port_list=exclude_laptops_2)
                 await self.laptops_obj.set_port(port_list=exclude_laptops_2)
                 # await self.laptops_obj.set_port_1(port_list=exclude_laptops_2)
@@ -1248,7 +1248,13 @@ class RealDevice(Realm):
                 curr_ssid = self.ssid_6g
 
             # get resource id for the android device from interop tab
-            resource_id = self.json_get('/adb/1/1/{}'.format(android[2]))['devices']['resource-id']
+            print(android)
+            resource_id = ''
+            for device_data in self.json_get('/adb/')['devices']:
+                device_name, device_info = list(device_data.keys())[0], list(device_data.values())[0]
+                if android[2] in device_name:
+                    resource_id = device_info['resource-id']
+                    break
 
             # if there is no resource id in interop tab
             if (resource_id == ''):
