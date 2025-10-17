@@ -64,7 +64,7 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_report_pdf = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
-
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
@@ -1079,6 +1079,21 @@ class InteropPortReset(Realm):
         except Exception as e:
             logging.warning(str(e))
 
+def change_port_to_ip(upstream_port, lfclient_host, lfclient_port):
+    if upstream_port.count('.') != 3:
+        target_port_list = LFUtils.name_to_eid(upstream_port)
+        shelf, resource, port, _ = target_port_list
+        try:
+            realm_obj = Realm(lfclient_host=lfclient_host, lfclient_port=lfclient_port)
+            target_port_ip = realm_obj.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
+            upstream_port = target_port_ip
+        except Exception:
+            logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
+        logging.info(f"Upstream port IP {upstream_port}")
+    else:
+        logging.info(f"Upstream port IP {upstream_port}")
+
+    return upstream_port
 
 def main():
     help_summary = '''\
@@ -1192,7 +1207,8 @@ INCLUDE_IN_README: False
 
     if args.log_level:
         logger_config.set_level(level=args.log_level)
-
+    args.mgr_ip = change_port_to_ip(args.mgr_ip,args.host,args.port)
+    print(args.mgr_ip)
     if args.lf_logger_config_json:
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
