@@ -1539,7 +1539,8 @@ NOTES:
                 youtube.generic_endps_profile.cleanup()
     except Exception as e:
         logging.error(f"Error occured {e}")
-        traceback.print_exc()
+        tb_str = traceback.format_exc()  # capture traceback as string
+        logger.error("An exception occurred:\n%s", tb_str)
     finally:
         if not ('--help' in sys.argv or '-h' in sys.argv):
             youtube.stop()
