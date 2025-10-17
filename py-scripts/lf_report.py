@@ -500,16 +500,13 @@ class lf_report:
         # allure_report directory
         try:
             files = os.listdir(self.allure_report_history)
-            if not files:
-                for fname in files:
-                    allure_report_history_file = str(self.allure_report_history_path) + '/' + str(fname)
-                    allure_results_history_file = str(self.allure_results_history_path) + '/' + str(fname)
-                    shutil.copy(allure_report_history_file, allure_results_history_file)
-            else:
-                logger.warning("Directory empty is this a first run?: {history}".format(history=self.allure_report_history))
+            for fname in files:
+                allure_report_history_file = str(self.allure_report_history_path) + '/' + str(fname)
+                allure_results_history_file = str(self.allure_results_history_path) + '/' + str(fname)
+                shutil.copy(allure_report_history_file, allure_results_history_file)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            logger.warning("Either no allure report present or the copy of history failed.")
+            logger.warning("Either no allure report history present or the copy of history failed.")
 
     def copy_allure_report(self):
         # TODO abiltiy to set the Allure results dir
