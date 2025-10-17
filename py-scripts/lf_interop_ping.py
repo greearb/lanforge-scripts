@@ -229,8 +229,9 @@ class Ping(Realm):
             shelf, resource, port, _ = target_port_list
             try:
                 target_port_ip = self.json_get('/port/{}/{}/{}?fields=ip'.format(shelf, resource, port))['interface']['ip']
-            except Exception as x:
-                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            except Exception:
+                tb_str = traceback.format_exc()  # capture traceback as string
+                logger.error("An exception occurred:\n%s", tb_str)
                 logging.error('The target port {} not found on the LANforge. Please change the target.'.format(self.target))
                 exit(0)
             self.target = target_port_ip
