@@ -2257,13 +2257,6 @@ If parameter not set will read TEST_WINDOW_DAYS from rig.json""")
 
     # Determine the number of iterations
     total_iterations = 0
-    # for rig json (lanforge)
-    # for _ in json_rig_list:
-    #     # for test json and suite
-    #     for (_, _) in zip(json_test_list, suite_list):
-    #         # for dut json
-    #         for _ in json_dut_list:
-    #             total_iterations += 1
 
     # for rig json (lanforge)
     for json_rig_name in json_rig_list:
