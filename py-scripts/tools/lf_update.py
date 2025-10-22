@@ -443,6 +443,13 @@ class create_lanforge_object:
         # check large files
         self.check_large_files()
 
+        # check if system is up
+        self.check_system_up()
+
+        self.kernel_version = self.get_lanforge_kernel_version()
+
+        self.server_version = self.get_lanforge_server_version()
+
     # LANforge user manager
     @contextmanager
     def get_mgmt_user(self) -> "Generator[GenericDriver]":  # noqa:
@@ -851,17 +858,7 @@ def main():
 
     lf = create_lanforge_object(**vars(args))
 
-    lf.check_system_up()
-
     lf.update_lanforge()
-
-    lf.check_system_up()
-
-    kernel_version = lf.get_lanforge_kernel_version()
-    logger.info(f"kernel_version = {kernel_version}")
-
-    server_version = lf.get_lanforge_server_version()
-    logger.info(f"server_version: {server_version}")
 
     # Work in progress , the process closes when starting the GUI
     # gui_version = lf.get_lanforge_gui_version()
@@ -872,8 +869,8 @@ def main():
     #     gui_version = lf.get_lanforge_gui_version()
     # logger.info(f"gui_version = {gui_version}")
 
-    logger.info(f"Kernel Version Config: {args.kver}  Read: {kernel_version}")
-    logger.info(f"Server Version Config: {args.lfver} Read: {server_version}")
+    logger.info(f"Kernel Version Config: {args.kver}  Read from Lanforge: {lf.kernel_version}")
+    logger.info(f"Server Version Config: {args.lfver} Read from Lanforge: {lf.server_version}")
     logger.info(f"Updated Test bed: {lf.tb_name}  Test bed IP: {lf.mgr}")
 
 
