@@ -9,6 +9,7 @@ NOTES:      This script is used to help to automate lanforge update
 
 EXAMPLE:    # Updating a LANforge cli
             ./lf_update.py \
+            --tb_name CT-US-001 \
             --mgr 192.168.50.103 \
             --root_user root \
             --root_password lanforge \
@@ -22,6 +23,7 @@ EXAMPLE:    # Updating a LANforge cli
             # Updating a LANforge Vscode json
             // ./lf_update.py
             "args":[
+            "--tb_name", "CT-US-001",
             "--mgr", "192.168.50.103",
             "--root_user", "root",
             "--root_password", "lanforge",
@@ -106,6 +108,9 @@ class create_lanforge_object:
                  **kwargs
                  ):
 
+        if "tb_name" in kwargs:
+            self.tb_name = kwargs["tb_name"]
+
         if "mgr" in kwargs:
             self.mgr = kwargs["mgr"]
 
@@ -144,8 +149,10 @@ class create_lanforge_object:
         self.interval = 5
         self.max_iterations = 24
 
+    # del causes an exception since the connection is already down
     def __del__(self) -> None:
-        self.tear_down_mgmt()
+        pass
+        # self.tear_down_mgmt()
 
     def tear_down_mgmt(self) -> None:
         pass
@@ -268,10 +275,10 @@ class create_lanforge_object:
         while interations < 10:
             try:
                 ssh.connect(hostname=self.mgr, port=self.mgr_ssh_port, username=self.root_user, password=self.root_password)
-                print("System is up!")
+                print(f"System {self.tb_name} {self.mgr} is up!")
                 break
             except (paramiko.ssh_exception.NoValidConnectionsError, paramiko.ssh_exception.AuthenticationException):
-                print("System is down, retrying in 5 seconds...")
+                print("System {self.tb_name} {self.mgr} is down, retrying in 5 seconds...")
                 time.sleep(5)  # Wait before retrying
                 interations += 1
 
@@ -324,7 +331,7 @@ class create_lanforge_object:
                 ssh.connect(hostname=self.mgr, port=self.mgr_ssh_port, username=self.root_user, password=self.root_password, timeout=self.timeout)
 
                 # client.connect(hostname, port=port, username=username, password=password, timeout=timeout)
-                print(f"System {self.mgr} is up!")
+                print(f"System {self.tb_name} {self.mgr} is up!")
                 # Execute a command to confirm the system is operational
                 stdin, stdout, stderr = ssh.exec_command("uptime")
                 print(stdout.read().decode())
@@ -477,7 +484,7 @@ class create_lanforge_object:
                 self.conn_user.open()
             except scrapli.exceptions.ScrapliAuthenticationFailed as e:
                 raise Exception(
-                    f"Failed to open connection to {self.mgr} ({e.message})"
+                    f"Failed to open connection to {self.tb_name} {self.mgr} ({e.message})"
                 ) from e
         yield self.conn_user
 
@@ -523,7 +530,7 @@ class create_lanforge_object:
                 self.conn.open()
             except scrapli.exceptions.ScrapliAuthenticationFailed as e:
                 raise Exception(
-                    f"Failed to open connection to {self.mgr} ({e.message})"
+                    f"Failed to open connection to {self.tb_name} {self.mgr} ({e.message})"
                 ) from e
         yield self.conn
 
@@ -564,6 +571,11 @@ class create_lanforge_object:
 
 def validate_args(args):
     """Validate CLI arguments."""
+
+    if args.tb_name is None:
+        logger.error("--tb_name required")
+        exit(1)
+
     if args.mgr is None:
         logger.error("--mgr required")
         exit(1)
@@ -621,6 +633,7 @@ NOTES:      This script is used to help to automate lanforge update
 
 EXAMPLE:    # Updating a LANforge cli
             ./lf_update.py \
+            --tb_name CT-US-001 \
             --mgr 192.168.50.103 \
             --root_user root \
             --root_password lanforge \
@@ -634,6 +647,7 @@ EXAMPLE:    # Updating a LANforge cli
             # Updating a LANforge Vscode json
             // ./lf_update.py
             "args":[
+            "--tb_name", "CT-US-001",
             "--mgr", "192.168.50.103",
             "--root_user", "root",
             "--root_password", "lanforge",
@@ -669,6 +683,11 @@ INCLUDE_IN_README
         '--remote_args',
         help='Arguments for remote command',
         default="")
+
+    parser.add_argument(
+        '--tb_name', '--test_bed_name',
+        help='name of the test_bed is used in reporting complete loading',
+        dest='tb_name')
 
     parser.add_argument(
         '--mgr', '--lf_mgr',
@@ -775,6 +794,7 @@ This script will perform an update on lanforge GUI version, Kernel version, rebo
     help_example = r'''\
 This example may be directly modified and executed from the command line
     ./lf_update.py \
+    --tb_name CT-ID-103 \
     --mgr 192.168.50.103 \
     --root_user root \
     --root_password lanforge \
@@ -795,6 +815,7 @@ This example may be directly modified and executed from the command line
     help_vscode = r'''
             // ./lf_update.py
             "args":[
+            "--tb_name", "CT-ID-103",
             "--mgr", "192.168.50.103",
             "--root_user", "root",
             "--root_password", "lanforge",
@@ -842,19 +863,18 @@ def main():
     server_version = lf.get_lanforge_server_version()
     logger.info(f"server_version: {server_version}")
 
-    gui_version = lf.get_lanforge_gui_version()
-
     # Work in progress , the process closes when starting the GUI
+    # gui_version = lf.get_lanforge_gui_version()
     # if gui_version is None and gui_version != "NA":
     #     logger.info(f"gui_version = {gui_version}")
     #     lf.start_gui()
     #     time.sleep(10)
     #     gui_version = lf.get_lanforge_gui_version()
-
-    logger.info(f"gui_version = {gui_version}")
+    # logger.info(f"gui_version = {gui_version}")
 
     logger.info(f"Kernel Version Config: {args.kver}  Read: {kernel_version}")
     logger.info(f"Server Version Config: {args.lfver} Read: {server_version}")
+    logger.info(f"Updated Test bed: {lf.tb_name}  Test bed IP: {lf.mgr}")
 
 
 if __name__ == '__main__':
