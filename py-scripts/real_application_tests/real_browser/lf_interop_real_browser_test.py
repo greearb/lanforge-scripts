@@ -2092,10 +2092,6 @@ def main():
         if args.lf_logger_config_json:
             logger_config.lf_logger_config_json = args.lf_logger_config_json
             logger_config.load_lf_logger_config()
-        if args.url.lower().startswith("www."):
-            args.url = "https://" + args.url
-        if args.url.lower().startswith("http://"):
-            args.url = "https://" + args.url.removeprefix("http://")
 
         # Initialize an instance of RealBrowserTest with various parameters
         obj = RealBrowserTest(host=args.host,
