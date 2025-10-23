@@ -1629,7 +1629,7 @@ class RealBrowserTest(Realm):
 
         return pass_fail_list, test_input_list
     
-    
+
     def create_report(self):
         try:
             if self.dowebgui:
@@ -1771,47 +1771,99 @@ class RealBrowserTest(Realm):
 
             report.set_table_title("Final Test Results")
             report.build_table_title()
-            if self.expected_passfail_value or self.device_csv_name:
-                pass_fail_list, test_input_list = self.generate_pass_fail_list(device_type_data, device_names, total_urls)
+            if self.selected_groups and self.selected_profiles:
+                if self.expected_passfail_value or self.device_csv_name:
+                    pass_fail_list, test_input_list = self.generate_pass_fail_list(device_type_data, device_names, total_urls)
 
-                final_test_results = {
+                    final_test_results = {
 
-                    "Device Type": device_type_data,
-                    "Hostname": device_names,
-                    "SSID": ssid_data,
-                    "MAC": mac_data,
-                    "Channel": channel_data,
-                    "UC-MIN (ms)": uc_min_data,
-                    "UC-MAX (ms)": uc_max_data,
-                    "UC-AVG (ms)": uc_avg_data,
-                    "Total Successful URLs": total_urls,
-                    "Expected URLS": test_input_list,
-                    "Total Erros": total_err_data,
-                    "RSSI": signal_data,
-                    "Link Speed": tx_rate_data,
-                    "Status ": pass_fail_list
+                        "Device Type": device_type_data,
+                        "Hostname": device_names,
+                        "SSID": ssid_data,
+                        "MAC": mac_data,
+                        "Channel": channel_data,
+                        "UC-MIN (ms)": uc_min_data,
+                        "UC-MAX (ms)": uc_max_data,
+                        "UC-AVG (ms)": uc_avg_data,
+                        "Total Successful URLs": total_urls,
+                        "Expected URLS": test_input_list,
+                        "Total Erros": total_err_data,
+                        "RSSI": signal_data,
+                        "Link Speed": tx_rate_data,
+                        "Status ": pass_fail_list
 
-                }
+                    }
+                else:
+                    final_test_results = {
+
+                        "Device Type": device_type_data,
+                        "Hostname": device_names,
+                        "SSID": ssid_data,
+                        "MAC": mac_data,
+                        "Channel": channel_data,
+                        "UC-MIN (ms)": uc_min_data,
+                        "UC-MAX (ms)": uc_max_data,
+                        "UC-AVG (ms)": uc_avg_data,
+                        "Total Successful URLs": total_urls,
+                        "Total Erros": total_err_data,
+                        "RSSI": signal_data,
+                        "Link Speed": tx_rate_data,
+
+                    }
+                
+                for group in self.selected_groups:
+                    group_specific_test_results = self.get_test_results_data(final_test_results, group)
+                    if not group_specific_test_results['Hostname']:
+                        continue
+                    report.set_table_title(f"{group} Test Results")
+                    report.build_table_title()
+                    test_results_df = pd.DataFrame(group_specific_test_results)
+                    report.set_table_dataframe(test_results_df)
+                    report.build_table()
+                
+
             else:
-                final_test_results = {
+                if self.expected_passfail_value or self.device_csv_name:
+                    pass_fail_list, test_input_list = self.generate_pass_fail_list(device_type_data, device_names, total_urls)
+                    final_test_results = {
 
-                    "Device Type": device_type_data,
-                    "Hostname": device_names,
-                    "SSID": ssid_data,
-                    "MAC": mac_data,
-                    "Channel": channel_data,
-                    "UC-MIN (ms)": uc_min_data,
-                    "UC-MAX (ms)": uc_max_data,
-                    "UC-AVG (ms)": uc_avg_data,
-                    "Total Successful URLs": total_urls,
-                    "Total Erros": total_err_data,
-                    "RSSI": signal_data,
-                    "Link Speed": tx_rate_data,
+                        "Device Type": device_type_data,
+                        "Hostname": device_names,
+                        "SSID": ssid_data,
+                        "MAC": mac_data,
+                        "Channel": channel_data,
+                        "UC-MIN (ms)": uc_min_data,
+                        "UC-MAX (ms)": uc_max_data,
+                        "UC-AVG (ms)": uc_avg_data,
+                        "Total Successful URLs": total_urls,
+                        "Expected URLS": test_input_list,
+                        "Total Erros": total_err_data,
+                        "RSSI": signal_data,
+                        "Link Speed": tx_rate_data,
+                        "Status ": pass_fail_list
 
-                }
-            test_results_df = pd.DataFrame(final_test_results)
-            report.set_table_dataframe(test_results_df)
-            report.build_table()
+                    }
+                else:
+
+                    final_test_results = {
+
+                        "Device Type": device_type_data,
+                        "Hostname": device_names,
+                        "SSID": ssid_data,
+                        "MAC": mac_data,
+                        "Channel": channel_data,
+                        "UC-MIN (ms)": uc_min_data,
+                        "UC-MAX (ms)": uc_max_data,
+                        "UC-AVG (ms)": uc_avg_data,
+                        "Total Successful URLs": total_urls,
+                        "Total Erros": total_err_data,
+                        "RSSI": signal_data,
+                        "Link Speed": tx_rate_data,
+
+                    }
+                test_results_df = pd.DataFrame(final_test_results)
+                report.set_table_dataframe(test_results_df)
+                report.build_table()
 
             if self.dowebgui:
 
