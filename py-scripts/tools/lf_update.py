@@ -869,6 +869,7 @@ def main():
     #     gui_version = lf.get_lanforge_gui_version()
     # logger.info(f"gui_version = {gui_version}")
 
+    logger.info(f"Updated Test bed: {lf.tb_name}  Test bed IP: {lf.mgr}")
     logger.info(f"Kernel Version Config: {args.kver}  Read from Lanforge: {lf.kernel_version}")
     logger.info(f"Server Version Config: {args.lfver} Read from Lanforge: {lf.server_version}")
     logger.info(f"Updated Test bed: {lf.tb_name}  Test bed IP: {lf.mgr}")
