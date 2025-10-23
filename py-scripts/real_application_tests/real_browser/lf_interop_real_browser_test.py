@@ -1582,17 +1582,11 @@ class RealBrowserTest(Realm):
         if not self.expected_passfail_value:
             res_list = []
             interop_tab_data = self.json_get('/adb/')["devices"]
+            user_to_serial_map = {}
+            for dev in interop_tab_data:
+                for item in dev.values():
+                    user_to_serial_map[item['user-name']] = item['name'].split('.')[2]
 
-            for i in range(len(device_type_data)):
-                if device_type_data[i] != 'Android':
-                    res_list.append(device_names[i])
-                else:
-                    for dev in interop_tab_data:
-                        for item in dev.values():
-                            if item['user-name'] in device_names:
-                                name_to_append = item['name'].split('.')[2]
-                                if name_to_append not in res_list:
-                                    res_list.append(name_to_append)
 
             if self.dowebgui:
                 os.chdir(self.original_dir)
@@ -1605,16 +1599,21 @@ class RealBrowserTest(Realm):
                 reader = csv.DictReader(file)
                 rows = list(reader)
 
-            for device in res_list:
+            for i, device in enumerate(device_names):
+                name_to_lookup = device
+                if device_type_data[i] == 'Android' and device in user_to_serial_map:
+                    name_to_lookup = user_to_serial_map[device]
+
                 found = False
                 for row in rows:
-                    if row['DeviceList'] == device and row['RealBrowser URLcount'].strip() != '':
+                    if row['DeviceList'] == name_to_lookup and row['RealBrowser URLcount'].strip() != '':
                         test_input_list.append(row['RealBrowser URLcount'])
                         found = True
                         break
                 if not found:
-                    logging.info(f"Pass Fail Value for Device {device} not found in CSV. Using default value 5")
-                    test_input_list.append(5)  # Default value
+                    logging.info(f"Pass Fail Value for Device {name_to_lookup} not found in CSV. Using default value 5")
+                    test_input_list.append(5)
+
 
             if self.dowebgui:
                 os.chdir(self.result_dir)
@@ -1629,7 +1628,8 @@ class RealBrowserTest(Realm):
                 pass_fail_list.append('FAIL')
 
         return pass_fail_list, test_input_list
-
+    
+    
     def create_report(self):
         try:
             if self.dowebgui:
