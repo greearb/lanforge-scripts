@@ -271,7 +271,7 @@ class RealBrowserTest(Realm):
                                             _exit_on_error=False)
         # Initialize utility
         self.utility = base.UtilityInteropWifi(host_ip=self.host)
-    
+        self.serial_list = []
 
     def get_test_results_data(self, test_results, group):
         groups_devices_map = self.config_obj.get_groups_devices(data=self.selected_groups, groupdevmap=True)
@@ -782,7 +782,7 @@ class RealBrowserTest(Realm):
                             station_name.append(i)
                             mac_address.append(alias[i].get("mac", "NA"))
                             ssid.append(alias[i].get("ssid", "NA"))
-                            user_name.append(resource_hw_data['resource'].get('user', 'NA'))
+                            user_name.append(resource_hw_data['resource'].get('user', '').strip())
                             self.webui_hostnames.append(resource_hw_data['resource'].get('user', 'NA'))
                             self.webui_ostypes.append("Android")
                             webui_android += 1
@@ -792,7 +792,7 @@ class RealBrowserTest(Realm):
                             laptop_os_types.append("windows")
                             mac_address.append(alias[i].get("mac", "NA"))
                             ssid.append(alias[i].get("ssid", "NA"))
-                            # user_name.append(resource_hw_data['resource'].get('user', 'NA'))
+                            user_name.append(resource_hw_data['resource'].get('user', '').strip())
                             self.webui_hostnames.append(resource_hw_data['resource'].get('hostname', 'NA'))
                             self.webui_ostypes.append("windows")
                             webui_windows += 1
@@ -802,7 +802,7 @@ class RealBrowserTest(Realm):
                             laptop_os_types.append("linux")
                             mac_address.append(alias[i].get("mac", "NA"))
                             ssid.append(alias[i].get("ssid", "NA"))
-                            # user_name.append(resource_hw_data['resource'].get('user', 'NA'))
+                            user_name.append(resource_hw_data['resource'].get('user', '').strip())
                             self.webui_hostnames.append(resource_hw_data['resource'].get('hostname', 'NA'))
                             self.webui_ostypes.append("Linux")
                             webui_linux += 1
@@ -811,7 +811,7 @@ class RealBrowserTest(Realm):
                             laptop_os_types.append("macos")
                             mac_address.append(alias[i].get("mac", "NA"))
                             ssid.append(alias[i].get("ssid", "NA"))
-                            # user_name.append(resource_hw_data['resource'].get('user', 'NA'))
+                            user_name.append(resource_hw_data['resource'].get('user', '').strip())
                             self.webui_hostnames.append(resource_hw_data['resource'].get('hostname', 'NA'))
                             self.webui_ostypes.append("Mac")
                             webui_mac += 1
@@ -831,6 +831,19 @@ class RealBrowserTest(Realm):
             elif os_type == "Android":
                 self.android = self.android + 1
 
+        interop_data = self.json_get('/adb')
+        interop_mobile_data = interop_data.get('devices', {})
+
+        for user in user_name:
+            if user == '':
+                self.serial_list.append('')
+            else:
+                for mobile_device in interop_mobile_data:
+                    for serial, device_data in mobile_device.items():
+                        if device_data.get('user-name') == user:
+                            serial_no = serial.split('.')[2]
+                            self.serial_list.append(serial_no)
+                            break
         return station_name, laptops, laptop_os_types, user_name, mac_address,
 
     def start_flask_server(self):
