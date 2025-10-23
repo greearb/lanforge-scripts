@@ -1405,7 +1405,6 @@ class RealBrowserTest(Realm):
         with open(file_path, 'w') as file:
             json.dump(data, file, indent=4)
 
-
     def change_port_to_ip(self):
         """
         Convert a given port name to its corresponding IP address if it's not already an IP.
@@ -1580,13 +1579,11 @@ class RealBrowserTest(Realm):
         test_input_list = []
 
         if not self.expected_passfail_value:
-            res_list = []
             interop_tab_data = self.json_get('/adb/')["devices"]
             user_to_serial_map = {}
             for dev in interop_tab_data:
                 for item in dev.values():
                     user_to_serial_map[item['user-name']] = item['name'].split('.')[2]
-
 
             if self.dowebgui:
                 os.chdir(self.original_dir)
@@ -1614,7 +1611,6 @@ class RealBrowserTest(Realm):
                     logging.info(f"Pass Fail Value for Device {name_to_lookup} not found in CSV. Using default value 5")
                     test_input_list.append(5)
 
-
             if self.dowebgui:
                 os.chdir(self.result_dir)
 
@@ -1628,7 +1624,6 @@ class RealBrowserTest(Realm):
                 pass_fail_list.append('FAIL')
 
         return pass_fail_list, test_input_list
-    
 
     def create_report(self):
         try:
@@ -1810,7 +1805,7 @@ class RealBrowserTest(Realm):
                         "Link Speed": tx_rate_data,
 
                     }
-                
+
                 for group in self.selected_groups:
                     group_specific_test_results = self.get_test_results_data(final_test_results, group)
                     if not group_specific_test_results['Hostname']:
@@ -1820,7 +1815,6 @@ class RealBrowserTest(Realm):
                     test_results_df = pd.DataFrame(group_specific_test_results)
                     report.set_table_dataframe(test_results_df)
                     report.build_table()
-                
 
             else:
                 if self.expected_passfail_value or self.device_csv_name:
