@@ -174,6 +174,21 @@ class create_lanforge_object:
         time.sleep(1)
         return self.lanforge_system_reboot
 
+    def get_lanforge_fedora_version(self):
+        # creating shh client object we use this object to connect to router
+        ssh = paramiko.SSHClient()
+        # automatically adds the missing host key
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=self.mgr, port=self.mgr_ssh_port, username=self.user, password=self.user_password,
+                    allow_agent=False, look_for_keys=False, banner_timeout=600)
+        stdin, stdout, stderr = ssh.exec_command('cat /etc/fedora-release')
+        self.lanforge_fedora_version = stdout.readlines()
+        self.lanforge_fedora_version = [line.replace(
+            '\n', '') for line in self.lanforge_fedora_version]
+        ssh.close()
+        time.sleep(1)
+        return self.lanforge_fedora_version
+
     def get_lanforge_kernel_version(self):
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -449,6 +464,8 @@ class create_lanforge_object:
         self.kernel_version = self.get_lanforge_kernel_version()
 
         self.server_version = self.get_lanforge_server_version()
+
+        self.fedora_version = self.get_lanforge_fedora_version()
 
     # LANforge user manager
     @contextmanager
@@ -870,6 +887,7 @@ def main():
     # logger.info(f"gui_version = {gui_version}")
 
     logger.info(f"Updated Test bed: {lf.tb_name}  Test bed IP: {lf.mgr}")
+    logger.info(f"Fedora Version: {lf.fedora_version}")
     logger.info(f"Kernel Version Config: {args.kver}  Read from Lanforge: {lf.kernel_version}")
     logger.info(f"Server Version Config: {args.lfver} Read from Lanforge: {lf.server_version}")
     logger.info(f"Updated Test bed: {lf.tb_name}  Test bed IP: {lf.mgr}")
