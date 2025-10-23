@@ -1101,6 +1101,7 @@ class RealBrowserTest(Realm):
             resource_ids_generated (str): Resource IDs joined as a comma-separated string
         """
         available_resources = []
+        self.devices.get_devices()
 
         # Web GUI Mode: Extract and sort resources from the given device list
         if self.dowebgui and self.group_name:
@@ -1404,27 +1405,6 @@ class RealBrowserTest(Realm):
         with open(file_path, 'w') as file:
             json.dump(data, file, indent=4)
 
-    def webui_stop(self):
-        "Sends a POST request to the web UI to update the test status to 'Completed'."
-        try:
-            url = f"http://{self.host}:5454/update_status_yt"
-            # url = "http://localhost:5454/update_status_yt"
-            headers = {
-                'Content-Type': 'application/json',
-            }
-            data = {
-                'status': 'Completed',
-                'name': self.test_name
-            }
-            response = requests.post(url, json=data, headers=headers)
-            if response.status_code == 200:
-                logging.info("Successfully updated STOP status to 'Completed'")
-                pass
-            else:
-                logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
-
-        except Exception as e:
-            logging.error(f"An error occurred while updating status: {e}")
 
     def change_port_to_ip(self):
         """
@@ -2165,8 +2145,6 @@ def main():
     finally:
         if '--help' not in sys.argv and '-h' not in sys.argv:
             obj.create_report()
-            if obj.dowebgui:
-                obj.webui_stop()
             obj.stop()
 
             if not args.no_postcleanup:
