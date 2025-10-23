@@ -271,6 +271,22 @@ class RealBrowserTest(Realm):
                                             _exit_on_error=False)
         # Initialize utility
         self.utility = base.UtilityInteropWifi(host_ip=self.host)
+    
+
+    def get_test_results_data(self, test_results, group):
+        groups_devices_map = self.config_obj.get_groups_devices(data=self.selected_groups, groupdevmap=True)
+        group_hostnames = groups_devices_map.get(group, [])
+        group_test_results = {}
+
+        for key in test_results:
+            group_test_results[key] = []
+
+        for idx, hostname in enumerate(test_results["Hostname"]):
+            if hostname in group_hostnames or hostname in self.serial_list:
+                for key in test_results:
+                    group_test_results[key].append(test_results[key][idx])
+
+        return group_test_results
 
     def build(self):
         """
