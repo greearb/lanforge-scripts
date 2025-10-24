@@ -118,7 +118,7 @@ class Youtube(Realm):
                  do_webUI=False,
                  ui_report_dir=None,
                  debug=False,
-                 stats_api_response={},
+                 stats_api_response=None,
                  resolution=None,
                  ap_name=None,
                  ssid=None,
@@ -369,7 +369,7 @@ class Youtube(Realm):
 
             # Iterate over the port interfaces to find a matching port
             for interface in response_port['interfaces']:
-                for port, port_data in interface.items():
+                for port, _port_data in interface.items():
                     # Extract the first two segments of the port identifier to match with expected_eid
                     result = '.'.join(port.split('.')[:2])
 
@@ -422,9 +422,46 @@ class Youtube(Realm):
             elif self.real_sta_os_types[i] == 'macos':
                 cmd = "sudo bash ctyt.bash --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-    
 
     def get_test_results_data(self, test_results, group):
+        """
+        Filters the overall test results to include only the data belonging to a specific group.
+
+        This function maps hostnames to their respective groups using the configuration object
+        (`self.configobj.get_groups_devices`). It then filters the input `test_results` dictionary
+        so that only entries corresponding to devices in the specified `group` are retained.
+
+        Args:
+            test_results (dict): A dictionary containing lists of test result values for all devices.
+                Example:
+                    {
+                        "Hostname": ["Device1", "Device2"],
+                        "RSSI": [-45, -50],
+                        "Link Rate": [300, 150],
+                        ...
+                    }
+            group (str): The name of the group whose test result data needs to be extracted.
+
+        Returns:
+            dict: A dictionary in the same structure as `test_results`, but filtered to include
+            only entries for hostnames that belong to the given `group`.
+
+        Example:
+            >>> test_results = {
+            ...     "Hostname": ["D1", "D2", "D3"],
+            ...     "RSSI": [-40, -50, -55]
+            ... }
+            >>> self.get_test_results_data(test_results, "GroupA")
+            {
+                "Hostname": ["D1", "D3"],
+                "RSSI": [-40, -55]
+            }
+
+        Notes:
+            - Relies on `self.configobj.get_groups_devices()` to retrieve the mapping of
+            groups to device hostnames.
+            - Returns an empty dictionary if no hostnames from the group are found.
+        """
         groups_devices_map = self.configobj.get_groups_devices(data=self.selected_groups, groupdevmap=True)
         group_hostnames = groups_devices_map.get(group, [])
         group_test_results = {}
@@ -693,7 +730,6 @@ class Youtube(Realm):
         flask_thread.daemon = True
         flask_thread.start()
 
-
     def move_files(self, source_file, dest_dir):
         # Ensure the source file exists
         if not os.path.isfile(source_file):
@@ -921,7 +957,7 @@ class Youtube(Realm):
 
 
         }
-
+        # If both groups and profiles are selected, generate separate result tables per group.
         if self.selected_groups and self.selected_profiles:
             for group in self.selected_groups:
                 group_specific_test_results = self.get_test_results_data(test_results, group)
@@ -932,7 +968,7 @@ class Youtube(Realm):
                 test_results_df = pd.DataFrame(group_specific_test_results)
                 self.report.set_table_dataframe(test_results_df)
                 self.report.build_table()
-
+        # If no groups or profiles are selected, build a single combined table for all results.
         else:
             test_results_df = pd.DataFrame(test_results)
             self.report.set_table_dataframe(test_results_df)
@@ -1050,7 +1086,8 @@ class Youtube(Realm):
             try:
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
-            except BaseException:
+            except Exception as e:
+                logging.warning(f'Could not resolve IP for port {upstream_port}: {e}. Proceeding with the given upstream_port {upstream_port}.')
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
             logging.info(f"Upstream port IP {upstream_port}")
         else:
@@ -1257,8 +1294,6 @@ NOTES:
         parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
         parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
         parser.add_argument("--wait_time", type=int, help="Specify the time for configuration", default=60)
-
-
 
         args = parser.parse_args()
 
@@ -1532,7 +1567,7 @@ NOTES:
                 for i in range(len(youtube.device_names)):
                     end_time_webgui.append(initial_data['result'].get(youtube.device_names[i], {}).get('stop', False))
             else:
-                for i in range(len(youtube.device_names)):
+                for _i in range(len(youtube.device_names)):
                     end_time_webgui.append("")
 
             end_time = datetime.now() + timedelta(minutes=duration)
