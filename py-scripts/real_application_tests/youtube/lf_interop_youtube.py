@@ -118,7 +118,7 @@ class Youtube(Realm):
                  do_webUI=False,
                  ui_report_dir=None,
                  debug=False,
-                 stats_api_response={},
+                 stats_api_response=None,
                  resolution=None,
                  ap_name=None,
                  ssid=None,
@@ -129,7 +129,8 @@ class Youtube(Realm):
                  upstream_port=None,
                  config=None,
                  selected_groups=None,
-                 selected_profiles=None
+                 selected_profiles=None,
+                 config_obj=None
 
 
                  ):
@@ -197,6 +198,7 @@ class Youtube(Realm):
         self.config = config
         self.selected_groups = selected_groups
         self.selected_profiles = selected_profiles
+        self.config_obj = config_obj
 
     def stop(self):
         self.stop_signal = True
@@ -367,7 +369,7 @@ class Youtube(Realm):
 
             # Iterate over the port interfaces to find a matching port
             for interface in response_port['interfaces']:
-                for port, port_data in interface.items():
+                for port, _port_data in interface.items():
                     # Extract the first two segments of the port identifier to match with expected_eid
                     result = '.'.join(port.split('.')[:2])
 
@@ -421,6 +423,21 @@ class Youtube(Realm):
                 cmd = "sudo bash ctyt.bash --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
+    def get_test_results_data(self, test_results, group):
+        groups_devices_map = self.configobj.get_groups_devices(data=self.selected_groups, groupdevmap=True)
+        group_hostnames = groups_devices_map.get(group, [])
+        group_test_results = {}
+
+        for key in test_results:
+            group_test_results[key] = []
+
+        for idx, hostname in enumerate(test_results["Hostname"]):
+            if hostname in group_hostnames:
+                for key in test_results:
+                    group_test_results[key].append(test_results[key][idx])
+
+        return group_test_results
+
     def select_real_devices(self, real_devices, real_sta_list=None, base_interop_obj=None):
         final_device_list = []
         """
@@ -446,6 +463,7 @@ class Youtube(Realm):
 
 
         """
+        real_devices.get_devices()
         # Query and retrieve all user-defined real stations if `real_sta_list` is not provided
         if real_sta_list is None:
             self.real_sta_list, _, _ = real_devices.query_user()
@@ -673,26 +691,6 @@ class Youtube(Realm):
         flask_thread = Thread(target=run_flask)
         flask_thread.daemon = True
         flask_thread.start()
-
-    def stop_test_yt(self,):
-        try:
-            url = f"http://{self.host}:5454/update_status_yt"
-            headers = {
-                'Content-Type': 'application/json',
-            }
-            data = {
-                'status': 'Completed',
-                'name': self.test_name,
-            }
-            response = requests.post(url, json=data, headers=headers)
-            if response.status_code == 200:
-                logging.info("Successfully updated STOP status to 'Completed'")
-                pass
-            else:
-                logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
-
-        except Exception as e:
-            logging.error(f"An error occurred while updating status: {e}")
 
     def move_files(self, source_file, dest_dir):
         # Ensure the source file exists
@@ -922,9 +920,21 @@ class Youtube(Realm):
 
         }
 
-        test_results_df = pd.DataFrame(test_results)
-        self.report.set_table_dataframe(test_results_df)
-        self.report.build_table()
+        if self.selected_groups and self.selected_profiles:
+            for group in self.selected_groups:
+                group_specific_test_results = self.get_test_results_data(test_results, group)
+                if not group_specific_test_results['Hostname']:
+                    continue
+                self.report.set_table_title(f"{group}")
+                self.report.build_table_title()
+                test_results_df = pd.DataFrame(group_specific_test_results)
+                self.report.set_table_dataframe(test_results_df)
+                self.report.build_table()
+
+        else:
+            test_results_df = pd.DataFrame(test_results)
+            self.report.set_table_dataframe(test_results_df)
+            self.report.build_table()
 
         for file_path in self.devices_list:
             self.move_files(file_path, self.report_path_date_time)
@@ -1038,7 +1048,8 @@ class Youtube(Realm):
             try:
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
-            except BaseException:
+            except Exception as e:
+                logging.warning(f'Could not resolve IP for port {upstream_port}: {e}. Proceeding with the given upstream_port {upstream_port}.')
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
             logging.info(f"Upstream port IP {upstream_port}")
         else:
@@ -1244,6 +1255,7 @@ NOTES:
         parser.add_argument("--expected_passfail_value", help="Specify the expected urlcount value for pass/fail")
         parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
         parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
+        parser.add_argument("--wait_time", type=int, help="Specify the time for configuration", default=60)
 
         args = parser.parse_args()
 
@@ -1359,7 +1371,8 @@ NOTES:
                 new_filename = args.file_name.removesuffix(".csv")
             else:
                 new_filename = args.file_name
-            config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.mgr, file_name=new_filename)
+            config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.mgr, file_name=new_filename, wait_time=args.wait_time)
+            youtube.configobj = config_obj
             if not args.expected_passfail_value and args.device_csv_name is None:
                 config_obj.device_csv_file(csv_name="device.csv")
             if args.group_name is not None and args.file_name is not None and args.profile_name is not None:
@@ -1422,6 +1435,7 @@ NOTES:
                     all_devices = config_obj.get_all_devices()
                     if args.group_name is None and args.file_name is None and args.profile_name is None:
                         dev_list = args.resources.split(',')
+                        dev_list = ['.'.join(device.split('.')[:2]) for device in dev_list]
                         if args.config:
                             asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
                 else:
@@ -1515,7 +1529,7 @@ NOTES:
                 for i in range(len(youtube.device_names)):
                     end_time_webgui.append(initial_data['result'].get(youtube.device_names[i], {}).get('stop', False))
             else:
-                for i in range(len(youtube.device_names)):
+                for _i in range(len(youtube.device_names)):
                     end_time_webgui.append("")
 
             end_time = datetime.now() + timedelta(minutes=duration)
@@ -1544,9 +1558,6 @@ NOTES:
     finally:
         if not ('--help' in sys.argv or '-h' in sys.argv):
             youtube.stop()
-            # Stopping the Youtube test
-            if do_webUI:
-                youtube.stop_test_yt()
             logging.info("Waiting for Cleanup of Browsers in Devices")
             time.sleep(10)
 
