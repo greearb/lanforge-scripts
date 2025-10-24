@@ -118,7 +118,7 @@ class Youtube(Realm):
                  do_webUI=False,
                  ui_report_dir=None,
                  debug=False,
-                 stats_api_response={},
+                 stats_api_response=None,
                  resolution=None,
                  ap_name=None,
                  ssid=None,
@@ -369,7 +369,7 @@ class Youtube(Realm):
 
             # Iterate over the port interfaces to find a matching port
             for interface in response_port['interfaces']:
-                for port, port_data in interface.items():
+                for port, _port_data in interface.items():
                     # Extract the first two segments of the port identifier to match with expected_eid
                     result = '.'.join(port.split('.')[:2])
 
@@ -422,7 +422,6 @@ class Youtube(Realm):
             elif self.real_sta_os_types[i] == 'macos':
                 cmd = "sudo bash ctyt.bash --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-    
 
     def get_test_results_data(self, test_results, group):
         groups_devices_map = self.configobj.get_groups_devices(data=self.selected_groups, groupdevmap=True)
@@ -692,7 +691,6 @@ class Youtube(Realm):
         flask_thread = Thread(target=run_flask)
         flask_thread.daemon = True
         flask_thread.start()
-
 
     def move_files(self, source_file, dest_dir):
         # Ensure the source file exists
@@ -1050,7 +1048,8 @@ class Youtube(Realm):
             try:
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
-            except BaseException:
+            except Exception as e:
+                logging.warning(f'Could not resolve IP for port {upstream_port}: {e}. Proceeding with the given upstream_port {upstream_port}.')
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
             logging.info(f"Upstream port IP {upstream_port}")
         else:
@@ -1257,8 +1256,6 @@ NOTES:
         parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
         parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
         parser.add_argument("--wait_time", type=int, help="Specify the time for configuration", default=60)
-
-
 
         args = parser.parse_args()
 
@@ -1532,7 +1529,7 @@ NOTES:
                 for i in range(len(youtube.device_names)):
                     end_time_webgui.append(initial_data['result'].get(youtube.device_names[i], {}).get('stop', False))
             else:
-                for i in range(len(youtube.device_names)):
+                for _i in range(len(youtube.device_names)):
                     end_time_webgui.append("")
 
             end_time = datetime.now() + timedelta(minutes=duration)
