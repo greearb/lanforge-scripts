@@ -693,25 +693,6 @@ class Youtube(Realm):
         flask_thread.daemon = True
         flask_thread.start()
 
-    def stop_test_yt(self,):
-        try:
-            url = f"http://{self.host}:5454/update_status_yt"
-            headers = {
-                'Content-Type': 'application/json',
-            }
-            data = {
-                'status': 'Completed',
-                'name': self.test_name,
-            }
-            response = requests.post(url, json=data, headers=headers)
-            if response.status_code == 200:
-                logging.info("Successfully updated STOP status to 'Completed'")
-                pass
-            else:
-                logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
-
-        except Exception as e:
-            logging.error(f"An error occurred while updating status: {e}")
 
     def move_files(self, source_file, dest_dir):
         # Ensure the source file exists
@@ -1580,9 +1561,6 @@ NOTES:
     finally:
         if not ('--help' in sys.argv or '-h' in sys.argv):
             youtube.stop()
-            # Stopping the Youtube test
-            if do_webUI:
-                youtube.stop_test_yt()
             logging.info("Waiting for Cleanup of Browsers in Devices")
             time.sleep(10)
 
