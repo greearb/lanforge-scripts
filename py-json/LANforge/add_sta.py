@@ -39,7 +39,7 @@ add_sta_flags = {
     "rrm-ignore-beacon-req": 0x1000000000000,   # Ignore (reject) RRM Beacon measurement request.
     "use-owe"              : 0x2000000000000,   # Enable OWE
     "be320-enable"         : 0x4000000000000,   # Enable 320Mhz mode.
-    "disable-mlo"          : 0x8000000000000,   # Disable OFDMA
+    "disable-mlo"          : 0x8000000000000,   # Disable MLO Multi-Link Operation, connect to multiple frequency bands
     "ignore-edca"          : 0x20000000000000,  # Request station to ignore EDCA settings
 }
 add_sta_modes = {
