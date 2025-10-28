@@ -299,8 +299,17 @@ class FileIOTest(Realm):
             cx_list = cx_list['endpoint']
             for i in cx_list:
                 for item, value in i.items():
-                    cx_map[self.name_to_eid(item)[2]] = {"read-bps": value['read-bps'],
-                                                         "write-bps": value['write-bps']}
+                    if self.mode == "write":
+                        cx_map[self.name_to_eid(item)[2]] = {"read-bps": 0,
+                                                             "write-bps": value['write-bps']}
+
+                    elif self.mode == "read":
+                        cx_map[self.name_to_eid(item)[2]] = {"read-bps": value['read-bps'],
+                                                             "write-bps": 0}
+
+                    elif self.mode == "both":
+                        cx_map[self.name_to_eid(item)[2]] = {"read-bps": value['read-bps'],
+                                                             "write-bps": value['write-bps']}
         return cx_map
 
     def build(self):
@@ -866,11 +875,12 @@ otherwise it will fail.
             read_bps += value['read-bps']
 
         expected_passes += 1
-        if ip_test.compare_vals(new_rx_values):
-            passes += 1
-        else:
-            ip_test._fail("FAIL: Not all stations increased traffic")  # , print_fail)
-            # break
+        if ip_test.mode == 'read':
+            if ip_test.compare_vals(new_rx_values):
+                passes += 1
+            else:
+                ip_test._fail("FAIL: Not all stations increased traffic")  # , print_fail)
+                # break
         # old_rx_values = new_rx_values
         cur_time = datetime.datetime.now()
 
