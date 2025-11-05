@@ -11,7 +11,7 @@ PURPOSE:    This script demonstrates automating the LANforge JSON API
             - LANforge version
             - OS version
             - System kernel version
-            - Number of stations (active and total)
+            - Number of stations (total, active, associated, with IP)
             - Number of L3 endpoints (active and total)
 
 EXAMPLE:    # Perform health check for LANforge testbed w/ manager '192.168.30.12'
@@ -24,7 +24,7 @@ EXAMPLE:    # Perform health check for LANforge testbed w/ manager '192.168.30.1
                 --verbose
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2024 Candela Technologies Inc.
+            Copyright 2025 Candela Technologies Inc.
 """  # noqa: D212,D415
 import argparse
 from http import HTTPStatus
@@ -59,6 +59,8 @@ class ResourceInfo:
 
         self.stations = []
         self.active_stations = []
+        self.associated_stations = []
+        self.stations_with_ip = []
         self.endps = []
         self.active_endps = []
 
@@ -70,12 +72,18 @@ class PortInfo:
                  port_type: str = "",
                  alias: str = "",
                  phantom: bool = True,
-                 down: bool = True):
+                 down: bool = True,
+                 bssid: str = "",
+                 ipv4: str = "",
+                 ipv6: str = ""):
         self.port_id = port_id
         self.port_type = port_type
         self.alias = alias
         self.phantom = phantom
         self.down = down
+        self.bssid = bssid
+        self.ipv4 = ipv4
+        self.ipv6 = ipv6
 
         # Derive resource ID for this port from port ID
         rsrc_id = ".".join(port_id.split(".")[:2])
@@ -170,7 +178,7 @@ def health_check_info(mgr: str = "localhost", mgr_port: int = 8080, **kwargs):
                 all_data[field] = []
 
             # We don't care about all station data for display purposes, just count
-            if field in ['stations', 'active_stations', 'endps', 'active_endps']:
+            if field in ['stations', 'active_stations', 'associated_stations', 'stations_with_ip', 'endps', 'active_endps']:
                 data = len(data)
 
             all_data[field].append(data)
@@ -345,6 +353,9 @@ def query_port_data(base_url: str) -> tuple:
         "alias",
         "down",
         "phantom",
+        "ap",
+        "ip",
+        "ipv6 address",
     ]
 
     ret, (status_code, queried_port_data) = query_lanforge(base_url=base_url,
@@ -404,8 +415,11 @@ def query_port_data(base_url: str) -> tuple:
             port_obj = PortInfo(port_id=port_id,
                                 alias=port_data['alias'],
                                 port_type=port_data['port type'],
+                                phantom=port_data['phantom'],
                                 down=port_data['down'],
-                                phantom=port_data['phantom'])
+                                bssid=port_data['ap'],
+                                ipv4=port_data['ip'],
+                                ipv6=port_data['ipv6 address'])
 
         port_info_objs.append(port_obj)
 
@@ -511,13 +525,28 @@ def filter_stations_to_resource(resource_data_list: list, port_data_list: list) 
 
     for rsrc in resource_data_list:
         this_rsrc_stations = [sta for sta in sta_ports_list if sta.resource_id == rsrc.resource_id]
-        this_rsrc_active_stations = [
-            sta for sta in this_rsrc_stations
-            if sta.phantom is False and sta.down is False
-        ]
+
+        this_rsrc_active_stations = []
+        this_rsrc_associated_stations = []
+        this_rsrc_stations_with_ip = []
+
+        for sta in this_rsrc_stations:
+            if sta.phantom is False and sta.down is False:
+                this_rsrc_active_stations.append(sta)
+
+                if sta.bssid != "":
+                    this_rsrc_associated_stations.append(sta)
+
+                # Only count statiosn that display non-localhost IPv6 addresses.
+                # LANforge will report localhost IPv6 address but not localhost IPv4 address
+                if (sta.ipv4 != "" and sta.ipv4 != "0.0.0.0") \
+                        or (sta.ipv6 != "" and "fe80" not in sta.ipv6):
+                    this_rsrc_stations_with_ip.append(sta)
 
         rsrc.stations = this_rsrc_stations
         rsrc.active_stations = this_rsrc_active_stations
+        rsrc.associated_stations = this_rsrc_associated_stations
+        rsrc.stations_with_ip = this_rsrc_stations_with_ip
 
 
 def filter_endps_to_resource(resource_data_list: list, endp_data_list: list) -> None:
@@ -547,19 +576,28 @@ def parse_args():
 NAME:       health_check_info.py
 
 PURPOSE:    This script demonstrates automating the LANforge JSON API
-            to query basic system information. This includes the following:
+            to query basic system information.
 
+            This includes the following (per resource in a testbed):
+            - System reachability (through JSON API)
             - Hostname
             - LANforge version
             - OS version
-            - System kernel
-            - System reachability (through JSON API)
+            - System kernel version
+            - Number of stations (total, active, associated, with IP)
+            - Number of L3 endpoints (active and total)
 
 EXAMPLE:    # Perform health check for LANforge testbed w/ manager '192.168.30.12'
             ./health_check_info.py --mgr 192.168.30.12
 
+            # Perform health check for LANforge testbed w/ manager '192.168.30.12'
+            # Output JSON API endpoint queries and returned JSON data
+            ./health_check_info.py \
+                --mgr 192.168.30.12 \
+                --verbose
+
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2024 Candela Technologies Inc.
+            Copyright 2025 Candela Technologies Inc.
 """)
 
     parser.add_argument("--mgr",
