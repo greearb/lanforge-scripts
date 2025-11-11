@@ -13,7 +13,7 @@
     EXAMPLE-2:
     Command Line Interface to run Zoom on multiple devices:
     python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
-      --resources 1.400,1.375 --zoom_host 1.95 --server_ip 192.168.214.123
+    --resources 1.400,1.375 --zoom_host 1.95 --server_ip 192.168.214.123
 
     Example-3:
     Command Line Interface to run Zoom on multiple devices with Device Configuration
@@ -48,9 +48,7 @@ import pandas as pd
 import shutil
 import logging
 import json
-import secrets
 import asyncio
-from flask_cors import CORS
 import redis
 import sys
 import traceback
@@ -99,9 +97,6 @@ class ZoomAutomation(Realm):
         self.app = Flask(__name__)
         self.redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
         self.redis_client.set('login_completed', 0)
-        self.secret_key = secrets.token_hex(32)
-        self.app.config['SECRET_KEY'] = self.secret_key
-        CORS(self.app)
         self.devices = devices
         self.windows = 0
         self.linux = 0
