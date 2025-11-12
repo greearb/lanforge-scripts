@@ -177,7 +177,6 @@ class ZoomAutomation(Realm):
             elif request.method == 'POST':
                 data = request.json
                 self.meet_link = data.get('meet_link', '')
-                # "checking self.meet_link",self.meet_link)
                 return jsonify({"message": "Meeting Link Updated sucessfully"})
 
         @self.app.route('/login_completed', methods=['GET', 'POST'])
@@ -1694,7 +1693,6 @@ def main():
                             "configuration_status": "configured",
                             "no_of_devices": f' Total({len(zoom_automation.real_sta_os_type)}) : W({zoom_automation.windows}),L({zoom_automation.linux}),M({zoom_automation.mac})',
                             "device_list": zoom_automation.hostname_os_combination,
-                            # "zoom_host":zoom_automation.zoom_host
 
                         }
                         zoom_automation.updating_webui_runningjson(obj)
@@ -1713,30 +1711,6 @@ def main():
         logger.error("An exception occurred:\n%s", tb_str)
     finally:
         if not ('--help' in sys.argv or '-h' in sys.argv):
-            if args.do_webUI:
-                try:
-                    url = f"http://{args.lanforge_ip}:5454/update_status_yt"
-                    headers = {
-                        'Content-Type': 'application/json',
-                    }
-
-                    data = {
-                        'status': 'Completed',
-                        'name': args.testname
-                    }
-
-                    response = requests.post(url, json=data, headers=headers)
-
-                    if response.status_code == 200:
-                        logging.info("Successfully updated STOP status to 'Completed'")
-                        pass
-                    else:
-                        logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
-
-                except Exception as e:
-                    # Print an error message if an exception occurs during the request
-                    logging.error(f"An error occurred while updating status: {e}")
-
             zoom_automation.redis_client.set('login_completed', 0)
             zoom_automation.stop_signal = True
             logging.info("Waiting for Browser Cleanup in Laptops")
