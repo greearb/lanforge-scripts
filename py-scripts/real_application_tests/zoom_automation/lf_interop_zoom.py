@@ -1048,21 +1048,53 @@ class ZoomAutomation(Realm):
             report.set_graph_image(graph_image)
             report.move_graph_image()
             report.build_graph()
-
-            report.set_table_title("Test Audio Results Table:")
-            report.build_table_title()
-            audio_test_details = pd.DataFrame({
+            audio_test_results_dict = {
                 'Device Name': [client for client in accepted_clients],
-                'Avg Latency Sent (ms)': [round(sum(data["audio_latency_s"]) / len(data["audio_latency_s"]), 2) if len(data["audio_latency_s"]) != 0 else 0 for data in final_dataset],
-                'Avg Latency Recv (ms)': [round(sum(data["audio_latency_r"]) / len(data["audio_latency_r"]), 2) if len(data["audio_latency_r"]) != 0 else 0 for data in final_dataset],
-                'Avg Jitter Sent (ms)': [round(sum(data["audio_jitter_s"]) / len(data["audio_jitter_s"]), 2) if len(data["audio_jitter_s"]) != 0 else 0 for data in final_dataset],
-                'Avg Jitter Recv (ms)': [round(sum(data["audio_jitter_r"]) / len(data["audio_jitter_r"]), 2) if len(data["audio_jitter_r"]) != 0 else 0 for data in final_dataset],
-                'Avg Pkt Loss Sent': [round(sum(data["audio_pktloss_s"]) / len(data["audio_pktloss_s"]), 2) if len(data["audio_pktloss_s"]) != 0 else 0 for data in final_dataset],
-                'Avg Pkt Loss Recv': [round(sum(data["audio_pktloss_r"]) / len(data["audio_pktloss_r"]), 2) if len(data["audio_pktloss_r"]) != 0 else 0 for data in final_dataset],
-                'CSV link': ['<a href="{}.csv" target="_blank">csv data</a>'.format(client) for client in accepted_clients]
+                'Avg Latency Sent (ms)': [
+                    round(sum(data["audio_latency_s"]) / len(data["audio_latency_s"]), 2) if len(data["audio_latency_s"]) != 0 else 0
+                    for data in final_dataset
+                ],
+                'Avg Latency Recv (ms)': [
+                    round(sum(data["audio_latency_r"]) / len(data["audio_latency_r"]), 2) if len(data["audio_latency_r"]) != 0 else 0
+                    for data in final_dataset
+                ],
+                'Avg Jitter Sent (ms)': [
+                    round(sum(data["audio_jitter_s"]) / len(data["audio_jitter_s"]), 2) if len(data["audio_jitter_s"]) != 0 else 0
+                    for data in final_dataset
+                ],
+                'Avg Jitter Recv (ms)': [
+                    round(sum(data["audio_jitter_r"]) / len(data["audio_jitter_r"]), 2) if len(data["audio_jitter_r"]) != 0 else 0
+                    for data in final_dataset
+                ],
+                'Avg Pkt Loss Sent': [
+                    round(sum(data["audio_pktloss_s"]) / len(data["audio_pktloss_s"]), 2) if len(data["audio_pktloss_s"]) != 0 else 0
+                    for data in final_dataset
+                ],
+                'Avg Pkt Loss Recv': [
+                    round(sum(data["audio_pktloss_r"]) / len(data["audio_pktloss_r"]), 2) if len(data["audio_pktloss_r"]) != 0 else 0
+                    for data in final_dataset
+                ],
+                'CSV link': [
+                    '<a href="{}.csv" target="_blank">csv data</a>'.format(client)
+                    for client in accepted_clients
+                ]
+            }
 
-            })
-            report.set_table_dataframe(audio_test_details)
+            if self.selected_groups and self.selected_profiles:
+                for group in self.selected_groups:
+                    group_specific_audio_test_results = self.get_test_results_data(audio_test_results_dict, group)
+                    if not group_specific_audio_test_results['Device Name']:
+                        continue
+                    report.set_table_title(f"{group} Test Audio Results:")
+                    report.build_table_title()
+                    test_results_df = pd.DataFrame(group_specific_audio_test_results)
+                    report.set_table_dataframe(test_results_df)
+            
+            else:
+                report.set_table_title("Test Audio Results:")
+                report.build_table_title()
+                audio_test_details = pd.DataFrame(audio_test_results_dict)
+                report.set_table_dataframe(audio_test_details)
             report.dataframe_html = report.dataframe.to_html(index=False,
                                                              justify='center', render_links=True, escape=False)  # have the index be able to be passed in.
             report.html += report.dataframe_html
@@ -1147,20 +1179,53 @@ class ZoomAutomation(Realm):
             report.set_graph_image(graph_image)
             report.move_graph_image()
             report.build_graph()
-
-            report.set_table_title("Test Video Results Table:")
-            report.build_table_title()
-            video_test_details = pd.DataFrame({
+            video_test_results_dict = {
                 'Device Name': [client for client in accepted_clients],
-                'Avg Latency Sent (ms)': [round(sum(data["video_latency_s"]) / len(data["video_latency_s"]), 2) if len(data["video_latency_s"]) != 0 else 0 for data in final_dataset],
-                'Avg Latency Recv (ms)': [round(sum(data["video_latency_r"]) / len(data["video_latency_r"]), 2) if len(data["video_latency_r"]) != 0 else 0 for data in final_dataset],
-                'Avg Jitter Sent (ms)': [round(sum(data["video_jitter_s"]) / len(data["video_jitter_s"]), 2) if len(data["video_jitter_s"]) != 0 else 0 for data in final_dataset],
-                'Avg Jitter Recv (ms)': [round(sum(data["video_jitter_r"]) / len(data["video_jitter_r"]), 2) if len(data["video_jitter_r"]) != 0 else 0 for data in final_dataset],
-                'Avg Pkt Loss Sent': [round(sum(data["video_pktloss_s"]) / len(data["video_pktloss_s"]), 2) if len(data["video_pktloss_s"]) != 0 else 0 for data in final_dataset],
-                'Avg Pkt Loss Recv': [round(sum(data["video_pktloss_r"]) / len(data["video_pktloss_r"]), 2) if len(data["video_pktloss_r"]) != 0 else 0 for data in final_dataset],
-                'CSV link': ['<a href="{}.csv" target="_blank">csv data</a>'.format(client) for client in accepted_clients]
-            })
-            report.set_table_dataframe(video_test_details)
+                'Avg Latency Sent (ms)': [
+                    round(sum(data["video_latency_s"]) / len(data["video_latency_s"]), 2) if len(data["video_latency_s"]) != 0 else 0
+                    for data in final_dataset
+                ],
+                'Avg Latency Recv (ms)': [
+                    round(sum(data["video_latency_r"]) / len(data["video_latency_r"]), 2) if len(data["video_latency_r"]) != 0 else 0
+                    for data in final_dataset
+                ],
+                'Avg Jitter Sent (ms)': [
+                    round(sum(data["video_jitter_s"]) / len(data["video_jitter_s"]), 2) if len(data["video_jitter_s"]) != 0 else 0
+                    for data in final_dataset
+                ],
+                'Avg Jitter Recv (ms)': [
+                    round(sum(data["video_jitter_r"]) / len(data["video_jitter_r"]), 2) if len(data["video_jitter_r"]) != 0 else 0
+                    for data in final_dataset
+                ],
+                'Avg Pkt Loss Sent': [
+                    round(sum(data["video_pktloss_s"]) / len(data["video_pktloss_s"]), 2) if len(data["video_pktloss_s"]) != 0 else 0
+                    for data in final_dataset
+                ],
+                'Avg Pkt Loss Recv': [
+                    round(sum(data["video_pktloss_r"]) / len(data["video_pktloss_r"]), 2) if len(data["video_pktloss_r"]) != 0 else 0
+                    for data in final_dataset
+                ],
+                'CSV link': [
+                    '<a href="{}.csv" target="_blank">csv data</a>'.format(client)
+                    for client in accepted_clients
+                ]
+            }
+
+            if self.selected_groups and self.selected_profiles:
+                for group in self.selected_groups:
+                    group_specific_video_test_results = self.get_test_results_data(video_test_results_dict, group)
+                    if not group_specific_video_test_results['Device Name']:
+                        continue
+                    report.set_table_title(f"{group} Test Video Results:")
+                    report.build_table_title()
+                    test_results_df = pd.DataFrame(group_specific_video_test_results)
+                    report.set_table_dataframe(test_results_df)
+            
+            else:
+                report.set_table_title("Test Video Results:")
+                report.build_table_title()
+                video_test_details = pd.DataFrame(video_test_results_dict)
+                report.set_table_dataframe(video_test_details)
 
             report.dataframe_html = report.dataframe.to_html(index=False,
                                                              justify='center', render_links=True, escape=False)  # have the index be able to be passed in.
@@ -1209,6 +1274,60 @@ class ZoomAutomation(Realm):
             logging.info(f"Upstream port IP {upstream_port}")
 
         return upstream_port
+    
+    
+    def get_test_results_data(self, test_results, group):
+        """
+        Filters the overall test results to include only the data belonging to a specific group.
+
+        This function maps hostnames to their respective groups using the configuration object
+        (`self.configobj.get_groups_devices`). It then filters the input `test_results` dictionary
+        so that only entries corresponding to devices in the specified `group` are retained.
+
+        Args:
+            test_results (dict): A dictionary containing lists of test result values for all devices.
+                Example:
+                    {
+                        "Hostname": ["Device1", "Device2"],
+                        "RSSI": [-45, -50],
+                        "Link Rate": [300, 150],
+                        ...
+                    }
+            group (str): The name of the group whose test result data needs to be extracted.
+
+        Returns:
+            dict: A dictionary in the same structure as `test_results`, but filtered to include
+            only entries for hostnames that belong to the given `group`.
+
+        Example:
+            >>> test_results = {
+            ...     "Hostname": ["D1", "D2", "D3"],
+            ...     "RSSI": [-40, -50, -55]
+            ... }
+            >>> self.get_test_results_data(test_results, "GroupA")
+            {
+                "Hostname": ["D1", "D3"],
+                "RSSI": [-40, -55]
+            }
+
+        Notes:
+            - Relies on `self.configobj.get_groups_devices()` to retrieve the mapping of
+            groups to device hostnames.
+            - Returns an empty dictionary if no hostnames from the group are found.
+        """
+        groups_devices_map = self.config_obj.get_groups_devices(data=self.selected_groups, groupdevmap=True)
+        group_hostnames = groups_devices_map.get(group, [])
+        group_test_results = {}
+
+        for key in test_results:
+            group_test_results[key] = []
+
+        for idx, hostname in enumerate(test_results["Device Name"]):
+            if hostname in group_hostnames:
+                for key in test_results:
+                    group_test_results[key].append(test_results[key][idx])
+
+        return group_test_results
 
     def filter_ios_devices(self, device_list):
         """
@@ -1432,7 +1551,8 @@ def main():
                 new_filename = args.file_name.removesuffix(".csv")
             else:
                 new_filename = args.file_name
-            config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.lanforge_ip, file_name=new_filename)
+            config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.lanforge_ip, file_name=new_filename, wait_time=args.wait_time)
+            zoom_automation.config_obj = config_obj
 
             if not args.expected_passfail_value and args.device_csv_name is None:
                 config_obj.device_csv_file(csv_name="device.csv")
@@ -1508,7 +1628,8 @@ def main():
                                 dev_list.remove(args.zoom_host)
                             dev_list.insert(0, args.zoom_host)
                         if args.config:
-                            asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
+                            conn_dev_list = ['.'.join(device.split('.')[:2]) for device in dev_list]
+                            asyncio.run(config_obj.connectivity(device_list=conn_dev_list, wifi_config=config_dict))
                         args.resources = ",".join(id for id in dev_list)
                 else:
                     # If no resources provided, prompt user to select devices manually
