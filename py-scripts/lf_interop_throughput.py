@@ -112,6 +112,18 @@
         python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth0 --test_duration 30s --traffic_type lf_udp --ssid NETGEAR_2G_wpa2
         --passwd Password@123 --security wpa2 --do_interopability --device_list 1.15,1.400 --download 10000000 --interopability_config
 
+    TO PERFORM TEST WITH IOT:
+        EXAMPLE-1:
+        Command Line Interface to run the Test along with IOT without device list
+        python3 -u lf_interop_throughput.py --mgr 192.168.204.75 --upstream_port eth1 --ssid "" --passwd "" --traffic_type lf_tcp --download 10000000 --upload 0 --test_duration 60
+        --packet_size 1500 --load_type wc_per_client_load --precleanup --postcleanup --iot_test --iot_iterations 1 --iot_delay 5 --iot_testname "testname"
+
+        EXAMPLE-2:
+        Command Line Interface to run the Test along with IOT with device list
+        python3 -u lf_interop_throughput.py --mgr 192.168.204.75 --upstream_port eth1 --ssid "" --passwd "" --traffic_type lf_tcp --download 10000000 --upload 0
+        --test_duration 60 --device_list 1.400 --test_name testname --packet_size 1500 --load_type wc_per_client_load --precleanup --postcleanup --iot_test --iot_iterations 1
+        --iot_delay 5 --iot_device_list "switch.smart_plug_1_socket_1,switch.smart_plug_2_socket_1" --iot_testname "testname" --iot_increment "1,5"
+
     SCRIPT_CLASSIFICATION :  Test
 
     SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
@@ -153,7 +165,8 @@ import asyncio
 import csv
 import matplotlib.pyplot as plt
 import re
-
+import threading
+from collections import OrderedDict
 logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
@@ -176,6 +189,11 @@ from datetime import datetime, timedelta  # noqa: E402
 
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
+iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
+if os.path.exists(iot_scripts_path):
+    sys.path.insert(0, iot_scripts_path)
+    from test_automation import Automation  # noqa: E402
 
 
 class Throughput(Realm):
@@ -2761,6 +2779,78 @@ def validate_args(args):
                 logger.error('Please provide valid passwd and security configuration')
                 exit(1)
 
+def trigger_iot(ip, port, iterations, delay, device_list, testname, increment):
+    """
+    Entry point to start the IoT test in a separate thread.
+    This function is called from the throughput test script when IoT testing
+    is enabled. It wraps the asynchronous `run_iot()`.
+    """
+    asyncio.run(run_iot(ip, port, iterations, delay, device_list, testname, increment))
+
+
+async def run_iot(ip: str = '127.0.0.1',
+                  port: str = '8000',
+                  iterations: int = 1,
+                  delay: int = 5,
+                  device_list: str = '',
+                  testname: str = '',
+                  increment: str = ''):
+    try:
+
+        if delay < 5:
+            logger.error('The minimum delay should be 5 seconds.')
+            exit(1)
+
+        if device_list != '':
+            device_list = device_list.split(',')
+        else:
+            device_list = None
+        # Parse and validate increment pattern if provided
+        if increment:
+            print("the increment is : ", increment)
+            try:
+                increment = list(map(int, increment.split(',')))
+                if any(i < 1 for i in increment):
+                    logger.error('Increment values must be positive integers')
+                    exit(1)
+            except ValueError:
+                logger.error('Invalid increment format. Please provide comma-separated integers (e.g., "1,3,5")')
+                exit(1)
+
+        testname = testname
+
+        # Ensure test name is unique (avoid overwriting previous results)
+        if testname in os.listdir('../../local/interop-webGUI/IoT/scripts/results/'):
+            logger.error('Test with same name already existing. Please give a different testname.')
+            exit(1)
+        automation = Automation(ip=ip,
+                                port=port,
+                                iterations=iterations,
+                                delay=delay,
+                                device_list=device_list,
+                                testname=testname,
+                                increment=increment)
+        
+        #fetch the available iot devices
+        automation.devices = await automation.fetch_iot_devices()
+        
+        #select the iot devices for testing
+        automation.select_iot_devices()
+        
+        #run the iot test on selected devices
+        automation.run_test()
+
+        #generate the iot report
+        automation.generate_report()
+
+    except Exception as e:
+        logger.error(f"Iot Test failed: {str(e)}")
+        raise
+
+    await automation.session.close()
+
+    logger.info('Iot Test Completed.')
+
 
 def main():
     help_summary = '''\
@@ -2941,6 +3031,39 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument("--interopability_config", action="store_true", help="To do individual configuration for each device in interoperability")
     optional.add_argument("--tput_mbps", action="store_true", help="Interpret rated download and upload values as Mbps instead of bytes")
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
+    # IOT ARGS
+    parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
+    optional.add_argument('--iot_ip',
+                          default='127.0.0.1',
+                          help='IP of the server')
+
+    optional.add_argument('--iot_port',
+                          default='8000',
+                          help='Port of the server')
+    optional.add_argument('--iot_iterations',
+                          type=int,
+                          default=1,
+                          help='Iterations to run the test')
+
+    optional.add_argument('--iot_delay',
+                          type=int,
+                          default=5,
+                          help='Delay in seconds between iterations (min. 5 seconds)')
+
+    optional.add_argument('--iot_device_list',
+                          type=str,
+                          default='',
+                          help='Entity IDs of the devices to include in testing (comma separated)')
+
+    optional.add_argument('--iot_testname',
+                          type=str,
+                          default='',
+                          help='Testname for reporting')
+
+    optional.add_argument('--iot_increment',
+                          type=str,
+                          default='',
+                          help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
 
     args = parser.parse_args()
 
@@ -3028,7 +3151,14 @@ Copyright 2023 Candela Technologies Inc.
     if (int(args.packet_size) < 16 or int(args.packet_size) > 65507) and int(args.packet_size) != -1:
         logger.error("Packet size should be greater than 16 bytes and less than 65507 bytes incorrect")
         return
-
+    if args.iot_test:
+        iot_ip = args.iot_ip
+        iot_port = args.iot_port
+        iot_iterations = args.iot_iterations
+        iot_delay = args.iot_delay
+        iot_device_list = args.iot_device_list
+        iot_testname = args.iot_testname
+        iot_increment = args.iot_increment
     for index in range(len(loads_data)):
         throughput = Throughput(host=args.mgr,
                                 ip=args.mgr,
@@ -3093,7 +3223,27 @@ Copyright 2023 Candela Technologies Inc.
         throughput.os_type()
 
         check_condition, clients_to_run = throughput.phantom_check()
-
+        if args.iot_test:
+            if args.iot_iterations > 1:
+                thread = threading.Thread(target=trigger_iot, args=(iot_ip, iot_port, iot_iterations, iot_delay, iot_device_list, iot_testname, iot_increment))
+                thread.start()
+            else:
+                total_secs = int(args.test_duration)
+                iot_iterations = max(1, total_secs // args.iot_delay)
+                iot_thread = threading.Thread(
+                    target=trigger_iot,
+                    args=(
+                        args.iot_ip,
+                        args.iot_port,
+                        iot_iterations,
+                        args.iot_delay,
+                        args.iot_device_list,
+                        args.iot_testname,
+                        args.iot_increment
+                    ),
+                    daemon=True
+                )
+                iot_thread.start()
         if check_condition is False:
             return
 
