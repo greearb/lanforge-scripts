@@ -497,7 +497,7 @@ class ZoomAutomation(Realm):
                 cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "client")
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
-        self.generic_endps_profile.start_cx()
+        self.start_client_cx()
 
         while not self.test_start:
 
@@ -510,6 +510,15 @@ class ZoomAutomation(Realm):
         while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
 
             time.sleep(5)
+
+    def start_client_cx(self):
+        client_cx = self.generic_endps_profile.created_cx[1:]
+        for cx_name in client_cx:
+            self.json_post("/cli-json/set_cx_state", {
+                "test_mgr": "default_tm",
+                "cx_name": cx_name,
+                "cx_state": "RUNNING"
+            }, debug_=True)
 
     def select_real_devices(self, real_device_obj, real_sta_list=None):
         final_device_list = []
@@ -772,6 +781,10 @@ class ZoomAutomation(Realm):
             }
             try:
                 file_path = os.path.join(self.path, f'{self.device_names[i]}.csv')
+                if not os.path.exists(file_path):
+                    logging.warning(f"File not found: {file_path}, skipping...")
+                    continue
+
                 with open(file_path, mode='r', encoding='utf-8', errors='ignore') as file:
                     csv_reader = csv.DictReader(file)
                     for row in csv_reader:
@@ -910,7 +923,7 @@ class ZoomAutomation(Realm):
                                     "%", "")) > 0 else temp_min_video_pktloss_r)
 
             except Exception as e:
-                logging.error(f"Error in reading data in client {self.device_names[i]}", e)
+                logging.error(f"Error in reading data in client {self.device_names[i]} {e}")
                 no_csv_client.append(self.device_names[i])
                 rejected_clients.append(self.device_names[i])
             if self.device_names[i] not in no_csv_client:
@@ -1075,7 +1088,7 @@ class ZoomAutomation(Realm):
                     for client in accepted_clients
                 ]
             }
-
+            # If both groups and profiles are selected, generate separate audio results tables per group; otherwise show a single combined results table.
             if self.selected_groups and self.selected_profiles:
                 for group in self.selected_groups:
                     group_specific_audio_test_results = self.get_test_results_data(audio_test_results_dict, group)
@@ -1085,15 +1098,15 @@ class ZoomAutomation(Realm):
                     report.build_table_title()
                     test_results_df = pd.DataFrame(group_specific_audio_test_results)
                     report.set_table_dataframe(test_results_df)
+                    report.html += report.dataframe.to_html(index=False, justify='center', render_links=True, escape=False)
 
             else:
                 report.set_table_title("Test Audio Results:")
                 report.build_table_title()
                 audio_test_details = pd.DataFrame(audio_test_results_dict)
                 report.set_table_dataframe(audio_test_details)
-            report.dataframe_html = report.dataframe.to_html(index=False,
-                                                             justify='center', render_links=True, escape=False)  # have the index be able to be passed in.
-            report.html += report.dataframe_html
+                report.html += report.dataframe.to_html(index=False,
+                                                        justify='center', render_links=True, escape=False)  # have the index be able to be passed in.
         if self.video:
             report.set_graph_title("Video Latency (Sent/Received)")
             report.build_graph_title()
@@ -1206,7 +1219,7 @@ class ZoomAutomation(Realm):
                     for client in accepted_clients
                 ]
             }
-
+            # If both groups and profiles are selected, generate separate video results tables per group; otherwise show a single combined results table.
             if self.selected_groups and self.selected_profiles:
                 for group in self.selected_groups:
                     group_specific_video_test_results = self.get_test_results_data(video_test_results_dict, group)
@@ -1216,16 +1229,15 @@ class ZoomAutomation(Realm):
                     report.build_table_title()
                     test_results_df = pd.DataFrame(group_specific_video_test_results)
                     report.set_table_dataframe(test_results_df)
+                    report.html += report.dataframe.to_html(index=False, justify='center', render_links=True, escape=False)
 
             else:
                 report.set_table_title("Test Video Results:")
                 report.build_table_title()
                 video_test_details = pd.DataFrame(video_test_results_dict)
                 report.set_table_dataframe(video_test_details)
-
-            report.dataframe_html = report.dataframe.to_html(index=False,
-                                                             justify='center', render_links=True, escape=False)  # have the index be able to be passed in.
-            report.html += report.dataframe_html
+                report.html += report.dataframe.to_html(index=False,
+                                                        justify='center', render_links=True, escape=False)  # have the index be able to be passed in.
         report.set_custom_html("<br/><hr/>")
         report.build_custom()
 
@@ -1526,7 +1538,7 @@ def main():
                 exit(0)
 
             zoom_automation = ZoomAutomation(audio=args.audio, video=args.video, lanforge_ip=args.lanforge_ip, wait_time=args.wait_time, testname=args.testname,
-                                             upstream_port=args.upstream_port, config=args.config, selected_groups=selected_groups, selected_profiles=selected_profiles)
+                                             upstream_port=args.upstream_port, config=args.config, selected_groups=selected_groups, selected_profiles=selected_profiles, ssid=args.ssid)
             args.upstream_port = zoom_automation.change_port_to_ip(args.upstream_port)
             realdevice = RealDevice(manager_ip=args.lanforge_ip,
                                     server_ip="192.168.1.61",
@@ -1624,7 +1636,12 @@ def main():
                             dev_list.insert(0, args.zoom_host)
                         if args.config:
                             conn_dev_list = ['.'.join(device.split('.')[:2]) for device in dev_list]
-                            asyncio.run(config_obj.connectivity(device_list=conn_dev_list, wifi_config=config_dict))
+                            dev_list = asyncio.run(config_obj.connectivity(device_list=conn_dev_list, wifi_config=config_dict))
+
+                        if not args.do_webUI:
+                            if args.zoom_host in dev_list:
+                                dev_list.remove(args.zoom_host)
+                            dev_list.insert(0, args.zoom_host)
                         args.resources = ",".join(id for id in dev_list)
                 else:
                     # If no resources provided, prompt user to select devices manually
@@ -1644,8 +1661,12 @@ def main():
                         args.resources = input("Enter client Resources to run the test :")
                         args.resources = zm_host + "," + args.resources
                         dev1_list = args.resources.split(',')
-                        asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict))
-
+                        dev1_list = asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict))
+                        if not args.do_webUI:
+                            if args.zoom_host in dev1_list:
+                                dev1_list.remove(args.zoom_host)
+                            dev1_list.insert(0, args.zoom_host)
+                        args.resources = ",".join(id for id in dev1_list)
             result_list = []
             if not args.do_webUI:
                 if args.resources:
