@@ -1345,7 +1345,7 @@ class DeviceConfig(Realm):
         else:
             df = pd.read_csv(file_path)
             df = df.where(pd.notnull(df), None)
-            df = df.applymap(lambda x: None if x == "" else x)
+            df = df.map(lambda x: None if x == "" else x)
             # Filter rows for current IP
             df = df[df['Lanforge'] == self.lanforge_ip]
             json_data = df.set_index('Profile').to_dict(orient='index')
@@ -1382,7 +1382,7 @@ class DeviceConfig(Realm):
         df = df.where(pd.notnull(df), None)
 
         # Replace empty strings with None
-        df = df.applymap(lambda x: None if x == "" else x)
+        df = df.map(lambda x: None if x == "" else x)
 
         # Filter rows for current IP
         df = df[df['Lanforge'] == self.lanforge_ip]
