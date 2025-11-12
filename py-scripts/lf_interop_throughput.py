@@ -2429,7 +2429,7 @@ class Throughput(Realm):
             if self.dowebgui and self.get_live_view and self.do_interopability:
                 self.add_live_view_images_to_report(report)
         if iot_summary:
-           self.build_iot_report_section(report, iot_summary)
+            self.build_iot_report_section(report, iot_summary)
         # report.build_custom()
         report.build_footer()
         report.write_html()
@@ -2801,7 +2801,7 @@ class Throughput(Realm):
             report.set_custom_html(f'<img src="{stats_png}" style="width:100%; height:auto;">')
             report.build_custom()
 
-        # Request vs Latency 
+        # Request vs Latency
         rvl_png = copy_into_report(iot_summary.get("req_vs_latency_img"), "iot_request_vs_latency.png")
         if rvl_png:
             report.build_chart_title("Request vs Average Latency")
@@ -2999,17 +2999,17 @@ async def run_iot(ip: str = '127.0.0.1',
                                 device_list=device_list,
                                 testname=testname,
                                 increment=increment)
-        
-        #fetch the available iot devices
+
+        # fetch the available iot devices
         automation.devices = await automation.fetch_iot_devices()
-        
-        #select the iot devices for testing
+
+        # select the iot devices for testing
         automation.select_iot_devices()
-        
-        #run the iot test on selected devices
+
+        # run the iot test on selected devices
         automation.run_test()
 
-        #generate the iot report
+        # generate the iot report
         automation.generate_report()
 
     except Exception as e:
