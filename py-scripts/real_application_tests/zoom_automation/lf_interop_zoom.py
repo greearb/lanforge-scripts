@@ -125,21 +125,15 @@ class ZoomAutomation(Realm):
         self.zoom_host = None
         self.testname = testname
         self.stop_signal = False
-
-        # self.path = "/home/lanforge/lanforge-scripts/py-scripts/zoom_automation/test_results"
         self.path = os.path.join(os.getcwd(), "zoom_test_results")
         if not os.path.exists(self.path):
             os.makedirs(self.path)
-
-        # self.path =  '/home/laxmi/Documents/lanforge-scripts/py-scripts/zoom_automation/test_results'
         self.device_names = []
         self.hostname_os_combination = None
-
         self.clients_disconnected = False
         self.audio = audio
         self.video = video
         self.wait_time = wait_time
-        # os.makedirs(self.path, exist_ok=True)
         self.generic_endps_profile = self.new_generic_endp_profile()
         self.generic_endps_profile.name_prefix = "zoom"
         self.generic_endps_profile.type = "zoom"
@@ -154,6 +148,8 @@ class ZoomAutomation(Realm):
         self.config = config
         self.selected_groups = selected_groups
         self.selected_profiles = selected_profiles
+        self.config_obj = None
+
 
     def start_flask_server(self):
         @self.app.route('/login_url', methods=['GET', 'POST'])
@@ -544,6 +540,7 @@ class ZoomAutomation(Realm):
         9. Returns the sorted list of selected real station names.
 
         """
+        real_device_obj.get_devices()
         # Query and retrieve all user-defined real stations if `real_sta_list` is not provided
         if real_sta_list is None:
             self.real_sta_list, _, _ = real_device_obj.query_user()
@@ -727,17 +724,6 @@ class ZoomAutomation(Realm):
                 "TEST TYPE": testtype,
 
             }])
-
-        test_parameters = pd.DataFrame([{
-
-            'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac})',
-            'Test Duration(min)': self.duration,
-            'EMAIL ID': self.signin_email,
-            "PASSWORD": self.signin_passwd,
-            "HOST": self.real_sta_list[0],
-            "TEST TYPE": testtype
-
-        }])
         report.set_table_dataframe(test_parameters)
         report.build_table()
 
