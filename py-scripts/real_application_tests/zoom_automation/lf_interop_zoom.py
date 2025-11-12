@@ -6,14 +6,12 @@
 
     EXAMPLE-1:
     Command Line Interface to run Zoom with specified duration:
-    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --server_ip 192.168.214.123
-
-
+    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123
 
     EXAMPLE-2:
     Command Line Interface to run Zoom on multiple devices:
     python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
-    --resources 1.400,1.375 --zoom_host 1.95 --server_ip 192.168.214.123
+    --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 192.168.214.123
 
     Example-3:
     Command Line Interface to run Zoom on multiple devices with Device Configuration
@@ -149,7 +147,6 @@ class ZoomAutomation(Realm):
         self.selected_groups = selected_groups
         self.selected_profiles = selected_profiles
         self.config_obj = None
-
 
     def start_flask_server(self):
         @self.app.route('/login_url', methods=['GET', 'POST'])
@@ -331,7 +328,7 @@ class ZoomAutomation(Realm):
 
                 endp_status = generic_endpoint["endpoint"].get("status", "")
 
-                if endp_status not in ["Stopped", "WAITING", "NO-CX"]:
+                if endp_status == "Run":
                     return False
 
             return True
@@ -413,7 +410,7 @@ class ZoomAutomation(Realm):
 
             # Iterate over the port interfaces to find a matching port
             for interface in response_port['interfaces']:
-                for port, port_data in interface.items():
+                for port, _ in interface.items():
                     # Extract the first two segments of the port identifier to match with expected_eid
                     result = '.'.join(port.split('.')[:2])
 
@@ -584,7 +581,7 @@ class ZoomAutomation(Realm):
             for hostname, os_type in zip(self.real_sta_hostname, self.real_sta_os_type)
         ]
 
-        for key, value in self.real_sta_data.items():
+        for _, value in self.real_sta_data.items():
             if value['ostype'] == 'windows':
                 self.windows = self.windows + 1
             elif value['ostype'] == 'macos':
@@ -1088,7 +1085,7 @@ class ZoomAutomation(Realm):
                     report.build_table_title()
                     test_results_df = pd.DataFrame(group_specific_audio_test_results)
                     report.set_table_dataframe(test_results_df)
-            
+
             else:
                 report.set_table_title("Test Audio Results:")
                 report.build_table_title()
@@ -1219,7 +1216,7 @@ class ZoomAutomation(Realm):
                     report.build_table_title()
                     test_results_df = pd.DataFrame(group_specific_video_test_results)
                     report.set_table_dataframe(test_results_df)
-            
+
             else:
                 report.set_table_title("Test Video Results:")
                 report.build_table_title()
@@ -1266,15 +1263,14 @@ class ZoomAutomation(Realm):
             try:
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
-            except BaseException:
-                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
+            except Exception as e:
+                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}. Exception: {e}')
             logging.info(f"Upstream port IP {upstream_port}")
         else:
             logging.info(f"Upstream port IP {upstream_port}")
 
         return upstream_port
-    
-    
+
     def get_test_results_data(self, test_results, group):
         """
         Filters the overall test results to include only the data belonging to a specific group.
