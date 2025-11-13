@@ -47,12 +47,15 @@ fi
 CHILD_PID=''
 #setup PIDF removal on-exit
 PIDFNAME="./btstack/btstack-$TARGET_DEVICE.pid"
-on_exit() {
-    kill -s SIGINT $CHILD_PID
+do_exit() {
     rm $PIDFNAME
-    exit 0
+    exit $1
 }
-trap on_exit SIGINT SIGTERM
+on_interrupt() {
+    kill -s SIGINT $CHILD_PID
+    do_exit 0
+}
+trap on_interrupt SIGINT SIGTERM
 
 #write out our PID
 echo $$ > $PIDFNAME
@@ -64,7 +67,14 @@ do
     echo "starting btstack w/ cmd: $CMD"
     ($CMD) &
     CHILD_PID=$!
-    wait $!
+    wait $CHILD_PID
+    RET_CODE=$?
+
+    # ignore retval of 1 which indicates that connection was failing or the device disconnected.
+    # retval of 2 means the program was unable to start with the given configuration
+    if [[ $RET_CODE -eq 2 ]]; then
+        do_exit $RET_CODE
+    fi
 
     echo "btstack exited - sleeping 3s before restarting"
     sleep 3
