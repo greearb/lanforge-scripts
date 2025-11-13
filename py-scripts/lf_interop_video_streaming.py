@@ -1114,10 +1114,14 @@ class VideoStreamingTest(Realm):
                     if device_type[client] != 'Android':
                         res_list.append(username[:ci][client])
                     else:
-                        for dev in interop_tab_data:
-                            for item in dev.values():
-                                if item['user-name'] == username[:ci][client]:
-                                    res_list.append(item['name'].split('.')[2])
+                        if isinstance(interop_tab_data, dict):
+                            name = interop_tab_data.get('name')
+                            res_list.append(name.split('.')[2])
+                        else:
+                            for dev in interop_tab_data:
+                                for item in dev.values():
+                                    if item['user-name'] == username[:ci][client]:
+                                        res_list.append(item['name'].split('.')[2])
 
                 if self.csv_name is None:
                     self.csv_name = "device.csv"
