@@ -74,6 +74,16 @@ Command Line Interface to run download scenario by Configuring Devices in Groups
 python3 lf_ftp.py --file_sizes 1MB --mgr 192.168.213.218 --traffic_duration 1m  --directions Download --clients_type Real  --bands 5G
  --upstream_port eth1 --file_name g219 --group_name grp1 --profile_name Open3 --expected_passfail_value 3 --wait_time 30
 
+EXAMPLE-14:
+Command Line Interface to run the Test along with IOT without device list
+python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.207.78 --traffic_duration 1m --security wpa2
+ --directions Download --clients_type Real --ap_name Netgear --bands 5G --upstream_port eth1 --iot_test --iot_testname "IotTest"
+
+EXAMPLE-15:
+Command Line Interface to run the Test along with IOT with device list
+python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.207.78 --traffic_duration 1m --security wpa2
+ --directions Download --clients_type Real --ap_name Netgear --bands 5G --upstream_port eth1 --iot_test --iot_testname "IotTest" --iot_device_list "switch.smart_plug_1_socket_1"
+
 SCRIPT_CLASSIFICATION : Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
@@ -119,6 +129,7 @@ import asyncio
 import csv
 import traceback
 import threading
+from collections import OrderedDict
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -1798,7 +1809,7 @@ class FtpTest(LFCliBase):
 
     def generate_report(self, ftp_data, date, input_setup_info, test_rig, test_tag, dut_hw_version,
                         dut_sw_version, dut_model_num, dut_serial_num, test_id, bands,
-                        csv_outfile, local_lf_report_dir, _results_dir_name='ftp_test', report_path='', config_devices=""):
+                        csv_outfile, local_lf_report_dir, _results_dir_name='ftp_test', report_path='', config_devices="", iot_summary=None):
         no_of_stations = ""
         duration = ""
         x_fig_size = 18
@@ -1869,7 +1880,7 @@ class FtpTest(LFCliBase):
                 logger.error("failed to create all layer 4 csv")
             for csv_name in self.individual_device_csv_names:
                 shutil.move(f"{csv_name}.csv", report_path_date_time)
-        self.report.set_title("FTP Test")
+        self.report.set_title("FTP Test Including IoT Devices" if iot_summary else "FTP Test")
         self.report.set_date(date)
         self.report.build_banner()
         self.report.set_table_title("Test Setup Information")
@@ -1920,12 +1931,28 @@ class FtpTest(LFCliBase):
                 "Traffic Direction": self.direction,
                 "Traffic Duration ": duration
             }
+        if iot_summary:
+            test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
+            self.report.set_obj_html(
+                    "Objective",
+                    "The Candela FTP Test Including IoT Devices is designed to verify an Access Point’s performance and stability "
+                    "when handling both Real clients (Android, Windows, Linux, iOS) and IoT devices (controlled via Home Assistant). "
+                    "For Real clients, the test measures simultaneous file download and upload operations over a specified band from "
+                    "an FTP server, capturing metrics such as transfer time and throughput to validate that the AP can support "
+                    "multiple clients efficiently. "
+                    "For IoT clients, the test concurrently executes device-specific actions (e.g., camera streaming, switch toggling, "
+                    "lock/unlock) and monitors success rate, latency, and failure rate. "
+                    "The goal is to ensure that the AP can reliably manage FTP traffic for multiple Real clients while maintaining "
+                    "responsive and consistent control of IoT devices."
+                )
+        else:
+            self.report.set_obj_html(
+                 "Objective",
+                 "This FTP Test is used to Verify that N clients connected on Specified band and can "
+                 "simultaneously download some amount of file from FTP server and measuring the "
+                 "time taken by client to Download the file."
+            )
         self.report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
-
-        self.report.set_obj_html("Objective",
-                                 "This FTP Test is used to Verify that N clients connected on Specified band and can "
-                                 "simultaneously download some amount of file from FTP server and measuring the "
-                                 "time taken by client to Download the file.")
         self.report.build_objective()
         # self.report.set_obj_html("PASS/FAIL Results",
         #                          "This Table will give Pass/Fail results.")
@@ -2077,6 +2104,8 @@ class FtpTest(LFCliBase):
             dataframe1 = pd.DataFrame(dataframe)
             self.report.set_table_dataframe(dataframe1)
             self.report.build_table()
+        if iot_summary:
+            self.build_iot_report_section(self.report, iot_summary)
         self.report.build_footer()
         html_file = self.report.write_html()
         logger.info("returned file {}".format(html_file))
@@ -2480,6 +2509,123 @@ class FtpTest(LFCliBase):
             logger.error('No cross connections created, aborting test')
             exit(1)
 
+    def build_iot_report_section(self, report, iot_summary):
+        """
+        Handles all IoT-related charts, tables, and increment-wise reports.
+        """
+        outdir = report.path_date_time
+        os.makedirs(outdir, exist_ok=True)
+
+        def copy_into_report(raw_path, new_name):
+            """Resolve and copy image into report dir."""
+            if not raw_path:
+                return None
+
+            abs_src = os.path.abspath(raw_path)
+            if not os.path.exists(abs_src):
+                # Search recursively under 'results' if absolute path missing
+                for root, _, files in os.walk(os.path.join(os.getcwd(), "results")):
+                    if os.path.basename(raw_path) in files:
+                        abs_src = os.path.join(root, os.path.basename(raw_path))
+                        break
+                else:
+                    return None
+
+            dst = os.path.join(outdir, new_name)
+            if os.path.abspath(abs_src) != os.path.abspath(dst):
+                shutil.copy2(abs_src, dst)
+            return new_name
+
+        # section header
+        report.set_custom_html('<div style="page-break-before: always;"></div>')
+        report.build_custom()
+        report.set_custom_html('<h2><u>IoT Results</u></h2>')
+        report.build_custom()
+
+        # Statistics
+        stats_png = copy_into_report(iot_summary.get("statistics_img"), "iot_statistics.png")
+        if stats_png:
+            report.build_chart_title("Test Statistics")
+            report.set_custom_html(f'<img src="{stats_png}" style="width:100%; height:auto;">')
+            report.build_custom()
+
+        # Request vs Latency
+        rvl_png = copy_into_report(iot_summary.get("req_vs_latency_img"), "iot_request_vs_latency.png")
+        if rvl_png:
+            report.build_chart_title("Request vs Average Latency")
+            report.set_custom_html(f'<img src="{rvl_png}" style="width:100%;">')
+            report.build_custom()
+
+        # Overall results table
+        ort = iot_summary.get("overall_result_table") or {}
+        if ort:
+            rows = [{
+                "Device": dev,
+                "Min Latency (ms)": stats.get("min_latency"),
+                "Avg Latency (ms)": stats.get("avg_latency"),
+                "Max Latency (ms)": stats.get("max_latency"),
+                "Total Iterations": stats.get("total_iterations"),
+                "Success Iters": stats.get("success_iterations"),
+                "Failed Iters": stats.get("failed_iterations"),
+                "No-Response Iters": stats.get("no_response_iterations"),
+            } for dev, stats in ort.items()]
+
+            df_overall = pd.DataFrame(rows).round(2)
+
+            report.set_custom_html('<div style="page-break-inside: avoid;">')
+            report.build_custom()
+            report.set_obj_html(_obj_title="Overall IoT Result Table", _obj=" ")
+            report.build_objective()
+            report.set_table_dataframe(df_overall)
+            report.build_table()
+            report.set_custom_html('</div>')
+            report.build_custom()
+
+        # Increment reports
+        inc = iot_summary.get("increment_reports") or {}
+        if inc:
+            report.set_custom_html('<h3>Reports by Increment Steps</h3>')
+            report.build_custom()
+
+            for step_name, rep in inc.items():
+
+                report.set_custom_html(f'<h4><u>{step_name.replace("_", " ")}</u></h4>')
+                report.build_custom()
+
+                # Latency graph
+                lat_png = copy_into_report(rep.get("latency_graph"), f"iot_{step_name}_latency.png")
+                if lat_png:
+                    report.build_chart_title("Average Latency")
+                    report.set_custom_html(f'<img src="{lat_png}" style="width:100%; height:auto;">')
+                    report.build_custom()
+
+                # Success count graph
+                res_png = copy_into_report(rep.get("result_graph"), f"iot_{step_name}_results.png")
+                if res_png:
+                    report.build_chart_title("Success Count")
+                    report.set_custom_html(f'<img src="{res_png}" style="width:100%; height:auto;">')
+                    report.build_custom()
+
+                # Tabular data for detailed iteration-level results
+                data_rows = rep.get("data") or []
+                if data_rows:
+                    df = pd.DataFrame(data_rows).rename(
+                        columns={"latency__ms": "Latency_ms", "latency_ms": "Latency_ms"}
+                    )
+                    if "Latency_ms" in df.columns:
+                        df["Latency_ms"] = pd.to_numeric(df["Latency_ms"], errors="coerce").round(3)
+                    if "Result" in df.columns:
+                        df["Result"] = df["Result"].map(lambda x: "Success" if bool(x) else "Failure")
+
+                    desired_cols = ["Iteration", "Device", "Current State", "latency (ms)", "Result"]
+                    df = df[[c for c in desired_cols if c in df.columns]]
+
+                    report.set_table_dataframe(df)
+                    report.build_table()
+
+                report.set_custom_html('<hr>')
+                report.build_custom()
+
 
 def validate_args(args):
     """Validate CLI arguments."""
@@ -2548,6 +2694,41 @@ def duration_to_seconds(duration: str) -> int:
         return int(duration[:-1]) * 3600
     else:
         return int(duration)
+
+
+def with_iot_params_in_table(base: dict, iot_summary) -> dict:
+    """
+    Append IoT params into the existing Throughput Input Parameters table.
+    Adds: IoT Test name, IoT Iterations, IoT Delay (s), IoT Increment.
+    Accepts dict or JSON string.
+    """
+    print("function called with iot params-----")
+    try:
+        if not iot_summary:
+            return base
+        if isinstance(iot_summary, str):
+            try:
+                iot_summary = json.loads(iot_summary)
+            except Exception:
+                start = iot_summary.find("{")
+                end = iot_summary.rfind("}")
+                if start == -1 or end == -1 or end <= start:
+                    return base
+                try:
+                    iot_summary = json.loads(iot_summary[start:end + 1])
+                except Exception:
+                    return base
+
+        ti = (iot_summary.get("test_input_table") or {})
+        out = OrderedDict(base)
+        out["IoT Test name"] = ti.get("Testname", "")
+        out["Iot Device List"] = ti.get("Device List", "")
+        out["IoT Iterations"] = ti.get("Iterations", "")
+        out["IoT Delay (s)"] = ti.get("Delay (seconds)", "")
+        out["IoT Increment"] = ti.get("Increment Pattern", "")
+        return out
+    except Exception:
+        return base
 
 
 def trigger_iot(ip, port, iterations, delay, device_list, testname, increment):
@@ -3120,20 +3301,27 @@ some amount of file data from the FTP server while measuring the time taken by c
 
         df1 = pd.DataFrame(obj.data_for_webui)
         df1.to_csv('{}/ftp_datavalues.csv'.format(obj.result_dir), index=False)
+    iot_summary = None
+    if args.iot_test and args.iot_testname:
+        base = os.path.join("results", args.iot_testname)
+        p = os.path.join(base, "iot_summary.json")
+        if os.path.exists(p):
+            with open(p) as f:
+                iot_summary = json.load(f)
     # Report generation when groups are specified
     if args.group_name:
         obj.generate_report(ftp_data, date, input_setup_info, test_rig=args.test_rig,
                             test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
                             dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
                             dut_serial_num=args.dut_serial_num, test_id=args.test_id,
-                            bands=args.bands, csv_outfile=args.csv_outfile, local_lf_report_dir=args.local_lf_report_dir, config_devices=configuration)
+                            bands=args.bands, csv_outfile=args.csv_outfile, local_lf_report_dir=args.local_lf_report_dir, config_devices=configuration, iot_summary=iot_summary)
     # Generating report without group-specific device configuration
     else:
         obj.generate_report(ftp_data, date, input_setup_info, test_rig=args.test_rig,
                             test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
                             dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
                             dut_serial_num=args.dut_serial_num, test_id=args.test_id,
-                            bands=args.bands, csv_outfile=args.csv_outfile, local_lf_report_dir=args.local_lf_report_dir)
+                            bands=args.bands, csv_outfile=args.csv_outfile, local_lf_report_dir=args.local_lf_report_dir, iot_summary=iot_summary)
 
     if args.dowebgui:
         obj.copy_reports_to_home_dir()
