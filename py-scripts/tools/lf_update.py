@@ -407,6 +407,7 @@ class create_lanforge_object:
 
         # command = "curl -o lf_kinstall.pl www.candelatech.com/lf_kinstall.txt" # leave in for testing
         command = f"curl -o lf_kinstall.pl www.candelatech.com/lf_kinstall.txt; chmod +x lf_kinstall.pl; ./lf_kinstall.pl --lfver {self.lfver} --kver {self.kver} --do_noaer 1 --do_upgrade"
+        # command = f"curl -o lf_kinstall.pl www.candelatech.com/lf_kinstall.txt; chmod +x lf_kinstall.pl; ./lf_kinstall.pl --lfver {self.lfver} --kver {self.kver} --do_noaer 1 --do_upgrade --from http://fs4.candelatech.com"  # noqa:
         r = self.send_lf_command(command)
         if r.failed:
             raise Exception(r.result)
