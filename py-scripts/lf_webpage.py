@@ -49,6 +49,16 @@ Command Line Interface to run download scenario for Real clients with device lis
 python3 lf_webpage.py --file_size 1MB --mgr 192.168.244.97 --duration 1m --client_type Real --bands 5G --upstream_port eth1 --ssid
 xiab_2G_WPA2 --passwd lanforge --security wpa2 --device_list 1.160,1.146,1.13,1.20 --config
 
+EXAMPLE-10:
+Command Line Interface to run the Test along with IOT without device list
+python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.207.78 --ssid Cisco-5g --security wpa2 --passwd sharedsecret --upstream_port eth1
+--duration 1m --bands 5G --client_type Real --file_size 2MB --iot_test --iot_testname "httpiot"
+
+EXAMPLE-11:
+Command Line Interface to run the Test along with IOT with device list
+python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.207.78 --ssid Cisco-5g --security wpa2 --passwd sharedsecret --upstream_port eth1
+--duration 1m --bands 5G --client_type Real --file_size 2MB --iot_test --iot_testname "httpiot" --iot_device_list "switch.smart_plug_1_socket_1"
+
 SCRIPT_CLASSIFICATION : Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
@@ -91,6 +101,8 @@ import shutil
 import json
 from lf_graph import lf_bar_graph_horizontal
 import traceback
+import threading
+from collections import OrderedDict
 import asyncio
 from typing import List, Optional
 import csv
@@ -111,6 +123,12 @@ DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
+if os.path.exists(iot_scripts_path):
+    sys.path.insert(0, iot_scripts_path)
+    from test_automation import Automation  # noqa: E402
 
 
 class HttpDownload(Realm):
@@ -1191,7 +1209,7 @@ class HttpDownload(Realm):
                         threshold_5g, threshold_both, dataset2, dataset1,  # summary_table_value,
                         result_data, test_rig, rx_rate,
                         test_tag, dut_hw_version, dut_sw_version, dut_model_num, dut_serial_num, test_id,
-                        test_input_infor, csv_outfile, _results_dir_name='webpage_test', report_path=''):
+                        test_input_infor, csv_outfile, _results_dir_name='webpage_test', report_path='', iot_summary=None):
         if self.dowebgui == "True" and report_path == '':
             report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html",
                                          _output_pdf="Webpage.pdf", _path=self.result_dir)
@@ -1213,17 +1231,31 @@ class HttpDownload(Realm):
                 shutil.move(f"{csv_name}.csv", report_path_date_time)
         if bands == "Both":
             num_stations = num_stations * 2
-        report.set_title("HTTP DOWNLOAD TEST")
+        report.set_title("HTTP TEST Including IoT Devices" if iot_summary else "HTTP DOWNLOAD TEST")
         report.set_date(date)
         report.build_banner()
         report.set_table_title("Test Setup Information")
         report.build_table_title()
+        if iot_summary:
+            test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
+            report.set_obj_html(
+                "Objective",
+                "The Candela HTTP Test Including IoT Devices is designed to verify an Access Point’s performance and "
+                "stability when handling both Real clients (Android, Windows, Linux, iOS) and IoT devices (controlled via "
+                "Home Assistant). For Real clients, the test measures simultaneous file downloads over a specified band "
+                "from an HTTP server, capturing metrics such as transfer time and throughput to validate that the AP can "
+                "support multiple clients efficiently. For IoT clients, the test concurrently executes device-specific "
+                "actions (e.g., camera streaming, switch toggling, lock/unlock) and monitors success rate, latency, and "
+                "failure rate. The goal is to ensure that the AP can reliably manage HTTP traffic for multiple Real "
+                "clients while maintaining responsive and consistent control of IoT devices."
+            )
+        else:
+            report.set_obj_html("Objective", "The HTTP Download Test is designed to verify that N clients connected on specified band can "
+                                "download some amount of file from HTTP server and measures the "
+                                "time taken by the client to Download the file.")
 
         report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
-        report.set_obj_html("Objective", "The HTTP Download Test is designed to verify that N clients connected on specified band can "
-                            "download some amount of file from HTTP server and measures the "
-                            "time taken by the client to Download the file.")
         report.build_objective()
         report.set_obj_html("No of times file Downloads", "The below graph represents number of times a file downloads for each client"
                             ". X- axis shows “No of times file downloads and Y-axis shows "
@@ -1467,6 +1499,8 @@ class HttpDownload(Realm):
             dataframe1 = pd.DataFrame(dataframe)
             report.set_table_dataframe(dataframe1)
             report.build_table()
+        if iot_summary:
+            self.build_iot_report_section(report, iot_summary)
         report.build_footer()
         html_file = report.write_html()
         print("returned file {}".format(html_file))
@@ -1733,6 +1767,123 @@ class HttpDownload(Realm):
             logger.error('No cross connections created, aborting test')
             exit(1)
 
+    def build_iot_report_section(self, report, iot_summary):
+        """
+        Handles all IoT-related charts, tables, and increment-wise reports.
+        """
+        outdir = report.path_date_time
+        os.makedirs(outdir, exist_ok=True)
+
+        def copy_into_report(raw_path, new_name):
+            """Resolve and copy image into report dir."""
+            if not raw_path:
+                return None
+
+            abs_src = os.path.abspath(raw_path)
+            if not os.path.exists(abs_src):
+                # Search recursively under 'results' if absolute path missing
+                for root, _, files in os.walk(os.path.join(os.getcwd(), "results")):
+                    if os.path.basename(raw_path) in files:
+                        abs_src = os.path.join(root, os.path.basename(raw_path))
+                        break
+                else:
+                    return None
+
+            dst = os.path.join(outdir, new_name)
+            if os.path.abspath(abs_src) != os.path.abspath(dst):
+                shutil.copy2(abs_src, dst)
+            return new_name
+
+        # section header
+        report.set_custom_html('<div style="page-break-before: always;"></div>')
+        report.build_custom()
+        report.set_custom_html('<h2><u>IoT Results</u></h2>')
+        report.build_custom()
+
+        # Statistics
+        stats_png = copy_into_report(iot_summary.get("statistics_img"), "iot_statistics.png")
+        if stats_png:
+            report.build_chart_title("Test Statistics")
+            report.set_custom_html(f'<img src="{stats_png}" style="width:100%; height:auto;">')
+            report.build_custom()
+
+        # Request vs Latency
+        rvl_png = copy_into_report(iot_summary.get("req_vs_latency_img"), "iot_request_vs_latency.png")
+        if rvl_png:
+            report.build_chart_title("Request vs Average Latency")
+            report.set_custom_html(f'<img src="{rvl_png}" style="width:100%;">')
+            report.build_custom()
+
+        # Overall results table
+        ort = iot_summary.get("overall_result_table") or {}
+        if ort:
+            rows = [{
+                "Device": dev,
+                "Min Latency (ms)": stats.get("min_latency"),
+                "Avg Latency (ms)": stats.get("avg_latency"),
+                "Max Latency (ms)": stats.get("max_latency"),
+                "Total Iterations": stats.get("total_iterations"),
+                "Success Iters": stats.get("success_iterations"),
+                "Failed Iters": stats.get("failed_iterations"),
+                "No-Response Iters": stats.get("no_response_iterations"),
+            } for dev, stats in ort.items()]
+
+            df_overall = pd.DataFrame(rows).round(2)
+
+            report.set_custom_html('<div style="page-break-inside: avoid;">')
+            report.build_custom()
+            report.set_obj_html(_obj_title="Overall IoT Result Table", _obj=" ")
+            report.build_objective()
+            report.set_table_dataframe(df_overall)
+            report.build_table()
+            report.set_custom_html('</div>')
+            report.build_custom()
+
+        # Increment reports
+        inc = iot_summary.get("increment_reports") or {}
+        if inc:
+            report.set_custom_html('<h3>Reports by Increment Steps</h3>')
+            report.build_custom()
+
+            for step_name, rep in inc.items():
+
+                report.set_custom_html(f'<h4><u>{step_name.replace("_", " ")}</u></h4>')
+                report.build_custom()
+
+                # Latency graph
+                lat_png = copy_into_report(rep.get("latency_graph"), f"iot_{step_name}_latency.png")
+                if lat_png:
+                    report.build_chart_title("Average Latency")
+                    report.set_custom_html(f'<img src="{lat_png}" style="width:100%; height:auto;">')
+                    report.build_custom()
+
+                # Success count graph
+                res_png = copy_into_report(rep.get("result_graph"), f"iot_{step_name}_results.png")
+                if res_png:
+                    report.build_chart_title("Success Count")
+                    report.set_custom_html(f'<img src="{res_png}" style="width:100%; height:auto;">')
+                    report.build_custom()
+
+                # Tabular data for detailed iteration-level results
+                data_rows = rep.get("data") or []
+                if data_rows:
+                    df = pd.DataFrame(data_rows).rename(
+                        columns={"latency__ms": "Latency_ms", "latency_ms": "Latency_ms"}
+                    )
+                    if "Latency_ms" in df.columns:
+                        df["Latency_ms"] = pd.to_numeric(df["Latency_ms"], errors="coerce").round(3)
+                    if "Result" in df.columns:
+                        df["Result"] = df["Result"].map(lambda x: "Success" if bool(x) else "Failure")
+
+                    desired_cols = ["Iteration", "Device", "Current State", "latency (ms)", "Result"]
+                    df = df[[c for c in desired_cols if c in df.columns]]
+
+                    report.set_table_dataframe(df)
+                    report.build_table()
+
+                report.set_custom_html('<hr>')
+                report.build_custom()
+
 
 def validate_args(args):
     if args.expected_passfail_value and args.device_csv_name:
@@ -1778,6 +1929,114 @@ def validate_args(args):
             elif args.security.lower() == 'open' and args.passwd != '[BLANK]':
                 logger.error("For a open type security there will be no password or the password should be left blank (i.e., set to '' or [BLANK]).")
                 exit(1)
+
+
+def with_iot_params_in_table(base: dict, iot_summary) -> dict:
+    """
+    Append IoT params into the existing Throughput Input Parameters table.
+    Adds: IoT Test name, IoT Iterations, IoT Delay (s), IoT Increment.
+    Accepts dict or JSON string.
+    """
+    print("function called with iot params-----")
+    try:
+        if not iot_summary:
+            return base
+        if isinstance(iot_summary, str):
+            try:
+                iot_summary = json.loads(iot_summary)
+            except Exception:
+                start = iot_summary.find("{")
+                end = iot_summary.rfind("}")
+                if start == -1 or end == -1 or end <= start:
+                    return base
+                try:
+                    iot_summary = json.loads(iot_summary[start:end + 1])
+                except Exception:
+                    return base
+
+        ti = (iot_summary.get("test_input_table") or {})
+        out = OrderedDict(base)
+        out["IoT Test name"] = ti.get("Testname", "")
+        out["IoT Device List"] = ti.get("Device List", "")
+        out["IoT Iterations"] = ti.get("Iterations", "")
+        out["IoT Delay (s)"] = ti.get("Delay (seconds)", "")
+        out["IoT Increment"] = ti.get("Increment Pattern", "")
+        return out
+    except Exception:
+        return base
+
+
+def trigger_iot(ip, port, iterations, delay, device_list, testname, increment):
+    """
+    Entry point to start the IoT test in a separate thread.
+    This function is called from the throughput test script when IoT testing
+    is enabled. It wraps the asynchronous `run_iot()`.
+    """
+    asyncio.run(run_iot(ip, port, iterations, delay, device_list, testname, increment))
+
+
+async def run_iot(ip: str = '127.0.0.1',
+                  port: str = '8000',
+                  iterations: int = 1,
+                  delay: int = 5,
+                  device_list: str = '',
+                  testname: str = '',
+                  increment: str = ''):
+    try:
+
+        if delay < 5:
+            logger.error('The minimum delay should be 5 seconds.')
+            exit(1)
+
+        if device_list != '':
+            device_list = device_list.split(',')
+        else:
+            device_list = None
+        # Parse and validate increment pattern if provided
+        if increment:
+            print("the increment is : ", increment)
+            try:
+                increment = list(map(int, increment.split(',')))
+                if any(i < 1 for i in increment):
+                    logger.error('Increment values must be positive integers')
+                    exit(1)
+            except ValueError:
+                logger.error('Invalid increment format. Please provide comma-separated integers (e.g., "1,3,5")')
+                exit(1)
+
+        testname = testname
+
+        # Ensure test name is unique (avoid overwriting previous results)
+        if testname in os.listdir('../../local/interop-webGUI/IoT/scripts/results/'):
+            logger.error('Test with same name already existing. Please give a different testname.')
+            exit(1)
+        automation = Automation(ip=ip,
+                                port=port,
+                                iterations=iterations,
+                                delay=delay,
+                                device_list=device_list,
+                                testname=testname,
+                                increment=increment)
+
+        # fetch the available iot devices
+        automation.devices = await automation.fetch_iot_devices()
+
+        # select the iot devices for testing
+        automation.select_iot_devices()
+
+        # run the iot test on selected devices
+        automation.run_test()
+
+        # generate the iot report
+        automation.generate_report()
+
+    except Exception as e:
+        logger.error(f"Iot Test failed: {str(e)}")
+        raise
+
+    await automation.session.close()
+
+    logger.info('Iot Test Completed.')
 
 
 def main():
@@ -1949,6 +2208,39 @@ def main():
 
     optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
     optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
+    # IOT ARGS
+    parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
+    optional.add_argument('--iot_ip',
+                          default='127.0.0.1',
+                          help='IP of the server')
+
+    optional.add_argument('--iot_port',
+                          default='8000',
+                          help='Port of the server')
+    optional.add_argument('--iot_iterations',
+                          type=int,
+                          default=1,
+                          help='Iterations to run the test')
+
+    optional.add_argument('--iot_delay',
+                          type=int,
+                          default=5,
+                          help='Delay in seconds between iterations (min. 5 seconds)')
+
+    optional.add_argument('--iot_device_list',
+                          type=str,
+                          default='',
+                          help='Entity IDs of the devices to include in testing (comma separated)')
+
+    optional.add_argument('--iot_testname',
+                          type=str,
+                          default='',
+                          help='Testname for reporting')
+
+    optional.add_argument('--iot_increment',
+                          type=str,
+                          default='',
+                          help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
     help_summary = '''\
 lf_webpage.py will verify that N clients are connected on a specified band and can download
 some amount of file data from the HTTP server while measuring the time taken by clients to download the file and number of
@@ -1976,6 +2268,14 @@ times the file is downloaded.
     # Check for Both being used independently
     if len(args.bands) > 1 and "Both" in args.bands:
         raise ValueError("'Both' test type must be used independently!")
+    if args.iot_test:
+        iot_ip = args.iot_ip
+        iot_port = args.iot_port
+        iot_iterations = args.iot_iterations
+        iot_delay = args.iot_delay
+        iot_device_list = args.iot_device_list
+        iot_testname = args.iot_testname
+        iot_increment = args.iot_increment
 
     validate_args(args)
     if args.duration.endswith('s') or args.duration.endswith('S'):
@@ -2111,6 +2411,27 @@ times the file is downloaded.
                 exit(0)
         http.set_values()
         http.precleanup()
+        if args.iot_test:
+            if args.iot_iterations > 1:
+                thread = threading.Thread(target=trigger_iot, args=(iot_ip, iot_port, iot_iterations, iot_delay, iot_device_list, iot_testname, iot_increment))
+                thread.start()
+            else:
+                total_secs = int(args.duration)
+                iot_iterations = max(1, total_secs // args.iot_delay)
+                iot_thread = threading.Thread(
+                    target=trigger_iot,
+                    args=(
+                        args.iot_ip,
+                        args.iot_port,
+                        iot_iterations,
+                        args.iot_delay,
+                        args.iot_device_list,
+                        args.iot_testname,
+                        args.iot_increment
+                    ),
+                    daemon=True
+                )
+                iot_thread.start()
         http.build()
         if args.client_type == 'Real':
             http.monitor_cx()
@@ -2411,6 +2732,13 @@ times the file is downloaded.
         # "": args.bands,
         # "PASS/FAIL": data
     # }
+    iot_summary = None
+    if args.iot_test and args.iot_testname:
+        base = os.path.join("results", args.iot_testname)
+        p = os.path.join(base, "iot_summary.json")
+        if os.path.exists(p):
+            with open(p) as f:
+                iot_summary = json.load(f)
     if args.dowebgui:
         http.data_for_webui["status"] = ["STOPPED"] * len(http.devices_list)
         http.data_for_webui['rx rate (1m)'] = http.data['rx rate (1m)']
@@ -2430,7 +2758,7 @@ times the file is downloaded.
                          test_rig=args.test_rig, test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
                          dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
                          dut_serial_num=args.dut_serial_num, test_id=args.test_id,
-                         test_input_infor=test_input_infor, csv_outfile=args.csv_outfile)
+                         test_input_infor=test_input_infor, csv_outfile=args.csv_outfile, iot_summary=iot_summary)
     http.postcleanup()
     # FOR WEBGUI, filling csv at the end to get the last terminal logs
     if args.dowebgui:
