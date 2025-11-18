@@ -312,6 +312,43 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra=
              --debug
              --no_cleanup
 
+        # Example : Command Line Interface to run the Test along with IOT without device list
+            ./test_l3.py
+             --lfmgr 192.168.207.78
+             --test_duration 1m
+             --polling_interval 5s
+             --upstream_port eth1
+             --endp_type mc_udp
+             --rates_are_totals
+             --side_b_min_bps=10000000
+             --test_tag test_l3
+             --use_existing_station_list
+             --existing_station_list 1.20.en0
+             --cleanup_cx
+             --tos VO
+             --test_name Multcast
+             --iot_test
+             --iot_testname "Multicast_IoT_Test"
+
+        # Example : Command Line Interface to run the Test along with IOT with device list
+            ./test_l3.py
+             --lfmgr 192.168.207.78
+             --test_duration 1m
+             --polling_interval 5s
+             --upstream_port eth1
+             --endp_type mc_udp
+             --rates_are_totals
+             --side_b_min_bps=10000000
+             --test_tag test_l3
+             --use_existing_station_list
+             --existing_station_list 1.20.en0
+             --cleanup_cx
+             --tos VO
+             --test_name Multcast
+             --iot_test
+             --iot_testname "Multicast_IoT_Test"
+             --iot_device_list "switch.smart_plug_1_socket_1"
+
 
 SCRIPT_CLASSIFICATION:  Creation & Runs Traffic
 
@@ -646,7 +683,7 @@ import pandas as pd
 import json
 import shutil
 import threading
-
+from collections import OrderedDict
 
 import asyncio
 import copy
@@ -663,6 +700,7 @@ lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
+LFCliBase = realm.LFCliBase
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_attenuator = importlib.import_module("py-scripts.lf_atten_mod_test")
 lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
@@ -6014,11 +6052,31 @@ class L3VariableTime(Realm):
                 self.report.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
                 self.report.build_custom()
 
-    def generate_report(self, config_devices=None, group_device_map=None):
-        self.report.set_obj_html("Objective", "The Layer 3 Traffic Generation Test is designed to test the performance of the "
-                                 "Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream "
-                                 "of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints, "
-                                 "each of which is associated with a particular Port (physical or virtual interface).")
+    def generate_report(self, config_devices=None, group_device_map=None, iot_summary=None):
+        if iot_summary:
+            self.report.set_obj_html(
+                "Objective",
+                "The Candela Multicast Test Including IoT Devices is designed to evaluate an Access "
+                "Point’s efficiency, reliability, and scalability in handling multicast communication "
+                "across both Real clients (Android, Windows, Linux, iOS) and IoT devices (controlled "
+                "via Home Assistant). "
+                "For Real clients, the test simulates multicast traffic and measures key metrics such "
+                "as performance, latency, and packet delivery to assess how well the AP sustains "
+                "multicast communication under real-world conditions. "
+                "For IoT clients, the test concurrently executes device-specific actions (e.g., camera "
+                "streaming, switch toggling, lock/unlock) while multicast traffic is active, monitoring "
+                "success rate, latency, and failure rate. The goal is to validate that the AP can "
+                "reliably manage multicast traffic for Real clients while ensuring consistent "
+                "responsiveness and control of IoT devices."
+            )
+        else:
+            self.report.set_obj_html(
+                "Objective",
+                "The Layer 3 Traffic Generation Test is designed to test the performance of the "
+                "Access Point by running layer 3 Cross-Connect Traffic. Layer-3 Cross-Connects represent a stream "
+                "of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints, "
+                "each of which is associated with a particular Port (physical or virtual interface)."
+            )
 
         self.report.build_objective()
         test_setup_info = {
@@ -6030,6 +6088,8 @@ class L3VariableTime(Realm):
 
         self.report.set_table_title("Device Under Test Information")
         self.report.build_table_title()
+        if iot_summary:
+            test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
         self.report.test_setup_table(value="Device Under Test",
                                      test_setup_data=test_setup_info)
         # For real devices when groups specified for configuration
@@ -6416,6 +6476,8 @@ class L3VariableTime(Realm):
                 self.report.build_table_title()
                 self.report.set_table_dataframe(last_row)
                 self.report.build_table()
+        if iot_summary:
+            self.build_iot_report_section(self.report, iot_summary)
 
     def write_report(self):
         """Write out HTML and PDF report as configured."""
@@ -6608,6 +6670,123 @@ class L3VariableTime(Realm):
             else:
                 pass_fail_list.append('FAIL')
         return test_input_list, pass_fail_list
+
+    def build_iot_report_section(self, report, iot_summary):
+        """
+        Handles all IoT-related charts, tables, and increment-wise reports.
+        """
+        outdir = report.path_date_time
+        os.makedirs(outdir, exist_ok=True)
+
+        def copy_into_report(raw_path, new_name):
+            """Resolve and copy image into report dir."""
+            if not raw_path:
+                return None
+
+            abs_src = os.path.abspath(raw_path)
+            if not os.path.exists(abs_src):
+                # Search recursively under 'results' if absolute path missing
+                for root, _, files in os.walk(os.path.join(os.getcwd(), "results")):
+                    if os.path.basename(raw_path) in files:
+                        abs_src = os.path.join(root, os.path.basename(raw_path))
+                        break
+                else:
+                    return None
+
+            dst = os.path.join(outdir, new_name)
+            if os.path.abspath(abs_src) != os.path.abspath(dst):
+                shutil.copy2(abs_src, dst)
+            return new_name
+
+        # section header
+        report.set_custom_html('<div style="page-break-before: always;"></div>')
+        report.build_custom()
+        report.set_custom_html('<h2><u>IoT Results</u></h2>')
+        report.build_custom()
+
+        # Statistics
+        stats_png = copy_into_report(iot_summary.get("statistics_img"), "iot_statistics.png")
+        if stats_png:
+            report.build_chart_title("Test Statistics")
+            report.set_custom_html(f'<img src="{stats_png}" style="width:100%; height:auto;">')
+            report.build_custom()
+
+        # Request vs Latency
+        rvl_png = copy_into_report(iot_summary.get("req_vs_latency_img"), "iot_request_vs_latency.png")
+        if rvl_png:
+            report.build_chart_title("Request vs Average Latency")
+            report.set_custom_html(f'<img src="{rvl_png}" style="width:100%;">')
+            report.build_custom()
+
+        # Overall results table
+        ort = iot_summary.get("overall_result_table") or {}
+        if ort:
+            rows = [{
+                "Device": dev,
+                "Min Latency (ms)": stats.get("min_latency"),
+                "Avg Latency (ms)": stats.get("avg_latency"),
+                "Max Latency (ms)": stats.get("max_latency"),
+                "Total Iterations": stats.get("total_iterations"),
+                "Success Iters": stats.get("success_iterations"),
+                "Failed Iters": stats.get("failed_iterations"),
+                "No-Response Iters": stats.get("no_response_iterations"),
+            } for dev, stats in ort.items()]
+
+            df_overall = pd.DataFrame(rows).round(2)
+
+            report.set_custom_html('<div style="page-break-inside: avoid;">')
+            report.build_custom()
+            report.set_obj_html(_obj_title="Overall IoT Result Table", _obj=" ")
+            report.build_objective()
+            report.set_table_dataframe(df_overall)
+            report.build_table()
+            report.set_custom_html('</div>')
+            report.build_custom()
+
+        # Increment reports
+        inc = iot_summary.get("increment_reports") or {}
+        if inc:
+            report.set_custom_html('<h3>Reports by Increment Steps</h3>')
+            report.build_custom()
+
+            for step_name, rep in inc.items():
+
+                report.set_custom_html(f'<h4><u>{step_name.replace("_", " ")}</u></h4>')
+                report.build_custom()
+
+                # Latency graph
+                lat_png = copy_into_report(rep.get("latency_graph"), f"iot_{step_name}_latency.png")
+                if lat_png:
+                    report.build_chart_title("Average Latency")
+                    report.set_custom_html(f'<img src="{lat_png}" style="width:100%; height:auto;">')
+                    report.build_custom()
+
+                # Success count graph
+                res_png = copy_into_report(rep.get("result_graph"), f"iot_{step_name}_results.png")
+                if res_png:
+                    report.build_chart_title("Success Count")
+                    report.set_custom_html(f'<img src="{res_png}" style="width:100%; height:auto;">')
+                    report.build_custom()
+
+                # Tabular data for detailed iteration-level results
+                data_rows = rep.get("data") or []
+                if data_rows:
+                    df = pd.DataFrame(data_rows).rename(
+                        columns={"latency__ms": "Latency_ms", "latency_ms": "Latency_ms"}
+                    )
+                    if "Latency_ms" in df.columns:
+                        df["Latency_ms"] = pd.to_numeric(df["Latency_ms"], errors="coerce").round(3)
+                    if "Result" in df.columns:
+                        df["Result"] = df["Result"].map(lambda x: "Success" if bool(x) else "Failure")
+
+                    desired_cols = ["Iteration", "Device", "Current State", "Latency_ms", "Result"]
+                    df = df[[c for c in desired_cols if c in df.columns]]
+
+                    report.set_table_dataframe(df)
+                    report.build_table()
+
+                report.set_custom_html('<hr>')
+                report.build_custom()
 
 
 # Converting the upstream_port to IP address for configuration purposes
@@ -7968,6 +8147,38 @@ INCLUDE_IN_README: False
 # https://stackoverflow.com/questions/37304799/cross-platform-safe-to-use-command-line-string-separator
 #
 # Safe to exit in this function, as this should only be called by this script
+def with_iot_params_in_table(base: dict, iot_summary) -> dict:
+    """
+    Append IoT params into the existing Throughput Input Parameters table.
+    Adds: IoT Test name, IoT Iterations, IoT Delay (s), IoT Increment.
+    Accepts dict or JSON string.
+    """
+    try:
+        if not iot_summary:
+            return base
+        if isinstance(iot_summary, str):
+            try:
+                iot_summary = json.loads(iot_summary)
+            except Exception:
+                start = iot_summary.find("{")
+                end = iot_summary.rfind("}")
+                if start == -1 or end == -1 or end <= start:
+                    return base
+                try:
+                    iot_summary = json.loads(iot_summary[start:end + 1])
+                except Exception:
+                    return base
+
+        ti = (iot_summary.get("test_input_table") or {})
+        out = OrderedDict(base)
+        out["Iot Device List"] = ti.get("Device List", "")
+        out["IoT Iterations"] = ti.get("Iterations", "")
+        out["IoT Delay (s)"] = ti.get("Delay (seconds)", "")
+        out["IoT Increment"] = ti.get("Increment Pattern", "")
+        return out
+    except Exception:
+        return base
+
 
 def trigger_iot(ip, port, iterations, delay, device_list, testname, increment):
     """
@@ -8040,18 +8251,6 @@ async def run_iot(ip: str = '127.0.0.1',
     await automation.session.close()
 
     logger.info('Iot Test Completed.')
-
-
-def duration_to_seconds(duration: str) -> int:
-    duration = duration.strip().lower()
-    if duration.endswith("s"):
-        return int(duration[:-1])
-    elif duration.endswith("m"):
-        return int(duration[:-1]) * 60
-    elif duration.endswith("h"):
-        return int(duration[:-1]) * 3600
-    else:
-        return int(duration)
 
 
 def main():
@@ -8186,7 +8385,7 @@ and generate a report.
             thread = threading.Thread(target=trigger_iot, args=(iot_ip, iot_port, iot_iterations, iot_delay, iot_device_list, iot_testname, iot_increment))
             thread.start()
         else:
-            total_secs = duration_to_seconds(args.test_duration)
+            total_secs = int(LFCliBase.parse_time(args.test_duration).total_seconds())
             iot_iterations = max(1, total_secs // args.iot_delay)
             iot_thread = threading.Thread(
                 target=trigger_iot,
@@ -8769,12 +8968,19 @@ and generate a report.
     ip_var_test.set_report_obj(report=report)
     if args.dowebgui:
         ip_var_test.webgui_finalize()
+    iot_summary = None
+    if args.iot_test and args.iot_testname:
+        base = os.path.join("results", args.iot_testname)
+        p = os.path.join(base, "iot_summary.json")
+        if os.path.exists(p):
+            with open(p) as f:
+                iot_summary = json.load(f)
     # Generate and write out test report
     logger.info("Generating test report")
     if args.real:
-        ip_var_test.generate_report(config_devices, group_device_map)
+        ip_var_test.generate_report(config_devices, group_device_map, iot_summary=iot_summary)
     else:
-        ip_var_test.generate_report()
+        ip_var_test.generate_report(iot_summary=iot_summary)
     ip_var_test.write_report()
 
     # TODO move to after reporting
