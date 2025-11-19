@@ -1544,6 +1544,7 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(AdbGuiFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
+        DO_MIPMAPS_SCRCPY = 0x8            # Enable scrcpy mipmap generation.
         NO_AUDIO_SCRCPY = 0x2              # Disable scrcpy audio forwarding
         OMX_H264_ENCODER_SCRCPY = 0x4      # Use non-default OMX.google.h264.encoder scrcpy video encoder
         USE_SCRCPY = 0x1                   # Use scrcpy instead of MonkeyRemote
@@ -1562,8 +1563,10 @@ class LFJsonCommand(JsonCommand):
                      display: str = None,                      # The DISPLAY option, for example: 192.168.1.5:0.0. Will
                      # guess if left blank.
                      flags: str = None,                        # See flags defined above.
+                     fps: str = None,                          # Limit the FPS of the video. (scrcpy only). 20 is default, 0
+                     # is unlocked.
                      max_size: str = None,                     # Limit both the width and height of the video to value.
-                     # (scrcpy only). 0 is default.
+                     # (scrcpy only). 0 (Unlocked )is default.
                      resource: int = None,                     # Resource number. [W]
                      screen_size_prcnt: str = None,            # 0.1 to 1.0, screen size percentage for the Android display.
                      shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
@@ -1585,6 +1588,8 @@ class LFJsonCommand(JsonCommand):
             data["display"] = display
         if flags is not None:
             data["flags"] = flags
+        if fps is not None:
+            data["fps"] = fps
         if max_size is not None:
             data["max_size"] = max_size
         if resource is not None:
@@ -1616,6 +1621,7 @@ class LFJsonCommand(JsonCommand):
         self.post_adb_gui(adb_id=param_map.get("adb_id"),
                           display=param_map.get("display"),
                           flags=param_map.get("flags"),
+                          fps=param_map.get("fps"),
                           max_size=param_map.get("max_size"),
                           resource=param_map.get("resource"),
                           screen_size_prcnt=param_map.get("screen_size_prcnt"),
@@ -1770,6 +1776,7 @@ class LFJsonCommand(JsonCommand):
 
         AUTO_CONNECT_WIFI = 0x80           # Attempt to reconfigure Interop device in case it connects to wrong
         # +ssid
+        NO_APP_EN_WIFI = 0x800             # Request App to not enable wifi.
         NO_AUDIO_SCRCPY = 0x2              # Disable scrcpy audio forwarding
         OMX_H264_ENCODER_SCRCPY = 0x4      # Use non-default OMX.google.h264.encoder scrcpy video encoder
         USE_SCRCPY = 0x1                   # Use scrcpy instead of MonkeyRemote
@@ -1788,8 +1795,10 @@ class LFJsonCommand(JsonCommand):
                      adb_id: str = None,                       # Android device identifier (serial number).
                      adb_model: str = None,                    # Android device model ID
                      adb_product: str = None,                  # Android device product ID
+                     app_flags: str = None,                    # Flags given to the Android App. See above.
                      app_identifier: str = None,               # Identifier that App and adb can both query (mac of wlan0)
                      auth: str = None,                         # WiFi Authentication to be used.
+                     bssid: str = None,                        # WiFi BSSID to which this device should connect.
                      bt_ctrl_dev: str = None,                  # Filepath of device's assigned BT adapter
                      bt_mac: str = None,                       # Device's BT MAC address
                      device_type: str = None,                  # Interop device type
@@ -1798,6 +1807,9 @@ class LFJsonCommand(JsonCommand):
                      flags: str = None,                        # See above
                      flags_mask: str = None,                   # Which bits in the flags value to apply.
                      lf_username: str = None,                  # LANforge Interop app user-name
+                     mgr_ip: str = None,                       # IP Address of the LANforge Manager to which this Interop
+                     # device should attempt to connect. Use 0.0.0.0 for Auto
+                     # Discovery.
                      password: str = None,                     # WiFi password.
                      realm: str = None,                        # Realm this Interop device should use. Default is server's
                      # realm.
@@ -1828,10 +1840,14 @@ class LFJsonCommand(JsonCommand):
             data["adb_model"] = adb_model
         if adb_product is not None:
             data["adb_product"] = adb_product
+        if app_flags is not None:
+            data["app_flags"] = app_flags
         if app_identifier is not None:
             data["app_identifier"] = app_identifier
         if auth is not None:
             data["auth"] = auth
+        if bssid is not None:
+            data["bssid"] = bssid
         if bt_ctrl_dev is not None:
             data["bt_ctrl_dev"] = bt_ctrl_dev
         if bt_mac is not None:
@@ -1848,6 +1864,8 @@ class LFJsonCommand(JsonCommand):
             data["flags_mask"] = flags_mask
         if lf_username is not None:
             data["lf_username"] = lf_username
+        if mgr_ip is not None:
+            data["mgr_ip"] = mgr_ip
         if password is not None:
             data["password"] = password
         if realm is not None:
@@ -1888,8 +1906,10 @@ class LFJsonCommand(JsonCommand):
                           adb_id=param_map.get("adb_id"),
                           adb_model=param_map.get("adb_model"),
                           adb_product=param_map.get("adb_product"),
+                          app_flags=param_map.get("app_flags"),
                           app_identifier=param_map.get("app_identifier"),
                           auth=param_map.get("auth"),
+                          bssid=param_map.get("bssid"),
                           bt_ctrl_dev=param_map.get("bt_ctrl_dev"),
                           bt_mac=param_map.get("bt_mac"),
                           device_type=param_map.get("device_type"),
@@ -1898,6 +1918,7 @@ class LFJsonCommand(JsonCommand):
                           flags=param_map.get("flags"),
                           flags_mask=param_map.get("flags_mask"),
                           lf_username=param_map.get("lf_username"),
+                          mgr_ip=param_map.get("mgr_ip"),
                           password=param_map.get("password"),
                           realm=param_map.get("realm"),
                           resource=param_map.get("resource"),
@@ -4027,6 +4048,7 @@ class LFJsonCommand(JsonCommand):
                          block_size: str = None,                   # TFTP Block size, in bytes.
                          dns_cache_timeout: str = None,            # In seconds, how long to cache DNS lookups. 0 means no
                          # caching at all.
+                         flavor: str = None,                       # Type of the application to run. See above.
                          http_auth_type: str = None,               # Bit-field for allowable http-authenticate methods.
                          ip_addr: str = None,                      # Local IP address, for binding to specific secondary IP.
                          max_speed: str = None,                    # In bits-per-second, can rate limit upload or download
@@ -4070,6 +4092,8 @@ class LFJsonCommand(JsonCommand):
             data["block_size"] = block_size
         if dns_cache_timeout is not None:
             data["dns_cache_timeout"] = dns_cache_timeout
+        if flavor is not None:
+            data["flavor"] = flavor
         if http_auth_type is not None:
             data["http_auth_type"] = http_auth_type
         if ip_addr is not None:
@@ -4131,6 +4155,7 @@ class LFJsonCommand(JsonCommand):
         self.post_add_l4_endp(alias=param_map.get("alias"),
                               block_size=param_map.get("block_size"),
                               dns_cache_timeout=param_map.get("dns_cache_timeout"),
+                              flavor=param_map.get("flavor"),
                               http_auth_type=param_map.get("http_auth_type"),
                               ip_addr=param_map.get("ip_addr"),
                               max_speed=param_map.get("max_speed"),
@@ -4569,7 +4594,9 @@ class LFJsonCommand(JsonCommand):
         EAP_PEAP = 0x200                    # Enable EAP-PEAP
         EAP_TTLS = 0x80                     # Use 802.1x EAP-TTLS
         ENABLE_POWERSAVE = 0x1000           # Enable power-save when creating stations.
+        IS_MAC_VLAN = 0x20000               # Whether VLAN is MAC-VLAN.
         NAT = 0x100                         # Enable NAT if this object is in a virtual router
+        NO_BIND = 0x40000                   # Do not bind to BSSID of AP. Good for MLO stations.
         OWE = 0x10000                       # Use OWE encryption.
         RRM_IGNORE_BEACON_REQ = 0x2000      # Request station ignore RRM beacon measurement request.
         SKIP_DHCP_ROAM = 0x10               # Ask station to not re-do DHCP on roam.
@@ -20271,46 +20298,59 @@ class LFJsonQuery(JsonQuery):
         /adb/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        a-wifi, api, app-id, bt+ctrl, bt+mac, device, device-type, eap-method, eap-user, 
-        encryption, model, name, password, phantom, product, release, resource-id, 
-        ssid, timed-out, unauth, user-name, wifi+mac
+        a-wifi, api, app-id, auth-rpt, bssid, bt+ctrl, bt+ctrl+cx+status, bt+mac, 
+        device, eap-method, eap-user, en-wifi, encryption, entity+id, freq, model, 
+        name, password, phantom, product, release, resource-id, rssi, ssid, ssid-rpt, 
+        timed-out, type, unauth, user-name, wifi+mac
     Example URL: /adb?fields=a-wifi,api
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_adb(eid_list=['1.234', '1.344'],
-                                   requested_col_names=['wifi mac'], 
+                                   requested_col_names=['entity id'], 
                                    debug=True)
 
     The record returned will have these members: 
     {
-        'a-wifi':      # Android phones may roam to other saved WiFi profiles if the preferred
-                       # WiFi connection disconnects.If you enable this option, the LANforge
-                       # system will attempt to detect this and force it back to the preferred
-                       # WiFi SSID.
-        'api':         # SDK API Version
-        'app-id':      # Interop app identifier.
-        'bt ctrl':     # LANforge bluetooth control device.
-        'bt mac':      # Bluetooth MAC address
-        'device':      # Interop device identifier.
-        'device-type': # Interop device type
-        'eap-method':  # WiFi EAP Method for Enterprise Authentication.
-        'eap-user':    # WiFi EAP User for Enterprise Authentication.
-        'encryption':  # WiFi authentication type for the WiFi connection.
-        'model':       # Interop device model identifier.
-        'name':        # Interop device serial number and LANforge Resource location.
-        'password':    # WiFi password.
-        'phantom':     # LANforge is unable to communicate with this device. Maybe it is
-                       # unplugged?
-        'product':     # Interop device product identifier.
-        'release':     # SDK Release
-        'resource-id': # Identifier for the Resource this Interop device is associated.
-        'ssid':        # WiFi SSID to which this device should connect.
-        'timed-out':   # The device has timed out too many times while running commands. It may
-                       # need to be reconnected.
-        'unauth':      # The device is un-authorized. Enable debugging on device to use it.
-                       # (Android only)
-        'user-name':   # LANforge Interop app username for this Interop device.
-        'wifi mac':    # Wifi MAC address
+        'a-wifi':            # Android phones may roam to other saved WiFi profiles if the preferred
+                             # WiFi connection disconnects.If you enable this option, the LANforge
+                             # system will attempt to detect this and force it back to the preferred
+                             # WiFi SSID.
+        'api':               # SDK API Version
+        'app-id':            # Interop app identifier.
+        'auth-rpt':          # Authentication type reported by the Interop device.
+        'bssid':             # BSSID to which the device is connected.
+        'bt ctrl':           # LANforge bluetooth control device.
+        'bt ctrl cx status': # Status of the Bluetooth controller <-> iOS device connection.
+        'bt mac':            # Bluetooth MAC address
+        'device':            # Interop device identifier.
+        'eap-method':        # WiFi EAP Method for Enterprise Authentication.
+        'eap-user':          # WiFi EAP User for Enterprise Authentication.
+        'en-wifi':           # Android and IOS apps will attempt to enable WiFi.Un-select this to have
+                             # the Apps not automatically enable WiFi.
+        'encryption':        # WiFi authentication type for the WiFi connection.Network changes will
+                             # only take effect if the 'App Enable WiFi' option is checked.
+        'entity id':         # Entity Identifier (shelf.resource.port.endpoint.endp-type).
+        'freq':              # Frequency reported by the Interop device.
+        'model':             # Interop device model identifier.
+        'name':              # Interop device serial number and LANforge Resource location.
+        'password':          # WiFi password.Network changes will only take effect if the 'App Enable
+                             # WiFi' option is checked.
+        'phantom':           # LANforge is unable to communicate with this device. Maybe it is
+                             # unplugged?
+        'product':           # Interop device product identifier.
+        'release':           # SDK Release
+        'resource-id':       # Identifier for the Resource this Interop device is associated.
+        'rssi':              # RSSI reported by the Interop device.
+        'ssid':              # WiFi SSID to which this device should connect.Network changes will only
+                             # take effect if the 'App Enable WiFi' option is checked.
+        'ssid-rpt':          # SSID to which the device is connected.
+        'timed-out':         # The device has timed out too many times while running commands. It may
+                             # need to be reconnected.
+        'type':              # Interop device type
+        'unauth':            # The device is un-authorized. Enable debugging on device to use it.
+                             # (Android only)
+        'user-name':         # LANforge Interop app username for this Interop device.
+        'wifi mac':          # Wifi MAC address
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -21877,8 +21917,9 @@ class LFJsonQuery(JsonQuery):
                                 # frame.In all cases, the packets on the wire will not exceed theport's
                                 # MTU + Ethernet-Header-Size (typically 1514 for Ethernet)Note that large
                                 # minimum write sizes put memory pressure on theLANforge system and can
-                                # degrade performance.For TCP, setting MSS is a better way to force the
-                                # on-the-wire packet size.
+                                # degrade performance.If Max PDU Size &gt Min PDU Size, then random sizes
+                                # between min and max will be used.For TCP, setting MSS is a better way to
+                                # force the on-the-wire packet size.
         'max rate':             # Maximum desired transmit rate, in bits per second (bps).
         'mcast rx':             # Indicates if endpoint is configured as a multicast receiver.
         'min pdu':              # The minimum write size for generated traffic.For UDP, this is the UDP
@@ -21887,8 +21928,9 @@ class LFJsonQuery(JsonQuery):
                                 # frame.In all cases, the packets on the wire will not exceed theport's
                                 # MTU + Ethernet-Header-Size (typically 1514 for Ethernet)Note that large
                                 # minimum write sizes put memory pressure on theLANforge system and can
-                                # degrade performance.For TCP, setting MSS is a better way to force the
-                                # on-the-wire packet size.
+                                # degrade performance.If Max PDU Size &gt Min PDU Size, then random sizes
+                                # between min and max will be used.For TCP, setting MSS is a better way to
+                                # force the on-the-wire packet size.
         'min rate':             # Minimum desired transmit rate, in bits per second (bps).
         'mng':                  # Is the Endpoint managed or not?
         'name':                 # Endpoint's Name.
