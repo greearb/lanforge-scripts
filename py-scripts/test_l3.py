@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# flake8: noqa: E501
+# long lines in this are ignored
 """
 NAME: test_l3.py
 
@@ -205,24 +207,23 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra=
              --log_level debug
 
         # Example : LAN-1927  WPA3-TLS-Configuration
-            ./test_l3.py
-             --lfmgr 192.168.0.103
-             --test_duration 20s
-             --polling_interval 5s
-             --upstream_port 1.1.eth2
-             --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,
-wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Required'
-             --endp_type lf_udp
-             --rates_are_totals
-             --side_a_min_bps=256000
-             --side_b_min_bps=300000000
-             --test_rig ID_003
-             --test_tag 'test_l3'
-             --dut_model_num GT-AXE11000
-             --dut_sw_version 3.0.0.4.386_44266
-             --dut_hw_version 1.0
-             --dut_serial_num 12345678
-             --log_level debug
+./test_l3.py\
+ --lfmgr 192.168.50.104\
+ --test_duration 20s\
+ --polling_interval 5s\
+ --upstream_port 1.1.eth2\
+ --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa3,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pmska_cache,wifi_extra==key_mgmt&&WPA-EAP!!pairwise&&GCMP-256!!group&&GCMP-256!!eap&&TLS!!identity&&testuser!!passwd&&testpasswd!!private_key&&/home/lanforge/client.p12!!ca_cert&&/home/lanforge/ca.pem!!pk_password&&lanforge!!ieee80211w&&Required'\
+ --endp_type lf_udp\
+ --rates_are_totals\
+ --side_a_min_bps=256000\
+ --side_b_min_bps=300000000\
+ --test_rig ID_003\
+ --test_tag 'test_l3'\
+ --dut_model_num GT-AXE11000\
+ --dut_sw_version 3.0.0.4.386_44266\
+ --dut_hw_version 1.0\
+ --dut_serial_num 12345678\
+ --log_level debug
 
 ./test_l3.py
              --lfmgr 192.168.101.137
