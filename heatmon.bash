@@ -29,8 +29,8 @@ JQ_FORMULA=$( cat <<- 'EOF'
       T: .value
     }
 ] + (
-if ($line // "" ) != "" then
-   ( $line | split(",") | map(gsub(" "; "")) ) as $f
+if ($ARGS.named.trinkey_reading // "" ) != "" then
+   ( $ARGS.named.trinkey_reading | split(",") | map(gsub(" "; "")) ) as $f
    | [{
        A: "TrinkeySHT41_Ambient",
        T: ($f[1] | tonumber)
@@ -46,40 +46,54 @@ if [[ -n "${1:-}" ]] && [[ -r "$1" ]]; then
 fi
 
 # Get a reading from the Adafruit Trinkey SHT41 USB Controller
-device="/dev/ttyACM0"
+device="/dev/TrinkeySHT41"
+trinkey_dev=''
+trinkey_reading=''
 
 getAmbientTempReading() {
+    stty -F "$device" raw 115200 cs8 clocal -icanon -echo min 1 time 1
     if ! exec 3< "$device"; then
         echo "Unable to open fd 3"
-        exit -1
+        return 1
     fi
-    if ! read -r line <&3; then
+    if ! read -r trinkey_reading <&3; then
         echo "Unable to read line from serial port on Trinkey SHT41"
-        exit -1
+        return 1
     fi
+    # echo "DEBUG: Current line: $trinkey_reading"
     # When the device first boots, it outputs three lines of header and ID info
-    # Detect the first header line then report the first reading from the fouth line.
-    # Lines have \r\n suffix, read once for first line then twice for last two lines.
-    HEADER_LINE="# Adafruit SHT4x Trinkey Factory Test"
-    if [[ "$line" =~ "$HEADER_LINE" ]]; then
-        read -r _ <&3
-        read -r _ <&3
-        read -r _ <&3
-        read -r _ <&3
-        read -r _ <&3
-        read -r line <&3
+    HEADER_PATTERN=".*Adafruit\s.*"
+    if [[ $trinkey_reading =~ $HEADER_PATTERN ]]; then
+        if mapfile -t -n 6 -u 3 readings; then
+            trinkey_reading=${readings[5]}
+            # echo "DEBUG: trinkey_reading after mapfile is: $trinkey_reading"
+        else
+           echo "ERROR: Failed to read header lines from Trinkey SHT41 device"
+           exec 3<&-
+           return 1
+        fi
     fi
+    # echo "DEBUG: closing serial port FD"
     exec 3<&-
+    return 0
 }
 
-# Check if the Adafruit device exists
-if [[ ! -e $device && ! -c $device ]]; then
-    echo "Unable to find Trinkey SHT41 device"
-    /usr/bin/sensors -u -j 2>/dev/null \
-      | jq -c "$JQ_FORMULA"
+# Device path exists and is a character device file
+if [[ -e $device && -c $device ]]; then
+   trinkey_dev=$device
 else
-    getAmbientTempReading
-    /usr/bin/sensors -u -j 2>/dev/null \
-      | jq --arg line "$line" -c "$JQ_FORMULA"
+   echo "ERROR: Trinkey SHT41 device path doesn't exist or isn't a serial device"
+fi
+# Non-empty string if SHT sensor controller found
+if [[ -n "$trinkey_dev" ]]; then
+   getAmbientTempReading
+   trinkey_read_status=$?
+else
+   echo "ERROR: Trinkey SHT41 device path is an empty string"
+fi
+if [[ -n "$trinkey_reading" && trinkey_read_status -eq 0 ]]; then
+   /usr/bin/sensors -u -j 2>/dev/null | jq --arg trinkey_reading "$trinkey_reading" -c "$JQ_FORMULA"
+else
+   /usr/bin/sensors -u -j 2>/dev/null | jq -c "$JQ_FORMULA"
 fi
 #
