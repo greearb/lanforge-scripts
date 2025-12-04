@@ -81,15 +81,11 @@ getAmbientTempReading() {
 # Device path exists and is a character device file
 if [[ -e $device && -c $device ]]; then
    trinkey_dev=$device
-else
-   echo "ERROR: Trinkey SHT41 device path doesn't exist or isn't a serial device"
 fi
 # Non-empty string if SHT sensor controller found
 if [[ -n "$trinkey_dev" ]]; then
    getAmbientTempReading
    trinkey_read_status=$?
-else
-   echo "ERROR: Trinkey SHT41 device path is an empty string"
 fi
 if [[ -n "$trinkey_reading" && trinkey_read_status -eq 0 ]]; then
    /usr/bin/sensors -u -j 2>/dev/null | jq --arg trinkey_reading "$trinkey_reading" -c "$JQ_FORMULA"
