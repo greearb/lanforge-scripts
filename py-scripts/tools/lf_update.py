@@ -147,7 +147,7 @@ class create_lanforge_object:
         self.lanforge_system_reboot = None
         self.timeout = 2
         self.interval = 5
-        self.max_iterations = 24
+        self.max_iterations = 40
 
     # del causes an exception since the connection is already down
     def __del__(self) -> None:
