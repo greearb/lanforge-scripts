@@ -167,6 +167,9 @@ class ADB_DEVICES(Realm):
 
     # Forget Networks
     async def forget_all_networks(self, port_list=[]):
+        # Added stop app in prior to clearing wifi profiles because in build 5.5.2 we have issue with clearing profiles, so the app is still running with the existing ssid.
+        logger.info("STOPPING APP ANDROID")
+        await self.stop_app(port_list=port_list)
         logger.info("FORGET ALL NETWORKS ANDROID")
         if (port_list == []):
             logger.info('Port list is empty')
@@ -232,16 +235,17 @@ class ADB_DEVICES(Realm):
                 if curr_encryption == "wpa3_enterprise":
                     curr_encryption = "wpa3-ent"
                 adb_cmd = (
-                    "shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity "
-                    "--es auto_start 1 "
-                    "--es username {} "
-                    "--es serverip {} "
-                    "--es ssid {} "
-                    "--es password {} "
-                    "--es encryption {} "
-                    "--es eap_method {} "
-                    "--es eap_user {} "
-                    "--es eap_passwd {}".format(
+                    'shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity '
+                    '--es auto_start 1 '
+                    '--es username {} '
+                    '--es serverip {} '
+                    '--es ssid \\"{}\\" '
+                    '--es password \\"{}\\" '
+                    '--es encryption {} '
+                    '--es eap_method {} '
+                    '--es eap_user {} '
+                    '--es eap_passwd {} '
+                    '--es auto_wifi 1'.format(
                         username, server_ip, curr_ssid, curr_passwd, curr_encryption,
                         curr_eap_method, curr_eap_identity, curr_passwd
                     )
@@ -255,13 +259,14 @@ class ADB_DEVICES(Realm):
                 }
             else:
                 adb_cmd = (
-                    "shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity "
-                    "--es auto_start 1 "
-                    "--es username {} "
-                    "--es serverip {} "
-                    "--es ssid {} "
-                    "--es password {} "
-                    "--es encryption {}".format(
+                    'shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity '
+                    '--es auto_start 1 '
+                    '--es username {} '
+                    '--es serverip {} '
+                    '--es ssid \\"{}\\" '
+                    '--es password \\"{}\\" '
+                    '--es encryption {} '
+                    '--es auto_wifi 1'.format(
                         username, server_ip, curr_ssid, curr_passwd, curr_encryption
                     )
                 )
@@ -1513,8 +1518,9 @@ class DeviceConfig(Realm):
                 time.sleep(10)
         if not reboot and not disconnect:
             if (selected_adb_devices != []):
-                await self.adb_obj.stop_app(port_list=selected_adb_devices)
-                # await self.adb_obj.forget_all_networks(port_list=selected_adb_devices)
+                # stop app is now included in forget_all_networks 
+                # await self.adb_obj.stop_app(port_list=selected_adb_devices)
+                await self.adb_obj.forget_all_networks(port_list=selected_adb_devices)
                 await self.adb_obj.configure_wifi(port_list=selected_adb_devices)
 
                 if (selected_laptop_devices == []):
