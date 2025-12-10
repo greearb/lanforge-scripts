@@ -112,7 +112,8 @@ class ADB_DEVICES(Realm):
         self.adb_url = '/adb/'
 
     # stop app
-    async def stop_app(self, port_list=[]):
+    async def stop_app(self, port_list=None):
+        port_list = [] if port_list is None else port_list
         if (port_list == []):
             logger.info('Device list is empty')
             return
@@ -138,7 +139,8 @@ class ADB_DEVICES(Realm):
         await asyncio.gather(*tasks)
 
     # toggle wifi
-    def set_wifi_state(self, port_list=[], state='enable'):
+    def set_wifi_state(self, port_list=None, state='enable'):
+        port_list = [] if port_list is None else port_list
         if (port_list == []):
             logger.info('Port list is empty')
             return
@@ -166,7 +168,8 @@ class ADB_DEVICES(Realm):
         [loop.run_in_executor(None, self.json_post, self.adb_post_url, data) for data in data_list]
 
     # Forget Networks
-    async def forget_all_networks(self, port_list=[]):
+    async def forget_all_networks(self, port_list=None):
+        port_list = [] if port_list is None else port_list
         # Added stop app in prior to clearing wifi profiles because in build 5.5.2 we have issue with clearing profiles, so the app is still running with the existing ssid.
         logger.info("STOPPING APP ANDROID")
         await self.stop_app(port_list=port_list)
@@ -194,7 +197,8 @@ class ADB_DEVICES(Realm):
         await asyncio.gather(*tasks)
 
     # Configure Wifi ADB
-    async def configure_wifi(self, port_list=[]):
+    async def configure_wifi(self, port_list=None):
+        port_list = [] if port_list is None else port_list
         logger.info("CONFIGURE ANDROIDS")
         if (port_list == []):
             logger.info('Port list is empty')
@@ -289,7 +293,8 @@ class ADB_DEVICES(Realm):
         await asyncio.gather(*tasks)
 
     # Reboot ADB Devices
-    async def reboot_android(self, port_list=[], state='enable'):
+    async def reboot_android(self, port_list=None, state='enable'):
+        port_list = [] if port_list is None else port_list
         if (port_list == []):
             logger.info('Port list is empty')
             return
@@ -332,7 +337,7 @@ class ADB_DEVICES(Realm):
                 # parameters for adb post request
                 try:
                     shelf, resource = interop_tab_data['resource-id'].split('.')
-                except BaseException:
+                except Exception:
                     # logger.warning('Resource id is missing for the device {} therefore skipping the device from usage'.format(name))
                     shelf, resource = '', ''
                 device["serial"] = serial
@@ -358,7 +363,7 @@ class ADB_DEVICES(Realm):
 
                     try:
                         shelf, resource = data['resource-id'].split('.')
-                    except BaseException:
+                    except Exception:
                         # logger.warning('Resource id is missing for the device {} therefore skipping the device from usage'.format(name))
                         _, resource = '', ''
                     device["serial"] = serial
@@ -372,7 +377,7 @@ class ADB_DEVICES(Realm):
                     devices_data.append(device)
         return (devices_data)
 
-    def get_serial_from_port(self, port_list=[]):
+    def get_serial_from_port(self, port_list=None):
 
         if (port_list == []):
             logger.info('Androids list is empty')
@@ -468,7 +473,8 @@ class LAPTOPS(Realm):
 
     # remove station
     # NOTE this is only for Linux Laptops
-    async def rm_station(self, port_list=[]):
+    async def rm_station(self, port_list=None):
+        port_list = [] if port_list is None else port_list
         if (port_list == []):
             logger.info('Port list is empty')
             return
@@ -495,7 +501,8 @@ class LAPTOPS(Realm):
         time.sleep(2)
 
     # add station
-    async def add_station(self, port_list=[]):
+    async def add_station(self, port_list=None):
+        port_list = [] if port_list is None else port_list
         logger.info("ADD STATION LAPTOP")
         if (port_list == []):
             logger.info('Port list is empty')
@@ -579,7 +586,8 @@ class LAPTOPS(Realm):
         time.sleep(2)
     # Set Wifi Extra
 
-    async def set_wifi_extra(self, port_list=[]):
+    async def set_wifi_extra(self, port_list=None):
+        port_list = [] if port_list is None else port_list
         logger.info("SET WIFI EXTRA LAPTOP")
         if (port_list == []):
             logger.info('Port list is empty')
@@ -640,7 +648,8 @@ class LAPTOPS(Realm):
         # Use asyncio.gather to await the completion of all tasks
         await asyncio.gather(*tasks)
 
-    async def set_port_1(self, port_list=[]):
+    async def set_port_1(self, port_list=None):
+        port_list = [] if port_list is None else port_list
         logger.info("SET PORT LAPTOP")
         if (port_list == []):
             logger.info('Port list is empty')
@@ -681,7 +690,8 @@ class LAPTOPS(Realm):
         await asyncio.gather(*tasks)
 
     # set port (enable DHCP)
-    async def set_port(self, port_list=[]):
+    async def set_port(self, port_list=None):
+        port_list = [] if port_list is None else port_list
         logger.info("SET PORT LAPTOP")
         if (port_list == []):
             logger.info('Port list is empty')
@@ -723,7 +733,8 @@ class LAPTOPS(Realm):
         await asyncio.gather(*tasks)
 
     # Reboot Laptops
-    async def reboot_laptop(self, port_list=[]):
+    async def reboot_laptop(self, port_list=None):
+        port_list = [] if port_list is None else port_list
         logger.info("REBOOT LAPTOP")
         if (port_list == []):
             logger.info('Port list is empty')
@@ -749,7 +760,8 @@ class LAPTOPS(Realm):
         await asyncio.gather(*tasks)
 
     # Disconnect Wifi Laptops
-    async def disconnect_wifi(self, port_list=[]):
+    async def disconnect_wifi(self, port_list=None):
+        port_list = [] if port_list is None else port_list
         logger.info("SET PORT LAPTOP")
         if (port_list == []):
             logger.info('Port list is empty')
@@ -1070,7 +1082,8 @@ class DeviceConfig(Realm):
             writer.writerows(existing_data)
         # input()
 
-    def update_device_csv(self, csv_name='device.csv', test='', device_dict={}):
+    def update_device_csv(self, csv_name='device.csv', test='', device_dict=None):
+        device_dict = {} if device_dict is None else device_dict
         adbresponse = self.adb_obj.get_devices()
         resource_manager = self.laptop_obj.get_devices()
         device_csv = {}
@@ -1363,7 +1376,8 @@ class DeviceConfig(Realm):
             logger.info("\n%s", result_df.to_string(index=False))
             return result_df
 
-    def get_profiles(self, data=[]):
+    def get_profiles(self, data=None):
+        data = [] if data is None else data
         py_scripts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
         # Read CSV file into DataFrame
         file_path = os.path.join(py_scripts_dir, 'profile.csv')
@@ -1518,7 +1532,7 @@ class DeviceConfig(Realm):
                 time.sleep(10)
         if not reboot and not disconnect:
             if (selected_adb_devices != []):
-                # stop app is now included in forget_all_networks 
+                # stop app is now included in forget_all_networks
                 # await self.adb_obj.stop_app(port_list=selected_adb_devices)
                 await self.adb_obj.forget_all_networks(port_list=selected_adb_devices)
                 await self.adb_obj.configure_wifi(port_list=selected_adb_devices)
