@@ -67,6 +67,21 @@
     python3 lf_interop_ping_plotter.py --mgr 192.168.204.74 --real --target 192.168.204.66 --ping_interval 1 --ping_duration 1m  --group_name grp4,grp5
      --profile_name Openz,Openz --file_name g219 --device_csv_name device.csv --server_ip 192.168.204.74
 
+    EXAMPLE-14:
+    Command Line Interface to run the Test along with IOT without device list
+    python3 lf_interop_ping_plotter.py --mgr 192.168.207.78 --target www.google.com --real --ping_interval 5 --ping_duration 60s --use_default_config
+     --iot_test --iot_testname "Pingiot"
+
+    EXAMPLE-15:
+    Command Line Interface to run the Test along with IOT with device list
+    python3 lf_interop_ping_plotter.py --mgr 192.168.207.78 --target www.google.com --real --ping_interval 5 --ping_duration 60s --use_default_config
+     --iot_test --iot_testname "Pingiot" --iot_device_list "switch.smart_plug_1_socket_1"
+
+    EXAMPLE-16:
+    Command Line Interface to run the Ping Plotter test by specifying upstream port as the target.
+    python3 lf_interop_ping_plotter.py --mgr 192.168.207.78 --target 1.1.eth1 --real --ping_interval 5 --ping_duration 60s --use_default_config
+
+
     SCRIPT_CLASSIFICATION : Test
 
     SCRIPT_CATEGORIES: Performance, Functional, Report Generation
@@ -102,6 +117,9 @@ import asyncio
 import json
 import shutil
 import requests
+import threading
+from collections import OrderedDict
+from os import path
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
@@ -127,7 +145,12 @@ if sys.version_info[0] != 3:
     exit(1)
 
 realm = importlib.import_module("py-json.realm")
+LFCliBase = realm.LFCliBase
 Realm = realm.Realm
+iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
+if os.path.exists(iot_scripts_path):
+    sys.path.insert(0, iot_scripts_path)
+    from test_automation import Automation  # noqa: E402
 
 
 class Ping(Realm):
@@ -214,7 +237,7 @@ class Ping(Realm):
             try:
                 target_port_ip = self.json_get('/port/{}/{}/{}?fields=ip'.format(shelf, resource, port))['interface']['ip']
                 self.target = target_port_ip
-            except BaseException:
+            except Exception:
                 logging.warning('The target is not an ethernet port. Proceeding with the given target {}.'.format(self.target))
             logging.info(self.target)
         else:
@@ -766,7 +789,7 @@ class Ping(Realm):
                     pass_fail_list.append("FAIL")
         return pass_fail_list, test_input_list
 
-    def generate_report(self, result_json=None, result_dir='Ping_Plotter_Test_Report', report_path='', config_devices='', group_device_map=None):
+    def generate_report(self, result_json=None, result_dir='Ping_Plotter_Test_Report', report_path='', config_devices='', group_device_map=None, iot_summary=None):
         if group_device_map is None:
             group_device_map = {}
         if result_json is not None:
@@ -858,7 +881,7 @@ class Ping(Realm):
         logging.info('path_date_time: {}'.format(report_path_date_time))
 
         # setting report title
-        report.set_title('Ping Plotter Test Report')
+        report.set_title('Ping Plotter Test Report including IoT Devices' if iot_summary else 'Ping Plotter Test Report')
         report.build_banner()
 
         # test setup info
@@ -906,16 +929,36 @@ class Ping(Realm):
                 'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
                 'Duration': self.duration
             }
+        if iot_summary:
+            test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
         report.test_setup_table(
             test_setup_data=test_setup_info, value='Test Setup Information')
 
         # objective and description
-        report.set_obj_html(_obj_title='Objective',
-                            _obj='''Candela Ping Plotter Test assesses the network connectivity for specified clients by measuring Round
-                            Trip data packet Travel time. It also detects issues like packet loss, delays, and
-                            response time variations, ensuring effective device communication and identifying
-                            connectivity problems.
-                            ''')
+        if iot_summary:
+            report.set_obj_html(
+                _obj_title='Objective',
+                _obj='''
+        The Candela Ping Test Including IoT Devices is designed to evaluate an Access Point’s connectivity, reliability,
+        and latency when handling both Real clients (Android, Windows, Linux, iOS) and IoT devices (controlled via Home Assistant).
+        For Real clients, the test measures round-trip time (RTT), packet loss, and response time variations to validate
+        that the AP provides stable and consistent network connectivity across multiple device types.
+        For IoT clients, the test concurrently executes device-specific actions (e.g., camera streaming, smart-switch toggling,
+        lock/unlock operations, sensor state updates) while monitoring iteration success rate, latency, and failure rate.
+        The goal is to ensure that the Access Point can maintain reliable communication with minimal delays for Real clients
+        while delivering consistent responsiveness and control for IoT devices in mixed workload environments.
+        '''
+            )
+        else:
+            report.set_obj_html(
+                _obj_title='Objective',
+                _obj='''
+        Candela Ping Plotter Test assesses the network connectivity for specified clients by measuring Round
+        Trip data packet travel time. It also detects issues like packet loss, delays, and
+        response time variations, ensuring effective device communication and identifying
+        connectivity problems.
+        '''
+            )
         report.build_objective()
 
         # uptime and downtime
@@ -1138,6 +1181,8 @@ class Ping(Realm):
             })
             report.set_table_dataframe(dataframe3)
             report.build_table()
+        if iot_summary:
+            self.build_iot_report_section(report, iot_summary)
 
         # closing
         report.build_footer()
@@ -1279,6 +1324,123 @@ class Ping(Realm):
                         report.set_custom_html(f'<img src="file://{image_path}" style="width:1200px; height:800px;"></img>')
                         report.build_custom()
 
+    def build_iot_report_section(self, report, iot_summary):
+        """
+        Handles all IoT-related charts, tables, and increment-wise reports.
+        """
+        outdir = report.path_date_time
+        os.makedirs(outdir, exist_ok=True)
+
+        def copy_into_report(raw_path, new_name):
+            """Resolve and copy image into report dir."""
+            if not raw_path:
+                return None
+
+            abs_src = os.path.abspath(raw_path)
+            if not os.path.exists(abs_src):
+                # Search recursively under 'results' if absolute path missing
+                for root, _, files in os.walk(os.path.join(os.getcwd(), "results")):
+                    if os.path.basename(raw_path) in files:
+                        abs_src = os.path.join(root, os.path.basename(raw_path))
+                        break
+                else:
+                    return None
+
+            dst = os.path.join(outdir, new_name)
+            if os.path.abspath(abs_src) != os.path.abspath(dst):
+                shutil.copy2(abs_src, dst)
+            return new_name
+
+        # section header
+        report.set_custom_html('<div style="page-break-before: always;"></div>')
+        report.build_custom()
+        report.set_custom_html('<h2><u>IoT Results</u></h2>')
+        report.build_custom()
+
+        # Statistics
+        stats_png = copy_into_report(iot_summary.get("statistics_img"), "iot_statistics.png")
+        if stats_png:
+            report.build_chart_title("Test Statistics")
+            report.set_custom_html(f'<img src="{stats_png}" style="width:100%; height:auto;">')
+            report.build_custom()
+
+        # Request vs Latency
+        rvl_png = copy_into_report(iot_summary.get("req_vs_latency_img"), "iot_request_vs_latency.png")
+        if rvl_png:
+            report.build_chart_title("Request vs Average Latency")
+            report.set_custom_html(f'<img src="{rvl_png}" style="width:100%;">')
+            report.build_custom()
+
+        # Overall results table
+        ort = iot_summary.get("overall_result_table") or {}
+        if ort:
+            rows = [{
+                "Device": dev,
+                "Min Latency (ms)": stats.get("min_latency"),
+                "Avg Latency (ms)": stats.get("avg_latency"),
+                "Max Latency (ms)": stats.get("max_latency"),
+                "Total Iterations": stats.get("total_iterations"),
+                "Success Iters": stats.get("success_iterations"),
+                "Failed Iters": stats.get("failed_iterations"),
+                "No-Response Iters": stats.get("no_response_iterations"),
+            } for dev, stats in ort.items()]
+
+            df_overall = pd.DataFrame(rows).round(2)
+
+            report.set_custom_html('<div style="page-break-inside: avoid;">')
+            report.build_custom()
+            report.set_obj_html(_obj_title="Overall IoT Result Table", _obj=" ")
+            report.build_objective()
+            report.set_table_dataframe(df_overall)
+            report.build_table()
+            report.set_custom_html('</div>')
+            report.build_custom()
+
+        # Increment reports
+        inc = iot_summary.get("increment_reports") or {}
+        if inc:
+            report.set_custom_html('<h3>Reports by Increment Steps</h3>')
+            report.build_custom()
+
+            for step_name, rep in inc.items():
+
+                report.set_custom_html(f'<h4><u>{step_name.replace("_", " ")}</u></h4>')
+                report.build_custom()
+
+                # Latency graph
+                lat_png = copy_into_report(rep.get("latency_graph"), f"iot_{step_name}_latency.png")
+                if lat_png:
+                    report.build_chart_title("Average Latency")
+                    report.set_custom_html(f'<img src="{lat_png}" style="width:100%; height:auto;">')
+                    report.build_custom()
+
+                # Success count graph
+                res_png = copy_into_report(rep.get("result_graph"), f"iot_{step_name}_results.png")
+                if res_png:
+                    report.build_chart_title("Success Count")
+                    report.set_custom_html(f'<img src="{res_png}" style="width:100%; height:auto;">')
+                    report.build_custom()
+
+                # Tabular data for detailed iteration-level results
+                data_rows = rep.get("data") or []
+                if data_rows:
+                    df = pd.DataFrame(data_rows).rename(
+                        columns={"latency__ms": "Latency_ms", "latency_ms": "Latency_ms"}
+                    )
+                    if "Latency_ms" in df.columns:
+                        df["Latency_ms"] = pd.to_numeric(df["Latency_ms"], errors="coerce").round(3)
+                    if "Result" in df.columns:
+                        df["Result"] = df["Result"].map(lambda x: "Success" if bool(x) else "Failure")
+
+                    desired_cols = ["Iteration", "Device", "Current State", "Latency_ms", "Result"]
+                    df = df[[c for c in desired_cols if c in df.columns]]
+
+                    report.set_table_dataframe(df)
+                    report.build_table()
+
+                report.set_custom_html('<hr>')
+                report.build_custom()
+
 
 def validate_args(args):
     # input sanity
@@ -1328,6 +1490,112 @@ def validate_args(args):
     if len(selected_groups) != len(selected_profiles):
         logger.error("Number of groups should match number of profiles")
         exit(1)
+
+
+def with_iot_params_in_table(base: dict, iot_summary) -> dict:
+    """
+    Append IoT params into the existing Throughput Input Parameters table.
+    Adds: IoT Test name, IoT Iterations, IoT Delay (s), IoT Increment.
+    Accepts dict or JSON string.
+    """
+    try:
+        if not iot_summary:
+            return base
+        if isinstance(iot_summary, str):
+            try:
+                iot_summary = json.loads(iot_summary)
+            except Exception:
+                start = iot_summary.find("{")
+                end = iot_summary.rfind("}")
+                if start == -1 or end == -1 or end <= start:
+                    return base
+                try:
+                    iot_summary = json.loads(iot_summary[start:end + 1])
+                except Exception:
+                    return base
+
+        ti = (iot_summary.get("test_input_table") or {})
+        out = OrderedDict(base)
+        out["Iot Device List"] = ti.get("Device List", "")
+        out["IoT Iterations"] = ti.get("Iterations", "")
+        out["IoT Delay (s)"] = ti.get("Delay (seconds)", "")
+        out["IoT Increment"] = ti.get("Increment Pattern", "")
+        return out
+    except Exception:
+        return base
+
+
+def trigger_iot(ip, port, iterations, delay, device_list, testname, increment):
+    """
+    Entry point to start the IoT test in a separate thread.
+    This function is called from the throughput test script when IoT testing
+    is enabled. It wraps the asynchronous `run_iot()`.
+    """
+    asyncio.run(run_iot(ip, port, iterations, delay, device_list, testname, increment))
+
+
+async def run_iot(ip: str = '127.0.0.1',
+                  port: str = '8000',
+                  iterations: int = 1,
+                  delay: int = 5,
+                  device_list: str = '',
+                  testname: str = '',
+                  increment: str = ''):
+    try:
+
+        if delay < 5:
+            logger.error('The minimum delay should be 5 seconds.')
+            exit(1)
+
+        if device_list != '':
+            device_list = device_list.split(',')
+        else:
+            device_list = None
+        # Parse and validate increment pattern if provided
+        if increment:
+            print("the increment is : ", increment)
+            try:
+                increment = list(map(int, increment.split(',')))
+                if any(i < 1 for i in increment):
+                    logger.error('Increment values must be positive integers')
+                    exit(1)
+            except ValueError:
+                logger.error('Invalid increment format. Please provide comma-separated integers (e.g., "1,3,5")')
+                exit(1)
+
+        testname = testname
+
+        # Ensure test name is unique (avoid overwriting previous results)
+        if testname in os.listdir('../../local/interop-webGUI/IoT/scripts/results/'):
+            logger.error('Test with same name already existing. Please give a different testname.')
+            exit(1)
+        automation = Automation(ip=ip,
+                                port=port,
+                                iterations=iterations,
+                                delay=delay,
+                                device_list=device_list,
+                                testname=testname,
+                                increment=increment)
+
+        # fetch the available iot devices
+        automation.devices = await automation.fetch_iot_devices()
+
+        # select the iot devices for testing
+        automation.select_iot_devices()
+
+        # run the iot test on selected devices
+        automation.run_test()
+
+        # generate the iot report
+        automation.generate_report()
+
+    except Exception as e:
+        logger.error(f"Iot Test failed: {str(e)}")
+        raise
+
+    await automation.session.close()
+
+    logger.info('Iot Test Completed.')
 
 
 def main():
@@ -1575,6 +1843,39 @@ connectivity problems.
                           type=int,
                           default=0,
                           help='specify the Number of floors there in the house')
+    # IOT ARGS
+    parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
+    optional.add_argument('--iot_ip',
+                          default='127.0.0.1',
+                          help='IP of the server')
+
+    optional.add_argument('--iot_port',
+                          default='8000',
+                          help='Port of the server')
+    optional.add_argument('--iot_iterations',
+                          type=int,
+                          default=1,
+                          help='Iterations to run the test')
+
+    optional.add_argument('--iot_delay',
+                          type=int,
+                          default=5,
+                          help='Delay in seconds between iterations (min. 5 seconds)')
+
+    optional.add_argument('--iot_device_list',
+                          type=str,
+                          default='',
+                          help='Entity IDs of the devices to include in testing (comma separated)')
+
+    optional.add_argument('--iot_testname',
+                          type=str,
+                          default='',
+                          help='Testname for reporting')
+
+    optional.add_argument('--iot_increment',
+                          type=str,
+                          default='',
+                          help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
 
     args = parser.parse_args()
 
@@ -1583,6 +1884,14 @@ connectivity problems.
         exit(0)
 
     validate_args(args)
+    if args.iot_test:
+        iot_ip = args.iot_ip
+        iot_port = args.iot_port
+        iot_iterations = args.iot_iterations
+        iot_delay = args.iot_delay
+        iot_device_list = args.iot_device_list
+        iot_testname = args.iot_testname
+        iot_increment = args.iot_increment
     # set the logger level to debug
     logger_config = lf_logger_config.lf_logger_config()
 
@@ -1782,6 +2091,27 @@ connectivity problems.
             else:
                 webUI_resources = webUI_resources.split(',')
                 ping.select_real_devices(real_devices=Devices, real_sta_list=webUI_resources, base_interop_obj=Devices)
+    if args.iot_test:
+        if args.iot_iterations > 1:
+            thread = threading.Thread(target=trigger_iot, args=(iot_ip, iot_port, iot_iterations, iot_delay, iot_device_list, iot_testname, iot_increment))
+            thread.start()
+        else:
+            total_secs = int(LFCliBase.parse_time(args.ping_duration).total_seconds())
+            iot_iterations = max(1, total_secs // args.iot_delay)
+            iot_thread = threading.Thread(
+                target=trigger_iot,
+                args=(
+                    args.iot_ip,
+                    args.iot_port,
+                    iot_iterations,
+                    args.iot_delay,
+                    args.iot_device_list,
+                    args.iot_testname,
+                    args.iot_increment
+                ),
+                daemon=True
+            )
+            iot_thread.start()
 
     # station precleanup
     ping.cleanup()
@@ -1886,7 +2216,7 @@ connectivity problems.
                                     try:
                                         # fetching the first part of the last result e.g., 64 bytes from 192.168.1.61: icmp_seq=28 time=3.66 ms into t_result and the remaining part into t_fail
                                         t_result, t_fail = result.split('***')
-                                    except BaseException:
+                                    except Exception:
                                         continue
                                     t_result = t_result.split()
                                     if 'icmp_seq=' not in result and 'time=' not in result:
@@ -1968,7 +2298,7 @@ connectivity problems.
                                         try:
                                             # fetching the first part of the last result e.g., 64 bytes from 192.168.1.61: icmp_seq=28 time=3.66 ms into t_result and the remaining part into t_fail
                                             t_result, t_fail = result.split('***')
-                                        except BaseException:
+                                        except Exception:
                                             continue  # first line of ping result
                                         t_result = t_result.split()
                                         if 'icmp_seq=' not in result and 'time=' not in result:
@@ -2068,7 +2398,7 @@ connectivity problems.
                                 try:
                                     # fetching the first part of the last result e.g., 64 bytes from 192.168.1.61: icmp_seq=28 time=3.66 ms into t_result and the remaining part into t_fail
                                     t_result, t_fail = result.split('***')
-                                except BaseException:
+                                except Exception:
                                     continue
                                 t_result = t_result.split()
                                 if 'icmp_seq=' not in result and 'time=' not in result:
@@ -2187,7 +2517,7 @@ connectivity problems.
                                         try:
                                             # fetching the first part of the last result e.g., 64 bytes from 192.168.1.61: icmp_seq=28 time=3.66 ms into t_result and the remaining part into t_fail
                                             t_result, t_fail = result.split('***')
-                                        except BaseException:
+                                        except Exception:
                                             continue
                                         t_result = t_result.split()
                                         if 'icmp_seq=' not in result and 'time=' not in result:
@@ -2252,7 +2582,13 @@ connectivity problems.
         # print(t_end, abs(t_init - t_end).total_seconds())
         loop_timer += abs(t_init - t_end).total_seconds()
     # time.sleep(duration * 60)
-
+    iot_summary = None
+    if args.iot_test and args.iot_testname:
+        base = path.join("results", args.iot_testname)
+        p = path.join(base, "iot_summary.json")
+        if path.exists(p):
+            with open(p) as f:
+                iot_summary = json.load(f)
     logging.info('Stopping the test')
     ping.stop_generic()
 
@@ -2264,14 +2600,14 @@ connectivity problems.
 
     if args.local_lf_report_dir == "":
         if args.group_name:
-            ping.generate_report(config_devices=config_devices, group_device_map=group_device_map)
+            ping.generate_report(config_devices=config_devices, group_device_map=group_device_map, iot_summary=iot_summary)
         else:
-            ping.generate_report()
+            ping.generate_report(iot_summary=iot_summary)
     else:
         if args.group_name:
-            ping.generate_report(config_devices=config_devices, group_device_map=group_device_map, report_path=args.local_lf_report_dir)
+            ping.generate_report(config_devices=config_devices, group_device_map=group_device_map, report_path=args.local_lf_report_dir, iot_summary=iot_summary)
         else:
-            ping.generate_report(report_path=args.local_lf_report_dir)
+            ping.generate_report(report_path=args.local_lf_report_dir, iot_summary=iot_summary)
 
     # print('----',rtts)
     # station post cleanup
