@@ -34,6 +34,17 @@
     python3 lf_interop_youtube.py --mgr 192.168.204.74 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 1
     --ssid NETGEAR_2g_wpa2 --passwd Password@123 --encryp wpa2 --upstream_port 1.1.eth1 --config
 
+    EXAMPLE-6:
+    Command Line Interface to run the Test along with IOT without device list
+    python3 lf_interop_youtube.py --mgr 192.168.207.78 --url https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1 --duration 1
+    --test_name Youtube --res 144p --upstream_port 192.168.200.191 --iot_test --iot_testname "youtubeIot"
+
+    EXAMPLE-7:
+    Command Line Interface to run the Test along with IOT with device list
+    python3 lf_interop_youtube.py --mgr 192.168.207.78 --url https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1 --duration 1
+    --test_name Youtube --res 144p --upstream_port 192.168.200.191 --iot_test --iot_testname "youtubeIot" --iot_device_list "switch.smart_plug_1_socket_1"
+
+
 
     SCRIPT CLASSIFICATION: Test
 
@@ -101,6 +112,8 @@ lf_base_interop_profile = importlib.import_module("py-scripts.lf_base_interop_pr
 lf_report = lf_report.lf_report
 lf_bar_graph_horizontal = lf_graph.lf_bar_graph_horizontal
 RealDevice = lf_base_interop_profile.RealDevice
+
+from IOT.iot_helper import start_iot_thread, with_iot_params_in_table, add_iot_report_section  # noqa: E402
 
 
 class Youtube(Realm):
@@ -780,7 +793,7 @@ class Youtube(Realm):
         with open(file_path, 'w') as file:
             json.dump(data, file, indent=4)
 
-    def create_report(self, data, ui_report_dir):
+    def create_report(self, data, ui_report_dir, iot_summary=None):
 
         result_data = data
         for device, stats in result_data.items():
@@ -808,14 +821,35 @@ class Youtube(Realm):
         self.report_path_date_time = self.report.get_path_date_time()
 
         # setting report title
-        self.report.set_title('Youtube Streaming Report')
+        self.report.set_title('Youtube Streaming Report Including IoT Devices ' if iot_summary else 'Youtube Streaming Report')
         self.report.build_banner()
 
         # objective and description
-        self.report.set_obj_html(_obj_title='Objective',
-                                 _obj='''The Objective is to conduct automated Youtube Video Streaming test across multiple laptops to gather statistics. The test
-                            will collect these statistics. Additionally,automated graphs will be generated using the collected data.
-                            ''')
+        if iot_summary:
+            self.report.set_obj_html(
+                _obj_title='Objective',
+                _obj=(
+                    "The Candela YouTube Streaming Test Including IoT Devices is designed to evaluate an Access Point’s "
+                    "performance and stability when handling both Real clients (Windows, Linux, MacBook, Android, iOS) and IoT "
+                    "devices (controlled via Home Assistant). "
+                    "For Real clients, the test simulates real-world streaming scenarios by playing YouTube videos and "
+                    "collecting key statistics such as video resolution, buffer health, total frames, and dropped frames to "
+                    "validate smooth playback across multiple devices and operating systems. "
+                    "For IoT clients, the test concurrently executes device-specific actions (e.g., camera streaming, switch "
+                    "toggling, lock/unlock) and monitors success rate, latency, and failure rate. The goal is to ensure that "
+                    "the AP can sustain high-quality YouTube streaming performance for Real clients while reliably supporting "
+                    "IoT device operations with consistent responsiveness and control."
+                )
+            )
+        else:
+            self.report.set_obj_html(
+                _obj_title='Objective',
+                _obj=(
+                    "The Objective is to conduct automated Youtube Video Streaming test across multiple laptops to gather "
+                    "statistics. The test will collect these statistics. Additionally, automated graphs will be generated "
+                    "using the collected data."
+                )
+            )
         self.report.build_objective()
 
         if self.config:
@@ -859,6 +893,9 @@ class Youtube(Realm):
                 "Video URL": self.url,
 
             }
+        if iot_summary:
+            test_setup_info['Test Name'] = 'YouTube Streaming Test with IoT Devices'
+            test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
 
         self.report.test_setup_table(
             test_setup_data=test_setup_info, value='Test Parameters')
@@ -1031,6 +1068,8 @@ class Youtube(Realm):
             self.report.build_graph()
 
         os.chdir(original_dir)
+        if iot_summary:
+            add_iot_report_section(self.report, iot_summary)
 
         # Closing
         self.report.build_custom()
@@ -1294,6 +1333,22 @@ NOTES:
         parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
         parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
         parser.add_argument("--wait_time", type=int, help="Specify the time for configuration", default=60)
+        # IOT ARGS
+        parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
+
+        optional.add_argument('--iot_ip', default='127.0.0.1', help='IP of the server')
+
+        optional.add_argument('--iot_port', default='8000', help='Port of the server')
+
+        optional.add_argument('--iot_iterations', type=int, default=1, help='Iterations to run the test')
+
+        optional.add_argument('--iot_delay', type=int, default=5, help='Delay in seconds between iterations (min. 5 seconds)')
+
+        optional.add_argument('--iot_device_list', type=str, default='', help='Entity IDs of the devices to include in testing (comma separated)')
+
+        optional.add_argument('--iot_testname', type=str, default='', help='Testname for reporting')
+
+        optional.add_argument('--iot_increment', type=str, default='', help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
 
         args = parser.parse_args()
 
@@ -1529,6 +1584,8 @@ NOTES:
 
                         }
                         youtube.updating_webui_runningjson(obj)
+            if args.iot_test:
+                start_iot_thread(args)
 
             # Perform pre-test cleanup if not skipped
             if not args.no_pre_cleanup:
@@ -1578,13 +1635,19 @@ NOTES:
 
             youtube.generic_endps_profile.stop_cx()
             logging.info("Duration ended")
+            iot_summary = None
+            if args.iot_test and args.iot_testname:
+                base = os.path.join("results", args.iot_testname)
+                p = os.path.join(base, "iot_summary.json")
+                if os.path.exists(p):
+                    with open(p) as f:
+                        iot_summary = json.load(f)
 
             logging.info('Stopping the test')
             if do_webUI:
-                youtube.create_report(youtube.stats_api_response, youtube.ui_report_dir)
+                youtube.create_report(youtube.stats_api_response, youtube.ui_report_dir, iot_summary=iot_summary)
             else:
-
-                youtube.create_report(youtube.stats_api_response, '')
+                youtube.create_report(youtube.stats_api_response, '', iot_summary=iot_summary)
 
             # Perform post-test cleanup if not skipped
             if not args.no_post_cleanup:
