@@ -249,6 +249,7 @@ class ADB_DEVICES(Realm):
                     '--es eap_method {} '
                     '--es eap_user {} '
                     '--es eap_passwd {} '
+                    '--es app_flags 1 '
                     '--es auto_wifi 1'.format(
                         username, server_ip, curr_ssid, curr_passwd, curr_encryption,
                         curr_eap_method, curr_eap_identity, curr_passwd
