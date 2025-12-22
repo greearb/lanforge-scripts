@@ -35,6 +35,16 @@ Pre-requisites: Real clients should be connected to the LANforge MGR and Interop
             python3 lf_interop_real_browser_test.py --mgr 192.168.204.74 --url "https://google.com" --duration 1m --debug --upstream_port 1.1.eth1
             --file_name grplaptops --group_name group1,group2 --profile_name netgear2g,netgear2g
 
+            Example-6:
+            Command Line Interface to run the Test along with IOT without device list
+            python3  lf_interop_real_browser_test.py --mgr 192.168.207.78 --duration 1 --url https://www.google.com --count 10 --upstream_port 192.168.200.191
+            --expected_passfail_value 5 --iot_test --iot_testname "Real_Browser_Iot"
+
+            Example-7:
+            Command Line Interface to run the Test along with IOT with device list
+            python3  lf_interop_real_browser_test.py --mgr 192.168.207.78 --duration 1 --url https://www.google.com --count 10 --upstream_port 192.168.200.191
+            --expected_passfail_value 5 --iot_test --iot_testname "Real_Browser_Iot" --iot_device_list "switch.smart_plug_1_socket_1"
+
 
             SCRIPT CLASSIFICATION: Test
 
@@ -116,6 +126,8 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 logger = logging.getLogger(__name__)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
+
+from IOT.iot_helper import start_iot_thread, with_iot_params_in_table, add_iot_report_section  # noqa: E402
 
 
 class RealBrowserTest(Realm):
@@ -1625,7 +1637,7 @@ class RealBrowserTest(Realm):
 
         return pass_fail_list, test_input_list
 
-    def create_report(self):
+    def create_report(self, iot_summary=None):
         try:
             if self.dowebgui:
                 report = lf_report(_output_pdf='Real_Browser_Report',
@@ -1641,16 +1653,35 @@ class RealBrowserTest(Realm):
                                    _path='')
                 self.report_path_date_time = report.get_path_date_time()
 
-            report.set_title("Web Browser Test")
+            report.set_title("Web Browser Test Including IoT Devices" if iot_summary else "Web Browser Test")
             report.build_banner()
 
             report.set_table_title("Objective:")
             report.build_table_title()
-            report.set_text("The Candela Web browser test is designed to measure the Access Point performance and stability by browsing multiple websites in real clients" +
-                            " like android, Linux, windows" +
-                            "and IOS which are connected to the access point. This test allows the user to choose the options like website link," +
-                            "the number of times the page has to browse, and the Time taken to browse the page." +
-                            "The expected behavior is for the AP to be able to handle several stations(within the limitations of the AP specs) and make sure all clients can browse the page.")
+            if iot_summary:
+                report.set_text(
+                    "The Candela Real Browser Test Including IoT Devices is designed to evaluate an Access Point’s performance and "
+                    "stability when handling both Real clients (Android, Linux, Windows, iOS) and IoT devices (controlled via Home "
+                    "Assistant) simultaneously. "
+                    "For Real clients, the test measures browsing performance by repeatedly accessing user-defined websites, "
+                    "capturing metrics such as page load time, number of successful loads, and reasons for failed URLs. This "
+                    "validates the AP’s ability to support multiple stations browsing concurrently while maintaining stability and "
+                    "responsiveness. "
+                    "For IoT clients, the test concurrently executes device-specific actions (e.g., camera streaming, switch "
+                    "toggling, lock/unlock) in repeated iterations and monitors key metrics such as task execution success rate, "
+                    "latency, and failure rate. The goal is to ensure that the AP can reliably support diverse traffic types, "
+                    "providing consistent browsing performance for Real clients while maintaining responsive and reliable control "
+                    "for IoT devices."
+                )
+            else:
+                report.set_text(
+                    "The Candela Web browser test is designed to measure the Access Point performance and stability by browsing "
+                    "multiple websites in real clients like Android, Linux, Windows, and iOS which are connected to the access "
+                    "point. This test allows the user to choose options such as website link, the number of times the page has to "
+                    "be browsed, and the time taken to browse the page. The expected behavior is for the AP to handle several "
+                    "stations (within the limitations of the AP specs) while ensuring all clients can browse the page."
+                )
+
             report.build_text_simple()
 
             report.set_table_title("Test Parameters:")
@@ -1674,6 +1705,8 @@ class RealBrowserTest(Realm):
             final_eid_data, mac_data, channel_data, signal_data, ssid_data, tx_rate_data, device_names, device_type_data = self.extract_device_data('real_time_data.csv')
 
             test_setup_info = self.generate_test_setup_info()
+            if iot_summary:
+                test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
             report.test_setup_table(
                 test_setup_data=test_setup_info, value='Test Parameters')
 
@@ -1862,7 +1895,8 @@ class RealBrowserTest(Realm):
             if self.dowebgui:
 
                 os.chdir(self.original_dir)
-
+            if iot_summary:
+                add_iot_report_section(report, iot_summary)
             report.build_custom()
             report.build_footer()
             report.write_html()
@@ -2072,7 +2106,20 @@ def main():
         parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
         parser.add_argument("--wait_time", type=int, help="Specify the time for configuration", default=60)
         parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
+        # IOT ARGS
+        parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
+        optional.add_argument('--iot_ip', default='127.0.0.1', help='IP of the server')
 
+        optional.add_argument('--iot_port', default='8000', help='Port of the server')
+        optional.add_argument('--iot_iterations', type=int, default=1, help='Iterations to run the test')
+
+        optional.add_argument('--iot_delay', type=int, default=5, help='Delay in seconds between iterations (min. 5 seconds)')
+
+        optional.add_argument('--iot_device_list', type=str, default='', help='Entity IDs of the devices to include in testing (comma separated)')
+
+        optional.add_argument('--iot_testname', type=str, default='', help='Testname for reporting')
+
+        optional.add_argument('--iot_increment', type=str, default='', help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
         args = parser.parse_args()
         if args.help_summary:
             print(help_summary)
@@ -2137,6 +2184,8 @@ def main():
         if not obj.expected_passfail_value and obj.device_csv_name is None:
             obj.config_obj.device_csv_file(csv_name="device.csv")
         obj.run_flask_server()
+        if args.iot_test:
+            start_iot_thread(args)
         if obj.group_name and obj.profile_name and obj.file_name:
             available_resources = obj.process_group_profiles()
         else:
@@ -2179,6 +2228,13 @@ def main():
         obj.handle_incremental(args, obj, available_resources, available_resources)
         obj.handle_duration()
         obj.run_test(available_resources)
+        iot_summary = None
+        if args.iot_test and args.iot_testname:
+            base = os.path.join("results", args.iot_testname)
+            p = os.path.join(base, "iot_summary.json")
+            if os.path.exists(p):
+                with open(p) as f:
+                    iot_summary = json.load(f)
 
     except Exception as e:
         logging.error("Error occured", e)
@@ -2186,7 +2242,7 @@ def main():
         logger.error("An exception occurred:\n%s", tb_str)
     finally:
         if '--help' not in sys.argv and '-h' not in sys.argv:
-            obj.create_report()
+            obj.create_report(iot_summary=iot_summary)
             obj.stop()
 
             if not args.no_postcleanup:
