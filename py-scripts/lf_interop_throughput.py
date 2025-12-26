@@ -68,6 +68,16 @@
         python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000
         --traffic_type lf_udp --ssid NETGEAR_2G_wpa2 --passwd Password@123 --security wpa2 --config --device_list 1.10,1.11,1.12
 
+        EXAMPLE-14:
+        Command Line Interface to run download scenario with desired resources at desired points using robo
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --robot_ip 192.168.204.101 --coordinate 3,4
+
+        EXAMPLE-15:
+        Command Line Interface to run download scenario with desired resources at desired points with rotations using robo
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --robot_ip 192.168.204.101 --coordinate 3,4 --rotation 30,60,90
+
     TO PERFORM INTEROPABILITY TEST:
 
         EXAMPLE-1:
@@ -167,6 +177,7 @@ import matplotlib.pyplot as plt
 import re
 import threading
 from collections import OrderedDict
+from lf_base_robo import RobotClass
 logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
@@ -257,7 +268,8 @@ class Throughput(Realm):
                  config=False,
                  user_list=None, real_client_list=None, real_client_list1=None, hw_list=None, laptop_list=None, android_list=None, mac_list=None, windows_list=None, linux_list=None,
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
-                 devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None):
+                 devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None,
+                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -365,6 +377,155 @@ class Throughput(Realm):
         self.config_dict = {}
         self.configured_devices_check = {}
         self.interopability_config = interopability_config
+
+        # Variables related to Robo
+        self.robo_ip = robo_ip
+        self.angle_list = angle_list if angle_list else [0]
+        if self.robo_ip:
+            self.robot = RobotClass(robo_ip=self.robo_ip, angle_list=self.angle_list)
+            self.rotation_enabled = rotation_enabled
+            self.coordinate_list = coordinate_list if coordinate_list else [0]
+            self.current_coordinate = None
+            self.current_angle = None
+            self.charge_point_name = None
+            self.coordinates_completed = []
+            self.battery_log = {}
+
+    def perform_robo(self, args, clients_to_run):
+        """
+        Execute robot-assisted throughput testing across multiple coordinates and angles.
+
+        The robot navigates to each configured coordinate, monitors battery status,
+        optionally performs angle-based rotation,on selected clients and generates
+        final performance reports.
+
+        Args:
+            args (Namespace): Parsed command-line arguments
+            clients_to_run (list): List of client identifiers used for throughput testing.
+
+        Returns:
+            None
+        """
+        if args.dowebgui and args.coordinate is not None:
+            base_dir = os.path.dirname(os.path.dirname(args.result_dir))
+            nav_data = os.path.join(base_dir, 'nav_data.json')  # To generate nav_data.json in webgui folder
+            with open(nav_data, "w") as file:
+                json.dump({}, file)
+            self.robot.nav_data_path = nav_data
+            self.robot.runtime_dir = args.result_dir
+            self.robot.ip = args.mgr
+            self.robot.testname = args.test_name
+        iterations_before_test_stopped_by_user = []
+        test_stopped_by_user = False
+        # Loop through the coordinate list when coordinates are specified.
+        for coord in self.coordinate_list:
+            # checking the battery status of robot before moving to a point
+            pause_coord, test_stopped_by_user = self.robot.wait_for_battery()
+            if test_stopped_by_user:
+                break
+
+            # move the robot to specified coordinate and tracking the current coordinate and set of coordinates completed
+            matched, abort = self.robot.move_to_coordinate(coord)
+            if matched:
+                self.current_coordinate = coord
+                self.coordinates_completed.append(coord)
+                logger.info("Reached the point {}".format(coord))
+            if abort:
+                break
+            individual_dataframe_column = []
+
+            to_run_cxs, to_run_cxs_len, created_cx_lists_keys, incremental_capacity_list = self.get_incremental_capacity_list()
+
+            for i in range(len(clients_to_run)):
+
+                # Extend individual_dataframe_column with dynamically generated column names
+                individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop  {clients_to_run[i]}',
+                                                    f'Tx % Drop{clients_to_run[i]}', f'Average RTT {clients_to_run[i]}', f'RSSI {clients_to_run[i]}',
+                                                    f'Tx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]}'])
+
+            if self.rotation_enabled:
+
+                individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop ', 'Overall Tx % Drop', 'Iteration',
+                                                    'TIMESTAMP', 'Start_time', 'End_time', 'Remaining_Time', 'Incremental_list', 'Angle', 'status'])
+
+            else:
+                individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop ', 'Overall Tx % Drop', 'Iteration',
+                                                    'TIMESTAMP', 'Start_time', 'End_time', 'Remaining_Time', 'Incremental_list', 'status'])
+            individual_df = pd.DataFrame(columns=individual_dataframe_column)
+
+            overall_start_time = datetime.now()
+            overall_end_time = overall_start_time + timedelta(seconds=int(args.test_duration) * len(incremental_capacity_list))
+
+            for i in range(len(to_run_cxs)):
+                is_device_configured = True
+                if args.do_interopability:
+                    # To get resource of device under test in interopability
+                    device_to_run_resource = self.extract_digits_until_alpha(to_run_cxs[i][0])
+
+                # Check the load type specified by the user
+                if args.load_type == "wc_intended_load":
+                    # Perform intended load for the current iteration
+                    self.perform_intended_load(i, incremental_capacity_list)
+                    if i != 0:
+
+                        # Stop throughput testing if not the first iteration
+                        self.stop()
+
+                    # Start specific connections for the current iteration
+                    self.start_specific(created_cx_lists_keys[:incremental_capacity_list[i]])
+                else:
+                    if args.do_interopability and i != 0:
+                        self.stop_specific(to_run_cxs[i - 1])
+                        time.sleep(5)
+                    if args.interopability_config:
+                        if args.do_interopability and i == 0:
+                            # To disconnect all the selected devices at the starting selected
+                            self.disconnect_all_devices()
+                        if args.do_interopability and "iOS" not in to_run_cxs[i][0]:
+                            logger.info("Configuring device of resource{}".format(to_run_cxs[i][0]))
+                            # To configure device which is under test
+                            is_device_configured = self.configure_specific([device_to_run_resource])
+                    if is_device_configured:
+                        self.start_specific(to_run_cxs[i])
+
+                # Determine device names based on the current iteration
+                device_names = created_cx_lists_keys[:to_run_cxs_len[i][-1]]
+
+                # Monitor throughput and capture all dataframes and test stop status
+                all_dataframes, test_stopped_by_user = self.monitor(i, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured)
+                if args.do_interopability and "iOS" not in to_run_cxs[i][0] and args.interopability_config:
+                    # Disconnecting device after running the test
+                    self.disconnect_all_devices([device_to_run_resource])
+                # Check if the test was stopped by the user
+                if test_stopped_by_user is False:
+
+                    # Append current iteration index to iterations_before_test_stopped_by_user
+                    iterations_before_test_stopped_by_user.append(i)
+                else:
+
+                    # Append current iteration index to iterations_before_test_stopped_by_user
+                    iterations_before_test_stopped_by_user.append(i)
+                    break
+
+        #     logger.info("connections download {}".format(connections_download))
+        #     logger.info("connections upload {}".format(connections_upload))
+            self.stop()
+        if args.postcleanup:
+            self.cleanup()
+
+        # Clear navigation status fields in nav_data.json when the test completes from Web UI
+        if args.dowebgui:
+            with open(nav_data, 'r') as x:
+                navdata = json.load(x)
+                navdata['status'] = ''
+                navdata['Canbee_location'] = ''
+                navdata['Canbee_angle'] = ''
+            with open(nav_data, 'w') as x:
+                json.dump(navdata, x, indent=4)
+        self.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
+        if self.dowebgui:
+            # copying to home directory i.e home/user_name
+            self.copy_reports_to_home_dir()
 
     def os_type(self):
         """
@@ -3234,6 +3395,11 @@ Copyright 2023 Candela Technologies Inc.
                           default='',
                           help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
 
+    # Arguments related to robo
+    optional.add_argument('--robot_ip', help='hostname for where Robot server is running')
+    optional.add_argument('--coordinate', help="Points at which the robot pauses")
+    optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
+
     args = parser.parse_args()
 
     if args.help_summary:
@@ -3384,7 +3550,11 @@ Copyright 2023 Candela Technologies Inc.
                                 pac_file=args.pac_file,
                                 wait_time=args.wait_time,
                                 config=args.config,
-                                interopability_config=args.interopability_config
+                                interopability_config=args.interopability_config,
+                                robo_ip=args.robot_ip,
+                                rotation_enabled=True if args.rotation else False,
+                                coordinate_list=args.coordinate.split(",") if args.coordinate else [],
+                                angle_list=args.rotation.split(",") if args.rotation else []
                                 )
 
         if gave_incremental:
@@ -3429,6 +3599,12 @@ Copyright 2023 Candela Technologies Inc.
         created_cxs = throughput.build()
         time.sleep(10)
         created_cxs = list(created_cxs.keys())
+
+        if args.robot_ip:
+            # Execute Robo test execution when robot IP is provided
+            throughput.perform_robo(args, clients_to_run)
+            exit(1)
+
         individual_dataframe_column = []
 
         to_run_cxs, to_run_cxs_len, created_cx_lists_keys, incremental_capacity_list = throughput.get_incremental_capacity_list()
