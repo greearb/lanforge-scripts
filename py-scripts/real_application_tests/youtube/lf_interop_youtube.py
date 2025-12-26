@@ -212,6 +212,11 @@ class Youtube(Realm):
         self.selected_groups = selected_groups
         self.selected_profiles = selected_profiles
         self.config_obj = config_obj
+        self.serial_list = []
+        self.user_list = []
+        self.lanforge_port_list = set()
+        self.lanforge_os_type = list()
+        self.android = 0
 
     def stop(self):
         self.stop_signal = True
@@ -241,76 +246,9 @@ class Youtube(Realm):
         self.generic_endps_profile.created_endp = []
         # Log cleanup completion
 
-    def execute_youtube_test(self, duration, do_webUI):
-        """
-        Execute the YouTube test for monitoring
-
-        Args:
-            duration (int): Duration of the test in minutes.
-            do_webUI (bool): Flag to determine if the test is triggered from the web UI.
-        """
-        # Wait for 10 seconds before starting the test
-        self.clear_previous_data()
-
-        self.start_generic()
-        time.sleep(5)
-
-        # Initialize variables
-        self.start_time = datetime.now()
-        self.est_end_time = self.start_time + timedelta(minutes=duration, seconds=60)
-        self.end_time_webgui = [False] * len(self.device_names)
-        self.keys = self.generic_endps_profile.created_cx
-        self.all_stop = False
-
-        # Ensure initial data is fetched
-        initial_data = self.get_data_from_api()
-        while not initial_data:
-            initial_data = self.get_data_from_api()
-            time.sleep(1)
-
-        # Monitoring loop
-        while not self.all_stop:
-            if do_webUI:
-                stop_value = self.set_webUI_stop()
-                if stop_value == "Completed":
-                    break
-
-            self._monitor_test(do_webUI)
-
-            time.sleep(1)  # Adjust sleep time as needed
-
-        logging.info("Duration ended. Stopping the test.")
-
-    def _monitor_test(self, do_webUI):
-        """
-        Monitor the YouTube test execution and handle stop conditions.
-
-        Args:
-            do_webUI (bool): Flag to determine if the test is triggered from the web UI.
-        """
-        initial_data = self.get_data_from_api()
-        if initial_data:
-            for i in range(len(self.device_names)):
-                stop_state = initial_data['result'].get(self.device_names[i], {}).get('stop', False)
-                if stop_state:
-                    self.end_time_webgui[i] = True
-                if all(self.end_time_webgui) or datetime.now() >= self.est_end_time:
-                    self.all_stop = True
-                    return
-
-            for i in range(len(self.device_names)):
-                if not self.end_time_webgui[i]:
-                    new_key = self.keys[i]
-                    if new_key.startswith("CX_"):
-                        new_key = self.keys[i][3:]
-                    response = self.json_get(f'/generic/{new_key}')
-                    if response['endpoint']['status'] in ['WAITING', 'Stopped']:
-                        self.end_time_webgui[i] = True
-
     def check_tab_exists(self):
         """
         Checks if the 'generic' tab exists by making a JSON GET request.
-
         Returns:
         - True if the 'generic' tab exists (response is not None).
         - False if the 'generic' tab does not exist (response is None).
@@ -323,7 +261,7 @@ class Youtube(Realm):
         else:
             return True
 
-    def create_generic_endp(self, query_resources):
+    def create_generic_endp(self):
         """
         Creates generic endpoints for the specified resources.
         Args:
@@ -1598,7 +1536,7 @@ NOTES:
 
             if len(youtube.real_sta_list) > 0:
                 logging.info(f"checking real sta list while creating endpionts {youtube.real_sta_list}")
-                youtube.create_generic_endp(youtube.real_sta_list)
+                youtube.create_generic_endp()
             else:
                 logging.info(f"checking real sta list while creating endpionts {youtube.real_sta_list}")
                 logging.error("No Real Devies Available")
