@@ -492,7 +492,7 @@ class Throughput(Realm):
                 device_names = created_cx_lists_keys[:to_run_cxs_len[i][-1]]
 
                 # Monitor throughput and capture all dataframes and test stop status
-                all_dataframes, test_stopped_by_user = self.monitor(i, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured)
+                all_dataframes, test_stopped_by_user = self.monitor_for_robo(i, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured)
                 if args.do_interopability and "iOS" not in to_run_cxs[i][0] and args.interopability_config:
                     # Disconnecting device after running the test
                     self.disconnect_all_devices([device_to_run_resource])
@@ -1456,6 +1456,481 @@ class Throughput(Realm):
                 individual_df.to_csv('throughput_data.csv', index=False)
         else:
             individual_df.to_csv('throughput_data.csv', index=False)
+
+        keys = list(connections_upload.keys())
+        keys = list(connections_download.keys())
+
+        for i in range(len(download_throughput)):
+            connections_download.update({keys[i]: float(f"{(download_throughput[i]):.2f}")})
+        for i in range(len(upload_throughput)):
+            connections_upload.update({keys[i]: float(f"{(upload_throughput[i]):.2f}")})
+
+        logger.info("connections download {}".format(connections_download))
+        logger.info("connections upload {}".format(connections_upload))
+
+        return individual_df, test_stopped_by_user
+
+    def monitor_for_robo(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured):
+        """
+        Monitor Layer-3 connections during robot-based throughput testing and
+        continuously update metrics for Web UI and reports.
+
+        Args:
+            iteration (int): Current test iteration index.
+            individual_df (DataFrame): DataFrame used to store throughput metrics.
+            device_names (list): List of device names involved in the test.
+            incremental_capacity_list (list): List of incremental client counts per iteration.
+            overall_start_time (datetime): Overall test start time.
+            overall_end_time (datetime): Overall test end time.
+            is_device_configured (bool): Indicates whether the device is configured correctly.
+
+        Returns:
+            tuple: Updated DataFrame with throughput data and a flag indicating
+                whether the test was stopped by the user.
+        """
+        individual_df_for_webui = individual_df.copy()  # for webui
+        throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download = {}, [], [], [], [], {}, {}
+        drop_a, drop_a_per, drop_b, drop_b_per, state, state_of_device, avg_rtt = [], [], [], [], [], [], []  # noqa: F841
+        test_stopped_by_user = False
+        if (self.test_duration is None) or (int(self.test_duration) <= 1):
+            raise ValueError("Monitor test duration should be > 1 second")
+        if self.cx_profile.created_cx is None:
+            raise ValueError("Monitor needs a list of Layer 3 connections")
+
+        start_time = datetime.now()
+
+        logger.info("Monitoring cx and endpoints")
+        end_time = start_time + timedelta(seconds=int(self.test_duration))
+        self.overall = []
+
+        # Initialize variables for real-time connections data
+        index = -1
+        connections_upload = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+        connections_download = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+        connections_upload_realtime = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+        connections_download_realtime = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+
+        # Initialize lists for throughput and drops for each connection
+        [(upload.append([]), download.append([]), drop_a.append([]), drop_b.append([]), state.append([]), avg_rtt.append([])) for i in range(len(self.cx_profile.created_cx))]
+
+        # If using web GUI, set runtime directory
+        if self.dowebgui:
+            runtime_dir = self.result_dir
+        previous_time = datetime.now()
+        time_break = 0
+
+        # Initialize the varaible to track the charge time of the robot
+        monitor_charge_time = datetime.now()
+        pause_angle = False
+
+        # Iterate through rotation angles.
+        # When no rotation is specified, angle_list defaults to [0],
+        # ensuring a single execution similar to normal throughput tests.
+        for j in range(len(self.angle_list)):
+
+            # Check robot battery status before proceeding to monitor
+            pause_angle, test_stopped_by_user = self.robot.wait_for_battery(stop=self.stop)
+
+            if test_stopped_by_user:
+                break
+
+            if pause_angle:
+                # If rotation was paused due to battery low condition,
+                # move the robot back to the current coordinate before continuing
+                reached = self.robot.move_to_coordinate(self.current_coordinate)
+                if not reached:
+                    test_stopped_by_user = True
+                    break
+
+            # start and stop of cx for each rotation
+            if j != 0:
+                self.start_specific(self.cx_profile.created_cx)
+
+            # Perform rotation only when rotation is enabled
+            if self.rotation_enabled:
+                rotation = self.robot.rotate_angle(self.angle_list[j])
+                if not rotation:
+                    break
+                end_time = datetime.now() + timedelta(seconds=int(self.test_duration))
+                self.current_angle = self.angle_list[j]
+
+            # Continuously collect data until end time is reached
+            while datetime.now() < end_time:
+                index += 1
+                current_time = datetime.now()
+                signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
+                signal_list = [int(i) if i != "" else 0 for i in signal_list]
+                throughput[index] = self.get_layer3_endp_data()
+                # Check if next sleep would overshoot the end_time
+                is_last_iteration = ((current_time + timedelta(seconds=1 if self.dowebgui else self.report_timer)) >= end_time)
+                # For the WebUI, data is appended as "STOPPED" outside the loop.
+                # To prevent the last record from being duplicated, break before exiting the loop.
+                if is_last_iteration:
+                    break
+                # Periodically monitor robot battery status (every 5 minutes).
+                # If charging is required, pause the test, recover robot position/angle,
+                # resume traffic, and adjust test timing to account for the charging pause.
+                if (datetime.now() - monitor_charge_time).total_seconds() >= 300:
+                    logger.info("Checking battery status (5-minute interval)...")
+                    pause_start = datetime.now()
+                    pause = False
+                    timestamp = datetime.now().strftime("%d/%m %I:%M:%S %p")
+                    pause, test_stopped_by_user = self.robot.wait_for_battery(stop=self.stop)
+
+                    if test_stopped_by_user:
+                        break
+
+                    if pause:
+                        reached, abort = self.robot.move_to_coordinate(self.current_coordinate)
+                        if not reached:
+                            test_stopped_by_user = True
+                            break
+                        if self.rotation_enabled:
+                            self.battery_log[self.current_coordinate] = {}
+                            self.battery_log[self.current_coordinate][float(self.angle_list[j])] = timestamp
+                            rotation_moni = self.robot.rotate_angle(self.angle_list[j])
+                            if not rotation_moni:
+                                test_stopped_by_user = True
+                                break
+                        else:
+                            self.battery_log[self.current_coordinate] = timestamp
+                        self.start_specific(self.cx_profile.created_cx)
+                        pause_end = datetime.now()
+                        charge_pause = pause_end - pause_start
+                        end_time += charge_pause
+                        overall_end_time += charge_pause
+                        previous_time = datetime.now()
+                    monitor_charge_time = datetime.now()
+
+                if self.dowebgui:
+                    time.sleep(1)  # for each second data in csv while ensuring webgui
+                    individual_df_data = []
+                    temp_upload, temp_download, temp_drop_a, temp_drop_b, temp_avg_rtt = [], [], [], [], []
+
+                    # Initialize temporary lists for each connection
+                    [(temp_upload.append([]), temp_download.append([]), temp_drop_a.append([]), temp_drop_b.append([]), temp_avg_rtt.append([])) for
+                        i in range(len(self.cx_profile.created_cx))]
+
+                    # Populate temporary lists with current throughput data
+                    for i in range(len(throughput[index])):
+                        if throughput[index][i][4] != 'Run':
+                            temp_upload[i].append(0)
+                            temp_download[i].append(0)
+                            temp_drop_a[i].append(0)
+                            temp_drop_b[i].append(0)
+                            temp_avg_rtt[i].append(0)
+                        else:
+                            temp_upload[i].append(throughput[index][i][1])
+                            temp_download[i].append(throughput[index][i][0])
+                            temp_drop_a[i].append(throughput[index][i][2])
+                            temp_drop_b[i].append(throughput[index][i][3])
+                            temp_avg_rtt[i].append(throughput[index][i][5])
+                    # Calculate average throughput and drop percentages
+                    upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in temp_upload]
+                    download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in temp_download]
+                    drop_a_per = [float(round(sum(i) / len(i), 2)) for i in temp_drop_a]
+                    drop_b_per = [float(round(sum(i) / len(i), 2)) for i in temp_drop_b]
+                    keys = list(connections_upload_realtime.keys())
+                    keys = list(connections_download_realtime.keys())
+                    for i in range(len(download_throughput)):
+                        connections_download_realtime.update({keys[i]: float(f"{(download_throughput[i]):.2f}")})
+                    for i in range(len(upload_throughput)):
+                        connections_upload_realtime.update({keys[i]: float(f"{(upload_throughput[i]):.2f}")})
+                    # time_difference = abs(end_time - datetime.now())
+                    overall_time_difference = abs(overall_end_time - datetime.now())
+                    overall_total_hours = overall_time_difference.total_seconds() / 3600
+                    overall_remaining_minutes = (overall_total_hours % 1) * 60
+                    timestamp = datetime.now().strftime("%d/%m %I:%M:%S %p")
+                    remaining_minutes_instrf = [str(int(overall_total_hours)) + " hr and " + str(int(overall_remaining_minutes)) +
+                                                " min" if int(overall_total_hours) != 0 or int(overall_remaining_minutes) != 0 else '<1 min'][0]
+                    if remaining_minutes_instrf != '<1 min':
+                        remaining_minutes_instrf = str(overall_time_difference).split(".")[0]
+                    # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe
+                    for i in range(len(download_throughput)):
+                        individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i],
+                                                   temp_avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
+
+                    # Storing Overall throughput data for all devices and also start time, end time, remaining time and status of test running
+                    if self.rotation_enabled:
+                        individual_df_data.extend([round(sum(download_throughput),
+                                                         2),
+                                                   round(sum(upload_throughput),
+                                                         2),
+                                                   sum(drop_a_per),
+                                                   sum(drop_a_per),
+                                                   iteration + 1,
+                                                   timestamp,
+                                                   overall_start_time.strftime("%d/%m %I:%M:%S %p"),
+                                                   overall_end_time.strftime("%d/%m %I:%M:%S %p"),
+                                                   remaining_minutes_instrf,
+                                                   ', '.join(str(n) for n in incremental_capacity_list),
+                                                   self.angle_list[j],
+                                                   'Running'])
+                    else:
+                        individual_df_data.extend([round(sum(download_throughput),
+                                                         2),
+                                                   round(sum(upload_throughput),
+                                                         2),
+                                                   sum(drop_a_per),
+                                                   sum(drop_a_per),
+                                                   iteration + 1,
+                                                   timestamp,
+                                                   overall_start_time.strftime("%d/%m %I:%M:%S %p"),
+                                                   overall_end_time.strftime("%d/%m %I:%M:%S %p"),
+                                                   remaining_minutes_instrf,
+                                                   ', '.join(str(n) for n in incremental_capacity_list),
+                                                   'Running'])
+                    # Appending the data according to the time gap (for webgui)
+                    if (current_time - previous_time).total_seconds() >= time_break:
+                        individual_df_for_webui.loc[len(individual_df_for_webui)] = individual_df_data
+                        if self.group_name is None:
+                            individual_df_for_webui.to_csv('{}/{}_throughput_data.csv'.format(runtime_dir, self.current_coordinate), index=False)
+                        else:
+                            individual_df_for_webui.to_csv('{}/{}_overall_throughput.csv'.format(runtime_dir, self.current_coordinate), index=False)
+                        previous_time = current_time
+
+                    # Append data to individual_df and save to CSV
+                    individual_df.loc[len(individual_df)] = individual_df_data
+
+                    # Check if test was stopped by the user
+                    with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name),
+                              'r') as file:
+                        data = json.load(file)
+                        if data["status"] != "Running":
+                            logger.warning('Test is stopped by the user')
+                            test_stopped_by_user = True
+                            break
+
+                    # Adjust time_gap based on elapsed time since start (for webui)
+                    d = datetime.now()
+                    if d - start_time <= timedelta(hours=1):
+                        time_break = 5
+                    elif d - start_time > timedelta(hours=1) or d - start_time <= timedelta(
+                            hours=6):
+                        if end_time - d < timedelta(seconds=10):
+                            time_break = 5
+                        else:
+                            time_break = 10
+                    elif d - start_time > timedelta(hours=6) or d - start_time <= timedelta(
+                            hours=12):
+                        if end_time - d < timedelta(seconds=30):
+                            time_break = 5
+                        else:
+                            time_break = 30
+                    elif d - start_time > timedelta(hours=12) or d - start_time <= timedelta(
+                            hours=24):
+                        if end_time - d < timedelta(seconds=60):
+                            time_break = 5
+                        else:
+                            time_break = 60
+                    elif d - start_time > timedelta(hours=24) or d - start_time <= timedelta(
+                            hours=48):
+                        if end_time - d < timedelta(seconds=60):
+                            time_break = 5
+                        else:
+                            time_break = 90
+                    elif d - start_time > timedelta(hours=48):
+                        if end_time - d < timedelta(seconds=120):
+                            time_break = 5
+                        else:
+                            time_break = 120
+                else:
+
+                    # If not using web GUI, sleep based on report timer
+                    individual_df_data = []
+                    time.sleep(self.report_timer)
+
+                    # Aggregate data from throughput
+
+                    for _, key in enumerate(throughput):
+                        for i in range(len(throughput[key])):
+                            upload[i], download[i], drop_a[i], drop_b[i], avg_rtt[i] = [], [], [], [], []
+                            if throughput[key][i][4] != 'Run':
+                                upload[i].append(0)
+                                download[i].append(0)
+                                drop_a[i].append(0)
+                                drop_b[i].append(0)
+                                avg_rtt[i].append(0)
+                            else:
+                                upload[i].append(throughput[key][i][1])
+                                download[i].append(throughput[key][i][0])
+                                drop_a[i].append(throughput[key][i][2])
+                                drop_b[i].append(throughput[key][i][3])
+                                avg_rtt[i].append(throughput[key][i][5])
+                    # Calculate average throughput and drop percentages
+                    upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
+                    download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
+                    drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
+                    drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
+
+                    # Calculate overall time difference and timestamp
+                    timestamp = datetime.now().strftime("%d/%m %I:%M:%S %p")
+                    # # time_difference = abs(end_time - datetime.now())
+                    overall_time_difference = abs(overall_end_time - datetime.now())
+                    # # total_hours = time_difference.total_seconds() / 3600
+                    overall_total_hours = overall_time_difference.total_seconds() / 3600
+                    overall_remaining_minutes = (overall_total_hours % 1) * 60
+                    remaining_minutes_instrf = [str(int(overall_total_hours)) + " hr and " + str(int(overall_remaining_minutes)) +
+                                                " min" if int(overall_total_hours) != 0 or int(overall_remaining_minutes) != 0 else '<1 min'][0]
+                    if remaining_minutes_instrf != '<1 min':
+                        remaining_minutes_instrf = str(overall_time_difference).split(".")[0]
+                    # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe
+                    for i in range(len(download_throughput)):
+                        individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
+
+                    # Storing Overall throughput data for all devices and also start time, end time, remaining time and status of test running
+                    if self.rotation_enabled:
+                        individual_df_data.extend([round(sum(download_throughput),
+                                                         2),
+                                                   round(sum(upload_throughput),
+                                                         2),
+                                                   sum(drop_a_per),
+                                                   sum(drop_a_per),
+                                                   iteration + 1,
+                                                   timestamp,
+                                                   overall_start_time.strftime("%d/%m %I:%M:%S %p"),
+                                                   overall_end_time.strftime("%d/%m %I:%M:%S %p"),
+                                                   remaining_minutes_instrf,
+                                                   ', '.join(str(n) for n in incremental_capacity_list),
+                                                   self.angle_list[j],
+                                                   'Running'])
+                    else:
+                        individual_df_data.extend([round(sum(download_throughput),
+                                                         2),
+                                                   round(sum(upload_throughput),
+                                                         2),
+                                                   sum(drop_a_per),
+                                                   sum(drop_a_per),
+                                                   iteration + 1,
+                                                   timestamp,
+                                                   overall_start_time.strftime("%d/%m %I:%M:%S %p"),
+                                                   overall_end_time.strftime("%d/%m %I:%M:%S %p"),
+                                                   remaining_minutes_instrf,
+                                                   ', '.join(str(n) for n in incremental_capacity_list),
+                                                   'Running'])
+
+                    individual_df.loc[len(individual_df)] = individual_df_data
+                    individual_df.to_csv('{}_throughput_data.csv'.format(self.current_coordinate), index=False)
+
+                if self.stop_test:
+                    test_stopped_by_user = True
+                    break
+                if not self.background_run and self.background_run is not None:
+                    break
+                # Exit the loop if the device is not connected or configured to match the provided SSID
+                if not is_device_configured and self.interopability_config:
+                    break
+
+            # individual_df = individual_df[1:-1]
+            # individual_df_for_webui = individual_df_for_webui[1:-1]
+            for _, key in enumerate(throughput):
+                for i in range(len(throughput[key])):
+                    upload[i], download[i], drop_a[i], drop_b[i], avg_rtt[i] = [], [], [], [], []
+                    if throughput[key][i][4] != 'Run':
+                        upload[i].append(0)
+                        download[i].append(0)
+                        drop_a[i].append(0)
+                        drop_b[i].append(0)
+                        avg_rtt[i].append(0)
+                    else:
+                        upload[i].append(throughput[key][i][1])
+                        download[i].append(throughput[key][i][0])
+                        drop_a[i].append(throughput[key][i][2])
+                        drop_b[i].append(throughput[key][i][3])
+                        avg_rtt[i].append(throughput[key][i][5])
+
+            if self.rotation_enabled:
+                self.stop()
+        individual_df_data = []
+        upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
+        download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
+        drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
+        drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
+        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
+        signal_list = [int(i) if i != "" else 0 for i in signal_list]
+
+        # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe after test stopped
+        for i in range(len(download_throughput)):
+            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
+        timestamp = datetime.now().strftime("%d/%m %I:%M:%S %p")
+
+        # If it's the last iteration, append final metrics and 'Stopped' status
+        if iteration + 1 == len(incremental_capacity_list):
+            if self.rotation_enabled:
+                individual_df_data.extend([round(sum(download_throughput), 2), round(sum(upload_throughput), 2), sum(drop_a_per), sum(drop_a_per), iteration + 1, timestamp,
+                                           overall_start_time.strftime("%d/%m %I:%M:%S %p"), timestamp, 0, ', '.join(str(n) for n in incremental_capacity_list), self.angle_list[j], 'Stopped'])
+
+            else:
+                individual_df_data.extend([round(sum(download_throughput), 2), round(sum(upload_throughput), 2), sum(drop_a_per), sum(drop_a_per), iteration + 1, timestamp,
+                                           overall_start_time.strftime("%d/%m %I:%M:%S %p"), timestamp, 0, ', '.join(str(n) for n in incremental_capacity_list), 'Stopped'])
+
+        # If the test was stopped by the user, append metrics and 'Stopped' status
+        elif test_stopped_by_user:
+            if self.rotation_enabled:
+                individual_df_data.extend([round(sum(download_throughput), 2), round(sum(upload_throughput), 2), sum(drop_a_per), sum(drop_a_per), iteration + 1, timestamp,
+                                           overall_start_time.strftime("%d/%m %I:%M:%S %p"), timestamp, 0, ', '.join(str(n) for n in incremental_capacity_list), self.angle_list[j], 'Stopped'])
+            else:
+                individual_df_data.extend([round(sum(download_throughput), 2), round(sum(upload_throughput), 2), sum(drop_a_per), sum(drop_a_per), iteration + 1, timestamp,
+                                           overall_start_time.strftime("%d/%m %I:%M:%S %p"), timestamp, 0, ', '.join(str(n) for n in incremental_capacity_list), 'Stopped'])
+
+        # Otherwise, append metrics and 'Stopped' status with overall end time
+        else:
+            if self.rotation_enabled:
+                individual_df_data.extend([round(sum(download_throughput),
+                                                 2),
+                                           round(sum(upload_throughput),
+                                                 2),
+                                           sum(drop_a_per),
+                                           sum(drop_a_per),
+                                           iteration + 1,
+                                           timestamp,
+                                           overall_start_time.strftime("%d/%m %I:%M:%S %p"),
+                                           overall_end_time.strftime("%d/%m %I:%M:%S %p"),
+                                           remaining_minutes_instrf,
+                                           ', '.join(str(n) for n in incremental_capacity_list),
+                                           self.angle_list[j],
+                                           'Stopped'])
+            else:
+                individual_df_data.extend([round(sum(download_throughput),
+                                                 2),
+                                           round(sum(upload_throughput),
+                                                 2),
+                                           sum(drop_a_per),
+                                           sum(drop_a_per),
+                                           iteration + 1,
+                                           timestamp,
+                                           overall_start_time.strftime("%d/%m %I:%M:%S %p"),
+                                           overall_end_time.strftime("%d/%m %I:%M:%S %p"),
+                                           remaining_minutes_instrf,
+                                           ', '.join(str(n) for n in incremental_capacity_list),
+                                           'Stopped'])
+
+        individual_df.loc[len(individual_df)] = individual_df_data
+        if self.dowebgui:
+            individual_df_for_webui.loc[len(individual_df_for_webui)] = individual_df_data
+
+        # Save individual_df to CSV based on web GUI status
+        if self.dowebgui:
+            if self.group_name:
+                individual_df_for_webui.to_csv('{}/{}_overall_throughput.csv'.format(runtime_dir, self.current_coordinate), index=False)
+                individual_df.to_csv('{}_overall_throughput.csv', index=False)
+            else:
+                individual_df_for_webui.to_csv('{}/{}_throughput_data.csv'.format(runtime_dir, self.current_coordinate), index=False)
+                individual_df.to_csv('{}_throughput_data.csv'.format(self.current_coordinate), index=False)
+        else:
+            individual_df.to_csv('{}_throughput_data.csv'.format(self.current_coordinate), index=False)
+
+        # Update the running Web GUI JSON with list of coordinates completed
+        if self.dowebgui and self.robo_ip:
+            with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name),
+                      'r') as file:
+                data = json.load(file)
+                coordinate_list = data['current_coordinate']
+                if self.current_coordinate not in coordinate_list:
+                    coordinate_list.append(self.current_coordinate)
+                data['current_coordinate'] = coordinate_list
+            with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name), 'w') as file:
+                json.dump(data, file, indent=4)
 
         keys = list(connections_upload.keys())
         keys = list(connections_download.keys())
