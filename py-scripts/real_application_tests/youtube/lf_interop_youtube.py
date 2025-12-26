@@ -295,6 +295,10 @@ class Youtube(Realm):
         Returns:
             None
         """
+        self.get_device_data()
+        self.get_android_device_data()
+        self.process_device_data()
+
         if self.generic_endps_profile.create(ports=self.real_sta_list, sleep_time=.5, real_client_os_types=self.real_sta_os_types,):
             logging.info('Real client generic endpoint creation completed.')
         else:
@@ -312,6 +316,15 @@ class Youtube(Realm):
             elif self.real_sta_os_types[i] == 'macos':
                 cmd = "sudo bash ctyt.bash --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
+
+        for i in range(0, len(self.lanforge_os_type)):
+            cmd = (
+                "python3 youtube_android_test.py --url %s --duration %s --devices %s --upstream_port %s "
+                "| tee youtube_test.log"
+            ) % (self.url, self.duration, self.serial_list_str, self.host)
+
+            logging.info(f"Setting command for Android devices: {cmd}")
+            self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[-(i + 1)], cmd)
 
     def get_test_results_data(self, test_results, group):
         """
@@ -763,7 +776,7 @@ class Youtube(Realm):
                 'Duration (in Minutes)': self.duration,
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
-                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac})',
+                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
                 "Video URL": self.url,
                 "SSID": self.ssid,
                 "Security": self.security,
@@ -781,7 +794,7 @@ class Youtube(Realm):
                 'Resolution': self.resolution,
                 "Configuration": gp_map,
                 'Configured Devices': self.hostname_os_combination,
-                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac})',
+                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
                 "Video URL": self.url,
 
             }
@@ -792,7 +805,7 @@ class Youtube(Realm):
                 'Duration (in Minutes)': self.duration,
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
-                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac})',
+                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
                 "Video URL": self.url,
 
             }
@@ -1589,7 +1602,6 @@ NOTES:
                     all_devices = config_obj.get_all_devices()
                     if args.group_name is None and args.file_name is None and args.profile_name is None:
                         dev_list = args.resources.split(',')
-                        dev_list = ['.'.join(device.split('.')[:2]) for device in dev_list]
                         if args.config:
                             asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
                 else:
