@@ -1148,6 +1148,62 @@ class Youtube(Realm):
         self.device_list = filtered_list
         return filtered_list
 
+    def get_android_device_data(self):
+        """
+        Fetch and process Android device information from the ADB interop API.
+
+        This method queries the '/adb' endpoint to retrieve connected Android
+        device details, matches devices against the configured user list,
+        and extracts relevant metadata for test execution.
+
+        Behavior:
+        - Supports both dictionary and list response formats from the API
+        - Filters devices based on matching 'user-name' entries
+        - Extracts device serial numbers and LANforge resource IDs
+        - Builds LANforge port identifiers in the format: 1.<resource>.eth0
+        - Populates internal lists used for endpoint and test setup
+
+        Side Effects:
+        - Updates self.serial_list with Android device serial numbers
+        - Updates self.lanforge_port_list with LANforge port identifiers
+        - Sets self.lanforge_os_type to 'Linux' for all discovered devices
+        - Generates a comma-separated serial string in self.serial_list_str
+
+        Returns:
+            None
+        """
+        interop_data = self.json_get('/adb')
+        interop_mobile_data = interop_data.get('devices', {})
+
+        if isinstance(interop_mobile_data, dict):
+            for user in self.user_list:
+                if user != '':
+                    if interop_mobile_data.get('user-name') == user:
+
+                        serial = interop_mobile_data.get('name', '')
+                        resource = serial.split('.')[1]
+                        serial_no = serial.split('.')[2]
+                        self.serial_list.append(serial_no)
+                        lanforge_port = f"1.{resource}.eth0"
+                        self.lanforge_port_list.add(lanforge_port)
+
+        else:
+            for user in self.user_list:
+                if user != '':
+                    for mobile_device in interop_mobile_data:
+                        for serial, device_data in mobile_device.items():
+                            if device_data.get('user-name') == user:
+                                resource = serial.split('.')[1]
+                                serial_no = serial.split('.')[2]
+                                self.serial_list.append(serial_no)
+                                lanforge_port = f"1.{resource}.eth0"
+                                self.lanforge_port_list.add(lanforge_port)
+                                break
+
+        self.lanforge_port_list = list(self.lanforge_port_list)
+        self.lanforge_os_type = ["Linux"] * len(self.lanforge_port_list)
+        self.serial_list_str = ','.join(self.serial_list)
+
 
 def main():
     try:
