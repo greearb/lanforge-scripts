@@ -387,9 +387,7 @@ class Youtube(Realm):
         5. Logs an error and exits if no real stations are selected for testing.
         6. Logs the selected real station names.
         7. Adds real station data to `self.real_sta_data_dict`.
-        8. Tracks the number of selected devices (`android`, `windows`, `mac`, `linux`).
-
-
+        8. Returns the list of selected real station names.
         """
         real_devices.get_devices()
         # Query and retrieve all user-defined real stations if `real_sta_list` is not provided
@@ -441,9 +439,37 @@ class Youtube(Realm):
 
             self.real_sta_data_dict[sta_name] = real_devices.devices_data[sta_name]
 
-        # Retrieve OS types and hostnames
-        self.real_sta_os_types = [self.real_sta_data_dict[real_sta_name]['ostype'] for real_sta_name in self.real_sta_data_dict]
-        self.real_sta_hostname = [self.real_sta_data_dict[real_sta_name]['hostname'] for real_sta_name in self.real_sta_data_dict]
+        return self.real_sta_list
+
+    def process_device_data(self):
+        """
+        Populate hostnames, OS types, and per-OS device counts for real stations.
+
+        Android devices use serial numbers as hostnames (mapped sequentially),
+        while other OS types use their reported hostnames. Also builds a combined
+        hostname–OS list for display and updates OS counters.
+
+        Returns:
+            None
+        """
+
+        self.real_sta_os_types = []
+        self.real_sta_hostname = []
+
+        serial_idx = 0  # separate counter just for Android devices
+
+        for _, sta_info in self.real_sta_data_dict.items():
+            os_type = sta_info.get('ostype', '')
+            self.real_sta_os_types.append(os_type)
+
+            if os_type.lower() == "android":
+                if serial_idx < len(self.serial_list):
+                    self.real_sta_hostname.append(self.serial_list[serial_idx])
+                    serial_idx += 1  # advance only for Androids
+                else:
+                    self.real_sta_hostname.append("NA")
+            else:
+                self.real_sta_hostname.append(sta_info.get('hostname', 'NA'))
 
         self.hostname_os_combination = [
             f"{hostname} ({os_type})"
@@ -458,8 +484,8 @@ class Youtube(Realm):
                 self.linux = self.linux + 1
             elif self.real_sta_os_types[i] == 'macos':
                 self.mac = self.mac + 1
-
-        return self.real_sta_list
+            elif self.real_sta_os_types[i] == 'android':
+                self.android = self.android + 1
 
     def start_generic(self):
         """
