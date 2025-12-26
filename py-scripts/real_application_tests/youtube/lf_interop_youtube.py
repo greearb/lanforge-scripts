@@ -263,99 +263,38 @@ class Youtube(Realm):
 
     def create_generic_endp(self):
         """
-        Creates generic endpoints for the specified resources.
-        Args:
-        - query_resources (list): List of resources to create endpoints for.
-        Steps:
-        1. Retrieves information about all resources using a JSON GET request.
-        2. Matches user-specified resources with available resources and retrieves necessary details (eid, ctrl-ip, hostname).
-        3. Retrieves port information using a JSON GET request.
-        4. Matches ports associated with retrieved resources and constructs a list of matching ports.
-        5. Creates generic endpoints using the retrieved ports and other parameters.
+        Create and configure generic endpoints for real client YouTube tests.
+
+        This method creates generic endpoints for all real client stations defined
+        in `self.real_sta_list` using the generic endpoints profile. Once endpoints
+        are successfully created, it assigns an OS-specific YouTube streaming
+        command to each endpoint based on the client operating system.
+
+        Behavior:
+        - Creates generic endpoints with a small delay between creations
+        - Applies different execution commands for Windows, Linux, and macOS clients
+        - Associates each command with the corresponding created endpoint
+
+        OS-specific command handling:
+        - Windows: Executes 'youtube_stream.bat'
+        - Linux: Executes 'ctyt.bash' as the 'lanforge' user
+        - macOS: Executes 'ctyt.bash' with elevated privileges
+
+        Dependencies:
+        - self.real_sta_list: List of real client stations
+        - self.real_sta_os_types: Operating system type for each client
+        - self.real_sta_hostname: Hostnames for real clients
+        - self.generic_endps_profile: Generic endpoint profile object
+        - self.new_port_list: Port identifiers for Linux clients
+
+        Side Effects:
+        - Creates generic endpoints via the profile
+        - Sets execution commands for each created endpoint
+        - Terminates the process if endpoint creation fails
+
+        Returns:
+            None
         """
-        ports_list = []
-        eid = ""
-        resource_ip = ""
-        user_resources = ['.'.join(item.split('.')[:2]) for item in self.real_sta_list]
-
-        # Step 1: Retrieve information about all resources
-        response = self.json_get("/resource/all")
-
-        # Step 2: Match user-specified resources with available resources sequentially
-        if user_resources:
-            # Iterate through user_resources sequentially, processing each value only once
-            for user_resource in user_resources:
-                # Break loop if no more user_resources left to process
-                if not user_resources:
-                    break
-
-                for key, value in response.items():
-                    if key == "resources":
-                        for element in value:
-                            for resource_key, resource_values in element.items():
-                                # Match the current user_resource
-                                if resource_key == user_resource:
-                                    eid = resource_values["eid"]
-                                    resource_ip = resource_values['ctrl-ip']
-                                    self.device_names.append(resource_values['hostname'])
-                                    ports_list.append({'eid': eid, 'ctrl-ip': resource_ip})
-                                    break
-                            else:
-                                # Continue outer loop only if no break occurred
-                                continue
-                            # Break if a match was found and processed
-                            break
-        gen_ports_list = []
-        self.mac_list = []
-        self.rssi_list = []
-        self.link_rate_list = []
-        self.ssid_list = []
-        # Step 3: Retrieve port information
-        response_port = self.json_get("/port/all")
-
-        # Step 4: Match ports associated with retrieved resources in the order of ports_list
-        for port_entry in ports_list:
-            # Extract the eid and ctrl-ip from the current ports_list entry
-            expected_eid = port_entry['eid']
-
-            # Iterate over the port interfaces to find a matching port
-            for interface in response_port['interfaces']:
-                for port, _port_data in interface.items():
-                    # Extract the first two segments of the port identifier to match with expected_eid
-                    result = '.'.join(port.split('.')[:2])
-
-                    # Check if the result matches the current expected eid from ports_list
-                    if result == expected_eid:
-                        gen_ports_list.append(port.split('.')[-1])
-                        break
-                else:
-                    continue
-                break
-
-        for port_entry in ports_list:
-            # Extract the eid and ctrl-ip from the current ports_list entry
-            expected_eid = port_entry['eid']
-
-            # Iterate over the port interfaces to find a matching port
-            for interface in response_port['interfaces']:
-                for port, port_data in interface.items():
-                    # Extract the first two segments of the port identifier to match with expected_eid
-                    result = '.'.join(port.split('.')[:2])
-
-                    # Check if the result matches the current expected eid from ports_list
-                    if result == expected_eid and port_data["parent dev"] == 'wiphy0':
-                        self.mac_list.append(port_data["mac"])
-                        self.rssi_list.append(port_data["signal"])
-                        self.link_rate_list.append(port_data["rx-rate"])
-                        self.ssid_list.append(port_data["ssid"])
-
-                        break
-                else:
-                    continue
-                break
-
-        self.new_port_list = [item.split('.')[2] for item in self.real_sta_list]
-
         if self.generic_endps_profile.create(ports=self.real_sta_list, sleep_time=.5, real_client_os_types=self.real_sta_os_types,):
             logging.info('Real client generic endpoint creation completed.')
         else:
@@ -1203,6 +1142,108 @@ class Youtube(Realm):
         self.lanforge_port_list = list(self.lanforge_port_list)
         self.lanforge_os_type = ["Linux"] * len(self.lanforge_port_list)
         self.serial_list_str = ','.join(self.serial_list)
+
+    def get_device_data(self):
+        """
+        Collect and correlate device, resource, and port information for real stations.
+
+        This method gathers metadata for devices listed in `self.real_sta_list` by:
+        1. Extracting user-specified resource identifiers from real station entries.
+        2. Querying the '/resource/all' API to map resources to device names,
+        controller IPs, EIDs, and associated users.
+        3. Querying the '/port/all' API to locate ports belonging to the matched
+        resources, preserving the order defined by the real station list.
+        4. Extracting wireless-specific attributes for ports associated with
+        the 'wiphy0' parent device.
+
+        The method builds several internal lists that are later used for endpoint
+        creation, test execution, and result processing.
+
+        Side Effects:
+        - Populates self.device_names with matched device hostnames
+        - Populates self.user_list with users associated with each resource
+        - Populates self.new_port_list with port identifiers derived from real stations
+        - Populates gen_ports_list with matched port suffixes (local variable)
+        - Populates self.mac_list with MAC addresses for wireless ports
+        - Populates self.rssi_list with signal strength values
+        - Populates self.link_rate_list with RX link rates
+        - Populates self.ssid_list with SSID values
+
+        Notes:
+        - The method preserves the order of devices as specified in
+        `self.real_sta_list`.
+        - Only ports whose parent device is 'wiphy0' are considered wireless
+        and used to collect RSSI, MAC, link rate, and SSID information.
+        - This method does not return any value; all results are stored as
+        instance attributes.
+
+        Returns:
+            None
+        """
+
+        ports_list = []
+        eid = ""
+        resource_ip = ""
+        user_resources = ['.'.join(item.split('.')[:2]) for item in self.real_sta_list]
+
+        # Step 1: Retrieve information about all resources
+        response = self.json_get("/resource/all")
+
+        # Step 2: Match user-specified resources with available resources sequentially
+        if user_resources:
+            for user_resource in user_resources:
+                if not user_resources:
+                    break
+
+                for key, value in response.items():
+                    if key == "resources":
+                        for element in value:
+                            for resource_key, resource_values in element.items():
+                                # Match the current user_resource
+                                if resource_key == user_resource:
+                                    eid = resource_values["eid"]
+                                    resource_ip = resource_values['ctrl-ip']
+                                    self.device_names.append(resource_values['hostname'])
+                                    ports_list.append({'eid': eid, 'ctrl-ip': resource_ip})
+                                    self.user_list.append(resource_values['user'])
+                                    break
+                            else:
+                                continue
+                            break
+        gen_ports_list = []
+        self.mac_list = []
+        self.rssi_list = []
+        self.link_rate_list = []
+        self.ssid_list = []
+        # Step 3: Retrieve port information
+        response_port = self.json_get("/port/all")
+
+        # Step 4: Match ports associated with retrieved resources in the order of ports_list
+        for port_entry in ports_list:
+            expected_eid = port_entry['eid']
+
+            found = False
+            for interface in response_port['interfaces']:
+                for port, port_data in interface.items():
+                    result = '.'.join(port.split('.')[:2])
+
+                    if result == expected_eid:
+                        # always collect the last segment for gen_ports_list
+                        gen_ports_list.append(port.split('.')[-1])
+
+                        # if this is the wireless parent, collect the other details
+                        if port_data.get("parent dev") == 'wiphy0':
+                            self.mac_list.append(port_data.get("mac"))
+                            self.rssi_list.append(port_data.get("signal"))
+                            self.link_rate_list.append(port_data.get("rx-rate"))
+                            self.ssid_list.append(port_data.get("ssid"))
+
+                        found = True
+                        break  # matched one port inside this interface
+                if found:
+                    break  # matched for this port_entry, go to next port_entry
+
+        self.new_port_list = [item.split('.')[2] for item in self.real_sta_list]
 
 
 def main():
