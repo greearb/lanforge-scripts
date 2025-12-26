@@ -522,7 +522,7 @@ class Throughput(Realm):
                 navdata['Canbee_angle'] = ''
             with open(nav_data, 'w') as x:
                 json.dump(navdata, x, indent=4)
-        self.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
+        self.generate_report_robo(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
         if self.dowebgui:
             # copying to home directory i.e home/user_name
             self.copy_reports_to_home_dir()
@@ -3071,7 +3071,592 @@ class Throughput(Realm):
         report.write_html()
         report.write_pdf(_orientation="Landscape")
 
+    def generate_report_robo(self, iterations_before_test_stopped_by_user, incremental_capacity_list, data=None, data1=None, report_path='', result_dir_name='Throughput_Test_report',
+                             selected_real_clients_names=None):
+        """
+        Generate throughput test report for robot-based testing.
+        It generates per-coordinate and per-angle line graphs, detailed result
+        tables, and embeds live heatmap images when the test is run from Web UI.
+
+        Args:
+            iterations_before_test_stopped_by_user (list):
+                Iterations completed before the test was stopped.
+            incremental_capacity_list (list):
+                Number of clients used in each test iteration.
+            data (DataFrame, optional):
+                Throughput data collected per coordinate and angle.
+            data1 (list, optional):
+                Runtime metadata containing active device counts per iteration.
+            report_path (str, optional):
+                Base path where the report will be generated.
+            result_dir_name (str, optional):
+                Name of the report results directory.
+            selected_real_clients_names (list, optional):
+                List of selected real client device names.
+
+        Returns:
+            None
+        """
+        if self.do_interopability:
+            result_dir_name = "Interopability_Test_report"
+
+        self.ssid_list = self.get_ssid_list(self.input_devices_list)
+        self.signal_list, self.channel_list, self.mode_list, self.link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
+
+        if selected_real_clients_names is not None:
+            self.num_stations = selected_real_clients_names
+
+        # Initialize the report object
+        if self.do_interopability is False:
+            report = lf_report(_output_pdf="throughput.pdf", _output_html="throughput.html", _path=report_path,
+                               _results_dir_name=result_dir_name)
+            report_path = report.get_path()
+            report_path_date_time = report.get_path_date_time()
+            # df.to_csv(os.path.join(report_path_date_time, 'throughput_data.csv'))
+            # For groups and profiles configuration through webgui
+
+            logger.info("path: {}".format(report_path))
+            logger.info("path_date_time: {}".format(report_path_date_time))
+            report.set_title("Throughput Test")
+            report.build_banner()
+
+            report.set_obj_html(_obj_title="Objective",
+                                _obj="The Candela Client Capacity test is designed to measure an Access Point’s client capacity and performance when handling different amounts of Real clients like android, Linux,"  # noqa: E501
+                                " windows,MacOS and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for"  # noqa: E501
+                                " this test, we aim to assess the capacity of network to handle high volumes of traffic while"
+                                " each trial. Along with throughput other measurements made are client connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the"  # noqa: E501
+                                " AP to be able to handle several stations (within the limitations of the AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that"  # noqa: E501
+                                "scales well will not show a significant overall throughput decrease as more Real clients are added.")
+            report.build_objective()
+            report.set_obj_html(_obj_title="Input Parameters",
+                                _obj="The below tables provides the input parameters for the test")
+            report.build_objective()
+
+            # Initialize counts and lists for device types
+            android_devices, windows_devices, linux_devices, mac_devices, ios_devices = 0, 0, 0, 0, 0
+            all_devices_names = []
+            device_type = []
+            packet_size_text = ''
+            total_devices = ""
+            if self.cx_profile.side_a_min_pdu == -1:
+                packet_size_text = 'AUTO'
+            else:
+                packet_size_text = str(self.cx_profile.side_a_min_pdu) + ' Bytes'
+            # Determine load type name based on self.load_type
+            if self.load_type == "wc_intended_load":
+                load_type_name = "Intended Load"
+            else:
+                load_type_name = "Per Client Load"
+            for i in self.real_client_list:
+                split_device_name = i.split(" ")
+                if 'android' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(Android)"))
+                    device_type.append("Android")
+                    android_devices += 1
+                elif 'Win' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(Windows)"))
+                    device_type.append("Windows")
+                    windows_devices += 1
+                elif 'Lin' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(Linux)"))
+                    device_type.append("Linux")
+                    linux_devices += 1
+                elif 'Mac' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(Mac)"))
+                    device_type.append("Mac")
+                    mac_devices += 1
+                elif 'iOS' in split_device_name:
+                    all_devices_names.append(split_device_name[2] + ("(iOS)"))
+                    device_type.append("iOS")
+                    ios_devices += 1
+
+            # Build total_devices string based on counts
+            if android_devices > 0:
+                total_devices += f" Android({android_devices})"
+            if windows_devices > 0:
+                total_devices += f" Windows({windows_devices})"
+            if linux_devices > 0:
+                total_devices += f" Linux({linux_devices})"
+            if mac_devices > 0:
+                total_devices += f" Mac({mac_devices})"
+            if ios_devices > 0:
+                total_devices += f" iOS({ios_devices})"
+
+            # Determine incremental_capacity_data based on self.incremental_capacity
+            if self.gave_incremental:
+                incremental_capacity_data = "No Incremental values provided"
+            elif len(self.incremental_capacity) == 1:
+                if len(incremental_capacity_list) == 1:
+                    incremental_capacity_data = str(self.incremental_capacity[0])
+                else:
+                    incremental_capacity_data = ','.join(map(str, incremental_capacity_list))
+            elif (len(self.incremental_capacity) > 1):
+                self.incremental_capacity = self.incremental_capacity.split(',')
+                incremental_capacity_data = ', '.join(self.incremental_capacity)
+            else:
+                incremental_capacity_data = "None"
+
+            # Construct test_setup_info dictionary for test setup table
+            if self.group_name:
+                group_names = ', '.join(self.configdevices.keys())
+                profile_names = ', '.join(self.configdevices.values())
+                configmap = "Groups:" + group_names + " -> Profiles:" + profile_names
+                test_setup_info = {
+                    "Test name": self.test_name,
+                    "Configuration": configmap,
+                    "Configured Devices": ", ".join(all_devices_names),
+                    "No of Devices": "Total" + f"({str(self.num_stations)})" + total_devices,
+                    "Increment": incremental_capacity_data,
+                    "Traffic Duration in minutes": round(int(self.test_duration) * len(incremental_capacity_list) / 60, 2),
+                    "Traffic Type": (self.traffic_type.strip("lf_")).upper(),
+                    "Traffic Direction": self.direction,
+                    "Upload Rate(Mbps)": str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps",
+                    "Download Rate(Mbps)": str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps",
+                    "Load Type": load_type_name,
+                    "Packet Size": packet_size_text
+                }
+            else:
+                test_setup_info = {
+                    "Test name": self.test_name,
+                    "Device List": ", ".join(all_devices_names),
+                    "No of Devices": "Total" + f"({str(self.num_stations)})" + total_devices,
+                    "Increment": incremental_capacity_data,
+                    "Traffic Duration in minutes": round(int(self.test_duration) * len(incremental_capacity_list) / 60, 2),
+                    "Traffic Type": (self.traffic_type.strip("lf_")).upper(),
+                    "Traffic Direction": self.direction,
+                    "Upload Rate(Mbps)": str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps",
+                    "Download Rate(Mbps)": str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps",
+                    "Load Type": load_type_name,
+                    "Packet Size": packet_size_text
+                }
+            # Add robot IP, completed coordinates, and selected angles to the test summary
+            test_setup_info["ROBOT IP"] = self.robo_ip
+            test_setup_info["Selected Coordinates"] = ",".join(self.coordinates_completed)
+            if self.rotation_enabled:
+                test_setup_info["Selected Angles"] = ",".join(self.angle_list)
+
+            report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
+
+            # Add live view images in case of robot testing from webui
+            if self.dowebgui:
+
+                throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput.png")
+                rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi.png")
+                timeout = 300  # seconds
+                start_time = time.time()
+
+                while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)):
+                    if time.time() - start_time > timeout:
+                        print("Timeout: Images not found within 300 seconds.")
+                        break
+                    time.sleep(1)
+
+                if os.path.exists(throughput_image_path):
+                    report.set_custom_html('<div style="page-break-before: always;"></div>')
+                    report.build_custom()
+                    report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                    report.build_custom()
+                    report.set_custom_html(f'<img src="file://{throughput_image_path}" style="width:1500px; height:900px;"></img>')
+                    report.build_custom()
+                    # os.remove(throughput_image_path)
+
+                if os.path.exists(rssi_image_path):
+                    report.set_custom_html('<div style="page-break-before: always;"></div>')
+                    report.build_custom()
+                    report.set_custom_html("<h2>Average RSSI Heatmap: </h2>")
+                    report.build_custom()
+                    report.set_custom_html(f'<img src="file://{rssi_image_path}" style="width:1500px; height:900px;"></img>')
+                    report.build_custom()
+            # Loop through each coordinate
+            for i, coordinate in enumerate(self.coordinates_completed):
+
+                report.set_obj_html(
+                    _obj_title=f"<h3 style='text-decoration: underline;'>Throughput Test Details – Robot Position: Point {coordinate}</h3>",
+                    _obj=" ")
+                report.build_objective()
+                coordinate_csv = f"{coordinate}_throughput_data.csv"
+                data = pd.read_csv(coordinate_csv)
+
+                if self.dowebgui is True and self.group_name:
+                    shutil.move('{}_overall_throughput.csv', report_path_date_time)
+                else:
+                    shutil.move('{}_throughput_data.csv'.format(coordinate), report_path_date_time)
+
+                for angle in self.angle_list:
+                    # Loop through iterations and build graphs, tables for each iteration
+                    for i in range(len(iterations_before_test_stopped_by_user)):
+                        # rssi_signal_data=[]
+                        devices_on_running = []
+                        download_data = []
+                        upload_data = []
+                        upload_drop = []
+                        download_drop = []
+                        devices_data_to_create_bar_graph = []
+                        # signal_data=[]
+                        direction_in_table = []
+                        packet_size_in_table = []
+                        upload_list, download_list = [], []
+                        rssi_data = []
+                        data_iter = data[data['Iteration'] == i + 1]
+                        avg_rtt_data = []
+
+                        # for sig in self.signal_list[0:int(incremental_capacity_list[i])]:
+                        #     signal_data.append(int(sig)*(-1))
+                        # rssi_signal_data.append(signal_data)
+
+                        # Fetch devices_on_running from real_client_list
+                        for j in range(data1[i][-1]):
+                            devices_on_running.append(self.real_client_list[j].split(" ")[-1])
+
+                        # Fetch download_data and upload_data based on load_type and direction
+                        for k in devices_on_running:
+                            # individual_device_data=[]
+
+                            # Checking individual device download and upload rate by searching device name in dataframe
+                            columns_with_substring = [col for col in data_iter.columns if k in col]
+                            if self.rotation_enabled:
+                                angle = float(angle)
+                                filtered_df = data_iter.loc[data_iter["Angle"] == angle, columns_with_substring]
+                            else:
+                                filtered_df = data_iter[columns_with_substring]
+                            download_col = filtered_df[[col for col in filtered_df.columns if "Download" in col][0]].values.tolist()
+                            upload_col = filtered_df[[col for col in filtered_df.columns if "Upload" in col][0]].values.tolist()
+                            upload_drop_col = filtered_df[[col for col in filtered_df.columns if "Tx % Drop" in col][0]].values.tolist()
+                            download_drop_col = filtered_df[[col for col in filtered_df.columns if "Rx % Drop " in col][0]].values.tolist()
+                            rssi_col = filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()
+                            if self.load_type == "wc_intended_load":
+                                if self.direction == "Bi-direction":
+
+                                    # Append average download and upload data from filtered dataframe
+                                    download_data.append(round(sum(download_col) / len(download_col), 2))
+                                    upload_data.append(round(sum(upload_col) / len(upload_col), 2))
+                                    # Append average upload and download drop from filtered dataframe
+                                    upload_drop.append(round(sum(upload_drop_col) / len(upload_drop_col), 2))
+                                    download_drop.append(round(sum(download_drop_col) / len(download_drop_col), 2))
+                                    rssi_data.append(int(round(sum(rssi_col) / len(rssi_col), 2) * -1))
+                                    avg_rtt_data.append(filtered_df[[col for col in filtered_df.columns if "Average RTT " in col][0]].values.tolist()[-1])
+                                    # Calculate and append upload and download throughput to lists
+                                    upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
+                                    download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
+                                    if self.cx_profile.side_a_min_pdu == -1:
+                                        packet_size_in_table.append('AUTO')
+                                    else:
+                                        packet_size_in_table.append(self.cx_profile.side_a_min_pdu)
+                                    direction_in_table.append(self.direction)
+
+                                elif self.direction == 'Download':
+
+                                    # Append average download data from filtered dataframe
+                                    download_data.append(round(sum(download_col) / len(download_col), 2))
+
+                                    # Append 0 for upload data
+                                    upload_data.append(0)
+
+                                    rssi_data.append(int(round(sum(rssi_col) / len(rssi_col), 2) * -1))
+
+                                    # Calculate and append upload and download throughput to lists
+                                    upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
+                                    download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
+                                    avg_rtt_data.append(filtered_df[[col for col in filtered_df.columns if "Average RTT " in col][0]].values.tolist()[-1])
+                                    # Append average download drop data from filtered dataframe
+
+                                    download_drop.append(round(sum(download_drop_col) / len(download_drop_col), 2))
+                                    if self.cx_profile.side_a_min_pdu == -1:
+                                        packet_size_in_table.append('AUTO')
+                                    else:
+                                        packet_size_in_table.append(self.cx_profile.side_a_min_pdu)
+                                    direction_in_table.append(self.direction)
+
+                                elif self.direction == 'Upload':
+
+                                    # Calculate and append upload and download throughput to lists
+                                    upload_list.append(str(round((int(self.cx_profile.side_a_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
+                                    download_list.append(str(round((int(self.cx_profile.side_b_min_bps) / 1000000) / int(incremental_capacity_list[i]), 2)))
+
+                                    rssi_data.append(int(round(sum(rssi_col) / len(rssi_col), 2) * -1))
+
+                                    # Append Average upload data from filtered dataframe
+                                    upload_data.append(round(sum(upload_col) / len(upload_col), 2))
+                                    # Append 0 for download data
+                                    download_data.append(0)
+                                    # Append average upload drop data from filtered dataframe
+                                    upload_drop.append(round(sum(upload_drop_col) / len(upload_drop_col), 2))
+                                    avg_rtt_data.append(filtered_df[[col for col in filtered_df.columns if "Average RTT " in col][0]].values.tolist()[-1])
+
+                                    if self.cx_profile.side_a_min_pdu == -1:
+                                        packet_size_in_table.append('AUTO')
+                                    else:
+                                        packet_size_in_table.append(self.cx_profile.side_a_min_pdu)
+                                    direction_in_table.append(self.direction)
+
+                            else:
+
+                                if self.direction == "Bi-direction":
+                                    # Append average download and upload data from filtered dataframe
+                                    download_data.append(round(sum(download_col) / len(download_col), 2))
+                                    upload_data.append(round(sum(upload_col) / len(upload_col), 2))
+                                    # Append average download and upload drop data from filtered dataframe
+                                    upload_drop.append(round(sum(upload_drop_col) / len(upload_drop_col), 2))
+                                    download_drop.append(round(sum(download_drop_col) / len(download_drop_col), 2))
+                                    # upload_data.append(filtered_df[[col for col in  filtered_df.columns if "Upload" in col][0]].values.tolist()[-1])
+                                    rssi_data.append(int(round(sum(rssi_col) / len(rssi_col), 2) * -1))
+                                    avg_rtt_data.append(filtered_df[[col for col in filtered_df.columns if "Average RTT " in col][0]].values.tolist()[-1])
+
+                                    # Calculate and append upload and download throughput to lists
+                                    upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                                    download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
+
+                                    if self.cx_profile.side_a_min_pdu == -1:
+                                        packet_size_in_table.append('AUTO')
+                                    else:
+                                        packet_size_in_table.append(self.cx_profile.side_a_min_pdu)
+                                    direction_in_table.append(self.direction)
+                                elif self.direction == 'Download':
+
+                                    # Append average download data from filtered dataframe
+                                    download_data.append(round(sum(download_col) / len(download_col), 2))
+                                    # Append 0 for upload data
+                                    upload_data.append(0)
+                                    rssi_data.append(int(round(sum(rssi_col) / len(rssi_col), 2) * -1))
+                                    avg_rtt_data.append(filtered_df[[col for col in filtered_df.columns if "Average RTT " in col][0]].values.tolist()[-1])
+
+                                    # Calculate and append upload and download throughput to lists
+                                    upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)))
+                                    download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)))
+                                    # Append average download drop data from filtered dataframe
+                                    download_drop.append(round(sum(download_drop_col) / len(download_drop_col), 2))
+                                    if self.cx_profile.side_a_min_pdu == -1:
+                                        packet_size_in_table.append('AUTO')
+                                    else:
+                                        packet_size_in_table.append(self.cx_profile.side_a_min_pdu)
+                                    direction_in_table.append(self.direction)
+                                elif self.direction == 'Upload':
+
+                                    # Calculate and append upload and download throughput to lists
+                                    upload_list.append(str(round(int(self.cx_profile.side_a_min_bps) / 1000000, 2)) + "Mbps")
+                                    download_list.append(str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps")
+                                    rssi_data.append(int(round(sum(rssi_col) / len(rssi_col), 2) * -1))
+                                    avg_rtt_data.append(filtered_df[[col for col in filtered_df.columns if "Average RTT " in col][0]].values.tolist()[-1])
+
+                                    # Append average upload data from filtered dataframe
+                                    upload_data.append(round(sum(upload_col) / len(upload_col), 2))
+                                    # Append average upload drop data from filtered dataframe
+                                    upload_drop.append(round(sum(upload_drop_col) / len(upload_drop_col), 2))
+
+                                    # Append 0 for download data
+                                    download_data.append(0)
+
+                                    if self.cx_profile.side_a_min_pdu == -1:
+                                        packet_size_in_table.append('AUTO')
+                                    else:
+                                        packet_size_in_table.append(self.cx_profile.side_a_min_pdu)
+                                    direction_in_table.append(self.direction)
+
+                        data_set_in_graph = []
+                        data_for_angle = []
+                        if self.rotation_enabled:
+                            angle = float(angle)
+                            data_for_angle = data[data["Angle"] == angle]
+                        # Depending on the test direction, retrieve corresponding throughput data,
+                        # organize it into datasets for graphing, and calculate real-time average throughput values accordingly.
+                        if self.direction == "Bi-direction":
+                            if self.rotation_enabled:
+                                download_values_list = data_for_angle['Overall Download'][data_for_angle['Iteration'] == i + 1].values.tolist()
+                                upload_values_list = data_for_angle['Overall Upload'][data_for_angle['Iteration'] == i + 1].values.tolist()
+                            else:
+                                download_values_list = data['Overall Download'][data['Iteration'] == i + 1].values.tolist()
+                                upload_values_list = data['Overall Upload'][data['Iteration'] == i + 1].values.tolist()
+                            data_set_in_graph.append(download_values_list)
+                            data_set_in_graph.append(upload_values_list)
+                            devices_data_to_create_bar_graph.append(download_data)
+                            devices_data_to_create_bar_graph.append(upload_data)
+                            label_data = ['Download', 'Upload']
+                            if not self.rotation_enabled:
+                                real_time_data = (
+                                    f"Real Time Throughput: Achieved Throughput: Download:{round(sum(download_data[0:int(incremental_capacity_list[i])]), 2)} Mbps, "
+                                    f"Upload: {round(sum(upload_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
+                                )
+                            else:
+                                real_time_data = (
+                                    f"Real Time Throughput: Achieved Throughput At Angle {angle}: Download: {round(sum(download_data[0:int(incremental_capacity_list[i])]), 2)} Mbps, "
+                                    f"Upload: {round(sum(upload_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
+                                )
+
+                        elif self.direction == 'Download':
+                            if self.rotation_enabled:
+                                download_values_list = data_for_angle['Overall Download'][data_for_angle['Iteration'] == i + 1].values.tolist()
+                            else:
+                                download_values_list = data['Overall Download'][data['Iteration'] == i + 1].values.tolist()
+                            data_set_in_graph.append(download_values_list)
+                            devices_data_to_create_bar_graph.append(download_data)
+                            label_data = ['Download']
+                            if not self.rotation_enabled:
+                                real_time_data = f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))), 2)} Mbps"
+                            else:
+                                real_time_data = f"Real Time Throughput: Achieved Throughput At Angle {angle}: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))), 2)} Mbps"
+
+                        elif self.direction == 'Upload':
+                            if self.rotation_enabled:
+                                upload_values_list = data_for_angle['Overall Upload'][data_for_angle['Iteration'] == i + 1].values.tolist()
+                            else:
+                                upload_values_list = data['Overall Upload'][data['Iteration'] == i + 1].values.tolist()
+                            data_set_in_graph.append(upload_values_list)
+                            data_set_in_graph.append(upload_values_list)
+                            devices_data_to_create_bar_graph.append(upload_data)
+                            label_data = ['Upload']
+                            if not self.rotation_enabled:
+                                real_time_data = f"Real Time Throughput: Achieved Throughput: Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])), 2)} Mbps"
+                            else:
+                                real_time_data = f"Real Time Throughput: Achieved Throughput At Angle {angle}: Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])), 2)} Mbps"
+
+                        if len(incremental_capacity_list) > 1:
+                            report.set_custom_html(f"<h2><u>Iteration-{i + 1}: Number of Devices Running : {len(devices_on_running)}</u></h2>")
+                            report.build_custom()
+
+                        report.set_obj_html(
+                            _obj_title=f"{real_time_data}",
+                            _obj=" ")
+                        report.build_objective()
+                        if self.rotation_enabled:
+                            xaxis_categories = data_for_angle['TIMESTAMP'][data_for_angle['Iteration'] == i + 1].values.tolist()
+                            graph_image_name = "line_graph{}_{}_{}".format(coordinate, angle, i)
+                        else:
+                            xaxis_categories = data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist()
+                            graph_image_name = "line_graph{}_{}".format(coordinate, i)
+                        graph_png = self.build_line_graph(
+                            data_set=data_set_in_graph,
+                            xaxis_name="Time",
+                            yaxis_name="Throughput (Mbps)",
+                            xaxis_categories=xaxis_categories,
+                            label=label_data,
+                            graph_image_name=graph_image_name
+                        )
+                        logger.info("graph name {}".format(graph_png))
+                        report.set_graph_image(graph_png)
+                        report.move_graph_image()
+
+                        report.build_graph()
+
+                        if self.group_name:
+                            report.set_obj_html(
+                                _obj_title="Detailed Result Table For Groups ",
+                                _obj="The below tables provides detailed information for the throughput test on each group.")
+                        else:
+
+                            report.set_obj_html(
+                                _obj_title="Detailed Result Table ",
+                                _obj="The below tables provides detailed information for the throughput test on each device.")
+                        report.build_objective()
+                        self.mac_id_list = [item.split()[-1] if ' ' in item else item for item in self.mac_id_list]
+                        if self.expected_passfail_value or self.device_csv_name:
+                            test_input_list, pass_fail_list = self.get_pass_fail_list(device_type, incremental_capacity_list[i], devices_on_running, download_data, upload_data)
+                        if self.group_name:
+                            for key, val in self.group_device_map.items():
+                                if self.expected_passfail_value or self.device_csv_name:
+                                    # Generating Dataframe when Groups with their profiles and pass_fail case is specified
+                                    dataframe = self.generate_dataframe(val,
+                                                                        device_type[0:int(incremental_capacity_list[i])],
+                                                                        devices_on_running[0:int(incremental_capacity_list[i])],
+                                                                        self.ssid_list[0:int(incremental_capacity_list[i])],
+                                                                        self.mac_id_list[0:int(incremental_capacity_list[i])],
+                                                                        self.channel_list[0:int(incremental_capacity_list[i])],
+                                                                        self.mode_list[0:int(incremental_capacity_list[i])],
+                                                                        direction_in_table[0:int(incremental_capacity_list[i])],
+                                                                        download_list[0:int(incremental_capacity_list[i])],
+                                                                        [str(n) for n in avg_rtt_data[0:int(incremental_capacity_list[i])]],
+                                                                        [str(n) + " Mbps" for n in download_data[0:int(incremental_capacity_list[i])]],
+                                                                        upload_list[0:int(incremental_capacity_list[i])],
+                                                                        [str(n) + " Mbps" for n in upload_data[0:int(incremental_capacity_list[i])]],
+                                                                        ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[0:int(incremental_capacity_list[i])]],
+                                                                        test_input_list,
+                                                                        self.link_speed_list[0:int(incremental_capacity_list[i])],
+                                                                        [str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]],
+                                                                        pass_fail_list,
+                                                                        upload_drop,
+                                                                        download_drop)
+                                # Generating Dataframe for groups when pass_fail case is not specified
+                                else:
+                                    dataframe = self.generate_dataframe(val,
+                                                                        device_type[0:int(incremental_capacity_list[i])],
+                                                                        devices_on_running[0:int(incremental_capacity_list[i])],
+                                                                        self.ssid_list[0:int(incremental_capacity_list[i])],
+                                                                        self.mac_id_list[0:int(incremental_capacity_list[i])],
+                                                                        self.channel_list[0:int(incremental_capacity_list[i])],
+                                                                        self.mode_list[0:int(incremental_capacity_list[i])],
+                                                                        direction_in_table[0:int(incremental_capacity_list[i])],
+                                                                        download_list[0:int(incremental_capacity_list[i])],
+                                                                        [str(n) for n in avg_rtt_data[0:int(incremental_capacity_list[i])]],
+                                                                        [str(n) + " Mbps" for n in download_data[0:int(incremental_capacity_list[i])]],
+                                                                        upload_list[0:int(incremental_capacity_list[i])],
+                                                                        [str(n) + " Mbps" for n in upload_data[0:int(incremental_capacity_list[i])]],
+                                                                        ['' if n == 0 else '-' + str(n) + " dbm" for n in rssi_data[0:int(incremental_capacity_list[i])]],
+                                                                        [],
+                                                                        self.link_speed_list[0:int(incremental_capacity_list[i])],
+                                                                        [str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]],
+                                                                        [],
+                                                                        upload_drop,
+                                                                        download_drop)
+                                if dataframe:
+                                    report.set_obj_html("", "Group: {}".format(key))
+                                    report.build_objective()
+                                    dataframe1 = pd.DataFrame(dataframe)
+                                    report.set_table_dataframe(dataframe1)
+                                    report.build_table()
+                        else:
+                            bk_dataframe = {
+                                " Device Type ": device_type[0:int(incremental_capacity_list[i])],
+                                " Username": devices_on_running[0:int(incremental_capacity_list[i])],
+                                " SSID ": self.ssid_list[0:int(incremental_capacity_list[i])],
+                                " MAC ": self.mac_id_list[0:int(incremental_capacity_list[i])],
+                                " Channel ": self.channel_list[0:int(incremental_capacity_list[i])],
+                                " Mode": self.mode_list[0:int(incremental_capacity_list[i])],
+                                # " Direction":direction_in_table[0:int(incremental_capacity_list[i])],
+                                " Offered download rate (Mbps) ": download_list[0:int(incremental_capacity_list[i])],
+                                " Observed Average download rate (Mbps) ": [str(n) for n in download_data[0:int(incremental_capacity_list[i])]],
+                                " Offered upload rate (Mbps) ": upload_list[0:int(incremental_capacity_list[i])],
+                                " Observed Average upload rate (Mbps) ": [str(n) for n in upload_data[0:int(incremental_capacity_list[i])]],
+                                " RSSI (dBm) ": ['' if n == 0 else '-' + str(n) for n in rssi_data[0:int(incremental_capacity_list[i])]],
+                                # " Link Speed ":self.link_speed_list[0:int(incremental_capacity_list[i])],
+                                " Average RTT (ms)": avg_rtt_data[0:int(incremental_capacity_list[i])],
+                                " Packet Size(Bytes) ": [str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]],
+                            }
+                            if self.direction == "Bi-direction":
+                                bk_dataframe[" Average Tx Drop % "] = upload_drop
+                                bk_dataframe[" Average Rx Drop % "] = download_drop
+                            elif self.direction == 'Download':
+                                bk_dataframe[" Average Rx Drop % "] = download_drop
+                                # adding rx drop while uploading as 0
+                                bk_dataframe[" Average Tx Drop % "] = [0.0] * len(download_drop)
+
+                            else:
+                                bk_dataframe[" Average Tx Drop % "] = upload_drop
+                                # adding rx drop while downloading as 0
+                                bk_dataframe[" Average Rx Drop % "] = [0.0] * len(upload_drop)
+                            if self.expected_passfail_value or self.device_csv_name:
+                                bk_dataframe[" Expected " + self.direction + " rate "] = [str(n) + " Mbps" for n in test_input_list]
+                                bk_dataframe[" Status "] = pass_fail_list
+                            dataframe1 = pd.DataFrame(bk_dataframe)
+                            report.set_table_dataframe(dataframe1)
+                            report.build_table()
+
+                            if coordinate in self.battery_log:
+                                if self.rotation_enabled and (angle in self.battery_log[coordinate]):
+                                    report.set_custom_html(f"<h2>Robot went to charging Dock at {self.battery_log[coordinate][angle]}</h2>")
+                                    report.build_custom()
+                                else:
+                                    report.set_custom_html(f"<h2>Robot went to charging Dock at {self.battery_log[coordinate]}</h2>")
+                                    report.build_custom()
+
+                        report.set_custom_html('<hr>')
+                        report.build_custom()
+
+        # report.build_custom()
+        report.build_footer()
+        report.write_html()
+        report.write_pdf(_orientation="Landscape")
+
     # Creates a separate DataFrame for each group of devices.
+
     def generate_dataframe(self, groupdevlist, typeofdevice, devusername, devssid, devmac, devchannel, devmode, devdirection, devofdownload, devrtt, devobsdownload,
                            devoffupload, devobsupload, devrssi, devExpected, devlinkspeed, devpacketsize, devstatus, upload_drop, download_drop):
         """
