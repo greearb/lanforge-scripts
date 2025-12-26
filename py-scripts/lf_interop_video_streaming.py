@@ -1920,6 +1920,390 @@ class VideoStreamingTest(Realm):
         with open(file_path, 'w') as file:
             json.dump(data, file, indent=4)
 
+    def build_report_params_for_robo(self, args, cx_order_list, individual_df, iterations_before_test_stopped_by_user):
+        """
+        Prepare robo report parameters based on incremental mode.
+
+        Returns:
+            dict: Report parameters built based on incremental mode.
+        """
+        date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
+
+        test_setup_info = self.create_test_setup_info(media_source=args.media_source, media_quality=args.media_quality)
+        params = {
+            "date": None,
+            "iterations_before_test_stopped_by_user": None,
+            "test_setup_info": None,
+            "realtime_dataset": None,
+            "report_path": "",
+            "cx_order_list": []
+        }
+        if self.resource_ids and self.incremental:
+            params.update({
+                "date": date,
+                "iterations_before_test_stopped_by_user": list(set(iterations_before_test_stopped_by_user)),
+                "test_setup_info": test_setup_info,
+                "realtime_dataset": individual_df,
+                "cx_order_list": cx_order_list
+            })
+        elif self.resource_ids:
+            params.update({
+                "date": date,
+                "iterations_before_test_stopped_by_user": list(set(iterations_before_test_stopped_by_user)),
+                "test_setup_info": test_setup_info,
+                "realtime_dataset": individual_df,
+            })
+        return params
+
+    def generate_report_for_robo(self, test_setup_info, report_path='', passed_coordinates=None):
+        """
+        Generate the Video Streaming test report for robo execution, handling per-coordinate
+        and rotation data.
+
+        Returns:
+            None
+        """
+        date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
+        if self.dowebgui and report_path == '':
+            report = lf_report.lf_report(_results_dir_name="VideoStreaming_test", _output_html="VideoStreaming_test.html",
+                                         _output_pdf="VideoStreaming_test.pdf", _path=self.result_dir)
+        else:
+            report = lf_report.lf_report(_results_dir_name="VideoStreaming_test", _output_html="VideoStreaming_test.html",
+                                         _output_pdf="VideoStreaming_test.pdf", _path=report_path)
+
+        # To store throughput_data.csv in report folder
+        report_path_date_time = report.get_path_date_time()
+        # shutil.move('video_streaming_realtime_data.csv', report_path_date_time)
+
+        created_incremental_values = self.get_incremental_capacity_list()
+        keys = list(self.http_profile.created_cx.keys())
+
+        report.set_title("Video Streaming Test")
+        report.set_date(date)
+        report.build_banner()
+        report.set_obj_html("Objective", " The Candela Video streaming test is designed to measure the access point performance and stability by streaming the videos from the local browser"
+                            "or from over the Internet in real clients like android which are connected to the access point,"
+                            "this test allows the user to choose the options like video link, type of media source, media quality, number of playbacks."
+                            "Along with the performance other measurements like No of Buffers, Wait-Time, per client Video Bitrate, Video Quality, and more. "
+                            "The expected behavior is for the DUT to be able to handle several stations (within the limitations of the AP specs)"
+                            "and make sure all capable clients can browse the video. ")
+        report.build_objective()
+        report.set_table_title("Input Parameters")
+        report.build_table_title()
+        if self.config:
+            test_setup_info["SSID"] = self.test_setup_info_ssid
+            test_setup_info["Password"] = self.passwd
+            test_setup_info["ENCRYPTION"] = self.encryp
+        elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
+            # Map each group with a profile
+            gp_pairs = zip(self.selected_groups, self.selected_profiles)
+            # Create a string by joining the mapped pairs
+            gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
+            test_setup_info["Configuration"] = gp_map
+        if self.robot_test:
+            test_setup_info["Coordinates"] = self.coordinate_list
+            if self.rotation_enabled:
+                test_setup_info["Rotations"] = self.rotation_list
+
+        report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
+        device_type = []
+        username = []
+        ssid = []
+        mac = []
+        channel = []
+        mode = []
+        rssi = []
+        channel = []
+        tx_rate = []
+        resource_ids = list(map(int, self.resource_ids.split(',')))
+        try:
+            eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,ssid,signal,channel")
+        except KeyError:
+            logger.error("Error: 'interfaces' key not found in port data")
+            exit(1)
+
+        # Loop through interfaces
+        for alias in eid_data["interfaces"]:
+            for i in alias:
+                # Check interface index and alias
+                if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
+
+                    # Get resource data for specific interface
+                    resource_hw_data = self.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
+                    hw_version = resource_hw_data['resource']['hw version']
+
+                    # Filter based on OS and resource ID
+                    if not hw_version.startswith(('Win', 'Linux', 'Apple')) and int(resource_hw_data['resource']['eid'].split('.')[1]) in resource_ids:
+                        device_type.append('Android')
+                        username.append(resource_hw_data['resource']['user'])
+                        ssid.append(alias[i]['ssid'])
+                        mac.append(alias[i]['mac'])
+                        mode.append(alias[i]['mode'])
+                        rssi.append(alias[i]['signal'])
+                        channel.append(alias[i]['channel'])
+                        tx_rate.append(alias[i]['tx-rate'])
+
+        self.add_buffer_and_wait_time_images(report=report)
+        for coordinate in range(len(passed_coordinates)):
+            self.current_coordinate = self.coordinate_list[coordinate]
+            csv_suffix = "_{}".format(self.current_coordinate)
+            if self.rotation_enabled:
+                for angle in range(len(self.rotation_list)):
+                    self.current_angle = self.rotation_list[angle]
+                    coord, ang = self.coordinate_list[coordinate], self.rotation_list[angle]
+                    self.data = self.vs_data[int(coord)][ang]["self_data"]
+                    self.generate_individual_coordinate(report, device_type, username, ssid, mac, channel, mode, rssi, tx_rate, created_incremental_values, keys)
+                shutil.move('video_streaming_realtime_data{}.csv'.format(csv_suffix), report_path_date_time)
+            else:
+                self.data = self.vs_data[self.coordinate_list[coordinate]]["self_data"]
+                shutil.move('video_streaming_realtime_data{}.csv'.format(csv_suffix), report_path_date_time)
+                self.generate_individual_coordinate(report, device_type, username, ssid, mac, channel, mode, rssi, tx_rate, created_incremental_values, keys)
+
+    def generate_individual_coordinate(self, report, device_type, username, ssid, mac, channel, mode, rssi, tx_rate, created_incremental_values, keys, report_path=""):
+        """
+        Generate per-coordinate and per-rotation Video Streaming graphs and tables by
+        processing incremental iteration data and adding line/bar graphs to the report.
+
+        Returns:
+            None
+        """
+        if self.rotation_enabled:
+            data_dict = self.vs_data[int(self.current_coordinate)][self.current_angle].copy()
+        else:
+            data_dict = self.vs_data[self.current_coordinate].copy()
+        if self.rotation_enabled:
+            graph_suffix = "_{}_{}".format(self.current_coordinate, self.current_angle)
+        else:
+            graph_suffix = "_{}".format(self.current_coordinate)
+
+        iterations_before_test_stopped_by_user = data_dict["iterations_before_test_stopped_by_user"]
+        realtime_dataset = data_dict["realtime_dataset"]
+        total_urls = self.data["total_urls"]
+        total_err = self.data["total_err"]
+        total_buffer = self.data["total_buffer"]
+        max_bytes_rd_list = []
+        avg_rx_rate_list = []
+        # Iterate through the length of cx_order_list
+        for iter in range(len(iterations_before_test_stopped_by_user)):
+            data_set_in_graph, wait_time_data, devices_on_running_state, device_names_on_running = [], [], [], []
+            devices_data_to_create_wait_time_bar_graph = []
+            max_video_rate, min_video_rate, avg_video_rate = [], [], []
+            total_url_data, rssi_data = [], []
+            trimmed_data_set_in_graph = []
+            max_bytes_rd_list = []
+            avg_rx_rate_list = []
+            # Retrieve data for the previous iteration, if it's not the first iteration
+            if iter != 0:
+                before_data_iter = realtime_dataset[realtime_dataset['iteration'] == iter]
+            # Retrieve data for the current iteration
+            data_iter = realtime_dataset[realtime_dataset['iteration'] == iter + 1]
+
+            # Populate the list of devices on running state and their corresponding usernames
+            for j in range(created_incremental_values[iter]):
+                devices_on_running_state.append(keys[j])
+                device_names_on_running.append(username[j])
+
+            # Iterate through each device currently running
+            for k in devices_on_running_state:
+                # Filter columns related to the current device
+                columns_with_substring = [col for col in data_iter.columns if k in col]
+                filtered_df = data_iter[columns_with_substring]
+                min_val = self.process_list(filtered_df[[col for col in filtered_df.columns if "video_format_bitrate" in col][0]].values.tolist())
+                if iter != 0:
+                    # Filter columns related to the current device from the previous iteration
+                    before_iter_columns_with_substring = [col for col in before_data_iter.columns if k in col]
+                    before_filtered_df = before_data_iter[before_iter_columns_with_substring]
+
+                # Extract and compute max, min, and average video rates
+                max_video_rate.append(max(filtered_df[[col for col in filtered_df.columns if "video_format_bitrate" in col][0]].values.tolist()))
+                min_video_rate.append(min_val)
+                avg_video_rate.append(round(sum(filtered_df[[col for col in filtered_df.columns if "video_format_bitrate" in col][0]].values.tolist()) /
+                                      len(filtered_df[[col for col in filtered_df.columns if "video_format_bitrate" in col][0]].values.tolist()), 2))
+                wait_time_data.append(filtered_df[[col for col in filtered_df.columns if "total_wait_time" in col][0]].values.tolist()[-1])
+                rssi_data.append(int(round(sum(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()) /
+                                 len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
+                # Extract maximum bytes read for the device
+                max_bytes_rd = max(filtered_df[[col for col in filtered_df.columns if "bytes_rd" in col][0]].values.tolist())
+                max_bytes_rd_list.append(max_bytes_rd)
+
+                # Calculate and append the average RX rate in Mbps
+                rx_rate_values = filtered_df[[col for col in filtered_df.columns if "rx rate" in col][0]].values.tolist()
+                avg_rx_rate_list.append(round((sum(rx_rate_values) / len(rx_rate_values)) / 1_000_000, 2))  # Convert bps to Mbps
+
+                if iter != 0:
+                    # Calculate the difference in total URLs between the current and previous iterations
+                    total_url_data.append(abs(filtered_df[[col for col in filtered_df.columns if "total_urls" in col][0]].values.tolist()[-1] -
+                                          before_filtered_df[[col for col in before_filtered_df.columns if "total_urls" in col][0]].values.tolist()[-1]))
+                else:
+                    # Append the total URLs for the first iteration
+                    total_url_data.append(filtered_df[[col for col in filtered_df.columns if "total_urls" in col][0]].values.tolist()[-1])
+
+            # Append the wait time data to the list for creating the wait time bar graph
+            devices_data_to_create_wait_time_bar_graph.append(wait_time_data)
+
+            # Extract overall video format bitrate values for the current iteration and append to data_set_in_graph
+            video_streaming_values_list = realtime_dataset['overall_video_format_bitrate'][realtime_dataset['iteration'] == iter + 1].values.tolist()
+            data_set_in_graph.append(video_streaming_values_list)
+
+            # Trim the data in data_set_in_graph and append to trimmed_data_set_in_graph
+            for _ in range(len(data_set_in_graph)):
+                trimmed_data_set_in_graph.append(self.trim_data(len(data_set_in_graph[_]), data_set_in_graph[_]))
+
+            # If there are multiple incremental values, add custom HTML content to the report for the current iteration
+            if len(created_incremental_values) > 1:
+                report.set_custom_html(f"<h2><u>Iteration-{iter + 1}</u></h2>")
+                report.build_custom()
+            if self.rotation_enabled:
+                obj_title = f"Realtime Video Rate on Coordinate: {self.current_coordinate} | Rotation Angle: {self.current_angle}°: Number of devices running: {len(device_names_on_running)}"
+            else:
+                obj_title = f"Realtime Video Rate on Coordinate: {self.current_coordinate} : Number of devices running: {len(device_names_on_running)}"
+
+            report.set_obj_html(
+                _obj_title=obj_title,
+                _obj="")
+            report.build_objective()
+
+            # Create a line graph for video rate over time
+            graph = lf_line_graph(_data_set=trimmed_data_set_in_graph,
+                                  _xaxis_name="Time",
+                                  _yaxis_name="Video Rate (Mbps)",
+                                  _xaxis_categories=self.trim_data(len(realtime_dataset['timestamp'][realtime_dataset['iteration'] == iter + 1].values.tolist()),
+                                                                   realtime_dataset['timestamp'][realtime_dataset['iteration'] == iter + 1].values.tolist()),
+                                  _label=['Rate'],
+                                  _graph_image_name=f"vs_line_graph{iter}{graph_suffix}"
+                                  )
+            graph_png = graph.build_line_graph()
+            logger.info("graph name {}".format(graph_png))
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+
+            report.build_graph()
+
+            # Define figure size for horizontal bar graphs
+            x_fig_size = 15
+            y_fig_size = len(devices_on_running_state) * .5 + 4
+
+            report.set_obj_html(
+                _obj_title="Total Urls Per Device",
+                _obj="")
+            report.build_objective()
+            # Create a horizontal bar graph for total URLs per device
+            graph = lf_bar_graph_horizontal(_data_set=[total_urls[:created_incremental_values[iter]]],
+                                            _xaxis_name="Total Urls",
+                                            _yaxis_name="Devices",
+                                            _graph_image_name=f"total_urls_image_name{iter}{graph_suffix}",
+                                            _label=["Total Urls"],
+                                            _yaxis_categories=device_names_on_running,
+                                            _legend_loc="best",
+                                            _legend_box=(1.0, 1.0),
+                                            _show_bar_value=True,
+                                            _figsize=(x_fig_size, y_fig_size)
+                                            #    _color=['lightcoral']
+                                            )
+            graph_png = graph.build_bar_graph_horizontal()
+            logger.info("wait time graph name {}".format(graph_png))
+            graph.build_bar_graph_horizontal()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.build_graph()
+
+            report.set_obj_html(
+                _obj_title="Max/Min Video Rate Per Device",
+                _obj="")
+            report.build_objective()
+
+            # Create a horizontal bar graph for max and min video rates per device
+            graph = lf_bar_graph_horizontal(_data_set=[max_video_rate, min_video_rate],
+                                            _xaxis_name="Max/Min Video Rate(Mbps)",
+                                            _yaxis_name="Devices",
+                                            _graph_image_name=f"max-min-video-rate_image_name{iter}{graph_suffix}",
+                                            _label=['Max Video Rate', 'Min Video Rate'],
+                                            _yaxis_categories=device_names_on_running,
+                                            _legend_loc="best",
+                                            _legend_box=(1.0, 1.0),
+                                            _show_bar_value=True,
+                                            _figsize=(x_fig_size, y_fig_size)
+                                            #    _color=['lightcoral']
+                                            )
+            graph_png = graph.build_bar_graph_horizontal()
+            logger.info("max/min graph name {}".format(graph_png))
+            graph.build_bar_graph_horizontal()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.build_graph()
+
+            report.set_obj_html(
+                _obj_title="Wait Time Per Device",
+                _obj="")
+            report.build_objective()
+
+            # Create a horizontal bar graph for wait time per device
+            graph = lf_bar_graph_horizontal(_data_set=devices_data_to_create_wait_time_bar_graph,
+                                            _xaxis_name="Wait Time(seconds)",
+                                            _yaxis_name="Devices",
+                                            _graph_image_name=f"wait_time_image_name{iter}{graph_suffix}",
+                                            _label=['Wait Time'],
+                                            _yaxis_categories=device_names_on_running,
+                                            _legend_loc="best",
+                                            _legend_box=(1.0, 1.0),
+                                            _show_bar_value=True,
+                                            _figsize=(x_fig_size, y_fig_size)
+                                            #    _color=['lightcoral']
+                                            )
+            graph_png = graph.build_bar_graph_horizontal()
+            logger.info("wait time graph name {}".format(graph_png))
+            graph.build_bar_graph_horizontal()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.build_graph()
+            if not self.robot_test:
+                self.add_buffer_and_wait_time_images(report=report)
+
+            # Table 1
+            report.set_obj_html("Overall - Detailed Result Table", "The below tables provides detailed information for the Video Streaming test.")
+            report.build_objective()
+            test_data = {
+                "iter": iter,
+                "created_incremental_values": created_incremental_values,
+                "device_type": device_type,
+                "username": username,
+                "ssid": ssid,
+                "mac": mac,
+                "channel": channel,
+                "mode": mode,
+                "total_buffer": total_buffer,
+                "wait_time_data": wait_time_data,
+                "min_video_rate": min_video_rate,
+                "avg_video_rate": avg_video_rate,
+                "max_video_rate": max_video_rate,
+                "total_urls": total_urls,
+                "total_err": total_err,
+                "rssi_data": rssi_data,
+                "tx_rate": tx_rate,
+                "max_bytes_rd_list": max_bytes_rd_list,
+                "avg_rx_rate_list": avg_rx_rate_list
+            }
+
+            dataframe = self.handle_passfail_criteria(test_data)
+
+            dataframe1 = pd.DataFrame(dataframe)
+            report.set_table_dataframe(dataframe1)
+            report.build_table()
+
+            # Set and build title for the overall results table
+            report.set_obj_html("Detailed Total Errors Table", "The below tables provides detailed information of total errors for the web browsing test.")
+            report.build_objective()
+            dataframe2 = {
+                " DEVICE": username[:created_incremental_values[iter]],
+                " TOTAL ERRORS ": total_err[:created_incremental_values[iter]],
+            }
+            dataframe3 = pd.DataFrame(dataframe2)
+            report.set_table_dataframe(dataframe3)
+            report.build_table()
+        report.build_footer()
+        report.write_html()
+        report.write_pdf()
+
     def perform_robo(self, args, individual_dataframe_columns, cx_order_list, i, actual_start_time, iterations_before_test_stopped_by_user):
         """
         Executes Video Streaming tests using robo across coordinates and rotations, collects per-iteration data,
@@ -1997,8 +2381,15 @@ class VideoStreamingTest(Realm):
                         else:
                             # Append current iteration index to iterations_before_test_stopped_by_user
                             iterations_before_test_stopped_by_user.append(i)
+                            params = self.build_report_params_for_robo(args, cx_order_list, coordinate_df, iterations_before_test_stopped_by_user)
+                            params["self_data"] = self.data.copy()
+                            self.vs_data[self.current_coordinate] = params
                             break
                         self.stop()
+                        params = self.build_report_params_for_robo(args, cx_order_list, coordinate_df, iterations_before_test_stopped_by_user)
+                        params["self_data"] = self.data.copy()
+                        self.vs_data[self.current_coordinate] = params
+
                     # if rotation mode
                     else:
                         exit_from_monitor = False
@@ -2078,10 +2469,17 @@ class VideoStreamingTest(Realm):
                             else:
                                 # Append current iteration index to iterations_before_test_stopped_by_user
                                 iterations_before_test_stopped_by_user.append(i)
+                                params = self.build_report_params_for_robo(args, cx_order_list, individual_df, iterations_before_test_stopped_by_user)
+                                params["self_data"] = self.data.copy()
                                 break
                             self.stop()
+                            params = self.build_report_params_for_robo(args, cx_order_list, individual_df, iterations_before_test_stopped_by_user)
+                            params["self_data"] = self.data.copy()
                             if int(coordinate) not in self.vs_data:
                                 self.vs_data[int(coordinate)] = {}
+                            self.vs_data[int(coordinate)][self.rotation_list[angle]] = params
+        test_setup_info = self.create_test_setup_info(media_source=args.media_source, media_quality=args.media_quality)
+        self.generate_report_for_robo(test_setup_info, passed_coordinates=passed_coord_list)
 
     def build_iot_report_section(self, report, iot_summary):
         """
