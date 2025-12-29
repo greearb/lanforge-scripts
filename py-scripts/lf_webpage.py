@@ -1367,11 +1367,11 @@ class HttpDownload(Realm):
                 self.add_live_view_images_to_report(report)
             if self.rotation_enabled:
                 for coord, rotation_dict in self.robot_data.items():
-                    for rotation in rotation_dict.items():
+                    for rotation, _ in rotation_dict.items():
                         # Build graphs and table for each coordinate and rotation
                         self.build_graphs_and_table(coord, rotation, report, lis, bands)
             else:
-                for coord in self.robot_data.items():
+                for coord, _ in self.robot_data.items():
                     # Build graphs and table for each coordinate
                     self.build_graphs_and_table(coord, "", report, lis, bands)
             report.build_footer()
