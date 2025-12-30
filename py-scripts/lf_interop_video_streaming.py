@@ -79,6 +79,16 @@
     python3 lf_interop_video_streaming.py --mgr 192.168.207.78 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls    --media_quality 1080P --duration 1m  --debug
     --test_name video_streaming_test --robot_test --robot_ip 192.168.204.101 --coordinate 3,4 --rotation 30,70
 
+    Example-15:
+    Command Line Interface to run Video Streaming test using a DASH stream hosted on the local LANforge server
+    python3 lf_interop_video_streaming.py --mgr 192.168.207.78 --url "http://192.168.204.63/kalki/kalki.mpd" --media_source dash    --media_quality 1080P --duration 1m  --debug
+    --test_name video_streaming_test
+
+    Example-16:
+    Command Line Interface to run Video Streaming test using a DASH stream hosted on the local LANforge server with Robot at specified coordinates without any rotation
+    python3 lf_interop_video_streaming.py --mgr 192.168.207.78 --url "http://192.168.204.63/kalki/kalki.mpd" --media_source dash    --media_quality 1080P --duration 1m  --debug
+    --test_name video_streaming_test --robot_test --robot_ip 192.168.204.101 --coordinate 3,4
+
     SCRIPT CLASSIFICATION: Test
 
     SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
@@ -2790,6 +2800,16 @@ def main():
         Command Line Interface to run the Video Streaming Test along with Robot by enabling rotation at the specified coordinates
         python3 lf_interop_video_streaming.py --mgr 192.168.207.78 --url "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" --media_source hls    --media_quality 1080P --duration 1m  --debug
         --test_name video_streaming_test --robot_test --robot_ip 192.168.204.101 --coordinate 3,4 --rotation 30,70
+
+        Example-13:
+        Command Line Interface to run Video Streaming test using a DASH stream hosted on the local LANforge server
+        python3 lf_interop_video_streaming.py --mgr 192.168.207.78 --url "http://192.168.204.63/kalki/kalki.mpd" --media_source dash    --media_quality 1080P --duration 1m  --debug
+        --test_name video_streaming_test
+
+        Example-14:
+        Command Line Interface to run Video Streaming test using a DASH stream hosted on the local LANforge server with Robot at specified coordinates without any rotation
+        python3 lf_interop_video_streaming.py --mgr 192.168.207.78 --url "http://192.168.204.63/kalki/kalki.mpd" --media_source dash    --media_quality 1080P --duration 1m  --debug
+        --test_name video_streaming_test --robot_test --robot_ip 192.168.204.101 --coordinate 3,4
 
         SCRIPT CLASSIFICATION: Test
 
