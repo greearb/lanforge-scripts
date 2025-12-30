@@ -59,6 +59,16 @@ Command Line Interface to run the Test along with IOT with device list
 python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.207.78 --ssid Cisco-5g --security wpa2 --passwd sharedsecret --upstream_port eth1
 --duration 1m --bands 5G --client_type Real --file_size 2MB --iot_test --iot_testname "httpiot" --iot_device_list "switch.smart_plug_1_socket_1"
 
+EXAMPLE-12:
+Command Line Interface to run download scenario for Real clients with Robot with only coordinates
+python3 lf_webpage.py --ap_name "Netgear" --mgr 192.168.204.78 --ssid NETGEAR_2G_wpa2 --security wpa2 --passwd Password@123
+--upstream_port eth1 --duration 10m --bands 5G --client_type Real --file_size 2MB --robot_ip 192.168.204.101 --coordinate 3,4 --robot_test
+
+EXAMPLE-13:
+Command Line Interface to run download scenario for Real clients with Robot with coordinates and rotations
+python3 lf_webpage.py --ap_name "Netgear" --mgr 192.168.204.78 --ssid NETGEAR_2G_wpa2 --security wpa2 --passwd Password@123
+--upstream_port eth1 --duration 10m --bands 5G --client_type Real --file_size 2MB --robot_ip 192.168.204.101 --coordinate 3,4 --rotation 30,45 --robot_test
+
 SCRIPT_CLASSIFICATION : Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
@@ -106,6 +116,7 @@ from collections import OrderedDict
 import asyncio
 from typing import List, Optional
 import csv
+from lf_base_robo import RobotClass
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -137,7 +148,8 @@ class HttpDownload(Realm):
                  test_name=None, _exit_on_fail=False, client_type="", port_list=None, devices_list=None, macid_list=None, lf_username="lanforge", lf_password="lanforge", result_dir="", dowebgui=False,
                  device_list=None, get_url_from_file=None, file_path=None, device_csv_name='', expected_passfail_value=None, file_name=None, group_name=None, profile_name=None, eap_method=None,
                  eap_identity=None, ieee80211=None, ieee80211u=None, ieee80211w=None, enable_pkc=None, bss_transition=None, power_save=None, disable_ofdma=None, roam_ft_ds=None, key_management=None,
-                 pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60, get_live_view=False, total_floors=0,):
+                 pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60, get_live_view=False, total_floors=0, robot_test=False,
+                 robot_ip=None, coordinate=None, rotation=None, duration=None):
         # super().__init__(lfclient_host=lfclient_host,
         #                  lfclient_port=lfclient_port)
         self.ssid_list = []
@@ -216,7 +228,20 @@ class HttpDownload(Realm):
         self.group_device_map = {}
         self.individual_device_csv_names = []
         self.get_live_view = get_live_view
+        self.duration = duration
         self.total_floors = total_floors
+        # Robot Automation parameters
+        self.robot_test = robot_test
+        self.robot_ip = robot_ip
+        self.coordinate = coordinate
+        self.rotation = rotation
+        self.rotation_enabled = False
+        self.coordinate_list = coordinate.split(',')
+        self.rotation_list = rotation.split(',')
+        self.current_coordinate = ""
+        self.current_angle = 0
+        self.robot_data = {}
+        self.robot_obj = {}
 
 # The 'phantom_check' will be handled within the 'get_real_client_list' function
     def get_real_client_list(self):
@@ -647,10 +672,31 @@ class HttpDownload(Realm):
         self.http_profile.stop_cx()
         # To update status of devices and remaining_time in ftp_datavalues.csv file to stopped and 0 respectively.
         if self.client_type == 'Real':
-            self.data["status"] = ["STOPPED"] * len(self.macid_list)
+            if not self.robot_test:
+                self.data["status"] = ["STOPPED"] * len(self.macid_list)
             self.data["remaining_time"] = ["0"] * len(self.macid_list)
             df1 = pd.DataFrame(self.data)
             df1.to_csv("http_datavalues.csv", index=False)
+            if self.robot_test:
+                # For Robot test, save data for each coordinate and rotation
+                if self.rotation_enabled:
+                    self.robot_data.setdefault(self.current_coordinate, {})[self.current_angle] = self.data
+                else:
+                    self.robot_data[self.current_coordinate] = self.data
+                if self.dowebgui:
+                    df1.to_csv(f"{self.result_dir}/{self.current_coordinate}_http_datavalues.csv", index=False)
+                else:
+                    df1.to_csv(f"{self.current_coordinate}_http_datavalues.csv", index=False)
+
+    def update_stop_status_robot(self):
+        # To update status of devices in csv file to stopped.
+        self.data["status"] = ["STOPPED"] * len(self.macid_list)
+        df1 = pd.DataFrame(self.data)
+        df1.to_csv("http_datavalues.csv", index=False)
+        if self.dowebgui:
+            df1.to_csv(f"{self.result_dir}/{self.current_coordinate}_http_datavalues.csv", index=False)
+        else:
+            df1.to_csv(f"{self.current_coordinate}_http_datavalues.csv", index=False)
 
     def get_layer4_data(self):
         """
@@ -712,8 +758,8 @@ class HttpDownload(Realm):
         # duration = self.traffic_duration
         endtime = time_now + timedelta(seconds=duration)
         end_time = endtime
-        endtime = endtime.isoformat()[0:19]
-        current_time = datetime.now().isoformat()[0:19]
+        # endtime = endtime
+        current_time = datetime.now()
         self.data = {}
         self.data["client"] = self.devices_list
         # self.data["url_data"] = []
@@ -727,7 +773,45 @@ class HttpDownload(Realm):
         for port in self.port_list:
             columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI']
             individual_device_data[port] = pd.DataFrame(columns=columns)
+        test_stopped_by_user = False
+        monitor_charge_time = current_time
         while (current_time < endtime):
+            # If robot test mode is enabled, periodically check if a battery pause is needed
+            if self.robot_test:
+                # Check if enough time has passed to trigger a battery check (300 sec)
+                if (datetime.now() - monitor_charge_time).total_seconds() >= 300:
+                    pause_start = datetime.now()
+                    # Wait for the robot to charge. Returns whether we paused and whether user aborted.
+                    pause, test_stopped_by_user = self.robot_obj.wait_for_battery(stop=self.stop)
+                    if test_stopped_by_user:
+                        break
+                    if pause:
+                        # After charging, return to the last coordinate
+                        reached, abort = self.robot_obj.move_to_coordinate(self.current_coordinate)
+                        # If user stopped the test during movement
+                        if abort:
+                            test_stopped_by_user = True
+                            break
+                        if not reached:
+                            # test_stopped_by_user = True
+                            break
+                        # Restore orientation if rotation is enabled
+                        if self.rotation_enabled:
+                            rotation_moni = self.robot_obj.rotate_angle(self.current_angle)
+                            if not rotation_moni:
+                                test_stopped_by_user = True
+                                break
+                        # restart traffic
+                        self.start()
+                        # Add pause duration to overall end time
+                        pause_end = datetime.now()
+                        charge_pause = pause_end - pause_start
+                        endtime += charge_pause
+                    # Reset battery-monitor timer
+                    monitor_charge_time = datetime.now()
+
+                    # IMPORTANT: Update loop time
+                    current_time = datetime.now()
 
             # data in json format
             # data = self.json_get("layer4/list?fields=bytes-rd")
@@ -809,10 +893,15 @@ class HttpDownload(Realm):
             total_hours = time_difference.total_seconds() / 3600
             remaining_minutes = (total_hours % 1) * 60
             self.data["start_time"] = [starttime] * len(self.devices_list)
+            if self.robot_test:
+                # To update end time at each interval
+                end_time = endtime
             self.data["end_time"] = [end_time.strftime("%d/%m %I:%M:%S %p")] * len(self.devices_list)
             self.data["remaining_time"] = [[str(int(total_hours)) + " hr and " + str(
                 int(remaining_minutes)) + " min" if int(total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][
                 0]] * len(self.devices_list)
+            if self.robot_test and self.rotation_enabled:
+                self.data["current_angle"] = [self.current_angle] * len(self.devices_list)
             try:
                 df1 = pd.DataFrame(self.data)
             except Exception:
@@ -821,8 +910,14 @@ class HttpDownload(Realm):
                 exit(1)
             if self.dowebgui:
                 df1.to_csv('{}/http_datavalues.csv'.format(self.result_dir), index=False)
+                if self.robot_test:
+                    df1.to_csv(f"{self.result_dir}/{self.current_coordinate}_http_datavalues.csv", index=False)
             elif self.client_type == 'Real':
                 df1.to_csv("http_datavalues.csv", index=False)
+                # IF ROBOT TEST PERFORMED
+                if self.robot_test:
+                    # Save FTP data values for the current coordinate when in robot test
+                    df1.to_csv(f"{self.current_coordinate}_http_datavalues.csv", index=False)
             time.sleep(5)
             if self.dowebgui == "True":
                 with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
@@ -832,9 +927,10 @@ class HttpDownload(Realm):
                     if data["status"] != "Running":
                         print('Test is stopped by the user')
                         self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.devices_list)
+                        test_stopped_by_user = True
                         break
 
-            current_time = datetime.now().isoformat()[0:19]
+            current_time = datetime.now()
         individual_device_csv_names = []  # To store individial device csv names
         # Iterate over each port and its corresponding DataFrame in the dictionary Saving the DataFrame to CSV
         for port, df in individual_device_data.items():
@@ -847,6 +943,7 @@ class HttpDownload(Realm):
             df.to_csv("all_l4_data.csv", index=False)
         except Exception:
             logger.error("All l4 data not found")
+        return test_stopped_by_user
 
     def get_all_l4_data(self):
         """
@@ -1101,7 +1198,7 @@ class HttpDownload(Realm):
     def check_station_ip(self):
         pass
 
-    def generate_graph(self, dataset, lis, bands):
+    def generate_graph(self, dataset, lis, bands, graph_image_name="ucg-avg_http"):
         bands = ['Download']
         if self.client_type == "Real":
             lis = self.devices_list
@@ -1135,14 +1232,14 @@ class HttpDownload(Realm):
                                         _color_name=['steelblue'],
                                         _show_bar_value=True,
                                         _enable_csv=True,
-                                        _graph_image_name="ucg-avg_http", _color_edge=['black'],
+                                        _graph_image_name=graph_image_name, _color_edge=['black'],
                                         _color=['steelblue'],
                                         _label=bands)
         graph_png = graph.build_bar_graph_horizontal()
         print("graph name {}".format(graph_png))
         return graph_png
 
-    def graph_2(self, dataset2, lis, bands):
+    def graph_2(self, dataset2, lis, bands, graph_name="Total-url_http"):
         bands = ['Download']
         if self.client_type == "Real":
             lis = self.devices_list
@@ -1167,7 +1264,7 @@ class HttpDownload(Realm):
                                           _color_name=['orange'],
                                           _show_bar_value=True,
                                           _enable_csv=True,
-                                          _graph_image_name="Total-url_http", _color_edge=['black'],
+                                          _graph_image_name=graph_name, _color_edge=['black'],
                                           _color=['orange'],
                                           _label=bands)
         graph_png = graph_2.build_bar_graph_horizontal()
@@ -1176,6 +1273,8 @@ class HttpDownload(Realm):
 
     def get_device_port_details(self):
         self.response_port = self.local_realm.json_get("/port/all")
+        # Initialize lists to store channel, mode, and SSID information
+        self.channel_list, self.mode_list, self.ssid_list = [], [], []
         if self.client_type == "Real":
             self.devices = self.devices_list
             for interface in self.response_port['interfaces']:
@@ -1236,6 +1335,11 @@ class HttpDownload(Realm):
         report.build_banner()
         report.set_table_title("Test Setup Information")
         report.build_table_title()
+        if self.robot_test:
+            # If robot test, add robot specific info to test setup
+            test_setup_info["Robot IP"] = self.robot_ip
+            test_setup_info["Coordinates"] = self.coordinate
+            test_setup_info["Rotation"] = self.rotation
         if iot_summary:
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
             report.set_obj_html(
@@ -1257,6 +1361,23 @@ class HttpDownload(Realm):
         report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
         report.build_objective()
+        if self.robot_test:
+            if self.dowebgui and self.get_live_view:
+                # Add live view images to the report
+                self.add_live_view_images_to_report(report)
+            if self.rotation_enabled:
+                for coord, rotation_dict in self.robot_data.items():
+                    for rotation, _ in rotation_dict.items():
+                        # Build graphs and table for each coordinate and rotation
+                        self.build_graphs_and_table(coord, rotation, report, lis, bands)
+            else:
+                for coord, _ in self.robot_data.items():
+                    # Build graphs and table for each coordinate
+                    self.build_graphs_and_table(coord, "", report, lis, bands)
+            report.build_footer()
+            html_file = report.write_html()
+            report.write_pdf()
+            return
         report.set_obj_html("No of times file Downloads", "The below graph represents number of times a file downloads for each client"
                             ". X- axis shows “No of times file downloads and Y-axis shows "
                             "Client names.")
@@ -1884,6 +2005,138 @@ class HttpDownload(Realm):
                 report.set_custom_html('<hr>')
                 report.build_custom()
 
+    def perform_robo(self):
+        """
+        Controls robot movement through a list of coordinates.
+        At each coordinate, optionally performs rotations and runs the test.
+        Handles battery charging and user stop conditions safely.
+        """
+
+        if self.rotation_list[0] != "":
+            self.rotation_enabled = True
+
+        self.robot_obj = RobotClass()
+        self.robot_obj.robo_ip = self.robot_ip
+        base_dir = os.path.dirname(os.path.dirname(self.result_dir))
+        nav_data = os.path.join(base_dir, 'nav_data.json')  # To generate nav_data.json in webgui folder
+        self.robot_obj.nav_data_path = nav_data
+        self.robot_obj.create_waypointlist()
+        self.robot_obj.ip = self.host
+        self.robot_obj.testname = self.test_name
+        self.robot_obj.runtime_dir = self.result_dir
+        test_stopped_by_user = False
+        for coordinate in range(len(self.coordinate_list)):
+            # Check for battery status before moving to next coordinate
+            if test_stopped_by_user:
+                break
+            if_paused, test_stopped_by_user = self.robot_obj.wait_for_battery()
+            # If test is stopped by user during battery wait
+            if test_stopped_by_user:
+                break
+            robo_moved, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[coordinate])
+            # If robot failed to reach the coordinate
+            if abort:
+                break
+            # If robot reached the coordinate
+            if robo_moved:
+                self.current_coordinate = self.coordinate_list[coordinate]
+                # if no rotation mode
+                if not self.rotation_enabled:
+                    # Start the test
+                    self.start()
+                    test_stopped_by_user = self.monitor_for_runtime_csv(self.duration)
+                    self.stop()
+                    self.update_stop_status_robot()
+
+                # if rotation mode
+                else:
+                    for angle in range(len(self.rotation_list)):
+                        # Check for battery status before rotating to next angle
+                        is_paused, test_stopped_by_user = self.robot_obj.wait_for_battery()
+                        if test_stopped_by_user:
+                            break
+                        robo_rotated = self.robot_obj.rotate_angle(self.rotation_list[angle])
+                        if robo_rotated:
+                            self.current_angle = self.rotation_list[angle]
+                            self.start()
+                            test_stopped_by_user = self.monitor_for_runtime_csv(self.duration)
+                            self.stop()
+                            self.update_stop_status_robot()
+                        # If test is stopped by user
+                        if test_stopped_by_user:
+                            break
+
+    def build_graphs_and_table(self, coord="", rotation="", report="", lis=None, bands=None):
+        """
+        Builds graphs and summary table for a given coordinate and rotation.
+        Parameters
+        coord : str, optional
+            Coordinate name for the current robot position.
+        rotation : str or int, optional
+            Rotation angle for the current robot orientation.
+        report : object
+            Report builder instance used to add headings, graphs, CSV files,
+            and tables to the report.
+        lis : list, optional
+            List of client labels or identifiers used for graph axis labeling
+            and data alignment.
+        bands : list, optional
+            List of bands used for graph
+            labeling.
+        """
+        rotation_suffix = f"_{rotation}" if rotation else ""
+        coord_label = f"<h2>Coordinate: {coord}</h2>"
+        if self.rotation_enabled:
+            coord_label = f"<h2>Coordinate: {coord}{', Rotation: ' + str(rotation) if rotation else ''}</h2>"
+        report.set_custom_html(coord_label)
+        report.build_custom()
+
+        report.set_obj_html("No of times file Downloads", "The below graph represents number of times a file downloads for each client"
+                            ". X- axis shows “No of times file downloads and Y-axis shows "
+                            "Client names.")
+        report.build_objective()
+
+        robot_data = self.robot_data.get(coord, {})
+        if self.rotation_enabled:
+            robot_data = robot_data.get(rotation, {})
+
+        graph2 = self.graph_2(robot_data['url_data'], lis=lis, bands=bands, graph_name=f"Total-url_http_{coord}{rotation_suffix}")
+        report.set_graph_image(graph2)
+        report.set_csv_filename(graph2)
+        report.move_csv_file()
+        report.move_graph_image()
+        report.build_graph()
+
+        report.set_obj_html("Average time taken to download file ", "The below graph represents average time taken to download for each client  "
+                            ".  X- axis shows “Average time taken to download a file ” and Y-axis shows "
+                            "Client names.")
+        report.build_objective()
+        graph = self.generate_graph(dataset=robot_data['uc_avg'], lis=lis, bands=bands, graph_image_name=f"ucg-avg_http_{coord}{rotation_suffix}")
+        report.set_graph_image(graph)
+        report.set_csv_filename(graph)
+        report.move_csv_file()
+        report.move_graph_image()
+        report.build_graph()
+
+        report.set_table_title("Overall Results")
+        report.build_table_title()
+
+        dataframe = {
+            " Clients": self.devices,
+            " MAC ": robot_data['MAC'],
+            " Channel": robot_data['Channel'],
+            " SSID ": robot_data['SSID'],
+            " Mode": robot_data['Mode'],
+            " No of times File downloaded ": robot_data['url_data'],
+            " Average time taken to Download file (ms)": robot_data['uc_avg'],
+            " Bytes-rd (Mega Bytes) ": robot_data['bytes_rd'],
+            "Rx Rate (Mbps)": robot_data['rx rate (1m)'],
+            "Failed url's": robot_data["total_err"]
+        }
+        dataframe1 = pd.DataFrame(dataframe)
+        report.set_table_dataframe(dataframe1)
+        report.build_table()
+
 
 def validate_args(args):
     if args.expected_passfail_value and args.device_csv_name:
@@ -2083,6 +2336,16 @@ def main():
     python3 lf_webpage.py --ap_name "Cisco" --mgr 192.168.214.219 --fiveg_ssid Cisco-5g --fiveg_security wpa2 --fiveg_passwd sharedsecret  --upstream_port eth1
     --duration 1m --bands 5G --client_type Real --file_size 2MB --device_list 1.12,1.22
 
+    EXAMPLE-7:
+    Command Line Interface to run download scenario for Real clients with Robot with only coordinates
+    python3 lf_webpage.py --ap_name "Netgear" --mgr 192.168.204.78 --ssid NETGEAR_2G_wpa2 --security wpa2 --passwd Password@123
+    --upstream_port eth1 --duration 10m --bands 5G --client_type Real --file_size 2MB --robot_ip 192.168.204.101 --coordinate 3,4 --robot_test
+
+    EXAMPLE-8:
+    Command Line Interface to run download scenario for Real clients with Robot with coordinates and rotations
+    python3 lf_webpage.py --ap_name "Netgear" --mgr 192.168.204.78 --ssid NETGEAR_2G_wpa2 --security wpa2 --passwd Password@123
+    --upstream_port eth1 --duration 10m --bands 5G --client_type Real --file_size 2MB --robot_ip 192.168.204.101 --coordinate 3,4 --rotation 30,45 --robot_test
+
     Verified CLI:
     python3 lf_webpage.py --ap_name "Netgear1234" --mgr 192.168.200.38 --fiveg_ssid NETGEAR_5G --fiveg_security wpa2
     --fiveg_passwd Password@123 --fiveg_radio 1.1.wiphy1 --upstream_port 1.1.eth2 --duration 1m --bands 5G
@@ -2241,6 +2504,12 @@ def main():
                           type=str,
                           default='',
                           help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
+    # Arguments for Robot Automation
+    optional.add_argument("--robot_test", help='to trigger robot test', action='store_true')
+    optional.add_argument('--robot_ip', type=str, default='', help='hostname for where Robot server is running')
+    optional.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")
+    optional.add_argument('--rotation', type=str, default='', help="The set of angles to rotate at a particular point")
+
     help_summary = '''\
 lf_webpage.py will verify that N clients are connected on a specified band and can download
 some amount of file data from the HTTP server while measuring the time taken by clients to download the file and number of
@@ -2378,7 +2647,13 @@ times the file is downloaded.
                             wait_time=args.wait_time,
                             config=args.config,
                             get_live_view=args.get_live_view,
-                            total_floors=args.total_floors
+                            total_floors=args.total_floors,
+                            # Robot test parameters
+                            robot_test=args.robot_test,
+                            robot_ip=args.robot_ip,
+                            coordinate=args.coordinate,
+                            rotation=args.rotation,
+                            duration=args.duration
                             )
         if args.client_type == "Real":
             if not isinstance(args.device_list, list):
@@ -2440,16 +2715,21 @@ times the file is downloaded.
         # Solution For Leap Year conflict changed it to %Y
         test_time = test_time.strftime("%Y %d %H:%M:%S")
         print("Test started at ", test_time)
-        http.start()
-        if args.dowebgui:
-            # FOR WEBGUI, -This fumction is called to fetch the runtime data from layer-4
-            http.monitor_for_runtime_csv(args.duration)
-        elif args.client_type == 'Real':
-            # To fetch runtime csv during runtime
-            http.monitor_for_runtime_csv(args.duration)
+
+        if args.robot_test:
+            # To perform robot test
+            http.perform_robo()
         else:
-            time.sleep(args.duration)
-        http.stop()
+            http.start()
+            if args.dowebgui:
+                # FOR WEBGUI, -This fumction is called to fetch the runtime data from layer-4
+                http.monitor_for_runtime_csv(args.duration)
+            elif args.client_type == 'Real':
+                # To fetch runtime csv during runtime
+                http.monitor_for_runtime_csv(args.duration)
+            else:
+                time.sleep(args.duration)
+            http.stop()
         # taking http.data, which got updated in the monitor_for_runtime_csv method
         if args.client_type == 'Real':
             uc_avg_val = http.data['uc_avg']
