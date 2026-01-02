@@ -5,10 +5,12 @@ NAME:       lf_create_wanlink.py
 PURPOSE:    Create and configure a LANforge WANLink used for network impairment.
 
 NOTES:      Underlying port IP addresses must be configured in order for wanlink endpoints
-            to become active
+            to become active.
 
 EXAMPLE:    # Duplicate configuration for both ends of the WANLink
             ./lf_create_wanlink.py \
+                --mgr           <lanforge ip> \
+                --mgr_port      <lanforge port usually 8080> \
                 --wl_name       wanlink \
                 --port_A        eth1 \
                 --port_B        eth2 \
@@ -16,10 +18,13 @@ EXAMPLE:    # Duplicate configuration for both ends of the WANLink
                 --latency       24 \
                 --max_jitter    50 \
                 --jitter_freq   6 \
-                --drop_freq     12
+                --drop_freq     12 \
+                --log_level     debug
 
             # Mixed configuration, each end of WANLink has specific config
             ./lf_create_wanlink.py \
+                --mgr           <lanforge ip> \
+                --mgr_port      <lanforge port usually 8080> \
                 --wl_name       wanlink \
                 --port_A        eth1 \
                 --port_B        eth2 \
@@ -29,7 +34,10 @@ EXAMPLE:    # Duplicate configuration for both ends of the WANLink
                 --latency_B     32 \
                 --max_jitter    50 \
                 --jitter_freq   6 \
-                --drop_freq     12
+                --drop_freq     12 \
+                --log_level     debug
+
+
 """
 import sys
 import time
