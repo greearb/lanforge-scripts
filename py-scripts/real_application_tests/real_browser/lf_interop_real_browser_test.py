@@ -1036,14 +1036,49 @@ class RealBrowserTest(Realm):
             sys.exit(1)
 
         cx_order_list = self.calculate_cx_order_list()
+        cx_batch = cx_order_list[0]
 
-        for i, cx_batch in enumerate(cx_order_list):
-            self.start_specific(cx_batch)
-            logging.info(f"Test started on Devices with resource Ids : {cx_batch}")
-            try:
-                self.get_stats(self.duration, "webBrowser.csv", i, available_resources, cx_batch, i, self.count)
-            except Exception as e:
-                logging.error(f"Error while monitoring stats {e}", exc_info=True)
+        if self.do_robo:
+            for coordinate in self.coordinates_list:
+                # self.robo_obj.ensure_battery_for_test(duration_min=self.duration, mins_per_percent=self.mins_per_percent)
+                self.robo_obj.wait_for_battery()
+                self.robo_obj.move_to_coordinate(coord=coordinate)
+                self.current_cord = coordinate
+                if self.rotations_enabled:
+                    for angle in self.angles_list:
+                        # self.robo_obj.ensure_battery_for_test(duration_min=self.duration, mins_per_percent=self.mins_per_percent)
+                        self.robo_obj.wait_for_battery()
+                        self.robo_obj.rotate_angle(angle_degree=angle)
+                        self.current_angle = angle
+                        self.start_specific(cx_batch)
+                        logging.info(f"Test started on Devices with resource Ids : {cx_batch}")
+                        try:
+                            self.get_robo_stats(self.duration, f"{coordinate}_{angle}_webBrowser.csv", self.count, angle)
+                            self.robo_csv_files.append(f"{coordinate}_{angle}_webBrowser.csv")
+                            self.http_profile.stop_cx()
+                            self.clear_http_cx_data()
+                            time.sleep(5)
+                        except Exception as e:
+                            logging.error(f"Error while monitoring stats {e}", exc_info=True)
+                else:
+                    self.start_specific(cx_batch)
+                    logging.info(f"Test started on Devices with resource Ids : {cx_batch}")
+                    try:
+                        self.get_robo_stats(self.duration, f"{coordinate}_webBrowser.csv", self.count, None)
+                        self.robo_csv_files.append(f"{coordinate}_webBrowser.csv")
+                        self.http_profile.stop_cx()
+                        self.clear_http_cx_data()
+                        time.sleep(5)
+                    except Exception as e:
+                        logging.error(f"Error while monitoring stats {e}", exc_info=True)
+        else:
+            for i, cx_batch in enumerate(cx_order_list):
+                self.start_specific(cx_batch)
+                logging.info(f"Test started on Devices with resource Ids : {cx_batch}")
+                try:
+                    self.get_stats(self.duration, "webBrowser.csv", i, available_resources, cx_batch, i, self.count)
+                except Exception as e:
+                    logging.error(f"Error while monitoring stats {e}", exc_info=True)
 
     def calculate_cx_order_list(self):
         """
