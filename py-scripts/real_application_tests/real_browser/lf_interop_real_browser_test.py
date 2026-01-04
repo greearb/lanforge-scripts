@@ -2284,6 +2284,230 @@ class RealBrowserTest(Realm):
             logging.error(f"Error in get_stats function {e}", exc_info=True)
             logging.info(f"layer4 cx data {mobile_data}")
 
+    def create_robo_report(self):
+        """
+        Generates the final PDF and HTML report for the robot-assisted browser test.
+
+        This method initializes the report structure, adds test objectives and setup info,
+        iterates through all visited coordinates and angles to generate specific graphs
+        (via `create_robo_graphs_test_results`), and embeds live view images. Finally,
+        it organizes the output files into the results directory.
+        """
+        try:
+            if self.dowebgui:
+                self.report = lf_report(_output_pdf='Real_Browser_Report',
+                                        _output_html='Real_Browser_Report.html',
+                                        _results_dir_name="Real_Browser_Report",
+                                        _path=self.result_dir)
+                self.report_path_date_time = self.report.get_path_date_time()
+            else:
+
+                self.report = lf_report(_output_pdf='Real_Browser_Report',
+                                        _output_html='Real_Browser_Report.html',
+                                        _results_dir_name="Real_Browser_Report",
+                                        _path='')
+                self.report_path_date_time = self.report.get_path_date_time()
+
+            self.report.set_title("Web Browser Test")
+            self.report.build_banner()
+
+            self.report.set_table_title("Objective:")
+            self.report.build_table_title()
+            self.report.set_text("The Candela Web browser test is designed to measure the Access Point performance and stability by browsing multiple websites in real clients" +
+                                 " like android, Linux, windows" +
+                                 "and IOS which are connected to the access point. This test allows the user to choose the options like website link," +
+                                 "the number of times the page has to browse, and the Time taken to browse the page." +
+                                 "The expected behavior is for the AP to be able to handle several stations(within the limitations of the AP specs) and make sure all clients can browse the page.")
+            self.report.build_text_simple()
+
+            self.report.set_table_title("Test Parameters:")
+            self.report.build_table_title()
+
+            test_setup_info = self.generate_test_setup_info()
+            self.report.test_setup_table(
+                test_setup_data=test_setup_info, value='Test Parameters')
+
+            for coordinate in self.coordinates_list:
+                if self.rotations_enabled:
+                    for angle in self.angles_list:
+                        csv_file = f"{coordinate}_{angle}_webBrowser.csv"
+                        self.create_robo_graphs_test_results(csv_file, coordinate, angle)
+
+                else:
+                    csv_file = f"{coordinate}_webBrowser.csv"
+                    self.create_robo_graphs_test_results(csv_file, coordinate)
+            self.add_live_view_images_to_report()
+
+            if self.dowebgui:
+                os.chdir(self.original_dir)
+            self.report.build_custom()
+            self.report.build_footer()
+            self.report.write_html()
+            self.report.write_pdf()
+        except Exception as e:
+            logging.error(f"Error in create_robo_report function {e}", exc_info=True)
+        finally:
+            if not self.dowebgui:
+                source_dir = "."
+                destination_dir = self.report_path_date_time
+                for filename in self.robo_csv_files:
+                    source_path = os.path.join(source_dir, filename)
+                    destination_path = os.path.join(destination_dir, filename)
+                    if os.path.isfile(source_path):
+                        shutil.move(source_path, destination_path)
+                        logging.info(f"Moved {filename} to {destination_dir}")
+                    else:
+                        logging.info(f"{filename} not found in the current directory")
+
+    def create_robo_graphs_test_results(self, csv_file, coordinate, angle=None):
+        """
+        Generates graphs and data tables for a specific location (coordinate/angle)
+        and adds them to the main report.
+
+        This method reads the CSV data for a specific robot position, creates bar charts
+        for 'Total URLs' and 'Time Taken', and builds a summary table containing
+        latency metrics, error counts, and signal strength for all devices.
+        """
+        try:
+
+            _, mac_data, channel_data, signal_data, ssid_data, tx_rate_data, device_names, device_type_data = self.extract_device_data(csv_file)
+            if self.rotations_enabled:
+                self.report.set_graph_title(f"Successful URL's per Device at coordinate {coordinate} and angle {angle}")
+            else:
+                self.report.set_graph_title(f"Successful URL's per Device at coordinate {coordinate}")
+            self.report.build_graph_title()
+            data = pd.read_csv(csv_file)
+            # Extract device names from CSV
+            if 'total_urls' in data.columns:
+                total_urls = data['total_urls'].tolist()
+            else:
+                raise ValueError("The 'total_urls' column was not found in the CSV file.")
+
+            x_fig_size = 18
+            y_fig_size = len(device_type_data) * 1 + 4
+            bar_graph_horizontal = lf_bar_graph_horizontal(
+                _data_set=[total_urls],
+                _xaxis_name="URL",
+                _yaxis_name="Devices",
+                _yaxis_label=device_names,
+                _yaxis_categories=device_names,
+                _yaxis_step=1,
+                _yticks_font=8,
+                _bar_height=.20,
+                _show_bar_value=True,
+                _figsize=(x_fig_size, y_fig_size),
+                _graph_title="URLs",
+                _graph_image_name=f"{coordinate}_{angle}_urls_per_device",
+                _label=["URLs"]
+            )
+            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
+            if self.rotations_enabled:
+                self.report.set_graph_title(f"Time Taken Vs Device For Completing {self.count} RealTime URLs at coordinate {coordinate} and angle {angle}")
+            else:
+                self.report.set_graph_title(f"Time Taken Vs Device For Completing {self.count} RealTime URLs at coordinate {coordinate}")
+            self.report.build_graph_title()
+
+            # Extract device names from CSV
+            if 'time_to_target_urls' in data.columns:
+                time_to_target_urls = data['time_to_target_urls'].tolist()
+            else:
+                raise ValueError("The 'time_to_target_urls' column was not found in the CSV file.")
+
+            x_fig_size = 18
+            y_fig_size = len(device_type_data) * 1 + 4
+            bar_graph_horizontal = lf_bar_graph_horizontal(
+                _data_set=[time_to_target_urls],
+                _xaxis_name="Time (in Seconds)",
+                _yaxis_name="Devices",
+                _yaxis_label=device_names,
+                _yaxis_categories=device_names,
+                _yaxis_step=1,
+                _yticks_font=8,
+                _bar_height=.20,
+                _show_bar_value=True,
+                _figsize=(x_fig_size, y_fig_size),
+                _graph_title="Time Taken",
+                _graph_image_name=f"{coordinate}_{angle}_time_taken_for_urls",
+                _label=["Time (in sec)"]
+            )
+            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
+
+            if 'uc_min' in data.columns:
+                uc_min_data = data['uc_min'].tolist()
+            else:
+                raise ValueError("The 'uc_min' column was not found in the CSV file.")
+
+            if 'uc_max' in data.columns:
+                uc_max_data = data['uc_max'].tolist()
+            else:
+                raise ValueError("The 'uc_max' column was not found in the CSV file.")
+
+            if 'uc_avg' in data.columns:
+                uc_avg_data = data['uc_avg'].tolist()
+            else:
+                raise ValueError("The 'uc_avg' column was not found in the CSV file.")
+
+            if 'total_err' in data.columns:
+                total_err_data = data['total_err'].tolist()
+            else:
+                raise ValueError("The 'total_err' column was not found in the CSV file.")
+
+            if self.rotations_enabled:
+                self.report.set_table_title(f"Final Test Results at coordinate {coordinate} and angle {angle}:")
+            else:
+                self.report.set_table_title(f"Final Test Results at coordinate {coordinate}:")
+            self.report.build_table_title()
+            if self.expected_passfail_value or self.device_csv_name:
+                pass_fail_list, test_input_list = self.generate_pass_fail_list(device_type_data, device_names, total_urls)
+
+                final_test_results = {
+
+                    "Device Type": device_type_data,
+                    "Hostname": device_names,
+                    "SSID": ssid_data,
+                    "MAC": mac_data,
+                    "Channel": channel_data,
+                    "UC-MIN (ms)": uc_min_data,
+                    "UC-MAX (ms)": uc_max_data,
+                    "UC-AVG (ms)": uc_avg_data,
+                    "Total Successful URLs": total_urls,
+                    "Expected URLS": test_input_list,
+                    "Total Errors": total_err_data,
+                    "RSSI": signal_data,
+                    "Link Speed": tx_rate_data,
+                    "Status ": pass_fail_list
+
+                }
+            else:
+                final_test_results = {
+
+                    "Device Type": device_type_data,
+                    "Hostname": device_names,
+                    "SSID": ssid_data,
+                    "MAC": mac_data,
+                    "Channel": channel_data,
+                    "UC-MIN (ms)": uc_min_data,
+                    "UC-MAX (ms)": uc_max_data,
+                    "UC-AVG (ms)": uc_avg_data,
+                    "Total Successful URLs": total_urls,
+                    "Total Errors": total_err_data,
+                    "RSSI": signal_data,
+                    "Link Speed": tx_rate_data,
+
+                }
+            test_results_df = pd.DataFrame(final_test_results)
+            self.report.set_table_dataframe(test_results_df)
+            self.report.build_table()
+
+        except Exception as e:
+            logging.error(f"Error in create_robo_graphs_test_results {e}", exc_info=True)
+
 
 def main():
     try:
@@ -2577,6 +2801,13 @@ def main():
             if os.path.exists(p):
                 with open(p) as f:
                     iot_summary = json.load(f)
+
+        if args.do_robo:
+            if args.dowebgui:
+                obj.stop_webui_test()
+            obj.create_robo_report()
+        else:
+            obj.create_report()
 
     except Exception as e:
         logging.error("Error occured", e)
