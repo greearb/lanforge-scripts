@@ -2059,6 +2059,46 @@ class RealBrowserTest(Realm):
         except Exception as e:
             logging.error(f"Error deleting file {file_path}: {e}", exc_info=True)
 
+    def stop_webui_test(self):
+        """
+        Updates the running status file to mark the WebUI test as 'Completed'.
+        Useful to Stop the Test at webui side.
+        """
+        try:
+            file = f"{self.result_dir}/running_status.json"
+            with open(file, 'r') as f:
+                data = json.load(f)
+            data['status'] = "Completed"
+            with open(file, 'w') as f:
+                json.dump(data, f, indent=4)
+            logging.info("WebUI test status updated to Completed.")
+        except Exception as e:
+            logging.error(f"Error in stop_webui_test function {e}", exc_info=True)
+
+    def add_live_view_images_to_report(self):
+        """
+        This function looks for live view images for each floor
+        in the 'live_view_images' folder within `self.result_dir`.
+        It waits up to **60 seconds** for each image. If an image is found,
+        it's added to the `report` on a new page; otherwise, it's skipped.
+        """
+        url_image_path = os.path.join(self.result_dir, "live_view_images", f"rb_{self.test_name}_1.png")
+        timeout = 60  # seconds
+        start_time = time.time()
+
+        while not os.path.exists(url_image_path):
+            if time.time() - start_time > timeout:
+                logging.error("Timeout: Images not found within 60 seconds.")
+                break
+            time.sleep(1)
+        if os.path.exists(url_image_path):
+            html_content = (
+                '<div style="page-break-before: always;"></div>'
+                f'<img src="file://{url_image_path}" style="width:1200px; height:800px;"></img>'
+            )
+
+            self.report.set_custom_html(html_content)
+
 
 def main():
     try:
