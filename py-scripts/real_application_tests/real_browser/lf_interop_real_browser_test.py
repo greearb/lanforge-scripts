@@ -872,12 +872,16 @@ class RealBrowserTest(Realm):
             if user == '':
                 self.serial_list.append('')
             else:
-                for mobile_device in interop_mobile_data:
-                    for serial, device_data in mobile_device.items():
-                        if device_data.get('user-name') == user:
-                            serial_no = serial.split('.')[2]
-                            self.serial_list.append(serial_no)
-                            break
+                if type(interop_mobile_data) is dict:
+                    serial_no = interop_mobile_data.get("name").split('.')[2]
+                    self.serial_list.append(serial_no)
+                else:
+                    for mobile_device in interop_mobile_data:
+                        for serial, device_data in mobile_device.items():
+                            if device_data.get('user-name') == user:
+                                serial_no = serial.split('.')[2]
+                                self.serial_list.append(serial_no)
+                                break
         return station_name, laptops, laptop_os_types, user_name, mac_address,
 
     def start_flask_server(self):
@@ -2002,6 +2006,23 @@ class RealBrowserTest(Realm):
                         tx_rate_data.append(value.get("tx-rate", 'None'))
 
         return final_eid_data, mac_data, channel_data, signal_data, ssid_data, tx_rate_data, device_names, device_type_data
+
+    def delete_current_csv_files(self):
+        """
+            Deletes a specific CSV file in the current working directory.
+        """
+        filename = f"{self.current_cord}_{self.current_angle}_webBrowser.csv" if self.rotations_enabled else f"{self.current_cord}_webBrowser.csv"
+        file_path = os.path.join(os.getcwd(), filename)
+
+        if not os.path.exists(file_path):
+            logging.info(f"CSV file not found: {file_path}")
+            return
+
+        try:
+            os.remove(file_path)
+            logging.info(f"Deleted CSV file: {file_path}")
+        except Exception as e:
+            logging.error(f"Error deleting file {file_path}: {e}", exc_info=True)
 
 
 def main():
