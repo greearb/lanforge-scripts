@@ -129,6 +129,9 @@ log.setLevel(logging.ERROR)
 
 from IOT.iot_helper import start_iot_thread, with_iot_params_in_table, add_iot_report_section  # noqa: E402
 
+# robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
+robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
+
 
 class RealBrowserTest(Realm):
     def __init__(self,
@@ -174,7 +177,15 @@ class RealBrowserTest(Realm):
                  wait_time=60,
                  config=None,
                  selected_groups=None,
-                 selected_profiles=None):
+                 selected_profiles=None,
+                 robo_ip="127.0.0.1",
+                 coordinates_list=None,
+                 angles_list=None,
+                 do_robo=False,
+                 current_cord="",
+                 current_angle=None,
+                 rotations_enabled=False,
+                 ):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         # Initialize attributes with provided parameters
         self.host = host
@@ -284,6 +295,17 @@ class RealBrowserTest(Realm):
         # Initialize utility
         self.utility = base.UtilityInteropWifi(host_ip=self.host)
         self.serial_list = []
+        self.do_robo = do_robo
+        if self.do_robo:
+            self.robo_ip = robo_ip
+            self.robo_obj = robo_base_class.RobotClass(robo_ip=self.robo_ip, angle_list=angles_list)
+            self.coordinates_list = coordinates_list
+            self.angles_list = angles_list
+            self.current_cord = current_cord
+            self.current_angle = current_angle
+            self.rotations_enabled = rotations_enabled
+            self.robo_csv_files = []
+            self.robo_mobile_data = {}
 
     def get_test_results_data(self, test_results, group):
         groups_devices_map = self.config_obj.get_groups_devices(data=self.selected_groups, groupdevmap=True)
@@ -877,6 +899,10 @@ class RealBrowserTest(Realm):
             temp_data = request.get_json()
             for hostname, stats in temp_data.items():
                 self.laptop_stats[hostname] = stats
+                if self.do_robo:
+                    self.laptop_stats[hostname]['current_angle'] = self.current_angle
+                    self.laptop_stats[hostname]['current_cord'] = self.current_cord
+                    self.laptop_stats[hostname]['rotations_enabled'] = self.rotations_enabled
             return jsonify({"status": "success"}), 200
 
         # New route to check the health of the Flask server
@@ -887,6 +913,11 @@ class RealBrowserTest(Realm):
         @self.app.route('/check_stop', methods=['GET'])
         def check_stop():
             return jsonify({"stop": self.stop_signal})
+
+        @self.app.route('/get_rb_data', methods=['GET'])
+        def get_rb_data():
+            combined = {**self.laptop_stats, **self.robo_mobile_data}
+            return jsonify(combined), 200
 
         try:
             self.app.run(host='0.0.0.0', port=5003, debug=True, threaded=True, use_reloader=False)
@@ -2053,6 +2084,8 @@ def main():
             ''')
 
         optional = parser.add_argument_group('Optional arguments to run lf_interop_real_browser_test.py')
+        # Define robo specific arguments group
+        robo = parser.add_argument_group('robo arguments')
         parser.add_argument("--host", "--mgr", required=True, help='specify the GUI to connect to, assumes port '
                             '8080')
         parser.add_argument("--ssid", default=None, help='specify ssid on which the test will be running')
@@ -2120,6 +2153,22 @@ def main():
         optional.add_argument('--iot_testname', type=str, default='', help='Testname for reporting')
 
         optional.add_argument('--iot_increment', type=str, default='', help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
+
+        # ROBO ARGS
+        robo.add_argument('--robo_ip', type=str, help='Specify the robo ip')
+        robo.add_argument(
+            '--coordinates',
+            help="Comma-separated list of coordinate point names (e.g. 1,2,3), each mapping to x and y values"
+        )
+
+        robo.add_argument(
+            '--rotations',
+            help="Comma-separated list of rotation angles (in degrees) to apply at respective points"
+        )
+        robo.add_argument(
+            '--do_robo',
+            help="Specify this flag to perform the test with robo", action='store_true'
+        )
         args = parser.parse_args()
         if args.help_summary:
             print(help_summary)
@@ -2133,6 +2182,13 @@ def main():
         if args.lf_logger_config_json:
             logger_config.lf_logger_config_json = args.lf_logger_config_json
             logger_config.load_lf_logger_config()
+
+        rotations_enabled = False
+        if args.do_robo:
+            args.coordinates = args.coordinates.split(',') if args.coordinates else []
+            args.rotations = [float(angle) for angle in args.rotations.split(',')] if args.rotations else []
+            if args.rotations:
+                rotations_enabled = True
 
         # Initialize an instance of RealBrowserTest with various parameters
         obj = RealBrowserTest(host=args.host,
@@ -2176,7 +2232,12 @@ def main():
                               wait_time=args.wait_time,
                               config=args.config,
                               selected_groups=args.group_name,
-                              selected_profiles=args.profile_name
+                              selected_profiles=args.profile_name,
+                              robo_ip=args.robo_ip,
+                              coordinates_list=args.coordinates,
+                              angles_list=args.rotations,
+                              do_robo=args.do_robo,
+                              rotations_enabled=rotations_enabled,
                               )
         obj.change_port_to_ip()
         obj.validate_and_process_args()
