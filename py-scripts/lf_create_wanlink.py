@@ -330,16 +330,18 @@ EXAMPLE:    # Duplicate configuration for both ends of the WANLink
     parser.add_argument("--max_rate", help="(add wl endp) Use --speed parameter instead. Maximum transmit rate (bps) for this WanLink. Default = 1024000 ", default='1024000')
     parser.add_argument("--max_rate_A", help="(add wl endp) Use --speed_A parameter instead. Maximum transmit rate (bps) for this WanLink. Default = None ", default=None)
     parser.add_argument("--max_rate_B", help="(add wl endp) Use --speed_B parameter instead. Maximum transmit rate (bps) for this WanLink. Default = None ", default=None)
-    parser.add_argument('--port_A', help='(add wl endp) Endpoint A', default="eth1")
-    parser.add_argument('--port_B', help='(add wl endp) Endpoint B', default="eth2")
+    parser.add_argument('--port_A', "--port_a", dest='port_A', help='(add wl endp) Endpoint A', default="eth1")
+    parser.add_argument('--port_B', "--port_b", dest='port_B', help='(add wl endp) Endpoint B', default="eth2")
     parser.add_argument("--resource", help='(add wl endp) LANforge resource Default', default=1)
     parser.add_argument("--shelf", help='(add wl endp) LANforge Shelf name/id', default=1)
     parser.add_argument("--wle_flags", help='(add wl endp) WanLink Endpoint specific flags, Default = 1, SHOW_WP = 1 .Show WanPaths in wanlink endpoint table in GUI', default=1)
 
     # http://www.candelatech.com/lfcli_ug.php#set_wanlink_info
     parser.add_argument('--drop_freq', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = 0 Both ports (%%)', default="0")
-    parser.add_argument('--drop_freq_A', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = None port A (%%)', default=None)
-    parser.add_argument('--drop_freq_B', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = None port B (%%)', default=None)
+    parser.add_argument('--drop_freq_A', '--drop_freq_a', dest='drop_freq_A',
+                        help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = None port A (%%)', default=None)
+    parser.add_argument('--drop_freq_B', '--drop_freq_b', dest='drop_freq_B',
+                        help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = None port B (%%)', default=None)
     parser.add_argument('--dup_freq', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = 0 Both ports (%%)', default="0")
     parser.add_argument('--dup_freq_A', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = None port A (%%)', default=None)
     parser.add_argument('--dup_freq_B', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = None port B (%%)', default=None)
