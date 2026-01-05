@@ -750,6 +750,7 @@ class RealBrowserTest(Realm):
         self.http_profile.stop_cx()
         self.generic_endps_profile.stop_cx()
         self.stop_signal = True
+        logging.info("Waiting for Browser Cleanup...")
         time.sleep(10)
 
     def precleanup(self):
@@ -2508,6 +2509,13 @@ class RealBrowserTest(Realm):
         except Exception as e:
             logging.error(f"Error in create_robo_graphs_test_results {e}", exc_info=True)
 
+    def clear_http_cx_data(self):
+        """Clears endpoint counters for all created HTTP connections."""
+        for cx in self.http_profile.created_cx:
+            url = "/cli-json/clear_endp_counters"
+            payload = {"endp_name": cx}
+            self.json_post(url, payload, debug_=self.debug, suppress_related_commands_=True)
+
 
 def main():
     try:
@@ -2802,20 +2810,18 @@ def main():
                 with open(p) as f:
                     iot_summary = json.load(f)
 
-        if args.do_robo:
-            if args.dowebgui:
-                obj.stop_webui_test()
-            obj.create_robo_report()
-        else:
-            obj.create_report()
-
     except Exception as e:
         logging.error("Error occured", e)
         tb_str = traceback.format_exc()  # capture traceback as string
         logger.error("An exception occurred:\n%s", tb_str)
     finally:
         if '--help' not in sys.argv and '-h' not in sys.argv:
-            obj.create_report(iot_summary=iot_summary)
+            if args.do_robo:
+                if args.dowebgui:
+                    obj.stop_webui_test()
+                obj.create_robo_report()
+            else:
+                obj.create_report(iot_summary=iot_summary)
             obj.stop()
 
             if not args.no_postcleanup:
