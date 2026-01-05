@@ -45,6 +45,11 @@ Pre-requisites: Real clients should be connected to the LANforge MGR and Interop
             python3  lf_interop_real_browser_test.py --mgr 192.168.207.78 --duration 1 --url https://www.google.com --count 10 --upstream_port 192.168.200.191
             --expected_passfail_value 5 --iot_test --iot_testname "Real_Browser_Iot" --iot_device_list "switch.smart_plug_1_socket_1"
 
+            Example-8:
+            Command Line Interface to run the Real Browser Test with Robo and Device list
+            python3 lf_interop_real_browser_test.py --mgr 192.168.207.78 --url "https://google.com" --duration 1m --debug --upstream_port 192.168.200.198
+            --coordinates 1 --do_robo --robo_ip 192.168.200.140 --rotations 30 --device_list 1.5,1.11
+
 
             SCRIPT CLASSIFICATION: Test
 
@@ -2570,6 +2575,11 @@ def main():
             Command Line Interface to run the Real Browser Test with groups and profiles
             python3 lf_interop_real_browser_test.py --mgr 192.168.204.74 --url "https://google.com" --duration 1m --debug --upstream_port 1.1.eth1
             --file_name grplaptops --group_name group1,group2 --profile_name netgear2g,netgear2g
+
+            Example-6:
+            Command Line Interface to run the Real Browser Test with Robo and Device list
+            python3 lf_interop_real_browser_test.py --mgr 192.168.207.78 --url "https://google.com" --duration 1m --debug --upstream_port 192.168.200.198
+            --coordinates 1 --do_robo --robo_ip 192.168.200.140 --rotations 30 --device_list 1.5,1.11
 
 
             SCRIPT CLASSIFICATION: Test
