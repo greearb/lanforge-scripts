@@ -6912,16 +6912,63 @@ class L3VariableTime(Realm):
             os.makedirs(test_name_dir)
         shutil.copytree(curr_path, test_name_dir, dirs_exist_ok=True)
 
-    def webgui_finalize(self):
+    def webgui_finalize(self, coord=None, rot=None):
         """Test report finalization run when in WebGUI mode."""
-        last_entry = self.overall[len(self.overall) - 1]
-        last_entry["status"] = "Stopped"
-        last_entry["timestamp"] = self.get_time_stamp_local()
-        last_entry["end_time"] = self.get_time_stamp_local()
-        self.overall.append(last_entry)
+        print(f"DEBUG: result_dir = {self.result_dir}")
+        print(f"DEBUG: coord = {coord}, rot = {rot}")
+        
+        if not self.overall:
+            logger.warning("webgui_finalize() called but self.overall is empty. Creating default entry.")
+            last_entry = {
+                "status": "Stopped",
+                "timestamp": self.get_time_stamp_local(),
+                "end_time": self.get_time_stamp_local()
+            }
+            self.overall.append(last_entry)
+        else:
+            # Get the last entry and preserve RSSI data
+            last_entry = self.overall[-1].copy()
+            last_entry["status"] = "Stopped"
+            last_entry["timestamp"] = self.get_time_stamp_local()
+            last_entry["end_time"] = self.get_time_stamp_local()
+
+            rssi_keys = [k for k in last_entry.keys() if k.startswith('rssi_')]
+
+            self.overall.append(last_entry)
 
         df1 = pd.DataFrame(self.overall)
-        df1.to_csv('{}/overall_multicast_throughput.csv'.format(self.result_dir), index=False)
+        if not hasattr(self, 'result_dir') or not self.result_dir:
+            # Create a default results directory
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            self.result_dir = os.path.join(script_dir, "results", getattr(self, 'test_name', 'default_test'))
+
+        os.makedirs(self.result_dir, exist_ok=True)
+
+        # Handle rotation parameter consistently with perform_robo_multicast()
+        if coord is not None:
+            filename = f"overall_multicast_throughput_coord_{coord}_rot_{rot}.csv"
+        else:
+            filename = 'overall_multicast_throughput.csv'
+
+        filepath = os.path.join(self.result_dir, filename)
+        print(f"DEBUG: Saving to {filepath}")
+
+        try:
+            df1.to_csv(filepath, index=False)
+            print(f"INFO: Successfully saved results to {filepath}")
+        except PermissionError as e:
+            # Try alternative location if permission denied
+            print(f"ERROR: Permission denied for {filepath}. Trying alternative...")
+            alt_dir = os.path.join(os.path.expanduser("~"), "test_results")
+            os.makedirs(alt_dir, exist_ok=True)
+            alt_path = os.path.join(alt_dir, filename)
+            df1.to_csv(alt_path, index=False)
+            print(f"INFO: Saved to alternative location: {alt_path}")
+        except Exception as e:
+            print(f"ERROR: Failed to save CSV: {e}")
+            # Save to current directory as last resort
+            df1.to_csv(filename, index=False)
+            print(f"INFO: Saved to current directory: {filename}")
 
     def get_pass_fail_list(self, tos, up, down):
         res_list = []
