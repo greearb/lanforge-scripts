@@ -195,32 +195,30 @@ class WiFiCapacityTest(cv_test):
         # Test related settings
         cfg_options = []
 
-        eid = LFUtils.name_to_eid(self.upstream)
-        port = "%i.%i.%s" % (eid[0], eid[1], eid[2])
+        if self.upstream != "":
+            eid = LFUtils.name_to_eid(self.upstream)
+            port = "%i.%i.%s" % (eid[0], eid[1], eid[2])
 
-        port_list = [port]
-        if self.stations != "" or self.stations_list != []:
-            stas = None
-            if self.stations:
-                stas = self.stations.split(",")
-            elif self.stations_list:
-                stas = self.stations_list
-            for s in stas:
-                port_list.append(s)
-        else:
-            stas = self.station_map()  # See realm
-            for eid in stas.keys():
-                port_list.append(eid)
-        logger.info(f"Selected Port list: {port_list}")
+            port_list = [port]
+            if self.stations != "" or self.stations_list != []:
+                stas = None
+                if self.stations:
+                    stas = self.stations.split(",")
+                elif self.stations_list:
+                    stas = self.stations_list
+                for s in stas:
+                    port_list.append(s)
+            else:
+                stas = self.station_map()  # See realm
+                for eid in stas.keys():
+                    port_list.append(eid)
+            logger.info(f"Selected Port list: {port_list}")
 
-        idx = 0
-        for eid in port_list:
-            add_port = "sel_port-" + str(idx) + ": " + eid
-            self.create_test_config(self.config_name, "Wifi-Capacity-", add_port)
-            idx += 1
-
-        self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
-
+            idx = 0
+            for eid in port_list:
+                add_port = "sel_port-" + str(idx) + ": " + eid
+                self.create_test_config(self.config_name, "Wifi-Capacity-", add_port)
+                idx += 1
         if self.batch_size != "":
             cfg_options.append("batch_size: " + self.batch_size)
         if self.loop_iter != "":
@@ -239,6 +237,8 @@ class WiFiCapacityTest(cv_test):
             cfg_options.append("test_tag: " + self.test_tag)
 
         cfg_options.append("save_csv: 1")
+
+        self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
 
         blob_test = "Wifi-Capacity-"
 
@@ -380,6 +380,10 @@ INCLUDE_IN_README:
 
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+    parser.add_argument('--logger_no_file',
+                        default=None,
+                        action="store_true",
+                        help='Show loggingout without the trailing file name and line')
 
     args = parser.parse_args()
 
@@ -400,6 +404,12 @@ INCLUDE_IN_README:
     if args.lf_logger_config_json:
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
+
+    if args.logger_no_file:
+        f = '%(created)f %(levelname)-8s %(message)s'
+        ff = logging.Formatter(fmt=f)
+        for handler in logging.getLogger().handlers:
+            handler.setFormatter(ff)
 
     # getting station list if number of stations provided.
     start_id = 0
