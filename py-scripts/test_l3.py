@@ -2088,6 +2088,220 @@ class L3VariableTime(Realm):
                 "PASS: Stations & CX build finished: created/updated: %s stations and %s connections." %
                 (self.station_count, self.cx_count))
 
+    def perform_robo_multicast(self, coordinate, rotation):
+        """Run multicast test at specific coordinate and rotation, storing results with position data."""
+
+        # Store current position information before starting test
+        position_key = f"coord_{coordinate}_rot_{rotation if rotation is not None else ''}"
+
+        logger.info(f"Starting multicast test at coordinate: {coordinate}, rotation: {rotation}")
+        self.start(False, coordinate, rotation)
+
+        logger.info("Test complete, stopping traffic")
+        self.stop()
+
+        self.webgui_finalize(coordinate, rotation)
+
+        # Collect and store test results for this position
+        self._collect_position_results(position_key, coordinate, rotation)
+
+    def _collect_position_results(self, position_key, coordinate, rotation):
+        if position_key not in self.multicast_robot_results:
+            self.multicast_robot_results[position_key] = {
+                "coordinate": coordinate,
+                "rotation": rotation,
+                "upstream": {},
+                "stations": [],
+                "summary": {},
+            }
+
+        endp_data = self.json_get(
+            "endp/all?fields=name,tx+rate,rx+rate,rx+bytes,a/b,tos,eid,type,rx+drop+%25"
+        )
+        endpoints = {}
+
+        if endp_data and "endpoint" in endp_data:
+            for endp_item in endp_data["endpoint"]:
+                for name, info in endp_item.items():
+                    endpoints[name] = info
+
+        eth_tx_total = 0
+        sta_rx_total = 0
+        stations_data = []
+
+        for name, info in endpoints.items():
+            if "MLT-mrx-" in name:
+                rx_rate = info.get("rx rate", 0)
+                rx_bytes = info.get("rx bytes", 0)
+                drop_percent = info.get("rx drop %", 0.0)
+                sta_rx_total += rx_rate if isinstance(rx_rate, int) else 0
+                stations_data.append({
+                    "station": name,
+                    "rx_rate_bps": rx_rate,
+                    "rx_bytes": rx_bytes,
+                    "drop_percent": drop_percent,
+                    "coordinate": coordinate,
+                    "rotation": rotation,
+                })
+            elif "MLT-mtx-" in name:
+                tx_rate = info.get("tx rate", 0)
+                tx_bytes = info.get("tx bytes", 0)
+                drop_percent = info.get("tx drop %", 0.0)
+                eth_tx_total += tx_rate if isinstance(tx_rate, int) else 0
+                upstream_data = {
+                    "endpoint": name,
+                    "tx_rate_bps": tx_rate,
+                    "tx_bytes": tx_bytes,
+                    "drop_percent": drop_percent,
+                    "coordinate": coordinate,
+                    "rotation": rotation,
+                }
+                self.multicast_robot_results[position_key]["upstream"] = upstream_data
+
+        total_tx_rate = eth_tx_total
+        total_rx_rate = sta_rx_total
+        avg_drop = (
+            sum([s["drop_percent"] for s in stations_data]) / len(stations_data)
+            if stations_data else 0.0
+        )
+
+        summary = {
+            "coordinate": coordinate,
+            "rotation": rotation,
+            "total_tx_rate_bps": total_tx_rate,
+            "total_rx_rate_bps": total_rx_rate,
+            "throughput_mbps": round(total_rx_rate / 1e6, 2),
+            "average_drop_percent": round(avg_drop, 2),
+            "endpoint_count": len(stations_data),
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
+        self.multicast_robot_results[position_key]["stations"] = stations_data
+        self.multicast_robot_results[position_key]["summary"] = summary
+
+        json_filename = os.path.join(self.result_dir, "test_l3_robot_multicast_detailed.json")
+        with open(json_filename, "w") as jsonfile:
+            json.dump(self.multicast_robot_results, jsonfile, indent=2, default=str)
+        logger.info(f"[RobotTest] Updated detailed JSON: {json_filename}")
+
+        coord_csv = os.path.join(
+            self.result_dir, f"overall_multicast_throughput_{coordinate}.csv"
+        )
+
+        write_header = not os.path.exists(coord_csv)
+        with open(coord_csv, "a") as f:
+            if write_header:
+                f.write(
+                    "coordinate,rotation,total_tx_rate_bps,total_rx_rate_bps,throughput_mbps,average_drop_percent,endpoint_count,timestamp\n"
+                )
+            f.write(
+                f"{coordinate},{rotation},{total_tx_rate},{total_rx_rate},{total_rx_rate/1e6:.2f},{avg_drop:.2f},{len(stations_data)},{summary['timestamp']}\n"
+            )
+
+        self._write_robot_station_csv(stations_data, summary["timestamp"])
+
+        logger.info(
+            f"[RobotTest] Coord={coordinate}, Rot={rotation}, Stations={len(stations_data)}, Avg Throughput={total_rx_rate/1e6:.2f} Mbps"
+        )
+
+    def _write_robot_station_csv(self, stations_data, timestamp):
+        """
+        Write per-station multicast RX results (Wi-Fi side) into a separate CSV file.
+        """
+        if not stations_data:
+            return
+
+        station_csv = os.path.join(self.result_dir, "robot_station_data.csv")
+        write_header = not os.path.exists(station_csv)
+        # Append station data to CSV
+        with open(station_csv, "a") as f:
+            if write_header:
+                f.write("coordinate,rotation,station,rx_rate_bps,rx_bytes,drop_percent,timestamp\n")
+            for st in stations_data:
+                f.write(
+                    f"{st['coordinate']},{st['rotation']},{st['station']},"
+                    f"{st['rx_rate_bps']},{st['rx_bytes']},{st['drop_percent']},{timestamp}\n"
+                )
+
+    def perform_robo(self):
+        """Main robot test execution with coordinate and rotation iteration."""
+
+        self.robot_rotation_enabled = (hasattr(self, 'rotation_list') and self.rotation_list)
+
+        # Iterate through all coordinates
+        for coord_index, coordinate in enumerate(self.coordinate_list):
+            logger.info(f"Moving to coordinate {coord_index}: {coordinate}")
+
+            pause_coord,test_stopped_by_user=self.robot_obj.wait_for_battery(self.stop)
+            if pause_coord:
+                print("Test stopped by user, exiting...")
+                exit(0)
+            if self.test_stopped_user:
+                break
+
+            # Move robot to coordinate
+            robo_moved = self.robot_obj.move_to_coordinate(coordinate)
+
+            if robo_moved:
+                logger.info(f"Successfully moved to coordinate {coordinate}")
+                if not self.robot_rotation_enabled:
+                    # No rotation mode - run test once at this coordinate
+                    self.perform_robo_multicast(coordinate=coordinate, rotation=None)
+                else:
+                    # Rotation mode - run test at each rotation angle
+                    for angle_index, rotation_angle in enumerate(self.rotation_list):
+                        pause_coord,test_stopped_by_user=self.robot_obj.wait_for_battery(self.stop)
+                        if pause_coord:
+                            print("Test stopped by user, exiting...")
+                            exit(0)
+                        logger.info(f"Rotating to angle {angle_index}: {rotation_angle} degrees")
+
+                        robo_rotated = self.robot_obj.rotate_angle(rotation_angle)
+
+                        if robo_rotated:
+                            logger.info(f"Successfully rotated to {rotation_angle} degrees")
+                            self.perform_robo_multicast(coordinate=coordinate, rotation=rotation_angle)
+                        else:
+                            logger.error(f"Failed to rotate to angle {rotation_angle} at coordinate {coordinate}")
+            else:
+                logger.error(f"Failed to move to coordinate {coordinate}")
+
+        # Generate final report after all tests
+        self._generate_robot_test_report()
+
+    def _generate_robot_test_report(self):
+        """Generate comprehensive report of all robot test results."""
+
+        if not self.multicast_robot_results:
+            logger.warning("No robot test results to report")
+            return
+
+        # Create CSV report
+        csv_filename = f"{self.outfile[:-4]}_robot_multicast_results.csv"
+        with open(csv_filename, 'w', newline='') as csvfile:
+            fieldnames = [
+                'position_key', 'coordinate', 'rotation',
+                'total_tx_rate_bps', 'total_rx_rate_bps', 'throughput_mbps',
+                'average_drop_percent', 'endpoint_count'
+            ]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            # write each position's summary
+            for position_key, result_data in self.multicast_robot_results.items():
+                test_data = result_data.get('summary', {})
+                writer.writerow({
+                    'position_key': position_key,
+                    'coordinate': test_data.get('coordinate', ''),
+                    'rotation': test_data.get('rotation', ''),
+                    'total_tx_rate_bps': test_data.get('total_tx_rate_bps', 0),
+                    'total_rx_rate_bps': test_data.get('total_rx_rate_bps', 0),
+                    'throughput_mbps': test_data.get('throughput_mbps', 0),
+                    'average_drop_percent': test_data.get('average_drop_percent', 0),
+                    'endpoint_count': test_data.get('endpoint_count', 0),
+                })
+        
+        logger.info(f"Robot test report generated: {csv_filename}")
+
     def l3_endp_port_data(self, tos):
         """
         Args:
@@ -8101,6 +8315,7 @@ INCLUDE_IN_README: False
     test_l3_parser.add_argument("--real", action="store_true", help='For testing on real devies')
     test_l3_parser.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
     test_l3_parser.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
+    
     parser.add_argument('--help_summary',
                         default=None,
                         action="store_true",
