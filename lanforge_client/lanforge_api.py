@@ -1777,6 +1777,7 @@ class LFJsonCommand(JsonCommand):
         AUTO_CONNECT_WIFI = 0x80           # Attempt to reconfigure Interop device in case it connects to wrong
         # +ssid
         NO_APP_EN_WIFI = 0x800             # Request App to not enable wifi.
+        NO_APP_WIFI_ABLTY = 0x4000         # Request App to not attempt connection to any wifi networks.
         NO_AUDIO_SCRCPY = 0x2              # Disable scrcpy audio forwarding
         OMX_H264_ENCODER_SCRCPY = 0x4      # Use non-default OMX.google.h264.encoder scrcpy video encoder
         USE_SCRCPY = 0x1                   # Use scrcpy instead of MonkeyRemote
@@ -1795,7 +1796,6 @@ class LFJsonCommand(JsonCommand):
                      adb_id: str = None,                       # Android device identifier (serial number).
                      adb_model: str = None,                    # Android device model ID
                      adb_product: str = None,                  # Android device product ID
-                     app_flags: str = None,                    # Flags given to the Android App. See above.
                      app_identifier: str = None,               # Identifier that App and adb can both query (mac of wlan0)
                      auth: str = None,                         # WiFi Authentication to be used.
                      bssid: str = None,                        # WiFi BSSID to which this device should connect.
@@ -1820,6 +1820,7 @@ class LFJsonCommand(JsonCommand):
                      sdk_version: str = None,                  # Android sdk version (example: 19)
                      shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
                      ssid: str = None,                         # WiFi SSID to which this device should connect
+                     unused_int: str = None,                   # Deprecated.
                      response_json_list: list = None,
                      debug: bool = False,
                      errors_warnings: list = None,
@@ -1840,8 +1841,6 @@ class LFJsonCommand(JsonCommand):
             data["adb_model"] = adb_model
         if adb_product is not None:
             data["adb_product"] = adb_product
-        if app_flags is not None:
-            data["app_flags"] = app_flags
         if app_identifier is not None:
             data["app_identifier"] = app_identifier
         if auth is not None:
@@ -1882,6 +1881,8 @@ class LFJsonCommand(JsonCommand):
             data["shelf"] = shelf
         if ssid is not None:
             data["ssid"] = ssid
+        if unused_int is not None:
+            data["unused_int"] = unused_int
         if len(data) < 1:
             raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_adb",
@@ -1906,7 +1907,6 @@ class LFJsonCommand(JsonCommand):
                           adb_id=param_map.get("adb_id"),
                           adb_model=param_map.get("adb_model"),
                           adb_product=param_map.get("adb_product"),
-                          app_flags=param_map.get("app_flags"),
                           app_identifier=param_map.get("app_identifier"),
                           auth=param_map.get("auth"),
                           bssid=param_map.get("bssid"),
@@ -1927,6 +1927,7 @@ class LFJsonCommand(JsonCommand):
                           sdk_version=param_map.get("sdk_version"),
                           shelf=param_map.get("shelf"),
                           ssid=param_map.get("ssid"),
+                          unused_int=param_map.get("unused_int"),
                           )
         """
 
@@ -20298,11 +20299,11 @@ class LFJsonQuery(JsonQuery):
         /adb/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        a-wifi, api, app-id, auth-rpt, bssid, bt+ctrl, bt+ctrl+cx+status, bt+mac, 
+        api, app-id, auth-rpt, bssid, bt+ctrl, bt+ctrl+cx+status, bt+mac, bt+peer+mac, 
         device, eap-method, eap-user, en-wifi, encryption, entity+id, freq, model, 
         name, password, phantom, product, release, resource-id, rssi, ssid, ssid-rpt, 
-        timed-out, type, unauth, user-name, wifi+mac
-    Example URL: /adb?fields=a-wifi,api
+        timed-out, type, unauth, user-name, wifi+mac, wifi-m
+    Example URL: /adb?fields=api,app-id
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_adb(eid_list=['1.234', '1.344'],
@@ -20311,10 +20312,6 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        'a-wifi':            # Android phones may roam to other saved WiFi profiles if the preferred
-                             # WiFi connection disconnects.If you enable this option, the LANforge
-                             # system will attempt to detect this and force it back to the preferred
-                             # WiFi SSID.
         'api':               # SDK API Version
         'app-id':            # Interop app identifier.
         'auth-rpt':          # Authentication type reported by the Interop device.
@@ -20322,6 +20319,7 @@ class LFJsonQuery(JsonQuery):
         'bt ctrl':           # LANforge bluetooth control device.
         'bt ctrl cx status': # Status of the Bluetooth controller <-> iOS device connection.
         'bt mac':            # Bluetooth MAC address
+        'bt peer mac':       # MAC of the USB Bluetooth controller.
         'device':            # Interop device identifier.
         'eap-method':        # WiFi EAP Method for Enterprise Authentication.
         'eap-user':          # WiFi EAP User for Enterprise Authentication.
@@ -20351,6 +20349,8 @@ class LFJsonQuery(JsonQuery):
                              # (Android only)
         'user-name':         # LANforge Interop app username for this Interop device.
         'wifi mac':          # Wifi MAC address
+        'wifi-m':            # How this ADB device should attempt to connect to WiFi.Both is the most
+                             # robust option for all Android versions.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -22741,9 +22741,9 @@ class LFJsonQuery(JsonQuery):
         active, activity, avg+chain+rssi, bandwidth, beacon+signal, chain+rssi, channel, 
         disabled+reason, dormant, dup+pkts, eid, entity+id, esr+active, last+exit, 
         noise, nss, our+address, parent+dev, peer+address, retry+failed, rx+bytes, 
-        rx+drop, rx+pkts, rx+rate, rx+rate+%281m%29, rx+signal, rx-rate, time-stamp, 
-        tx+bytes, tx+pkts, tx+rate, tx+rate+%281%C2%A0min%29, tx-rate, wifi+retries, 
-              # hidden columns:
+        rx+drop, rx+pkts, rx+rate, rx+rate+%281m%29, rx+rate+%28last%29, rx+signal, rx-rate, 
+        time-stamp, tx+bytes, tx+pkts, tx+rate, tx+rate+%281%C2%A0min%29, tx+rate+%28last%29, 
+        tx-rate, wifi+retries        # hidden columns:
         resource
     Example URL: /mlo?fields=active,activity
 
@@ -22782,6 +22782,7 @@ class LFJsonQuery(JsonQuery):
         'rx pkts':              # Number of packets received by this MLO Link.
         'rx rate':              # Average bits per second received since last stats clear.
         'rx rate (1m)':         # Average bits per second received over the last 60 seconds.
+        'rx rate (last)':       # Average bits per second received over the report interval.
         'rx signal':            # Wireless signal strength (RSSI).
         'rx-rate':              # Reported network device RX link speed.
         'time-stamp':           # Time at which this event was created.This uses the clock on the source
@@ -22790,6 +22791,7 @@ class LFJsonQuery(JsonQuery):
         'tx pkts':              # Number of bytes transmitted by this MLO Link.
         'tx rate':              # Average bits per second transmitted since last stats clear.
         'tx rate (1&nbsp;min)': # Average bits per second transmitted over the last 60 seconds.
+        'tx rate (last)':       # Average bits per second transmitted over the report interval.
         'tx-rate':              # Reported network device TX link speed.
         'wifi retries':         # Number of Wireless packets that the MLO Link wifi radio retried.One
                                 # packet may be tried multiple times and each try would be counted in this
