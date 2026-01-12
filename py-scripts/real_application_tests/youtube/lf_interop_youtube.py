@@ -569,61 +569,6 @@ class Youtube(Realm):
         self.generic_endps_profile.stop_cx()
         self.stop_time = datetime.now()
 
-    def get_data_from_api(self):
-        """
-        Retrieves YouTube streaming statistics from an API endpoint.
-        Returns:
-            dict or None: The fetched data if successful, None otherwise.
-        """
-        self.devices_list = []
-        url = "http://localhost:5002/youtube_stats"
-        response = requests.get(url)
-        if response.status_code == 200:
-            self.data = response.json()
-            result_data = self.data.get("result", {})
-            for device_name, device_data in result_data.items():
-                stats = {key: value for key, value in device_data.items() if key != "stop"}
-                timestamp = stats.get("Timestamp", {})
-                if device_name not in self.mydatajson:
-                    self.mydatajson[device_name] = {}
-                if "maxbufferhealth" not in self.mydatajson[device_name]:
-                    self.mydatajson[device_name]["maxbufferhealth"] = "0.0"
-                else:
-                    if float(stats.get("BufferHealth", "0.0")) > float(self.mydatajson[device_name]["maxbufferhealth"]):
-                        self.mydatajson[device_name]["maxbufferhealth"] = stats.get("BufferHealth", "0.0")
-
-                if "minbufferhealth" not in self.mydatajson[device_name]:
-                    self.mydatajson[device_name]["minbufferhealth"] = "100000.0"
-                else:
-                    if float(stats.get("BufferHealth", "100000.0")) < float(self.mydatajson[device_name]["minbufferhealth"]):
-                        self.mydatajson[device_name]["minbufferhealth"] = stats.get("BufferHealth", "0.0")
-
-                # Define CSV file path using the device name as the file name
-                if self.do_webUI:
-                    csv_file_path = os.path.join(self.ui_report_dir, f'{device_name}_youtube_stats_report.csv')
-                else:
-                    current_path = os.path.dirname(os.path.abspath(__file__))
-                    csv_file_path = os.path.join(current_path, f"{device_name}_youtube_stats_report.csv")
-
-                self.devices_list.append(csv_file_path)
-
-                file_exists = os.path.isfile(csv_file_path)
-                headers = ["Instance Name", "TimeStamp", "Viewport", "DroppedFrames", "TotalFrames", "CurrentRes", "OptimalRes", "BufferHealth"]
-
-                with open(csv_file_path, mode='a', newline='') as file:
-                    writer = csv.writer(file)
-                    if not file_exists:
-                        writer.writerow(headers)
-                    row = [device_name, timestamp]
-                    for header in headers[2:]:
-                        row.append(stats.get(header, "NA"))
-                    writer.writerow(row)
-
-            return self.data
-        else:
-            logging.error(f"Failed to fetch data from API. Status code: {response.status_code}")
-            return None
-
     def start_flask_server(self):
         """
         Starts a Flask server with API endpoints for YouTube statistics.
@@ -655,29 +600,53 @@ class Youtube(Realm):
             """
             API endpoint to get or post YouTube statistics.
             - GET: Returns the current YouTube stats.
-            - POST: Updates the stats or clears them based on the provided data.
+            - POST: Updates stats, writes directly to CSV.
             """
             if request.method == 'POST':
                 data = request.json
 
-                # Clear data if requested
-                if data.get("clear_data"):
-                    self.stats_api_response = {}
-                    return jsonify({"message": "Data cleared"}), 200
-
                 for key, value in data.items():
                     if key == "stop":
                         continue
+                    
                     device_name = key
                     stats = value
-                    stop = data.get("stop", False)
 
                     if device_name not in self.stats_api_response:
                         self.stats_api_response[device_name] = {}
                     self.stats_api_response[device_name] = {
-                        **stats,
-                        "stop": stop
+                        **stats
                     }
+
+                    # Write stats directly to CSV
+                    try:
+                        # Determine CSV path
+                        if self.do_webUI:
+                            csv_file_path = os.path.join(self.ui_report_dir, f'{device_name}_youtube_stats_report.csv')
+                        else:
+                            current_path = os.path.dirname(os.path.abspath(__file__))
+                            csv_file_path = os.path.join(current_path, f"{device_name}_youtube_stats_report.csv")
+
+                        # Maintain list of devices for reporting
+                        if csv_file_path not in self.devices_list:
+                            self.devices_list.append(csv_file_path)
+
+                        # Write to file
+                        file_exists = os.path.isfile(csv_file_path)
+                        timestamp = stats.get("Timestamp", "")
+
+                        with open(csv_file_path, mode='a', newline='') as file:
+                            writer = csv.writer(file)
+                            if not file_exists:
+                                writer.writerow(self.csv_headers)
+                            
+                            row = [device_name, timestamp]
+                            for header in self.csv_headers[2:]:
+                                row.append(stats.get(header, "NA"))
+                            writer.writerow(row)
+                            
+                    except Exception as e:
+                        logger.error(f"Error writing to CSV for {device_name}: {e}")
 
                 return jsonify({"message": "Stats updated"}), 200
 
@@ -772,30 +741,19 @@ class Youtube(Realm):
         with open(file_path, 'w') as file:
             json.dump(data, file, indent=4)
 
-    def create_report(self, data, ui_report_dir, iot_summary=None):
-
-        result_data = data
-        for device, stats in result_data.items():
-            self.mydatajson.setdefault(device, {}).update({
-                "Viewport": stats.get("Viewport", ""),
-                "DroppedFrames": stats.get("DroppedFrames", "0"),
-                "TotalFrames": stats.get("TotalFrames", "0"),
-                "CurrentRes": stats.get("CurrentRes", ""),
-                "OptimalRes": stats.get("OptimalRes", ""),
-                "BufferHealth": stats.get("BufferHealth", "0.0"),
-                "Timestamp": stats.get("Timestamp", ""),
-            })
-
+    def create_report(self, iot_summary=None):
+        # Initialize the report object
         if self.do_webUI:
             self.report = lf_report(_output_pdf='youtube_streaming.pdf',
                                     _output_html='youtube_streaming.html',
                                     _results_dir_name="youtube_streaming_report",
-                                    _path=ui_report_dir)
+                                    _path=self.ui_report_dir)
         else:
             self.report = lf_report(_output_pdf='youtube_streaming.pdf',
                                     _output_html='youtube_streaming.html',
                                     _results_dir_name="youtube_streaming_report",
                                     _path='')
+        
         self.report_path = self.report.get_path()
         self.report_path_date_time = self.report.get_path_date_time()
 
@@ -831,9 +789,8 @@ class Youtube(Realm):
             )
         self.report.build_objective()
 
+        # --- Test Setup Information ---
         if self.config:
-
-            # Test setup info
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
                 'Duration (in Minutes)': self.duration,
@@ -843,14 +800,10 @@ class Youtube(Realm):
                 "Video URL": self.url,
                 "SSID": self.ssid,
                 "Security": self.security,
-
             }
-
         elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
             gp_pairs = zip(self.selected_groups, self.selected_profiles)
             gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
-
-            # Test setup info
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
                 'Duration (in Minutes)': self.duration,
@@ -859,10 +812,8 @@ class Youtube(Realm):
                 'Configured Devices': self.hostname_os_combination,
                 'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
                 "Video URL": self.url,
-
             }
         else:
-            # Test setup info
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
                 'Duration (in Minutes)': self.duration,
@@ -870,64 +821,81 @@ class Youtube(Realm):
                 'Configured Devices': self.hostname_os_combination,
                 'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
                 "Video URL": self.url,
-
             }
+        
         if iot_summary:
             test_setup_info['Test Name'] = 'YouTube Streaming Test with IoT Devices'
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
 
-        self.report.test_setup_table(
-            test_setup_data=test_setup_info, value='Test Parameters')
+        self.report.test_setup_table(test_setup_data=test_setup_info, value='Test Parameters')
 
+        # --- Process Data from CSVs ---
         viewport_list = []
         current_res_list = []
         optimal_res_list = []
-
         dropped_frames_list = []
         total_frames_list = []
         max_buffer_health_list = []
         min_buffer_health_list = []
 
+        # Iterate over the configured hostnames
         for hostname in self.real_sta_hostname:
-            if hostname in self.mydatajson:
-                stats = self.mydatajson[hostname]
-                viewport_list.append(stats.get("Viewport", ""))
-                current_res_list.append(stats.get("CurrentRes", ""))
-                optimal_res_list.append(stats.get("OptimalRes", ""))
+            # Determine the CSV filename for this host
+            expected_csv = None
+            for csv_path in self.devices_list:
+                if os.path.basename(csv_path).startswith(f"{hostname}_"):
+                    expected_csv = csv_path
+                    break
+            
+            if expected_csv and os.path.isfile(expected_csv):
+                try:
+                    df = pd.read_csv(expected_csv)
+                    if not df.empty:
+                        # Convert numeric columns safely
+                        for col in ['BufferHealth', 'DroppedFrames', 'TotalFrames']:
+                            if col in df.columns:
+                                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
-                dropped_frames = stats.get("DroppedFrames", "0")
-                total_frames = stats.get("TotalFrames", "0")
-                max_buffer_health = stats.get("maxbufferhealth", "0,0")
-                min_buffer_health = stats.get("minbufferhealth", "0.0")
-                try:
-                    dropped_frames_list.append(int(dropped_frames))
-                except ValueError:
-                    dropped_frames_list.append(0)
+                        # Get stats
+                        last_row = df.iloc[-1]
+                        
+                        viewport_list.append(last_row.get("Viewport", "NA"))
+                        current_res_list.append(last_row.get("CurrentRes", "NA"))
+                        optimal_res_list.append(last_row.get("OptimalRes", "NA"))
+                        
+                        # Use MAX from the whole file for Buffer Health to capture peak performance
+                        max_buffer_health_list.append(float(df['BufferHealth'].max()))
+                        
+                        # Use MIN from the whole file (filtering out initial 0s if necessary, or just absolute min)
+                        min_buffer_health_list.append(float(df['BufferHealth'].min()))
 
-                try:
-                    total_frames_list.append(int(total_frames))
-                except ValueError:
-                    total_frames_list.append(0)
-                try:
-                    max_buffer_health_list.append(float(max_buffer_health))
-                except ValueError:
+                        # Use the LAST value for cumulative counters
+                        dropped_frames_list.append(int(last_row.get("DroppedFrames", 0)))
+                        total_frames_list.append(int(last_row.get("TotalFrames", 0)))
+                    else:
+                        # CSV exists but is empty
+                        raise ValueError("Empty CSV")
+                except Exception as e:
+                    logging.error(f"Error reading CSV for {hostname}: {e}")
+                    # Fill with defaults if read fails
+                    viewport_list.append("NA")
+                    current_res_list.append("NA")
+                    optimal_res_list.append("NA")
                     max_buffer_health_list.append(0.0)
-
-                try:
-                    min_buffer_health_list.append(float(min_buffer_health))
-                except ValueError:
                     min_buffer_health_list.append(0.0)
-
+                    dropped_frames_list.append(0)
+                    total_frames_list.append(0)
             else:
+                # No CSV found for this host
                 viewport_list.append("NA")
                 current_res_list.append("NA")
                 optimal_res_list.append("NA")
-                dropped_frames_list.append(0)
-                total_frames_list.append(0)
                 max_buffer_health_list.append(0.0)
                 min_buffer_health_list.append(0.0)
+                dropped_frames_list.append(0)
+                total_frames_list.append(0)
 
-        # graph of frames dropped
+        # --- Graphs and Tables ---
         self.report.set_graph_title("Total Frames vs Frames dropped")
         self.report.build_graph_title()
         x_fig_size = 25
@@ -970,9 +938,8 @@ class Youtube(Realm):
             "Min Buffer health (Seconds)": min_buffer_health_list,
             "Total Frames": total_frames_list,
             "Dropped Frames": dropped_frames_list,
-
-
         }
+
         # If both groups and profiles are selected, generate separate result tables per group.
         if self.selected_groups and self.selected_profiles:
             for group in self.selected_groups:
@@ -990,65 +957,55 @@ class Youtube(Realm):
             self.report.set_table_dataframe(test_results_df)
             self.report.build_table()
 
+        # Move files to report directory
         for file_path in self.devices_list:
-            self.move_files(file_path, self.report_path_date_time)
+            if os.path.exists(file_path):
+                self.move_files(file_path, self.report_path_date_time)
 
+        # Generate Time Series Graphs
         original_dir = os.getcwd()
-
-        if self.do_webUI:
-            csv_files = [f for f in os.listdir(self.report_path_date_time) if f.endswith('.csv')]
-            os.chdir(self.report_path_date_time)
-        else:
-            csv_files = [f for f in os.listdir(self.report_path_date_time) if f.endswith('.csv')]
-            os.chdir(self.report_path_date_time)
+        csv_files = [f for f in os.listdir(self.report_path_date_time) if f.endswith('.csv')]
+        os.chdir(self.report_path_date_time)
 
         for file_name in csv_files:
-            data = pd.read_csv(file_name)
-
-            self.report.set_graph_title('Buffer Health vs Time Graph for {}'.format(file_name.split('_')[0]))
-            self.report.build_graph_title()
-
             try:
-                data['TimeStamp'] = pd.to_datetime(data['TimeStamp'], format="%H:%M:%S").dt.time
+                data = pd.read_csv(file_name)
+                self.report.set_graph_title('Buffer Health vs Time Graph for {}'.format(file_name.split('_')[0]))
+                self.report.build_graph_title()
+
+                data['TimeStamp'] = pd.to_datetime(data['TimeStamp'], format="%H:%M:%S", errors='coerce').dt.time
+                data = data.dropna(subset=['TimeStamp'])
+                data = data.drop_duplicates(subset='TimeStamp', keep='first')
+
+                timestamps = data['TimeStamp'].apply(lambda t: t.strftime('%H:%M:%S'))
+                buffer_health = data['BufferHealth']
+
+                fig, ax = plt.subplots(figsize=(20, 10))
+                plt.plot(timestamps, buffer_health, color='blue', linewidth=2)
+
+                plt.xlabel('Time', fontweight='bold', fontsize=15)
+                plt.ylabel('Buffer Health', fontweight='bold', fontsize=15)
+                plt.title('Buffer Health vs Time Graph for {}'.format(file_name.split('_')[0]), fontsize=18)
+
+                if len(timestamps) > 30:
+                    tick_interval = len(timestamps) // 30
+                    ax.set_xticks(timestamps[::tick_interval])
+                else:
+                    ax.set_xticks(timestamps)
+
+                plt.xticks(rotation=45, ha='right')
+
+                output_file = '{}'.format(file_name.split('_')[0]) + 'buffer_health_vs_time.png'
+                plt.tight_layout()
+                plt.savefig(output_file, dpi=96)
+                plt.close()
+
+                self.report.set_graph_image(output_file)
+                self.report.build_graph()
             except Exception as e:
-                logging.error(f"Error in timestamp conversion for {file_name}: {e}")
-                continue
-
-            data = data.drop_duplicates(subset='TimeStamp', keep='first')
-            timestamps = data['TimeStamp'].apply(lambda t: t.strftime('%H:%M:%S'))
-            buffer_health = data['BufferHealth']
-
-            fig, ax = plt.subplots(figsize=(20, 10))
-            plt.plot(timestamps, buffer_health, color='blue', linewidth=2)
-
-            # Customize the plot
-            plt.xlabel('Time', fontweight='bold', fontsize=15)
-            plt.ylabel('Buffer Health', fontweight='bold', fontsize=15)
-            plt.title('Buffer Health vs Time Graph for {}'.format(file_name.split('_')[0]), fontsize=18)
-
-            if len(timestamps) > 30:
-                tick_interval = len(timestamps) // 30
-                selected_ticks = timestamps[::tick_interval]
-                ax.set_xticks(selected_ticks)
-            else:
-                ax.set_xticks(timestamps)
-
-            plt.xticks(rotation=45, ha='right')
-
-            output_file = '{}'.format(file_name.split('_')[0]) + 'buffer_health_vs_time.png'
-            plt.tight_layout()
-            plt.savefig(output_file, dpi=96)
-            plt.close()
-
-            logging.info(f"Graph saved for {file_name}: {output_file}")
-
-            self.report.set_graph_image(output_file)
-
-            self.report.build_graph()
+                logging.error(f"Failed to generate graph for {file_name}: {e}")
 
         os.chdir(original_dir)
-        if iot_summary:
-            add_iot_report_section(self.report, iot_summary)
 
         # Closing
         self.report.build_custom()
@@ -1402,12 +1359,12 @@ class Youtube(Realm):
             self.mydatajson = {}
             self.stats_api_response = {}
 
-    def create_robo_report(self, ui_report_dir):
+    def create_robo_report(self):
         if self.do_webUI:
             self.report = lf_report(_output_pdf='youtube_streaming.pdf',
                                     _output_html='youtube_streaming.html',
                                     _results_dir_name="youtube_streaming_report",
-                                    _path=ui_report_dir)
+                                    _path=self.ui_report_dir)
         else:
             self.report = lf_report(_output_pdf='youtube_streaming.pdf',
                                     _output_html='youtube_streaming.html',
@@ -1957,7 +1914,6 @@ NOTES:
         duration = args.duration
 
         do_webUI = args.do_webUI
-        ui_report_dir = args.ui_report_dir
         debug = args.debug
 
         # Print debug information if debugging is enabled
@@ -2028,7 +1984,7 @@ NOTES:
                 lanforge_password='lanforge',
                 sta_list=[],
                 do_webUI=args.do_webUI,
-                ui_report_dir=ui_report_dir,
+                ui_report_dir=args.ui_report_dir,
                 debug=debug,
                 resolution=args.res,
                 ap_name=args.ap_name,
@@ -2187,44 +2143,34 @@ NOTES:
                 youtube.perform_robo_test()
                 if do_webUI:
                     youtube.stop_webui_test()
-                    youtube.create_robo_report(youtube.ui_report_dir)
+                    youtube.create_robo_report()
                 else:
-                    youtube.create_robo_report('')
+                    youtube.create_robo_report()
             else:
                 youtube.start_generic()
-
                 duration = args.duration
                 end_time = datetime.now() + timedelta(minutes=duration)
-
-                youtube.get_initial_data()
-
                 while datetime.now() < end_time or not youtube.check_gen_cx():
-                    youtube.process_data()
-                    time.sleep(1)
+                    time.sleep(5)
 
                 youtube.generic_endps_profile.stop_cx()
                 logging.info("Duration ended")
 
                 logging.info('Stopping the test')
-                if do_webUI:
-                    youtube.create_report(youtube.stats_api_response, youtube.ui_report_dir)
-                else:
-                    youtube.create_report(youtube.stats_api_response, '')
-            youtube.generic_endps_profile.stop_cx()
-            logging.info("Duration ended")
-            iot_summary = None
-            if args.iot_test and args.iot_testname:
-                base = os.path.join("results", args.iot_testname)
-                p = os.path.join(base, "iot_summary.json")
-                if os.path.exists(p):
-                    with open(p) as f:
-                        iot_summary = json.load(f)
+                iot_summary = None
+                if args.iot_test and args.iot_testname:
+                    base = os.path.join("results", args.iot_testname)
+                    p = os.path.join(base, "iot_summary.json")
+                    if os.path.exists(p):
+                        with open(p) as f:
+                            iot_summary = json.load(f)
 
-            logging.info('Stopping the test')
-            if do_webUI:
-                youtube.create_report(youtube.stats_api_response, youtube.ui_report_dir, iot_summary=iot_summary)
-            else:
-                youtube.create_report(youtube.stats_api_response, '', iot_summary=iot_summary)
+                logging.info('Stopping the test')
+                if do_webUI:
+                    youtube.create_report(iot_summary=iot_summary)
+                else:
+                    youtube.create_report(iot_summary=iot_summary)
+            
 
             # Perform post-test cleanup if not skipped
             if not args.no_post_cleanup:
