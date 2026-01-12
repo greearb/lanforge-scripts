@@ -230,6 +230,11 @@ class Youtube(Realm):
         self.lanforge_os_type = list()
         self.android = 0
         self.wifi_interface_list = []
+        self.devices_list = []
+        self.csv_headers = ["Instance Name", "TimeStamp", "Viewport", "DroppedFrames", "TotalFrames", "CurrentRes", "OptimalRes", "BufferHealth"]
+        # Add 'Angle' to headers if Robo test is enabled
+        if do_robo:
+            self.csv_headers.append("Angle")
         self.do_robo = do_robo
         if self.do_robo:
             self.robo_ip = robo_ip
@@ -349,7 +354,7 @@ class Youtube(Realm):
         for i in range(0, len(self.lanforge_os_type)):
             cmd = (
                 "python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/youtube/youtube_android_test.py --url %s --duration %s --devices %s --upstream_port %s "
-            ) % (self.url, self.duration, self.serial_list_str, self.host)
+            ) % (self.url, self.duration, self.serial_list_str, self.upstream_port)
 
             logging.info(f"Setting command for Android devices: {cmd}")
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[-(i + 1)], cmd)
@@ -617,15 +622,24 @@ class Youtube(Realm):
                     self.stats_api_response[device_name] = {
                         **stats
                     }
-
+                    if self.do_robo:
+                        self.stats_api_response[device_name]["current_angle"] = self.current_angle
+                        self.stats_api_response[device_name]["current_cord"] = self.current_cord
+                        self.stats_api_response[device_name]["rotations_enabled"] = self.rotations_enabled
+                        stats["Angle"] = self.current_angle
                     # Write stats directly to CSV
                     try:
-                        # Determine CSV path
+                        if self.do_robo and self.current_cord != "":
+                            csv_filename = f"{self.current_cord}_{device_name}_youtube_stats_report.csv"
+                        else:
+                            csv_filename = f'{device_name}_youtube_stats_report.csv'
+                        
+                        # Determine full path
                         if self.do_webUI:
-                            csv_file_path = os.path.join(self.ui_report_dir, f'{device_name}_youtube_stats_report.csv')
+                            csv_file_path = os.path.join(self.ui_report_dir, csv_filename)
                         else:
                             current_path = os.path.dirname(os.path.abspath(__file__))
-                            csv_file_path = os.path.join(current_path, f"{device_name}_youtube_stats_report.csv")
+                            csv_file_path = os.path.join(current_path, csv_filename)
 
                         # Maintain list of devices for reporting
                         if csv_file_path not in self.devices_list:
@@ -1304,26 +1318,18 @@ class Youtube(Realm):
     
     def perform_robo_test(self):
         for coordinate in self.coordinates_list:
-            # self.robo_obj.ensure_battery_for_test(duration_min=self.duration, mins_per_percent=self.mins_per_percent)
             self.robo_obj.wait_for_battery()
             self.robo_obj.move_to_coordinate(coord=coordinate)
             self.current_cord = coordinate
             if self.rotations_enabled:
                 for angle in self.angles_list:
-                    # self.robo_obj.ensure_battery_for_test(duration_min=self.duration, mins_per_percent=self.mins_per_percent)
                     pause = self.robo_obj.wait_for_battery()
-
                     self.robo_obj.rotate_angle(angle_degree=angle)
                     self.current_angle = angle
                     self.start_generic()
-
                     duration = self.duration
                     end_time = datetime.now() + timedelta(minutes=duration)
-
                     logging.info("Starting data collection for coordinate: %s and angle: %s", coordinate, angle)
-
-                    self.get_initial_data()
-
                     while datetime.now() < end_time or not self.check_gen_cx():
                         pause, _ = self.robo_obj.wait_for_battery()
                         if pause:
@@ -1331,12 +1337,8 @@ class Youtube(Realm):
                             self.generic_endps_profile.stop_cx()
                             self.start_generic()
                             end_time = datetime.now() + timedelta(minutes=self.duration)
-                            self.mydatajson = {}
-                            self.data = {}
-                            self.stats_api_response = {}
-                            self.get_initial_data()
 
-                        time.sleep(1)
+                        time.sleep(5)
 
                     self.generic_endps_profile.stop_cx()
             
@@ -1345,7 +1347,6 @@ class Youtube(Realm):
                 duration = self.duration
                 end_time = datetime.now() + timedelta(minutes=duration)
                 logging.info("Starting data collection for coordinate: %s", coordinate)
-                self.get_initial_data()
 
                 while datetime.now() < end_time or not self.check_gen_cx():
                     pause, _ = self.robo_obj.wait_for_battery()
@@ -1354,18 +1355,11 @@ class Youtube(Realm):
                         self.generic_endps_profile.stop_cx()
                         self.start_generic()
                         end_time = datetime.now() + timedelta(minutes=self.duration)
-                        self.mydatajson = {}
-                        self.data = {}
-                        self.stats_api_response = {}
-                        self.get_initial_data()
 
-                    time.sleep(1)
+                    time.sleep(5)
 
                 self.generic_endps_profile.stop_cx()
             
-            self.data = {}
-            self.mydatajson = {}
-            self.stats_api_response = {}
 
     def create_robo_report(self):
         if self.do_webUI:
@@ -2149,11 +2143,6 @@ NOTES:
             youtube.start_time = datetime.now()
             if args.do_robo:
                 youtube.perform_robo_test()
-                if do_webUI:
-                    youtube.stop_webui_test()
-                    youtube.create_robo_report()
-                else:
-                    youtube.create_robo_report()
             else:
                 youtube.start_generic()
                 duration = args.duration
@@ -2174,10 +2163,6 @@ NOTES:
                             iot_summary = json.load(f)
 
                 logging.info('Stopping the test')
-                if do_webUI:
-                    youtube.create_report(iot_summary=iot_summary)
-                else:
-                    youtube.create_report(iot_summary=iot_summary)
             
 
             # Perform post-test cleanup if not skipped
@@ -2189,6 +2174,19 @@ NOTES:
         logger.error("An exception occurred:\n%s", tb_str)
     finally:
         if not ('--help' in sys.argv or '-h' in sys.argv):
+            if args.do_robo:
+                if do_webUI:
+                    youtube.stop_webui_test()
+                    youtube.create_robo_report()
+                else:
+                    youtube.create_robo_report()
+            else:
+                if do_webUI:
+                    youtube.create_report(iot_summary=iot_summary)
+                else:
+                    youtube.create_report(iot_summary=iot_summary)
+
+
             youtube.stop()
             logging.info("Waiting for Cleanup of Browsers in Devices")
             time.sleep(10)
