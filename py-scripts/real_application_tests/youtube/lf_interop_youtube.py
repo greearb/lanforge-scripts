@@ -229,6 +229,7 @@ class Youtube(Realm):
         self.lanforge_port_list = set()
         self.lanforge_os_type = list()
         self.android = 0
+        self.wifi_interface_list = []
         self.do_robo = do_robo
         if self.do_robo:
             self.robo_ip = robo_ip
@@ -238,7 +239,6 @@ class Youtube(Realm):
             self.current_cord = current_cord
             self.current_angle = current_angle
             self.rotations_enabled = rotations_enabled
-            # self.mins_per_percent = mins_per_percent
             self.pause = False
 
     def stop(self):
@@ -308,7 +308,7 @@ class Youtube(Realm):
         - self.real_sta_os_types: Operating system type for each client
         - self.real_sta_hostname: Hostnames for real clients
         - self.generic_endps_profile: Generic endpoint profile object
-        - self.new_port_list: Port identifiers for Linux clients
+        - self.wifi_interface_list: Wifi interface list 
 
         Side Effects:
         - Creates generic endpoints via the profile
@@ -333,7 +333,7 @@ class Youtube(Realm):
                 cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_types[i] == 'linux':
-                cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.new_port_list[i], self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.wifi_interface_list[i], self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
             elif self.real_sta_os_types[i] == 'macos':
@@ -1007,6 +1007,9 @@ class Youtube(Realm):
 
         os.chdir(original_dir)
 
+        if iot_summary:
+            add_iot_report_section(self.report, iot_summary)
+
         # Closing
         self.report.build_custom()
         self.report.build_footer()
@@ -1221,7 +1224,6 @@ class Youtube(Realm):
         Side Effects:
         - Populates self.device_names with matched device hostnames
         - Populates self.user_list with users associated with each resource
-        - Populates self.new_port_list with port identifiers derived from real stations
         - Populates self.mac_list with MAC addresses for wireless ports
         - Populates self.rssi_list with signal strength values
         - Populates self.link_rate_list with RX link rates
@@ -1240,59 +1242,65 @@ class Youtube(Realm):
         """
 
         ports_list = []
-        eid = ""
-        resource_ip = ""
-        user_resources = ['.'.join(item.split('.')[:2]) for item in self.real_sta_list]
+        user_resources = [".".join(item.split(".")[:2]) for item in self.real_sta_list]
 
         # Step 1: Retrieve information about all resources
         response = self.json_get("/resource/all")
 
-        # Step 2: Match user-specified resources with available resources sequentially
-        if user_resources:
-            for user_resource in user_resources:
-                if not user_resources:
-                    break
+        resource_data_list = response.get("resources", [])
 
-                for key, value in response.items():
-                    if key == "resources":
-                        for element in value:
-                            for resource_key, resource_values in element.items():
-                                # Match the current user_resource
-                                if resource_key == user_resource:
-                                    eid = resource_values["eid"]
-                                    resource_ip = resource_values['ctrl-ip']
-                                    self.device_names.append(resource_values['hostname'])
-                                    ports_list.append({'eid': eid, 'ctrl-ip': resource_ip})
-                                    self.user_list.append(resource_values['user'])
-                                    break
-                            else:
-                                continue
-                            break
+        # Step 2. Loop through the user resources you want to find
+        for user_resource in user_resources:
+
+            # Look through the data to find that user
+            for element in resource_data_list:
+
+                # Check if the user_resource (e.g., "1.1") exists in this dictionary element
+                if user_resource in element:
+                    resource_values = element[user_resource]
+
+                    # Extract the data
+                    self.device_names.append(resource_values["hostname"])
+                    self.user_list.append(resource_values["user"])
+                    ports_list.append(
+                        {
+                            "eid": resource_values["eid"],
+                            "ctrl-ip": resource_values["ctrl-ip"],
+                        }
+                    )
+
+                    # Found it! Stop searching specifically for this user_resource
+                    break
         self.mac_list = []
         self.rssi_list = []
         self.link_rate_list = []
         self.ssid_list = []
-        # Step 3: Retrieve port information
-        response_port = self.json_get("/port/all")
 
-        # Step 4: Match ports associated with retrieved resources in the order of ports_list
-        for port_entry in ports_list:
-            expected_eid = port_entry['eid']
-            matched_ports = []
+        # Step 3: Retrieve all port information
+        all_ports_response = self.json_get("/port/all")
+        interfaces_list = all_ports_response.get("interfaces", [])
 
-            for interface in response_port['interfaces']:
-                for port, port_data in interface.items():
-                    if '.'.join(port.split('.')[:2]) == expected_eid:
-                        matched_ports.append((port, port_data))
+        # Step 4: Find matching wifi ports for our target resources
+        for target_resource in ports_list:
+            target_eid = target_resource["eid"]
 
-            for _port, port_data in matched_ports:
-                if port_data.get("parent dev") == 'wiphy0':
-                    self.mac_list.append(port_data.get("mac"))
-                    self.rssi_list.append(port_data.get("signal"))
-                    self.link_rate_list.append(port_data.get("rx-rate"))
-                    self.ssid_list.append(port_data.get("ssid"))
+            # Search through all available interfaces
+            for interface_entry in interfaces_list:
+                for port_name, port_details in interface_entry.items():
 
-        self.new_port_list = [item.split('.')[2] for item in self.real_sta_list]
+                    # Logic: Extract EID from port name (e.g., "1.1.wlan0" -> "1.1")
+                    current_eid = ".".join(port_name.split(".")[:2])
+
+                    if (
+                        current_eid == target_eid
+                        and port_details.get("parent dev") == "wiphy0"
+                    ):
+                        self.mac_list.append(port_details.get("mac"))
+                        self.rssi_list.append(port_details.get("signal"))
+                        self.link_rate_list.append(port_details.get("rx-rate"))
+                        self.ssid_list.append(port_details.get("ssid"))
+
+        self.wifi_interface_list = [item.split('.')[2] for item in self.real_sta_list]
     
     def perform_robo_test(self):
         for coordinate in self.coordinates_list:
