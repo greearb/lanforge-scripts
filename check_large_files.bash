@@ -901,7 +901,12 @@ survey_core_files() {
     debug "Surveying core files"
     cd /
 
-    mapfile -t core_files < <(ls /core* /home/lanforge/core* 2>/dev/null) 2>/dev/null
+    mapfile -t core_files < <(ls \
+        /core* \
+        /home/lanforge/core* \
+        /home/lanforge/*/core.* \
+        2>/dev/null) \
+    2>/dev/null
     if [[ $verbose = 1 ]] && (( ${#core_files[@]} > 0 )); then
         printf "    %s\n" "${core_files[@]}" | head
     fi
@@ -1084,7 +1089,7 @@ survey_pcap_files() {
 
 removable_lflogs=()
 survey_lflogs() {
-    debug "Surveying hostapd, lanforge, nginx, vnc and wpa_supplicant logs"
+    debug "Surveying hostapd, lanforge, nginx, vnc and wpa_supplicant logs, pcap.txt"
     local fsiz=0
     local fnum=0
     cd /home/lanforge
@@ -1119,9 +1124,14 @@ survey_lflogs() {
             -o -iname 'helper_shared_log_*'      \
             -o -iname '*:1.log'                  \
         \) -print0 > /tmp/removable_lflogs.txt ||:)
+    # printf '\0' >> /tmp/removable_lflogs.txt ||:
+    find /home/lanforge/LANforgeGUI_* \
+        -type f -iname '*.pcap.txt' \
+        -print0 >> /tmp/removable_lflogs.txt ||:
+
     fnum=$( grep -cz '' /tmp/removable_lflogs.txt )
     #printf '      %s\n' "${removable_lflogs[@]}"
-    if (( $fnum > 0 )); then
+    if (( $fnum > 1 )); then
         fsiz=$(du -sch --files0-from=/tmp/removable_lflogs.txt | tail -1)
     fi
     totals[e]="$fnum files ($fsiz)"
