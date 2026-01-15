@@ -705,9 +705,34 @@ survey_kernel_files() {
     local ser
     local file
     debug "Surveying Kernel files"
-    mapfile -t kernel_files < <(find /boot -maxdepth 1 -type f -a \( \
+    local do_not_delete
+    # set -x
+    mapfile -t do_not_delete < <( ls /boot/*rescue* /boot/*kdump* \
+      | sed -e 's/\.x86_64kdump\.img//' \
+      | xargs -I% basename % 2>/dev/null ||:)
+    local dnd_grep="| grep -F -v "
+    # notice that we do not want to add quotes to the %s because the grep -F will
+    # interpret them literally and not match the filename
+    local grep_args=$(printf " -e %s " "${do_not_delete[@]}")
+    local temp_fn='/tmp/survey_k_files'
+    find /boot -maxdepth 1 -type f -a \( \
         -iname "System*" -o -iname "init*img" -o -iname "vm*" -o -iname "ct*" \) \
-        2>/dev/null | grep -v rescue | sort)
+        > $temp_fn 2>/dev/null
+    echo 'Listing of kernel files:'
+    cat $temp_fn
+    # temp list of files
+    kernel_files=()
+    if [[ -z "$grep_args" ]]; then
+        echo 'No GREP ARGS'
+        mapfile -t kernel_files < <( sort < $temp_fn )
+    else
+#        echo "GREP $grep_args"
+#        set -x
+#        grep -Fv $grep_args $temp_fn | sort
+        mapfile -t kernel_files < <( grep -Fv $grep_args $temp_fn | sort)
+#        set +x
+    fi
+
     mapfile -t lib_module_dirs < <(find /lib/modules -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
     local booted=`uname -r`
 
