@@ -907,6 +907,15 @@ survey_core_files() {
         /home/lanforge/*/core.* \
         2>/dev/null) \
     2>/dev/null
+
+    if (( "${#core_files[@]}" > 0 )); then
+        mapfile -t -O "${core_files[@]}" core_files < <(find \
+          /var/crash -type f -name "vmcore-incomplete" 2>/dev/null)
+    else
+        mapfile -t core_files < <(find \
+          /var/crash -type f -name "vmcore-incomplete" 2>/dev/null)
+    fi
+
     if [[ $verbose = 1 ]] && (( ${#core_files[@]} > 0 )); then
         printf "    %s\n" "${core_files[@]}" | head
     fi
