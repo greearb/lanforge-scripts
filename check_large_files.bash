@@ -31,7 +31,7 @@ USAGE="$0 # Check for large files and purge many of the most inconsequencial
     l3helper*           /usr/local/lanforge/nginx/logs/*
  -d   # remove old LANforge downloads
  -h   # help
- -k   # remove ath10k crash files
+ -k   # remove ath10k, be200 crash files
  -l   # remove old files from /var/log, truncate /var/log/messages
  -m   # remove orphaned fileio items in /mnt/lf
  -p   # remove pcap data
@@ -231,7 +231,7 @@ declare -A desc=(
     [c]="core files"
     [d]="lf downloads"
     [e]="lanforge logs"
-    [k]="lf/ath10 files"
+    [k]="lf/ath10,be200 files"
     [l]="/var/log"
     [m]="/mnt/lf files"
     [n]="dnf cache"
@@ -486,11 +486,18 @@ clean_lf_downloads() {
 
 clean_ath10_files() {
     note "clean_ath10_files WIP"
+    local files
     local f
-    while read f; do
-        echo "removing $f"
-        rm -f "$f"
-    done < <( find /home/lanforge -type f -iname "ath10*" ||:)
+    mapfile -t files < <(
+      ls /home/lanforge/ath10*                2>/dev/null ||:
+      ls /home/lanforge/be200_fw_kern_logs-*  2>/dev/null ||:
+      ls /home/lanforge/be200_fw_crash_dump-* 2>/dev/null ||:
+      ls -t /var/crash/*/vmcore-dmesg.txt     2>/dev/null | tail -n 10 ||:
+    )
+    for f in "${files[@]}"; do
+      echo "removing $f "
+      rm -f  "$f"
+    done
 }
 
 clean_var_log() {
@@ -966,7 +973,15 @@ survey_lf_downloads() {
 ath10_files=()
 survey_ath10_files() {
     debug "Surveying ath10 crash files"
-    mapfile -t ath10_files < <(ls /home/lanforge/ath10* 2>/dev/null)
+    mapfile -t ath10_files < <(
+      ls /home/lanforge/ath10*                2>/dev/null ||:
+      ls /home/lanforge/be200_fw_kern_logs-*  2>/dev/null ||:
+      ls /home/lanforge/be200_fw_crash_dump-* 2>/dev/null ||:
+      ls -t /var/crash/*/vmcore-dmesg.txt     2>/dev/null | tail -n 10 ||:
+    )
+    for f in "${ath10_files[@]}"; do
+      debug "$f"
+    done
     if [[ ${ath10_files+x} = x ]]; then
         totals[k]=$(du -hc "${ath10_files[@]}" 2>/dev/null | awk '/total/{print $1}')
         [[ x${totals[k]} = x ]] && totals[k]=0 ||:
@@ -974,7 +989,6 @@ survey_ath10_files() {
         totals[k]=0
         return
     fi
-
 }
 
 # stuff in var log
@@ -1332,7 +1346,7 @@ while [[ $choice != q ]]; do
     echo "  c) core crash files           : ${totals[c]}"
     echo "  d) old LANforge downloads     : ${totals[d]}"
     echo "  e) old LF, wifi or nginx logs : ${totals[e]}"
-    echo "  k) ath10k crash files         : ${totals[k]}"
+    echo "  k) ath10k, be200 crash files  : ${totals[k]}"
     echo "  l) old /var/log files         : ${totals[l]}"
     echo "  m) orphaned /mnt/lf files     : ${totals[m]}"
     echo "  n) purge dnf/yum cache        : ${totals[n]}"
