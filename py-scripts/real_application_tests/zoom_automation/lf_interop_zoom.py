@@ -724,6 +724,7 @@ class ZoomAutomation(Realm):
                     self.participants_qos_last = self.get_participants_qos(self.remote_login_url, token, "live")
                 except:
                     logger.info(f"Unable to fetch live meeting data...retrying in 5 seconds")
+                    # traceback.print_exc()
             time.sleep(5)
 
     def select_real_devices(self, real_device_obj, real_sta_list=None):
@@ -1391,6 +1392,8 @@ class ZoomAutomation(Realm):
             self.move_files(os.path.join(os.getcwd(),self.csv_file_name), report_path_date_time)
     
     def generate_report_from_api(self):
+        print("========================================================")
+        print("checking self.qos_data_last", self.participants_qos_last)
         report = lf_report(_output_pdf='zoom_call_report.pdf',
                            _output_html='zoom_call_report.html',
                            _results_dir_name="zoom_call_report",
@@ -1481,6 +1484,8 @@ and downstream traffic""")
             # we will use api response to generate report
 
             device_data = self.summarize_audio_video(self.participants_qos_last)
+            print("========================================================")
+            print("device_data", device_data)
             report.set_table_title("Test Devices:")
             report.build_table_title()
             device_details = pd.DataFrame({
@@ -1950,7 +1955,7 @@ and downstream traffic""")
         
         summary = {}
         count = 0
-        for participant in json_data:
+        for index, participant in enumerate(json_data):
             device = participant.get("user_name") or "Unknown Device {count}".format(count=count+1)
             if device not in summary:
                 summary[device] = {f"{m}_{f}_avg": None for m in metrics for f in fields}
@@ -1972,6 +1977,9 @@ and downstream traffic""")
                     vals = temp_values[m][f]
                     if vals:
                         summary[device][f"{m}_{f}_avg"] = round(sum(vals)/len(vals),2)
+            
+            if index == 0:
+                summary["Host Device"] = summary.pop(device)
         
         return summary        
 
