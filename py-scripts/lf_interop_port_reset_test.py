@@ -1345,12 +1345,12 @@ INCLUDE_IN_README: False
                            )
     obj.selecting_devices_from_available()
     reset_dict, duration = obj.run()
-    obj.generate_report(reset_dict=reset_dict, test_dur=duration)
 
     if args.dowebgui:
         obj.result_df['Status'] = 'stopped'
         obj.result_df.to_csv(f"{obj.report_path}/overall_reset.csv", index=False)
         obj.result_df.to_csv(f"{obj.result_dir}/overall_reset.csv", index=False)
+    obj.generate_report(reset_dict=reset_dict, test_dur=duration)
 
 
 if __name__ == '__main__':
