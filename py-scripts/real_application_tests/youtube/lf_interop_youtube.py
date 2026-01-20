@@ -231,7 +231,7 @@ class Youtube(Realm):
         self.android = 0
         self.wifi_interface_list = []
         self.devices_list = []
-        self.csv_headers = ["Instance Name", "TimeStamp", "Viewport", "DroppedFrames", "TotalFrames", "CurrentRes", "OptimalRes", "BufferHealth"]
+        self.csv_headers = ["Instance Name", "TimeStamp", "Viewport", "DroppedFrames", "TotalFrames", "CurrentRes", "OptimalRes", "BufferHealth", "VideoCodec", "AudioCodec", "ConnectionSpeedKbps", "NetworkActivityKB", "LiveLatency(sec)"]
         # Add 'Angle' to headers if Robo test is enabled
         if do_robo:
             self.csv_headers.append("Angle")
@@ -354,7 +354,7 @@ class Youtube(Realm):
         for i in range(0, len(self.lanforge_os_type)):
             cmd = (
                 "python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/youtube/youtube_android_test.py --url %s --duration %s --devices %s --upstream_port %s "
-            ) % (self.url, self.duration, self.serial_list_str, self.upstream_port)
+            ) % (self.url, self.duration, self.serial_list_str, self.host)
 
             logging.info(f"Setting command for Android devices: {cmd}")
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[-(i + 1)], cmd)
