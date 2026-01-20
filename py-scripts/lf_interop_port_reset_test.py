@@ -494,6 +494,120 @@ class InteropPortReset(Realm):
 
         return local_dict
 
+    def performing_resets(self, test_start_time=None):
+        reset_list = []
+        for i in range(self.reset):
+            reset_list.append(i)
+        logging.info(f"Given No.of iterations for Reset : {len(reset_list)}")
+        logging.info("Reset list:" + str(reset_list))
+        reset_dict = dict.fromkeys(reset_list)
+        test_stopped = False
+        for r, _ in zip(range(self.reset), reset_dict):
+            logging.info("Waiting until given %s sec time intervel to finish..." % self.time_int)
+            time.sleep(int(self.time_int))  # sleeping until time interval finish
+            logging.info(f"Iteration :- {r}")
+            logging.info("Reset -" + str(r))
+            local_dict = dict.fromkeys(self.adb_device_list)
+            logging.info(f"local dict for android :{local_dict}")
+            laptop_local_dict = dict.fromkeys(self.all_laptops)
+            logging.info(f"local dict for laptops : {laptop_local_dict}")
+            local_dict.update(laptop_local_dict)
+
+            list_ = ["ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected"]
+            sec_dict = dict.fromkeys(list_)
+
+            for i in self.adb_device_list:
+                local_dict[i] = sec_dict.copy()  # for android devices dict
+            for i in self.all_laptops:
+                laptop_local_dict[i] = sec_dict.copy()  # for laptop devices dict
+            logging.info(f"Final Outcome dict for android devices: {local_dict}")
+            logging.info(f"Final Outcome dict for laptop devices: {laptop_local_dict}")
+            logging.info(str(local_dict))
+
+            local_dict.update(laptop_local_dict)
+            logging.info(f"Final dict: {local_dict}")
+
+            # note last log time
+            timee = self.get_last_wifi_msg()
+
+            for i in self.adb_device_list:
+                self.interop.stop(device=i)
+            for i in self.all_laptops:  # laptop admin down
+                logging.info("**** Disable wifi for laptop %s" % i)
+                self.admin_down(port_eid=i)
+            for i in self.adb_device_list:
+                logging.info("**** Disable wifi for android %s" % i)
+                logging.info("disable wifi")
+                self.interop.enable_or_disable_wifi(device=i, wifi="disable")
+            for i in self.all_laptops:  # laptop admin up
+                logging.info("**** Enable wifi for laptop %s" % i)
+                self.admin_up(port_eid=i)
+            for i in self.adb_device_list:
+                logging.info("*** Enable wifi for laptop %s" % i)
+                logging.info("enable wifi")
+                self.interop.enable_or_disable_wifi(device=i, wifi="enable")
+            for i in self.adb_device_list:
+                logging.info("Starting APP for %s" % i)
+                self.interop.start(device=i)
+            if self.all_laptops:
+                if self.wait_for_ip(station_list=self.all_laptops, timeout_sec=60):
+                    logging.info("PASSED : ALL STATIONS GOT IP")
+                else:
+                    logging.info("FAILED : MAY BE NOT ALL STATIONS ACQUIRED IP'S")
+                # logging.info("Waiting until given %s sec waiting time to finish..." % self.wait_time)
+            time.sleep(30)
+            for i in self.all_selected_devices:
+                get_dicct = self.get_time_from_wifi_msgs(local_dict=local_dict, phn_name=i, timee=timee,
+                                                         file_name=f"reset_{r}_log.json", reset_cnt=r)
+                reset_dict[r] = get_dicct
+                self.create_dict_csv(reset_dict)
+                if self.dowebgui:
+                    with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
+                                                                                                     self.test_name),
+                              'r') as file:
+                        data = json.load(file)
+                        if data["status"] != "Running":
+                            logging.info('Test is stopped by the user')
+                            test_stopped = True
+                            break
+            logging.info('{}'.format(reset_dict))
+            if test_stopped:
+                temp_data = {
+                    'ConnectAttempt': 0,
+                    'Disconnected': 0,
+                    'Scanning': 0,
+                    'Association Rejection': 0,
+                    'Connected': 0,
+                    'Remarks': "Test stopped by user",
+                    'cx time (us)': 0
+                }
+                keys_to_delete = []
+                for i in range(self.reset):
+                    if reset_dict.get(i) is None:
+                        keys_to_delete.append(i)
+                    else:
+                        for dev, data in reset_dict[i].items():
+                            if any(v is None for v in data.values()):
+                                reset_dict[i][dev] = temp_data.copy()
+
+                for key in keys_to_delete:
+                    del reset_dict[key]
+
+                break
+        logging.info(f"Final Reset Count Dictionary for all clients: {reset_dict}")
+        logging.info("reset dict " + str(reset_dict))
+        test_end = datetime.now()
+        test_end_time = test_end.strftime("%b %d %H:%M:%S")
+        logging.info(f"Test Ended at {test_end}")
+        # logging.info("Test ended at " + test_end_time)
+        s1 = test_start_time
+        s2 = test_end_time
+        FMT = '%b %d %H:%M:%S'
+        test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
+        logging.info(f"Total Test Duration: {test_duration}")
+
+        return reset_dict, test_duration
+
     # @property
     def run(self):
         try:
@@ -579,119 +693,9 @@ class InteropPortReset(Realm):
                 logging.info(f"Health Status for the Laptop Devices: {health_for_laptops}")
 
                 # Resting Starts from here
-                reset_list = []
-                for i in range(self.reset):
-                    reset_list.append(i)
-                logging.info(f"Given No.of iterations for Reset : {len(reset_list)}")
-                logging.info("Reset list:" + str(reset_list))
-                reset_dict = dict.fromkeys(reset_list)
-                test_stopped = False
-                for r, _ in zip(range(self.reset), reset_dict):
-                    logging.info("Waiting until given %s sec time intervel to finish..." % self.time_int)
-                    time.sleep(int(self.time_int))  # sleeping until time interval finish
-                    logging.info(f"Iteration :- {r}")
-                    logging.info("Reset -" + str(r))
-                    local_dict = dict.fromkeys(self.adb_device_list)
-                    logging.info(f"local dict for android :{local_dict}")
-                    laptop_local_dict = dict.fromkeys(self.all_laptops)
-                    logging.info(f"local dict for laptops : {laptop_local_dict}")
-                    local_dict.update(laptop_local_dict)
-
-                    list_ = ["ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected"]
-                    sec_dict = dict.fromkeys(list_)
-
-                    for i in self.adb_device_list:
-                        local_dict[i] = sec_dict.copy()  # for android devices dict
-                    for i in self.all_laptops:
-                        laptop_local_dict[i] = sec_dict.copy()  # for laptop devices dict
-                    logging.info(f"Final Outcome dict for android devices: {local_dict}")
-                    logging.info(f"Final Outcome dict for laptop devices: {laptop_local_dict}")
-                    logging.info(str(local_dict))
-
-                    local_dict.update(laptop_local_dict)
-                    logging.info(f"Final dict: {local_dict}")
-
-                    # note last log time
-                    timee = self.get_last_wifi_msg()
-
-                    for i in self.adb_device_list:
-                        self.interop.stop(device=i)
-                    for i in self.all_laptops:  # laptop admin down
-                        logging.info("**** Disable wifi for laptop %s" % i)
-                        self.admin_down(port_eid=i)
-                    for i in self.adb_device_list:
-                        logging.info("**** Disable wifi for android %s" % i)
-                        logging.info("disable wifi")
-                        self.interop.enable_or_disable_wifi(device=i, wifi="disable")
-                    for i in self.all_laptops:  # laptop admin up
-                        logging.info("**** Enable wifi for laptop %s" % i)
-                        self.admin_up(port_eid=i)
-                    for i in self.adb_device_list:
-                        logging.info("*** Enable wifi for laptop %s" % i)
-                        logging.info("enable wifi")
-                        self.interop.enable_or_disable_wifi(device=i, wifi="enable")
-                    for i in self.adb_device_list:
-                        logging.info("Starting APP for %s" % i)
-                        self.interop.start(device=i)
-                    if self.all_laptops:
-                        if self.wait_for_ip(station_list=self.all_laptops, timeout_sec=60):
-                            logging.info("PASSED : ALL STATIONS GOT IP")
-                        else:
-                            logging.info("FAILED : MAY BE NOT ALL STATIONS ACQUIRED IP'S")
-                        # logging.info("Waiting until given %s sec waiting time to finish..." % self.wait_time)
-                    time.sleep(30)
-                    for i in self.all_selected_devices:
-                        get_dicct = self.get_time_from_wifi_msgs(local_dict=local_dict, phn_name=i, timee=timee,
-                                                                 file_name=f"reset_{r}_log.json", reset_cnt=r)
-                        reset_dict[r] = get_dicct
-                        self.create_dict_csv(reset_dict)
-                        if self.dowebgui:
-                            with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
-                                                                                                             self.test_name),
-                                      'r') as file:
-                                data = json.load(file)
-                                if data["status"] != "Running":
-                                    logging.info('Test is stopped by the user')
-                                    test_stopped = True
-                                    break
-                    logging.info('{}'.format(reset_dict))
-                    if test_stopped:
-                        temp_data = {
-                            'ConnectAttempt': 0,
-                            'Disconnected': 0,
-                            'Scanning': 0,
-                            'Association Rejection': 0,
-                            'Connected': 0,
-                            'Remarks': "Test stopped by user",
-                            'cx time (us)': 0
-                        }
-                        keys_to_delete = []
-                        for i in range(self.reset):
-                            if reset_dict.get(i) is None:
-                                keys_to_delete.append(i)
-                            else:
-                                for dev, data in reset_dict[i].items():
-                                    if any(v is None for v in data.values()):
-                                        reset_dict[i][dev] = temp_data.copy()
-
-                        for key in keys_to_delete:
-                            del reset_dict[key]
-
-                        break
-                logging.info(f"Final Reset Count Dictionary for all clients: {reset_dict}")
-                logging.info("reset dict " + str(reset_dict))
-                test_end = datetime.now()
-                test_end_time = test_end.strftime("%b %d %H:%M:%S")
-                logging.info(f"Test Ended at {test_end}")
-                # logging.info("Test ended at " + test_end_time)
-                s1 = test_start_time
-                s2 = test_end_time
-                FMT = '%b %d %H:%M:%S'
-                test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
-                logging.info(f"Total Test Duration: {test_duration}")
-                logging.info(f"Name of the Report Folder : {self.report_path}")
-                logging.info("Generating the Report...")
+                reset_dict, test_duration = self.performing_resets(test_start_time=test_start_time)
                 return reset_dict, test_duration
+
         except Exception as e:
             logger.error(str(e))
 
