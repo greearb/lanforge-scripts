@@ -14,6 +14,16 @@ EXAMPLE:
             ./lf_interop_port_reset_test.py --host 192.168.200.192 --mgr_ip 192.168.1.161 --dut TestDut --ssid OpenWifi
             --passwd OpenWifi --encryp psk2 --reset 10 --time_int 5 --release 11
 
+        # To run port-reset test on specified real devices with only coordinates
+
+            ./lf_interop_port_reset_test.py --host 192.168.207.78 --mgr_ip eth1 --dut AP --ssid "NETGEAR_2G_wpa2" --encryp psk2 --passwd Password@123
+            --reset 2 --time_int 5 --robot_test --coordinate 4,3  --robot_ip 192.168.200.169 --device_list ubuntu24
+
+        # To run port-reset test on specified real devices with only coordinates and rotations
+
+            ./lf_interop_port_reset_test.py --host 192.168.207.78 --mgr_ip eth1 --dut AP --ssid "NETGEAR_2G_wpa2" --encryp psk2 --passwd Password@123
+            --reset 2 --time_int 5 --robot_test --coordinate 4,3 --rotation 30,45 --robot_ip 192.168.200.169 --device_list ubuntu24
+
 SCRIPT_CLASSIFICATION:  Toggling, Report Generation, Each Reset Wi-Fi Messages
 
 SCRIPT_CATEGORIES: Interop Port-Reset Test
@@ -51,6 +61,7 @@ from datetime import datetime  # noqa: F811
 import pandas as pd
 import matplotlib.pyplot as plt
 import logging
+from lf_base_robo import RobotClass
 import asyncio
 
 if sys.version_info[0] != 3:
@@ -85,7 +96,14 @@ class InteropPortReset(Realm):
                  forget_network=True,
                  dowebgui=False,
                  result_dir=None,
-                 test_name=None
+                 test_name=None,
+                 robot_test=False,
+                 robot_ip=None,
+                 robot_port=None,
+                 coordinate=None,
+                 rotation=None,
+                 get_live_view=False,
+                 total_floors=0,
                  ):
         super().__init__(lfclient_host=host,
                          lfclient_port=8080)
@@ -122,6 +140,21 @@ class InteropPortReset(Realm):
         self.dowebgui = dowebgui
         self.test_name = test_name
         self.result_df = {}
+        self.port_reset_data = {}
+        self.robot_test = robot_test
+        self.coordinate_df = {}
+        self.get_live_view = get_live_view
+        self.total_floors = total_floors
+        self.robo_test_stopped = False
+        self.robot_ip = robot_ip
+        self.robot_port = robot_port
+        self.coordinate = coordinate
+        self.rotation = rotation
+        self.rotation_enabled = False
+        self.coordinate_list = coordinate.split(',')
+        self.rotation_list = rotation.split(',')
+        self.current_coordinate = None
+        self.current_angle = None
         # self.wait_time = wait_time
         self.supported_release = suporrted_release
         self.device_name = []
@@ -149,7 +182,8 @@ class InteropPortReset(Realm):
         real_device_data = self.base_interop_profile.devices_data
         if len(self.real_sta_list) == 0:
             logging.error('There are no real devices in this testbed. Aborting the test.')
-            exit(0)
+            # Added for the purpose to stop webui test when there are no selected devices availble in lanforge.
+            raise RuntimeError("here are no real devices in this testbed. Aborting the test.")
         logging.info(f"{self.real_sta_list}")
 
         for sta_name in self.real_sta_list:
@@ -494,6 +528,68 @@ class InteropPortReset(Realm):
 
         return local_dict
 
+    def aggregate_reset_dict(self, reset_dict):
+        aggregated = {}
+        for reset_id in sorted(reset_dict.keys()):
+            if reset_dict[reset_id] is None:
+                continue
+            devices = reset_dict[reset_id]
+            for device, stats in devices.items():
+                if device not in aggregated:
+                    aggregated[device] = {}
+                for key, value in stats.items():
+                    if key in ("Remarks", "cx time (us)"):
+                        aggregated[device][key] = value
+                    else:
+                        if key not in aggregated[device]:
+                            aggregated[device][key] = 0
+                        aggregated[device][key] += int(value) if str(value).isdigit() else 0
+        return dict(aggregated)
+
+    def generate_coordinate_csv(self, reset_dict, r):
+        cols = ['Client', 'ConnectAttempt', 'Disconnected', 'Scanning', 'Association Rejection', 'Connected', 'Iterations', 'Status', 'coordinate']
+        if self.rotation_enabled:
+            cols.append('angle')
+        if self.rotation_enabled:
+            suffix = f"_{self.current_coordinate}_{self.current_angle}"
+        else:
+            suffix = f"_{self.current_coordinate}"
+        aggregated_dict = self.aggregate_reset_dict(reset_dict=reset_dict)
+        if self.current_coordinate not in self.coordinate_df:
+            self.coordinate_df[self.current_coordinate] = {}
+        df = pd.DataFrame(columns=cols)
+        for client, stats in aggregated_dict.items():
+            client_name = f"{client}{suffix}"
+            self.coordinate_df[self.current_coordinate][client_name] = stats.copy()
+            self.coordinate_df[self.current_coordinate][client_name]["coordinate"] = self.current_coordinate
+            self.coordinate_df[self.current_coordinate][client_name]["Status"] = "running"
+
+            if self.rotation_enabled:
+                self.coordinate_df[self.current_coordinate][client_name]["angle"] = self.current_angle
+        rows = []
+        for client, stats in self.coordinate_df[self.current_coordinate].items():
+            row = {
+                'Client': client,
+                'ConnectAttempt': stats.get('ConnectAttempt', 0),
+                'Disconnected': stats.get('Disconnected', 0),
+                'Scanning': stats.get('Scanning', 0),
+                'Association Rejection': stats.get('Association Rejection', 0),
+                'Connected': stats.get('Connected', 0),
+                'Iterations': r + 1,
+                'Status': stats.get('Status', 'NA'),
+                'coordinate': stats.get('coordinate', 'NA')
+            }
+            if self.rotation_enabled:
+                row['angle'] = stats.get('angle', 'NA')
+            rows.append(row)
+
+        df = pd.DataFrame(rows, columns=cols)
+        self.result_df = df.copy()
+
+        df.to_csv(f"{self.report_path}/overall_reset_{self.current_coordinate}.csv", index=False)
+        if self.dowebgui:
+            df.to_csv(f"{self.result_dir}/overall_reset_{self.current_coordinate}.csv", index=False)
+
     def performing_resets(self, test_start_time=None):
         reset_list = []
         for i in range(self.reset):
@@ -502,8 +598,35 @@ class InteropPortReset(Realm):
         logging.info("Reset list:" + str(reset_list))
         reset_dict = dict.fromkeys(reset_list)
         test_stopped = False
+        interval = 300
+        test_stopped_by_user = False
+        charge_check = time.time() + interval
         for r, _ in zip(range(self.reset), reset_dict):
-            logging.info("Waiting until given %s sec time intervel to finish..." % self.time_int)
+            if self.robot_test:
+                current_time = time.time()
+                if current_time >= charge_check:
+                    if test_stopped_by_user or self.robo_test_stopped:
+                        break
+                    pause, test_stopped_by_user = self.robot_obj.wait_for_battery()
+                    if test_stopped_by_user:
+                        break
+                    if pause:
+                        # After charging, return to the last coordinate
+                        reached, abort = self.robot_obj.move_to_coordinate(self.current_coordinate)
+                        # If user stopped the test during movement
+                        if abort:
+                            test_stopped_by_user = True
+                            break
+                        if not reached:
+                            break
+                        # Restore orientation if rotation is enabled
+                        if self.rotation_enabled:
+                            rotation_moni = self.robot_obj.rotate_angle(self.current_angle)
+                            if not rotation_moni:
+                                test_stopped_by_user = True
+                                break
+                    charge_check = current_time + interval
+            logging.info(f"Waiting until given {self.time_int} sec time intervel to finish...")
             time.sleep(int(self.time_int))  # sleeping until time interval finish
             logging.info(f"Iteration :- {r}")
             logging.info("Reset -" + str(r))
@@ -533,42 +656,44 @@ class InteropPortReset(Realm):
             for i in self.adb_device_list:
                 self.interop.stop(device=i)
             for i in self.all_laptops:  # laptop admin down
-                logging.info("**** Disable wifi for laptop %s" % i)
+                logging.info(f"**** Disable wifi for laptop {i}")
                 self.admin_down(port_eid=i)
             for i in self.adb_device_list:
-                logging.info("**** Disable wifi for android %s" % i)
+                logging.info(f"**** Disable wifi for android {i}")
                 logging.info("disable wifi")
                 self.interop.enable_or_disable_wifi(device=i, wifi="disable")
             for i in self.all_laptops:  # laptop admin up
-                logging.info("**** Enable wifi for laptop %s" % i)
+                logging.info(f"**** Enable wifi for laptop {i}")
                 self.admin_up(port_eid=i)
             for i in self.adb_device_list:
-                logging.info("*** Enable wifi for laptop %s" % i)
+                logging.info(f"*** Enable wifi for laptop {i}")
                 logging.info("enable wifi")
                 self.interop.enable_or_disable_wifi(device=i, wifi="enable")
             for i in self.adb_device_list:
-                logging.info("Starting APP for %s" % i)
+                logging.info(f"Starting APP for {i}")
                 self.interop.start(device=i)
             if self.all_laptops:
                 if self.wait_for_ip(station_list=self.all_laptops, timeout_sec=60):
                     logging.info("PASSED : ALL STATIONS GOT IP")
                 else:
                     logging.info("FAILED : MAY BE NOT ALL STATIONS ACQUIRED IP'S")
-                # logging.info("Waiting until given %s sec waiting time to finish..." % self.wait_time)
             time.sleep(30)
             for i in self.all_selected_devices:
                 get_dicct = self.get_time_from_wifi_msgs(local_dict=local_dict, phn_name=i, timee=timee,
                                                          file_name=f"reset_{r}_log.json", reset_cnt=r)
                 reset_dict[r] = get_dicct
-                self.create_dict_csv(reset_dict)
+                if self.robot_test:
+                    self.generate_coordinate_csv(reset_dict=reset_dict, r=r)
+                else:
+                    self.create_dict_csv(reset_dict)
                 if self.dowebgui:
-                    with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
-                                                                                                     self.test_name),
+                    with open(self.result_dir + f"/../../Running_instances/{self.host}_{self.test_name}_running.json",
                               'r') as file:
                         data = json.load(file)
                         if data["status"] != "Running":
                             logging.info('Test is stopped by the user')
                             test_stopped = True
+                            self.robo_test_stopped = True
                             break
             logging.info('{}'.format(reset_dict))
             if test_stopped:
@@ -598,13 +723,25 @@ class InteropPortReset(Realm):
         logging.info("reset dict " + str(reset_dict))
         test_end = datetime.now()
         test_end_time = test_end.strftime("%b %d %H:%M:%S")
-        logging.info(f"Test Ended at {test_end}")
+        if self.robot_test:
+            if self.rotation_enabled:
+                logging.info(f"At coordinate {self.current_coordinate} on Angle {self.current_angle} Test Ended at {test_end}")
+            else:
+                logging.info(f"At coordinate {self.current_coordinate} Test Ended at {test_end}")
+        else:
+            logging.info(f"Test Ended at {test_end}")
         # logging.info("Test ended at " + test_end_time)
         s1 = test_start_time
         s2 = test_end_time
         FMT = '%b %d %H:%M:%S'
         test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
-        logging.info(f"Total Test Duration: {test_duration}")
+        if self.robot_test:
+            if self.rotation_enabled:
+                logging.info(f"Total Test Duration taken to complete port resets at coordinate {self.current_coordinate} on angle {self.current_angle}: {test_duration}")
+            else:
+                logging.info(f"Total Test Duration taken to complete port resets at coordinate {self.current_coordinate} : {test_duration}")
+        else:
+            logging.info(f"Total Test Duration: {test_duration}")
 
         return reset_dict, test_duration
 
@@ -636,11 +773,8 @@ class InteropPortReset(Realm):
             if len(self.adb_device_list) == 0 and len(self.base_interop_profile.windows_list) == 0 and len(self.base_interop_profile.linux_list) == 0 and len(self.base_interop_profile.mac_list) == 0:
                 logging.info("There is no active devices please check system.")
                 logging.info('Aborting the test.')
-                if self.dowebgui:
-                    self.result_df["Status"] = "Stopped"
-                    self.result_df.to_csv(f"{self.result_dir}/overall_reset.csv", index=False)
-                    pass
-                exit(1)
+                # Added for the purpose to stop webui test when there are no selected devices availble in lanforge.
+                raise RuntimeError("There is no active devices please check system.")
             else:
                 for i in range(len(self.adb_device_list)):
                     self.phn_name.append(self.adb_device_list[i].split(".")[2])
@@ -691,10 +825,60 @@ class InteropPortReset(Realm):
                 logging.info(f"Health Status for the Android Devices: {health}")
 
                 logging.info(f"Health Status for the Laptop Devices: {health_for_laptops}")
-
                 # Resting Starts from here
-                reset_dict, test_duration = self.performing_resets(test_start_time=test_start_time)
-                return reset_dict, test_duration
+                if not self.robot_test:
+                    reset_dict, test_duration = self.performing_resets(test_start_time=test_start_time)
+                    return reset_dict, test_duration
+
+                # For robot Scenario
+                if (self.rotation_list[0] != ""):
+                    self.rotation_enabled = True
+                self.robot_obj = RobotClass()
+                self.robot_obj.robo_ip = self.robot_ip
+                base_dir = os.path.dirname(os.path.dirname(self.result_dir))
+                nav_data = os.path.join(base_dir, 'nav_data.json')  # To generate nav_data.json in webgui folder
+                self.robot_obj.nav_data_path = nav_data
+                self.robot_obj.create_waypointlist()
+                self.robot_obj.ip = self.host
+                self.robot_obj.testname = self.test_name
+                self.robot_obj.runtime_dir = self.result_dir
+                test_stopped_by_user = False
+                for coordinate in range(len(self.coordinate_list)):
+                    if test_stopped_by_user or self.robo_test_stopped:
+                        break
+                    # Check for battery status before moving to next coordinate
+                    if_paused, test_stopped_by_user = self.robot_obj.wait_for_battery()
+                    # If test is stopped by user during battery wait
+                    if test_stopped_by_user:
+                        break
+                    robo_moved, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[coordinate])
+                    # If robot failed to reach the coordinate
+                    if abort:
+                        break
+                    if robo_moved:
+                        self.current_coordinate = self.coordinate_list[coordinate]
+                        if not self.rotation_enabled:
+                            reset_dict, test_duration = self.performing_resets(test_start_time=test_start_time)
+                            self.port_reset_data[self.coordinate_list[coordinate]] = {'reset_dict': reset_dict, 'test_duration': test_duration}
+                            time.sleep(10)
+                        else:
+                            for angle in range(len(self.rotation_list)):
+                                # If test is stopped by user during battery wait
+                                if self.robo_test_stopped or test_stopped_by_user:
+                                    break
+                                # Check for battery status before rotating to next angle
+                                is_paused, test_stopped_by_user = self.robot_obj.wait_for_battery()
+                                robo_rotated = self.robot_obj.rotate_angle(self.rotation_list[angle])
+                                if robo_rotated:
+                                    self.current_angle = self.rotation_list[angle]
+                                    reset_dict, test_duration = self.performing_resets(test_start_time=test_start_time)
+                                if self.coordinate_list[coordinate] not in self.port_reset_data:
+                                    self.port_reset_data[self.coordinate_list[coordinate]] = {}
+                                self.port_reset_data[self.coordinate_list[coordinate]][self.rotation_list[angle]] = {'reset_dict': reset_dict, 'test_duration': test_duration}
+
+                                time.sleep(10)
+                                if test_stopped_by_user or self.robo_test_stopped:
+                                    break
 
         except Exception as e:
             logger.error(str(e))
@@ -702,7 +886,7 @@ class InteropPortReset(Realm):
     def generate_overall_graph(self, reset_dict=None, figsize=(13, 5), _alignmen=None, remove_border=None,
                                bar_width=0.7, _legend_handles=None, _legend_loc="best", _legend_box=None,
                                _legend_ncol=1,
-                               _legend_fontsize=None, text_font=12, bar_text_rotation=45):
+                               _legend_fontsize=None, text_font=12, bar_text_rotation=45, graph_suffix=""):
         dict_ = ['Port Resets', 'Disconnected', 'Scans', 'Assoc Attempts', "Association Rejection", 'Connected']
         data = dict.fromkeys(dict_)
         data['Port Resets'] = self.reset * len(self.all_selected_devices)
@@ -780,7 +964,7 @@ class InteropPortReset(Realm):
         # print("Final data for overall graph: ", data)
 
         # creating the dataset
-        self.graph_image_name = "overall_graph"
+        self.graph_image_name = f"overall_graph{graph_suffix}"
         courses = list(data.keys())
         values = list(data.values())
 
@@ -863,7 +1047,8 @@ class InteropPortReset(Realm):
         return "%s.png" % self.graph_image_name
 
     def generate_overall_graph_table(self, reset_dict, device_list):
-        # self.total_resets, self.total_disconnects, self.total_scans, self.total_ass_attemst, self.total_ass_rejects, self.total_connects = [], [], [], [], [], []
+        if self.robot_test:
+            self.total_resets, self.total_disconnects, self.total_scans, self.total_ass_attemst, self.total_ass_rejects, self.total_connects = [], [], [], [], [], []
         for y, _ in zip(device_list, range(len(device_list))):
             reset_count_ = list(reset_dict.keys())
             reset_count = []
@@ -1020,7 +1205,6 @@ class InteropPortReset(Realm):
             # logging.info("reset dict " + str(reset_dict))
 
             date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
-            # self.lf_report.move_data(_file_name="overall_reset_test.log")
             security = ""
             if self.encryp == "psk2":
                 security = "wpa2"
@@ -1145,6 +1329,237 @@ class InteropPortReset(Realm):
         except Exception as e:
             logging.warning(str(e))
 
+    def add_live_view_images_to_report(self):
+        """
+        This function looks for throughput and RSSI images for each floor
+        in the 'live_view_images' folder within `self.result_dir`.
+        It waits up to **60 seconds** for each image. If an image is found,
+        it's added to the `report` on a new page; otherwise, it's skipped.
+        """
+        for floor in range(0, int(self.total_floors)):
+            port_reset_img_path = os.path.join(self.result_dir, "live_view_images", f"port_reset_{self.test_name}_{floor + 1}.png")
+            timeout = 60  # seconds
+            start_time = time.time()
+
+            while not (os.path.exists(port_reset_img_path)):
+                if time.time() - start_time > timeout:
+                    logging.info("Timeout: Images not found within 60 seconds.")
+                    break
+                time.sleep(1)
+            if os.path.exists(port_reset_img_path):
+                self.lf_report.set_custom_html('<div style="page-break-before: always;"></div>')
+                self.lf_report.build_custom()
+                self.lf_report.set_custom_html(f'<img src="file://{port_reset_img_path}"></img>')
+                self.lf_report.build_custom()
+
+    def generate_report_for_robo(self):
+        date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
+        # self.lf_report.move_data(_file_name="overall_reset_test.log")
+        security = ""
+        if self.encryp == "psk2":
+            security = "wpa2"
+        elif self.encryp == "psk3":
+            security = "wpa3"
+        elif self.encryp == "psk":
+            security = "wpa"
+        else:
+            security = "open"
+        test_setup_info = {
+            "DUT Name": self.dut_name,
+            "LANforge ip": self.host,
+            "SSID": self.ssid,
+            "Security": security,
+            "Total Reset Count": self.reset,
+            "No of Clients": f"{len(self.all_selected_devices)} (Windows: {len(self.windows_list)}, Linux: {len(self.linux_list)}, Mac: {len(self.mac_list)}, Android: {len(self.adb_device_list)})",  # noqa: E501
+            # "Wait Time": str(self.wait_time) + " sec",
+            "Time intervel between resets": str(self.time_int) + " sec",
+        }
+        test_setup_info["Selected Coordinates"] = self.coordinate
+        if self.rotation_enabled:
+            test_setup_info["Selected Angles"] = self.rotation
+        self.lf_report.set_title("Port Reset Test")
+        self.lf_report.set_date(date)
+        self.lf_report.build_banner_cover()
+
+        self.lf_report.set_obj_html("Objective",
+                                    "The Port Reset Test simulates a scenario where multiple WiFi stations are created "
+                                    "and connected to the Access Point (AP) under test. These stations are then randomly "
+                                    "disconnected and reconnected at varying intervals, mimicking a busy enterprise or "
+                                    "large public venue environment with frequent station arrivals and departures. "
+                                    "The primary objective of this test is to thoroughly assess the core Access Point "
+                                    "functions' control and management aspects under stress.<br><br>"
+                                    )
+        self.lf_report.build_objective()
+
+        self.lf_report.set_table_title("Test Setup Information")
+        self.lf_report.build_table_title()
+        self.lf_report.test_setup_table(value="Basic Test Information", test_setup_data=test_setup_info)
+
+        if (self.dowebgui and self.get_live_view):
+            self.lf_report.set_custom_html("<h2>Overall Port reset's Heatmap: </h2>")
+            self.lf_report.build_custom()
+            self.add_live_view_images_to_report()
+        self.lf_report.set_obj_html("Overall Port Resets Graphs",
+                                    "The following graph presents an overview of different events during the test, "
+                                    "including Port Resets, Disconnects, Scans, Association Attempts, Association Rejections and Connections. "
+                                    "Each category represents the total count achieved by all clients.<br><br>"
+                                    "1.  Port Resets: Total number of reset occurrences provided as test input.<br>"
+                                    "2.  Disconnects: Total number of disconnects that happened for all clients during the test when WiFi was disabled.<br>"
+                                    "3.  Scans: Total number of scanning states achieved by all clients during the test when the network is re-enabled.<br>"
+                                    "4.  Association Attempts: Total number of association attempts (Associating state) made by all clients after WiFi is re-enabled in the full test.<br>"
+                                    "4.  Association Rejections: Total number of association rejections made by all clients after WiFi is re-enabled in the full test.<br>"
+                                    "6.  Connected: Total number of successful connections (Associated state) achieved by all clients during the test when WiFi is re-enabled.<br>"
+                                    # " Here real clients used is "+ str(self.clients) + "and number of resets provided is " + str(self.reset)
+                                    )
+        self.lf_report.build_objective()
+        for coordinate in range(len(self.coordinate_list)):
+            if self.rotation_enabled:
+                for angle in range(len(self.rotation_list)):
+                    coord_key = self.coordinate_list[coordinate]
+                    angle_key = self.rotation_list[angle]
+
+                    if (
+                        coord_key not in self.port_reset_data or
+                        angle_key not in self.port_reset_data[coord_key] or
+                        'reset_dict' not in self.port_reset_data[coord_key][angle_key]
+                    ):
+                        continue
+                    reset_dict = self.port_reset_data[coord_key][angle_key]['reset_dict']
+                    self.lf_report.set_obj_html(_obj_title=f"Overall Port reset stats at Coordinate: {self.coordinate_list[coordinate]} | Rotation Angle: {self.rotation_list[angle]}°",
+                                                _obj="")
+                    self.lf_report.build_objective()
+
+                    graph_suffix = f"{self.coordinate_list[coordinate]}_{self.rotation_list[angle]}"
+                    graph1 = self.generate_overall_graph(reset_dict=reset_dict, figsize=(13, 5), _alignmen=None, bar_width=0.5,
+                                                         _legend_loc="upper center", _legend_ncol=6, _legend_fontsize=10,
+                                                         _legend_box=(0.5, -0.06), text_font=12, graph_suffix=graph_suffix)
+                    # graph1 = self.generate_per_station_graph()
+                    self.lf_report.set_graph_image(graph1)
+                    self.lf_report.move_graph_image()
+                    self.lf_report.build_graph()
+                    all_devices = self.adb_device_list + self.all_laptops
+
+                    self.generate_overall_graph_table(reset_dict=reset_dict, device_list=all_devices)
+
+                    d_name, device_type, model, user_name, release = [], [], [], [], []  # noqa: F841
+
+                    for y in all_devices:
+                        if "1.1." in y:
+                            d_name.append(self.interop.get_device_details(device=y, query="name"))
+                            device_type.append(self.interop.get_device_details(device=y, query="device-type"))
+                            # model.append(self.interop.get_device_details(device=y, query="model"))
+                            user_name.append(self.interop.get_device_details(device=y, query="user-name"))
+                            # release.append(self.interop.get_device_details(device=y, query="release"))
+                        else:
+                            d_name.append(y)
+                            user_name.append(self.interop.get_laptop_devices_details(device=y, query="host_name"))
+                            hw_version = self.interop.get_laptop_devices_details(device=y, query="hw_version")
+                            if "Linux" in hw_version:
+                                dev_type = "Linux"
+                            elif "Win" in hw_version:
+                                dev_type = "Windows"
+                            elif "Apple" in hw_version:
+                                dev_type = "Apple"
+                            else:
+                                dev_type = ""
+                            device_type.append(dev_type)
+                            # release.append("")
+                    s_no = []
+                    for i in range(len(d_name)):
+                        s_no.append(i + 1)
+
+                    table_2 = {
+                        "S.No": s_no,
+                        "Name of the Devices": d_name,
+                        "Hardware Version": user_name,
+                        "Device Type": device_type,
+                        # "Model": model,
+                        # "SDK Release": release,
+                        "Port Resets": self.total_resets,
+                        "Disconnects": self.total_disconnects,
+                        "Scans": self.total_scans,
+                        "Assoc Attemts": self.total_ass_attemst,
+                        "Assoc Rejects": self.total_ass_rejects,
+                        "Connects": self.total_connects
+                    }
+                    test_setup = pd.DataFrame(table_2)
+                    self.lf_report.set_table_dataframe(test_setup)
+                    self.lf_report.build_table()
+            else:
+                coord_key = self.coordinate_list[coordinate]
+
+                if (
+                    coord_key not in self.port_reset_data or
+                    'reset_dict' not in self.port_reset_data[coord_key]
+                ):
+                    continue
+                reset_dict = self.port_reset_data[coord_key]['reset_dict']
+                self.lf_report.set_obj_html(_obj_title=f"Overall Port reset stats at Coordinate: {self.coordinate_list[coordinate]}",
+                                            _obj="")
+                self.lf_report.build_objective()
+                graph_suffix = f"{self.coordinate_list[coordinate]}"
+                graph1 = self.generate_overall_graph(reset_dict=reset_dict, figsize=(13, 5), _alignmen=None, bar_width=0.5,
+                                                     _legend_loc="upper center", _legend_ncol=6, _legend_fontsize=10,
+                                                     _legend_box=(0.5, -0.06), text_font=12, graph_suffix=graph_suffix)
+                # graph1 = self.generate_per_station_graph()
+                self.lf_report.set_graph_image(graph1)
+                self.lf_report.move_graph_image()
+                self.lf_report.build_graph()
+                all_devices = self.adb_device_list + self.all_laptops
+
+                self.generate_overall_graph_table(reset_dict=reset_dict, device_list=all_devices)
+
+                d_name, device_type, model, user_name, release = [], [], [], [], []  # noqa: F841
+
+                for y in all_devices:
+                    if "1.1." in y:
+                        d_name.append(self.interop.get_device_details(device=y, query="name"))
+                        device_type.append(self.interop.get_device_details(device=y, query="device-type"))
+                        # model.append(self.interop.get_device_details(device=y, query="model"))
+                        user_name.append(self.interop.get_device_details(device=y, query="user-name"))
+                        # release.append(self.interop.get_device_details(device=y, query="release"))
+                    else:
+                        d_name.append(y)
+                        user_name.append(self.interop.get_laptop_devices_details(device=y, query="host_name"))
+                        hw_version = self.interop.get_laptop_devices_details(device=y, query="hw_version")
+                        if "Linux" in hw_version:
+                            dev_type = "Linux"
+                        elif "Win" in hw_version:
+                            dev_type = "Windows"
+                        elif "Apple" in hw_version:
+                            dev_type = "Apple"
+                        else:
+                            dev_type = ""
+                        device_type.append(dev_type)
+                        # release.append("")
+                s_no = []
+                for i in range(len(d_name)):
+                    s_no.append(i + 1)
+
+                table_2 = {
+                    "S.No": s_no,
+                    "Name of the Devices": d_name,
+                    "Hardware Version": user_name,
+                    "Device Type": device_type,
+                    # "Model": model,
+                    # "SDK Release": release,
+                    "Port Resets": self.total_resets,
+                    "Disconnects": self.total_disconnects,
+                    "Scans": self.total_scans,
+                    "Assoc Attemts": self.total_ass_attemst,
+                    "Assoc Rejects": self.total_ass_rejects,
+                    "Connects": self.total_connects
+                }
+                test_setup = pd.DataFrame(table_2)
+                self.lf_report.set_table_dataframe(test_setup)
+                self.lf_report.build_table()
+        self.lf_report.build_footer()
+        self.lf_report.write_html()
+        if self.dowebgui:
+            self.lf_report.write_pdf(_page_size='A4', _orientation='Portrait')
+        else:
+            self.lf_report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
+
     def create_dict_csv(self, port_reset_dict):
         """
         Aggregate client connection stats from all iterations and save a summary CSV (overall_reset.csv).
@@ -1230,6 +1645,16 @@ EXAMPLE:
             python3 lf_interop_port_reset_test.py --host 192.168.200.63 --mgr_ip 192.168.1.61 --dut Test_Dut
             --ssid RDT_wpa2 --passwd OpenWifi --encryp psk2 --reset 1 --time_int 5 --release 11
 
+        # To run port-reset test on specified real devices with only coordinates
+
+            python3 lf_interop_port_reset_test.py --host 192.168.207.78 --mgr_ip eth1 --dut AP --ssid "NETGEAR_2G_wpa2" --encryp psk2 --passwd Password@123
+            --reset 2 --time_int 5 --robot_test --coordinate 4,3  --robot_ip 192.168.200.169 --device_list ubuntu24
+
+         # To run port-reset test on specified real devices with only coordinates and rotations
+
+            python3 lf_interop_port_reset_test.py --host 192.168.207.78 --mgr_ip eth1 --dut AP --ssid "NETGEAR_2G_wpa2" --encryp psk2 --passwd Password@123
+            --reset 2 --time_int 5 --robot_test --coordinate 4,3 --rotation 30,45 --robot_ip 192.168.200.169 --device_list ubuntu24
+
 SCRIPT_CLASSIFICATION:  Interop Port-Reset Test
 
 SCRIPT_CATEGORIES: Toggling, Report Generation, Each Reset Wifi Messages
@@ -1306,6 +1731,13 @@ INCLUDE_IN_README: False
 
     parser.add_argument('--result_dir', help='Specify the result dir to store the runtime logs', default='')
     parser.add_argument('--test_name', help='Specify test name to store the runtime csv results', default=None)
+    parser.add_argument("--robot_test", help='to trigger robot test', action='store_true')
+    parser.add_argument('--robot_ip', type=str, default='localhost', help='hostname for where Robot server is running')
+    parser.add_argument('--robot_port', type=str, default=5000, help='port Robot HTTP service is running on')
+    parser.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")
+    parser.add_argument('--rotation', type=str, default='', help="The set of angles to rotate at a particular point")
+    parser.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
+    parser.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     args = parser.parse_args()
 
     # help summary
@@ -1341,16 +1773,32 @@ INCLUDE_IN_README: False
                            forget_network=not args.no_forget_networks,
                            dowebgui=args.dowebgui,
                            result_dir=args.result_dir,
-                           test_name=args.test_name
+                           test_name=args.test_name,
+                           robot_test=args.robot_test,
+                           robot_ip=args.robot_ip,
+                           robot_port=args.robot_port,
+                           coordinate=args.coordinate,
+                           rotation=args.rotation,
+                           get_live_view=args.get_live_view,
+                           total_floors=args.total_floors
                            )
     obj.selecting_devices_from_available()
-    reset_dict, duration = obj.run()
-
+    if obj.robot_test:
+        obj.run()
+    else:
+        reset_dict, duration = obj.run()
     if args.dowebgui:
         obj.result_df['Status'] = 'stopped'
-        obj.result_df.to_csv(f"{obj.report_path}/overall_reset.csv", index=False)
-        obj.result_df.to_csv(f"{obj.result_dir}/overall_reset.csv", index=False)
-    obj.generate_report(reset_dict=reset_dict, test_dur=duration)
+        if obj.robot_test:
+            obj.result_df.to_csv(f"{obj.report_path}/overall_reset_{obj.current_coordinate}.csv", index=False)
+            obj.result_df.to_csv(f"{obj.result_dir}/overall_reset_{obj.current_coordinate}.csv", index=False)
+        else:
+            obj.result_df.to_csv(f"{obj.report_path}/overall_reset.csv", index=False)
+            obj.result_df.to_csv(f"{obj.result_dir}/overall_reset.csv", index=False)
+    if obj.robot_test:
+        obj.generate_report_for_robo()
+    else:
+        obj.generate_report(reset_dict=reset_dict, test_dur=duration)
 
 
 if __name__ == '__main__':
