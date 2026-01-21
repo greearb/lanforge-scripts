@@ -1064,7 +1064,7 @@ class FtpTest(LFCliBase):
                 if (datetime.now() - monitor_charge_time).total_seconds() >= 300:
                     pause_start = datetime.now()
                     # Wait for the robot to charge. Returns whether we paused and whether user aborted.
-                    pause, test_stopped_by_user = self.robot_obj.wait_for_battery()
+                    pause, test_stopped_by_user = self.robot_obj.wait_for_battery(stop=self.stop)
                     if test_stopped_by_user:
                         break
                     if pause:
