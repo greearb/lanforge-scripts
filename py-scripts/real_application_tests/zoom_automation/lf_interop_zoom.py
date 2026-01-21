@@ -1,39 +1,40 @@
 #!/usr/bin/env python3
 """
-    NAME: lf_interop_zoom.py
+NAME: lf_interop_zoom.py
 
-    PURPOSE: lf_interop_zoom.py provides the available devices and allows the user to start Zoom call conference meeting for the user-specified duration
+PURPOSE: lf_interop_zoom.py provides the available devices and allows the user to start Zoom call conference meeting for the user-specified duration
 
-    EXAMPLE-1:
-    Command Line Interface to run Zoom with specified duration:
-    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --server_ip 192.168.214.123
-
-
-
-    EXAMPLE-2:
-    Command Line Interface to run Zoom on multiple devices:
-    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
-      --resources 1.400,1.375 --zoom_host 1.95 --server_ip 192.168.214.123
-
-    Example-3:
-    Command Line Interface to run Zoom on multiple devices with Device Configuration
-    python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
-    --upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
-
-    Example-4:
-    Command Line Interface to run Zoom on multiple devices with Groups and Profiles
-    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
-    --wait_time 30  --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
+EXAMPLE-1:
+Command Line Interface to run Zoom with specified duration:
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --server_ip 192.168.214.123
 
 
 
-    NOTES:
-    1. Use './lf_interop_zoom.py --help' to see command line usage and options.
-    2. Always specify the duration in minutes (for example: --duration 3 indicates a duration of 3 minutes).
-    3. If --resources are not given after passing the CLI, a list of available devices (laptops) will be displayed on the terminal.
-    4. Enter the resource numbers separated by commas (,) in the resource argument.
+EXAMPLE-2:
+Command Line Interface to run Zoom on multiple devices:
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
+  --resources 1.400,1.375 --zoom_host 1.95 --server_ip 192.168.214.123
+
+Example-3:
+Command Line Interface to run Zoom on multiple devices with Device Configuration
+python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+--upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
+
+Example-4:
+Command Line Interface to run Zoom on multiple devices with Groups and Profiles
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+--wait_time 30  --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
+
+
+
+NOTES:
+1. Use './lf_interop_zoom.py --help' to see command line usage and options.
+2. Always specify the duration in minutes (for example: --duration 3 indicates a duration of 3 minutes).
+3. If --resources are not given after passing the CLI, a list of available devices (laptops) will be displayed on the terminal.
+4. Enter the resource numbers separated by commas (,) in the resource argument.
 
 """
+
 import os
 import csv
 import time
@@ -48,10 +49,7 @@ import pandas as pd
 import shutil
 import logging
 import json
-import secrets
 import asyncio
-from flask_cors import CORS
-import redis
 import sys
 import traceback
 import textwrap
@@ -59,8 +57,8 @@ from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 import re
 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 
@@ -84,27 +82,52 @@ RealDevice = lf_base_interop_profile.RealDevice
 
 # Set up logging
 logger = logging.getLogger(__name__)
-log = logging.getLogger('werkzeug')
+log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 
 
 # Import LF logger configuration module
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
+robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
+# robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
+
 
 class ZoomAutomation(Realm):
-    def __init__(self, ssid="SSID", band="5G", security="wpa2", apname="AP Name", audio=True, video=True, lanforge_ip=None,
-                 upstream_port='0.0.0.0', wait_time=30, devices=None, testname=None, config=None, selected_groups=None, selected_profiles=None):
+    def __init__(
+        self,
+        ssid="SSID",
+        band="5G",
+        security="wpa2",
+        apname="AP Name",
+        audio=True,
+        video=True,
+        lanforge_ip=None,
+        upstream_port="0.0.0.0",
+        wait_time=30,
+        devices=None,
+        testname=None,
+        config=None,
+        selected_groups=None,
+        selected_profiles=None,
+        robo_ip="127.0.0.1",
+        coordinates_list=None,
+        angles_list=None,
+        do_robo=False,
+        current_cord="",
+        current_angle="",
+        rotations_enabled=False,
+        signin_email="",
+        signin_passwd="",
+        duration=None,
+        participants_req=None,
+        env_file=None,
+    ):
 
         super().__init__(lfclient_host=lanforge_ip)
         self.upstream_port = upstream_port
         self.mgr_ip = lanforge_ip
         self.app = Flask(__name__)
-        self.redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
-        self.redis_client.set('login_completed', 0)
-        self.secret_key = secrets.token_hex(32)
-        self.app.config['SECRET_KEY'] = self.secret_key
-        CORS(self.app)
         self.devices = devices
         self.windows = 0
         self.linux = 0
@@ -118,18 +141,18 @@ class ZoomAutomation(Realm):
         self.login_completed = False  # Initially set to False
         self.remote_login_url = ""  # Initialize remote login URL
         self.remote_login_passwd = ""  # Initialize remote login password
-        self.signin_email = ""
-        self.signin_passwd = ""
+        self.signin_email = signin_email
+        self.signin_passwd = signin_passwd
         self.test_start = False
         self.start_time = None
         self.end_time = None
         self.participants_joined = 0
-        self.participants_req = None
+        self.participants_req = participants_req
         self.ap_name = apname
         self.ssid = ssid
         self.band = band
         self.security = security
-        self.tz = pytz.timezone('Asia/Kolkata')
+        self.tz = pytz.timezone("Asia/Kolkata")
         self.meet_link = None
         self.zoom_host = None
         self.testname = testname
@@ -154,156 +177,209 @@ class ZoomAutomation(Realm):
         self.generic_endps_profile.name_prefix = "zoom"
         self.generic_endps_profile.type = "zoom"
         self.data_store = {}
-        self.header = ["timestamp",
-                       "Sent Audio Frequency (khz)", "Sent Audio Latency (ms)", "Sent Audio Jitter (ms)", "Sent Audio Packet loss (%)",
-                       "Receive Audio Frequency (khz)", "Receive Audio Latency (ms)", "Receive Audio Jitter (ms)", "Receive Audio Packet loss (%)",
-                       "Sent Video Latency (ms)", "Sent Video Jitter (ms)", "Sent Video Packet loss (%)", "Sent Video Resolution (khz)",
-                       "Sent Video Frames ps (khz)", "Receive Video Latency (ms)", "Receive Video Jitter (ms)", "Receive Video Packet loss (%)",
-                       "Receive Video Resolution (khz)", "Receive Video Frames ps (khz)"
-                       ]
+        self.header = [
+            "timestamp",
+            "Sent Audio Frequency (khz)",
+            "Sent Audio Latency (ms)",
+            "Sent Audio Jitter (ms)",
+            "Sent Audio Packet loss (%)",
+            "Receive Audio Frequency (khz)",
+            "Receive Audio Latency (ms)",
+            "Receive Audio Jitter (ms)",
+            "Receive Audio Packet loss (%)",
+            "Sent Video Latency (ms)",
+            "Sent Video Jitter (ms)",
+            "Sent Video Packet loss (%)",
+            "Sent Video Resolution (khz)",
+            "Sent Video Frames ps (khz)",
+            "Receive Video Latency (ms)",
+            "Receive Video Jitter (ms)",
+            "Receive Video Packet loss (%)",
+            "Receive Video Resolution (khz)",
+            "Receive Video Frames ps (khz)",
+        ]
         self.config = config
         self.selected_groups = selected_groups
         self.selected_profiles = selected_profiles
+        self.duration = duration
 
         # api live data response store
         self.participants_qos_last = None
+        self.env_file = env_file
+        self.live_data = {}
+
+        self.do_robo = do_robo
+        if self.do_robo:
+            self.robo_ip = robo_ip
+            self.robo_obj = robo_base_class.RobotClass(
+                robo_ip=self.robo_ip, angle_list=angles_list
+            )
+            self.coordinates_list = coordinates_list
+            self.angles_list = angles_list
+            self.current_cord = current_cord
+            self.current_angle = current_angle
+            self.rotations_enabled = rotations_enabled
+            self.robo_csv_files = []
 
     def start_flask_server(self):
-        @self.app.route('/login_url', methods=['GET', 'POST'])
+        @self.app.route("/login_url", methods=["GET", "POST"])
         def login_url():
-            if request.method == 'GET':
+            if request.method == "GET":
                 return jsonify({"login_url": self.remote_login_url})
-            elif request.method == 'POST':
+            elif request.method == "POST":
                 data = request.json
-                self.remote_login_url = data.get('login_url', '')
-                return jsonify({"message": f"Updated login_url to {self.remote_login_url}"})
+                self.remote_login_url = data.get("login_url", "")
+                return jsonify(
+                    {"message": f"Updated login_url to {self.remote_login_url}"}
+                )
 
-        @self.app.route('/login_passwd', methods=['GET', 'POST'])
+        @self.app.route("/login_passwd", methods=["GET", "POST"])
         def login_passwd():
-            if request.method == 'GET':
+            if request.method == "GET":
                 return jsonify({"login_passwd": self.remote_login_passwd})
-            elif request.method == 'POST':
+            elif request.method == "POST":
                 data = request.json
-                self.remote_login_passwd = data.get('login_passwd', '')
+                self.remote_login_passwd = data.get("login_passwd", "")
                 return jsonify({"message": "Password updated successfully."})
 
-        @self.app.route('/meeting_link', methods=['GET', 'POST'])
+        @self.app.route("/meeting_link", methods=["GET", "POST"])
         def meeting_link():
-            if request.method == 'GET':
+            if request.method == "GET":
                 return jsonify({"meet_link": self.meet_link})
-            elif request.method == 'POST':
+            elif request.method == "POST":
                 data = request.json
-                self.meet_link = data.get('meet_link', '')
-                self.meet_link = self.meet_link.rsplit('.', 1)[0] + '.1'
-                
+                self.meet_link = data.get("meet_link", "")
+                self.meet_link = self.meet_link.rsplit(".", 1)[0] + ".1"
+
                 print(f"Updating meeting link to: {self.meet_link}")
                 # "checking self.meet_link",self.meet_link)
                 return jsonify({"message": "Meeting Link Updated sucessfully"})
 
-        @self.app.route('/login_completed', methods=['GET', 'POST'])
+        @self.app.route("/login_completed", methods=["GET", "POST"])
         def login_completed():
-            if request.method == 'GET':
-                login_completed_status = self.redis_client.get('login_completed')
-                return jsonify({"login_completed": bool(int(login_completed_status)) if login_completed_status else False})
+            if request.method == "GET":
+                self.login_completed = True
+                return jsonify({"login_completed": True})
 
-            elif request.method == 'POST':
-                data = request.json
-                login_completed_status = int(data.get('login_completed', 0))
-                self.redis_client.set('login_completed', login_completed_status)
-                return jsonify({"message": f"Updated login_completed status to {bool(login_completed_status)}"})
-
-        @self.app.route('/get_host_email', methods=['GET'])
+        @self.app.route("/get_host_email", methods=["GET"])
         def get_host_email():
             return jsonify({"host_email": self.signin_email})
 
-        @self.app.route('/get_host_passwd', methods=['GET'])
+        @self.app.route("/get_host_passwd", methods=["GET"])
         def get_host_passwd():
             return jsonify({"host_passwd": self.signin_passwd})
 
-        @self.app.route('/get_participants_joined', methods=['GET'])
+        @self.app.route("/get_participants_joined", methods=["GET"])
         def get_participants_joined():
             return jsonify({"participants": self.participants_joined})
 
-        @self.app.route('/set_participants_joined', methods=['POST'])
+        @self.app.route("/set_participants_joined", methods=["POST"])
         def set_participants_joined():
             data = request.json
-            self.participants_joined = data.get('participants_joined', None)
-            return jsonify({"message": f"Updated participants jopind status to {self.participants_joined}"})
+            self.participants_joined = data.get("participants_joined", None)
+            return jsonify(
+                {
+                    "message": f"Updated participants jopind status to {self.participants_joined}"
+                }
+            )
 
-        @self.app.route('/get_participants_req', methods=['GET'])
+        @self.app.route("/get_participants_req", methods=["GET"])
         def get_participants_req():
             return jsonify({"participants": self.participants_req})
 
-        @self.app.route('/test_started', methods=['GET', 'POST'])
+        @self.app.route("/test_started", methods=["GET", "POST"])
         def test_started():
-            if request.method == 'GET':
+            if request.method == "GET":
                 return jsonify({"test_started": self.test_start})
-            elif request.method == 'POST':
+            elif request.method == "POST":
                 data = request.json
-                self.test_start = data.get('test_started', False)
-                return jsonify({"message": f"Updated test_start status to {self.test_start}"})
+                self.test_start = data.get("test_started", False)
+                return jsonify(
+                    {"message": f"Updated test_start status to {self.test_start}"}
+                )
 
-        @self.app.route('/clients_disconnected', methods=['POST'])
+        @self.app.route("/clients_disconnected", methods=["POST"])
         def client_disconnected():
             data = request.json
-            self.clients_disconnected = data.get('clients_disconnected', False)
-            return jsonify({"message": f"Updated clients_disconnected status to {self.clients_disconnected}"})
+            self.clients_disconnected = data.get("clients_disconnected", False)
+            return jsonify(
+                {
+                    "message": f"Updated clients_disconnected status to {self.clients_disconnected}"
+                }
+            )
 
-        @self.app.route('/get_start_end_time', methods=['GET'])
+        @self.app.route("/get_start_end_time", methods=["GET"])
         def get_start_end_time():
-            return jsonify({
-                "start_time": self.start_time.isoformat() if self.start_time is not None else None,
-                "end_time": self.end_time.isoformat() if self.end_time is not None else None
-            })
+            return jsonify(
+                {
+                    "start_time": (
+                        self.start_time.isoformat()
+                        if self.start_time is not None
+                        else None
+                    ),
+                    "end_time": (
+                        self.end_time.isoformat() if self.end_time is not None else None
+                    ),
+                }
+            )
 
-        @self.app.route('/stats_opt', methods=['GET'])
+        @self.app.route("/stats_opt", methods=["GET"])
         def stats_to_be_collected():
-            return jsonify({
-                'audio_stats': self.audio,
-                "video_stats": self.video
-            })
+            return jsonify({"audio_stats": self.audio, "video_stats": self.video})
 
-        @self.app.route('/check_stop', methods=['GET'])
+        @self.app.route("/check_stop", methods=["GET"])
         def check_stop():
             return jsonify({"stop": self.stop_signal})
 
-        @self.app.route('/upload_stats', methods=['POST'])
+        @self.app.route("/upload_stats", methods=["POST"])
         def upload_stats():
             data = request.json
             for hostname, stats in data.items():
                 self.data_store[hostname] = stats
             for hostname, stats in data.items():
 
-                csv_file = os.path.join(self.path, f'{hostname}.csv')
-                with open(csv_file, mode='a', newline='') as file:
+                csv_file = os.path.join(self.path, f"{hostname}.csv")
+                with open(csv_file, mode="a", newline="") as file:
                     writer = csv.writer(file)
 
                     if os.path.getsize(csv_file) == 0:
                         writer.writerow(self.header)
 
-                    timestamp = stats.get('timestamp', '')
-                    audio = stats.get('audio_stats', {})
-                    video = stats.get('video_stats', {})
+                    timestamp = stats.get("timestamp", "")
+                    audio = stats.get("audio_stats", {})
+                    video = stats.get("video_stats", {})
 
                     row = [
                         timestamp,
-                        audio.get('frequency_sent', '0'), audio.get('latency_sent', '0'), audio.get('jitter_sent', '0'), audio.get('packet_loss_sent', '0'),
-                        audio.get('frequency_received', '0'), audio.get('latency_received', '0'), audio.get('jitter_received', '0'), audio.get('packet_loss_received', '0'),
-                        video.get('latency_sent', '0'), video.get('jitter_sent', '0'), video.get('packet_loss_sent', '0'),
-                        video.get('resolution_sent', '0'), video.get('frames_per_second_sent', '0'),
-                        video.get('latency_received', '0'), video.get('jitter_received', '0'), video.get('packet_loss_received', '0'),
-                        video.get('resolution_received', '0'), video.get('frames_per_second_received', '0')
+                        audio.get("frequency_sent", "0"),
+                        audio.get("latency_sent", "0"),
+                        audio.get("jitter_sent", "0"),
+                        audio.get("packet_loss_sent", "0"),
+                        audio.get("frequency_received", "0"),
+                        audio.get("latency_received", "0"),
+                        audio.get("jitter_received", "0"),
+                        audio.get("packet_loss_received", "0"),
+                        video.get("latency_sent", "0"),
+                        video.get("jitter_sent", "0"),
+                        video.get("packet_loss_sent", "0"),
+                        video.get("resolution_sent", "0"),
+                        video.get("frames_per_second_sent", "0"),
+                        video.get("latency_received", "0"),
+                        video.get("jitter_received", "0"),
+                        video.get("packet_loss_received", "0"),
+                        video.get("resolution_received", "0"),
+                        video.get("frames_per_second_received", "0"),
                     ]
                     writer.writerow(row)
 
             return jsonify({"status": "success"}), 200
 
-        @self.app.route('/get_latest_stats', methods=['GET'])
+        @self.app.route("/get_latest_stats", methods=["GET"])
         def get_latest_stats():
             # Return the latest data for all hostnames
             return jsonify(self.data_store), 200
 
-        @self.app.route('/stop_zoom', methods=['GET'])
+        @self.app.route("/stop_zoom", methods=["GET"])
         def stop_zoom():
             """
             Endpoint to stop the Zoom test and trigger a graceful application shutdown.
@@ -318,54 +394,61 @@ class ZoomAutomation(Realm):
             shutdown_thread.start()
             return response
 
-        @self.app.route('/download_csv', methods=['GET'])
+        @self.app.route("/download_csv", methods=["GET"])
         def download_csv_flag():
             return jsonify({"download_csv": self.download_csv})
-        
-        @self.app.route('/upload_csv', methods=['POST'])
+
+        @self.app.route("/upload_csv", methods=["POST"])
         def upload_csv_data():
             try:
                 data = request.json
 
                 if not data:
-                    return jsonify({"status": "error", "message": "No JSON received"}), 400
-                
+                    return (
+                        jsonify({"status": "error", "message": "No JSON received"}),
+                        400,
+                    )
+
                 filename = data.get("filename", "csvdata.csv")
                 self.csv_file_name = f"received_{filename}"
                 rows = data.get("rows", [])
-                print("filename",filename)
-                print("rows",rows)
+                print("filename", filename)
+                print("rows", rows)
                 if not rows:
-                    return jsonify({
-                        "status": "error",
-                        "message": "No rows received"
-                    }), 400
+                    return (
+                        jsonify({"status": "error", "message": "No rows received"}),
+                        400,
+                    )
 
                 filepath = f"received_{filename}"
-                print("created is",filepath)
-                with open(filepath, "w", newline='') as f:
+                print("created is", filepath)
+                with open(filepath, "w", newline="") as f:
                     writer = csv.writer(f)
                     if rows:
                         writer.writerows(rows)
 
-                return jsonify({
-                    "status": "success",
-                    "message": f"Received {len(rows)} rows from {filename}",
-                    "saved_as": filepath
-                }), 200
+                return (
+                    jsonify(
+                        {
+                            "status": "success",
+                            "message": f"Received {len(rows)} rows from {filename}",
+                            "saved_as": filepath,
+                        }
+                    ),
+                    200,
+                )
 
             except Exception as e:
-                return jsonify({
-                    "status": "error",
-                    "message": str(e)
-                }), 500
-        
+                return jsonify({"status": "error", "message": str(e)}), 500
+
         try:
-            self.app.run(host='0.0.0.0', port=5000, debug=True, threaded=True, use_reloader=False)
+            self.app.run(
+                host="0.0.0.0", port=5000, debug=True, threaded=True, use_reloader=False
+            )
         except Exception as e:
             logging.info(f"Error starting Flask server: {e}")
             sys.exit(0)
-        
+
     def shutdown(self):
         """
         Gracefully shut down the application.
@@ -386,7 +469,7 @@ class ZoomAutomation(Realm):
         try:
 
             for gen_endp in self.generic_endps_profile.created_endp:
-                generic_endpoint = self.json_get(f'/generic/{gen_endp}')
+                generic_endpoint = self.json_get(f"/generic/{gen_endp}")
 
                 if not generic_endpoint or "endpoint" not in generic_endpoint:
                     logging.info(f"Error fetching endpoint data for {gen_endp}")
@@ -416,10 +499,18 @@ class ZoomAutomation(Realm):
         logging.error("? Flask server did not start within 10 seconds. Exiting.")
         sys.exit(1)
 
-    def create_android(self, lanforge_res, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, real_client_os_types=None):
+    def create_android(
+        self,
+        lanforge_res,
+        ports=None,
+        sleep_time=0.5,
+        debug_=False,
+        suppress_related_commands_=None,
+        real_client_os_types=None,
+    ):
         if ports and real_client_os_types and len(real_client_os_types) == 0:
-            logging.error('Real client operating systems types is empty list')
-            raise ValueError('Real client operating systems types is empty list')
+            logging.error("Real client operating systems types is empty list")
+            raise ValueError("Real client operating systems types is empty list")
         created_cx = []
         created_endp = []
 
@@ -440,15 +531,15 @@ class ZoomAutomation(Realm):
             else:
                 name = port_info[2]
 
-            gen_name_a = "%s-%s" % ('zoom', '_'.join(port_name.split('.')))
+            gen_name_a = "%s-%s" % ("zoom", "_".join(port_name.split(".")))
             endp_tpls.append((shelf, resource, name, gen_name_a))
 
-        print('endp_tpls', endp_tpls)
+        print("endp_tpls", endp_tpls)
         for endp_tpl in endp_tpls:
             shelf = endp_tpl[0]
             resource = endp_tpl[1]
             if real_client_os_types:
-                name = endp_tpl[2].split('.')[2]
+                name = endp_tpl[2].split(".")[2]
             else:
                 name = endp_tpl[2]
             gen_name_a = endp_tpl[3]
@@ -457,8 +548,8 @@ class ZoomAutomation(Realm):
                 "alias": gen_name_a,
                 "shelf": shelf,
                 "resource": lanforge_res,
-                "port": 'eth0',
-                "type": "gen_generic"
+                "port": "eth0",
+                "type": "gen_generic",
             }
             # print('Adding endpoint ', data)
             self.json_post("cli-json/add_gen_endp", data, debug_=self.debug)
@@ -475,11 +566,7 @@ class ZoomAutomation(Realm):
             name = endp_tpl[2]
             gen_name_a = endp_tpl[3]
             cx_name = "CX_%s-%s" % ("generic", gen_name_a)
-            data = {
-                "alias": cx_name,
-                "test_mgr": "default_tm",
-                "tx_endp": gen_name_a
-            }
+            data = {"alias": cx_name, "test_mgr": "default_tm", "tx_endp": gen_name_a}
             post_data.append(data)
             created_cx.append(cx_name)
             created_endp.append(gen_name_a)
@@ -487,46 +574,47 @@ class ZoomAutomation(Realm):
         for data in post_data:
             url = "/cli-json/add_cx"
             # print('Adding cx', data)
-            self.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+            self.json_post(
+                url,
+                data,
+                debug_=debug_,
+                suppress_related_commands_=suppress_related_commands_,
+            )
             # time.sleep(2)
         if sleep_time:
             time.sleep(sleep_time)
 
         for data in post_data:
-            self.json_post("/cli-json/show_cx", {
-                "test_mgr": "default_tm",
-                "cross_connect": data["alias"]
-            })
+            self.json_post(
+                "/cli-json/show_cx",
+                {"test_mgr": "default_tm", "cross_connect": data["alias"]},
+            )
         return True, created_cx, created_endp
 
-    def run(self, duration, upstream_port, signin_email, signin_passwd, participants, account_id = None, client_id = None, client_secret = None):
-        # Store the email and password in the instance
-        self.signin_email = signin_email
-        self.signin_passwd = signin_passwd
-        self.duration = duration
-        self.upstream_port = upstream_port
-        self.participants_req = participants
+    def handle_flask_server(self):
         flask_thread = threading.Thread(target=self.start_flask_server)
         flask_thread.daemon = True
         flask_thread.start()
         self.wait_for_flask()
-        ports_list = []
-        user_list = []
+
+    def get_resource_data(self):
+        self.ports_list = []
+        self.user_list = []
         self.serial_list = []
         self.lanforge_port_list = []
-        eid = ""
-        resource_ip = ""
-        user_resources = ['.'.join(item.split('.')[:2]) for item in self.real_sta_list]
+        self.user_resources = [
+            ".".join(item.split(".")[:2]) for item in self.real_sta_list
+        ]
 
         # Step 1: Retrieve information about all resources
         response = self.json_get("/resource/all")
 
         # Step 2: Match user-specified resources with available resources sequentially
-        if user_resources:
+        if self.user_resources:
             # Iterate through user_resources sequentially, processing each value only once
-            for user_resource in user_resources:
+            for user_resource in self.user_resources:
                 # Break loop if no more user_resources left to process
-                if not user_resources:
+                if not self.user_resources:
                     break
 
                 for key, value in response.items():
@@ -536,10 +624,14 @@ class ZoomAutomation(Realm):
                                 # Match the current user_resource
                                 if resource_key == user_resource:
                                     eid = resource_values["eid"]
-                                    resource_ip = resource_values['ctrl-ip']
-                                    self.device_names.append(resource_values['hostname'])
-                                    ports_list.append({'eid': eid, 'ctrl-ip': resource_ip})
-                                    user_list.append(resource_values['user'])
+                                    resource_ip = resource_values["ctrl-ip"]
+                                    self.device_names.append(
+                                        resource_values["hostname"]
+                                    )
+                                    self.ports_list.append(
+                                        {"eid": eid, "ctrl-ip": resource_ip}
+                                    )
+                                    self.user_list.append(resource_values["user"])
 
                                     break
                             else:
@@ -548,7 +640,8 @@ class ZoomAutomation(Realm):
                             # Break if a match was found and processed
                             break
 
-        gen_ports_list = []
+    def get_ports_data(self):
+        self.gen_ports_list = []
         self.mac_list = []
         self.rssi_list = []
         self.link_rate_list = []
@@ -558,36 +651,36 @@ class ZoomAutomation(Realm):
         response_port = self.json_get("/port/all")
 
         # Step 4: Match ports associated with retrieved resources in the order of ports_list
-        for port_entry in ports_list:
+        for port_entry in self.ports_list:
             # Extract the eid and ctrl-ip from the current ports_list entry
-            expected_eid = port_entry['eid']
+            expected_eid = port_entry["eid"]
 
             # Iterate over the port interfaces to find a matching port
-            for interface in response_port['interfaces']:
+            for interface in response_port["interfaces"]:
                 for port, port_data in interface.items():
                     # Extract the first two segments of the port identifier to match with expected_eid
-                    result = '.'.join(port.split('.')[:2])
+                    result = ".".join(port.split(".")[:2])
 
                     # Check if the result matches the current expected eid from ports_list
                     if result == expected_eid:
-                        gen_ports_list.append(port.split('.')[-1])
+                        self.gen_ports_list.append(port.split(".")[-1])
                         break
                 else:
                     continue
                 break
 
-        for port_entry in ports_list:
+        for port_entry in self.ports_list:
             # Extract the eid and ctrl-ip from the current ports_list entry
-            expected_eid = port_entry['eid']
+            expected_eid = port_entry["eid"]
 
             # Iterate over the port interfaces to find a matching port
-            for interface in response_port['interfaces']:
+            for interface in response_port["interfaces"]:
                 for port, port_data in interface.items():
                     # Extract the first two segments of the port identifier to match with expected_eid
-                    result = '.'.join(port.split('.')[:2])
+                    result = ".".join(port.split(".")[:2])
 
                     # Check if the result matches the current expected eid from ports_list
-                    if result == expected_eid and port_data["parent dev"] == 'wiphy0':
+                    if result == expected_eid and port_data["parent dev"] == "wiphy0":
                         self.mac_list.append(port_data["mac"])
                         self.rssi_list.append(port_data["signal"])
                         self.link_rate_list.append(port_data["rx-rate"])
@@ -597,45 +690,60 @@ class ZoomAutomation(Realm):
                 else:
                     continue
                 break
-        self.new_port_list = [item.split('.')[2] for item in self.real_sta_list]
+        self.wifi_interface_list = [item.split(".")[2] for item in self.real_sta_list]
 
-        if self.generic_endps_profile.create(ports=[self.real_sta_list[0]], real_client_os_types=[self.real_sta_os_type[0]]):
-            logging.info('Real client generic endpoint creation completed.')
-        else:
-            logging.error('Real client generic endpoint creation failed.')
-            exit(0)
-        interop_data = self.json_get('/adb')
-        interop_mobile_data = interop_data.get('devices', {})
-
-        for user in user_list:
-            if user == '':
-                self.serial_list.append('')
-                self.lanforge_port_list.append('')
+    def get_interop_data(self):
+        interop_data = self.json_get("/adb")
+        interop_mobile_data = interop_data.get("devices", {})
+        self.serial_list = []
+        for user in self.user_list:
+            if user == "":
+                self.serial_list.append("")
+                self.lanforge_port_list.append("")
             else:
                 for mobile_device in interop_mobile_data:
                     for serial, device_data in mobile_device.items():
-                        if device_data.get('user-name') == user:
-                            resource = serial.split('.')[1]
-                            serial_no = serial.split('.')[2]
+                        if device_data.get("user-name") == user:
+                            resource = serial.split(".")[1]
+                            serial_no = serial.split(".")[2]
                             self.serial_list.append(serial_no)
                             lanforge_port = f"1.{resource}.eth0"
                             self.lanforge_port_list.append(lanforge_port)
                             break
 
         logger.debug(f"Checking serial list {self.serial_list}")
-                
+
+    def run(self, account_id=None, client_id=None, client_secret=None):
+        if self.generic_endps_profile.create(
+            ports=[self.real_sta_list[0]],
+            real_client_os_types=[self.real_sta_os_type[0]],
+        ):
+            logging.info("Real client generic endpoint creation completed.")
+        else:
+            logging.error("Real client generic endpoint creation failed.")
+            exit(0)
 
         if self.real_sta_os_type[0] == "windows":
             cmd = f"py zoom_host.py --ip {self.upstream_port}"
-            self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
-        elif self.real_sta_os_type[0] == 'linux':
+            self.generic_endps_profile.set_cmd(
+                self.generic_endps_profile.created_endp[0], cmd
+            )
+        elif self.real_sta_os_type[0] == "linux":
 
-            cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[0], self.upstream_port, "host")
+            cmd = "su -l lanforge ctzoom.bash %s %s %s" % (
+                self.wifi_interface_list[0],
+                self.upstream_port,
+                "host",
+            )
 
-            self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
-        elif self.real_sta_os_type[0] == 'macos':
+            self.generic_endps_profile.set_cmd(
+                self.generic_endps_profile.created_endp[0], cmd
+            )
+        elif self.real_sta_os_type[0] == "macos":
             cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "host")
-            self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
+            self.generic_endps_profile.set_cmd(
+                self.generic_endps_profile.created_endp[0], cmd
+            )
         self.generic_endps_profile.start_cx()
         time.sleep(5)
 
@@ -644,9 +752,9 @@ class ZoomAutomation(Realm):
 
         while not self.login_completed:
             try:
-                self.login_completed = bool(int(self.redis_client.get('login_completed') or 0))
-
-                generic_endpoint = self.json_get(f'/generic/{self.generic_endps_profile.created_endp[0]}')
+                generic_endpoint = self.json_get(
+                    f"/generic/{self.generic_endps_profile.created_endp[0]}"
+                )
                 endp_status = generic_endpoint["endpoint"]["status"]
                 if endp_status == "Stopped":
                     logging.info("Failed to Start the Host Device")
@@ -656,7 +764,7 @@ class ZoomAutomation(Realm):
             except Exception as e:
                 logging.info(f"Error while checking login_completed status: {e}")
                 time.sleep(5)
-        
+
         self.meet_link = f"https://us04web.zoom.us/j/{self.remote_login_url}?pwd={self.remote_login_passwd}"
         print("checking meet link for android devices", self.meet_link)
 
@@ -664,52 +772,64 @@ class ZoomAutomation(Realm):
             if self.real_sta_os_type[i] == "android":
 
                 print(self.lanforge_port_list[i])
-                
-                status, created_cx, created_endp = self.create_android(lanforge_res=self.lanforge_port_list[i], ports=[self.real_sta_list[i]], real_client_os_types=["Linux"])
+
+                status, created_cx, created_endp = self.create_android(
+                    lanforge_res=self.lanforge_port_list[i],
+                    ports=[self.real_sta_list[i]],
+                    real_client_os_types=["Linux"],
+                )
                 self.generic_endps_profile.created_endp.extend(created_endp)
                 self.generic_endps_profile.created_cx.extend(created_cx)
                 print(self.generic_endps_profile.created_cx)
-                cmd = f"python3 android_zoom.py --serial {self.serial_list[i]} --meeting_url '{self.meet_link}' --participant_name '{self.real_sta_hostname[i]}' --server_host {self.upstream_port} --server_port 5000"
-                # cmd = f"adb -s {self.serial_list[i]} shell am start -a android.intent.action.VIEW -d {self.meet_link}"
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-                
+                cmd = (
+                    f"python3 android_zoom.py "
+                    f"--serial {self.serial_list[i]} "
+                    f"--meeting_url '{self.meet_link}' "
+                    f"--participant_name '{self.real_sta_hostname[i]}' "
+                    f"--server_host {self.upstream_port} "
+                    f"--server_port 5000"
+                )
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+
             else:
-                self.generic_endps_profile.create(ports=[self.real_sta_list[i]], real_client_os_types=[self.real_sta_os_type[i]])
-
-                
-
-        # if self.generic_endps_profile.create(ports=self.real_sta_list[1:], real_client_os_types=self.real_sta_os_type[1:]):
-        #     logging.info('Real client generic endpoint creation completed.')
-        # else:
-        #     logging.error('Real client generic endpoint creation failed.')
-        #     exit(0)
+                self.generic_endps_profile.create(
+                    ports=[self.real_sta_list[i]],
+                    real_client_os_types=[self.real_sta_os_type[i]],
+                )
 
         for i in range(1, len(self.real_sta_os_type)):
 
             if self.real_sta_os_type[i] == "windows":
                 cmd = f"py zoom_client.py --ip {self.upstream_port}"
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-            elif self.real_sta_os_type[i] == 'linux':
-                cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[i], self.upstream_port, "client")
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-            elif self.real_sta_os_type[i] == 'macos':
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+            elif self.real_sta_os_type[i] == "linux":
+                cmd = "su -l lanforge ctzoom.bash %s %s %s" % (
+                    self.wifi_interface_list[i],
+                    self.upstream_port,
+                    "client",
+                )
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+            elif self.real_sta_os_type[i] == "macos":
                 cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "client")
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-            # elif self.real_sta_os_type[i] == 'android':
-            #     cmd = f"adb -s {self.serial_list[i]} shell am start -a android.intent.action.VIEW -d {self.meet_link}"
-            #     self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
 
             cx_name = self.generic_endps_profile.created_cx[i]
-            self.json_post("/cli-json/set_cx_state", {
-                "test_mgr": "default_tm",
-                "cx_name": cx_name,
-                "cx_state": "RUNNING"
-            }, debug_=True)
-            print("sending running state to..",cx_name)
-        # self.generic_endps_profile.start_cx()
+            self.json_post(
+                "/cli-json/set_cx_state",
+                {"test_mgr": "default_tm", "cx_name": cx_name, "cx_state": "RUNNING"},
+                debug_=True,
+            )
+            print("sending running state to..", cx_name)
 
         while not self.test_start:
-
             logging.info("WAITING FOR THE TEST TO BE STARTED")
             time.sleep(5)
 
@@ -721,11 +841,23 @@ class ZoomAutomation(Realm):
                 try:
                     # retrieving with past meetings
                     token = self.get_access_token(account_id, client_id, client_secret)
-                    self.participants_qos_last = self.get_participants_qos(self.remote_login_url, token, "live")
-                except:
-                    logger.info(f"Unable to fetch live meeting data...retrying in 5 seconds")
+                    self.participants_qos_last = self.get_participants_qos(
+                        self.remote_login_url, token, "live"
+                    )
+                    self.live_data = self.summarize_audio_video(
+                        self.participants_qos_last
+                    )
+                    print(self.live_data)
+                except Exception as e:
+                    logger.info(
+                        f"Unable to fetch live meeting data...retrying in 5 seconds {e}"
+                    )
                     # traceback.print_exc()
             time.sleep(5)
+
+        self.generic_endps_profile.stop_cx()
+        self.generic_endps_profile.cleanup()
+        self.login_completed = False
 
     def select_real_devices(self, real_device_obj, real_sta_list=None):
         final_device_list = []
@@ -760,21 +892,37 @@ class ZoomAutomation(Realm):
             interfaces = interface_data["interfaces"]
             final_device_list = []  # Initialize the list
 
-            for device in real_sta_list:  # Iterate over devices in `real_sta_list` to preserve order
+            for (
+                device
+            ) in (
+                real_sta_list
+            ):  # Iterate over devices in `real_sta_list` to preserve order
                 for interface_dict in interfaces:  # Iterate through `interfaces`
-                    for key, value in interface_dict.items():  # Iterate through items of each interface dictionary
+                    for (
+                        key,
+                        value,
+                    ) in (
+                        interface_dict.items()
+                    ):  # Iterate through items of each interface dictionary
                         # Check conditions for adding the device
                         key_parts = key.split(".")
                         extracted_key = ".".join(key_parts[:2])
-                        if extracted_key == device and not value["phantom"] and not value["down"] and value["parent dev"] != "":
-                            final_device_list.append(key)  # Add to final_device_list in order
+                        if (
+                            extracted_key == device
+                            and not value["phantom"]
+                            and not value["down"]
+                            and value["parent dev"] != ""
+                        ):
+                            final_device_list.append(
+                                key
+                            )  # Add to final_device_list in order
                             break  # Stop after finding the first match for the current device to maintain order
 
             self.real_sta_list = final_device_list
 
         # Log an error and exit if no real stations are selected for testing
         if len(self.real_sta_list) == 0:
-            logger.error('There are no real devices in this testbed. Aborting test')
+            logger.error("There are no real devices in this testbed. Aborting test")
             exit(0)
         # Filter out iOS devices from the real_sta_list before proceeding
         self.real_sta_list = self.filter_ios_devices(self.real_sta_list)
@@ -782,12 +930,24 @@ class ZoomAutomation(Realm):
         for sta_name in self.real_sta_list:
             if sta_name not in real_device_obj.devices_data:
                 self.real_sta_list.remove(sta_name)
-                logger.error('Real station not in devices data, ignoring it from testing')
+                logger.error(
+                    "Real station not in devices data, ignoring it from testing"
+                )
                 continue
 
             self.real_sta_data[sta_name] = real_device_obj.devices_data[sta_name]
-        self.real_sta_os_type = [self.real_sta_data[real_sta_name]['ostype'] for real_sta_name in self.real_sta_data]
-        self.real_sta_hostname = [self.real_sta_data[real_sta_name]['hostname'] if self.real_sta_data[real_sta_name]["ostype"] != "android" else self.real_sta_data[real_sta_name]['user'] for real_sta_name in self.real_sta_data]
+        self.real_sta_os_type = [
+            self.real_sta_data[real_sta_name]["ostype"]
+            for real_sta_name in self.real_sta_data
+        ]
+        self.real_sta_hostname = [
+            (
+                self.real_sta_data[real_sta_name]["hostname"]
+                if self.real_sta_data[real_sta_name]["ostype"] != "android"
+                else self.real_sta_data[real_sta_name]["user"]
+            )
+            for real_sta_name in self.real_sta_data
+        ]
 
         self.zoom_host = self.real_sta_list[0]
         self.hostname_os_combination = [
@@ -796,13 +956,13 @@ class ZoomAutomation(Realm):
         ]
 
         for key, value in self.real_sta_data.items():
-            if value['ostype'] == 'windows':
+            if value["ostype"] == "windows":
                 self.windows = self.windows + 1
-            elif value['ostype'] == 'macos':
+            elif value["ostype"] == "macos":
                 self.mac = self.mac + 1
-            elif value['ostype'] == 'linux':
+            elif value["ostype"] == "linux":
                 self.linux = self.linux + 1
-            elif value['ostype'] == 'android':
+            elif value["ostype"] == "android":
                 self.android = self.android + 1
 
         # Return the sorted list of selected real station names
@@ -827,7 +987,9 @@ class ZoomAutomation(Realm):
     def move_files(self, source_file, dest_dir):
         # Ensure the source file exists
         if not os.path.isfile(source_file):
-            logging.error(f"Source file '{source_file}' does not exist or is not a regular file.")
+            logging.error(
+                f"Source file '{source_file}' does not exist or is not a regular file."
+            )
             return
 
         # Ensure the destination directory exists
@@ -851,27 +1013,31 @@ class ZoomAutomation(Realm):
 
     def updating_webui_runningjson(self, obj):
         data = {}
-        file_path = self.path + "/../../Running_instances/{}_{}_running.json".format(self.mgr_ip, self.testname)
+        file_path = self.path + "/../../Running_instances/{}_{}_running.json".format(
+            self.mgr_ip, self.testname
+        )
 
         # Wait until the file exists
         while not os.path.exists(file_path):
             logging.info("Waiting for the running json file to be created")
             time.sleep(1)
         logging.info("Running Json file found")
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             data = json.load(file)
 
         for key in obj:
             data[key] = obj[key]
 
-        with open(file_path, 'w') as file:
+        with open(file_path, "w") as file:
             json.dump(data, file, indent=4)
 
     def generate_report(self):
-        report = lf_report(_output_pdf='zoom_call_report.pdf',
-                           _output_html='zoom_call_report.html',
-                           _results_dir_name="zoom_call_report",
-                           _path=self.path)
+        report = lf_report(
+            _output_pdf="zoom_call_report.pdf",
+            _output_html="zoom_call_report.html",
+            _results_dir_name="zoom_call_report",
+            _path=self.path,
+        )
         report_path_date_time = report.get_path_date_time()
 
         report.set_title("Zoom Call Automated Report")
@@ -879,8 +1045,10 @@ class ZoomAutomation(Realm):
 
         report.set_table_title("Objective:")
         report.build_table_title()
-        report.set_text("The objective is to conduct automated Zoom call tests across multiple laptops to gather statistics on sent audio, video, and received audio, video performance." +
-                        "The test will collect these statistics and store them in a CSV file. Additionally, automated graphs will be generated using the collected data.")
+        report.set_text(
+            "The objective is to conduct automated Zoom call tests across multiple laptops to gather statistics on sent audio, video, and received audio, video performance."
+            + "The test will collect these statistics and store them in a CSV file. Additionally, automated graphs will be generated using the collected data."
+        )
         report.build_text_simple()
 
         report.set_table_title("Test Parameters:")
@@ -894,18 +1062,21 @@ class ZoomAutomation(Realm):
             testtype = "VIDEO"
 
         if self.config:
-            test_parameters = pd.DataFrame([{
-                "Configured Devices": self.hostname_os_combination,
-                'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac})',
-                'Test Duration(min)': self.duration,
-                'EMAIL ID': self.signin_email,
-                "PASSWORD": self.signin_passwd,
-                "HOST": self.real_sta_list[0],
-                "TEST TYPE": testtype,
-                "SSID": self.ssid,
-                "Security": self.security
-
-            }])
+            test_parameters = pd.DataFrame(
+                [
+                    {
+                        "Configured Devices": self.hostname_os_combination,
+                        "No of Clients": f"W({self.windows}),L({self.linux}),M({self.mac})",
+                        "Test Duration(min)": self.duration,
+                        "EMAIL ID": self.signin_email,
+                        "PASSWORD": self.signin_passwd,
+                        "HOST": self.real_sta_list[0],
+                        "TEST TYPE": testtype,
+                        "SSID": self.ssid,
+                        "Security": self.security,
+                    }
+                ]
+            )
         elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
             # Map each group with a profile
             gp_pairs = zip(self.selected_groups, self.selected_profiles)
@@ -913,28 +1084,34 @@ class ZoomAutomation(Realm):
             # Create a string by joining the mapped pairs
             gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
 
-            test_parameters = pd.DataFrame([{
-                "Configuration": gp_map,
-                "Configured Devices": self.hostname_os_combination,
-                'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac})',
-                'Test Duration(min)': self.duration,
-                'EMAIL ID': self.signin_email,
-                "PASSWORD": self.signin_passwd,
-                "HOST": self.real_sta_list[0],
-                "TEST TYPE": testtype,
-
-            }])
+            test_parameters = pd.DataFrame(
+                [
+                    {
+                        "Configuration": gp_map,
+                        "Configured Devices": self.hostname_os_combination,
+                        "No of Clients": f"W({self.windows}),L({self.linux}),M({self.mac})",
+                        "Test Duration(min)": self.duration,
+                        "EMAIL ID": self.signin_email,
+                        "PASSWORD": self.signin_passwd,
+                        "HOST": self.real_sta_list[0],
+                        "TEST TYPE": testtype,
+                    }
+                ]
+            )
         else:
 
-            test_parameters = pd.DataFrame([{
-                'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac})',
-                'Test Duration(min)': self.duration,
-                'EMAIL ID': self.signin_email,
-                "PASSWORD": self.signin_passwd,
-                "HOST": self.real_sta_list[0],
-                "TEST TYPE": testtype,
-
-            }])
+            test_parameters = pd.DataFrame(
+                [
+                    {
+                        "No of Clients": f"W({self.windows}),L({self.linux}),M({self.mac})",
+                        "Test Duration(min)": self.duration,
+                        "EMAIL ID": self.signin_email,
+                        "PASSWORD": self.signin_passwd,
+                        "HOST": self.real_sta_list[0],
+                        "TEST TYPE": testtype,
+                    }
+                ]
+            )
 
         report.set_table_dataframe(test_parameters)
         report.build_table()
@@ -987,149 +1164,373 @@ class ZoomAutomation(Realm):
                 "video_pktloss_r": [],
             }
             try:
-                file_path = os.path.join(self.path, f'{self.device_names[i]}.csv')
+                file_path = os.path.join(self.path, f"{self.device_names[i]}.csv")
                 if not os.path.exists(file_path):
-                    logging.error(f"File not found for client {self.device_names[i]}: {file_path}")
+                    logging.error(
+                        f"File not found for client {self.device_names[i]}: {file_path}"
+                    )
                     continue
-                with open(file_path, mode='r', encoding='utf-8', errors='ignore') as file:
+                with open(
+                    file_path, mode="r", encoding="utf-8", errors="ignore"
+                ) as file:
                     csv_reader = csv.DictReader(file)
                     for row in csv_reader:
 
-                        per_client_data["audio_jitter_s"].append(float(row["Sent Audio Jitter (ms)"]))
-                        per_client_data["audio_jitter_r"].append(float(row["Receive Audio Jitter (ms)"]))
-                        per_client_data["audio_latency_s"].append(float(row["Sent Audio Latency (ms)"]))
-                        per_client_data["audio_latency_r"].append(float(row["Receive Audio Latency (ms)"]))
-                        per_client_data["audio_pktloss_s"].append(float((row["Sent Audio Packet loss (%)"]).split(" ")[0].replace("%", "")))
-                        per_client_data["audio_pktloss_r"].append(float((row["Receive Audio Packet loss (%)"]).split(" ")[0].replace("%", "")))
-                        per_client_data["video_jitter_s"].append(float(row["Sent Video Jitter (ms)"]))
-                        per_client_data["video_jitter_r"].append(float(row["Receive Video Jitter (ms)"]))
-                        per_client_data["video_latency_s"].append(float(row["Sent Video Latency (ms)"]))
-                        per_client_data["video_latency_r"].append(float(row["Receive Video Latency (ms)"]))
-                        per_client_data["video_pktloss_s"].append(float((row["Sent Video Packet loss (%)"]).split(" ")[0].replace("%", "")))
-                        per_client_data["video_pktloss_r"].append(float((row["Receive Video Packet loss (%)"]).split(" ")[0].replace("%", "")))
+                        per_client_data["audio_jitter_s"].append(
+                            float(row["Sent Audio Jitter (ms)"])
+                        )
+                        per_client_data["audio_jitter_r"].append(
+                            float(row["Receive Audio Jitter (ms)"])
+                        )
+                        per_client_data["audio_latency_s"].append(
+                            float(row["Sent Audio Latency (ms)"])
+                        )
+                        per_client_data["audio_latency_r"].append(
+                            float(row["Receive Audio Latency (ms)"])
+                        )
+                        per_client_data["audio_pktloss_s"].append(
+                            float(
+                                (row["Sent Audio Packet loss (%)"])
+                                .split(" ")[0]
+                                .replace("%", "")
+                            )
+                        )
+                        per_client_data["audio_pktloss_r"].append(
+                            float(
+                                (row["Receive Audio Packet loss (%)"])
+                                .split(" ")[0]
+                                .replace("%", "")
+                            )
+                        )
+                        per_client_data["video_jitter_s"].append(
+                            float(row["Sent Video Jitter (ms)"])
+                        )
+                        per_client_data["video_jitter_r"].append(
+                            float(row["Receive Video Jitter (ms)"])
+                        )
+                        per_client_data["video_latency_s"].append(
+                            float(row["Sent Video Latency (ms)"])
+                        )
+                        per_client_data["video_latency_r"].append(
+                            float(row["Receive Video Latency (ms)"])
+                        )
+                        per_client_data["video_pktloss_s"].append(
+                            float(
+                                (row["Sent Video Packet loss (%)"])
+                                .split(" ")[0]
+                                .replace("%", "")
+                            )
+                        )
+                        per_client_data["video_pktloss_r"].append(
+                            float(
+                                (row["Receive Video Packet loss (%)"])
+                                .split(" ")[0]
+                                .replace("%", "")
+                            )
+                        )
 
-                        temp_max_audio_jitter_s = max(temp_max_audio_jitter_s, float(row["Sent Audio Jitter (ms)"]))
-                        temp_max_audio_jitter_r = max(temp_max_audio_jitter_r, float(row["Receive Audio Jitter (ms)"]))
-                        temp_max_audio_latency_s = max(temp_max_audio_latency_s, float(row["Sent Audio Latency (ms)"]))
-                        temp_max_audio_latency_r = max(temp_max_audio_latency_r, float(row["Receive Audio Latency (ms)"]))
-                        temp_max_audio_pktloss_s = max(temp_max_audio_pktloss_s, float((row["Sent Audio Packet loss (%)"]).split(" ")[0].replace("%", "")))
-                        temp_max_audio_pktloss_r = max(temp_max_audio_pktloss_r, float((row["Receive Audio Packet loss (%)"]).split(" ")[0].replace("%", "")))
+                        temp_max_audio_jitter_s = max(
+                            temp_max_audio_jitter_s,
+                            float(row["Sent Audio Jitter (ms)"]),
+                        )
+                        temp_max_audio_jitter_r = max(
+                            temp_max_audio_jitter_r,
+                            float(row["Receive Audio Jitter (ms)"]),
+                        )
+                        temp_max_audio_latency_s = max(
+                            temp_max_audio_latency_s,
+                            float(row["Sent Audio Latency (ms)"]),
+                        )
+                        temp_max_audio_latency_r = max(
+                            temp_max_audio_latency_r,
+                            float(row["Receive Audio Latency (ms)"]),
+                        )
+                        temp_max_audio_pktloss_s = max(
+                            temp_max_audio_pktloss_s,
+                            float(
+                                (row["Sent Audio Packet loss (%)"])
+                                .split(" ")[0]
+                                .replace("%", "")
+                            ),
+                        )
+                        temp_max_audio_pktloss_r = max(
+                            temp_max_audio_pktloss_r,
+                            float(
+                                (row["Receive Audio Packet loss (%)"])
+                                .split(" ")[0]
+                                .replace("%", "")
+                            ),
+                        )
 
-                        temp_max_video_jitter_s = max(temp_max_video_jitter_s, float(row["Sent Video Jitter (ms)"]))
-                        temp_max_video_jitter_r = max(temp_max_video_jitter_r, float(row["Receive Video Jitter (ms)"]))
-                        temp_max_video_latency_s = max(temp_max_video_latency_s, float(row["Sent Video Latency (ms)"]))
-                        temp_max_video_latency_r = max(temp_max_video_latency_r, float(row["Receive Video Latency (ms)"]))
-                        temp_max_video_pktloss_s = max(temp_max_video_pktloss_s, float((row["Sent Video Packet loss (%)"]).split(" ")[0].replace("%", "")))
-                        temp_max_video_pktloss_r = max(temp_max_video_pktloss_r, float((row["Receive Video Packet loss (%)"]).split(" ")[0].replace("%", "")))
+                        temp_max_video_jitter_s = max(
+                            temp_max_video_jitter_s,
+                            float(row["Sent Video Jitter (ms)"]),
+                        )
+                        temp_max_video_jitter_r = max(
+                            temp_max_video_jitter_r,
+                            float(row["Receive Video Jitter (ms)"]),
+                        )
+                        temp_max_video_latency_s = max(
+                            temp_max_video_latency_s,
+                            float(row["Sent Video Latency (ms)"]),
+                        )
+                        temp_max_video_latency_r = max(
+                            temp_max_video_latency_r,
+                            float(row["Receive Video Latency (ms)"]),
+                        )
+                        temp_max_video_pktloss_s = max(
+                            temp_max_video_pktloss_s,
+                            float(
+                                (row["Sent Video Packet loss (%)"])
+                                .split(" ")[0]
+                                .replace("%", "")
+                            ),
+                        )
+                        temp_max_video_pktloss_r = max(
+                            temp_max_video_pktloss_r,
+                            float(
+                                (row["Receive Video Packet loss (%)"])
+                                .split(" ")[0]
+                                .replace("%", "")
+                            ),
+                        )
 
-                        temp_min_audio_jitter_s = min(
-                            temp_min_audio_jitter_s,
-                            float(
-                                row["Sent Audio Jitter (ms)"])) if temp_min_audio_jitter_s > 0 and float(
-                            row["Sent Audio Jitter (ms)"]) > 0 else (
-                            float(
-                                row["Sent Audio Jitter (ms)"]) if float(
-                                row["Sent Audio Jitter (ms)"]) > 0 else temp_min_audio_jitter_s)
-                        temp_min_audio_jitter_r = min(
-                            temp_min_audio_jitter_r, float(
-                                row["Receive Audio Jitter (ms)"])) if temp_min_audio_jitter_r > 0 and float(
-                            row["Receive Audio Jitter (ms)"]) > 0 else (
-                            float(
-                                row["Receive Audio Jitter (ms)"]) if float(
-                                row["Receive Audio Jitter (ms)"]) > 0 else temp_min_audio_jitter_r)
-                        temp_min_audio_latency_s = min(
-                            temp_min_audio_latency_s, float(
-                                row["Sent Audio Latency (ms)"])) if temp_min_audio_latency_s > 0 and float(
-                            row["Sent Audio Latency (ms)"]) > 0 else (
-                            float(
-                                row["Sent Audio Latency (ms)"]) if float(
-                                row["Sent Audio Latency (ms)"]) > 0 else temp_min_audio_jitter_s)
-                        temp_min_audio_latency_r = min(
-                            temp_min_audio_latency_r, float(
-                                row["Receive Audio Latency (ms)"])) if temp_min_audio_latency_r > 0 and float(
-                            row["Receive Audio Latency (ms)"]) > 0 else (
-                            float(
-                                row["Receive Audio Latency (ms)"]) if float(
-                                row["Receive Audio Latency (ms)"]) > 0 else temp_min_audio_jitter_r)
+                        temp_min_audio_jitter_s = (
+                            min(
+                                temp_min_audio_jitter_s,
+                                float(row["Sent Audio Jitter (ms)"]),
+                            )
+                            if temp_min_audio_jitter_s > 0
+                            and float(row["Sent Audio Jitter (ms)"]) > 0
+                            else (
+                                float(row["Sent Audio Jitter (ms)"])
+                                if float(row["Sent Audio Jitter (ms)"]) > 0
+                                else temp_min_audio_jitter_s
+                            )
+                        )
+                        temp_min_audio_jitter_r = (
+                            min(
+                                temp_min_audio_jitter_r,
+                                float(row["Receive Audio Jitter (ms)"]),
+                            )
+                            if temp_min_audio_jitter_r > 0
+                            and float(row["Receive Audio Jitter (ms)"]) > 0
+                            else (
+                                float(row["Receive Audio Jitter (ms)"])
+                                if float(row["Receive Audio Jitter (ms)"]) > 0
+                                else temp_min_audio_jitter_r
+                            )
+                        )
+                        temp_min_audio_latency_s = (
+                            min(
+                                temp_min_audio_latency_s,
+                                float(row["Sent Audio Latency (ms)"]),
+                            )
+                            if temp_min_audio_latency_s > 0
+                            and float(row["Sent Audio Latency (ms)"]) > 0
+                            else (
+                                float(row["Sent Audio Latency (ms)"])
+                                if float(row["Sent Audio Latency (ms)"]) > 0
+                                else temp_min_audio_jitter_s
+                            )
+                        )
+                        temp_min_audio_latency_r = (
+                            min(
+                                temp_min_audio_latency_r,
+                                float(row["Receive Audio Latency (ms)"]),
+                            )
+                            if temp_min_audio_latency_r > 0
+                            and float(row["Receive Audio Latency (ms)"]) > 0
+                            else (
+                                float(row["Receive Audio Latency (ms)"])
+                                if float(row["Receive Audio Latency (ms)"]) > 0
+                                else temp_min_audio_jitter_r
+                            )
+                        )
 
-                        temp_min_audio_pktloss_s = min(
-                            temp_min_audio_pktloss_s, float(
-                                (row["Sent Audio Packet loss (%)"]).split(" ")[0].replace(
-                                    "%", ""))) if temp_min_audio_pktloss_s > 0 and float(
-                            (row["Sent Audio Packet loss (%)"]).split(" ")[0].replace(
-                                "%", "")) > 0 else (
-                            float(
-                                (row["Sent Audio Packet loss (%)"]).split(" ")[0].replace(
-                                    "%", "")) if float(
-                                (row["Sent Audio Packet loss (%)"]).split(" ")[0].replace(
-                                    "%", "")) > 0 else temp_min_audio_pktloss_s)
-                        temp_min_audio_pktloss_r = min(
-                            temp_min_audio_pktloss_r, float(
-                                (row["Sent Audio Packet loss (%)"]).split(" ")[0].replace(
-                                    "%", ""))) if temp_min_audio_pktloss_r > 0 and float(
-                            (row["Sent Audio Packet loss (%)"]).split(" ")[0].replace(
-                                "%", "")) > 0 else (
-                            float(
-                                (row["Sent Audio Packet loss (%)"]).split(" ")[0].replace(
-                                    "%", "")) if float(
-                                (row["Sent Audio Packet loss (%)"]).split(" ")[0].replace(
-                                    "%", "")) > 0 else temp_min_audio_pktloss_r)
+                        temp_min_audio_pktloss_s = (
+                            min(
+                                temp_min_audio_pktloss_s,
+                                float(
+                                    (row["Sent Audio Packet loss (%)"])
+                                    .split(" ")[0]
+                                    .replace("%", "")
+                                ),
+                            )
+                            if temp_min_audio_pktloss_s > 0
+                            and float(
+                                (row["Sent Audio Packet loss (%)"])
+                                .split(" ")[0]
+                                .replace("%", "")
+                            )
+                            > 0
+                            else (
+                                float(
+                                    (row["Sent Audio Packet loss (%)"])
+                                    .split(" ")[0]
+                                    .replace("%", "")
+                                )
+                                if float(
+                                    (row["Sent Audio Packet loss (%)"])
+                                    .split(" ")[0]
+                                    .replace("%", "")
+                                )
+                                > 0
+                                else temp_min_audio_pktloss_s
+                            )
+                        )
+                        temp_min_audio_pktloss_r = (
+                            min(
+                                temp_min_audio_pktloss_r,
+                                float(
+                                    (row["Sent Audio Packet loss (%)"])
+                                    .split(" ")[0]
+                                    .replace("%", "")
+                                ),
+                            )
+                            if temp_min_audio_pktloss_r > 0
+                            and float(
+                                (row["Sent Audio Packet loss (%)"])
+                                .split(" ")[0]
+                                .replace("%", "")
+                            )
+                            > 0
+                            else (
+                                float(
+                                    (row["Sent Audio Packet loss (%)"])
+                                    .split(" ")[0]
+                                    .replace("%", "")
+                                )
+                                if float(
+                                    (row["Sent Audio Packet loss (%)"])
+                                    .split(" ")[0]
+                                    .replace("%", "")
+                                )
+                                > 0
+                                else temp_min_audio_pktloss_r
+                            )
+                        )
 
-                        temp_min_video_jitter_s = min(
-                            temp_min_video_jitter_s,
-                            float(
-                                row["Sent Video Jitter (ms)"])) if temp_min_video_jitter_s > 0 and float(
-                            row["Sent Video Jitter (ms)"]) > 0 else (
-                            float(
-                                row["Sent Video Jitter (ms)"]) if float(
-                                row["Sent Video Jitter (ms)"]) > 0 else temp_min_video_jitter_s)
-                        temp_min_video_jitter_r = min(
-                            temp_min_video_jitter_r, float(
-                                row["Receive Video Jitter (ms)"])) if temp_min_video_jitter_r > 0 and float(
-                            row["Receive Video Jitter (ms)"]) > 0 else (
-                            float(
-                                row["Receive Video Jitter (ms)"]) if float(
-                                row["Receive Video Jitter (ms)"]) > 0 else temp_min_video_jitter_r)
-                        temp_min_video_latency_s = min(
-                            temp_min_video_latency_s, float(
-                                row["Sent Video Latency (ms)"])) if temp_min_video_latency_s > 0 and float(
-                            row["Sent Video Latency (ms)"]) > 0 else (
-                            float(
-                                row["Sent Video Latency (ms)"]) if float(
-                                row["Sent Video Latency (ms)"]) > 0 else temp_min_video_latency_s)
-                        temp_min_video_latency_r = min(
-                            temp_min_video_latency_r, float(
-                                row["Receive Video Latency (ms)"])) if temp_min_video_latency_r > 0 and float(
-                            row["Receive Video Latency (ms)"]) > 0 else (
-                            float(
-                                row["Receive Video Latency (ms)"]) if float(
-                                row["Receive Video Latency (ms)"]) > 0 else temp_min_video_latency_r)
+                        temp_min_video_jitter_s = (
+                            min(
+                                temp_min_video_jitter_s,
+                                float(row["Sent Video Jitter (ms)"]),
+                            )
+                            if temp_min_video_jitter_s > 0
+                            and float(row["Sent Video Jitter (ms)"]) > 0
+                            else (
+                                float(row["Sent Video Jitter (ms)"])
+                                if float(row["Sent Video Jitter (ms)"]) > 0
+                                else temp_min_video_jitter_s
+                            )
+                        )
+                        temp_min_video_jitter_r = (
+                            min(
+                                temp_min_video_jitter_r,
+                                float(row["Receive Video Jitter (ms)"]),
+                            )
+                            if temp_min_video_jitter_r > 0
+                            and float(row["Receive Video Jitter (ms)"]) > 0
+                            else (
+                                float(row["Receive Video Jitter (ms)"])
+                                if float(row["Receive Video Jitter (ms)"]) > 0
+                                else temp_min_video_jitter_r
+                            )
+                        )
+                        temp_min_video_latency_s = (
+                            min(
+                                temp_min_video_latency_s,
+                                float(row["Sent Video Latency (ms)"]),
+                            )
+                            if temp_min_video_latency_s > 0
+                            and float(row["Sent Video Latency (ms)"]) > 0
+                            else (
+                                float(row["Sent Video Latency (ms)"])
+                                if float(row["Sent Video Latency (ms)"]) > 0
+                                else temp_min_video_latency_s
+                            )
+                        )
+                        temp_min_video_latency_r = (
+                            min(
+                                temp_min_video_latency_r,
+                                float(row["Receive Video Latency (ms)"]),
+                            )
+                            if temp_min_video_latency_r > 0
+                            and float(row["Receive Video Latency (ms)"]) > 0
+                            else (
+                                float(row["Receive Video Latency (ms)"])
+                                if float(row["Receive Video Latency (ms)"]) > 0
+                                else temp_min_video_latency_r
+                            )
+                        )
 
-                        temp_min_video_pktloss_s = min(
-                            temp_min_video_pktloss_s, float(
-                                (row["Sent Video Packet loss (%)"]).split(" ")[0].replace(
-                                    "%", ""))) if temp_min_video_pktloss_s > 0 and float(
-                            (row["Sent Video Packet loss (%)"]).split(" ")[0].replace(
-                                "%", "")) > 0 else (
-                            float(
-                                (row["Sent Video Packet loss (%)"]).split(" ")[0].replace(
-                                    "%", "")) if float(
-                                (row["Sent Video Packet loss (%)"]).split(" ")[0].replace(
-                                    "%", "")) > 0 else temp_min_video_pktloss_s)
-                        temp_min_video_pktloss_r = min(
-                            temp_min_video_pktloss_r, float(
-                                (row["Sent Video Packet loss (%)"]).split(" ")[0].replace(
-                                    "%", ""))) if temp_min_video_pktloss_r > 0 and float(
-                            (row["Sent Video Packet loss (%)"]).split(" ")[0].replace(
-                                "%", "")) > 0 else (
-                            float(
-                                (row["Sent Video Packet loss (%)"]).split(" ")[0].replace(
-                                    "%", "")) if float(
-                                (row["Sent Video Packet loss (%)"]).split(" ")[0].replace(
-                                    "%", "")) > 0 else temp_min_video_pktloss_r)
+                        temp_min_video_pktloss_s = (
+                            min(
+                                temp_min_video_pktloss_s,
+                                float(
+                                    (row["Sent Video Packet loss (%)"])
+                                    .split(" ")[0]
+                                    .replace("%", "")
+                                ),
+                            )
+                            if temp_min_video_pktloss_s > 0
+                            and float(
+                                (row["Sent Video Packet loss (%)"])
+                                .split(" ")[0]
+                                .replace("%", "")
+                            )
+                            > 0
+                            else (
+                                float(
+                                    (row["Sent Video Packet loss (%)"])
+                                    .split(" ")[0]
+                                    .replace("%", "")
+                                )
+                                if float(
+                                    (row["Sent Video Packet loss (%)"])
+                                    .split(" ")[0]
+                                    .replace("%", "")
+                                )
+                                > 0
+                                else temp_min_video_pktloss_s
+                            )
+                        )
+                        temp_min_video_pktloss_r = (
+                            min(
+                                temp_min_video_pktloss_r,
+                                float(
+                                    (row["Sent Video Packet loss (%)"])
+                                    .split(" ")[0]
+                                    .replace("%", "")
+                                ),
+                            )
+                            if temp_min_video_pktloss_r > 0
+                            and float(
+                                (row["Sent Video Packet loss (%)"])
+                                .split(" ")[0]
+                                .replace("%", "")
+                            )
+                            > 0
+                            else (
+                                float(
+                                    (row["Sent Video Packet loss (%)"])
+                                    .split(" ")[0]
+                                    .replace("%", "")
+                                )
+                                if float(
+                                    (row["Sent Video Packet loss (%)"])
+                                    .split(" ")[0]
+                                    .replace("%", "")
+                                )
+                                > 0
+                                else temp_min_video_pktloss_r
+                            )
+                        )
 
             except Exception as e:
-                logging.error(f"Error in reading data in client {self.device_names[i]}", e)
+                logging.error(
+                    f"Error in reading data in client {self.device_names[i]}", e
+                )
                 no_csv_client.append(self.device_names[i])
                 rejected_clients.append(self.device_names[i])
             if self.device_names[i] not in no_csv_client:
@@ -1167,22 +1568,28 @@ class ZoomAutomation(Realm):
         report.set_table_title("Test Devices:")
         report.build_table_title()
 
-        device_details = pd.DataFrame({
-            'Hostname': self.real_sta_hostname,
-            'OS Type': self.real_sta_os_type,
-            "MAC": self.mac_list,
-            "RSSI": self.rssi_list,
-            "Link Rate": self.link_rate_list,
-            "SSID": self.ssid_list,
-
-        })
+        device_details = pd.DataFrame(
+            {
+                "Hostname": self.real_sta_hostname,
+                "OS Type": self.real_sta_os_type,
+                "MAC": self.mac_list,
+                "RSSI": self.rssi_list,
+                "Link Rate": self.link_rate_list,
+                "SSID": self.ssid_list,
+            }
+        )
         report.set_table_dataframe(device_details)
         report.build_table()
 
         if self.audio:
             report.set_graph_title("Audio Latency (Sent/Received)")
             report.build_graph_title()
-            x_data_set = [max_audio_latency_s.copy(), min_audio_latency_s.copy(), max_audio_latency_r.copy(), min_audio_latency_r.copy()]
+            x_data_set = [
+                max_audio_latency_s.copy(),
+                min_audio_latency_s.copy(),
+                max_audio_latency_r.copy(),
+                min_audio_latency_r.copy(),
+            ]
             y_data_set = client_array
 
             x_fig_size = 18
@@ -1195,13 +1602,13 @@ class ZoomAutomation(Realm):
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["yellow", "blue", "orange", "grey"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Audio Latency(sent/received)",
                 _graph_image_name="Audio Latency(sent and received)",
-                _label=["Max Sent", "Min Sent", "Max Recv", "Min Recv"]
+                _label=["Max Sent", "Min Sent", "Max Recv", "Min Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             report.set_graph_image(graph_image)
@@ -1210,7 +1617,12 @@ class ZoomAutomation(Realm):
 
             report.set_graph_title("Audio Jitter (Sent/Received)")
             report.build_graph_title()
-            x_data_set = [max_audio_jitter_s.copy(), min_audio_jitter_s.copy(), max_audio_jitter_r.copy(), min_audio_jitter_r.copy()]
+            x_data_set = [
+                max_audio_jitter_s.copy(),
+                min_audio_jitter_s.copy(),
+                max_audio_jitter_r.copy(),
+                min_audio_jitter_r.copy(),
+            ]
             y_data_set = client_array
 
             x_fig_size = 18
@@ -1223,13 +1635,13 @@ class ZoomAutomation(Realm):
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["yellow", "blue", "orange", "grey"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Audio Jitter(sent/received)",
                 _graph_image_name="Audio Jitter(sent and received)",
-                _label=["Max Sent", "Min Sent", "Max Recv", "Min Recv"]
+                _label=["Max Sent", "Min Sent", "Max Recv", "Min Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             report.set_graph_image(graph_image)
@@ -1238,7 +1650,12 @@ class ZoomAutomation(Realm):
 
             report.set_graph_title("Audio Packet Loss (Sent/Received)")
             report.build_graph_title()
-            x_data_set = [max_audio_pktloss_s.copy(), min_audio_pktloss_s.copy(), max_audio_pktloss_r.copy(), min_audio_pktloss_r.copy()]
+            x_data_set = [
+                max_audio_pktloss_s.copy(),
+                min_audio_pktloss_s.copy(),
+                max_audio_pktloss_r.copy(),
+                min_audio_pktloss_r.copy(),
+            ]
             y_data_set = client_array
 
             x_fig_size = 18
@@ -1251,13 +1668,13 @@ class ZoomAutomation(Realm):
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["yellow", "blue", "orange", "grey"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Audio Packet Loss(sent/received)",
                 _graph_image_name="Audio Packet Loss(sent and received)",
-                _label=["Max Sent", "Min Sent", "Max Recv", "Min Recv"]
+                _label=["Max Sent", "Min Sent", "Max Recv", "Min Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             report.set_graph_image(graph_image)
@@ -1266,25 +1683,101 @@ class ZoomAutomation(Realm):
 
             report.set_table_title("Test Audio Results Table:")
             report.build_table_title()
-            audio_test_details = pd.DataFrame({
-                'Device Name': [client for client in accepted_clients],
-                'Avg Latency Sent (ms)': [round(sum(data["audio_latency_s"]) / len(data["audio_latency_s"]), 2) if len(data["audio_latency_s"]) != 0 else 0 for data in final_dataset],
-                'Avg Latency Recv (ms)': [round(sum(data["audio_latency_r"]) / len(data["audio_latency_r"]), 2) if len(data["audio_latency_r"]) != 0 else 0 for data in final_dataset],
-                'Avg Jitter Sent (ms)': [round(sum(data["audio_jitter_s"]) / len(data["audio_jitter_s"]), 2) if len(data["audio_jitter_s"]) != 0 else 0 for data in final_dataset],
-                'Avg Jitter Recv (ms)': [round(sum(data["audio_jitter_r"]) / len(data["audio_jitter_r"]), 2) if len(data["audio_jitter_r"]) != 0 else 0 for data in final_dataset],
-                'Avg Pkt Loss Sent': [round(sum(data["audio_pktloss_s"]) / len(data["audio_pktloss_s"]), 2) if len(data["audio_pktloss_s"]) != 0 else 0 for data in final_dataset],
-                'Avg Pkt Loss Recv': [round(sum(data["audio_pktloss_r"]) / len(data["audio_pktloss_r"]), 2) if len(data["audio_pktloss_r"]) != 0 else 0 for data in final_dataset],
-                'CSV link': ['<a href="{}.csv" target="_blank">csv data</a>'.format(client) for client in accepted_clients]
-
-            })
+            audio_test_details = pd.DataFrame(
+                {
+                    "Device Name": [client for client in accepted_clients],
+                    "Avg Latency Sent (ms)": [
+                        (
+                            round(
+                                sum(data["audio_latency_s"])
+                                / len(data["audio_latency_s"]),
+                                2,
+                            )
+                            if len(data["audio_latency_s"]) != 0
+                            else 0
+                        )
+                        for data in final_dataset
+                    ],
+                    "Avg Latency Recv (ms)": [
+                        (
+                            round(
+                                sum(data["audio_latency_r"])
+                                / len(data["audio_latency_r"]),
+                                2,
+                            )
+                            if len(data["audio_latency_r"]) != 0
+                            else 0
+                        )
+                        for data in final_dataset
+                    ],
+                    "Avg Jitter Sent (ms)": [
+                        (
+                            round(
+                                sum(data["audio_jitter_s"])
+                                / len(data["audio_jitter_s"]),
+                                2,
+                            )
+                            if len(data["audio_jitter_s"]) != 0
+                            else 0
+                        )
+                        for data in final_dataset
+                    ],
+                    "Avg Jitter Recv (ms)": [
+                        (
+                            round(
+                                sum(data["audio_jitter_r"])
+                                / len(data["audio_jitter_r"]),
+                                2,
+                            )
+                            if len(data["audio_jitter_r"]) != 0
+                            else 0
+                        )
+                        for data in final_dataset
+                    ],
+                    "Avg Pkt Loss Sent": [
+                        (
+                            round(
+                                sum(data["audio_pktloss_s"])
+                                / len(data["audio_pktloss_s"]),
+                                2,
+                            )
+                            if len(data["audio_pktloss_s"]) != 0
+                            else 0
+                        )
+                        for data in final_dataset
+                    ],
+                    "Avg Pkt Loss Recv": [
+                        (
+                            round(
+                                sum(data["audio_pktloss_r"])
+                                / len(data["audio_pktloss_r"]),
+                                2,
+                            )
+                            if len(data["audio_pktloss_r"]) != 0
+                            else 0
+                        )
+                        for data in final_dataset
+                    ],
+                    "CSV link": [
+                        '<a href="{}.csv" target="_blank">csv data</a>'.format(client)
+                        for client in accepted_clients
+                    ],
+                }
+            )
             report.set_table_dataframe(audio_test_details)
-            report.dataframe_html = report.dataframe.to_html(index=False,
-                                                             justify='center', render_links=True, escape=False)  # have the index be able to be passed in.
+            report.dataframe_html = report.dataframe.to_html(
+                index=False, justify="center", render_links=True, escape=False
+            )  # have the index be able to be passed in.
             report.html += report.dataframe_html
         if self.video:
             report.set_graph_title("Video Latency (Sent/Received)")
             report.build_graph_title()
-            x_data_set = [max_video_latency_s.copy(), min_video_latency_s.copy(), max_video_latency_r.copy(), min_video_latency_r.copy()]
+            x_data_set = [
+                max_video_latency_s.copy(),
+                min_video_latency_s.copy(),
+                max_video_latency_r.copy(),
+                min_video_latency_r.copy(),
+            ]
             y_data_set = client_array
             x_fig_size = 18
             y_fig_size = len(client_array) * 1 + 4
@@ -1296,13 +1789,13 @@ class ZoomAutomation(Realm):
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["yellow", "blue", "orange", "grey"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Video Latency(sent/received)",
                 _graph_image_name="Video Latency(sent and received)",
-                _label=["Max Sent", "Min Sent", "Max Recv", "Min Recv"]
+                _label=["Max Sent", "Min Sent", "Max Recv", "Min Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             report.set_graph_image(graph_image)
@@ -1311,7 +1804,12 @@ class ZoomAutomation(Realm):
 
             report.set_graph_title("Video Jitter (Sent/Received)")
             report.build_graph_title()
-            x_data_set = [max_video_jitter_s.copy(), min_video_jitter_s.copy(), max_video_jitter_r.copy(), min_video_jitter_r.copy()]
+            x_data_set = [
+                max_video_jitter_s.copy(),
+                min_video_jitter_s.copy(),
+                max_video_jitter_r.copy(),
+                min_video_jitter_r.copy(),
+            ]
             y_data_set = client_array
             x_fig_size = 18
             y_fig_size = len(client_array) * 1 + 4
@@ -1323,13 +1821,13 @@ class ZoomAutomation(Realm):
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["yellow", "blue", "orange", "grey"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Video Jitter(sent/received)",
                 _graph_image_name="Video Jitter(sent and received)",
-                _label=["Max Sent", "Min Sent", "Max Recv", "Min Recv"]
+                _label=["Max Sent", "Min Sent", "Max Recv", "Min Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             report.set_graph_image(graph_image)
@@ -1338,7 +1836,12 @@ class ZoomAutomation(Realm):
 
             report.set_graph_title("Video Packet Loss (Sent/Received)")
             report.build_graph_title()
-            x_data_set = [max_video_pktloss_s.copy(), min_video_pktloss_s.copy(), max_video_pktloss_r.copy(), min_video_pktloss_r.copy()]
+            x_data_set = [
+                max_video_pktloss_s.copy(),
+                min_video_pktloss_s.copy(),
+                max_video_pktloss_r.copy(),
+                min_video_pktloss_r.copy(),
+            ]
             y_data_set = client_array
             x_fig_size = 18
             y_fig_size = len(client_array) * 1 + 4
@@ -1350,13 +1853,13 @@ class ZoomAutomation(Realm):
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["yellow", "blue", "orange", "grey"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Video Packet Loss(sent/received)",
                 _graph_image_name="Video Packet Loss(sent and received)",
-                _label=["Max Sent", "Min Sent", "Max Recv", "Min Recv"]
+                _label=["Max Sent", "Min Sent", "Max Recv", "Min Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             report.set_graph_image(graph_image)
@@ -1365,45 +1868,224 @@ class ZoomAutomation(Realm):
 
             report.set_table_title("Test Video Results Table:")
             report.build_table_title()
-            video_test_details = pd.DataFrame({
-                'Device Name': [client for client in accepted_clients],
-                'Avg Latency Sent (ms)': [round(sum(data["video_latency_s"]) / len(data["video_latency_s"]), 2) if len(data["video_latency_s"]) != 0 else 0 for data in final_dataset],
-                'Avg Latency Recv (ms)': [round(sum(data["video_latency_r"]) / len(data["video_latency_r"]), 2) if len(data["video_latency_r"]) != 0 else 0 for data in final_dataset],
-                'Avg Jitter Sent (ms)': [round(sum(data["video_jitter_s"]) / len(data["video_jitter_s"]), 2) if len(data["video_jitter_s"]) != 0 else 0 for data in final_dataset],
-                'Avg Jitter Recv (ms)': [round(sum(data["video_jitter_r"]) / len(data["video_jitter_r"]), 2) if len(data["video_jitter_r"]) != 0 else 0 for data in final_dataset],
-                'Avg Pkt Loss Sent': [round(sum(data["video_pktloss_s"]) / len(data["video_pktloss_s"]), 2) if len(data["video_pktloss_s"]) != 0 else 0 for data in final_dataset],
-                'Avg Pkt Loss Recv': [round(sum(data["video_pktloss_r"]) / len(data["video_pktloss_r"]), 2) if len(data["video_pktloss_r"]) != 0 else 0 for data in final_dataset],
-                'CSV link': ['<a href="{}.csv" target="_blank">csv data</a>'.format(client) for client in accepted_clients]
-            })
+            video_test_details = pd.DataFrame(
+                {
+                    "Device Name": [client for client in accepted_clients],
+                    "Avg Latency Sent (ms)": [
+                        (
+                            round(
+                                sum(data["video_latency_s"])
+                                / len(data["video_latency_s"]),
+                                2,
+                            )
+                            if len(data["video_latency_s"]) != 0
+                            else 0
+                        )
+                        for data in final_dataset
+                    ],
+                    "Avg Latency Recv (ms)": [
+                        (
+                            round(
+                                sum(data["video_latency_r"])
+                                / len(data["video_latency_r"]),
+                                2,
+                            )
+                            if len(data["video_latency_r"]) != 0
+                            else 0
+                        )
+                        for data in final_dataset
+                    ],
+                    "Avg Jitter Sent (ms)": [
+                        (
+                            round(
+                                sum(data["video_jitter_s"])
+                                / len(data["video_jitter_s"]),
+                                2,
+                            )
+                            if len(data["video_jitter_s"]) != 0
+                            else 0
+                        )
+                        for data in final_dataset
+                    ],
+                    "Avg Jitter Recv (ms)": [
+                        (
+                            round(
+                                sum(data["video_jitter_r"])
+                                / len(data["video_jitter_r"]),
+                                2,
+                            )
+                            if len(data["video_jitter_r"]) != 0
+                            else 0
+                        )
+                        for data in final_dataset
+                    ],
+                    "Avg Pkt Loss Sent": [
+                        (
+                            round(
+                                sum(data["video_pktloss_s"])
+                                / len(data["video_pktloss_s"]),
+                                2,
+                            )
+                            if len(data["video_pktloss_s"]) != 0
+                            else 0
+                        )
+                        for data in final_dataset
+                    ],
+                    "Avg Pkt Loss Recv": [
+                        (
+                            round(
+                                sum(data["video_pktloss_r"])
+                                / len(data["video_pktloss_r"]),
+                                2,
+                            )
+                            if len(data["video_pktloss_r"]) != 0
+                            else 0
+                        )
+                        for data in final_dataset
+                    ],
+                    "CSV link": [
+                        '<a href="{}.csv" target="_blank">csv data</a>'.format(client)
+                        for client in accepted_clients
+                    ],
+                }
+            )
             report.set_table_dataframe(video_test_details)
 
-            report.dataframe_html = report.dataframe.to_html(index=False,
-                                                             justify='center', render_links=True, escape=False)  # have the index be able to be passed in.
+            report.dataframe_html = report.dataframe.to_html(
+                index=False, justify="center", render_links=True, escape=False
+            )  # have the index be able to be passed in.
             report.html += report.dataframe_html
         report.set_custom_html("<br/><hr/>")
         report.build_custom()
 
         report.write_html()
-        report.write_pdf(_page_size='Legal', _orientation='Landscape')
+        report.write_pdf(_page_size="Legal", _orientation="Landscape")
         for client in accepted_clients:
-            file_to_move_path = os.path.join(self.path, f'{client}.csv')
+            file_to_move_path = os.path.join(self.path, f"{client}.csv")
             self.move_files(file_to_move_path, report_path_date_time)
         if self.download_csv:
-            self.move_files(os.path.join(os.getcwd(),self.csv_file_name), report_path_date_time)
-    
+            self.move_files(
+                os.path.join(os.getcwd(), self.csv_file_name), report_path_date_time
+            )
+
+    def get_final_qos_data(self):
+        # load envirnment file if specified
+        if self.env_file:
+            if os.path.exists(self.env_file):
+                load_dotenv(self.env_file)
+                print(f"Loaded environment variables from {self.env_file}")
+            else:
+                raise FileNotFoundError(f".env file '{self.env_file}' not found")
+
+        # Fetching zoom credentials for account
+        account_id = os.environ.get("ACCOUNT_ID")
+        client_id = os.environ.get("CLIENT_ID")
+        client_secret = os.environ.get("CLIENT_SECRET")
+
+        if not all([account_id, client_id, client_secret]):
+            logging.info("Exiting test.")
+            raise ValueError(
+                "Missing Zoom credentials (account_id, client_id, client_secret)"
+            )
+
+        meeting_id = self.remote_login_url
+        logger.info(f"Meeting ID: {meeting_id}")
+
+        # Getting access token
+        token = self.get_access_token(account_id, client_id, client_secret)
+        logging.info("\nFetching participants QoS data...")
+        api_data_tries = 0
+        while api_data_tries <= 2:
+            try:
+                # retrring with past meetings
+                self.participants_qos_last = self.get_participants_qos(
+                    meeting_id, token, "past"
+                )
+                self.live_data = self.summarize_audio_video(self.participants_qos_last)
+                if self.do_robo:
+                    self.save_json(
+                        self.participants_qos_last,
+                        f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json",
+                    )
+                else:
+                    self.save_json(self.participants_qos_last, f"{meeting_id}_qos.json")
+                break
+            except Exception as e:
+                api_data_tries += 1
+                logger.info(
+                    f"Unable to fetch meeting data...waiting for 10 seconds <===tries:{api_data_tries} {e}"
+                )
+                time.sleep(10)
+        if api_data_tries > 2:
+            logger.info("Unable to fetch meeting data...trying with live meeting.")
+            try:
+                # retrring with live meeting once
+                self.participants_qos_last = self.get_participants_qos(
+                    meeting_id, token, "live"
+                )
+                self.live_data = self.summarize_audio_video(self.participants_qos_last)
+                if self.do_robo:
+                    self.save_json(
+                        self.participants_qos_last,
+                        f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json",
+                    )
+                else:
+                    self.save_json(self.participants_qos_last, f"{meeting_id}_qos.json")
+            except Exception as e:
+                logger.info(
+                    f"couldn't fetch data from live meeting as well....Trying from past meeting one last time after 100 seconds. {e}"
+                )
+                time.sleep(100)
+                try:
+                    # Refecting access token
+                    token = self.get_access_token(account_id, client_id, client_secret)
+                    # retrring with past meetings
+                    self.participants_qos_last = self.get_participants_qos(
+                        meeting_id, token, "past"
+                    )
+                    self.live_data = self.summarize_audio_video(
+                        self.participants_qos_last
+                    )
+                    if self.do_robo:
+                        self.save_json(
+                            self.participants_qos_last,
+                            f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json",
+                        )
+                    else:
+                        self.save_json(
+                            self.participants_qos_last, f"{meeting_id}_qos.json"
+                        )
+                except Exception as e:
+                    logger.info(
+                        f"Unable to get the data from meeting....Exiting test {e}"
+                    )
+                    logger.info(
+                        "using the last live data that we fetched during running"
+                    )
+                    if self.do_robo:
+                        self.save_json(
+                            self.participants_qos_last,
+                            f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json",
+                        )
+                    else:
+                        self.save_json(
+                            self.participants_qos_last, f"{meeting_id}_qos.json"
+                        )
+
     def generate_report_from_api(self):
-        print("========================================================")
-        print("checking self.qos_data_last", self.participants_qos_last)
-        report = lf_report(_output_pdf='zoom_call_report.pdf',
-                           _output_html='zoom_call_report.html',
-                           _results_dir_name="zoom_call_report",
-                           _path=self.path)
-        report_path_date_time = report.get_path_date_time()
-        report.set_title("Zoom Call Automated Report")
-        report.build_banner()
-        report.set_table_title("Objective:")
-        report.build_table_title()
-        report.set_text("""The Zoom Conference Test is designed to evaluate an Access Point ability
+        self.report = lf_report(
+            _output_pdf="zoom_call_report.pdf",
+            _output_html="zoom_call_report.html",
+            _results_dir_name="zoom_call_report",
+            _path=self.path,
+        )
+        report_path_date_time = self.report.get_path_date_time()
+        self.report.set_title("Zoom Call Automated Report")
+        self.report.build_banner()
+        self.report.set_table_title("Objective:")
+        self.report.build_table_title()
+        self.report.set_text(
+            """The Zoom Conference Test is designed to evaluate an Access Point ability
 to handle real-time conferencing workloads when multiple clients, including Windows,
 Linux, macOS, and Android devices, participate in a Zoom meeting. The test measures
 the AP’s efficiency in managing audio, video, and screen share traffic while maintaining
@@ -1411,10 +2093,11 @@ acceptable latency, jitter, packet loss, and bitrate. Additional observations in
 connection stability, airtime fairness, and MOS Score. The expected behavior is for the
 Access Point to sustain consistent Zoom performance as the client load increases,
 ensuring reliable conferencing quality without significant degradation across upstream
-and downstream traffic""")
-        report.build_text_simple()
-        report.set_table_title("Test Parameters:")
-        report.build_table_title()
+and downstream traffic"""
+        )
+        self.report.build_text_simple()
+        self.report.set_table_title("Test Parameters:")
+        self.report.build_table_title()
         testtype = ""
         if self.audio and self.video:
             testtype = "AUDIO & VIDEO"
@@ -1424,24 +2107,29 @@ and downstream traffic""")
             testtype = "VIDEO"
 
         # lambda function to convert min to HH:MM:SS
-        to_hms = lambda mins: f"{int(mins*60//3600):02}:{int((mins*60%3600)//60):02}:{int(mins*60%60):02}"
+        to_hms = (
+            lambda mins: f"{int(mins * 60 // 3600):02}:{int((mins * 60 % 3600) // 60):02}:{int(mins * 60 % 60):02}"
+        )
 
         if self.config:
-            test_parameters = pd.DataFrame([{
-                "Test Name":"Zoom Conference Call Test",
-                "Date": time.strftime("%d-%m-%Y", time.localtime()),
-                "Configured Devices": self.hostname_os_combination,
-                "Zoom Meeting ID": self.remote_login_url,
-                'Devices Used': f'W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
-                'Test Duration': to_hms(self.duration),
-                'EMAIL ID': self.signin_email,
-                "PASSWORD": self.signin_passwd,
-                "HOST": self.real_sta_list[0],
-                "TEST TYPE": testtype,
-                "SSID": self.ssid,
-                "Security": self.security
-
-            }])
+            test_parameters = pd.DataFrame(
+                [
+                    {
+                        "Test Name": "Zoom Conference Call Test",
+                        "Date": time.strftime("%d-%m-%Y", time.localtime()),
+                        "Configured Devices": self.hostname_os_combination,
+                        "Zoom Meeting ID": self.remote_login_url,
+                        "Devices Used": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
+                        "Test Duration": to_hms(self.duration),
+                        "EMAIL ID": self.signin_email,
+                        "PASSWORD": self.signin_passwd,
+                        "HOST": self.real_sta_list[0],
+                        "TEST TYPE": testtype,
+                        "SSID": self.ssid,
+                        "Security": self.security,
+                    }
+                ]
+            )
         elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
             # Map each group with a profile
             gp_pairs = zip(self.selected_groups, self.selected_profiles)
@@ -1449,36 +2137,42 @@ and downstream traffic""")
             # Create a string by joining the mapped pairs
             gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
 
-            test_parameters = pd.DataFrame([{
-                "Test Name":"Zoom Conference Call Test",
-                "Date": time.strftime("%d-%m-%Y", time.localtime()),
-                "Configuration": gp_map,
-                "Configured Devices": self.hostname_os_combination,
-                "Zoom Meeting ID": self.remote_login_url,
-                'Devices Used': f'W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
-                'Test Duration': to_hms(self.duration),
-                'EMAIL ID': self.signin_email,
-                "PASSWORD": self.signin_passwd,
-                "HOST": self.real_sta_list[0],
-                "TEST TYPE": testtype,
-
-            }])
+            test_parameters = pd.DataFrame(
+                [
+                    {
+                        "Test Name": "Zoom Conference Call Test",
+                        "Date": time.strftime("%d-%m-%Y", time.localtime()),
+                        "Configuration": gp_map,
+                        "Configured Devices": self.hostname_os_combination,
+                        "Zoom Meeting ID": self.remote_login_url,
+                        "Devices Used": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
+                        "Test Duration": to_hms(self.duration),
+                        "EMAIL ID": self.signin_email,
+                        "PASSWORD": self.signin_passwd,
+                        "HOST": self.real_sta_list[0],
+                        "TEST TYPE": testtype,
+                    }
+                ]
+            )
         else:
 
-            test_parameters = pd.DataFrame([{
-                "Test Name":"Zoom Conference Call Test",
-                "Date": time.strftime("%d-%m-%Y", time.localtime()),
-                'Devices Used': f'W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
-                "Zoom Meeting ID": self.remote_login_url,
-                'Test Duration': to_hms(self.duration),
-                'EMAIL ID': self.signin_email,
-                "PASSWORD": self.signin_passwd,
-                "HOST": self.real_sta_list[0],
-                "TEST TYPE": testtype,
-
-            }])
-        report.set_table_dataframe(test_parameters)
-        report.build_table()
+            test_parameters = pd.DataFrame(
+                [
+                    {
+                        "Test Name": "Zoom Conference Call Test",
+                        "Date": time.strftime("%d-%m-%Y", time.localtime()),
+                        "Devices Used": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
+                        # "Zoom Meeting ID": self.remote_login_url,
+                        "Test Duration": to_hms(self.duration),
+                        "EMAIL ID": self.signin_email,
+                        "PASSWORD": self.signin_passwd,
+                        "HOST": self.real_sta_list[0],
+                        "TEST TYPE": testtype,
+                    }
+                ]
+            )
+        self.report.set_table_dataframe(test_parameters)
+        self.report.build_table()
 
         if not self.download_csv:
             # we will use api response to generate report
@@ -1486,80 +2180,145 @@ and downstream traffic""")
             device_data = self.summarize_audio_video(self.participants_qos_last)
             print("========================================================")
             print("device_data", device_data)
-            report.set_table_title("Test Devices:")
-            report.build_table_title()
-            device_details = pd.DataFrame({
-                'Hostname': self.real_sta_hostname,
-                'OS Type': self.real_sta_os_type,
-                "MAC": self.mac_list,
-                "RSSI": self.rssi_list,
-                "Link Rate": self.link_rate_list,
-                "SSID": self.ssid_list,
-                "Role in call": ["Host" if index == 0 else "Participant" for index, hostname in enumerate(self.real_sta_hostname)],
-            })
-        else :
-            try:
-                # check if csv file is present
-                if not os.path.exists(os.path.join(os.getcwd(),self.csv_file_name)):
-                    logging.error(f"File not found: {self.csv_file_name}")
-                    device_data = self.summarize_audio_video(self.participants_qos_last)
-                    report.set_table_title("Test Devices:")
-                    report.build_table_title()
-                    device_details = pd.DataFrame({
-                        'Hostname': self.real_sta_hostname,
-                        'OS Type': self.real_sta_os_type,
-                        "MAC": self.mac_list,
-                        "RSSI": self.rssi_list,
-                        "Link Rate": self.link_rate_list,
-                        "SSID": self.ssid_list,
-                        "Role in call": ["Host" if index == 0 else "Participant" for index, hostname in enumerate(self.real_sta_hostname)],
-                    })
-                else:
-                    device_data = self.summarize_csv_audio_video(self.csv_file_name)
-                    report.set_table_title("Test Devices:")
-                    report.build_table_title()
-                    device_details = pd.DataFrame({
-                        'Hostname': self.real_sta_hostname,
-                        'OS Type': self.real_sta_os_type,
-                        "MAC": self.mac_list,
-                        "RSSI": self.rssi_list,
-                        "Link Rate": self.link_rate_list,
-                        "SSID": self.ssid_list,
-                        "Role in call": ["Host" if index == 0 else "Participant" for index, hostname in enumerate(self.real_sta_hostname)],
-                        "Overall Audio MOS": [device_data.get(client,{}).get("audio_mos_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_mos_avg") or 0 for index, client in enumerate(self.real_sta_hostname)],
-                        "Overall Video MOS": [device_data.get(client,{}).get("video_mos_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_mos_avg") or 0 for index, client in enumerate(self.real_sta_hostname)],
-                    })
-            except Exception as e:
-                logging.error(f"Error while getting/reading: {self.csv_file_name}", e)
-                device_data = self.summarize_audio_video(self.participants_qos_last)
-                report.set_table_title("Test Devices:")
-                report.build_table_title()
-                device_details = pd.DataFrame({
-                    'Hostname': self.real_sta_hostname,
-                    'OS Type': self.real_sta_os_type,
+            self.report.set_table_title("Test Devices:")
+            self.report.build_table_title()
+            device_details = pd.DataFrame(
+                {
+                    "Hostname": self.real_sta_hostname,
+                    "OS Type": self.real_sta_os_type,
                     "MAC": self.mac_list,
                     "RSSI": self.rssi_list,
                     "Link Rate": self.link_rate_list,
                     "SSID": self.ssid_list,
-                    "Role in call": ["Host" if index == 0 else "Participant" for index, hostname in enumerate(self.real_sta_hostname)],
-                })
-        report.set_table_dataframe(device_details)
-        report.build_table()
+                    "Role in call": [
+                        "Host" if index == 0 else "Participant"
+                        for index, hostname in enumerate(self.real_sta_hostname)
+                    ],
+                }
+            )
+        else:
+            try:
+                # check if csv file is present
+                if not os.path.exists(os.path.join(os.getcwd(), self.csv_file_name)):
+                    logging.error(f"File not found: {self.csv_file_name}")
+                    device_data = self.summarize_audio_video(self.participants_qos_last)
+                    self.report.set_table_title("Test Devices:")
+                    self.report.build_table_title()
+                    device_details = pd.DataFrame(
+                        {
+                            "Hostname": self.real_sta_hostname,
+                            "OS Type": self.real_sta_os_type,
+                            "MAC": self.mac_list,
+                            "RSSI": self.rssi_list,
+                            "Link Rate": self.link_rate_list,
+                            "SSID": self.ssid_list,
+                            "Role in call": [
+                                "Host" if index == 0 else "Participant"
+                                for index, hostname in enumerate(self.real_sta_hostname)
+                            ],
+                        }
+                    )
+                else:
+                    device_data = self.summarize_csv_audio_video(self.csv_file_name)
+                    self.report.set_table_title("Test Devices:")
+                    self.report.build_table_title()
+                    device_details = pd.DataFrame(
+                        {
+                            "Hostname": self.real_sta_hostname,
+                            "OS Type": self.real_sta_os_type,
+                            "MAC": self.mac_list,
+                            "RSSI": self.rssi_list,
+                            "Link Rate": self.link_rate_list,
+                            "SSID": self.ssid_list,
+                            "Role in call": [
+                                "Host" if index == 0 else "Participant"
+                                for index, hostname in enumerate(self.real_sta_hostname)
+                            ],
+                            "Overall Audio MOS": [
+                                (
+                                    device_data.get(client, {}).get("audio_mos_avg")
+                                    or 0
+                                    if index != 0
+                                    else device_data.get("Host Device", {}).get(
+                                        "audio_mos_avg"
+                                    )
+                                    or 0
+                                )
+                                for index, client in enumerate(self.real_sta_hostname)
+                            ],
+                            "Overall Video MOS": [
+                                (
+                                    device_data.get(client, {}).get("video_mos_avg")
+                                    or 0
+                                    if index != 0
+                                    else device_data.get("Host Device", {}).get(
+                                        "video_mos_avg"
+                                    )
+                                    or 0
+                                )
+                                for index, client in enumerate(self.real_sta_hostname)
+                            ],
+                        }
+                    )
+            except Exception as e:
+                logging.error(f"Error while getting/reading: {self.csv_file_name}", e)
+                device_data = self.summarize_audio_video(self.participants_qos_last)
+                self.report.set_table_title("Test Devices:")
+                self.report.build_table_title()
+                device_details = pd.DataFrame(
+                    {
+                        "Hostname": self.real_sta_hostname,
+                        "OS Type": self.real_sta_os_type,
+                        "MAC": self.mac_list,
+                        "RSSI": self.rssi_list,
+                        "Link Rate": self.link_rate_list,
+                        "SSID": self.ssid_list,
+                        "Role in call": [
+                            "Host" if index == 0 else "Participant"
+                            for index, hostname in enumerate(self.real_sta_hostname)
+                        ],
+                    }
+                )
+        self.report.set_table_dataframe(device_details)
+        self.report.build_table()
 
         if self.audio:
-            report.set_table_title("1. Audio Performance")
-            report.build_table_title()
+            self.report.set_table_title("1. Audio Performance")
+            self.report.build_table_title()
 
-            report.set_text("""Audio quality is evaluated through latency, jitter, bitrate, and packet loss, ensuring clear communication and consistent voice transmission.""")
-            report.build_text_simple()
+            self.report.set_text(
+                """Audio quality is evaluated through latency, jitter, bitrate, and packet loss, ensuring clear communication and consistent voice transmission."""
+            )
+            self.report.build_text_simple()
 
             # audio bitrate graph
-            report.set_graph_title("a. Audio Bitrate (Sent/Received)")
-            report.build_graph_title()
-            x_data_set = [ [device_data.get(client,{}).get("audio_input_bitrate_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_input_bitrate_avg") or 0 for index, client in enumerate(self.real_sta_hostname)],
-                          [device_data.get(client,{}).get("audio_output_bitrate_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_output_bitrate_avg") or 0 for index, client in enumerate(self.real_sta_hostname)]]
+            self.report.set_graph_title("a. Audio Bitrate (Sent/Received)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (
+                        device_data.get(client, {}).get("audio_input_bitrate_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "audio_input_bitrate_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (
+                        device_data.get(client, {}).get("audio_output_bitrate_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "audio_output_bitrate_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
             y_data_set = self.real_sta_hostname
-            
 
             x_fig_size = 18
             y_fig_size = len(self.real_sta_hostname) * 1 + 4
@@ -1571,24 +2330,46 @@ and downstream traffic""")
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Audio Bitrate(sent/received)",
                 _graph_image_name="Audio Bitrate(sent and received)",
-                _label=["Avg Sent", "Avg Recv"]
+                _label=["Avg Sent", "Avg Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-            report.set_graph_image(graph_image)
-            report.move_graph_image()
-            report.build_graph()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
 
             # audio latency graph
-            report.set_graph_title("b. Audio Latency (Sent/Received)")
-            report.build_graph_title()
-            x_data_set = [ [device_data.get(client,{}).get("audio_input_latency_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_input_latency_avg") or 0 for index, client in enumerate(self.real_sta_hostname)],
-                           [device_data.get(client,{}).get("audio_output_latency_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_output_latency_avg") or 0 for index, client in enumerate(self.real_sta_hostname)]]
+            self.report.set_graph_title("b. Audio Latency (Sent/Received)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (
+                        device_data.get(client, {}).get("audio_input_latency_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "audio_input_latency_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (
+                        device_data.get(client, {}).get("audio_output_latency_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "audio_output_latency_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
             y_data_set = self.real_sta_hostname
             x_fig_size = 18
             y_fig_size = len(self.real_sta_hostname) * 1 + 4
@@ -1600,24 +2381,46 @@ and downstream traffic""")
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Audio Latency(sent/received)",
                 _graph_image_name="Audio Latency(sent and received)",
-                _label=["Avg Sent", "Avg Recv"]
+                _label=["Avg Sent", "Avg Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-            report.set_graph_image(graph_image)
-            report.move_graph_image()
-            report.build_graph()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
 
             # audio jitter graph
-            report.set_graph_title("c. Audio Jitter (Sent/Received)")
-            report.build_graph_title()
-            x_data_set = [ [device_data.get(client,{}).get("audio_input_jitter_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_input_jitter_avg") or 0 for index, client in enumerate(self.real_sta_hostname)],
-                           [device_data.get(client,{}).get("audio_output_jitter_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_output_jitter_avg") or 0 for index, client in enumerate(self.real_sta_hostname)]]
+            self.report.set_graph_title("c. Audio Jitter (Sent/Received)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (
+                        device_data.get(client, {}).get("audio_input_jitter_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "audio_input_jitter_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (
+                        device_data.get(client, {}).get("audio_output_jitter_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "audio_output_jitter_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
             y_data_set = self.real_sta_hostname
             x_fig_size = 18
             y_fig_size = len(self.real_sta_hostname) * 1 + 4
@@ -1629,23 +2432,46 @@ and downstream traffic""")
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Audio Jitter(sent/received)",
                 _graph_image_name="Audio Jitter(sent and received)",
-                _label=["Avg Sent", "Avg Recv"]
+                _label=["Avg Sent", "Avg Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-            report.set_graph_image(graph_image)
-            report.move_graph_image()
-            report.build_graph()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
             # audio packet loss graph
-            report.set_graph_title("d. Audio Packet Loss (Sent/Received)")
-            report.build_graph_title()
-            x_data_set = [ [device_data.get(client,{}).get("audio_input_avg_loss_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_input_avg_loss_avg") or 0 for index, client in enumerate(self.real_sta_hostname)],
-                           [device_data.get(client,{}).get("audio_output_avg_loss_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_output_avg_loss_avg") or 0 for index, client in enumerate(self.real_sta_hostname)]]
+            self.report.set_graph_title("d. Audio Packet Loss (Sent/Received)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (
+                        device_data.get(client, {}).get("audio_input_avg_loss_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "audio_input_avg_loss_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (
+                        device_data.get(client, {}).get("audio_output_avg_loss_avg")
+                        or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "audio_output_avg_loss_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
             y_data_set = self.real_sta_hostname
             x_fig_size = 18
             y_fig_size = len(self.real_sta_hostname) * 1 + 4
@@ -1657,48 +2483,177 @@ and downstream traffic""")
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Audio Packet Loss(sent/received)",
                 _graph_image_name="Audio Packet Loss(sent and received)",
-                _label=["Avg Sent", "Avg Recv"]
+                _label=["Avg Sent", "Avg Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-            report.set_graph_image(graph_image)
-            report.move_graph_image()
-            report.build_graph()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
 
-            report.set_table_title("Test Audio Results Table:")
-            report.build_table_title()
-            audio_test_details = pd.DataFrame({
-                'Device Name': [client for client in self.real_sta_hostname],
-                'Avg Bitrate (kbps) [sent/Received]': ["{}/{}".format(device_data.get(client,{}).get("audio_input_bitrate_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_input_bitrate_avg") or 0,
-                                                          device_data.get(client,{}).get("audio_output_bitrate_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_output_bitrate_avg") or 0) for index, client in enumerate(self.real_sta_hostname)],
-                'Avg Latency (ms) [sent/Received]': ["{}/{}".format(device_data.get(client,{}).get("audio_input_latency_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_input_latency_avg") or 0,
-                                                       device_data.get(client,{}).get("audio_output_latency_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_output_latency_avg") or 0) for index, client in enumerate(self.real_sta_hostname)],
-                'Avg Jitter (ms) [sent/Received]': ["{}/{}".format(device_data.get(client,{}).get("audio_input_jitter_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_input_jitter_avg") or 0,
-                                                     device_data.get(client,{}).get("audio_output_jitter_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_output_jitter_avg") or 0) for index, client in enumerate(self.real_sta_hostname)],
-                'Avg Pkt Loss (%) [sent/Received]': ["{}/{}".format(device_data.get(client,{}).get("audio_input_avg_loss_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_input_avg_loss_avg") or 0,
-                                                      device_data.get(client,{}).get("audio_output_avg_loss_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("audio_output_avg_loss_avg") or 0) for index, client in enumerate(self.real_sta_hostname)]            
-                })
-            report.set_table_dataframe(audio_test_details)
-            report.dataframe_html = report.dataframe.to_html(index=False,
-                                                             justify='center', render_links=True, escape=False)  # have the index be able to be passed in.
-            report.html += report.dataframe_html
+            self.report.set_table_title("Test Audio Results Table:")
+            self.report.build_table_title()
+            audio_test_details = pd.DataFrame(
+                {
+                    "Device Name": [client for client in self.real_sta_hostname],
+                    "Avg Bitrate (kbps) [sent/Received]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_input_bitrate_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "audio_input_bitrate_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_output_bitrate_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "audio_output_bitrate_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                    "Avg Latency (ms) [sent/Received]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_input_latency_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "audio_input_latency_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_output_latency_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "audio_output_latency_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                    "Avg Jitter (ms) [sent/Received]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_input_jitter_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "audio_input_jitter_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_output_jitter_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "audio_output_jitter_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                    "Avg Pkt Loss (%) [sent/Received]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_input_avg_loss_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "audio_input_avg_loss_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_output_avg_loss_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "audio_output_avg_loss_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                }
+            )
+            self.report.set_table_dataframe(audio_test_details)
+            self.report.dataframe_html = self.report.dataframe.to_html(
+                index=False, justify="center", render_links=True, escape=False
+            )  # have the index be able to be passed in.
+            self.report.html += self.report.dataframe_html
         if self.video:
-            report.set_table_title("2. Video Performance")
-            report.build_table_title()
+            self.report.set_table_title("2. Video Performance")
+            self.report.build_table_title()
 
-            report.set_text("""Video traffic stresses the Access Point with higher bandwidth demand. Performance is validated by maintaining resolution, frame rate, and minimal loss under increasing client loads.""")
-            report.build_text_simple()
+            self.report.set_text(
+                "Video traffic stresses the Access Point with higher bandwidth demand. "
+                "Performance is validated by maintaining resolution, frame rate, "
+                "and minimal loss under increasing client loads."
+            )
+            self.report.build_text_simple()
 
             # video bitrate graph
-            report.set_graph_title("a. Video Bitrate (Sent/Received)")
-            report.build_graph_title()
-            x_data_set = [ [device_data.get(client,{}).get("video_input_bitrate_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_input_bitrate_avg") or 0 for index, client in enumerate(self.real_sta_hostname)],
-                           [device_data.get(client,{}).get("video_output_bitrate_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_output_bitrate_avg") or 0 for index, client in enumerate(self.real_sta_hostname)]]
+            self.report.set_graph_title("a. Video Bitrate (Sent/Received)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (
+                        device_data.get(client, {}).get("video_input_bitrate_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "video_input_bitrate_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (
+                        device_data.get(client, {}).get("video_output_bitrate_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "video_output_bitrate_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
             y_data_set = self.real_sta_hostname
             x_fig_size = 18
             y_fig_size = len(self.real_sta_hostname) * 1 + 4
@@ -1710,24 +2665,46 @@ and downstream traffic""")
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Video Bitrate(sent/received)",
                 _graph_image_name="Video Bitrate(sent and received)",
-                _label=["Avg Sent", "Avg Recv"]
+                _label=["Avg Sent", "Avg Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-            report.set_graph_image(graph_image)
-            report.move_graph_image()
-            report.build_graph()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
 
             # video latency graph
-            report.set_graph_title("b. Video Latency (Sent/Received)")
-            report.build_graph_title()
-            x_data_set = [ [device_data.get(client,{}).get("video_input_latency_avg") or 0  if index != 0 else device_data.get("Host Device",{}).get("video_input_latency_avg") or 0 for index, client in enumerate(self.real_sta_hostname)],
-                           [device_data.get(client,{}).get("video_output_latency_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_output_latency_avg") or 0 for index, client in enumerate(self.real_sta_hostname)]]
+            self.report.set_graph_title("b. Video Latency (Sent/Received)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (
+                        device_data.get(client, {}).get("video_input_latency_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "video_input_latency_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (
+                        device_data.get(client, {}).get("video_output_latency_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "video_output_latency_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
             y_data_set = self.real_sta_hostname
             x_fig_size = 18
             y_fig_size = len(self.real_sta_hostname) * 1 + 4
@@ -1739,23 +2716,45 @@ and downstream traffic""")
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Video Latency(sent/received)",
                 _graph_image_name="Video Latency(sent and received)",
-                _label=["Avg Sent", "Avg Recv"]
+                _label=["Avg Sent", "Avg Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-            report.set_graph_image(graph_image)
-            report.move_graph_image()
-            report.build_graph()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
             # video jitter graph
-            report.set_graph_title("c. Video Jitter (Sent/Received)")
-            report.build_graph_title()
-            x_data_set = [ [device_data.get(client,{}).get("video_input_jitter_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_input_jitter_avg") or 0 for index, client in enumerate(self.real_sta_hostname)],
-                           [device_data.get(client,{}).get("video_output_jitter_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_output_jitter_avg") or 0 for index, client in enumerate(self.real_sta_hostname)]]
+            self.report.set_graph_title("c. Video Jitter (Sent/Received)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (
+                        device_data.get(client, {}).get("video_input_jitter_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "video_input_jitter_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (
+                        device_data.get(client, {}).get("video_output_jitter_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "video_output_jitter_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
             y_data_set = self.real_sta_hostname
             x_fig_size = 18
             y_fig_size = len(self.real_sta_hostname) * 1 + 4
@@ -1767,23 +2766,46 @@ and downstream traffic""")
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Video Jitter(sent/received)",
                 _graph_image_name="Video Jitter(sent and received)",
-                _label=["Avg Sent", "Avg Recv"]
+                _label=["Avg Sent", "Avg Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-            report.set_graph_image(graph_image)
-            report.move_graph_image()
-            report.build_graph()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
             # video packet loss graph
-            report.set_graph_title("d. Video Packet Loss (Sent/Received)")
-            report.build_graph_title()
-            x_data_set = [ [device_data.get(client,{}).get("video_input_avg_loss_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_input_avg_loss_avg") or 0 for index, client in enumerate(self.real_sta_hostname)],
-                           [device_data.get(client,{}).get("video_output_avg_loss_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_output_avg_loss_avg") or 0 for index, client in enumerate(self.real_sta_hostname)]]
+            self.report.set_graph_title("d. Video Packet Loss (Sent/Received)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (
+                        device_data.get(client, {}).get("video_input_avg_loss_avg") or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "video_input_avg_loss_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (
+                        device_data.get(client, {}).get("video_output_avg_loss_avg")
+                        or 0
+                        if index != 0
+                        else device_data.get("Host Device", {}).get(
+                            "video_output_avg_loss_avg"
+                        )
+                        or 0
+                    )
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
             y_data_set = self.real_sta_hostname
             x_fig_size = 18
             y_fig_size = len(self.real_sta_hostname) * 1 + 4
@@ -1795,56 +2817,163 @@ and downstream traffic""")
                 _yaxis_categories=y_data_set,
                 _yaxis_step=1,
                 _yticks_font=8,
-                _bar_height=.20,
+                _bar_height=0.20,
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
                 _graph_title="Video Packet Loss(sent/received)",
                 _graph_image_name="Video Packet Loss(sent and received)",
-                _label=["Avg Sent", "Avg Recv"]
+                _label=["Avg Sent", "Avg Recv"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-            report.set_graph_image(graph_image)
-            report.move_graph_image()
-            report.build_graph()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
 
-            report.set_table_title("Test Video Results Table:")
-            report.build_table_title()
-            video_test_details = pd.DataFrame({
-                'Device Name': [client for client in self.real_sta_hostname],
-                'Avg Bitrate (kbps) [sent/Received]': ["{}/{}".format(device_data.get(client,{}).get("video_input_bitrate_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_input_bitrate_avg") or 0,
-                                                          device_data.get(client,{}).get("video_output_bitrate_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_output_bitrate_avg") or 0) for index, client in enumerate(self.real_sta_hostname)],
-                'Avg Latency (ms) [sent/Received]': ["{}/{}".format(device_data.get(client,{}).get("video_input_latency_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_input_latency_avg") or 0,
-                                                       device_data.get(client,{}).get("video_output_latency_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_output_latency_avg") or 0) for index, client in enumerate(self.real_sta_hostname)],
-                'Avg Jitter (ms) [sent/Received]': ["{}/{}".format(device_data.get(client,{}).get("video_input_jitter_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_input_jitter_avg") or 0,
-                                                     device_data.get(client,{}).get("video_output_jitter_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_output_jitter_avg") or 0) for index, client in enumerate(self.real_sta_hostname)],
-                'Avg Pkt Loss (%) [sent/Received]': ["{}/{}".format(device_data.get(client,{}).get("video_input_avg_loss_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_input_avg_loss_avg") or 0,
-                                                      device_data.get(client,{}).get("video_output_avg_loss_avg") or 0 if index != 0 else device_data.get("Host Device",{}).get("video_output_avg_loss_avg") or 0) for index, client in enumerate(self.real_sta_hostname)]            
-                })
-            report.set_table_dataframe(video_test_details)
-            report.dataframe_html = report.dataframe.to_html(index=False,
-                                                             justify='center', render_links=True, escape=False)  # have the index be able to be passed in.
-            report.html += report.dataframe_html
-
-        report.write_html()
-        report.write_pdf(_page_size='Legal', _orientation='Landscape')
+            self.report.set_table_title("Test Video Results Table:")
+            self.report.build_table_title()
+            video_test_details = pd.DataFrame(
+                {
+                    "Device Name": [client for client in self.real_sta_hostname],
+                    "Avg Bitrate (kbps) [sent/Received]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_input_bitrate_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "video_input_bitrate_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_output_bitrate_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "video_output_bitrate_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                    "Avg Latency (ms) [sent/Received]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_input_latency_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "video_input_latency_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_output_latency_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "video_output_latency_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                    "Avg Jitter (ms) [sent/Received]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_input_jitter_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "video_input_jitter_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_output_jitter_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "video_output_jitter_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                    "Avg Pkt Loss (%) [sent/Received]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_input_avg_loss_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "video_input_avg_loss_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_output_avg_loss_avg"
+                                )
+                                or 0
+                                if index != 0
+                                else device_data.get("Host Device", {}).get(
+                                    "video_output_avg_loss_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                }
+            )
+            self.report.set_table_dataframe(video_test_details)
+            self.report.dataframe_html = self.report.dataframe.to_html(
+                index=False, justify="center", render_links=True, escape=False
+            )  # have the index be able to be passed in.
+            self.report.html += self.report.dataframe_html
+        self.report.write_html()
+        self.report.write_pdf(_page_size="Legal", _orientation="Landscape")
         for client in self.real_sta_hostname:
-            file_to_move_path = os.path.join(self.path, f'{client}.csv')
+            file_to_move_path = os.path.join(self.path, f"{client}.csv")
             self.move_files(file_to_move_path, report_path_date_time)
         if self.download_csv:
-            self.move_files(os.path.join(os.getcwd(),self.csv_file_name), report_path_date_time)
-        self.move_files(os.path.join(os.getcwd(),'zoom_api_responses',f'{self.remote_login_url}_qos.json'), report_path_date_time)
-        
-
-                
+            self.move_files(
+                os.path.join(os.getcwd(), self.csv_file_name), report_path_date_time
+            )
+        self.move_files(
+            os.path.join(
+                os.getcwd(), "zoom_api_responses", f"{self.remote_login_url}_qos.json"
+            ),
+            report_path_date_time,
+        )
 
     def parse_value(self, value):
         """Convert Zoom string values to float. Handles kbps, ms, and %."""
         if not value or value in ["-", ""]:
             return None
         try:
-            return float(value.split()[0].replace("%",""))
-        except:
+            return float(value.split()[0].replace("%", ""))
+        except Exception as e:
+            logging.error(f"Error parsing value '{value}': {e}")
             return None
 
     def parse_zoom_value(self, value):
@@ -1880,7 +3009,7 @@ and downstream traffic""")
 
     def summarize_csv_audio_video(self, csv_path):
         # Step 1: Find the correct header line
-        with open(csv_path, 'r', encoding='utf-8-sig') as f:
+        with open(csv_path, "r", encoding="utf-8-sig") as f:
             lines = f.readlines()
 
         # Step 2: Find the line index where real participant data header starts
@@ -1891,10 +3020,12 @@ and downstream traffic""")
                 break
 
         if header_line_idx is None:
-            raise ValueError("Could not find the participant metrics section in the CSV.")
+            raise ValueError(
+                "Could not find the participant metrics section in the CSV."
+            )
 
         # Step 3: Read only the participant section
-        df = pd.read_csv(csv_path, skiprows=header_line_idx, encoding='utf-8-sig')
+        df = pd.read_csv(csv_path, skiprows=header_line_idx, encoding="utf-8-sig")
         df.columns = df.columns.str.strip()
 
         # Mapping from JSON-style keys to CSV columns
@@ -1909,7 +3040,6 @@ and downstream traffic""")
             "audio_input_avg_loss_avg": "Audio (Sending) Packet Loss-Avg/Max",
             "audio_output_avg_loss_avg": "Audio (Receiving) Packet Loss-Avg/Max",
             "audio_mos_avg": "Audio Quality",
-
             # Video
             "video_input_bitrate_avg": "Video (Sending) Bitrate",
             "video_output_bitrate_avg": "Video (Receiving) Bitrate",
@@ -1921,15 +3051,15 @@ and downstream traffic""")
             "video_output_avg_loss_avg": "Video (Receiving) Packet Loss-Avg/Max",
             "video_input_frame_rate_avg": "Video (Sending) Frame Rate",
             "video_output_frame_rate_avg": "Video (Receiving) Frame Rate",
-            "video_mos_avg": "Video Quality"
+            "video_mos_avg": "Video Quality",
         }
 
         summary = {}
 
         for _, row in df.iterrows():
-            device = row['Participant'].replace("(Guest)", "").strip()
-            summary[device] = {"is_host": 'host' in device.lower()}
-            
+            device = row["Participant"].replace("(Guest)", "").strip()
+            summary[device] = {"is_host": "host" in device.lower()}
+
             for metric_key, csv_column in metric_map.items():
                 raw_value = row.get(csv_column)
                 parsed_value = self.parse_zoom_value(raw_value)
@@ -1943,26 +3073,32 @@ and downstream traffic""")
     def summarize_audio_video(self, json_data):
         """
         Summarize per-device audio and video stats: avg/max of bitrate, jitter, latency, packet loss.
-        
+
         Args:
             json_data (list): Zoom JSON as list of participants.
-        
+
         Returns:
             dict: {device_name: {metric_field_avg/max: value, ...}}
         """
         metrics = ["audio_input", "audio_output", "video_input", "video_output"]
         fields = ["bitrate", "latency", "jitter", "avg_loss_avg", "frame_rate"]
-        
+
         summary = {}
         count = 0
         for index, participant in enumerate(json_data):
-            device = participant.get("user_name") or "Unknown Device {count}".format(count=count+1)
+            device = participant.get("user_name") or "Unknown Device {count}".format(
+                count=count + 1
+            )
             if device not in summary:
-                summary[device] = {f"{m}_{f}_avg": None for m in metrics for f in fields}
-                summary[device].update({"is_host": participant.get("is_original_host", False)})
-            
-            temp_values = {m:{f:[] for f in fields} for m in metrics}
-            
+                summary[device] = {
+                    f"{m}_{f}_avg": None for m in metrics for f in fields
+                }
+                summary[device].update(
+                    {"is_host": participant.get("is_original_host", False)}
+                )
+
+            temp_values = {m: {f: [] for f in fields} for m in metrics}
+
             for sample in participant.get("user_qos", []):
                 for m in metrics:
                     data = sample.get(m, {})
@@ -1970,18 +3106,20 @@ and downstream traffic""")
                         val = self.parse_value(data.get(f))
                         if val is not None:
                             temp_values[m][f].append(val)
-            
+
             # calculate avg and max
             for m in metrics:
                 for f in fields:
                     vals = temp_values[m][f]
                     if vals:
-                        summary[device][f"{m}_{f}_avg"] = round(sum(vals)/len(vals),2)
-            
+                        summary[device][f"{m}_{f}_avg"] = round(
+                            sum(vals) / len(vals), 2
+                        )
+
             if index == 0:
                 summary["Host Device"] = summary.pop(device)
-        
-        return summary        
+
+        return summary
 
     def change_port_to_ip(self, upstream_port):
         """
@@ -2005,14 +3143,18 @@ and downstream traffic""")
             - Info logs for the resolved or passed IP.
 
         """
-        if upstream_port.count('.') != 3:
+        if upstream_port.count(".") != 3:
             target_port_list = self.name_to_eid(upstream_port)
             shelf, resource, port, _ = target_port_list
             try:
-                target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
+                target_port_ip = self.json_get(
+                    f"/port/{shelf}/{resource}/{port}?fields=ip"
+                )["interface"]["ip"]
                 upstream_port = target_port_ip
             except BaseException:
-                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
+                logging.warning(
+                    f"The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}."
+                )
             logging.info(f"Upstream port IP {upstream_port}")
         else:
             logging.info(f"Upstream port IP {upstream_port}")
@@ -2051,35 +3193,42 @@ and downstream traffic""")
         """
         modified_device_list = device_list
         if isinstance(device_list, str):
-            modified_device_list = device_list.split(',')
+            modified_device_list = device_list.split(",")
 
         filtered_list = []
 
         for device in modified_device_list:
             device = str(device).strip()
             try:
-                if device.count('.') == 1:
-                    shelf, resource = device.split('.')
-                elif device.count('.') == 2:
-                    shelf, resource, port = device.split('.')
-                elif device.count('.') == 0:
+                if device.count(".") == 1:
+                    shelf, resource = device.split(".")
+                elif device.count(".") == 2:
+                    shelf, resource, port = device.split(".")
+                elif device.count(".") == 0:
                     shelf, resource = 1, device
                 else:
                     logger.warning("Invalid device format: %s", device)
                     continue
 
-                device_data_resp = self.json_get(f'/resource/{shelf}/{resource}')
-                if not device_data_resp or 'resource' not in device_data_resp:
+                device_data_resp = self.json_get(f"/resource/{shelf}/{resource}")
+                if not device_data_resp or "resource" not in device_data_resp:
                     logger.warning("Device data not found for %s", device)
                     continue
 
-                device_data = device_data_resp['resource']
-                hw_version = device_data.get('hw version', '')
-                app_id = device_data.get('app-id', '')
-                kernel = device_data.get('kernel', '')
+                device_data = device_data_resp["resource"]
+                hw_version = device_data.get("hw version", "")
+                app_id = device_data.get("app-id", "")
+                kernel = device_data.get("kernel", "")
 
-                if 'Apple' in hw_version and app_id != '' and (app_id != '0' or kernel == ''):
-                    logger.info("%s is an iOS device. Currently, we do not support iOS devices.", device)
+                if (
+                    "Apple" in hw_version
+                    and app_id != ""
+                    and (app_id != "0" or kernel == "")
+                ):
+                    logger.info(
+                        "%s is an iOS device. Currently, we do not support iOS devices.",
+                        device,
+                    )
                 else:
                     filtered_list.append(device)
 
@@ -2088,24 +3237,28 @@ and downstream traffic""")
                 continue
 
         if isinstance(device_list, str):
-            filtered_list = ','.join(filtered_list)
+            filtered_list = ",".join(filtered_list)
 
         self.device_list = filtered_list
         return filtered_list
 
-    def get_access_token(self,account_id, client_id, client_secret):
+    def get_access_token(self, account_id, client_id, client_secret):
         token_url = f"https://zoom.us/oauth/token?grant_type=account_credentials&account_id={account_id}"
-        response = requests.post(token_url, auth=HTTPBasicAuth(client_id, client_secret))
+        response = requests.post(
+            token_url, auth=HTTPBasicAuth(client_id, client_secret)
+        )
         if response.status_code == 200:
-            access_token = response.json().get('access_token')
+            access_token = response.json().get("access_token")
             return access_token
         else:
-            raise Exception(f"Failed to get access token: {response.status_code} {response.text}")
+            raise Exception(
+                f"Failed to get access token: {response.status_code} {response.text}"
+            )
 
     def get_participants_qos(self, meeting_id, access_token, test_type="past"):
         url = f"https://api.zoom.us/v2/metrics/meetings/{meeting_id}/participants/qos"
         headers = {"Authorization": f"Bearer {access_token}"}
-        params = {"type":test_type}
+        params = {"type": test_type}
         all_participants = []
         next_page_token = None
 
@@ -2122,15 +3275,34 @@ and downstream traffic""")
                 if not next_page_token:
                     break
             else:
-                raise Exception(f"Failed to get participants QoS: {response.status_code} {response.text}")
+                raise Exception(
+                    f"Failed to get participants QoS: {response.status_code} {response.text}"
+                )
         return all_participants
 
-    def save_json(self,data, filename):
+    def save_json(self, data, filename):
         os.makedirs("zoom_api_responses", exist_ok=True)
         path = os.path.join("zoom_api_responses", filename)
         with open(path, "w") as f:
             json.dump(data, f, indent=2)
         logging.info(f"Saved data to {path}")
+
+    def run_robo_test(self, account_id, client_id, client_secret):
+        for coordinate in self.coordinates_list:
+            self.robo_obj.wait_for_battery()
+            self.robo_obj.move_to_coordinate(coord=coordinate)
+            self.current_cord = coordinate
+            if self.rotations_enabled:
+                for angle in self.angles_list:
+                    self.robo_obj.wait_for_battery()
+                    self.robo_obj.rotate_angle(angle_degree=angle)
+                    self.current_angle = angle
+                    self.run(account_id, client_id, client_secret)
+                    self.get_final_qos_data()
+
+            else:
+                self.run(account_id, client_id, client_secret)
+                self.get_final_qos_data()
 
 
 def main():
@@ -2138,7 +3310,7 @@ def main():
         parser = argparse.ArgumentParser(
             prog=__file__,
             formatter_class=argparse.RawTextHelpFormatter,
-            description=textwrap.dedent('''
+            description=textwrap.dedent("""
                 Zoom Automation Script
                 PURPOSE: lf_interop_zoom.py provides the available devices and allows the user to start Zoom call conference meeting for the user-specified duration
 
@@ -2161,66 +3333,212 @@ def main():
                 Command Line Interface to run Zoom with Groups and Profiles:
                 python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
                 --wait_time 30 --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
-            ''')
+            """),
         )
-        parser.add_argument('--duration', type=int, required=True, help="Duration of the Zoom meeting in minutes")
-        parser.add_argument('--lanforge_ip', type=str, required=True, help="LANforge IP address")
-        parser.add_argument('--signin_email', type=str, required=True, help="Sign-in email")
-        parser.add_argument('--signin_passwd', type=str, required=True, help="Sign-in password")
-        parser.add_argument('--participants', type=int, required=True, help="no of participanrs")
-        parser.add_argument('--audio', action='store_true')
-        parser.add_argument('--video', action='store_true')
-        parser.add_argument("--wait_time", type=int, default=30, help='time set to wait for the csv files')
-        parser.add_argument('--log_level', help='Level of the logs to be dispalyed')
-        parser.add_argument('--lf_logger_config_json', help='lf_logger config json')
-        parser.add_argument('--resources', help="resources participated in the test")
-        parser.add_argument('--do_webUI', action='store_true', help='useful to specify whether we are running through webui or cli')
-        parser.add_argument('--report_dir', help="report directory while running test through web ui")
-        parser.add_argument('--testname', help="report directory while running test through web ui")
-        parser.add_argument('--zoom_host', help="Host of the test")
+        parser.add_argument(
+            "--duration",
+            type=int,
+            required=True,
+            help="Duration of the Zoom meeting in minutes",
+        )
+        parser.add_argument(
+            "--lanforge_ip", type=str, required=True, help="LANforge IP address"
+        )
+        parser.add_argument(
+            "--signin_email", type=str, required=True, help="Sign-in email"
+        )
+        parser.add_argument(
+            "--signin_passwd", type=str, required=True, help="Sign-in password"
+        )
+        parser.add_argument(
+            "--participants", type=int, required=True, help="no of participanrs"
+        )
+        parser.add_argument("--audio", action="store_true")
+        parser.add_argument("--video", action="store_true")
+        parser.add_argument(
+            "--wait_time",
+            type=int,
+            default=30,
+            help="time set to wait for the csv files",
+        )
+        parser.add_argument("--log_level", help="Level of the logs to be dispalyed")
+        parser.add_argument("--lf_logger_config_json", help="lf_logger config json")
+        parser.add_argument("--resources", help="resources participated in the test")
+        parser.add_argument(
+            "--do_webUI",
+            action="store_true",
+            help="useful to specify whether we are running through webui or cli",
+        )
+        parser.add_argument(
+            "--report_dir", help="report directory while running test through web ui"
+        )
+        parser.add_argument(
+            "--testname", help="report directory while running test through web ui"
+        )
+        parser.add_argument("--zoom_host", help="Host of the test")
 
         # Arguments Related to Device Configurations
-        parser.add_argument('--file_name', help="File name for DeviceConfig")
+        parser.add_argument("--file_name", help="File name for DeviceConfig")
 
-        parser.add_argument('--group_name', type=str, help='specify the group name')
-        parser.add_argument('--profile_name', type=str, help='specify the profile name')
+        parser.add_argument("--group_name", type=str, help="specify the group name")
+        parser.add_argument("--profile_name", type=str, help="specify the profile name")
 
-        parser.add_argument("--ssid", default=None, help='specify ssid on which the test will be running')
-        parser.add_argument("--passwd", default=None, help='specify encryption password  on which the test will '
-                            'be running')
-        parser.add_argument("--encryp", default=None, help='specify the encryption type  on which the test will be '
-                            'running eg :open|psk|psk2|sae|psk2jsae')
+        parser.add_argument(
+            "--ssid",
+            default=None,
+            help="specify ssid on which the test will be running",
+        )
+        parser.add_argument(
+            "--passwd",
+            default=None,
+            help="specify encryption password  on which the test will " "be running",
+        )
+        parser.add_argument(
+            "--encryp",
+            default=None,
+            help="specify the encryption type  on which the test will be "
+            "running eg :open|psk|psk2|sae|psk2jsae",
+        )
 
-        parser.add_argument("--eap_method", type=str, default='DEFAULT', help="Specify the EAP method for authentication.")
-        parser.add_argument("--eap_identity", type=str, default='DEFAULT', help="Specify the EAP identity for authentication.")
-        parser.add_argument("--ieee8021x", action="store_true", help='Enables IEEE 802.1x support.')
-        parser.add_argument("--ieee80211u", action="store_true", help='Enables IEEE 802.11u (Hotspot 2.0) support.')
-        parser.add_argument("--ieee80211w", type=int, default=1, help='Enables IEEE 802.11w (Management Frame Protection) support.')
-        parser.add_argument("--enable_pkc", action="store_true", help='Enables pkc support.')
-        parser.add_argument("--bss_transition", action="store_true", help='Enables BSS transition support.')
-        parser.add_argument("--power_save", action="store_true", help='Enables power-saving features.')
-        parser.add_argument("--disable_ofdma", action="store_true", help='Disables OFDMA support.')
-        parser.add_argument("--roam_ft_ds", action="store_true", help='Enables fast BSS transition (FT) support')
-        parser.add_argument("--key_management", type=str, default='DEFAULT', help='Specify the key management method (e.g., WPA-PSK, WPA-EAP)')
-        parser.add_argument("--pairwise", type=str, default='NA', help='Specify the pairwise cipher')
-        parser.add_argument("--private_key", type=str, default='NA', help='Specify EAP private key certificate file.')
-        parser.add_argument("--ca_cert", type=str, default='NA', help='Specify the CA certificate file name')
-        parser.add_argument("--client_cert", type=str, default='NA', help='Specify the client certificate file name')
-        parser.add_argument("--pk_passwd", type=str, default='NA', help='Specify the password for the private key')
-        parser.add_argument("--pac_file", type=str, default='NA', help='Specify the pac file name')
-        parser.add_argument("--upstream_port", type=str, default='NA', help='Specify the upstream port', required=True)
-        parser.add_argument('--help_summary', help='Show summary of what this script does', default=None)
-        parser.add_argument("--expected_passfail_value", help="Specify the expected urlcount value for pass/fail")
-        parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
-        parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
+        parser.add_argument(
+            "--eap_method",
+            type=str,
+            default="DEFAULT",
+            help="Specify the EAP method for authentication.",
+        )
+        parser.add_argument(
+            "--eap_identity",
+            type=str,
+            default="DEFAULT",
+            help="Specify the EAP identity for authentication.",
+        )
+        parser.add_argument(
+            "--ieee8021x", action="store_true", help="Enables IEEE 802.1x support."
+        )
+        parser.add_argument(
+            "--ieee80211u",
+            action="store_true",
+            help="Enables IEEE 802.11u (Hotspot 2.0) support.",
+        )
+        parser.add_argument(
+            "--ieee80211w",
+            type=int,
+            default=1,
+            help="Enables IEEE 802.11w (Management Frame Protection) support.",
+        )
+        parser.add_argument(
+            "--enable_pkc", action="store_true", help="Enables pkc support."
+        )
+        parser.add_argument(
+            "--bss_transition",
+            action="store_true",
+            help="Enables BSS transition support.",
+        )
+        parser.add_argument(
+            "--power_save", action="store_true", help="Enables power-saving features."
+        )
+        parser.add_argument(
+            "--disable_ofdma", action="store_true", help="Disables OFDMA support."
+        )
+        parser.add_argument(
+            "--roam_ft_ds",
+            action="store_true",
+            help="Enables fast BSS transition (FT) support",
+        )
+        parser.add_argument(
+            "--key_management",
+            type=str,
+            default="DEFAULT",
+            help="Specify the key management method (e.g., WPA-PSK, WPA-EAP)",
+        )
+        parser.add_argument(
+            "--pairwise", type=str, default="NA", help="Specify the pairwise cipher"
+        )
+        parser.add_argument(
+            "--private_key",
+            type=str,
+            default="NA",
+            help="Specify EAP private key certificate file.",
+        )
+        parser.add_argument(
+            "--ca_cert",
+            type=str,
+            default="NA",
+            help="Specify the CA certificate file name",
+        )
+        parser.add_argument(
+            "--client_cert",
+            type=str,
+            default="NA",
+            help="Specify the client certificate file name",
+        )
+        parser.add_argument(
+            "--pk_passwd",
+            type=str,
+            default="NA",
+            help="Specify the password for the private key",
+        )
+        parser.add_argument(
+            "--pac_file", type=str, default="NA", help="Specify the pac file name"
+        )
+        parser.add_argument(
+            "--upstream_port",
+            type=str,
+            default="NA",
+            help="Specify the upstream port",
+            required=True,
+        )
+        parser.add_argument(
+            "--help_summary", help="Show summary of what this script does", default=None
+        )
+        parser.add_argument(
+            "--expected_passfail_value",
+            help="Specify the expected urlcount value for pass/fail",
+        )
+        parser.add_argument(
+            "--device_csv_name",
+            type=str,
+            help="Specify the device csv name for pass/fail",
+            default=None,
+        )
+        parser.add_argument(
+            "--config",
+            action="store_true",
+            help="specify this flag whether to config devices or not",
+        )
 
         # argument related to api stats collection
-        parser.add_argument('--api_stats_collection', action='store_true', help='Specify if using business account to get the stats using api')
-        parser.add_argument('--account_id', help='Zoom Account ID')
-        parser.add_argument('--client_id', help='Zoom Client ID')
-        parser.add_argument('--client_secret', help='Zoom Client Secret')
-        parser.add_argument('--env_file', help='Path to .env file for credentials')
-        parser.add_argument('--download_csv', action='store_true', help='Specify if wanted to collect csv from dashboard.Only works with buiseness account')
+        parser.add_argument(
+            "--api_stats_collection",
+            action="store_true",
+            help="Specify if using business account to get the stats using api",
+        )
+        parser.add_argument("--account_id", help="Zoom Account ID")
+        parser.add_argument("--client_id", help="Zoom Client ID")
+        parser.add_argument("--client_secret", help="Zoom Client Secret")
+        parser.add_argument("--env_file", help="Path to .env file for credentials")
+        parser.add_argument(
+            "--download_csv",
+            action="store_true",
+            help="Specify if wanted to collect csv from dashboard.Only works with buiseness account",
+        )
+
+        # Arguments related to robo feature
+        parser.add_argument("--robo_ip", type=str, help="Specify the robo ip")
+        parser.add_argument(
+            "--coordinates",
+            help="Comma-separated list of coordinate point names (e.g. 1,2,3), each mapping to x and y values",
+        )
+
+        parser.add_argument(
+            "--rotations",
+            help="Comma-separated list of rotation angles (in degrees) to apply at respective points",
+        )
+        parser.add_argument(
+            "--do_robo",
+            help="Specify this flag to perform the test with robo",
+            action="store_true",
+        )
         args = parser.parse_args()
 
         # set the logger level to debug
@@ -2234,68 +3552,130 @@ def main():
             logger_config.load_lf_logger_config()
 
         if True:
-            if args.expected_passfail_value is not None and args.device_csv_name is not None:
-                logging.error("Specify either expected_passfail_value or device_csv_name")
+            if (
+                args.expected_passfail_value is not None
+                and args.device_csv_name is not None
+            ):
+                logging.error(
+                    "Specify either expected_passfail_value or device_csv_name"
+                )
                 exit(1)
 
             if args.group_name is not None:
                 args.group_name = args.group_name.strip()
-                selected_groups = args.group_name.split(',')
+                selected_groups = args.group_name.split(",")
             else:
                 selected_groups = []
 
             if args.profile_name is not None:
                 args.profile_name = args.profile_name.strip()
-                selected_profiles = args.profile_name.split(',')
+                selected_profiles = args.profile_name.split(",")
             else:
                 selected_profiles = []
 
             if len(selected_groups) != len(selected_profiles):
                 logging.error("Number of groups should match number of profiles")
                 exit(0)
-            elif args.group_name is not None and args.profile_name is not None and args.file_name is not None and args.resources is not None:
-                logging.error("Either group name or device list should be entered not both")
+            elif (
+                args.group_name is not None
+                and args.profile_name is not None
+                and args.file_name is not None
+                and args.resources is not None
+            ):
+                logging.error(
+                    "Either group name or device list should be entered not both"
+                )
                 exit(0)
             elif args.ssid is not None and args.profile_name is not None:
                 logging.error("Either ssid or profile name should be given")
                 exit(0)
-            elif args.file_name is not None and (args.group_name is None or args.profile_name is None):
+            elif args.file_name is not None and (
+                args.group_name is None or args.profile_name is None
+            ):
                 logging.error("Please enter the correct set of arguments")
                 exit(0)
-            elif args.config and ((args.ssid is None or (args.passwd is None and args.security.lower() != 'open') or (args.passwd is None and args.security is None))):
-                logging.error("Please provide ssid password and security for configuration of devices")
+            elif args.config and (
+                (
+                    args.ssid is None
+                    or (args.passwd is None and args.security.lower() != "open")
+                    or (args.passwd is None and args.security is None)
+                )
+            ):
+                logging.error(
+                    "Please provide ssid password and security for configuration of devices"
+                )
                 exit(0)
 
-            zoom_automation = ZoomAutomation(audio=args.audio, video=args.video, lanforge_ip=args.lanforge_ip, wait_time=args.wait_time, testname=args.testname,
-                                             upstream_port=args.upstream_port, config=args.config, selected_groups=selected_groups, selected_profiles=selected_profiles)
+            rotations_enabled = False
+            if args.do_robo:
+                args.coordinates = (
+                    args.coordinates.split(",") if args.coordinates else []
+                )
+                args.rotations = (
+                    [float(angle) for angle in args.rotations.split(",")]
+                    if args.rotations
+                    else []
+                )
+                if args.rotations:
+                    rotations_enabled = True
+
+            zoom_automation = ZoomAutomation(
+                audio=args.audio,
+                video=args.video,
+                lanforge_ip=args.lanforge_ip,
+                wait_time=args.wait_time,
+                testname=args.testname,
+                upstream_port=args.upstream_port,
+                config=args.config,
+                selected_groups=selected_groups,
+                selected_profiles=selected_profiles,
+                robo_ip=args.robo_ip,
+                coordinates_list=args.coordinates,
+                angles_list=args.rotations,
+                do_robo=args.do_robo,
+                rotations_enabled=rotations_enabled,
+                signin_email=args.signin_email,
+                signin_passwd=args.signin_passwd,
+                duration=args.duration,
+                participants_req=args.participants,
+                env_file=args.env_file,
+            )
             if args.download_csv:
                 zoom_automation.download_csv = True
             args.upstream_port = zoom_automation.change_port_to_ip(args.upstream_port)
-            realdevice = RealDevice(manager_ip=args.lanforge_ip,
-                                    server_ip="192.168.1.61",
-                                    ssid_2g='Test Configured',
-                                    passwd_2g='',
-                                    encryption_2g='',
-                                    ssid_5g='Test Configured',
-                                    passwd_5g='',
-                                    encryption_5g='',
-                                    ssid_6g='Test Configured',
-                                    passwd_6g='',
-                                    encryption_6g='',
-                                    selected_bands=['5G'])
+            realdevice = RealDevice(
+                manager_ip=args.lanforge_ip,
+                server_ip="192.168.1.61",
+                ssid_2g="Test Configured",
+                passwd_2g="",
+                encryption_2g="",
+                ssid_5g="Test Configured",
+                passwd_5g="",
+                encryption_5g="",
+                ssid_6g="Test Configured",
+                passwd_6g="",
+                encryption_6g="",
+                selected_bands=["5G"],
+            )
             laptops = realdevice.get_devices()
 
             if args.file_name:
                 new_filename = args.file_name.removesuffix(".csv")
             else:
                 new_filename = args.file_name
-            config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.lanforge_ip, file_name=new_filename)
+            config_obj = DeviceConfig.DeviceConfig(
+                lanforge_ip=args.lanforge_ip, file_name=new_filename
+            )
 
             if not args.expected_passfail_value and args.device_csv_name is None:
                 config_obj.device_csv_file(csv_name="device.csv")
-            if args.group_name is not None and args.file_name is not None and args.profile_name is not None:
-                selected_groups = args.group_name.split(',')
-                selected_profiles = args.profile_name.split(',')
+            if (
+                args.group_name is not None
+                and args.file_name is not None
+                and args.profile_name is not None
+            ):
+                selected_groups = args.group_name.split(",")
+                selected_profiles = args.profile_name.split(",")
                 config_devices = {}
                 for i in range(len(selected_groups)):
                     config_devices[selected_groups[i]] = selected_profiles[i]
@@ -2307,13 +3687,13 @@ def main():
                 resource_manager = config_obj.laptop_obj.get_devices()
                 all_res = {}
                 df1 = config_obj.display_groups(config_obj.groups)
-                groups_list = df1.to_dict(orient='list')
+                groups_list = df1.to_dict(orient="list")
                 group_devices = {}
 
                 for adb in adbresponse:
-                    group_devices[adb['serial']] = adb['eid']
+                    group_devices[adb["serial"]] = adb["eid"]
                 for res in resource_manager:
-                    all_res[res['hostname']] = res['shelf'] + '.' + res['resource']
+                    all_res[res["hostname"]] = res["shelf"] + "." + res["resource"]
                 eid_list = []
                 for grp_name in groups_list.keys():
                     for g_name in selected_groups:
@@ -2332,40 +3712,47 @@ def main():
                 args.resources = ",".join(id for id in eid_list)
             else:
                 config_dict = {
-                    'ssid': args.ssid,
-                    'passwd': args.passwd,
-                    'enc': args.encryp,
-                    'eap_method': args.eap_method,
-                    'eap_identity': args.eap_identity,
-                    'ieee80211': args.ieee8021x,
-                    'ieee80211u': args.ieee80211u,
-                    'ieee80211w': args.ieee80211w,
-                    'enable_pkc': args.enable_pkc,
-                    'bss_transition': args.bss_transition,
-                    'power_save': args.power_save,
-                    'disable_ofdma': args.disable_ofdma,
-                    'roam_ft_ds': args.roam_ft_ds,
-                    'key_management': args.key_management,
-                    'pairwise': args.pairwise,
-                    'private_key': args.private_key,
-                    'ca_cert': args.ca_cert,
-                    'client_cert': args.client_cert,
-                    'pk_passwd': args.pk_passwd,
-                    'pac_file': args.pac_file,
-                    'server_ip': args.upstream_port,
-
+                    "ssid": args.ssid,
+                    "passwd": args.passwd,
+                    "enc": args.encryp,
+                    "eap_method": args.eap_method,
+                    "eap_identity": args.eap_identity,
+                    "ieee80211": args.ieee8021x,
+                    "ieee80211u": args.ieee80211u,
+                    "ieee80211w": args.ieee80211w,
+                    "enable_pkc": args.enable_pkc,
+                    "bss_transition": args.bss_transition,
+                    "power_save": args.power_save,
+                    "disable_ofdma": args.disable_ofdma,
+                    "roam_ft_ds": args.roam_ft_ds,
+                    "key_management": args.key_management,
+                    "pairwise": args.pairwise,
+                    "private_key": args.private_key,
+                    "ca_cert": args.ca_cert,
+                    "client_cert": args.client_cert,
+                    "pk_passwd": args.pk_passwd,
+                    "pac_file": args.pac_file,
+                    "server_ip": args.upstream_port,
                 }
                 if args.resources:
                     all_devices = config_obj.get_all_devices()
-                    if args.group_name is None and args.file_name is None and args.profile_name is None:
-                        dev_list = args.resources.split(',')
+                    if (
+                        args.group_name is None
+                        and args.file_name is None
+                        and args.profile_name is None
+                    ):
+                        dev_list = args.resources.split(",")
                         if not args.do_webUI:
                             args.zoom_host = args.zoom_host.strip()
                             if args.zoom_host in dev_list:
                                 dev_list.remove(args.zoom_host)
                             dev_list.insert(0, args.zoom_host)
                         if args.config:
-                            asyncio.run(config_obj.connectivity(device_list=dev_list, wifi_config=config_dict))
+                            asyncio.run(
+                                config_obj.connectivity(
+                                    device_list=dev_list, wifi_config=config_dict
+                                )
+                            )
                         args.resources = ",".join(id for id in dev_list)
                 else:
                     # If no resources provided, prompt user to select devices manually
@@ -2373,27 +3760,47 @@ def main():
                         all_devices = config_obj.get_all_devices()
                         device_list = []
                         for device in all_devices:
-                            if device["type"] != 'laptop':
-                                device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
-                            elif device["type"] == 'laptop':
-                                device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+                            if device["type"] != "laptop":
+                                device_list.append(
+                                    device["shelf"]
+                                    + "."
+                                    + device["resource"]
+                                    + " "
+                                    + device["serial"]
+                                )
+                            elif device["type"] == "laptop":
+                                device_list.append(
+                                    device["shelf"]
+                                    + "."
+                                    + device["resource"]
+                                    + " "
+                                    + device["hostname"]
+                                )
                         print("Available Devices For Testing")
                         for device in device_list:
                             print(device)
                         zm_host = input("Enter Host Resource for the Test : ")
                         zm_host = zm_host.strip()
-                        args.resources = input("Enter client Resources to run the test :")
+                        args.resources = input(
+                            "Enter client Resources to run the test :"
+                        )
                         args.resources = zm_host + "," + args.resources
-                        dev1_list = args.resources.split(',')
-                        asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict))
+                        dev1_list = args.resources.split(",")
+                        asyncio.run(
+                            config_obj.connectivity(
+                                device_list=dev1_list, wifi_config=config_dict
+                            )
+                        )
 
             result_list = []
             if not args.do_webUI:
                 if args.resources:
-                    resources = args.resources.split(',')
-                    resources = [r for r in resources if len(r.split('.')) > 1]
+                    resources = args.resources.split(",")
+                    resources = [r for r in resources if len(r.split(".")) > 1]
                     # resources = sorted(resources, key=lambda x: int(x.split('.')[1]))
-                    get_data = zoom_automation.select_real_devices(real_device_obj=realdevice, real_sta_list=resources)
+                    get_data = zoom_automation.select_real_devices(
+                        real_device_obj=realdevice, real_sta_list=resources
+                    )
                     print(get_data)
                     for item in get_data:
                         item = item.strip()
@@ -2401,27 +3808,33 @@ def main():
                         matching_laps = [lap for lap in laptops if lap.startswith(item)]
                         result_list.extend(matching_laps)
                     if not result_list:
-                        logging.info("Resources donot exist hence Terminating the test.")
+                        logging.info(
+                            "Resources donot exist hence Terminating the test."
+                        )
                         return
                     if len(result_list) != len(get_data):
                         logging.info("Few Resources donot exist")
                 else:
-                    resources = zoom_automation.select_real_devices(real_device_obj=realdevice)
+                    resources = zoom_automation.select_real_devices(
+                        real_device_obj=realdevice
+                    )
             else:
                 if args.do_webUI:
                     zoom_automation.path = args.report_dir
-                resources = args.resources.split(',')
-                extracted_parts = [res.split('.')[:2] for res in resources]
-                formatted_parts = ['.'.join(parts) for parts in extracted_parts]
+                resources = args.resources.split(",")
+                extracted_parts = [res.split(".")[:2] for res in resources]
+                formatted_parts = [".".join(parts) for parts in extracted_parts]
 
-                zoom_automation.select_real_devices(real_device_obj=realdevice, real_sta_list=formatted_parts)
+                zoom_automation.select_real_devices(
+                    real_device_obj=realdevice, real_sta_list=formatted_parts
+                )
                 if args.do_webUI:
 
                     if len(zoom_automation.real_sta_hostname) == 0:
                         logging.info("No device is available to run the test")
                         obj = {
                             "status": "Stopped",
-                            "configuration_status": "configured"
+                            "configuration_status": "configured",
                         }
                         zoom_automation.updating_webui_runningjson(obj)
                         return
@@ -2429,16 +3842,21 @@ def main():
                         obj = {
                             "configured_devices": zoom_automation.real_sta_hostname,
                             "configuration_status": "configured",
-                            "no_of_devices": f' Total({len(zoom_automation.real_sta_os_type)}) : W({zoom_automation.windows}),L({zoom_automation.linux}),M({zoom_automation.mac})',
+                            "no_of_devices": f" Total({len(zoom_automation.real_sta_os_type)}) : W({zoom_automation.windows}),L({zoom_automation.linux}),M({zoom_automation.mac})",
                             "device_list": zoom_automation.hostname_os_combination,
                             # "zoom_host":zoom_automation.zoom_host
-
                         }
                         zoom_automation.updating_webui_runningjson(obj)
 
             if not zoom_automation.check_tab_exists():
-                logging.error('Generic Tab is not available.\nAborting the test.')
+                logging.error("Generic Tab is not available.\nAborting the test.")
                 exit(0)
+
+            zoom_automation.handle_flask_server()
+            zoom_automation.get_resource_data()
+            zoom_automation.get_ports_data()
+            zoom_automation.get_interop_data()
+
             if args.api_stats_collection:
                 # load envirnment file if specified
                 if args.env_file:
@@ -2446,8 +3864,10 @@ def main():
                         load_dotenv(args.env_file)
                         print(f"Loaded environment variables from {args.env_file}")
                     else:
-                        raise FileNotFoundError(f".env file '{args.env_file}' not found")
-                
+                        raise FileNotFoundError(
+                            f".env file '{args.env_file}' not found"
+                        )
+
                 # Fetching zoom credentials for account
                 account_id = args.account_id or os.environ.get("ACCOUNT_ID")
                 client_id = args.client_id or os.environ.get("CLIENT_ID")
@@ -2455,11 +3875,15 @@ def main():
 
                 if not all([account_id, client_id, client_secret]):
                     logging.info("Exiting test.")
-                    raise ValueError("Missing Zoom credentials (account_id, client_id, client_secret)")
-                meeting_id = zoom_automation.remote_login_url
-                zoom_automation.run(args.duration, args.upstream_port, args.signin_email, args.signin_passwd, args.participants,account_id, client_id, client_secret )
+                    raise ValueError(
+                        "Missing Zoom credentials (account_id, client_id, client_secret)"
+                    )
+                if args.do_robo:
+                    zoom_automation.run_robo_test(account_id, client_id, client_secret)
+                else:
+                    zoom_automation.run(account_id, client_id, client_secret)
             else:
-                zoom_automation.run(args.duration, args.upstream_port, args.signin_email, args.signin_passwd, args.participants)
+                zoom_automation.run()
             zoom_automation.data_store.clear()
             if not args.api_stats_collection:
                 zoom_automation.generate_report()
@@ -2468,94 +3892,11 @@ def main():
         logging.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
         traceback.print_exc()
     finally:
-        if not ('--help' in sys.argv or '-h' in sys.argv):
-            if args.do_webUI:
-                try:
-                    url = f"http://{args.lanforge_ip}:5454/update_status_yt"
-                    headers = {
-                        'Content-Type': 'application/json',
-                    }
-
-                    data = {
-                        'status': 'Completed',
-                        'name': args.testname
-                    }
-
-                    response = requests.post(url, json=data, headers=headers)
-
-                    if response.status_code == 200:
-                        logging.info("Successfully updated STOP status to 'Completed'")
-                        pass
-                    else:
-                        logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
-
-                except Exception as e:
-                    # Print an error message if an exception occurs during the request
-                    logging.error(f"An error occurred while updating status: {e}")
-
-            zoom_automation.redis_client.set('login_completed', 0)
+        if not ("--help" in sys.argv or "-h" in sys.argv):
             zoom_automation.stop_signal = True
             logging.info("Waiting for Browser Cleanup in Laptops")
             time.sleep(10)
             zoom_automation.generic_endps_profile.cleanup()
-            # If trying to get stats from api
-            if args.api_stats_collection:
-                # load envirnment file if specified
-                if args.env_file:
-                    if os.path.exists(args.env_file):
-                        load_dotenv(args.env_file)
-                        print(f"Loaded environment variables from {args.env_file}")
-                    else:
-                        raise FileNotFoundError(f".env file '{args.env_file}' not found")
-                
-                # Fetching zoom credentials for account
-                account_id = args.account_id or os.environ.get("ACCOUNT_ID")
-                client_id = args.client_id or os.environ.get("CLIENT_ID")
-                client_secret = args.client_secret or os.environ.get("CLIENT_SECRET")
-
-                if not all([account_id, client_id, client_secret]):
-                    logging.info("Exiting test.")
-                    raise ValueError("Missing Zoom credentials (account_id, client_id, client_secret)")
-
-
-                meeting_id = zoom_automation.remote_login_url
-                logger.info(f"Meeting ID: {meeting_id}")
-
-                # Getting access token
-                token = zoom_automation.get_access_token(account_id, client_id, client_secret)
-                logging.info("\nFetching participants QoS data...")
-                api_data_tries = 0
-                while(api_data_tries <= 2):
-                    try:
-                        # retrring with past meetings
-                        zoom_automation.participants_qos_last = zoom_automation.get_participants_qos(meeting_id, token, "past")
-                        print(zoom_automation.participants_qos_last)
-                        zoom_automation.save_json(zoom_automation.participants_qos_last, f"{meeting_id}_qos.json")
-                        break
-                    except:
-                        api_data_tries += 1
-                        logger.info(f"Unable to fetch meeting data...waiting for 10 seconds <===tries:{api_data_tries}")
-                        time.sleep(10)
-                if api_data_tries > 2:
-                    logger.info(f"Unable to fetch meeting data...trying with live meeting.")
-                    try:
-                        # retrring with live meeting once
-                        zoom_automation.participants_qos_last = zoom_automation.get_participants_qos(meeting_id, token, "live")
-                        zoom_automation.save_json(zoom_automation.participants_qos_last, f"{meeting_id}_qos.json")
-                    except:
-                        logger.info("couldn't fetch data from live meeting as well....Trying from past meeting one last time after 100 seconds.")
-                        time.sleep(100)
-                        try:
-                            # Refecting access token
-                            token = zoom_automation.get_access_token(account_id, client_id, client_secret)
-                            # retrring with past meetings
-                            zoom_automation.participants_qos_last = zoom_automation.get_participants_qos(meeting_id, token, "past")
-                            zoom_automation.save_json(zoom_automation.participants_qos_last, f"{meeting_id}_qos.json")
-                        except:
-                            logger.info("Unable to get the data from meeting....Exiting test")
-                            logger.info("using the last live data that we fetched during running")
-                            zoom_automation.save_json(zoom_automation.participants_qos_last, f"{meeting_id}_qos.json")
-                zoom_automation.generate_report_from_api()
             logging.info("Done.")
 
 
