@@ -56,6 +56,7 @@ import textwrap
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 import re
+import glob
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
@@ -271,20 +272,23 @@ class ZoomAutomation(Realm):
 
         @self.app.route("/get_participants_joined", methods=["GET"])
         def get_participants_joined():
+            print("participants joined is", self.participants_joined)
             return jsonify({"participants": self.participants_joined})
 
         @self.app.route("/set_participants_joined", methods=["POST"])
         def set_participants_joined():
             data = request.json
             self.participants_joined = data.get("participants_joined", None)
+            print("participants joined is", self.participants_joined)
             return jsonify(
                 {
-                    "message": f"Updated participants jopind status to {self.participants_joined}"
+                    "message": f"Updated participants joined status to {self.participants_joined}"
                 }
             )
 
         @self.app.route("/get_participants_req", methods=["GET"])
         def get_participants_req():
+            print("participants req is", self.participants_req)
             return jsonify({"participants": self.participants_req})
 
         @self.app.route("/test_started", methods=["GET", "POST"])
@@ -337,8 +341,18 @@ class ZoomAutomation(Realm):
             for hostname, stats in data.items():
                 self.data_store[hostname] = stats
             for hostname, stats in data.items():
-
-                csv_file = os.path.join(self.path, f"{hostname}.csv")
+                if self.do_robo:
+                    if self.rotations_enabled:
+                        csv_file = os.path.join(
+                            self.path,
+                            f"{hostname}_{self.current_cord}_{self.current_angle}.csv",
+                        )
+                    else:
+                        csv_file = os.path.join(
+                            self.path, f"{hostname}_{self.current_cord}.csv"
+                        )
+                else:
+                    csv_file = os.path.join(self.path, f"{hostname}.csv")
                 with open(csv_file, mode="a", newline="") as file:
                     writer = csv.writer(file)
 
@@ -713,130 +727,46 @@ class ZoomAutomation(Realm):
 
         logger.debug(f"Checking serial list {self.serial_list}")
 
-    def run(self, account_id=None, client_id=None, client_secret=None):
-        if self.generic_endps_profile.create(
-            ports=[self.real_sta_list[0]],
-            real_client_os_types=[self.real_sta_os_type[0]],
-        ):
-            logging.info("Real client generic endpoint creation completed.")
-        else:
-            logging.error("Real client generic endpoint creation failed.")
-            exit(0)
+    def delete_current_csv_files(self):
+        filename_pattern = (
+            f"*_{self.current_cord}_{self.current_angle}.csv"
+            if self.rotations_enabled
+            else f"*_{self.current_cord}.csv"
+        )
+        csv_files_pattern = os.path.join(self.path, filename_pattern)
+        csv_files = glob.glob(csv_files_pattern)
 
-        if self.real_sta_os_type[0] == "windows":
-            cmd = f"py zoom_host.py --ip {self.upstream_port}"
-            self.generic_endps_profile.set_cmd(
-                self.generic_endps_profile.created_endp[0], cmd
-            )
-        elif self.real_sta_os_type[0] == "linux":
-
-            cmd = "su -l lanforge ctzoom.bash %s %s %s" % (
-                self.wifi_interface_list[0],
-                self.upstream_port,
-                "host",
-            )
-
-            self.generic_endps_profile.set_cmd(
-                self.generic_endps_profile.created_endp[0], cmd
-            )
-        elif self.real_sta_os_type[0] == "macos":
-            cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "host")
-            self.generic_endps_profile.set_cmd(
-                self.generic_endps_profile.created_endp[0], cmd
-            )
-        self.generic_endps_profile.start_cx()
-        time.sleep(5)
-
-        logger.debug(f"checking real sta list {self.real_sta_list}")
-        logger.debug(f"checking real sta os type {self.real_sta_os_type}")
-
-        while not self.login_completed:
+        for file_path in csv_files:
             try:
-                generic_endpoint = self.json_get(
-                    f"/generic/{self.generic_endps_profile.created_endp[0]}"
-                )
-                endp_status = generic_endpoint["endpoint"]["status"]
-                if endp_status == "Stopped":
-                    logging.info("Failed to Start the Host Device")
-                    self.generic_endps_profile.cleanup()
-                    sys.exit(1)
-                time.sleep(5)
+                os.remove(file_path)
+                logging.info(f"Deleted CSV file: {file_path}")
             except Exception as e:
-                logging.info(f"Error while checking login_completed status: {e}")
-                time.sleep(5)
+                logging.error(f"Error deleting file {file_path}: {e}")
 
-        self.meet_link = f"https://us04web.zoom.us/j/{self.remote_login_url}?pwd={self.remote_login_passwd}"
-        print("checking meet link for android devices", self.meet_link)
-
-        for i in range(1, len(self.real_sta_os_type)):
-            if self.real_sta_os_type[i] == "android":
-
-                print(self.lanforge_port_list[i])
-
-                status, created_cx, created_endp = self.create_android(
-                    lanforge_res=self.lanforge_port_list[i],
-                    ports=[self.real_sta_list[i]],
-                    real_client_os_types=["Linux"],
-                )
-                self.generic_endps_profile.created_endp.extend(created_endp)
-                self.generic_endps_profile.created_cx.extend(created_cx)
-                print(self.generic_endps_profile.created_cx)
-                cmd = (
-                    f"python3 android_zoom.py "
-                    f"--serial {self.serial_list[i]} "
-                    f"--meeting_url '{self.meet_link}' "
-                    f"--participant_name '{self.real_sta_hostname[i]}' "
-                    f"--server_host {self.upstream_port} "
-                    f"--server_port 5000"
-                )
-                self.generic_endps_profile.set_cmd(
-                    self.generic_endps_profile.created_endp[i], cmd
-                )
-
-            else:
-                self.generic_endps_profile.create(
-                    ports=[self.real_sta_list[i]],
-                    real_client_os_types=[self.real_sta_os_type[i]],
-                )
-
-        for i in range(1, len(self.real_sta_os_type)):
-
-            if self.real_sta_os_type[i] == "windows":
-                cmd = f"py zoom_client.py --ip {self.upstream_port}"
-                self.generic_endps_profile.set_cmd(
-                    self.generic_endps_profile.created_endp[i], cmd
-                )
-            elif self.real_sta_os_type[i] == "linux":
-                cmd = "su -l lanforge ctzoom.bash %s %s %s" % (
-                    self.wifi_interface_list[i],
-                    self.upstream_port,
-                    "client",
-                )
-                self.generic_endps_profile.set_cmd(
-                    self.generic_endps_profile.created_endp[i], cmd
-                )
-            elif self.real_sta_os_type[i] == "macos":
-                cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "client")
-                self.generic_endps_profile.set_cmd(
-                    self.generic_endps_profile.created_endp[i], cmd
-                )
-
-            cx_name = self.generic_endps_profile.created_cx[i]
-            self.json_post(
-                "/cli-json/set_cx_state",
-                {"test_mgr": "default_tm", "cx_name": cx_name, "cx_state": "RUNNING"},
-                debug_=True,
-            )
-            print("sending running state to..", cx_name)
-
-        while not self.test_start:
-            logging.info("WAITING FOR THE TEST TO BE STARTED")
-            time.sleep(5)
-
-        self.set_start_time()
-        logging.info("TEST WILL BE STARTING")
+    def run(self, account_id=None, client_id=None, client_secret=None):
+        self.create_host()
+        self.wait_for_host_ready()
+        self.create_participants()
+        self.wait_for_test_start()
 
         while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
+            if self.do_robo:
+                pause, _ = self.robo_obj.wait_for_battery()
+                if pause:
+                    self.stop_signal = True
+                    self.generic_endps_profile.stop_cx()
+                    self.generic_endps_profile.cleanup()
+                    self.delete_current_csv_files()
+                    self.start_time = None
+                    self.end_time = None
+                    time.sleep(20)
+                    self.stop_signal = False
+                    self.participants_joined = 0
+                    self.create_host()
+                    self.wait_for_host_ready()
+                    self.create_participants()
+                    self.wait_for_test_start()
+
             if account_id and client_id and client_secret:
                 try:
                     # retrieving with past meetings
@@ -847,7 +777,6 @@ class ZoomAutomation(Realm):
                     self.live_data = self.summarize_audio_video(
                         self.participants_qos_last
                     )
-                    print(self.live_data)
                 except Exception as e:
                     logger.info(
                         f"Unable to fetch live meeting data...retrying in 5 seconds {e}"
@@ -857,7 +786,8 @@ class ZoomAutomation(Realm):
 
         self.generic_endps_profile.stop_cx()
         self.generic_endps_profile.cleanup()
-        self.login_completed = False
+        self.start_time = None
+        self.end_time = None
 
     def select_real_devices(self, real_device_obj, real_sta_list=None):
         final_device_list = []
@@ -3299,10 +3229,473 @@ and downstream traffic"""
                     self.current_angle = angle
                     self.run(account_id, client_id, client_secret)
                     self.get_final_qos_data()
+                    self.participants_joined = 0
 
             else:
                 self.run(account_id, client_id, client_secret)
                 self.get_final_qos_data()
+                self.participants_joined = 0
+
+    def create_host(self):
+        if self.generic_endps_profile.create(
+            ports=[self.real_sta_list[0]],
+            real_client_os_types=[self.real_sta_os_type[0]],
+        ):
+            logging.info("Real client generic endpoint creation completed.")
+        else:
+            logging.error("Real client generic endpoint creation failed.")
+            exit(0)
+
+        if self.real_sta_os_type[0] == "windows":
+            cmd = f"py zoom_host.py --ip {self.upstream_port}"
+            self.generic_endps_profile.set_cmd(
+                self.generic_endps_profile.created_endp[0], cmd
+            )
+        elif self.real_sta_os_type[0] == "linux":
+
+            cmd = "su -l lanforge ctzoom.bash %s %s %s" % (
+                self.wifi_interface_list[0],
+                self.upstream_port,
+                "host",
+            )
+
+            self.generic_endps_profile.set_cmd(
+                self.generic_endps_profile.created_endp[0], cmd
+            )
+        elif self.real_sta_os_type[0] == "macos":
+            cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "host")
+            self.generic_endps_profile.set_cmd(
+                self.generic_endps_profile.created_endp[0], cmd
+            )
+        self.generic_endps_profile.start_cx()
+        time.sleep(5)
+
+        logger.debug(f"checking real sta list {self.real_sta_list}")
+        logger.debug(f"checking real sta os type {self.real_sta_os_type}")
+
+    def wait_for_host_ready(self):
+        while not self.login_completed:
+            try:
+                generic_endpoint = self.json_get(
+                    f"/generic/{self.generic_endps_profile.created_endp[0]}"
+                )
+                endp_status = generic_endpoint["endpoint"]["status"]
+                if endp_status == "Stopped":
+                    logging.info("Failed to Start the Host Device")
+                    self.generic_endps_profile.cleanup()
+                    sys.exit(1)
+                time.sleep(5)
+            except Exception as e:
+                logging.info(f"Error while checking login_completed status: {e}")
+                time.sleep(5)
+
+        self.meet_link = f"https://us04web.zoom.us/j/{self.remote_login_url}?pwd={self.remote_login_passwd}"
+        print("checking meet link for android devices", self.meet_link)
+        self.login_completed = False
+
+    def create_participants(self):
+        for i in range(1, len(self.real_sta_os_type)):
+            if self.real_sta_os_type[i] == "android":
+
+                print(self.lanforge_port_list[i])
+
+                status, created_cx, created_endp = self.create_android(
+                    lanforge_res=self.lanforge_port_list[i],
+                    ports=[self.real_sta_list[i]],
+                    real_client_os_types=["Linux"],
+                )
+                self.generic_endps_profile.created_endp.extend(created_endp)
+                self.generic_endps_profile.created_cx.extend(created_cx)
+                print(self.generic_endps_profile.created_cx)
+                cmd = (
+                    f"python3 android_zoom.py "
+                    f"--serial {self.serial_list[i]} "
+                    f"--meeting_url '{self.meet_link}' "
+                    f"--participant_name '{self.real_sta_hostname[i]}' "
+                    f"--server_host {self.upstream_port} "
+                    f"--server_port 5000"
+                )
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+
+            else:
+                self.generic_endps_profile.create(
+                    ports=[self.real_sta_list[i]],
+                    real_client_os_types=[self.real_sta_os_type[i]],
+                )
+
+        for i in range(1, len(self.real_sta_os_type)):
+
+            if self.real_sta_os_type[i] == "windows":
+                cmd = f"py zoom_client.py --ip {self.upstream_port}"
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+            elif self.real_sta_os_type[i] == "linux":
+                cmd = "su -l lanforge ctzoom.bash %s %s %s" % (
+                    self.wifi_interface_list[i],
+                    self.upstream_port,
+                    "client",
+                )
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+            elif self.real_sta_os_type[i] == "macos":
+                cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "client")
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+
+            cx_name = self.generic_endps_profile.created_cx[i]
+            self.json_post(
+                "/cli-json/set_cx_state",
+                {"test_mgr": "default_tm", "cx_name": cx_name, "cx_state": "RUNNING"},
+                debug_=True,
+            )
+            print("sending running state to..", cx_name)
+
+    def wait_for_test_start(self):
+        # Wait for the test to be started
+        while not self.test_start:
+            logging.info("WAITING FOR THE TEST TO BE STARTED")
+            time.sleep(5)
+        self.test_start = False
+
+        self.set_start_time()
+        logging.info("TEST WILL BE STARTING")
+
+    def generate_report_from_data(self):
+        """
+        Main function to generate report from API data.
+        """
+        # --- Initialize Report ---
+        self.report = lf_report(
+            _output_pdf="zoom_call_report.pdf",
+            _output_html="zoom_call_report.html",
+            _results_dir_name="zoom_call_report",
+            _path=self.path,
+        )
+        report_path_date_time = self.report.get_path_date_time()
+        self.report.set_title("Zoom Call Automated Report")
+        self.report.build_banner()
+
+        # --- Objective Section ---
+        self.report.set_table_title("Objective:")
+        self.report.build_table_title()
+        self.report.set_text(
+            """The Zoom Conference Test is designed to evaluate an Access Point ability
+                to handle real-time conferencing workloads when multiple clients, including Windows,
+                Linux, macOS, and Android devices, participate in a Zoom meeting...
+            """
+        )
+        self.report.build_text_simple()
+
+        # --- Test Parameters Table ---
+        self.report.set_table_title("Test Parameters:")
+        self.report.build_table_title()
+
+        testtype = (
+            "AUDIO & VIDEO"
+            if (self.audio and self.video)
+            else ("AUDIO" if self.audio else "VIDEO")
+        )
+        to_hms = (
+            lambda mins: f"{int(mins * 60 // 3600):02}:{int((mins * 60 % 3600) // 60):02}:{int(mins * 60 % 60):02}"
+        )
+
+        param_data = {
+            "Test Name": "Zoom Conference Call Test",
+            "Date": time.strftime("%d-%m-%Y", time.localtime()),
+            "Devices Used": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
+            "Zoom Meeting ID": (
+                self.remote_login_url if not self.do_robo else "Robo-Multi-Location"
+            ),
+            "Test Duration": to_hms(self.duration),
+            "TEST TYPE": testtype,
+            "Mode": "Robo Motion" if self.do_robo else "Static",
+        }
+
+        # Add conditional fields
+        if self.config:
+            param_data["Configured Devices"] = self.hostname_os_combination
+            param_data["SSID"] = self.ssid
+            param_data["Security"] = self.security
+        elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
+            gp_pairs = zip(self.selected_groups, self.selected_profiles)
+            gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
+            param_data["Configuration"] = gp_map
+            param_data["Configured Devices"] = self.hostname_os_combination
+
+        self.report.set_table_dataframe(pd.DataFrame([param_data]))
+        self.report.build_table()
+
+        # ==============================================================================
+        # REPORT CONTENT GENERATION
+        # ==============================================================================
+
+        # ROBO MODE: Iterate through Coords/Angles and generate device graphs for each
+        self._generate_robo_per_location_report()
+
+        # --- Finalize Report ---
+        self.report.write_html()
+        self.report.write_pdf(_page_size="Legal", _orientation="Landscape")
+        self._move_report_files(report_path_date_time)
+
+    def _move_report_files(self, report_path_date_time):
+        """
+        Helper to move CSVs, and Robo JSONs to the report folder.
+        """
+        # 1. Move Client CSV files
+        if self.do_robo:
+            for coord in self.coordinates_list:
+                if self.rotations_enabled:
+                    for angle in self.angles_list:
+                        for client in self.real_sta_hostname:
+                            csv_path = os.path.join(
+                                self.path,
+                                f"{client}_{coord}_{angle}.csv",
+                            )
+                            if os.path.exists(csv_path):
+                                self.move_files(csv_path, report_path_date_time)
+                else:
+                    for client in self.real_sta_hostname:
+                        csv_path = os.path.join(self.path, f"{client}_{coord}.csv")
+                        if os.path.exists(csv_path):
+                            self.move_files(csv_path, report_path_date_time)
+
+        # 2. Move Robo JSONs (Wildcard search for Multi-Location files)
+        if self.do_robo:
+            pattern = os.path.join(os.getcwd(), "zoom_api_responses", "*_qos.json")
+            for f in glob.glob(pattern):
+                self.move_files(f, report_path_date_time)
+
+    def _generate_robo_per_location_report(self):
+        """
+        Iterates through every coordinate and angle, loads the specific JSON,
+        and generates Device-Specific Bar Graphs (Device Name on Y-Axis).
+        """
+        coords = self.coordinates_list if self.coordinates_list else ["0,0,0"]
+
+        for coord in coords:
+            # Determine angles loop
+            if self.rotations_enabled and self.angles_list:
+                angles_loop = self.angles_list
+            else:
+                angles_loop = [self.current_angle]
+
+            for angle in angles_loop:
+                # 1. Heading for this Location
+                if self.rotations_enabled:
+                    heading = f"Audio and Video graphs at coordinate {coord} and angle {angle}"
+                else:
+                    heading = f"Audio and Video graphs at coordinate {coord}"
+                self.report.set_table_title(heading)
+                self.report.build_table_title()
+
+                # 2. Load Data
+                json_pattern = f"*_{coord}_{angle}_qos.json"
+                file_path = os.path.join("zoom_api_responses", json_pattern)
+                found_files = glob.glob(file_path)
+                print("checking found files", found_files)
+
+                device_data = {}
+                if found_files:
+                    try:
+                        with open(found_files[0], "r") as f:
+                            raw_data = json.load(f)
+                        # Parse data to get per-device averages
+                        device_data = self.summarize_audio_video(raw_data)
+                        print(device_data)
+                    except Exception as e:
+                        logging.error(f"Error reading {found_files[0]}: {e}")
+                        self.report.set_text(f"Error loading data for {coord}/{angle}")
+                        self.report.build_text_simple()
+                        continue
+                else:
+                    self.report.set_text(f"No data found for {coord}/{angle}")
+                    self.report.build_text_simple()
+                    continue
+
+                # 3. Generate Audio Graphs (Device on Y-Axis)
+                if self.audio:
+                    # if self.rotations_enabled:
+                    #     self.report.set_text(
+                    #         f"Audio Performance at {coord} coordinate - {angle} degrees angle"
+                    #     )
+                    # else:
+                    #     self.report.set_text(f"Audio Performance at {coord} coordinate")
+                    # self.report.build_text_simple()
+
+                    suffix = f"_{coord}_{angle}"  # Unique suffix for image names
+                    self._build_metric_graph(
+                        "Audio",
+                        "Bitrate",
+                        "Kbps",
+                        device_data,
+                        "audio_input_bitrate_avg",
+                        "audio_output_bitrate_avg",
+                        suffix,
+                    )
+                    self._build_metric_graph(
+                        "Audio",
+                        "Latency",
+                        "ms",
+                        device_data,
+                        "audio_input_latency_avg",
+                        "audio_output_latency_avg",
+                        suffix,
+                    )
+                    self._build_metric_graph(
+                        "Audio",
+                        "Jitter",
+                        "ms",
+                        device_data,
+                        "audio_input_jitter_avg",
+                        "audio_output_jitter_avg",
+                        suffix,
+                    )
+                    self._build_metric_graph(
+                        "Audio",
+                        "Packet Loss",
+                        "%",
+                        device_data,
+                        "audio_input_avg_loss_avg",
+                        "audio_output_avg_loss_avg",
+                        suffix,
+                    )
+
+                    self._build_results_table(device_data, "audio")
+
+                # 4. Generate Video Graphs (Device on Y-Axis)
+                if self.video:
+                    # if self.rotations_enabled:
+                    #     self.report.set_text(
+                    #         f"Video Performance at {coord} coordinate - {angle} degrees angle"
+                    #     )
+                    # else:
+                    #     self.report.set_text(f"Video Performance at {coord} coordinate")
+                    # self.report.build_text_simple()
+
+                    suffix = f"_{coord}_{angle}"
+                    self._build_metric_graph(
+                        "Video",
+                        "Bitrate",
+                        "Kbps",
+                        device_data,
+                        "video_input_bitrate_avg",
+                        "video_output_bitrate_avg",
+                        suffix,
+                    )
+                    self._build_metric_graph(
+                        "Video",
+                        "Latency",
+                        "ms",
+                        device_data,
+                        "video_input_latency_avg",
+                        "video_output_latency_avg",
+                        suffix,
+                    )
+                    self._build_metric_graph(
+                        "Video",
+                        "Jitter",
+                        "ms",
+                        device_data,
+                        "video_input_jitter_avg",
+                        "video_output_jitter_avg",
+                        suffix,
+                    )
+                    self._build_metric_graph(
+                        "Video",
+                        "Packet Loss",
+                        "%",
+                        device_data,
+                        "video_input_avg_loss_avg",
+                        "video_output_avg_loss_avg",
+                        suffix,
+                    )
+                    self._build_results_table(device_data, "video")
+
+                # Add a separator between coordinates
+                self.report.set_custom_html("<hr>")
+                self.report.build_custom()
+
+    def _build_metric_graph(
+        self, media_type, metric_name, unit, data, input_key, output_key, suffix=""
+    ):
+        """
+        Helper to build standard horizontal bar graphs with Device Names on Y-Axis.
+        suffix: used for Robo graphs to ensure unique image names per coordinate.
+        """
+        self.report.set_graph_title(f"{media_type} {metric_name} (Sent/Received)")
+        self.report.build_graph_title()
+
+        sent_vals = []
+        recv_vals = []
+
+        for index, client in enumerate(self.real_sta_hostname):
+            # Handle Host vs Client logic
+            device_key = client if index != 0 else "Host Device"
+
+            # Safe Get
+            def get_val(key):
+                val = data.get(device_key, {}).get(key)
+                return val if val is not None else 0
+
+            sent_vals.append(get_val(input_key))
+            recv_vals.append(get_val(output_key))
+
+        # Generate Graph
+        bar_graph = lf_bar_graph_horizontal(
+            _data_set=[sent_vals, recv_vals],
+            _xaxis_name=f"{metric_name} ({unit})",
+            _yaxis_name="Devices",
+            _yaxis_categories=self.real_sta_hostname,  # Device Names on Y-Axis
+            _graph_title=f"{media_type} {metric_name}",
+            _graph_image_name=f"{media_type}_{metric_name}{suffix}",
+            _label=["Avg Sent", "Avg Recv"],
+            _figsize=(18, len(self.real_sta_hostname) * 1 + 4),
+            _color_name=["blue", "orange"],
+        )
+        self.report.set_graph_image(bar_graph.build_bar_graph_horizontal())
+        self.report.move_graph_image()
+        self.report.build_graph()
+
+    def _build_results_table(self, data, media_type):
+        """Helper for Summary Table"""
+
+        def fmt_val(client, index, key):
+            device_key = client if index != 0 else "Host Device"
+            val = data.get(device_key, {}).get(key)
+            return val if val is not None else 0
+
+        p = media_type
+        details = pd.DataFrame(
+            {
+                "Device Name": self.real_sta_hostname,
+                "Avg Bitrate (kbps) [S/R]": [
+                    f"{fmt_val(c, i, f'{p}_input_bitrate_avg')}/{fmt_val(c, i, f'{p}_output_bitrate_avg')}"
+                    for i, c in enumerate(self.real_sta_hostname)
+                ],
+                "Avg Latency (ms) [S/R]": [
+                    f"{fmt_val(c, i, f'{p}_input_latency_avg')}/{fmt_val(c, i, f'{p}_output_latency_avg')}"
+                    for i, c in enumerate(self.real_sta_hostname)
+                ],
+                "Avg Jitter (ms) [S/R]": [
+                    f"{fmt_val(c, i, f'{p}_input_jitter_avg')}/{fmt_val(c, i, f'{p}_output_jitter_avg')}"
+                    for i, c in enumerate(self.real_sta_hostname)
+                ],
+                "Avg Pkt Loss (%) [S/R]": [
+                    f"{fmt_val(c, i, f'{p}_input_avg_loss_avg')}/{fmt_val(c, i, f'{p}_output_avg_loss_avg')}"
+                    for i, c in enumerate(self.real_sta_hostname)
+                ],
+            }
+        )
+        self.report.set_table_dataframe(details)
+        self.report.dataframe_html = self.report.dataframe.to_html(
+            index=False, justify="center", render_links=True, escape=False
+        )
+        self.report.html += self.report.dataframe_html
 
 
 def main():
@@ -3801,7 +4194,6 @@ def main():
                     get_data = zoom_automation.select_real_devices(
                         real_device_obj=realdevice, real_sta_list=resources
                     )
-                    print(get_data)
                     for item in get_data:
                         item = item.strip()
                         # Find and append the matching lap to result_list
@@ -3893,6 +4285,10 @@ def main():
         traceback.print_exc()
     finally:
         if not ("--help" in sys.argv or "-h" in sys.argv):
+            if args.do_robo:
+                zoom_automation.generate_report_from_data()
+            if args.api_stats_collection:
+                zoom_automation.generate_report_from_api()
             zoom_automation.stop_signal = True
             logging.info("Waiting for Browser Cleanup in Laptops")
             time.sleep(10)
