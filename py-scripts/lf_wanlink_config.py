@@ -2,7 +2,7 @@
 r"""
 NAME:       lf_wanlink_config.py
 
-PURPOSE:    Read csv file which contains configuration for lf_create_wanlink.py
+PURPOSE:    Read csv file which contains configuration for lf_wanlink_config.py
             and call lf_create_wanlink.py
 
 NOTES:      The csv names uses need to match the configuration of lf_create_wanlink.py.
