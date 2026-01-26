@@ -109,15 +109,15 @@ class lf_logger_config:
         if not level:
             return  # no change from defaults
 
-        if level == "debug":
+        if level.lower() == "debug":
             self.set_level_debug()
-        elif level == "info":
+        elif level.lower() == "info":
             self.set_level_info()
-        elif level == "warning":
+        elif level.lower() == "warning":
             self.set_level_warning()
-        elif level == "error":
+        elif level.lower() == "error":
             self.set_level_error()
-        elif level == "critical":
+        elif level.lower() == "critical":
             self.set_level_warning()
         else:
             print("ERROR:  Invalid log level requested: %s" % (level))
