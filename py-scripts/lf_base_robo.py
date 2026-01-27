@@ -4,6 +4,8 @@ import os
 import json
 import math
 import logging
+import csv
+from datetime import datetime
 
 
 class RobotClass:
@@ -32,10 +34,12 @@ class RobotClass:
         self.runtime_dir = None
         self.ip = None
         self.testname = None
+        self.do_bandsteering = False
 
         # Create waypoint list on initialization
         if self.robo_ip is not None:
             self.create_waypointlist()
+        open("bandsteering.csv","w").write("Timestamp,MAC,Channel,BSSID,Signal,Robot x,Robot y\n")
 
     def create_waypointlist(self):
         """
@@ -162,13 +166,13 @@ class RobotClass:
                 stopped = True
                 return pause, stopped
 
-    def move_to_coordinate(self, coord):
+    def move_to_coordinate(self, coord, monitor_function=None):
         """
         Move the robot to a specified position.
 
         Args:
             coord (str): position name.
-
+            monitor_function (function, optional): Function to call during movement.
         Returns:
             tuple: (matched (bool), abort (bool))
         """
@@ -187,8 +191,12 @@ class RobotClass:
             matched = False
             try:
                 response = requests.get(status_url, timeout=5)
+                # x_coord, y_coord=self.get_robot_pose()
+                if monitor_function:
+                    all_dataframes =monitor_function()
+                    
                 response.raise_for_status()
-                nav_status = response.json()
+                nav_status = response.json()                
             except (requests.RequestException, ValueError) as e:
                 logging.info("[ERROR] Failed to get robot status: {}".format(e))
                 time.sleep(5)
@@ -225,7 +233,8 @@ class RobotClass:
                 navdata['Canbee_angle'] = ''
             with open(self.nav_data_path, 'w') as x:
                 json.dump(navdata, x, indent=4)
-
+        if self.do_bandsteering:
+            return matched,abort,all_dataframes
         return matched, abort
 
     def rotate_angle(self, angle_degree):
@@ -302,3 +311,20 @@ class RobotClass:
                 angle += 360
             result.append(round(math.radians(angle), 2))
         return result
+
+    def get_robot_pose(self):
+        pose_url = f"http://{self.robo_ip}/reeman/pose"
+
+        try:
+            response = requests.get(pose_url, timeout=5)
+            response.raise_for_status()
+            data_pose = response.json()
+
+            x = data_pose.get("x", 0)
+            y = data_pose.get("y", 0)
+
+            return x, y
+
+        except Exception as e:
+            logging.error("Failed to get robot pose: %s", e)
+            return 0,0

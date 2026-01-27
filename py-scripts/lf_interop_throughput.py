@@ -201,10 +201,10 @@ from datetime import datetime, timedelta  # noqa: E402
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
-iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
-if os.path.exists(iot_scripts_path):
-    sys.path.insert(0, iot_scripts_path)
-    from test_automation import Automation  # noqa: E402
+# iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
+# if os.path.exists(iot_scripts_path):
+#     sys.path.insert(0, iot_scripts_path)
+#     from test_automation import Automation  # noqa: E402
 
 
 class Throughput(Realm):
@@ -269,7 +269,7 @@ class Throughput(Realm):
                  user_list=None, real_client_list=None, real_client_list1=None, hw_list=None, laptop_list=None, android_list=None, mac_list=None, windows_list=None, linux_list=None,
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None,
-                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None):
+                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None,do_bandsteering=False):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -377,7 +377,7 @@ class Throughput(Realm):
         self.config_dict = {}
         self.configured_devices_check = {}
         self.interopability_config = interopability_config
-
+        self.do_bandsteering=do_bandsteering
         # Variables related to Robo
         self.robo_ip = robo_ip
         self.angle_list = angle_list if angle_list else [0]
@@ -390,7 +390,8 @@ class Throughput(Realm):
             self.charge_point_name = None
             self.coordinates_completed = []
             self.battery_log = {}
-
+    def perform_bandsteering_with_robo(self, args, client):
+        pass
     def perform_robo(self, args, clients_to_run):
         """
         Execute robot-assisted throughput testing across multiple coordinates and angles.
@@ -418,6 +419,63 @@ class Throughput(Realm):
         iterations_before_test_stopped_by_user = []
         test_stopped_by_user = False
         # Loop through the coordinate list when coordinates are specified.
+        if self.do_bandsteering:
+            self.robot.do_bandsteering = True
+            is_device_configured = True
+            columns = []
+            to_run_cxs, to_run_cxs_len, created_cx_lists_keys, incremental_capacity_list = self.get_incremental_capacity_list()
+
+
+            for client in clients_to_run:
+                columns.extend([
+                    f'Download{client}', f'Upload{client}',
+                    f'Rx % Drop {client}', f'Tx % Drop{client}',
+                    f'Average RTT {client}', f'RSSI {client}',
+                    f'Tx-Rate {client}', f'Rx-Rate {client}', f'BSSID {client}'
+                ])
+
+            columns.extend([
+                'Overall Download', 'Overall Upload',
+                'Overall Rx % Drop', 'Overall Tx % Drop',
+                'Iteration', 'TIMESTAMP', 'Start_time',
+                'End_time', 'Remaining_Time',
+                'Incremental_list', 'status', 'Robot X', 'Robot Y'
+            ])
+
+            individual_df = pd.DataFrame(columns=columns)
+            device_names = []
+            for cx in to_run_cxs:
+                self.start_specific(cx)
+
+                device_names = created_cx_lists_keys[:to_run_cxs_len[-1][-1]]
+            overall_start_time = datetime.now()
+            overall_end_time = overall_start_time + timedelta(seconds=int(args.test_duration) * len(incremental_capacity_list))
+            for coord in self.coordinate_list:
+                pause, stopped = self.robot.wait_for_battery()
+                if stopped:
+                    break
+
+                matched, abort, all_dataframes = self.robot.move_to_coordinate(
+                    coord,
+                    monitor_function=lambda: self.monitor(
+                                                        0,
+                                                        individual_df,
+                                                        device_names,
+                                                        incremental_capacity_list,
+                                                        overall_start_time,
+                                                        overall_end_time,
+                                                        is_device_configured
+                                                    )
+                                                )
+            self.stop()
+            iterations_before_test_stopped_by_user.append(0)
+            all_dataframes = pd.concat(
+                [df for df in all_dataframes if isinstance(df, pd.DataFrame)],
+                ignore_index=True
+            )
+            print(type(all_dataframes))
+            self.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
+            exit(1)
         for coord in self.coordinate_list:
             # checking the battery status of robot before moving to a point
             pause_coord, test_stopped_by_user = self.robot.wait_for_battery()
@@ -918,7 +976,7 @@ class Throughput(Realm):
 
         """
 
-        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = [], [], [], [], []
+        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = [], [], [], [], [], []
         interfaces_dict = dict()
         try:
             port_data = self.json_get('/ports/all/')['interfaces']
@@ -956,7 +1014,12 @@ class Throughput(Realm):
                 rx_rate_list.append(interfaces_dict[sta]['rx-rate'])
             else:
                 rx_rate_list.append('-')
-        return signal_list, channel_list, mode_list, link_speed_list, rx_rate_list
+        for sta in station_names:
+            if sta in interfaces_dict:
+                bssid_list.append(interfaces_dict[sta]['ap'])
+            else:
+                bssid_list.append('-')
+        return signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list
 
     def get_ssid_list(self, station_names):
         """
@@ -1188,7 +1251,7 @@ class Throughput(Realm):
         while datetime.now() < end_time:
             index += 1
             current_time = datetime.now()
-            signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
+            signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
             signal_list = [int(i) if i != "" else 0 for i in signal_list]
             throughput[index] = self.get_layer3_endp_data()
             # Check if next sleep would overshoot the end_time
@@ -1244,7 +1307,7 @@ class Throughput(Realm):
                 # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe
                 for i in range(len(download_throughput)):
                     individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i],
-                                              temp_avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
+                                              temp_avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i], bssid_list[i]])
 
                 # Storing Overall throughput data for all devices and also start time, end time, remaining time and status of test running
                 individual_df_data.extend([round(sum(download_throughput),
@@ -1260,6 +1323,10 @@ class Throughput(Realm):
                                            remaining_minutes_instrf,
                                            ', '.join(str(n) for n in incremental_capacity_list),
                                            'Running'])
+                if self.do_bandsteering:
+                    robot_x, robot_y = self.robot.get_robot_pose()
+                    individual_df_data.extend([robot_x, robot_y]) 
+                
                 # Appending the data according to the time gap (for webgui)
                 if (current_time - previous_time).total_seconds() >= time_break:
                     individual_df_for_webui.loc[len(individual_df_for_webui)] = individual_df_data
@@ -1280,7 +1347,8 @@ class Throughput(Realm):
                         logger.warning('Test is stopped by the user')
                         test_stopped_by_user = True
                         break
-
+                if self.do_bandsteering:
+                    return individual_df, test_stopped_by_user
                 # Adjust time_gap based on elapsed time since start (for webui)
                 d = datetime.now()
                 if d - start_time <= timedelta(hours=1):
@@ -1314,6 +1382,16 @@ class Throughput(Realm):
                         time_break = 5
                     else:
                         time_break = 120
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             else:
 
                 # If not using web GUI, sleep based on report timer
@@ -1356,7 +1434,7 @@ class Throughput(Realm):
                     remaining_minutes_instrf = str(overall_time_difference).split(".")[0]
                 # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe
                 for i in range(len(download_throughput)):
-                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
+                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i], bssid_list[i]])
 
                 # Storing Overall throughput data for all devices and also start time, end time, remaining time and status of test running
                 individual_df_data.extend([round(sum(download_throughput),
@@ -1372,8 +1450,13 @@ class Throughput(Realm):
                                            remaining_minutes_instrf,
                                            ', '.join(str(n) for n in incremental_capacity_list),
                                            'Running'])
+                if self.do_bandsteering:
+                    robot_x, robot_y = self.robot.get_robot_pose()
+                    individual_df_data.extend([robot_x, robot_y]) 
                 individual_df.loc[len(individual_df)] = individual_df_data
                 individual_df.to_csv('throughput_data.csv', index=False)
+                if self.do_bandsteering:
+                    return individual_df, test_stopped_by_user
 
             if self.stop_test:
                 test_stopped_by_user = True
@@ -1407,12 +1490,12 @@ class Throughput(Realm):
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
         drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
         drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
-        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
+        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
         signal_list = [int(i) if i != "" else 0 for i in signal_list]
 
         # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe after test stopped
         for i in range(len(download_throughput)):
-            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
+            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i], bssid_list[i]])
         timestamp = datetime.now().strftime("%d/%m %I:%M:%S %p")
 
         # If it's the last iteration, append final metrics and 'Stopped' status
@@ -1558,7 +1641,7 @@ class Throughput(Realm):
             while datetime.now() < end_time:
                 index += 1
                 current_time = datetime.now()
-                signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
+                signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
                 signal_list = [int(i) if i != "" else 0 for i in signal_list]
                 throughput[index] = self.get_layer3_endp_data()
                 # Check if next sleep would overshoot the end_time
@@ -1846,7 +1929,7 @@ class Throughput(Realm):
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
         drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
         drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
-        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
+        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
         signal_list = [int(i) if i != "" else 0 for i in signal_list]
 
         # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe after test stopped
@@ -2195,7 +2278,7 @@ class Throughput(Realm):
             result_dir_name = "Interopability_Test_report"
 
         self.ssid_list = self.get_ssid_list(self.input_devices_list)
-        self.signal_list, self.channel_list, self.mode_list, self.link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
+        self.signal_list, self.channel_list, self.mode_list, self.link_speed_list, rx_rate_list, self.bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
 
         if selected_real_clients_names is not None:
             self.num_stations = selected_real_clients_names
@@ -3101,7 +3184,7 @@ class Throughput(Realm):
             result_dir_name = "Interopability_Test_report"
 
         self.ssid_list = self.get_ssid_list(self.input_devices_list)
-        self.signal_list, self.channel_list, self.mode_list, self.link_speed_list, rx_rate_list = self.get_signal_and_channel_data(self.input_devices_list)
+        self.signal_list, self.channel_list, self.mode_list, self.link_speed_list, rx_rate_list, self.bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
 
         if selected_real_clients_names is not None:
             self.num_stations = selected_real_clients_names
@@ -4420,6 +4503,7 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
     optional.add_argument("--interopability_config", action="store_true", help="To do individual configuration for each device in interoperability")
     optional.add_argument("--tput_mbps", action="store_true", help="Interpret rated download and upload values as Mbps instead of bytes")
+    optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
     # IOT ARGS
     parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
@@ -4614,7 +4698,8 @@ Copyright 2023 Candela Technologies Inc.
                                 robo_ip=args.robot_ip,
                                 rotation_enabled=True if args.rotation else False,
                                 coordinate_list=args.coordinate.split(",") if args.coordinate else [],
-                                angle_list=args.rotation.split(",") if args.rotation else []
+                                angle_list=args.rotation.split(",") if args.rotation else [],
+                                do_bandsteering=args.do_bandsteering
                                 )
 
         if gave_incremental:
@@ -4659,7 +4744,7 @@ Copyright 2023 Candela Technologies Inc.
         created_cxs = throughput.build()
         time.sleep(10)
         created_cxs = list(created_cxs.keys())
-
+    
         if args.robot_ip:
             # Execute Robo test execution when robot IP is provided
             throughput.perform_robo(args, clients_to_run)
@@ -4674,10 +4759,14 @@ Copyright 2023 Candela Technologies Inc.
             # Extend individual_dataframe_column with dynamically generated column names
             individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop  {clients_to_run[i]}',
                                                 f'Tx % Drop{clients_to_run[i]}', f'Average RTT {clients_to_run[i]}', f'RSSI {clients_to_run[i]}',
-                                                f'Tx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]}'])
-
+                                                f'Tx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]}', f'BSSID {clients_to_run[i]}'])
+            # if args.do_bandsteering:
+            #     individual_dataframe_column.extend([f'BSSID {clients_to_run[i]}'])
         individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop ', 'Overall Tx % Drop', 'Iteration',
                                            'TIMESTAMP', 'Start_time', 'End_time', 'Remaining_Time', 'Incremental_list', 'status'])
+        # if args.do_bandsteering:
+        #     # Add Robot X and Robot Y columns if bandsteering is enabled
+        #     individual_dataframe_column.extend(['Robot X', 'Robot Y'])
         individual_df = pd.DataFrame(columns=individual_dataframe_column)
 
         overall_start_time = datetime.now()
@@ -4747,6 +4836,8 @@ Copyright 2023 Candela Technologies Inc.
         if os.path.exists(p):
             with open(p) as f:
                 iot_summary = json.load(f)
+    print(type(all_dataframes))
+    print("====",list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list,all_dataframes, to_run_cxs_len, throughput.result_dir,)
     throughput.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=throughput.result_dir,
                                iot_summary=iot_summary)
     if throughput.dowebgui:
