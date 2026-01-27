@@ -390,8 +390,7 @@ class Throughput(Realm):
             self.charge_point_name = None
             self.coordinates_completed = []
             self.battery_log = {}
-    def perform_bandsteering_with_robo(self, args, client):
-        pass
+
     def perform_robo(self, args, clients_to_run):
         """
         Execute robot-assisted throughput testing across multiple coordinates and angles.
@@ -420,6 +419,7 @@ class Throughput(Realm):
         test_stopped_by_user = False
         # Loop through the coordinate list when coordinates are specified.
         if self.do_bandsteering:
+            self.robot.move_to_coordinate(self.coordinate_list[0])
             self.robot.do_bandsteering = True
             is_device_configured = True
             columns = []
@@ -439,7 +439,7 @@ class Throughput(Realm):
                 'Overall Rx % Drop', 'Overall Tx % Drop',
                 'Iteration', 'TIMESTAMP', 'Start_time',
                 'End_time', 'Remaining_Time',
-                'Incremental_list', 'status', 'Robot X', 'Robot Y'
+                'Incremental_list', 'status', 'Robot X', 'Robot Y','From Coordinate', 'To Coordinate'
             ])
 
             individual_df = pd.DataFrame(columns=columns)
@@ -1324,8 +1324,10 @@ class Throughput(Realm):
                                            ', '.join(str(n) for n in incremental_capacity_list),
                                            'Running'])
                 if self.do_bandsteering:
-                    robot_x, robot_y = self.robot.get_robot_pose()
-                    individual_df_data.extend([robot_x, robot_y]) 
+                    if from_coordinate == to_coordinate:
+                        continue
+                    robot_x, robot_y, from_coordinate, to_coordinate = self.robot.get_robot_pose()
+                    individual_df_data.extend([robot_x, robot_y, from_coordinate, to_coordinate]) 
                 
                 # Appending the data according to the time gap (for webgui)
                 if (current_time - previous_time).total_seconds() >= time_break:
@@ -1451,8 +1453,10 @@ class Throughput(Realm):
                                            ', '.join(str(n) for n in incremental_capacity_list),
                                            'Running'])
                 if self.do_bandsteering:
-                    robot_x, robot_y = self.robot.get_robot_pose()
-                    individual_df_data.extend([robot_x, robot_y]) 
+                    robot_x, robot_y, from_coordinate, to_coordinate = self.robot.get_robot_pose()
+                    if from_coordinate == to_coordinate:
+                        return individual_df, test_stopped_by_user
+                    individual_df_data.extend([robot_x, robot_y, from_coordinate, to_coordinate]) 
                 individual_df.loc[len(individual_df)] = individual_df_data
                 individual_df.to_csv('throughput_data.csv', index=False)
                 if self.do_bandsteering:
@@ -4504,6 +4508,7 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument("--interopability_config", action="store_true", help="To do individual configuration for each device in interoperability")
     optional.add_argument("--tput_mbps", action="store_true", help="Interpret rated download and upload values as Mbps instead of bytes")
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
+    optional.add_argument('--total_cycles', help='Enable bandsteering', default="1")
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
     # IOT ARGS
     parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
@@ -4630,6 +4635,11 @@ Copyright 2023 Candela Technologies Inc.
     if (int(args.packet_size) < 16 or int(args.packet_size) > 65507) and int(args.packet_size) != -1:
         logger.error("Packet size should be greater than 16 bytes and less than 65507 bytes incorrect")
         return
+    if args.do_bandsteering:
+        coordinate_list = args.coordinate.split(",")
+        coordinate_list_with_robo = [coordinate_list[(1 + i) % len(coordinate_list)] for i in range(int(args.total_cycles) * len(coordinate_list))]
+        print(coordinate_list_with_robo)
+        return
     if args.iot_test:
         iot_ip = args.iot_ip
         iot_port = args.iot_port
@@ -4699,7 +4709,8 @@ Copyright 2023 Candela Technologies Inc.
                                 rotation_enabled=True if args.rotation else False,
                                 coordinate_list=args.coordinate.split(",") if args.coordinate else [],
                                 angle_list=args.rotation.split(",") if args.rotation else [],
-                                do_bandsteering=args.do_bandsteering
+                                do_bandsteering=args.do_bandsteering,
+                                coordinate_list_with_robo = coordinate_list_with_robo
                                 )
 
         if gave_incremental:
@@ -4836,8 +4847,6 @@ Copyright 2023 Candela Technologies Inc.
         if os.path.exists(p):
             with open(p) as f:
                 iot_summary = json.load(f)
-    print(type(all_dataframes))
-    print("====",list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list,all_dataframes, to_run_cxs_len, throughput.result_dir,)
     throughput.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=throughput.result_dir,
                                iot_summary=iot_summary)
     if throughput.dowebgui:

@@ -35,6 +35,8 @@ class RobotClass:
         self.ip = None
         self.testname = None
         self.do_bandsteering = False
+        self.from_coordinate = ""
+        self.to_coordinate = ""
 
         # Create waypoint list on initialization
         if self.robo_ip is not None:
@@ -193,6 +195,7 @@ class RobotClass:
                 response = requests.get(status_url, timeout=5)
                 # x_coord, y_coord=self.get_robot_pose()
                 if monitor_function:
+                    self.to_coordinate = response.json().get("goal", "")
                     all_dataframes =monitor_function()
                     
                 response.raise_for_status()
@@ -214,6 +217,7 @@ class RobotClass:
             distance = nav_status.get("dist", "")
             if goal == coord and state == 3 and distance < 0.5:
                 matched = True
+                self.from_coordinate = coord
                 break
 
         # Store the coordinate in navdatajson only from webui
@@ -323,8 +327,8 @@ class RobotClass:
             x = data_pose.get("x", 0)
             y = data_pose.get("y", 0)
 
-            return x, y
+            return x, y, self.from_coordinate, self.to_coordinate
 
         except Exception as e:
             logging.error("Failed to get robot pose: %s", e)
-            return 0,0
+            return 0,0, self.from_coordinate,self.to_coordinate
