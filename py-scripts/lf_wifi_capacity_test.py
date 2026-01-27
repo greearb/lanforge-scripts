@@ -377,7 +377,10 @@ INCLUDE_IN_README:
                         default=None)
     parser.add_argument('--start_id', help='Specify the station starting id \n e.g: --start_id <value> default 0',
                         default=0)
-
+    parser.add_argument("--per_station_upload_rate",
+                        default=False, action='store_true', help="will report Per-Station Upload Rate (Default: Total Upload Rate)")
+    parser.add_argument("--per_station_download_rate",
+                        default=False, action='store_true', help="will report Per-Station Download Rate (Default: Total Download Rate)")
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
     parser.add_argument('--logger_no_file',
@@ -428,6 +431,15 @@ INCLUDE_IN_README:
                                                 radio=args.radio)
     else:
         station_list = []
+
+    # add addtional configuration to raw_line
+    if (args.per_station_upload_rate):
+        if "ul_rate_sel: Per-Station Upload Rate:" not in args.raw_line:
+            args.raw_line.append("ul_rate_sel: Per-Station Upload Rate")
+
+    if (args.per_station_download_rate):
+        if "dl_rate_sel: Per-Station Download Rate:" not in args.raw_line:
+            args.raw_line.append("dl_rate_sel: Per-Station Download Rate")
 
     WFC_Test = WiFiCapacityTest(lfclient_host=args.mgr,
                                 lf_port=args.port,
