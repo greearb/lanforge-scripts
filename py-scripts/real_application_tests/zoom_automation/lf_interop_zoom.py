@@ -90,8 +90,8 @@ log.setLevel(logging.ERROR)
 # Import LF logger configuration module
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
-robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
-# robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
+# robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
+robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 
 
 class ZoomAutomation(Realm):
@@ -123,6 +123,7 @@ class ZoomAutomation(Realm):
         duration=None,
         participants_req=None,
         env_file=None,
+        do_bs=False,
     ):
 
         super().__init__(lfclient_host=lanforge_ip)
@@ -210,7 +211,8 @@ class ZoomAutomation(Realm):
         self.live_data = {}
 
         self.do_robo = do_robo
-        if self.do_robo:
+        self.do_bs = do_bs
+        if self.do_robo or self.do_bs:
             self.robo_ip = robo_ip
             self.robo_obj = robo_base_class.RobotClass(
                 robo_ip=self.robo_ip, angle_list=angles_list
@@ -221,6 +223,10 @@ class ZoomAutomation(Realm):
             self.current_angle = current_angle
             self.rotations_enabled = rotations_enabled
             self.robo_csv_files = []
+
+        self.account_id = None
+        self.client_id = None
+        self.client_secret = None
 
     def start_flask_server(self):
         @self.app.route("/login_url", methods=["GET", "POST"])
@@ -256,11 +262,11 @@ class ZoomAutomation(Realm):
                 # "checking self.meet_link",self.meet_link)
                 return jsonify({"message": "Meeting Link Updated sucessfully"})
 
-        @self.app.route("/login_completed", methods=["GET", "POST"])
+        @self.app.route("/login_completed", methods=["GET"])
         def login_completed():
             if request.method == "GET":
                 self.login_completed = True
-                return jsonify({"login_completed": True})
+                return jsonify({"status": "login_completed"}), 200
 
         @self.app.route("/get_host_email", methods=["GET"])
         def get_host_email():
@@ -335,58 +341,122 @@ class ZoomAutomation(Realm):
         def check_stop():
             return jsonify({"stop": self.stop_signal})
 
-        @self.app.route("/upload_stats", methods=["POST"])
+        @self.app.route("/upload_stats", methods=["POST", "GET"])
         def upload_stats():
-            data = request.json
-            for hostname, stats in data.items():
-                self.data_store[hostname] = stats
-            for hostname, stats in data.items():
-                if self.do_robo:
-                    if self.rotations_enabled:
-                        csv_file = os.path.join(
-                            self.path,
-                            f"{hostname}_{self.current_cord}_{self.current_angle}.csv",
+            if self.do_robo or self.do_bs:
+                self.get_live_data()
+                print(self.live_data)
+                if self.live_data:
+                    lf_wifi_data = self.get_signal_and_channel_data_dict()
+                    for hostname, stats in self.live_data.items():
+                        if hostname == "Host Device":
+                            if self.real_sta_hostname:
+                                final_filename = self.real_sta_hostname[0]
+                            else:
+                                final_filename = (
+                                    "Host_Device"  # Fallback if list is empty
+                                )
+                        else:
+                            final_filename = hostname
+
+                        sta_id = self.hostname_to_station_map.get(final_filename, None)
+
+                        if sta_id in lf_wifi_data:
+                            # This adds keys like 'lf_signal', 'lf_channel' to the 'stats' dict
+                            stats.update(lf_wifi_data[sta_id])
+                        else:
+                            # Fill with placeholders if no LF data found for this device
+                            stats.update(
+                                {
+                                    "lf_signal": "-",
+                                    "lf_channel": "-",
+                                    "lf_mode": "-",
+                                    "lf_tx_rate": "-",
+                                    "lf_rx_rate": "-",
+                                    "lf_bssid": "-",
+                                }
+                            )
+
+                        # --- CSV FILE PATH GENERATION ---
+                        if self.do_robo:
+                            if self.rotations_enabled:
+                                csv_name = f"{final_filename}_{self.current_cord}_{self.current_angle}.csv"
+                            else:
+                                csv_name = f"{final_filename}_{self.current_cord}.csv"
+                        else:
+                            csv_name = f"{final_filename}.csv"
+
+                        csv_file = os.path.join(self.path, csv_name)
+
+                        # --- WRITING DATA TO CSV ---
+                        # Check if file exists/is empty to decide on writing headers
+                        file_exists = (
+                            os.path.isfile(csv_file) and os.path.getsize(csv_file) > 0
                         )
+
+                        with open(csv_file, mode="a", newline="") as file:
+                            # using DictWriter matches the keys in 'stats' (e.g., 'audio_input_bitrate_avg') to columns
+                            # We grab the keys from the stats dictionary to form the header
+                            headers = list(stats.keys())
+                            writer = csv.DictWriter(file, fieldnames=headers)
+
+                            if not file_exists:
+                                writer.writeheader()
+
+                            writer.writerow(stats)
+
+                return "Live Data Processed", 200
+            else:
+                data = request.json
+                for hostname, stats in data.items():
+                    self.data_store[hostname] = stats
+                for hostname, stats in data.items():
+                    if self.do_robo:
+                        if self.rotations_enabled:
+                            csv_file = os.path.join(
+                                self.path,
+                                f"{hostname}_{self.current_cord}_{self.current_angle}.csv",
+                            )
+                        else:
+                            csv_file = os.path.join(
+                                self.path, f"{hostname}_{self.current_cord}.csv"
+                            )
                     else:
-                        csv_file = os.path.join(
-                            self.path, f"{hostname}_{self.current_cord}.csv"
-                        )
-                else:
-                    csv_file = os.path.join(self.path, f"{hostname}.csv")
-                with open(csv_file, mode="a", newline="") as file:
-                    writer = csv.writer(file)
+                        csv_file = os.path.join(self.path, f"{hostname}.csv")
+                    with open(csv_file, mode="a", newline="") as file:
+                        writer = csv.writer(file)
 
-                    if os.path.getsize(csv_file) == 0:
-                        writer.writerow(self.header)
+                        if os.path.getsize(csv_file) == 0:
+                            writer.writerow(self.header)
 
-                    timestamp = stats.get("timestamp", "")
-                    audio = stats.get("audio_stats", {})
-                    video = stats.get("video_stats", {})
+                        timestamp = stats.get("timestamp", "")
+                        audio = stats.get("audio_stats", {})
+                        video = stats.get("video_stats", {})
 
-                    row = [
-                        timestamp,
-                        audio.get("frequency_sent", "0"),
-                        audio.get("latency_sent", "0"),
-                        audio.get("jitter_sent", "0"),
-                        audio.get("packet_loss_sent", "0"),
-                        audio.get("frequency_received", "0"),
-                        audio.get("latency_received", "0"),
-                        audio.get("jitter_received", "0"),
-                        audio.get("packet_loss_received", "0"),
-                        video.get("latency_sent", "0"),
-                        video.get("jitter_sent", "0"),
-                        video.get("packet_loss_sent", "0"),
-                        video.get("resolution_sent", "0"),
-                        video.get("frames_per_second_sent", "0"),
-                        video.get("latency_received", "0"),
-                        video.get("jitter_received", "0"),
-                        video.get("packet_loss_received", "0"),
-                        video.get("resolution_received", "0"),
-                        video.get("frames_per_second_received", "0"),
-                    ]
-                    writer.writerow(row)
+                        row = [
+                            timestamp,
+                            audio.get("frequency_sent", "0"),
+                            audio.get("latency_sent", "0"),
+                            audio.get("jitter_sent", "0"),
+                            audio.get("packet_loss_sent", "0"),
+                            audio.get("frequency_received", "0"),
+                            audio.get("latency_received", "0"),
+                            audio.get("jitter_received", "0"),
+                            audio.get("packet_loss_received", "0"),
+                            video.get("latency_sent", "0"),
+                            video.get("jitter_sent", "0"),
+                            video.get("packet_loss_sent", "0"),
+                            video.get("resolution_sent", "0"),
+                            video.get("frames_per_second_sent", "0"),
+                            video.get("latency_received", "0"),
+                            video.get("jitter_received", "0"),
+                            video.get("packet_loss_received", "0"),
+                            video.get("resolution_received", "0"),
+                            video.get("frames_per_second_received", "0"),
+                        ]
+                        writer.writerow(row)
 
-            return jsonify({"status": "success"}), 200
+                return jsonify({"status": "success"}), 200
 
         @self.app.route("/get_latest_stats", methods=["GET"])
         def get_latest_stats():
@@ -476,7 +546,10 @@ class ZoomAutomation(Realm):
 
     def set_start_time(self):
         self.start_time = datetime.now(self.tz) + timedelta(seconds=30)
-        self.end_time = self.start_time + timedelta(minutes=self.duration)
+        if self.do_bs:
+            self.end_time = self.start_time + timedelta(minutes=300000)
+        else:
+            self.end_time = self.start_time + timedelta(minutes=self.duration)
         return [self.start_time, self.end_time]
 
     def check_gen_cx(self):
@@ -743,46 +816,102 @@ class ZoomAutomation(Realm):
             except Exception as e:
                 logging.error(f"Error deleting file {file_path}: {e}")
 
-    def run(self, account_id=None, client_id=None, client_secret=None):
+    def get_signal_and_channel_data_dict(self):
+        """
+        Returns a dictionary of LANforge stats keyed by station name.
+        Example: {'sta001': {'lf_signal': -55, 'lf_channel': 36, ...}}
+        """
+        # print("checking self.user_resources", self.user_resources)
+
+        lf_stats_map = {}
+        interfaces_dict = dict()
+
+        try:
+            # Get raw data from LANforge API
+            port_data = self.json_get("/ports/all/")["interfaces"]
+            for port in port_data:
+                interfaces_dict.update(port)
+        except Exception as e:
+            print(f"Error fetching port data: {e}")
+            return {}
+
+        # Loop through your managed stations (e.g., sta001, sta002)
+        for sta in self.real_sta_list:
+            # Default values if station is missing
+            lf_stats_map[sta] = {
+                "lf_signal": "-",
+                "lf_channel": "-",
+                "lf_mode": "-",
+                "lf_tx_rate": "-",
+                "lf_rx_rate": "-",
+                "lf_bssid": "-",
+            }
+
+            if sta in interfaces_dict:
+                data = interfaces_dict[sta]
+
+                # --- Signal Parsing ---
+                sig = data.get("signal", "-")
+                if "dBm" in str(sig):
+                    lf_stats_map[sta]["lf_signal"] = sig.split(" ")[0]
+                else:
+                    lf_stats_map[sta]["lf_signal"] = sig
+
+                # --- Other Fields ---
+                lf_stats_map[sta]["lf_channel"] = data.get("channel", "-")
+                lf_stats_map[sta]["lf_mode"] = data.get("mode", "-")
+                lf_stats_map[sta]["lf_tx_rate"] = data.get("tx-rate", "-")
+                lf_stats_map[sta]["lf_rx_rate"] = data.get("rx-rate", "-")
+                lf_stats_map[sta]["lf_bssid"] = data.get(
+                    "ap", "-"
+                )  # 'ap' is usually BSSID
+
+        print(lf_stats_map)
+
+        return lf_stats_map
+
+    def run(self):
         self.create_host()
         self.wait_for_host_ready()
         self.create_participants()
         self.wait_for_test_start()
 
-        while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
-            if self.do_robo:
-                pause, _ = self.robo_obj.wait_for_battery()
-                if pause:
-                    self.stop_signal = True
-                    self.generic_endps_profile.stop_cx()
-                    self.generic_endps_profile.cleanup()
-                    self.delete_current_csv_files()
-                    self.start_time = None
-                    self.end_time = None
-                    time.sleep(20)
-                    self.stop_signal = False
-                    self.participants_joined = 0
-                    self.create_host()
-                    self.wait_for_host_ready()
-                    self.create_participants()
-                    self.wait_for_test_start()
+        if self.do_bs:
+            time.sleep(30)
+            for coordinate in self.coordinates_list:
+                # pause, _ = self.robo_obj.wait_for_battery()
+                self.robo_obj.move_to_coordinate(coord=coordinate)
+                self.current_cord = coordinate
+                if self.rotations_enabled:
+                    for angle in self.angles_list:
+                        # self.robo_obj.wait_for_battery()
+                        self.robo_obj.rotate_angle(angle_degree=angle)
+                        self.current_angle = angle
+                        time.sleep(10)
+        else:
+            while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
+                if self.do_robo:
+                    pause, _ = self.robo_obj.wait_for_battery()
+                    if pause:
+                        self.stop_signal = True
+                        self.generic_endps_profile.stop_cx()
+                        self.generic_endps_profile.cleanup()
+                        self.delete_current_csv_files()
+                        self.start_time = None
+                        self.end_time = None
+                        time.sleep(20)
+                        self.stop_signal = False
+                        self.participants_joined = 0
+                        self.create_host()
+                        self.wait_for_host_ready()
+                        self.create_participants()
+                        self.wait_for_test_start()
 
-            if account_id and client_id and client_secret:
-                try:
-                    # retrieving with past meetings
-                    token = self.get_access_token(account_id, client_id, client_secret)
-                    self.participants_qos_last = self.get_participants_qos(
-                        self.remote_login_url, token, "live"
-                    )
-                    self.live_data = self.summarize_audio_video(
-                        self.participants_qos_last
-                    )
-                except Exception as e:
-                    logger.info(
-                        f"Unable to fetch live meeting data...retrying in 5 seconds {e}"
-                    )
-                    # traceback.print_exc()
-            time.sleep(5)
+                time.sleep(5)
+
+        if not self.do_robo:
+            self.get_final_qos_data()
+            self.write_final_data()
 
         self.generic_endps_profile.stop_cx()
         self.generic_endps_profile.cleanup()
@@ -896,6 +1025,13 @@ class ZoomAutomation(Realm):
                 self.android = self.android + 1
 
         # Return the sorted list of selected real station names
+
+        # Create mapping: { 'Hostname': 'Station_ID' }
+        self.hostname_to_station_map = dict(
+            zip(self.real_sta_hostname, self.real_sta_list)
+        )
+        print("checking self.hostname_to_station_map", self.hostname_to_station_map)
+
         return self.real_sta_list
 
     def check_tab_exists(self):
@@ -3217,7 +3353,7 @@ and downstream traffic"""
             json.dump(data, f, indent=2)
         logging.info(f"Saved data to {path}")
 
-    def run_robo_test(self, account_id, client_id, client_secret):
+    def run_robo_test(self):
         for coordinate in self.coordinates_list:
             self.robo_obj.wait_for_battery()
             self.robo_obj.move_to_coordinate(coord=coordinate)
@@ -3227,14 +3363,16 @@ and downstream traffic"""
                     self.robo_obj.wait_for_battery()
                     self.robo_obj.rotate_angle(angle_degree=angle)
                     self.current_angle = angle
-                    self.run(account_id, client_id, client_secret)
+                    self.run()
                     self.get_final_qos_data()
                     self.participants_joined = 0
+                    self.write_final_data()
 
             else:
-                self.run(account_id, client_id, client_secret)
+                self.run()
                 self.get_final_qos_data()
                 self.participants_joined = 0
+                self.write_final_data()
 
     def create_host(self):
         if self.generic_endps_profile.create(
@@ -3697,6 +3835,39 @@ and downstream traffic"""
         )
         self.report.html += self.report.dataframe_html
 
+    def get_live_data(self):
+        try:
+            # retrieving with past meetings
+            token = self.get_access_token(
+                self.account_id, self.client_id, self.client_secret
+            )
+            self.participants_qos_last = self.get_participants_qos(
+                self.remote_login_url, token, "live"
+            )
+            self.live_data = self.summarize_audio_video(self.participants_qos_last)
+        except Exception as e:
+            logger.info(
+                f"Unable to fetch live meeting data...retrying in 5 seconds {e}"
+            )
+            # traceback.print_exc()
+
+    def write_final_data(self):
+        url = "http://127.0.0.1:5000/upload_stats"
+        try:
+            response = requests.get(url)
+
+            if response.status_code == 200:
+                print("Successfully uploaded stats.")
+            else:
+                print(
+                    f"Upload failed. Status: {response.status_code}, Response: {response.text}"
+                )
+
+        except requests.exceptions.ConnectionError:
+            print("Failed to connect to the local API. Is the server running?")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
 
 def main():
     try:
@@ -3932,6 +4103,12 @@ def main():
             help="Specify this flag to perform the test with robo",
             action="store_true",
         )
+        parser.add_argument(
+            "--do_bs",
+            help="Specify this flag to perform the test with robo for band steering",
+            action="store_true",
+        )
+
         args = parser.parse_args()
 
         # set the logger level to debug
@@ -4032,6 +4209,7 @@ def main():
                 duration=args.duration,
                 participants_req=args.participants,
                 env_file=args.env_file,
+                do_bs=args.do_bs,
             )
             if args.download_csv:
                 zoom_automation.download_csv = True
@@ -4261,19 +4439,30 @@ def main():
                         )
 
                 # Fetching zoom credentials for account
-                account_id = args.account_id or os.environ.get("ACCOUNT_ID")
-                client_id = args.client_id or os.environ.get("CLIENT_ID")
-                client_secret = args.client_secret or os.environ.get("CLIENT_SECRET")
+                zoom_automation.account_id = args.account_id or os.environ.get(
+                    "ACCOUNT_ID"
+                )
+                zoom_automation.client_id = args.client_id or os.environ.get(
+                    "CLIENT_ID"
+                )
+                zoom_automation.client_secret = args.client_secret or os.environ.get(
+                    "CLIENT_SECRET"
+                )
 
-                if not all([account_id, client_id, client_secret]):
+                if not all(
+                    [
+                        zoom_automation.account_id,
+                        zoom_automation.client_id,
+                        zoom_automation.client_secret,
+                    ]
+                ):
                     logging.info("Exiting test.")
                     raise ValueError(
                         "Missing Zoom credentials (account_id, client_id, client_secret)"
                     )
-                if args.do_robo:
-                    zoom_automation.run_robo_test(account_id, client_id, client_secret)
-                else:
-                    zoom_automation.run(account_id, client_id, client_secret)
+
+            if args.do_robo:
+                zoom_automation.run_robo_test()
             else:
                 zoom_automation.run()
             zoom_automation.data_store.clear()
@@ -4285,13 +4474,13 @@ def main():
         traceback.print_exc()
     finally:
         if not ("--help" in sys.argv or "-h" in sys.argv):
-            if args.do_robo:
-                zoom_automation.generate_report_from_data()
-            if args.api_stats_collection:
-                zoom_automation.generate_report_from_api()
             zoom_automation.stop_signal = True
             logging.info("Waiting for Browser Cleanup in Laptops")
             time.sleep(10)
+            if args.do_robo and args.api_stats_collection:
+                zoom_automation.generate_report_from_data()
+            elif args.api_stats_collection:
+                zoom_automation.generate_report_from_api()
             zoom_automation.generic_endps_profile.cleanup()
             logging.info("Done.")
 
