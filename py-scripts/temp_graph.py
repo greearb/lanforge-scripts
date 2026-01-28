@@ -96,6 +96,8 @@ This file is then parsed into a series of CSVs and optionally:
                         default=False, action="store_true")
     parser.add_argument("-c", "--cutoff", default=20,
                         help="max time in minutes between two table entries")
+    parser.add_argument("-f", "--filter", default=None,
+                        help="only graph from sensors with names containing the filtered string")
     parser.add_argument("--help_summary", default=False, action="store_true")
 
     args = parser.parse_args()
@@ -173,12 +175,20 @@ This file is then parsed into a series of CSVs and optionally:
 
     date_format = mdates.DateFormatter('%H:%M')
 
+    skip_tables = []
+
     for file_num in range(len(out_tables)):
         file = out_tables[file_num]
         df = pd.read_csv(file.name)
+        if args.filter:
+            df = df[df['device'].str.contains(args.filter, case=False)]
+            if (df.empty):
+                print("A chart was hidden because it did not contain the filtered string")
+                skip_tables.append(file_num)
+                continue
         df['datetime'] = pd.to_datetime(df['datetime'],
                                         format="%Y-%m-%d %H:%M:%S")
-        _, ax = plt.subplots()
+        _, ax = plt.subplots(layout='constrained')
         min_temps = df.groupby('datetime')['temperature'].min()
         max_temps = df.groupby('datetime')['temperature'].max()
         mean_temps = df.groupby('datetime')['temperature'].mean()
@@ -216,6 +226,8 @@ This file is then parsed into a series of CSVs and optionally:
         with open(_out_dir + _tstamp + '/report' + '.html', 'w') as f:
             f.write("<!DOCTYPE HTML> \n <html> \n <b>")
             for file_num in range(len(out_tables)):
+                if file_num in skip_tables:
+                    continue
                 f.write('<img src=\"' +
                         _next_png_name(file_num) +
                         '\" alt=\"graph 1\">')
