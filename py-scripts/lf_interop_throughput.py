@@ -193,7 +193,7 @@ from LANforge import LFUtils  # noqa: F401 E402
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 from lf_report import lf_report  # noqa: E402
-from lf_graph import lf_bar_graph_horizontal  # noqa: E402
+from lf_graph import lf_bar_graph_horizontal, lf_bar_graph  # noqa: E402
 # from lf_graph import lf_line_graph  # noqa: E402
 
 from datetime import datetime, timedelta  # noqa: E402
@@ -269,7 +269,7 @@ class Throughput(Realm):
                  user_list=None, real_client_list=None, real_client_list1=None, hw_list=None, laptop_list=None, android_list=None, mac_list=None, windows_list=None, linux_list=None,
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None,
-                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None,do_bandsteering=False):
+                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None,do_bandsteering=False,total_cycles=1):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -378,6 +378,7 @@ class Throughput(Realm):
         self.configured_devices_check = {}
         self.interopability_config = interopability_config
         self.do_bandsteering=do_bandsteering
+        self.total_cycles = total_cycles
         # Variables related to Robo
         self.robo_ip = robo_ip
         self.angle_list = angle_list if angle_list else [0]
@@ -420,6 +421,7 @@ class Throughput(Realm):
         # Loop through the coordinate list when coordinates are specified.
         if self.do_bandsteering:
             self.robot.move_to_coordinate(self.coordinate_list[0])
+            coordinate_list_with_robo = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(int(self.total_cycles) * len(self.coordinate_list))]
             self.robot.do_bandsteering = True
             is_device_configured = True
             columns = []
@@ -450,7 +452,7 @@ class Throughput(Realm):
                 device_names = created_cx_lists_keys[:to_run_cxs_len[-1][-1]]
             overall_start_time = datetime.now()
             overall_end_time = overall_start_time + timedelta(seconds=int(args.test_duration) * len(incremental_capacity_list))
-            for coord in self.coordinate_list:
+            for coord in coordinate_list_with_robo:
                 pause, stopped = self.robot.wait_for_battery()
                 if stopped:
                     break
@@ -473,7 +475,6 @@ class Throughput(Realm):
                 [df for df in all_dataframes if isinstance(df, pd.DataFrame)],
                 ignore_index=True
             )
-            print(type(all_dataframes))
             self.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
             exit(1)
         for coord in self.coordinate_list:
@@ -1324,9 +1325,9 @@ class Throughput(Realm):
                                            ', '.join(str(n) for n in incremental_capacity_list),
                                            'Running'])
                 if self.do_bandsteering:
+                    robot_x, robot_y, from_coordinate, to_coordinate = self.robot.get_robot_pose()
                     if from_coordinate == to_coordinate:
                         continue
-                    robot_x, robot_y, from_coordinate, to_coordinate = self.robot.get_robot_pose()
                     individual_df_data.extend([robot_x, robot_y, from_coordinate, to_coordinate]) 
                 
                 # Appending the data according to the time gap (for webgui)
@@ -2274,10 +2275,138 @@ class Throughput(Realm):
             "Username": list(configured_devices_check.keys()),
             "Configuration Status": ["Pass" if status else "Fail" for status in configured_devices_check.values()]
         }
+    def get_bandsteering_stats(self, report=None, df=None, data1=None):
+        """
+        Retrieves and adds bandsteering statistics to the report.
+
+        """
+        import pandas as pd
+
+        # df = pd.DataFrame({
+        #     'TIMESTAMP': [
+        #         '27/01 11:26:39 PM',
+        #         '27/01 11:26:45 PM',
+        #         '27/01 11:26:51 PM',
+        #         '27/01 11:26:57 PM',
+        #         '27/01 11:27:02 PM',
+        #         '27/01 11:27:14 PM',
+        #         '27/01 11:27:20 PM',
+        #         '27/01 11:27:26 PM',
+        #     ],
+        #     'BSSID 1.15 Lin ubuntu24': [
+        #         '94:A6:7E:74:26:22',
+        #         '94:A6:7E:74:26:22',
+        #         'AA:BB:CC:DD:EE:FF',  # 🔄 change
+        #         'AA:BB:CC:DD:EE:FF',
+        #         '94:A6:7E:74:26:22',  # 🔄 returns
+        #         '94:A6:7E:74:26:22',
+        #         '11:22:33:44:55:66',  # 🔄 change again
+        #         '11:22:33:44:55:66',
+        #     ],
+        #     'BSSID 1.16 Lin lin34': [
+        #         '94:A6:7E:74:26:22',
+        #         '94:A6:7E:74:26:22',
+        #         '94:A6:7E:74:26:22',  # 🔄 change
+        #         '94:A6:7E:74:26:22',
+        #         '94:A6:7E:74:26:22',  # 🔄 returns
+        #         '94:A6:7E:74:26:22',
+        #         '11:22:33:44:55:66',  # 🔄 change again
+        #         '11:22:33:44:55:66',
+        #     ]
+
+        # })
+
+
+        bssid_cols = df.columns[df.columns.str.startswith('BSSID')]
+
+        rows = []
+
+        for col in bssid_cols:
+            mask = df[col] != df[col].shift()
+            bssid_list = df.loc[mask, col].tolist()
+            timestamp_list = df.loc[mask, 'TIMESTAMP'].tolist()
+            from_coordinate_list = df.loc[mask, 'From Coordinate'].tolist()
+            to_coordinate_list = df.loc[mask, 'To Coordinate'].tolist()
+            print(bssid_list,timestamp_list)
+            from collections import Counter
+            bssid_counts = Counter(bssid_list)
+
+            x_axis = list(bssid_counts.keys())      # BSSID values
+            y_axis = [[float(i)] for i in list(bssid_counts.values())]
+            device_name = col.replace('BSSID ', '')
+            report.set_obj_html(
+                    _obj_title=f"BSSID Change Count Of The Client{device_name}",
+                    _obj=" ")
+            report.build_objective()
+            graph = lf_bar_graph(_data_set=y_axis,
+                        _xaxis_name="BSSID",
+                        _yaxis_name="Number of Changes",
+                        # _xaxis_categories = [", ".join(x_axis)],
+                        _xaxis_categories = [""],
+                        _xaxis_label=x_axis,
+                        _graph_image_name=f"bssid_change_count_{device_name}",
+                        _label=x_axis,
+                        _xaxis_step=1,
+                        _graph_title=f"BSSID change count – {device_name}",
+                        _title_size=16,
+                        _color_edge='black',
+                        _bar_width=0.15,
+                        _figsize=(18, 6),
+                        _legend_loc="best",
+                        _legend_box=(1.0, 1.0),
+                        _dpi=96,
+                        _show_bar_value=True,
+                        _enable_csv=True,
+                        _color=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
+                        _color_name=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
+                        
+                        )
+            # graph = lf_bar_graph(
+            #         _data_set=y_axis,
+            #         _xaxis_name="BSSID",
+            #         _yaxis_name="Number of Changes",
+            #         _xaxis_categories=x_axis,
+            #         _xaxis_label=x_axis,
+            #         _graph_image_name=f"bssid_change_count_{device_name}",
+            #         _label=x_axis,
+            #         _xaxis_step=1,
+            #         _graph_title=f"BSSID change count – {device_name}",
+            #         _title_size=16,
+            #         _bar_width=0.4,
+            #         _figsize=(18, 6),
+            #         _legend_loc="best",
+            #         _dpi=96,
+            #         _show_bar_value=True,
+            #         _enable_csv=True
+            #     )
+            
+            graph_png = graph.build_bar_graph()
+            report.set_graph_image(graph_png)
+            # need to move the graph image to the results directory
+            report.move_graph_image()
+            report.set_csv_filename(graph_png)
+            report.move_csv_file()
+            report.build_graph()
+
+
+            report.set_obj_html(
+                    _obj_title=f"Band Steering Results for {device_name}",
+                    _obj=" ")
+            report.build_objective()
+            table_df = {
+                "BSSID": bssid_list,
+                "Timestamp": timestamp_list,
+                "From Coordinate": from_coordinate_list,
+                "To Coordinate": to_coordinate_list
+            }
+            table_df = pd.DataFrame(table_df)
+            report.set_table_dataframe(table_df)
+            report.build_table()
+
+
 
     def generate_report(self, iterations_before_test_stopped_by_user, incremental_capacity_list, data=None, data1=None, report_path='', result_dir_name='Throughput_Test_report',
                         selected_real_clients_names=None, iot_summary=None):
-
         if self.do_interopability:
             result_dir_name = "Interopability_Test_report"
 
@@ -2697,6 +2826,10 @@ class Throughput(Realm):
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
                 report.build_graph()
+
+                if self.do_bandsteering:
+                    self.get_bandsteering_stats(report, data, devices_on_running_trimmed)
+
                 if self.dowebgui and self.get_live_view:
                     # To add live view images coming from the Web-GUI in report
                     self.add_live_view_images_to_report(report)
@@ -4459,7 +4592,7 @@ Copyright 2023 Candela Technologies Inc.
     required.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp]', required=False)
     required.add_argument('--upload', help='--upload traffic load per connection (upload rate)', default='2560')
     required.add_argument('--download', help='--download traffic load per connection (download rate)', default='2560')
-    required.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="")
+    required.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="1m")
     required.add_argument('--report_timer', help='--duration to collect data', default="5s")
     required.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
     required.add_argument('--dowebgui', help="If true will execute script for webgui", action='store_true')
@@ -4635,11 +4768,6 @@ Copyright 2023 Candela Technologies Inc.
     if (int(args.packet_size) < 16 or int(args.packet_size) > 65507) and int(args.packet_size) != -1:
         logger.error("Packet size should be greater than 16 bytes and less than 65507 bytes incorrect")
         return
-    if args.do_bandsteering:
-        coordinate_list = args.coordinate.split(",")
-        coordinate_list_with_robo = [coordinate_list[(1 + i) % len(coordinate_list)] for i in range(int(args.total_cycles) * len(coordinate_list))]
-        print(coordinate_list_with_robo)
-        return
     if args.iot_test:
         iot_ip = args.iot_ip
         iot_port = args.iot_port
@@ -4710,7 +4838,7 @@ Copyright 2023 Candela Technologies Inc.
                                 coordinate_list=args.coordinate.split(",") if args.coordinate else [],
                                 angle_list=args.rotation.split(",") if args.rotation else [],
                                 do_bandsteering=args.do_bandsteering,
-                                coordinate_list_with_robo = coordinate_list_with_robo
+                                total_cycles=args.total_cycles
                                 )
 
         if gave_incremental:
