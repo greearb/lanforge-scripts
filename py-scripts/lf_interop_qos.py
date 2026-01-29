@@ -220,7 +220,9 @@ class ThroughputQOS(Realm):
                  coordinate=None,
                  rotation=None,
                  rotation_enabled=None,
-                 angle_list=None):
+                 angle_list=None,
+                 do_bandsteering=False,
+                 cycles=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -308,11 +310,15 @@ class ThroughputQOS(Realm):
         self.get_live_view = get_live_view
         self.total_floors = total_floors
         self.qos_data = {}
+        self.throughput_data = []
+        self.band_steering_df = []
+        self.do_bandsteering = do_bandsteering
         # Initializing robot test parameters
         self.robot_test = robot_test
+        self.cycles = cycles
         if robot_test:
             if self.dowebgui:
-                self.get_live_view = True
+                self.get_live_view = True if not self.do_bandsteering else False
             self.robot_ip = robot_ip
             self.coordinate = coordinate
             self.rotation = rotation
@@ -826,6 +832,7 @@ class ThroughputQOS(Realm):
                             rates_data['.'.join(port.split('.')[:2]) + ' rx_rate'].append(port_data['rx-rate'])
                             rates_data['.'.join(port.split('.')[:2]) + ' tx_rate'].append(port_data['tx-rate'])
                             rates_data['.'.join(port.split('.')[:2]) + ' RSSI'].append(port_data['signal'])
+                            rates_data['.'.join(port.split('.')[:2]) + ' BSSID'].append(port_data['ap'])
                 cx_list = list(self.cx_profile.created_cx.keys())
                 # t_response data order - [rx rate(last)_A,rx rate(last)_B,rx drop % A,rx drop %B] A or B will considered based upon the name in L3 Endps tab
                 for cx in cx_list:
@@ -911,8 +918,14 @@ class ThroughputQOS(Realm):
                     for col_keys, col_values in rates_data.items():
                         self.overall[-1].update({
                             col_keys: col_values[-1]})
+                    if self.do_bandsteering:
+                        robot_x, robot_y, prev_coord, nex_coord = self.robot.get_robot_pose()
+                        self.overall[-1]["robot_x"] = robot_x
+                        self.overall[-1]["robot_y"] = robot_y
+                        self.overall[-1]["from_coordinate"] = prev_coord
+                        self.overall[-1]["to_coordinate"] = nex_coord
                     # Appending the data according to the time gap (for webgui)
-                    if self.dowebgui and (current_time - previous_time).total_seconds() >= time_break:
+                    if not self.do_bandsteering and self.dowebgui and (current_time - previous_time).total_seconds() >= time_break:
                         self.df_for_webui.append(self.overall[-1])
                         previous_time = current_time
 
@@ -941,8 +954,14 @@ class ThroughputQOS(Realm):
                     for col_keys, col_values in rates_data.items():
                         self.overall[-1].update({
                             col_keys: col_values[-1]})
+                    if self.do_bandsteering:
+                        robot_x, robot_y, prev_coord, nex_coord = self.robot.get_robot_pose()
+                        self.overall[-1]["robot_x"] = robot_x
+                        self.overall[-1]["robot_y"] = robot_y
+                        self.overall[-1]["from_coordinate"] = prev_coord
+                        self.overall[-1]["to_coordinate"] = nex_coord
                     # Appending the data according to the time gap (for webgui)
-                    if self.dowebgui and (current_time - previous_time).total_seconds() >= time_break:
+                    if not self.do_bandsteering and self.dowebgui and (current_time - previous_time).total_seconds() >= time_break:
                         self.df_for_webui.append(self.overall[-1])
                         previous_time = current_time
                 else:
@@ -970,21 +989,34 @@ class ThroughputQOS(Realm):
                     for col_keys, col_values in rates_data.items():
                         self.overall[-1].update({
                             col_keys: col_values[-1]})
+                    if self.do_bandsteering:
+                        robot_x, robot_y, prev_coord, nex_coord = self.robot.get_robot_pose()
+                        self.overall[-1]["robot_x"] = robot_x
+                        self.overall[-1]["robot_y"] = robot_y
+                        self.overall[-1]["from_coordinate"] = prev_coord
+                        self.overall[-1]["to_coordinate"] = nex_coord
                     # Appending the data according to the time gap (for webgui)
-                    if self.dowebgui and (current_time - previous_time).total_seconds() >= time_break:
+                    if not self.do_bandsteering and self.dowebgui and (current_time - previous_time).total_seconds() >= time_break:
                         self.df_for_webui.append(self.overall[-1])
                         previous_time = current_time
+            if self.do_bandsteering:
+                self.band_steering_df.append(self.overall[-1])
             if self.dowebgui == "True":
-                for key, value in t_response.items():
-                    row_data = [value[0], value[1]]
-                    individual_device_data[key].loc[len(individual_device_data[key])] = row_data
-                for port, df in individual_device_data.items():
-                    df.to_csv(f"{runtime_dir}/{port}.csv", index=False)
-                df1 = pd.DataFrame(self.df_for_webui)
+                if not self.do_bandsteering:
+                    for key, value in t_response.items():
+                        row_data = [value[0], value[1]]
+                        individual_device_data[key].loc[len(individual_device_data[key])] = row_data
+                    for port, df in individual_device_data.items():
+                        df.to_csv(f"{runtime_dir}/{port}.csv", index=False)
+                    df1 = pd.DataFrame(self.df_for_webui)
                 if not self.robot_test:
                     df1.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
                 else:
-                    df1.to_csv('{}/overall_throughput_{}.csv'.format(runtime_dir, curr_coordinate), index=False)
+                    if self.do_bandsteering:
+                        df1 = pd.DataFrame(self.band_steering_df)
+                        df1.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
+                    else:
+                        df1.to_csv('{}/overall_throughput_{}.csv'.format(runtime_dir, curr_coordinate), index=False)
                 with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name), 'r') as file:
                     data = json.load(file)
                     if data["status"] != "Running":
@@ -1025,6 +1057,9 @@ class ThroughputQOS(Realm):
                     else:
                         time_break = 120
             else:
+                if self.do_bandsteering:
+                    df1 = pd.DataFrame(self.band_steering_df)
+                    df1.to_csv('overall_throughput.csv', index=False)
                 time_break = 1
             # average upload download and drop is calculated
             for ind, _k in enumerate(throughput):
@@ -1032,6 +1067,11 @@ class ThroughputQOS(Realm):
                 avg_download[ind].append(throughput[ind][0])
                 avg_drop_a[ind].append(throughput[ind][2])
                 avg_drop_b[ind].append(throughput[ind][3])
+
+            if self.do_bandsteering:
+                df = pd.DataFrame(self.band_steering_df)
+                self.throughput_data.append(throughput.copy())
+                return df
 
         if self.robot_test and self.dowebgui:
             last_entry = self.df_for_webui[-1].copy()
@@ -1393,6 +1433,10 @@ class ThroughputQOS(Realm):
                 "Per TOS Load in Mbps": load
             }
         print(res["throughput_table_df"])
+        if self.do_bandsteering:
+            test_setup_info["Robot IP"] = self.robot_ip
+            test_setup_info["Selected Coordinates"] = self.coordinate_list
+            test_setup_info["no of cycles"] = self.cycles
 
         if iot_summary:
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
@@ -1438,6 +1482,8 @@ class ThroughputQOS(Realm):
         report.set_csv_filename(graph_png)
         report.move_csv_file()
         report.build_graph()
+        if self.do_bandsteering:
+            self.get_bandsteering_stats(report=report,data=self.band_steering_df)
         self.generate_individual_graph(res, report, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b)
         report.test_setup_table(test_setup_data=input_setup_info, value="Information")
         if iot_summary:
@@ -2535,6 +2581,95 @@ class ThroughputQOS(Realm):
         report.write_html()
         report.write_pdf()
 
+    def get_bandsteering_stats(self, report=None, data=None):
+        """
+        QOS Band Steering Statistics
+        """
+        import pandas as pd
+        from collections import Counter
+
+        # 1️⃣ Build DataFrame from qos_data
+        df = pd.DataFrame(data)
+
+        # 2️⃣ Normalize column names (QOS specific)
+        rename_map = {
+            "timestamp": "TIMESTAMP",
+            "from_coordinate": "From Coordinate",
+            "to_coordinate": "To Coordinate",
+        }
+
+        df.rename(columns=rename_map, inplace=True)
+
+        # 3️⃣ Detect BSSID columns (QOS style)
+        bssid_cols = [c for c in df.columns if "BSSID" in c]
+
+        for col in bssid_cols:
+            # Detect BSSID change points
+            mask = df[col] != df[col].shift()
+
+            bssid_list = df.loc[mask, col].tolist()
+            timestamp_list = df.loc[mask, "TIMESTAMP"].tolist()
+            from_coordinate_list = df.loc[mask, "From Coordinate"].tolist()
+            to_coordinate_list = df.loc[mask, "To Coordinate"].tolist()
+
+            # Count BSSID switches
+            bssid_counts = Counter(bssid_list)
+
+            x_axis = list(bssid_counts.keys())
+            y_axis = [[float(v)] for v in bssid_counts.values()]
+
+            device_name = col.replace("BSSID", "").strip()
+
+            # 📊 Graph section
+            report.set_obj_html(
+                _obj_title=f"BSSID Change Count Of The Client {device_name}",
+                _obj=" "
+            )
+            report.build_objective()
+
+            graph = lf_bar_graph(
+                _data_set=y_axis,
+                _xaxis_name="BSSID",
+                _yaxis_name="Number of Changes",
+                _xaxis_categories=[""],
+                _xaxis_label=x_axis,
+                _graph_image_name=f"bssid_change_count_{device_name}",
+                _label=x_axis,
+                _xaxis_step=1,
+                _graph_title=f"BSSID change count for device :  {device_name}",
+                _title_size=16,
+                _bar_width=0.15,
+                _figsize=(18, 6),
+                _dpi=96,
+                _show_bar_value=True,
+                _enable_csv=True,
+            )
+
+            graph_png = graph.build_bar_graph()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.set_csv_filename(graph_png)
+            report.move_csv_file()
+            report.build_graph()
+
+            # 📋 Table section
+            report.set_obj_html(
+                _obj_title=f"Band Steering Results for {device_name}",
+                _obj=" "
+            )
+            report.build_objective()
+
+            table_df = pd.DataFrame({
+                "BSSID": bssid_list,
+                "Timestamp": timestamp_list,
+                "From Coordinate": from_coordinate_list,
+                "To Coordinate": to_coordinate_list
+            })
+
+            report.set_table_dataframe(table_df)
+            report.build_table()
+
+
     def perform_robo(self):
         """
         It handles moving the robot to each coordinate,
@@ -2559,6 +2694,120 @@ class ThroughputQOS(Realm):
                 self.robot.testname = self.test_name
             passed_coord_list = []
             abort = False
+        if self.do_bandsteering:
+            self.overall = []
+            self.df_for_webui = []
+            matched, abort = self.robot.move_to_coordinate(coord_list[0])
+            self.robot.do_bandsteering = True
+            if matched:
+                logger.info("Reached the coordinate {}".format(coord_list[0]))
+                self.start(False, False)
+                print("Starting CXs")
+                time.sleep(15)
+            if abort:
+                logger.info("test aborted")
+                exit(0)
+            cycles = self.cycles
+            cycle_coords = [coord_list[(1 + i) % len(coord_list)] for i in range(cycles * len(coord_list))]
+            for coordinate in cycle_coords:
+                if self.test_stopped_by_user:
+                    break
+                # Before moving to next coordinate, check if battery is sufficient
+                pause_coord, test_stopped_by_user = self.robot.wait_for_battery()
+                if test_stopped_by_user:
+                    break
+                matched, abort, band_steering_data = self.robot.move_to_coordinate(
+                    coordinate,
+                    monitor_function=lambda: self.monitor()
+                )
+                if matched:
+                    logger.info("Reached the coordinate {}".format(coordinate))
+                if abort:
+                    break
+            self.stop()
+            upload = []
+            download = []
+            drop_a = []
+            drop_b = []
+            avg_upload = []
+            avg_download = []
+            avg_drop_a = []
+            avg_drop_b = []
+            [(upload.append([]), download.append([]), drop_a.append([]), drop_b.append([]), avg_upload.append([]), avg_download.append([]), avg_drop_a.append([]), avg_drop_b.append([])) for i in
+             range(len(self.cx_profile.created_cx))]
+            dropa_connections = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+            dropb_connections = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+            connections_upload = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+            connections_download = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+            connections_upload_avg = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+            connections_download_avg = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
+            # # rx_rate list is calculated
+            for thpt in self.throughput_data:
+                for ind, _k in enumerate(thpt):
+                    avg_upload[ind].append(thpt[ind][1])
+                    avg_download[ind].append(thpt[ind][0])
+                    avg_drop_a[ind].append(thpt[ind][2])
+                    avg_drop_b[ind].append(thpt[ind][3])
+            throughput = self.throughput_data[-1]
+            for index, _key in enumerate(throughput):
+                upload[index].append(throughput[index][1])
+                download[index].append(throughput[index][0])
+                drop_a[index].append(throughput[index][2])
+                drop_b[index].append(throughput[index][3])
+
+            # Rounding of the results upto 2 decimals
+            upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
+            download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
+            drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
+            drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
+            avg_upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in avg_upload]
+            avg_download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in avg_download]
+            avg_drop_a_per = [float(round(sum(i) / len(i), 2)) for i in avg_drop_a]
+            avg_drop_b_per = [float(round(sum(i) / len(i), 2)) for i in avg_drop_b]
+            keys = list(connections_download.keys())
+            # Updated the calculated values to the respective connections in dictionary
+            for i in range(len(download_throughput)):
+                connections_download.update({keys[i]: download_throughput[i]})
+            for i in range(len(upload_throughput)):
+                connections_upload.update({keys[i]: upload_throughput[i]})
+            for i in range(len(avg_download_throughput)):
+                connections_download_avg.update({keys[i]: avg_download_throughput[i]})
+            for i in range(len(avg_upload_throughput)):
+                connections_upload_avg.update({keys[i]: avg_upload_throughput[i]})
+            for i in range(len(avg_drop_a_per)):
+                dropa_connections.update({keys[i]: avg_drop_a_per[i]})
+            for i in range(len(avg_drop_b_per)):
+                dropb_connections.update({keys[i]: avg_drop_b_per[i]})
+            logger.info("connections download {}".format(connections_download))
+            logger.info("connections {}".format(connections_upload))
+            test_results = {'test_results': []}
+            data = {}
+            test_results['test_results'].append(self.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
+            data.update(test_results)
+            input_setup_info = {
+                "contact": "support@candelatech.com"
+            }
+            if self.dowebgui == "True":
+                last_entry = self.overall[len(self.overall) - 1]
+                last_entry["status"] = "Stopped"
+                last_entry["timestamp"] = datetime.now().strftime("%d/%m %I:%M:%S %p")
+                last_entry["remaining_time"] = "0"
+                last_entry["end_time"] = last_entry["timestamp"]
+                self.band_steering_df.append(
+                    last_entry
+                )
+                df1 = pd.DataFrame(self.band_steering_df)
+                df1.to_csv('{}/overall_throughput.csv'.format(self.result_dir, ), index=False)
+            print("qos_dict",self.band_steering_df)
+            self.generate_report(
+                data=data,
+                input_setup_info=input_setup_info,
+                report_path=self.result_dir,
+                connections_upload_avg=connections_upload_avg,
+                connections_download_avg=connections_download_avg,
+                avg_drop_a=dropa_connections,
+                avg_drop_b=dropb_connections)
+            return
         for coordinate in coord_list:
             if self.robot_ip:
                 if self.test_stopped_by_user:
@@ -3138,6 +3387,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
     optional.add_argument('--robot_ip', type=str, default='localhost', help='hostname for where Robot server is running')
     optional.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")
     optional.add_argument('--rotation', type=str, default='', help="The set of angles to rotate at a particular point")
+    optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
+    optional.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
     # IOT ARGS
     parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
     optional.add_argument('--iot_ip',
@@ -3288,7 +3539,9 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
                                        coordinate=args.coordinate,
                                        rotation=args.rotation,
                                        rotation_enabled=rotation_enabled,
-                                       angle_list=angle_list
+                                       angle_list=angle_list,
+                                       do_bandsteering=args.do_bandsteering,
+                                       cycles=args.cycles
                                        )
         throughput_qos.os_type()
         _, configured_device, _, configuration = throughput_qos.phantom_check()
