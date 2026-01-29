@@ -18,10 +18,6 @@ LICENSE:
 INCLUDE_IN_README
 
 '''
-# visit http://127.0.0.1:8050/ in your web browser.
-# import sys
-# import os
-# import importlib
 import argparse
 
 
@@ -51,16 +47,13 @@ class file_convert():
         file2_fd.close()
 
 
-# Feature, Sum up the subtests passed/failed from the kpi files for each run, poke those into the database, and generate a kpi graph for them.
 def main():
 
     parser = argparse.ArgumentParser(
-        prog='lf_json_convert.py',
+        prog='lf_help_to_cookbook_convert.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-        lf_json_convert.py converts json for cookbook the output is <file>_edit
-        NOTE: CANNOT have extra blank lines at the end of the json to display correctly.
-
+        lf_help_to_cookbook_convert.py converts script help output to js cookbook type output
             ''',
         description=r'''
 NAME:    lf_help_to_cookbook_convert.py
