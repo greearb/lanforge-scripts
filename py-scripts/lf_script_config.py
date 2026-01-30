@@ -1,3 +1,29 @@
+#!/usr/bin/env python3
+r"""
+NAME:       lf_script_config.py
+
+PURPOSE:    Read csv file which contains configuration for a script and
+            and call the script with those parameters.
+
+NOTES:      The sleepTime_ms needs to get the first entry.
+
+EXAMPLE:    # Duplicate configuration for both ends of the WANLink
+            ./lf_script_config.py \
+                --file network_conditions.csv \
+                --verbose
+
+EXAMPLE CSV: (network_conditions.csv)
+
+sleepTime_ms,command,mgr,mgr_port,wl_name,port_A,port_B,speed,latency,max_jitter,jitter_freq,drop_freq_A,drop_freq_B,log_level
+2000,lf_create_wanlink.py,192.168.50.103,8080,wanlink,eth1,eth2,1014000,24,50,6,2000,3000,debug
+4000,lf_create_wanlink.py,192.168.50.103,8080,wanlink,eth1,eth2,2028000,10,8,6,4000,5000,debug
+5000,lf_create_wanlink.py,192.168.50.103,8080,wanlink,eth1,eth2,1014000,24,50,6,7000,8000,debug
+6000,lf_create_wanlink.py,192.168.50.103,8080,wanlink,eth1,eth2,2028000,24,20,6,10000,20000,debug
+
+add_wanpath
+http://www.candelatech.com/lfcli_ug.php#add_wanpath
+
+"""
 import csv
 import time
 import sys
@@ -87,12 +113,35 @@ def apply_network_conditions(config_dict: dict, command_name: str = "./lf_create
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Apply network conditions from CSV - supports repeated headers and custom command"
+        description="""
+NAME:       lf_script_config.py
+
+PURPOSE:    Read csv file which contains configuration for a script and
+            and call the script with those parameters.
+
+NOTES:      The sleepTime_ms needs to get the first entry.
+
+EXAMPLE:    # Duplicate configuration for both ends of the WANLink
+            ./lf_script_config.py \
+                --file network_conditions.csv \
+                --verbose
+
+EXAMPLE CSV: (network_conditions.csv)
+
+sleepTime_ms,command,mgr,mgr_port,wl_name,port_A,port_B,speed,latency,max_jitter,jitter_freq,drop_freq_A,drop_freq_B,log_level
+2000,lf_create_wanlink.py,192.168.50.103,8080,wanlink,eth1,eth2,1014000,24,50,6,2000,3000,debug
+4000,lf_create_wanlink.py,192.168.50.103,8080,wanlink,eth1,eth2,2028000,10,8,6,4000,5000,debug
+5000,lf_create_wanlink.py,192.168.50.103,8080,wanlink,eth1,eth2,1014000,24,50,6,7000,8000,debug
+6000,lf_create_wanlink.py,192.168.50.103,8080,wanlink,eth1,eth2,2028000,24,20,6,10000,20000,debug
+
+add_wanpath
+http://www.candelatech.com/lfcli_ug.php#add_wanpath
+
+"""
     )
     parser.add_argument(
         "-f", "--file",
         type=str,
-        required=True,
         help="Path to the CSV configuration file"
     )
     parser.add_argument(
@@ -100,7 +149,22 @@ def main():
         action="store_true",
         help="Show more detailed output"
     )
+    # Help Summary
+    parser.add_argument('--help_summary',
+                        default=None,
+                        action="store_true",
+                        help='Show summary of what this script does')
+
     args = parser.parse_args()
+
+    help_summary = "This script creates a wanlink using the lanforge api."
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
+    if not args.file:
+        print("--file parameter required")
+        exit(1)
 
     csv_path = Path(args.file)
     if not csv_path.is_file():
