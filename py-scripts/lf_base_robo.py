@@ -37,6 +37,7 @@ class RobotClass:
         self.do_bandsteering = False
         self.from_coordinate = ""
         self.to_coordinate = ""
+        self.charging_timestamps = []
 
         # Create waypoint list on initialization
         if self.robo_ip is not None:
@@ -89,7 +90,7 @@ class RobotClass:
 
         return False
 
-    def wait_for_battery(self, stop=None):
+    def wait_for_battery(self, stop=None, monitor_function=None):
         """Monitor robot battery status and pause execution if battery is low.
 
         Sends robot to charging station and resumes once fully charged.
@@ -106,6 +107,9 @@ class RobotClass:
         battery_url = f"http://{self.robo_ip}/reeman/base_encode"
         status_url = f"http://{self.robo_ip}/reeman/nav_status"
         move_url = f"http://{self.robo_ip}/cmd/nav_name"
+        charge_dock_move_start_timestamp = ""
+        charge_dock_arrival_timestamp = ""
+        charging_completion_timestamp = ""
         while True:
             try:
                 response = requests.get(battery_url, timeout=5)
@@ -118,12 +122,19 @@ class RobotClass:
                     if stop is not None:
                         stop()
                     logging.info("Battery low ({}%). Pausing test until fully charged...".format(battery))
+                    charge_dock_move_start_timestamp = datetime.now()
                     requests.post(move_url, json={"point": self.charge_point_name})
+                    if self.to_coordinate != self.charge_point_name:
+                        if self.to_coordinate != "":
+                            self.from_coordinate = self.to_coordinate
+                        self.to_coordinate = self.charge_point_name
                     while True:
                         try:
                             response = requests.get(status_url, timeout=5)
                             response.raise_for_status()
                             nav_status = response.json()
+                            if monitor_function:
+                                all_dataframes = monitor_function()
                         except (requests.RequestException, ValueError) as e:
                             logging.info("[ERROR] Failed to get robot status: {}".format(e))
                             time.sleep(5)
@@ -136,14 +147,20 @@ class RobotClass:
                         state = nav_status.get("res", "")
                         distance = nav_status.get("dist", "")
                         if goal == self.charge_point_name and state == 3 and distance < 0.5:
+                            self.from_coordinate = self.charge_point_name
+                            charge_dock_arrival_timestamp = datetime.now()
                             break
 
                     while True:
                         if self.runtime_dir is not None and self.check_test_status():
                             stopped = True
+                            if self.do_bandsteering:
+                                return pause, stopped, all_dataframes
                             return pause, stopped
 
                         current_time = time.time()
+                        if monitor_function:
+                            all_dataframes = monitor_function()
                         if current_time - last_battery_check >= 300:
                             try:
                                 resp = requests.get(battery_url, timeout=5)
@@ -153,19 +170,27 @@ class RobotClass:
                                 logging.info("Current battery: {}%".format(new_battery))
                                 if new_battery > 99:
                                     logging.info("Battery full. Resuming test...")
+                                    charging_completion_timestamp = datetime.now()
+                                    self.charging_timestamps.append([charge_dock_arrival_timestamp,charging_completion_timestamp])
+                                    if self.do_bandsteering:
+                                        return pause, stopped, all_dataframes
                                     return pause, stopped
                             except Exception as e:
                                 logging.info("[ERROR] Checking charge: {}".format(e))
 
                             last_battery_check = time.time()
-                        time.sleep(10)
+                        time.sleep(1)
                 else:
                     logging.info("[OK] Battery at {}%. Continuing test.".format(battery))
+                    if self.do_bandsteering:
+                        return pause, stopped, {}
                     return pause, stopped
 
             except Exception as e:
                 logging.info("[ERROR] Failed to check battery: {}".format(e))
                 stopped = True
+                if self.do_bandsteering:
+                    return pause,stopped, {}
                 return pause, stopped
 
     def move_to_coordinate(self, coord, monitor_function=None):
@@ -195,7 +220,7 @@ class RobotClass:
                 response = requests.get(status_url, timeout=5)
                 # x_coord, y_coord=self.get_robot_pose()
                 if monitor_function:
-                    self.to_coordinate = response.json().get("goal", "")
+                    self.to_coordinate = coord
                     all_dataframes =monitor_function()
                     
                 response.raise_for_status()
