@@ -720,8 +720,9 @@ class ThroughputQOS(Realm):
         # monitor columns
         start_time = datetime.now()
         test_start_time = datetime.now().strftime("%Y %d %H:%M:%S")
-        print("Test started at: ", test_start_time)
-        print("Monitoring cx and endpoints")
+        if not self.do_bandsteering:
+            print("Test started at: ", test_start_time)
+            print("Monitoring cx and endpoints")
         end_time = start_time + timedelta(seconds=int(self.test_duration))
         if not self.robot_test:
             self.overall = []
@@ -833,6 +834,7 @@ class ThroughputQOS(Realm):
                             rates_data['.'.join(port.split('.')[:2]) + ' tx_rate'].append(port_data['tx-rate'])
                             rates_data['.'.join(port.split('.')[:2]) + ' RSSI'].append(port_data['signal'])
                             rates_data['.'.join(port.split('.')[:2]) + ' BSSID'].append(port_data['ap'])
+                            rates_data['.'.join(port.split('.')[:2]) + ' Channel'].append(port_data['channel'])
                 cx_list = list(self.cx_profile.created_cx.keys())
                 # t_response data order - [rx rate(last)_A,rx rate(last)_B,rx drop % A,rx drop %B] A or B will considered based upon the name in L3 Endps tab
                 for cx in cx_list:
@@ -2626,6 +2628,7 @@ class ThroughputQOS(Realm):
 
         # 3️⃣ Detect BSSID columns (QOS style)
         bssid_cols = [c for c in df.columns if "BSSID" in c]
+        channel_cols = [c for c in df.columns if "Channel" in c]
 
         for col in bssid_cols:
             # Detect BSSID change points
@@ -2643,6 +2646,14 @@ class ThroughputQOS(Realm):
             y_axis = [[float(v)] for v in bssid_counts.values()]
 
             device_name = col.replace("BSSID", "").strip()
+            channel_col = next(
+                (c for c in channel_cols if device_name in c), None
+            )
+
+            channel_list = (
+                df.loc[mask, channel_col].tolist()
+                if channel_col else []
+            )
 
             # 📊 Graph section
             report.set_obj_html(
@@ -2685,6 +2696,7 @@ class ThroughputQOS(Realm):
 
             table_df = pd.DataFrame({
                 "BSSID": bssid_list,
+                "Channel": channel_list,
                 "Timestamp": timestamp_list,
                 "From Coordinate": from_coordinate_list,
                 "To Coordinate": to_coordinate_list
@@ -2728,6 +2740,9 @@ class ThroughputQOS(Realm):
                 self.start(False, False)
                 print("Starting CXs")
                 time.sleep(15)
+                test_start_time = datetime.now().strftime("%Y %d %H:%M:%S")
+                print("Test started at: ", test_start_time)
+                print("Monitoring cx and endpoints")
             if abort:
                 logger.info("test aborted")
                 exit(0)
@@ -2772,12 +2787,10 @@ class ThroughputQOS(Realm):
                     avg_download[ind].append(thpt[ind][0])
                     avg_drop_a[ind].append(thpt[ind][2])
                     avg_drop_b[ind].append(thpt[ind][3])
-            throughput = self.throughput_data[-1]
-            for index, _key in enumerate(throughput):
-                upload[index].append(throughput[index][1])
-                download[index].append(throughput[index][0])
-                drop_a[index].append(throughput[index][2])
-                drop_b[index].append(throughput[index][3])
+                    upload[ind].append(thpt[ind][1])
+                    download[ind].append(thpt[ind][0])
+                    drop_a[ind].append(thpt[ind][2])
+                    drop_b[ind].append(thpt[ind][3])
 
             # Rounding of the results upto 2 decimals
             upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
@@ -2822,7 +2835,6 @@ class ThroughputQOS(Realm):
                 )
                 df1 = pd.DataFrame(self.band_steering_df)
                 df1.to_csv('{}/overall_throughput.csv'.format(self.result_dir, ), index=False)
-            print("qos_dict",self.band_steering_df)
             self.generate_report(
                 data=data,
                 input_setup_info=input_setup_info,
