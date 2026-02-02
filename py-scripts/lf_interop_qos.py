@@ -1024,6 +1024,10 @@ class ThroughputQOS(Realm):
                     if data["status"] != "Running":
                         self.test_stopped_by_user = True
                         logger.warning('Test is stopped by the user')
+                        if self.do_bandsteering:
+                            df = pd.DataFrame(self.band_steering_df)
+                            self.throughput_data.append(throughput.copy())
+                            return df
                         break
                 # Adjust time_gap based on elapsed time since start (for webui)
                 d = datetime.now()
