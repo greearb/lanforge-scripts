@@ -155,7 +155,7 @@ class RobotClass:
                     while True:
                         if self.runtime_dir is not None and self.check_test_status():
                             stopped = True
-                            if self.do_bandsteering:
+                            if monitor_function:
                                 return pause, stopped, all_dataframes
                             return pause, stopped
 
@@ -173,7 +173,7 @@ class RobotClass:
                                     logging.info("Battery full. Resuming test...")
                                     charging_completion_timestamp = datetime.now()
                                     self.charging_timestamps.append([charge_dock_arrival_timestamp,charging_completion_timestamp])
-                                    if self.do_bandsteering:
+                                    if monitor_function:
                                         return pause, stopped, all_dataframes
                                     return pause, stopped
                             except Exception as e:
@@ -183,14 +183,14 @@ class RobotClass:
                         time.sleep(1)
                 else:
                     logging.info("[OK] Battery at {}%. Continuing test.".format(battery))
-                    if self.do_bandsteering:
+                    if monitor_function:
                         return pause, stopped, {}
                     return pause, stopped
 
             except Exception as e:
                 logging.info("[ERROR] Failed to check battery: {}".format(e))
                 stopped = True
-                if self.do_bandsteering:
+                if monitor_function:
                     return pause,stopped, {}
                 return pause, stopped
 
