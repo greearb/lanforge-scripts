@@ -1486,6 +1486,30 @@ class ThroughputQOS(Realm):
             self.get_bandsteering_stats(report=report,data=self.band_steering_df)
         self.generate_individual_graph(res, report, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b)
         report.test_setup_table(test_setup_data=input_setup_info, value="Information")
+        if self.do_bandsteering:
+            if len(self.robot.charging_timestamps) != 0:
+                report.set_obj_html(_obj_title="Charging Timestamps",
+                                    _obj="")
+                report.build_objective()
+                df = pd.DataFrame(
+                    self.robot.charging_timestamps,
+                    columns=[
+                        "charge_dock_arrival_timestamp",
+                        "charging_completion_timestamp"
+                    ]
+                )
+                # Add S.No column
+                df.insert(0, "S.No", range(1, len(df) + 1))
+                report.set_table_dataframe(df)
+                report.build_table()
+            else:
+                report.set_obj_html(_obj_title="Charging Timestamps",
+                                    _obj="Robot did not went to charge during this test")
+                report.build_objective()
+
+
+            
+            
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
         report.build_footer()
@@ -2713,7 +2737,7 @@ class ThroughputQOS(Realm):
                 if self.test_stopped_by_user:
                     break
                 # Before moving to next coordinate, check if battery is sufficient
-                pause_coord, test_stopped_by_user = self.robot.wait_for_battery()
+                pause_coord, test_stopped_by_user,band_steering_data = self.robot.wait_for_battery(monitor_function=lambda: self.monitor())
                 if test_stopped_by_user:
                     break
                 matched, abort, band_steering_data = self.robot.move_to_coordinate(
