@@ -57,6 +57,7 @@ from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 import re
 import glob
+from collections import Counter
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
@@ -90,8 +91,8 @@ log.setLevel(logging.ERROR)
 # Import LF logger configuration module
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
-# robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
-robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
+robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
+# robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 
 
 class ZoomAutomation(Realm):
@@ -124,6 +125,9 @@ class ZoomAutomation(Realm):
         participants_req=None,
         env_file=None,
         do_bs=False,
+        api_stats_collection=False,
+        do_webui=False,
+        cycles=1,
     ):
 
         super().__init__(lfclient_host=lanforge_ip)
@@ -227,6 +231,9 @@ class ZoomAutomation(Realm):
         self.account_id = None
         self.client_id = None
         self.client_secret = None
+        self.api_stats_collection = api_stats_collection
+        self.do_webui = do_webui
+        self.cycles = cycles
 
     def start_flask_server(self):
         @self.app.route("/login_url", methods=["GET", "POST"])
@@ -343,39 +350,45 @@ class ZoomAutomation(Realm):
 
         @self.app.route("/upload_stats", methods=["POST", "GET"])
         def upload_stats():
-            if self.do_robo or self.do_bs:
+            if self.do_robo or self.do_bs or self.api_stats_collection:
                 self.get_live_data()
-                print(self.live_data)
+                # print(self.live_data)
                 if self.live_data:
-                    lf_wifi_data = self.get_signal_and_channel_data_dict()
+                    if self.do_bs:
+                        lf_wifi_data = self.get_signal_and_channel_data_dict()
                     for hostname, stats in self.live_data.items():
-                        if hostname == "Host Device":
-                            if self.real_sta_hostname:
-                                final_filename = self.real_sta_hostname[0]
+                        
+                        final_filename = hostname
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        stats["timestamp"] = timestamp
+
+                        if self.do_bs:
+                            sta_id = self.hostname_to_station_map.get(final_filename, None)
+
+                            if sta_id in lf_wifi_data:
+                                # This adds keys like 'lf_signal', 'lf_channel' to the 'stats' dict
+                                stats.update(lf_wifi_data[sta_id])
                             else:
-                                final_filename = (
-                                    "Host_Device"  # Fallback if list is empty
+                                # Fill with placeholders if no LF data found for this device
+                                stats.update(
+                                    {
+                                        "signal": "-",
+                                        "channel": "-",
+                                        "mode": "-",
+                                        "tx_rate": "-",
+                                        "rx_rate": "-",
+                                        "bssid": "-",
+                                    }
                                 )
-                        else:
-                            final_filename = hostname
-
-                        sta_id = self.hostname_to_station_map.get(final_filename, None)
-
-                        if sta_id in lf_wifi_data:
-                            # This adds keys like 'lf_signal', 'lf_channel' to the 'stats' dict
-                            stats.update(lf_wifi_data[sta_id])
-                        else:
-                            # Fill with placeholders if no LF data found for this device
-                            stats.update(
-                                {
-                                    "lf_signal": "-",
-                                    "lf_channel": "-",
-                                    "lf_mode": "-",
-                                    "lf_tx_rate": "-",
-                                    "lf_rx_rate": "-",
-                                    "lf_bssid": "-",
-                                }
-                            )
+                        
+                        if self.do_robo or self.do_bs:
+                            # Add current coordinate and angle to stats
+                            stats["current_cord"] = self.current_cord
+                            if self.rotations_enabled:
+                                stats["rotations_enabled"] = self.rotations_enabled
+                                stats["current_angle"] = self.current_angle
+                            else:
+                                stats["rotations_enabled"] = False
 
                         # --- CSV FILE PATH GENERATION ---
                         if self.do_robo:
@@ -461,7 +474,7 @@ class ZoomAutomation(Realm):
         @self.app.route("/get_latest_stats", methods=["GET"])
         def get_latest_stats():
             # Return the latest data for all hostnames
-            return jsonify(self.data_store), 200
+            return jsonify(self.live_data), 200
 
         @self.app.route("/stop_zoom", methods=["GET"])
         def stop_zoom():
@@ -545,7 +558,7 @@ class ZoomAutomation(Realm):
         os._exit(0)
 
     def set_start_time(self):
-        self.start_time = datetime.now(self.tz) + timedelta(seconds=30)
+        self.start_time = datetime.now(self.tz) + timedelta(seconds=60)
         if self.do_bs:
             self.end_time = self.start_time + timedelta(minutes=300000)
         else:
@@ -788,15 +801,26 @@ class ZoomAutomation(Realm):
                 self.serial_list.append("")
                 self.lanforge_port_list.append("")
             else:
-                for mobile_device in interop_mobile_data:
-                    for serial, device_data in mobile_device.items():
-                        if device_data.get("user-name") == user:
-                            resource = serial.split(".")[1]
-                            serial_no = serial.split(".")[2]
-                            self.serial_list.append(serial_no)
-                            lanforge_port = f"1.{resource}.eth0"
-                            self.lanforge_port_list.append(lanforge_port)
-                            break
+                # 1. Handle Single Device (Flat Dictionary)
+                if isinstance(interop_mobile_data, dict):
+                    if interop_mobile_data.get("user-name") == user:
+                        # Extract details from 'name' (e.g., '1.1.3200f8664a91a5e9')
+                        full_name = interop_mobile_data.get("name")
+                        resource = full_name.split(".")[1]
+                        serial_no = full_name.split(".")[2]
+                        
+                        self.serial_list.append(serial_no)
+                        self.lanforge_port_list.append(f"1.{resource}.eth0")
+                else:
+                    for mobile_device in interop_mobile_data:
+                        for serial, device_data in mobile_device.items():
+                            if device_data.get("user-name") == user:
+                                resource = serial.split(".")[1]
+                                serial_no = serial.split(".")[2]
+                                self.serial_list.append(serial_no)
+                                lanforge_port = f"1.{resource}.eth0"
+                                self.lanforge_port_list.append(lanforge_port)
+                                break
 
         logger.debug(f"Checking serial list {self.serial_list}")
 
@@ -839,12 +863,12 @@ class ZoomAutomation(Realm):
         for sta in self.real_sta_list:
             # Default values if station is missing
             lf_stats_map[sta] = {
-                "lf_signal": "-",
-                "lf_channel": "-",
-                "lf_mode": "-",
-                "lf_tx_rate": "-",
-                "lf_rx_rate": "-",
-                "lf_bssid": "-",
+                "signal": "-",
+                "channel": "-",
+                "mode": "-",
+                "tx_rate": "-",
+                "rx_rate": "-",
+                "bssid": "-",
             }
 
             if sta in interfaces_dict:
@@ -853,22 +877,154 @@ class ZoomAutomation(Realm):
                 # --- Signal Parsing ---
                 sig = data.get("signal", "-")
                 if "dBm" in str(sig):
-                    lf_stats_map[sta]["lf_signal"] = sig.split(" ")[0]
+                    lf_stats_map[sta]["signal"] = sig.split(" ")[0]
                 else:
-                    lf_stats_map[sta]["lf_signal"] = sig
+                    lf_stats_map[sta]["signal"] = sig
 
                 # --- Other Fields ---
-                lf_stats_map[sta]["lf_channel"] = data.get("channel", "-")
-                lf_stats_map[sta]["lf_mode"] = data.get("mode", "-")
-                lf_stats_map[sta]["lf_tx_rate"] = data.get("tx-rate", "-")
-                lf_stats_map[sta]["lf_rx_rate"] = data.get("rx-rate", "-")
-                lf_stats_map[sta]["lf_bssid"] = data.get(
+                lf_stats_map[sta]["channel"] = data.get("channel", "-")
+                lf_stats_map[sta]["mode"] = data.get("mode", "-")
+                lf_stats_map[sta]["tx_rate"] = data.get("tx-rate", "-")
+                lf_stats_map[sta]["rx_rate"] = data.get("rx-rate", "-")
+                lf_stats_map[sta]["bssid"] = data.get(
                     "ap", "-"
                 )  # 'ap' is usually BSSID
 
         print(lf_stats_map)
 
         return lf_stats_map
+
+    def add_bandsteering_report_section(self, report=None, report_path=None):
+        """
+        Bandsteering reporting (Robo-style):
+        Reads all youtube stats CSVs from report directory and builds:
+        - BSSID change count graph per device
+        - Table of BSSID change events
+        """
+        if report is None:
+            logging.error("Bandsteering report: report object is None")
+            return
+
+        if not self.do_bs:
+            logging.info("Bandsteering report skipped: do_bandsteering is False")
+            return
+
+        report_dir = report_path
+        if not report_dir or not os.path.isdir(report_dir):
+            logging.error(f"Bandsteering report: invalid report dir: {report_dir}")
+            return
+
+        logging.info(f"Bandsteering report dir: {report_dir}")
+    
+        csv_files = []
+        for client in self.real_sta_hostname:
+            client_csv_files = os.path.join(self.path, f"{client}.csv")
+            csv_files.extend(client_csv_files)
+
+        if not csv_files:
+            logging.warning("No CSVs found in report dir for bandsteering")
+            return
+
+        # Section header
+        report.set_obj_html(
+            _obj_title="Band Steering Statistics",
+            _obj="This section summarizes BSSID changes observed while the robot moved between coordinates."
+        )
+        report.build_objective()
+
+        for csv_file_path in csv_files:
+            try:
+                df = pd.read_csv(csv_file_path)
+            except Exception as e:
+                logging.error(f"Unable to read CSV {csv_file_path}: {e}", exc_info=True)
+                continue
+
+            required_cols = {"timestamp", "bssid", "From_Coord", "To_Coord","channel"}
+            if not required_cols.issubset(df.columns):
+                logging.warning(f"Skipping {csv_file_path}: missing {required_cols - set(df.columns)}")
+                continue
+
+            device_name = os.path.basename(csv_file_path).split("_youtube_stats_report")[0]
+
+            # Clean columns
+            df["bssid"] = df["bssid"].fillna("NA").astype(str)
+            df["timestamp"] = df["timestamp"].fillna("NA").astype(str)
+            df["From_Coord"] = df["From_Coord"].fillna("NA").astype(str)
+            df["To_Coord"] = df["To_Coord"].fillna("NA").astype(str)
+            df["channel"] = df["channel"].fillna("NA").astype(str)
+
+            # Change detection
+            mask = df["bssid"] != df["bssid"].shift()
+
+            bssid_list = df.loc[mask, "bssid"].tolist()
+            timestamp_list = df.loc[mask, "timestamp"].tolist()
+            from_coordinate_list = df.loc[mask, "From_Coord"].tolist()
+            to_coordinate_list = df.loc[mask, "To_Coord"].tolist()
+            channel_list=df.loc[mask,"channel"].tolist()
+            x_list = df.loc[mask, "X"].tolist() if "X" in df.columns else ["NA"] * len(bssid_list)
+            y_list = df.loc[mask, "Y"].tolist() if "Y" in df.columns else ["NA"] * len(bssid_list)
+
+            if not bssid_list:
+                logging.info(f"No BSSID events found for {device_name}")
+                continue
+
+            # Count BSSID occurrences
+            bssid_counts = Counter(bssid_list)
+            x_axis = list(bssid_counts.keys())
+            y_axis = [[float(v)] for v in bssid_counts.values()]
+
+            # Graph
+            report.set_obj_html(
+                _obj_title=f"BSSID Change Count Of The Client {device_name}",
+                _obj=" "
+            )
+            report.build_objective()
+
+            graph = lf_bar_graph(
+                _data_set=y_axis,
+                _xaxis_name="BSSID",
+                _yaxis_name="Number of Changes",
+                _xaxis_categories=[""],
+                _xaxis_label=x_axis,
+                _graph_image_name=f"youtube_bssid_change_count_{device_name}",
+                _label=x_axis,
+                _xaxis_step=1,
+                _graph_title=f"YouTube Bandsteering: BSSID change count for device : {device_name}",
+                _title_size=16,
+                _bar_width=0.15,
+                _figsize=(18, 6),
+                _dpi=96,
+                _show_bar_value=True,
+                _enable_csv=True,
+            )
+
+            graph_png = graph.build_bar_graph()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.set_csv_filename(graph_png)
+            report.move_csv_file()
+            report.build_graph()
+
+            # Table
+            report.set_obj_html(
+                _obj_title=f"Band Steering Results for {device_name}",
+                _obj=" "
+            )
+            report.build_objective()
+
+            table_df = pd.DataFrame({
+                "TimeStamp": timestamp_list,
+                "BSSID": bssid_list,
+                "Channel":channel_list,
+                "From Coordinate": from_coordinate_list,
+                "To Coordinate": to_coordinate_list,
+
+                # "X": x_list,
+                # "Y": y_list
+            })
+
+            report.set_table_dataframe(table_df)
+            report.build_table()
 
     def run(self):
         self.create_host()
@@ -877,17 +1033,25 @@ class ZoomAutomation(Realm):
         self.wait_for_test_start()
 
         if self.do_bs:
-            time.sleep(30)
-            for coordinate in self.coordinates_list:
-                # pause, _ = self.robo_obj.wait_for_battery()
+            time.sleep(60)
+            first_cord = self.coordinates_list[0]
+            self.robo_obj.move_to_coordinate(coord=first_cord)
+            self.current_cord = first_cord
+            result = [self.coordinates_list[(1 + i) % len(self.coordinates_list)] for i in range(self.cycles * len(self.coordinates_list))]
+            for coordinate in result:
+                logging.info(f"Moving robot to coordinate: {coordinate}")
+
+                # Battery safety
+                self.robo_obj.wait_for_battery()
+
+                
                 self.robo_obj.move_to_coordinate(coord=coordinate)
                 self.current_cord = coordinate
-                if self.rotations_enabled:
-                    for angle in self.angles_list:
-                        # self.robo_obj.wait_for_battery()
-                        self.robo_obj.rotate_angle(angle_degree=angle)
-                        self.current_angle = angle
-                        time.sleep(10)
+                time.sleep(10)
+
+            logging.info("All coordinates completed — stopping Band-Steering Test")
+
+            
         else:
             while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
                 if self.do_robo:
@@ -909,9 +1073,9 @@ class ZoomAutomation(Realm):
 
                 time.sleep(5)
 
-        if not self.do_robo:
-            self.get_final_qos_data()
-            self.write_final_data()
+        # if not self.do_robo:
+        #     self.get_final_qos_data()
+        #     self.write_final_data()
 
         self.generic_endps_profile.stop_cx()
         self.generic_endps_profile.cleanup()
@@ -1076,6 +1240,64 @@ class ZoomAutomation(Realm):
             logging.info(f"Successfully moved '{source_file}' to '{dest_file}'.")
         except Exception as e:
             logging.error(f"Failed to move '{source_file}' to '{dest_dir}': {e}")
+    
+    def add_live_view_images_to_report(self):
+        """
+        Waits for and adds the Video and Audio heatmap images for Floor 1.
+        """
+        live_view_dir = os.path.join(self.path, "live_view_images")
+        
+        # Define the specific filenames for Floor 1
+        video_img_name = f"zoom_video_{self.testname}_floor1.png"
+        audio_img_name = f"zoom_audio_{self.testname}_floor1.png"
+        
+        video_path = os.path.join(live_view_dir, video_img_name)
+        audio_path = os.path.join(live_view_dir, audio_img_name)
+
+        timeout = 60  # seconds
+        start_time = time.time()
+
+        # 1. Wait for the Video image (Primary trigger)
+        # We assume if Video is ready, Audio is likely ready or close behind.
+        while not os.path.exists(video_path):
+            if time.time() - start_time > timeout:
+                logging.error(f"Timeout: {video_img_name} not found within 60 seconds.")
+                break
+            time.sleep(1)
+        
+        if os.path.exists(video_path):
+            logging.info(f"Found video heatmap image: {video_path}")
+        else:
+            logging.warning(f"Video heatmap image not found: {video_path}")
+        
+        if os.path.exists(audio_path):
+            logging.info(f"Found audio heatmap image: {audio_path}")
+        else:
+            logging.warning(f"Audio heatmap image not found: {audio_path}")
+
+        # 2. Build the HTML Report Content
+        html_content = ""
+
+        # Add Video Map (if found)
+        if os.path.exists(video_path):
+            html_content += (
+                '<div style="page-break-before: always;"></div>'
+                '<h3 style="text-align:center;">Video Heatmap</h3>'
+                f'<div style="text-align:center;"><img src="file://{video_path}" style="width:1200px; height:800px;"></img></div>'
+            )
+
+        # Add Audio Map (if found)
+        # Note: We check specifically for existence here in case only video was generated
+        if os.path.exists(audio_path):
+            html_content += (
+                '<div style="page-break-before: always;"></div>'
+                '<h3 style="text-align:center;">Audio Heatmap</h3>'
+                f'<div style="text-align:center;"><img src="file://{audio_path}" style="width:1200px; height:800px;"></img></div>'
+            )
+
+        # 3. Inject into Report
+        if html_content:
+            self.report.set_custom_html(html_content)
 
     def updating_webui_runningjson(self, obj):
         data = {}
@@ -3016,6 +3238,8 @@ and downstream traffic"""
                 index=False, justify="center", render_links=True, escape=False
             )  # have the index be able to be passed in.
             self.report.html += self.report.dataframe_html
+        if self.do_bs:
+            self.add_bandsteering_report_section(report=self.report, report_path=report_path_date_time)
         self.report.write_html()
         self.report.write_pdf(_page_size="Legal", _orientation="Landscape")
         for client in self.real_sta_hostname:
@@ -3184,6 +3408,10 @@ and downstream traffic"""
 
             if index == 0:
                 summary["Host Device"] = summary.pop(device)
+        
+        if "Host Device" in summary and self.real_sta_hostname:
+                    # .pop() removes "Host Device" and returns its value, which we assign to the new key
+                    summary[self.real_sta_hostname[0]] = summary.pop("Host Device")
 
         return summary
 
@@ -3364,15 +3592,15 @@ and downstream traffic"""
                     self.robo_obj.rotate_angle(angle_degree=angle)
                     self.current_angle = angle
                     self.run()
-                    self.get_final_qos_data()
+                    # self.get_final_qos_data()
                     self.participants_joined = 0
-                    self.write_final_data()
+                    # self.write_final_data()
 
             else:
                 self.run()
-                self.get_final_qos_data()
+                # self.get_final_qos_data()
                 self.participants_joined = 0
-                self.write_final_data()
+                # self.write_final_data()
 
     def create_host(self):
         if self.generic_endps_profile.create(
@@ -3575,10 +3803,45 @@ and downstream traffic"""
         # ROBO MODE: Iterate through Coords/Angles and generate device graphs for each
         self._generate_robo_per_location_report()
 
+        if self.do_webui:
+            self.add_live_view_images_to_report()
+
         # --- Finalize Report ---
+        self.report.build_custom()
         self.report.write_html()
         self.report.write_pdf(_page_size="Legal", _orientation="Landscape")
         self._move_report_files(report_path_date_time)
+    
+    def stop_webui(self):
+        """
+        Updates the running_status.json file to mark the test as Completed.
+        """
+        try:
+            json_path = os.path.join(self.path, "running_status.json")
+            
+            # 1. Load existing data or create new dict
+            data = {}
+            if os.path.exists(json_path):
+                with open(json_path, 'r') as f:
+                    try:
+                        data = json.load(f)
+                    except json.JSONDecodeError:
+                        data = {}
+            
+            # 2. Update status
+            data["status"] = "Completed"
+            # Optional: Add end time timestamp
+            # data["end_time"] = str(datetime.now())
+
+            # 3. Write back to file
+            with open(json_path, 'w') as f:
+                json.dump(data, f, indent=4)
+                
+            print(f"Updated running_status.json at {json_path}")
+            
+        except Exception as e:
+            print(f"Error updating running_status.json: {e}")
+
 
     def _move_report_files(self, report_path_date_time):
         """
@@ -3845,6 +4108,16 @@ and downstream traffic"""
                 self.remote_login_url, token, "live"
             )
             self.live_data = self.summarize_audio_video(self.participants_qos_last)
+            if self.do_robo:
+                self.save_json(
+                    self.participants_qos_last,
+                    f"{self.remote_login_url}_{self.current_cord}_{self.current_angle}_qos.json",
+                )
+            else:
+                self.save_json(
+                    self.participants_qos_last, f"{self.remote_login_url}_qos.json"
+                )
+        
         except Exception as e:
             logger.info(
                 f"Unable to fetch live meeting data...retrying in 5 seconds {e}"
@@ -4108,6 +4381,9 @@ def main():
             help="Specify this flag to perform the test with robo for band steering",
             action="store_true",
         )
+        parser.add_argument(
+            "--cycles", type=int, default=1, help="Number of cycles to run the test"
+        )
 
         args = parser.parse_args()
 
@@ -4210,6 +4486,9 @@ def main():
                 participants_req=args.participants,
                 env_file=args.env_file,
                 do_bs=args.do_bs,
+                api_stats_collection=args.api_stats_collection,
+                do_webui = args.do_webUI,
+                cycles = args.cycles,
             )
             if args.download_csv:
                 zoom_automation.download_csv = True
@@ -4477,6 +4756,9 @@ def main():
             zoom_automation.stop_signal = True
             logging.info("Waiting for Browser Cleanup in Laptops")
             time.sleep(10)
+            if zoom_automation.do_webui:
+                zoom_automation.stop_webui()
+
             if args.do_robo and args.api_stats_collection:
                 zoom_automation.generate_report_from_data()
             elif args.api_stats_collection:
