@@ -178,6 +178,7 @@ import re
 import threading
 from collections import OrderedDict
 from lf_base_robo import RobotClass
+from collections import Counter
 logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
@@ -433,7 +434,7 @@ class Throughput(Realm):
                     f'Download{client}', f'Upload{client}',
                     f'Rx % Drop {client}', f'Tx % Drop{client}',
                     f'Average RTT {client}', f'RSSI {client}',
-                    f'Tx-Rate {client}', f'Rx-Rate {client}', f'BSSID {client}'
+                    f'Tx-Rate {client}', f'Rx-Rate {client}', f'BSSID {client}', f'Channel {client}'
                 ])
 
             columns.extend([
@@ -469,12 +470,23 @@ class Throughput(Realm):
                                                         is_device_configured
                                                     )
                                                 )
-            self.stop()
-            iterations_before_test_stopped_by_user.append(0)
+                print(abort)
+                if abort:
+                    break
+            # To get add last entry in the csv
             all_dataframes = pd.concat(
                 [df for df in all_dataframes if isinstance(df, pd.DataFrame)],
                 ignore_index=True
             )
+            last_idx = all_dataframes.index[-1]
+
+            all_dataframes.loc[last_idx, "status"] = "Stopped"
+
+            last_row_df = all_dataframes.loc[[last_idx]]
+
+            last_row_df.to_csv(f"{args.result_dir}/throughput_data.csv",mode="a",header=False,index=False)
+            self.stop()
+            iterations_before_test_stopped_by_user.append(0)
             self.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
             exit(1)
         for coord in self.coordinate_list:
@@ -1308,7 +1320,7 @@ class Throughput(Realm):
                 # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe
                 for i in range(len(download_throughput)):
                     individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i],
-                                              temp_avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i], bssid_list[i]])
+                                              temp_avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i], bssid_list[i], channel_list[i]])
 
                 # Storing Overall throughput data for all devices and also start time, end time, remaining time and status of test running
                 individual_df_data.extend([round(sum(download_throughput),
@@ -1327,7 +1339,7 @@ class Throughput(Realm):
                 if self.do_bandsteering:
                     robot_x, robot_y, from_coordinate, to_coordinate = self.robot.get_robot_pose()
                     if from_coordinate == to_coordinate:
-                        continue
+                        return individual_df, test_stopped_by_user
                     individual_df_data.extend([robot_x, robot_y, from_coordinate, to_coordinate]) 
                 
                 # Appending the data according to the time gap (for webgui)
@@ -1437,7 +1449,7 @@ class Throughput(Realm):
                     remaining_minutes_instrf = str(overall_time_difference).split(".")[0]
                 # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe
                 for i in range(len(download_throughput)):
-                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i], bssid_list[i]])
+                    individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i], bssid_list[i], channel_list[i]])
 
                 # Storing Overall throughput data for all devices and also start time, end time, remaining time and status of test running
                 individual_df_data.extend([round(sum(download_throughput),
@@ -1500,7 +1512,7 @@ class Throughput(Realm):
 
         # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe after test stopped
         for i in range(len(download_throughput)):
-            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i], bssid_list[i]])
+            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i], bssid_list[i], channel_list[i]])
         timestamp = datetime.now().strftime("%d/%m %I:%M:%S %p")
 
         # If it's the last iteration, append final metrics and 'Stopped' status
@@ -2280,7 +2292,6 @@ class Throughput(Realm):
         Retrieves and adds bandsteering statistics to the report.
 
         """
-        import pandas as pd
 
         # df = pd.DataFrame({
         #     'TIMESTAMP': [
@@ -2293,49 +2304,69 @@ class Throughput(Realm):
         #         '27/01 11:27:20 PM',
         #         '27/01 11:27:26 PM',
         #     ],
+
         #     'BSSID 1.15 Lin ubuntu24': [
         #         '94:A6:7E:74:26:22',
         #         '94:A6:7E:74:26:22',
-        #         'AA:BB:CC:DD:EE:FF',  # 🔄 change
         #         'AA:BB:CC:DD:EE:FF',
-        #         '94:A6:7E:74:26:22',  # 🔄 returns
+        #         'AA:BB:CC:DD:EE:FF',
         #         '94:A6:7E:74:26:22',
-        #         '11:22:33:44:55:66',  # 🔄 change again
+        #         '94:A6:7E:74:26:22',
+        #         '11:22:33:44:55:66',
         #         '11:22:33:44:55:66',
         #     ],
+
         #     'BSSID 1.16 Lin lin34': [
         #         '94:A6:7E:74:26:22',
         #         '94:A6:7E:74:26:22',
-        #         '94:A6:7E:74:26:22',  # 🔄 change
         #         '94:A6:7E:74:26:22',
-        #         '94:A6:7E:74:26:22',  # 🔄 returns
         #         '94:A6:7E:74:26:22',
-        #         '11:22:33:44:55:66',  # 🔄 change again
+        #         '94:A6:7E:74:26:22',
+        #         '94:A6:7E:74:26:22',
         #         '11:22:33:44:55:66',
-        #     ]
+        #         '11:22:33:44:55:66',
+        #     ],
 
+        #     'Channel 1.15 Lin ubuntu24': [1, 1, 6, 6, 1, 1, 11, 11],
+        #     'Channel1.16 Lin lin34': [36, 36, 36, 36, 36, 36, 44, 44],
+
+        #     'From Coordinate': ['A'] * 8,
+        #     'To Coordinate': ['B'] * 8
         # })
 
 
-        bssid_cols = df.columns[df.columns.str.startswith('BSSID')]
+        bssid_cols = [c for c in df.columns if c.startswith("BSSID")]
+        channel_cols = [c for c in df.columns if c.startswith("Channel")]
 
-        rows = []
+        bssid_to_channel = {
+            bssid_col: next(
+                ch for ch in channel_cols
+                if ch.replace("Channel", "").strip() ==
+                bssid_col.replace("BSSID", "").strip()
+            )
+            for bssid_col in bssid_cols
+        }
 
         for col in bssid_cols:
+
+            channel_col = bssid_to_channel[col]
+
+            # Detect BSSID changes
             mask = df[col] != df[col].shift()
+
             bssid_list = df.loc[mask, col].tolist()
+            channel_list = df.loc[mask, channel_col].tolist()
             timestamp_list = df.loc[mask, 'TIMESTAMP'].tolist()
             from_coordinate_list = df.loc[mask, 'From Coordinate'].tolist()
             to_coordinate_list = df.loc[mask, 'To Coordinate'].tolist()
-            print(bssid_list,timestamp_list)
-            from collections import Counter
             bssid_counts = Counter(bssid_list)
 
             x_axis = list(bssid_counts.keys())      # BSSID values
             y_axis = [[float(i)] for i in list(bssid_counts.values())]
             device_name = col.replace('BSSID ', '')
+            device_name = col.split()[-1]
             report.set_obj_html(
-                    _obj_title=f"BSSID Change Count Of The Client{device_name}",
+                    _obj_title=f"BSSID change count of the {device_name}",
                     _obj=" ")
             report.build_objective()
             graph = lf_bar_graph(_data_set=y_axis,
@@ -2394,8 +2425,9 @@ class Throughput(Realm):
                     _obj=" ")
             report.build_objective()
             table_df = {
-                "BSSID": bssid_list,
                 "Timestamp": timestamp_list,
+                "BSSID": bssid_list,
+                "Channel": channel_list,
                 "From Coordinate": from_coordinate_list,
                 "To Coordinate": to_coordinate_list
             }
@@ -2426,6 +2458,8 @@ class Throughput(Realm):
             # For groups and profiles configuration through webgui
             if self.dowebgui is True and self.group_name:
                 shutil.move('overall_throughput.csv', report_path_date_time)
+            elif self.do_bandsteering:
+                pass
             else:
                 shutil.move('throughput_data.csv', report_path_date_time)
             logger.info("path: {}".format(report_path))
@@ -4898,7 +4932,7 @@ Copyright 2023 Candela Technologies Inc.
             # Extend individual_dataframe_column with dynamically generated column names
             individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop  {clients_to_run[i]}',
                                                 f'Tx % Drop{clients_to_run[i]}', f'Average RTT {clients_to_run[i]}', f'RSSI {clients_to_run[i]}',
-                                                f'Tx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]}', f'BSSID {clients_to_run[i]}'])
+                                                f'Tx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]}', f'BSSID {clients_to_run[i]}', f'Channel {clients_to_run[i]}'])
             # if args.do_bandsteering:
             #     individual_dataframe_column.extend([f'BSSID {clients_to_run[i]}'])
         individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop ', 'Overall Tx % Drop', 'Iteration',
