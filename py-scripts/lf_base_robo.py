@@ -135,6 +135,7 @@ class RobotClass:
                             nav_status = response.json()
                             if monitor_function:
                                 all_dataframes = monitor_function()
+
                         except (requests.RequestException, ValueError) as e:
                             logging.info("[ERROR] Failed to get robot status: {}".format(e))
                             time.sleep(5)
@@ -222,6 +223,7 @@ class RobotClass:
                 if monitor_function:
                     self.to_coordinate = coord
                     all_dataframes =monitor_function()
+                    time.sleep(1)
                     
                 response.raise_for_status()
                 nav_status = response.json()                
