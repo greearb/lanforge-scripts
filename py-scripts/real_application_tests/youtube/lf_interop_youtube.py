@@ -217,7 +217,7 @@ class Youtube(Realm):
 
         self.mydatajson = {}
         self.final_data = None
-        self.stats_api_response = {}
+        self.stats_api_response = dict()
         self.upstream_port = upstream_port
         self.stop_signal = False
         self.config = config
@@ -665,7 +665,7 @@ class Youtube(Realm):
                 return jsonify({"message": "Stats updated"}), 200
 
             elif request.method == 'GET':
-                return jsonify({self.stats_api_response}), 200
+                return jsonify(self.stats_api_response), 200
 
             return jsonify({"error": "Invalid request"}), 400
 
@@ -1728,6 +1728,50 @@ class Youtube(Realm):
                     if os.path.isfile(csv_file_path):
                         os.remove(csv_file_path)
                         logging.info(f"Deleted existing CSV file: {csv_file_path}")
+    
+    def add_live_view_images_to_report(self):
+        """
+        This function looks for live view images for each floor
+        in the 'live_view_images' folder within `self.ui_report_dir`.
+        It waits up to **60 seconds** for each image. If an image is found,
+        it's added to the `report` on a new page; otherwise, it's skipped.
+        """
+        url_image_path = os.path.join(self.ui_report_dir, "live_view_images", f"yt_{self.test_name}_1.png")
+        timeout = 60  # seconds
+        start_time = time.time()
+
+        while not os.path.exists(url_image_path):
+            if time.time() - start_time > timeout:
+                logging.info("Timeout: Images not found within 60 seconds.")
+                break
+            time.sleep(1)
+        if os.path.exists(url_image_path):
+            # self.report.set_custom_html('<div style="page-break-before: always;"></div>')
+            # self.report.build_custom()
+            # self.report.set_custom_html(f'<img src="file://{url_image_path}"></img>')
+            # self.report.build_custom()
+
+            # Combine the HTML into a single string
+            html_content = (
+                '<div style="page-break-before: always;"></div>'
+                f'<img src="file://{url_image_path}" style="width:1200px; height:800px;"></img>'
+            )
+            
+            # Set and build only once
+            self.report.set_custom_html(html_content)
+    
+
+    def stop_webui_test(self):
+        try:
+            file = f"{self.ui_report_dir}/running_status.json"
+            with open(file, 'r') as f:
+                data = json.load(f)
+            data['status'] = "Completed"
+            with open(file, 'w') as f:
+                json.dump(data, f, indent=4)
+            logging.info("WebUI test status updated to Completed.")
+        except Exception as e:
+            logging.error(f"Error in stop_webui_test function {e}", exc_info=True)
 
 
 
