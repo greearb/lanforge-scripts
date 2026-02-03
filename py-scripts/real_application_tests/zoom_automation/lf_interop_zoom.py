@@ -357,13 +357,21 @@ class ZoomAutomation(Realm):
                     if self.do_bs:
                         lf_wifi_data = self.get_signal_and_channel_data_dict()
                     for hostname, stats in self.live_data.items():
-                        
+
                         final_filename = hostname
-                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        # Generates: 2026-02-02 15:41:40
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         stats["timestamp"] = timestamp
 
                         if self.do_bs:
-                            sta_id = self.hostname_to_station_map.get(final_filename, None)
+                            x, y, from_cord, to_cord = self.robo_obj.get_robot_pose()
+                            stats["X"] = x
+                            stats["Y"] = y
+                            stats["From_Coord"] = from_cord
+                            stats["To_Coord"] = to_cord
+                            sta_id = self.hostname_to_station_map.get(
+                                final_filename, None
+                            )
 
                             if sta_id in lf_wifi_data:
                                 # This adds keys like 'lf_signal', 'lf_channel' to the 'stats' dict
@@ -380,7 +388,7 @@ class ZoomAutomation(Realm):
                                         "bssid": "-",
                                     }
                                 )
-                        
+
                         if self.do_robo or self.do_bs:
                             # Add current coordinate and angle to stats
                             stats["current_cord"] = self.current_cord
@@ -808,7 +816,7 @@ class ZoomAutomation(Realm):
                         full_name = interop_mobile_data.get("name")
                         resource = full_name.split(".")[1]
                         serial_no = full_name.split(".")[2]
-                        
+
                         self.serial_list.append(serial_no)
                         self.lanforge_port_list.append(f"1.{resource}.eth0")
                 else:
@@ -897,7 +905,7 @@ class ZoomAutomation(Realm):
     def add_bandsteering_report_section(self, report=None, report_path=None):
         """
         Bandsteering reporting (Robo-style):
-        Reads all youtube stats CSVs from report directory and builds:
+        Reads all Zoom stats CSVs from report directory and builds:
         - BSSID change count graph per device
         - Table of BSSID change events
         """
@@ -915,11 +923,11 @@ class ZoomAutomation(Realm):
             return
 
         logging.info(f"Bandsteering report dir: {report_dir}")
-    
+
         csv_files = []
         for client in self.real_sta_hostname:
             client_csv_files = os.path.join(self.path, f"{client}.csv")
-            csv_files.extend(client_csv_files)
+            csv_files.append(client_csv_files)
 
         if not csv_files:
             logging.warning("No CSVs found in report dir for bandsteering")
@@ -928,7 +936,7 @@ class ZoomAutomation(Realm):
         # Section header
         report.set_obj_html(
             _obj_title="Band Steering Statistics",
-            _obj="This section summarizes BSSID changes observed while the robot moved between coordinates."
+            _obj="This section summarizes BSSID changes observed while the robot moved between coordinates.",
         )
         report.build_objective()
 
@@ -939,12 +947,16 @@ class ZoomAutomation(Realm):
                 logging.error(f"Unable to read CSV {csv_file_path}: {e}", exc_info=True)
                 continue
 
-            required_cols = {"timestamp", "bssid", "From_Coord", "To_Coord","channel"}
+            required_cols = {"timestamp", "bssid", "From_Coord", "To_Coord", "channel"}
             if not required_cols.issubset(df.columns):
-                logging.warning(f"Skipping {csv_file_path}: missing {required_cols - set(df.columns)}")
+                logging.warning(
+                    f"Skipping {csv_file_path}: missing {required_cols - set(df.columns)}"
+                )
                 continue
 
-            device_name = os.path.basename(csv_file_path).split("_youtube_stats_report")[0]
+            device_name = os.path.basename(csv_file_path).split(
+                "_youtube_stats_report"
+            )[0]
 
             # Clean columns
             df["bssid"] = df["bssid"].fillna("NA").astype(str)
@@ -960,9 +972,17 @@ class ZoomAutomation(Realm):
             timestamp_list = df.loc[mask, "timestamp"].tolist()
             from_coordinate_list = df.loc[mask, "From_Coord"].tolist()
             to_coordinate_list = df.loc[mask, "To_Coord"].tolist()
-            channel_list=df.loc[mask,"channel"].tolist()
-            x_list = df.loc[mask, "X"].tolist() if "X" in df.columns else ["NA"] * len(bssid_list)
-            y_list = df.loc[mask, "Y"].tolist() if "Y" in df.columns else ["NA"] * len(bssid_list)
+            channel_list = df.loc[mask, "channel"].tolist()
+            x_list = (
+                df.loc[mask, "X"].tolist()
+                if "X" in df.columns
+                else ["NA"] * len(bssid_list)
+            )
+            y_list = (
+                df.loc[mask, "Y"].tolist()
+                if "Y" in df.columns
+                else ["NA"] * len(bssid_list)
+            )
 
             if not bssid_list:
                 logging.info(f"No BSSID events found for {device_name}")
@@ -975,8 +995,7 @@ class ZoomAutomation(Realm):
 
             # Graph
             report.set_obj_html(
-                _obj_title=f"BSSID Change Count Of The Client {device_name}",
-                _obj=" "
+                _obj_title=f"BSSID Change Count Of The Client {device_name}", _obj=" "
             )
             report.build_objective()
 
@@ -986,10 +1005,10 @@ class ZoomAutomation(Realm):
                 _yaxis_name="Number of Changes",
                 _xaxis_categories=[""],
                 _xaxis_label=x_axis,
-                _graph_image_name=f"youtube_bssid_change_count_{device_name}",
+                _graph_image_name=f"zoom_bssid_change_count_{device_name}",
                 _label=x_axis,
                 _xaxis_step=1,
-                _graph_title=f"YouTube Bandsteering: BSSID change count for device : {device_name}",
+                _graph_title=f"Zoom Bandsteering: BSSID change count for device : {device_name}",
                 _title_size=16,
                 _bar_width=0.15,
                 _figsize=(18, 6),
@@ -1007,21 +1026,21 @@ class ZoomAutomation(Realm):
 
             # Table
             report.set_obj_html(
-                _obj_title=f"Band Steering Results for {device_name}",
-                _obj=" "
+                _obj_title=f"Band Steering Results for {device_name}", _obj=" "
             )
             report.build_objective()
 
-            table_df = pd.DataFrame({
-                "TimeStamp": timestamp_list,
-                "BSSID": bssid_list,
-                "Channel":channel_list,
-                "From Coordinate": from_coordinate_list,
-                "To Coordinate": to_coordinate_list,
-
-                # "X": x_list,
-                # "Y": y_list
-            })
+            table_df = pd.DataFrame(
+                {
+                    "TimeStamp": timestamp_list,
+                    "BSSID": bssid_list,
+                    "Channel": channel_list,
+                    "From Coordinate": from_coordinate_list,
+                    "To Coordinate": to_coordinate_list,
+                    # "X": x_list,
+                    # "Y": y_list
+                }
+            )
 
             report.set_table_dataframe(table_df)
             report.build_table()
@@ -1037,21 +1056,24 @@ class ZoomAutomation(Realm):
             first_cord = self.coordinates_list[0]
             self.robo_obj.move_to_coordinate(coord=first_cord)
             self.current_cord = first_cord
-            result = [self.coordinates_list[(1 + i) % len(self.coordinates_list)] for i in range(self.cycles * len(self.coordinates_list))]
+            print("checking self.coordinates_list", self.coordinates_list)
+            result = [
+                self.coordinates_list[(1 + i) % len(self.coordinates_list)]
+                for i in range(self.cycles * len(self.coordinates_list))
+            ]
+            print("Band-Steering Test coordinates to be visited:", result)
             for coordinate in result:
                 logging.info(f"Moving robot to coordinate: {coordinate}")
 
                 # Battery safety
                 self.robo_obj.wait_for_battery()
 
-                
                 self.robo_obj.move_to_coordinate(coord=coordinate)
                 self.current_cord = coordinate
                 time.sleep(10)
 
             logging.info("All coordinates completed — stopping Band-Steering Test")
 
-            
         else:
             while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
                 if self.do_robo:
@@ -1073,9 +1095,12 @@ class ZoomAutomation(Realm):
 
                 time.sleep(5)
 
-        # if not self.do_robo:
-        #     self.get_final_qos_data()
-        #     self.write_final_data()
+        if self.api_stats_collection:
+            if self.do_bs:
+                self.stop_signal = True
+                time.sleep(10)
+
+            self.get_final_qos_data()
 
         self.generic_endps_profile.stop_cx()
         self.generic_endps_profile.cleanup()
@@ -1240,17 +1265,17 @@ class ZoomAutomation(Realm):
             logging.info(f"Successfully moved '{source_file}' to '{dest_file}'.")
         except Exception as e:
             logging.error(f"Failed to move '{source_file}' to '{dest_dir}': {e}")
-    
+
     def add_live_view_images_to_report(self):
         """
         Waits for and adds the Video and Audio heatmap images for Floor 1.
         """
         live_view_dir = os.path.join(self.path, "live_view_images")
-        
+
         # Define the specific filenames for Floor 1
         video_img_name = f"zoom_video_{self.testname}_floor1.png"
         audio_img_name = f"zoom_audio_{self.testname}_floor1.png"
-        
+
         video_path = os.path.join(live_view_dir, video_img_name)
         audio_path = os.path.join(live_view_dir, audio_img_name)
 
@@ -1264,12 +1289,12 @@ class ZoomAutomation(Realm):
                 logging.error(f"Timeout: {video_img_name} not found within 60 seconds.")
                 break
             time.sleep(1)
-        
+
         if os.path.exists(video_path):
             logging.info(f"Found video heatmap image: {video_path}")
         else:
             logging.warning(f"Video heatmap image not found: {video_path}")
-        
+
         if os.path.exists(audio_path):
             logging.info(f"Found audio heatmap image: {audio_path}")
         else:
@@ -2256,109 +2281,249 @@ class ZoomAutomation(Realm):
                 os.path.join(os.getcwd(), self.csv_file_name), report_path_date_time
             )
 
+    # def get_final_qos_data(self):
+    #     # load envirnment file if specified
+    #     if self.env_file:
+    #         if os.path.exists(self.env_file):
+    #             load_dotenv(self.env_file)
+    #             print(f"Loaded environment variables from {self.env_file}")
+    #         else:
+    #             raise FileNotFoundError(f".env file '{self.env_file}' not found")
+
+    #     # Fetching zoom credentials for account
+    #     account_id = os.environ.get("ACCOUNT_ID")
+    #     client_id = os.environ.get("CLIENT_ID")
+    #     client_secret = os.environ.get("CLIENT_SECRET")
+
+    #     if not all([account_id, client_id, client_secret]):
+    #         logging.info("Exiting test.")
+    #         raise ValueError(
+    #             "Missing Zoom credentials (account_id, client_id, client_secret)"
+    #         )
+
+    #     meeting_id = self.remote_login_url
+    #     logger.info(f"Meeting ID: {meeting_id}")
+
+    #     # Getting access token
+    #     token = self.get_access_token(account_id, client_id, client_secret)
+    #     logging.info("\nFetching participants QoS data...")
+    #     api_data_tries = 0
+    #     while api_data_tries <= 2:
+    #         try:
+    #             # retrring with past meetings
+    #             self.participants_qos_last = self.get_participants_qos(
+    #                 meeting_id, token, "past"
+    #             )
+    #             self.live_data = self.summarize_audio_video(self.participants_qos_last)
+    #             if self.do_robo:
+    #                 self.save_json(
+    #                     self.participants_qos_last,
+    #                     f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json",
+    #                 )
+    #             else:
+    #                 self.save_json(self.participants_qos_last, f"{meeting_id}_qos.json")
+    #             break
+    #         except Exception as e:
+    #             api_data_tries += 1
+    #             logger.info(
+    #                 f"Unable to fetch meeting data...waiting for 10 seconds <===tries:{api_data_tries} {e}"
+    #             )
+    #             time.sleep(10)
+    #     if api_data_tries > 2:
+    #         logger.info("Unable to fetch meeting data...trying with live meeting.")
+    #         try:
+    #             # retrring with live meeting once
+    #             self.participants_qos_last = self.get_participants_qos(
+    #                 meeting_id, token, "live"
+    #             )
+    #             self.live_data = self.summarize_audio_video(self.participants_qos_last)
+    #             if self.do_robo:
+    #                 self.save_json(
+    #                     self.participants_qos_last,
+    #                     f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json",
+    #                 )
+    #             else:
+    #                 self.save_json(self.participants_qos_last, f"{meeting_id}_qos.json")
+    #         except Exception as e:
+    #             logger.info(
+    #                 f"couldn't fetch data from live meeting as well....Trying from past meeting one last time after 100 seconds. {e}"
+    #             )
+    #             time.sleep(100)
+    #             try:
+    #                 # Refecting access token
+    #                 token = self.get_access_token(account_id, client_id, client_secret)
+    #                 # retrring with past meetings
+    #                 self.participants_qos_last = self.get_participants_qos(
+    #                     meeting_id, token, "past"
+    #                 )
+    #                 self.live_data = self.summarize_audio_video(
+    #                     self.participants_qos_last
+    #                 )
+    #                 if self.do_robo:
+    #                     self.save_json(
+    #                         self.participants_qos_last,
+    #                         f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json",
+    #                     )
+    #                 else:
+    #                     self.save_json(
+    #                         self.participants_qos_last, f"{meeting_id}_qos.json"
+    #                     )
+    #             except Exception as e:
+    #                 logger.info(
+    #                     f"Unable to get the data from meeting....Exiting test {e}"
+    #                 )
+    #                 logger.info(
+    #                     "using the last live data that we fetched during running"
+    #                 )
+    #                 if self.do_robo:
+    #                     self.save_json(
+    #                         self.participants_qos_last,
+    #                         f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json",
+    #                     )
+    #                 else:
+    #                     self.save_json(
+    #                         self.participants_qos_last, f"{meeting_id}_qos.json"
+    #                     )
+
     def get_final_qos_data(self):
-        # load envirnment file if specified
-        if self.env_file:
-            if os.path.exists(self.env_file):
-                load_dotenv(self.env_file)
-                print(f"Loaded environment variables from {self.env_file}")
-            else:
-                raise FileNotFoundError(f".env file '{self.env_file}' not found")
-
-        # Fetching zoom credentials for account
-        account_id = os.environ.get("ACCOUNT_ID")
-        client_id = os.environ.get("CLIENT_ID")
-        client_secret = os.environ.get("CLIENT_SECRET")
-
-        if not all([account_id, client_id, client_secret]):
-            logging.info("Exiting test.")
+        # 1. Check Credentials (using instance variables)
+        if not all([self.account_id, self.client_id, self.client_secret]):
+            logging.info("Exiting test due to missing credentials.")
             raise ValueError(
-                "Missing Zoom credentials (account_id, client_id, client_secret)"
+                "Missing Zoom credentials (self.account_id, self.client_id, self.client_secret)"
             )
 
         meeting_id = self.remote_login_url
-        logger.info(f"Meeting ID: {meeting_id}")
+        logging.info(f"Meeting ID: {meeting_id}")
 
-        # Getting access token
-        token = self.get_access_token(account_id, client_id, client_secret)
-        logging.info("\nFetching participants QoS data...")
-        api_data_tries = 0
-        while api_data_tries <= 2:
+        # 2. Get Token & Wait for Data Indexing
+        token = self.get_access_token(
+            self.account_id, self.client_id, self.client_secret
+        )
+
+        # Zoom QoS data is typically available ~20 seconds after meeting end.
+        # We wait 60 seconds to be safe and simplify the logic.
+        wait_time = 100
+        logging.info(
+            f"Waiting {wait_time} seconds for Zoom servers to index past meeting QoS data..."
+        )
+        time.sleep(wait_time)
+
+        # 3. Fetch Data (Try 'Past' first, fallback to 'Live')
+        self.participants_qos_last = {}
+
+        try:
+            logging.info("Attempting to fetch 'past' meeting data...")
+            self.participants_qos_last = self.get_participants_qos(
+                meeting_id, token, "past"
+            )
+
+            # If past data is empty, raise error to trigger fallback
+            if not self.participants_qos_last:
+                raise ValueError("Zoom API returned empty data for past meeting.")
+
+        except Exception as e:
+            logging.warning(
+                f"Could not fetch 'past' data ({e}). Falling back to 'live' meeting data..."
+            )
             try:
-                # retrring with past meetings
-                self.participants_qos_last = self.get_participants_qos(
-                    meeting_id, token, "past"
-                )
-                self.live_data = self.summarize_audio_video(self.participants_qos_last)
-                if self.do_robo:
-                    self.save_json(
-                        self.participants_qos_last,
-                        f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json",
-                    )
-                else:
-                    self.save_json(self.participants_qos_last, f"{meeting_id}_qos.json")
-                break
-            except Exception as e:
-                api_data_tries += 1
-                logger.info(
-                    f"Unable to fetch meeting data...waiting for 10 seconds <===tries:{api_data_tries} {e}"
-                )
-                time.sleep(10)
-        if api_data_tries > 2:
-            logger.info("Unable to fetch meeting data...trying with live meeting.")
-            try:
-                # retrring with live meeting once
                 self.participants_qos_last = self.get_participants_qos(
                     meeting_id, token, "live"
                 )
-                self.live_data = self.summarize_audio_video(self.participants_qos_last)
-                if self.do_robo:
-                    self.save_json(
-                        self.participants_qos_last,
-                        f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json",
-                    )
-                else:
-                    self.save_json(self.participants_qos_last, f"{meeting_id}_qos.json")
-            except Exception as e:
-                logger.info(
-                    f"couldn't fetch data from live meeting as well....Trying from past meeting one last time after 100 seconds. {e}"
-                )
-                time.sleep(100)
-                try:
-                    # Refecting access token
-                    token = self.get_access_token(account_id, client_id, client_secret)
-                    # retrring with past meetings
-                    self.participants_qos_last = self.get_participants_qos(
-                        meeting_id, token, "past"
-                    )
-                    self.live_data = self.summarize_audio_video(
-                        self.participants_qos_last
-                    )
+            except Exception as e_live:
+                logging.error(f"Failed to fetch both past and live data: {e_live}")
+                # Continue to allow empty JSON/CSV generation if strict failure isn't desired
+
+        # 4. Summarize and Save JSON
+        self.live_data = self.summarize_audio_video(self.participants_qos_last)
+
+        # Construct JSON filename
+        if self.do_robo:
+            json_name = (
+                f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json"
+            )
+        else:
+            json_name = f"{meeting_id}_qos.json"
+
+        self.save_json(self.participants_qos_last, json_name)
+
+        # 5. Write to CSV (Integrated Logic)
+        if self.do_robo or self.do_bs or self.api_stats_collection:
+            if self.live_data:
+                logging.info("Writing final QoS data to CSV...")
+
+                # Fetch Wifi Data if needed
+                lf_wifi_data = {}
+                if self.do_bs:
+                    try:
+                        lf_wifi_data = self.get_signal_and_channel_data_dict()
+                    except Exception as e:
+                        logging.warning(f"Could not fetch WiFi data for CSV: {e}")
+
+                for hostname, stats in self.live_data.items():
+                    final_filename = hostname
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    stats["timestamp"] = timestamp
+
+                    # Add Robot/BS specific data
+                    if self.do_bs:
+                        x, y, from_cord, to_cord = self.robo_obj.get_robot_pose()
+                        stats["X"] = x
+                        stats["Y"] = y
+                        stats["From_Coord"] = from_cord
+                        stats["To_Coord"] = to_cord
+
+                        sta_id = self.hostname_to_station_map.get(final_filename, None)
+                        if sta_id in lf_wifi_data:
+                            stats.update(lf_wifi_data[sta_id])
+                        else:
+                            stats.update(
+                                {
+                                    "signal": "-",
+                                    "channel": "-",
+                                    "mode": "-",
+                                    "tx_rate": "-",
+                                    "rx_rate": "-",
+                                    "bssid": "-",
+                                }
+                            )
+
+                    # Add Coordinate/Angle data
+                    if self.do_robo or self.do_bs:
+                        stats["current_cord"] = self.current_cord
+                        if self.rotations_enabled:
+                            stats["rotations_enabled"] = self.rotations_enabled
+                            stats["current_angle"] = self.current_angle
+                        else:
+                            stats["rotations_enabled"] = False
+
+                    # Generate CSV Filename
                     if self.do_robo:
-                        self.save_json(
-                            self.participants_qos_last,
-                            f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json",
-                        )
+                        if self.rotations_enabled:
+                            csv_name = f"{final_filename}_{self.current_cord}_{self.current_angle}.csv"
+                        else:
+                            csv_name = f"{final_filename}_{self.current_cord}.csv"
                     else:
-                        self.save_json(
-                            self.participants_qos_last, f"{meeting_id}_qos.json"
+                        csv_name = f"{final_filename}.csv"
+
+                    csv_file = os.path.join(self.path, csv_name)
+
+                    # Write to File
+                    try:
+                        file_exists = (
+                            os.path.isfile(csv_file) and os.path.getsize(csv_file) > 0
                         )
-                except Exception as e:
-                    logger.info(
-                        f"Unable to get the data from meeting....Exiting test {e}"
-                    )
-                    logger.info(
-                        "using the last live data that we fetched during running"
-                    )
-                    if self.do_robo:
-                        self.save_json(
-                            self.participants_qos_last,
-                            f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json",
-                        )
-                    else:
-                        self.save_json(
-                            self.participants_qos_last, f"{meeting_id}_qos.json"
-                        )
+
+                        with open(csv_file, mode="a", newline="") as file:
+                            headers = list(stats.keys())
+                            writer = csv.DictWriter(file, fieldnames=headers)
+
+                            if not file_exists:
+                                writer.writeheader()
+
+                            writer.writerow(stats)
+                    except Exception as e:
+                        logging.error(f"Failed to write CSV for {hostname}: {e}")
 
     def generate_report_from_api(self):
         self.report = lf_report(
@@ -2585,23 +2750,25 @@ and downstream traffic"""
             x_data_set = [
                 [
                     (
-                        device_data.get(client, {}).get("audio_input_bitrate_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "audio_input_bitrate_avg"
-                        )
+                        device_data.get(client, {}).get("audio_input_bitrate_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "audio_input_bitrate_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
                 [
                     (
-                        device_data.get(client, {}).get("audio_output_bitrate_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "audio_output_bitrate_avg"
-                        )
+                        device_data.get(client, {}).get("audio_output_bitrate_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "audio_output_bitrate_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
@@ -2637,23 +2804,25 @@ and downstream traffic"""
             x_data_set = [
                 [
                     (
-                        device_data.get(client, {}).get("audio_input_latency_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "audio_input_latency_avg"
-                        )
+                        device_data.get(client, {}).get("audio_input_latency_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "audio_input_latency_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
                 [
                     (
-                        device_data.get(client, {}).get("audio_output_latency_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "audio_output_latency_avg"
-                        )
+                        device_data.get(client, {}).get("audio_output_latency_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "audio_output_latency_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
@@ -2688,23 +2857,25 @@ and downstream traffic"""
             x_data_set = [
                 [
                     (
-                        device_data.get(client, {}).get("audio_input_jitter_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "audio_input_jitter_avg"
-                        )
+                        device_data.get(client, {}).get("audio_input_jitter_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "audio_input_jitter_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
                 [
                     (
-                        device_data.get(client, {}).get("audio_output_jitter_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "audio_output_jitter_avg"
-                        )
+                        device_data.get(client, {}).get("audio_output_jitter_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "audio_output_jitter_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
@@ -2738,12 +2909,13 @@ and downstream traffic"""
             x_data_set = [
                 [
                     (
-                        device_data.get(client, {}).get("audio_input_avg_loss_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "audio_input_avg_loss_avg"
-                        )
+                        device_data.get(client, {}).get("audio_input_avg_loss_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "audio_input_avg_loss_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
@@ -2751,11 +2923,11 @@ and downstream traffic"""
                     (
                         device_data.get(client, {}).get("audio_output_avg_loss_avg")
                         or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "audio_output_avg_loss_avg"
-                        )
-                        or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "audio_output_avg_loss_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
@@ -2796,22 +2968,22 @@ and downstream traffic"""
                                     "audio_input_bitrate_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "audio_input_bitrate_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "audio_input_bitrate_avg"
+                                # )
+                                # or 0
                             ),
                             (
                                 device_data.get(client, {}).get(
                                     "audio_output_bitrate_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "audio_output_bitrate_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "audio_output_bitrate_avg"
+                                # )
+                                # or 0
                             ),
                         )
                         for index, client in enumerate(self.real_sta_hostname)
@@ -2823,22 +2995,22 @@ and downstream traffic"""
                                     "audio_input_latency_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "audio_input_latency_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "audio_input_latency_avg"
+                                # )
+                                # or 0
                             ),
                             (
                                 device_data.get(client, {}).get(
                                     "audio_output_latency_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "audio_output_latency_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "audio_output_latency_avg"
+                                # )
+                                # or 0
                             ),
                         )
                         for index, client in enumerate(self.real_sta_hostname)
@@ -2850,22 +3022,22 @@ and downstream traffic"""
                                     "audio_input_jitter_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "audio_input_jitter_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "audio_input_jitter_avg"
+                                # )
+                                # or 0
                             ),
                             (
                                 device_data.get(client, {}).get(
                                     "audio_output_jitter_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "audio_output_jitter_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "audio_output_jitter_avg"
+                                # )
+                                # or 0
                             ),
                         )
                         for index, client in enumerate(self.real_sta_hostname)
@@ -2877,22 +3049,22 @@ and downstream traffic"""
                                     "audio_input_avg_loss_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "audio_input_avg_loss_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "audio_input_avg_loss_avg"
+                                # )
+                                # or 0
                             ),
                             (
                                 device_data.get(client, {}).get(
                                     "audio_output_avg_loss_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "audio_output_avg_loss_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "audio_output_avg_loss_avg"
+                                # )
+                                # or 0
                             ),
                         )
                         for index, client in enumerate(self.real_sta_hostname)
@@ -2921,23 +3093,25 @@ and downstream traffic"""
             x_data_set = [
                 [
                     (
-                        device_data.get(client, {}).get("video_input_bitrate_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "video_input_bitrate_avg"
-                        )
+                        device_data.get(client, {}).get("video_input_bitrate_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "video_input_bitrate_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
                 [
                     (
-                        device_data.get(client, {}).get("video_output_bitrate_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "video_output_bitrate_avg"
-                        )
+                        device_data.get(client, {}).get("video_output_bitrate_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "video_output_bitrate_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
@@ -2972,23 +3146,25 @@ and downstream traffic"""
             x_data_set = [
                 [
                     (
-                        device_data.get(client, {}).get("video_input_latency_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "video_input_latency_avg"
-                        )
+                        device_data.get(client, {}).get("video_input_latency_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "video_input_latency_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
                 [
                     (
-                        device_data.get(client, {}).get("video_output_latency_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "video_output_latency_avg"
-                        )
+                        device_data.get(client, {}).get("video_output_latency_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "video_output_latency_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
@@ -3022,23 +3198,25 @@ and downstream traffic"""
             x_data_set = [
                 [
                     (
-                        device_data.get(client, {}).get("video_input_jitter_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "video_input_jitter_avg"
-                        )
+                        device_data.get(client, {}).get("video_input_jitter_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "video_input_jitter_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
                 [
                     (
-                        device_data.get(client, {}).get("video_output_jitter_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "video_output_jitter_avg"
-                        )
+                        device_data.get(client, {}).get("video_output_jitter_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "video_output_jitter_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
@@ -3072,12 +3250,13 @@ and downstream traffic"""
             x_data_set = [
                 [
                     (
-                        device_data.get(client, {}).get("video_input_avg_loss_avg") or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "video_input_avg_loss_avg"
-                        )
+                        device_data.get(client, {}).get("video_input_avg_loss_avg")
                         or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "video_input_avg_loss_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
@@ -3085,11 +3264,11 @@ and downstream traffic"""
                     (
                         device_data.get(client, {}).get("video_output_avg_loss_avg")
                         or 0
-                        if index != 0
-                        else device_data.get("Host Device", {}).get(
-                            "video_output_avg_loss_avg"
-                        )
-                        or 0
+                        # if index != 0
+                        # else device_data.get("Host Device", {}).get(
+                        #     "video_output_avg_loss_avg"
+                        # )
+                        # or 0
                     )
                     for index, client in enumerate(self.real_sta_hostname)
                 ],
@@ -3130,22 +3309,22 @@ and downstream traffic"""
                                     "video_input_bitrate_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "video_input_bitrate_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "video_input_bitrate_avg"
+                                # )
+                                # or 0
                             ),
                             (
                                 device_data.get(client, {}).get(
                                     "video_output_bitrate_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "video_output_bitrate_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "video_output_bitrate_avg"
+                                # )
+                                # or 0
                             ),
                         )
                         for index, client in enumerate(self.real_sta_hostname)
@@ -3157,22 +3336,22 @@ and downstream traffic"""
                                     "video_input_latency_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "video_input_latency_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "video_input_latency_avg"
+                                # )
+                                # or 0
                             ),
                             (
                                 device_data.get(client, {}).get(
                                     "video_output_latency_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "video_output_latency_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "video_output_latency_avg"
+                                # )
+                                # or 0
                             ),
                         )
                         for index, client in enumerate(self.real_sta_hostname)
@@ -3184,22 +3363,22 @@ and downstream traffic"""
                                     "video_input_jitter_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "video_input_jitter_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "video_input_jitter_avg"
+                                # )
+                                # or 0
                             ),
                             (
                                 device_data.get(client, {}).get(
                                     "video_output_jitter_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "video_output_jitter_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "video_output_jitter_avg"
+                                # )
+                                # or 0
                             ),
                         )
                         for index, client in enumerate(self.real_sta_hostname)
@@ -3211,22 +3390,22 @@ and downstream traffic"""
                                     "video_input_avg_loss_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "video_input_avg_loss_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "video_input_avg_loss_avg"
+                                # )
+                                # or 0
                             ),
                             (
                                 device_data.get(client, {}).get(
                                     "video_output_avg_loss_avg"
                                 )
                                 or 0
-                                if index != 0
-                                else device_data.get("Host Device", {}).get(
-                                    "video_output_avg_loss_avg"
-                                )
-                                or 0
+                                # if index != 0
+                                # else device_data.get("Host Device", {}).get(
+                                #     "video_output_avg_loss_avg"
+                                # )
+                                # or 0
                             ),
                         )
                         for index, client in enumerate(self.real_sta_hostname)
@@ -3239,7 +3418,9 @@ and downstream traffic"""
             )  # have the index be able to be passed in.
             self.report.html += self.report.dataframe_html
         if self.do_bs:
-            self.add_bandsteering_report_section(report=self.report, report_path=report_path_date_time)
+            self.add_bandsteering_report_section(
+                report=self.report, report_path=report_path_date_time
+            )
         self.report.write_html()
         self.report.write_pdf(_page_size="Legal", _orientation="Landscape")
         for client in self.real_sta_hostname:
@@ -3408,10 +3589,10 @@ and downstream traffic"""
 
             if index == 0:
                 summary["Host Device"] = summary.pop(device)
-        
+
         if "Host Device" in summary and self.real_sta_hostname:
-                    # .pop() removes "Host Device" and returns its value, which we assign to the new key
-                    summary[self.real_sta_hostname[0]] = summary.pop("Host Device")
+            # .pop() removes "Host Device" and returns its value, which we assign to the new key
+            summary[self.real_sta_hostname[0]] = summary.pop("Host Device")
 
         return summary
 
@@ -3592,15 +3773,11 @@ and downstream traffic"""
                     self.robo_obj.rotate_angle(angle_degree=angle)
                     self.current_angle = angle
                     self.run()
-                    # self.get_final_qos_data()
                     self.participants_joined = 0
-                    # self.write_final_data()
 
             else:
                 self.run()
-                # self.get_final_qos_data()
                 self.participants_joined = 0
-                # self.write_final_data()
 
     def create_host(self):
         if self.generic_endps_profile.create(
@@ -3811,37 +3988,36 @@ and downstream traffic"""
         self.report.write_html()
         self.report.write_pdf(_page_size="Legal", _orientation="Landscape")
         self._move_report_files(report_path_date_time)
-    
+
     def stop_webui(self):
         """
         Updates the running_status.json file to mark the test as Completed.
         """
         try:
             json_path = os.path.join(self.path, "running_status.json")
-            
+
             # 1. Load existing data or create new dict
             data = {}
             if os.path.exists(json_path):
-                with open(json_path, 'r') as f:
+                with open(json_path, "r") as f:
                     try:
                         data = json.load(f)
                     except json.JSONDecodeError:
                         data = {}
-            
+
             # 2. Update status
             data["status"] = "Completed"
             # Optional: Add end time timestamp
             # data["end_time"] = str(datetime.now())
 
             # 3. Write back to file
-            with open(json_path, 'w') as f:
+            with open(json_path, "w") as f:
                 json.dump(data, f, indent=4)
-                
+
             print(f"Updated running_status.json at {json_path}")
-            
+
         except Exception as e:
             print(f"Error updating running_status.json: {e}")
-
 
     def _move_report_files(self, report_path_date_time):
         """
@@ -4117,29 +4293,12 @@ and downstream traffic"""
                 self.save_json(
                     self.participants_qos_last, f"{self.remote_login_url}_qos.json"
                 )
-        
+
         except Exception as e:
             logger.info(
                 f"Unable to fetch live meeting data...retrying in 5 seconds {e}"
             )
             # traceback.print_exc()
-
-    def write_final_data(self):
-        url = "http://127.0.0.1:5000/upload_stats"
-        try:
-            response = requests.get(url)
-
-            if response.status_code == 200:
-                print("Successfully uploaded stats.")
-            else:
-                print(
-                    f"Upload failed. Status: {response.status_code}, Response: {response.text}"
-                )
-
-        except requests.exceptions.ConnectionError:
-            print("Failed to connect to the local API. Is the server running?")
-        except Exception as e:
-            print(f"An error occurred: {e}")
 
 
 def main():
@@ -4453,7 +4612,7 @@ def main():
                 exit(0)
 
             rotations_enabled = False
-            if args.do_robo:
+            if args.do_robo or args.do_bs:
                 args.coordinates = (
                     args.coordinates.split(",") if args.coordinates else []
                 )
@@ -4487,8 +4646,8 @@ def main():
                 env_file=args.env_file,
                 do_bs=args.do_bs,
                 api_stats_collection=args.api_stats_collection,
-                do_webui = args.do_webUI,
-                cycles = args.cycles,
+                do_webui=args.do_webUI,
+                cycles=args.cycles,
             )
             if args.download_csv:
                 zoom_automation.download_csv = True
