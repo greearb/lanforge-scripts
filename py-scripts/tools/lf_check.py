@@ -1655,8 +1655,8 @@ junit.xml path: allure serve {junit_path}
                         self.test_result = "Some Tests Failed"
                         background = self.background_orange
                 elif 'IndexError: list index out of range' in text:
-                    self.test_result = "Test Errors"
-                    background = self.background_red
+                    self.test_result = "Some Tests Failed"
+                    background = self.background_orange
                 elif 'ERROR: FAILED ' in text:
                     self.test_result = "Some Tests Failed"
                     background = self.background_orange
