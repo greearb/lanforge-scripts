@@ -1222,9 +1222,7 @@ class Throughput(Realm):
                     throughput[i][4] = 'Run' if value['run'] else 'Stopped'
             # To add average RTT
             for j in l3_cx_data:
-                if (j == "handler" or j == "uri"):
-                    continue
-                if cx == l3_cx_data[j]['name']:
+                if 'name' in l3_cx_data[j] and cx == l3_cx_data[j]['name']:
                     throughput[i][5] = l3_cx_data[j]['avg rtt']
             i += 1
         return throughput
