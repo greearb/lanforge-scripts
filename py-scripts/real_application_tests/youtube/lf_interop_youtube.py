@@ -194,6 +194,8 @@ class Youtube(Realm):
         self.linux = 0
         self.windows = 0
         self.mac = 0
+        self.to_coordinate = ""
+        self.from_coordinate = ""
         self.result_json = {}
         self.generic_endps_profile = self.new_generic_endp_profile()
         self.generic_endps_profile.type = 'youtube'
@@ -375,7 +377,7 @@ class Youtube(Realm):
         for i in range(0, len(self.lanforge_os_type)):
             cmd = (
                 "python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/youtube/youtube_android_test.py --url %s --duration %s --devices %s --upstream_port %s "
-            ) % (self.url, self.duration, self.serial_list_str, self.host)
+            ) % (self.url, self.duration, self.serial_list_str, self.host)#upstream_port
 
             logging.info(f"Setting command for Android devices: {cmd}")
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[-(i + 1)], cmd)
@@ -639,8 +641,7 @@ class Youtube(Realm):
                 # BSSID
                 lf_stats_map[sta]["BSSID"] = data.get("ap", "NA")
 
-        return lf_stats_map
-
+        return lf_stats_map 
 
     def start_flask_server(self):
         """
@@ -713,11 +714,14 @@ class Youtube(Realm):
                         else:
                             stats["BSSID"] = "NA"
                         x,y,fromc,toc=self.robo_obj.get_robot_pose()
-                        print(f"Robo Position X:{x} Y:{y} From_Coord:{fromc} To_Coord:{toc}")
+                        # from_cord=self.from_coordinate
+                        # to_cord=self.to_coordinate
+                        # x,y,fromc,toc=self.get_robo_context_for_youtube()
+                        # print(f"Robo Position X:{x} Y:{y} From_Coord:{fromc} To_Coord:{toc}")
                         stats["X"] = x
                         stats["Y"] = y
-                        stats["From_Coord"] = fromc
-                        stats["To_Coord"] = toc    
+                        stats["From_Coord"] = self.from_coordinate
+                        stats["To_Coord"] = self.to_coordinate
 
                     # Write stats directly to CSV
                     try:
@@ -979,6 +983,26 @@ class Youtube(Realm):
 
             report.set_table_dataframe(table_df)
             report.build_table()
+
+            if len(self.robo_obj.charging_timestamps) != 0:
+                report.set_obj_html(_obj_title="Charging Timestamps",
+                                    _obj="")
+                report.build_objective()
+                df = pd.DataFrame(
+                    self.robo_obj.charging_timestamps,
+                    columns=[
+                        "charge_dock_arrival_timestamp",
+                        "charging_completion_timestamp"
+                    ]
+                )
+                # Add S.No column
+                df.insert(0, "S.No", range(1, len(df) + 1))
+                report.set_table_dataframe(df)
+                report.build_table()
+            else:
+                report.set_obj_html(_obj_title="Charging Timestamps",
+                                    _obj="Robot did not went to charge during this test")
+                report.build_objective()
 
     
     def create_report(self, iot_summary=None):
@@ -1593,7 +1617,7 @@ class Youtube(Realm):
         # Start YouTube ONCE
         matched,aborted=self.robo_obj.move_to_coordinate(self.coordinates_list[0])
         if matched:
-            self.start_generic()
+            self.from_coordinate = self.coordinates_list[0]
         if aborted:
             logger.info("test aborted")
             exit(0)
@@ -1605,6 +1629,13 @@ class Youtube(Realm):
         print(result,"the result coordinates")
         for coordinate in result:
             logging.info(f"Moving robot to coordinate: {coordinate}")
+            if self.to_coordinate == "":
+                self.to_coordinate = coordinate
+                self.start_generic()
+            else:
+                self.from_coordinate = self.to_coordinate
+                self.to_coordinate = coordinate
+
 
             # Battery safety
             self.robo_obj.wait_for_battery()
@@ -1975,49 +2006,6 @@ class Youtube(Realm):
 
             logging.info(f"Removed all rows for angle {self.current_angle} from {csv_file_path}.")
     
-    def add_live_view_images_to_report(self):
-        """
-        This function looks for live view images for each floor
-        in the 'live_view_images' folder within `self.ui_report_dir`.
-        It waits up to **60 seconds** for each image. If an image is found,
-        it's added to the `report` on a new page; otherwise, it's skipped.
-        """
-        url_image_path = os.path.join(self.ui_report_dir, "live_view_images", f"yt_{self.test_name}_1.png")
-        timeout = 60  # seconds
-        start_time = time.time()
-
-        while not os.path.exists(url_image_path):
-            if time.time() - start_time > timeout:
-                logging.info("Timeout: Images not found within 60 seconds.")
-                break
-            time.sleep(1)
-        if os.path.exists(url_image_path):
-            # self.report.set_custom_html('<div style="page-break-before: always;"></div>')
-            # self.report.build_custom()
-            # self.report.set_custom_html(f'<img src="file://{url_image_path}"></img>')
-            # self.report.build_custom()
-
-            # Combine the HTML into a single string
-            html_content = (
-                '<div style="page-break-before: always;"></div>'
-                f'<img src="file://{url_image_path}" style="width:1200px; height:800px;"></img>'
-            )
-            
-            # Set and build only once
-            self.report.set_custom_html(html_content)
-
-    def stop_webui_test(self):
-        try:
-            file = f"{self.ui_report_dir}/running_status.json"
-            with open(file, 'r') as f:
-                data = json.load(f)
-            data['status'] = "Completed"
-            with open(file, 'w') as f:
-                json.dump(data, f, indent=4)
-            logging.info("WebUI test status updated to Completed.")
-        except Exception as e:
-            logging.error(f"Error in stop_webui_test function {e}", exc_info=True)
-    
     def delete_existing_csvs_for_current_point(self):
         """
         Deletes existing CSV files for the current coordinate and angle.
@@ -2284,6 +2272,8 @@ NOTES:
         url = args.url
         duration = args.duration if args.duration is not None else 100
         args.duration = duration
+        if args.do_bandsteering:
+            args.duration = 999999
         cycles=args.cycles
         
 
@@ -2510,7 +2500,10 @@ NOTES:
                 youtube.update_webui()
 
             logging.info("TEST STARTED")
-            logging.info('Running the Youtube Streaming test for {} minutes'.format(duration))
+            if args.do_bandsteering:
+                logging.info('Running the Youtube Streaming unitl robo finishes all the cycles')
+            else:
+                logging.info('Running the Youtube Streaming test for {} minutes'.format(duration))
 
             time.sleep(10)
 
