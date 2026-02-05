@@ -831,6 +831,12 @@ class Youtube(Realm):
         time.sleep(10)
         self.generic_endps_profile.cleanup()
         logging.info("Application Closed sucessfully")
+        if self.do_robo:
+            if self.do_bandsteering:
+                self.create_report()
+            else:
+                self.create_robo_report()
+            
         os._exit(0)
 
     def updating_webui_runningjson(self, obj):
@@ -984,25 +990,25 @@ class Youtube(Realm):
             report.set_table_dataframe(table_df)
             report.build_table()
 
-            if len(self.robo_obj.charging_timestamps) != 0:
-                report.set_obj_html(_obj_title="Charging Timestamps",
-                                    _obj="")
-                report.build_objective()
-                df = pd.DataFrame(
-                    self.robo_obj.charging_timestamps,
-                    columns=[
-                        "charge_dock_arrival_timestamp",
-                        "charging_completion_timestamp"
-                    ]
-                )
-                # Add S.No column
-                df.insert(0, "S.No", range(1, len(df) + 1))
-                report.set_table_dataframe(df)
-                report.build_table()
-            else:
-                report.set_obj_html(_obj_title="Charging Timestamps",
-                                    _obj="Robot did not went to charge during this test")
-                report.build_objective()
+        if len(self.robo_obj.charging_timestamps) != 0:
+            report.set_obj_html(_obj_title="Charging Timestamps",
+                                _obj="")
+            report.build_objective()
+            df = pd.DataFrame(
+                self.robo_obj.charging_timestamps,
+                columns=[
+                    "charge_dock_arrival_timestamp",
+                    "charging_completion_timestamp"
+                ]
+            )
+            # Add S.No column
+            df.insert(0, "S.No", range(1, len(df) + 1))
+            report.set_table_dataframe(df)
+            report.build_table()
+        else:
+            report.set_obj_html(_obj_title="Charging Timestamps",
+                                _obj="Robot did not went to charge during this test")
+            report.build_objective()
 
     
     def create_report(self, iot_summary=None):
@@ -1641,7 +1647,11 @@ class Youtube(Realm):
             self.robo_obj.wait_for_battery()
 
             
-            self.robo_obj.move_to_coordinate(coord=coordinate)
+            matched, abort = self.robo_obj.move_to_coordinate(coord=coordinate)
+            if matched:
+                logger.info("Reached the coordinate {}".format(coordinate))
+            if abort:
+                break
             self.current_cord = coordinate
             time.sleep(10)
 
@@ -2339,7 +2349,6 @@ NOTES:
             Devices.get_devices()
 
             # Create a YouTube object with the specified parameters
-
             youtube = Youtube(
                 host=mgr_ip,
                 port=mgr_port,
