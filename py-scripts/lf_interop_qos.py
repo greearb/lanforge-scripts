@@ -222,7 +222,8 @@ class ThroughputQOS(Realm):
                  rotation_enabled=None,
                  angle_list=None,
                  do_bandsteering=False,
-                 cycles=None):
+                 cycles=None,
+                 bssids=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -313,6 +314,7 @@ class ThroughputQOS(Realm):
         self.throughput_data = []
         self.band_steering_df = []
         self.do_bandsteering = do_bandsteering
+        self.bssids = bssids.split(",") if bssids else []
         # Initializing robot test parameters
         self.robot_test = robot_test
         self.cycles = cycles
@@ -2618,36 +2620,45 @@ class ThroughputQOS(Realm):
         import pandas as pd
         from collections import Counter
 
-        # 1️⃣ Build DataFrame from qos_data
         df = pd.DataFrame(data)
 
-        # 2️⃣ Normalize column names (QOS specific)
         rename_map = {
             "timestamp": "TIMESTAMP",
             "from_coordinate": "From Coordinate",
             "to_coordinate": "To Coordinate",
         }
-
         df.rename(columns=rename_map, inplace=True)
 
-        # 3️⃣ Detect BSSID columns (QOS style)
         bssid_cols = [c for c in df.columns if "BSSID" in c]
         channel_cols = [c for c in df.columns if "Channel" in c]
 
         for col in bssid_cols:
-            # Detect BSSID change points
-            mask = df[col] != df[col].shift()
+            allowed_bssids = set(self.bssids)
 
-            bssid_list = df.loc[mask, col].tolist()
-            timestamp_list = df.loc[mask, "TIMESTAMP"].tolist()
-            from_coordinate_list = df.loc[mask, "From Coordinate"].tolist()
-            to_coordinate_list = df.loc[mask, "To Coordinate"].tolist()
+            mask = (
+                (df[col] != df[col].shift()) &
+                (df[col].isin(allowed_bssids))
+            )
 
-            # Count BSSID switches
-            bssid_counts = Counter(bssid_list)
+            skip_table = not mask.any()
 
-            x_axis = list(bssid_counts.keys())
-            y_axis = [[float(v)] for v in bssid_counts.values()]
+            if skip_table:
+                bssid_counts = {bssid: 0 for bssid in self.bssids}
+            else:
+                bssid_list = df.loc[mask, col].tolist()
+                timestamp_list = df.loc[mask, "TIMESTAMP"].tolist()
+                from_coordinate_list = df.loc[mask, "From Coordinate"].tolist()
+                to_coordinate_list = df.loc[mask, "To Coordinate"].tolist()
+
+                bssid_counts = Counter(bssid_list)
+
+            final_bssid_counts = {
+                bssid: bssid_counts.get(bssid, 0)
+                for bssid in self.bssids
+            }
+
+            x_axis = list(final_bssid_counts.keys())
+            y_axis = [[float(v)] for v in final_bssid_counts.values()]
 
             device_name = col.replace("BSSID", "").strip()
             channel_col = next(
@@ -2656,7 +2667,7 @@ class ThroughputQOS(Realm):
 
             channel_list = (
                 df.loc[mask, channel_col].tolist()
-                if channel_col else []
+                if channel_col and not skip_table else []
             )
 
             # 📊 Graph section
@@ -2692,6 +2703,14 @@ class ThroughputQOS(Realm):
             report.build_graph()
 
             # 📋 Table section
+            if skip_table:
+                report.set_obj_html(
+                    _obj_title=f"Band Steering Results for {device_name}",
+                    _obj="No band steering events observed for the configured BSSID list."
+                )
+                report.build_objective()
+                continue
+
             report.set_obj_html(
                 _obj_title=f"Band Steering Results for {device_name}",
                 _obj=" "
@@ -3429,6 +3448,7 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
     optional.add_argument('--rotation', type=str, default='', help="The set of angles to rotate at a particular point")
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
     optional.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
+    optional.add_argument('--bssids', type=str, default='', help='hostname for where Robot server is running')
     # IOT ARGS
     parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
     optional.add_argument('--iot_ip',
@@ -3481,7 +3501,7 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
     data = {}
     rotation_enabled = False
     angle_list = []
-
+    print("Starting Interop QOS Test Script")
     if args.rotation:
         angle_list = args.rotation.split(',')
         rotation_enabled = True
@@ -3581,7 +3601,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
                                        rotation_enabled=rotation_enabled,
                                        angle_list=angle_list,
                                        do_bandsteering=args.do_bandsteering,
-                                       cycles=args.cycles
+                                       cycles=args.cycles,
+                                       bssids=args.bssids
                                        )
         throughput_qos.os_type()
         _, configured_device, _, configuration = throughput_qos.phantom_check()
