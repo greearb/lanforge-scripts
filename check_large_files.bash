@@ -705,11 +705,27 @@ survey_kernel_files() {
     local ser
     local file
     debug "Surveying Kernel files"
-    local do_not_delete
+    local do_not_delete=()
     # set -x
-    mapfile -t do_not_delete < <( ls /boot/*rescue* /boot/*kdump* \
-      | sed -e 's/\.x86_64kdump\.img//' \
-      | xargs -I% basename % 2>/dev/null ||:)
+    # Unfortunately, ls will exit non-zero if a listed glob is not found.
+    # This is bad behavior when -o pipefail is set. This is why we are
+    # splitting up this into tests.
+
+    if compgen -G "/boot/*rescue*"; then
+        mapfile -t -O "${#do_not_delete[@]}" do_not_delete < <( ls /boot/*rescue* \
+            | xargs -I% basename % )
+        debug printf "a: %s\n" "${do_not_delete[@]}"
+    fi
+
+    if compgen -G "/boot/*kdump*"; then
+        mapfile -t -O "${#do_not_delete[@]}" do_not_delete < <( ls  /boot/*kdump* \
+            | xargs -I% basename % \
+            | sed -E 's/\.x86_64kdump\.img//' )
+        debug printf "b: %s\n" "${do_not_delete[@]}"
+    fi
+
+    debug printf "c: %s\n" "${do_not_delete[@]}"
+
     local dnd_grep="| grep -F -v "
     # notice that we do not want to add quotes to the %s because the grep -F will
     # interpret them literally and not match the filename
@@ -742,10 +758,10 @@ survey_kernel_files() {
     local fiile
     for file in "${kernel_files[@]}"; do
         debug "kernel_file [$file]"
-        [[ $file =~ /boot/initramfs* ]] && continue
-        [[ $file =~ *.fc*.x86_64 ]] && continue
+        [[ $file = /boot/initramfs* ]] && continue
+        [[ $file = *.fc*.x86_64 ]] && continue
         [[ $file = *initrd-plymouth.img ]] && continue
-        fiile=$( basename $file )
+        fiile=$( basename "$file" )
         fiile=${fiile%.img}
 
         if [[ $fiile =~ $booted ]]; then
@@ -762,9 +778,9 @@ survey_kernel_files() {
         fi
     done
     # sleep 2
-    local booted_ser=$( kernel_to_relnum $booted )
+    local booted_ser=$( kernel_to_relnum "$booted" )
     if (( ${#kernel_sort_names[@]} > 0 )); then
-        declare -A ser_files
+        # declare -A ser_files
         for file in "${!kernel_sort_names[@]}"; do
             ser="${kernel_sort_names[$file]}"
         done
