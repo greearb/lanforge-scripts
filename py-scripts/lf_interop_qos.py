@@ -3448,7 +3448,7 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
     optional.add_argument('--rotation', type=str, default='', help="The set of angles to rotate at a particular point")
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
     optional.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
-    optional.add_argument('--bssids', type=str, default='', help='hostname for where Robot server is running')
+    optional.add_argument('--bssids', type=str, default='', help='Comma separated list of BSSIDs to be used for the test')
     # IOT ARGS
     parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
     optional.add_argument('--iot_ip',

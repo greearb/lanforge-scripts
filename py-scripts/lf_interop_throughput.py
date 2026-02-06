@@ -270,7 +270,7 @@ class Throughput(Realm):
                  user_list=None, real_client_list=None, real_client_list1=None, hw_list=None, laptop_list=None, android_list=None, mac_list=None, windows_list=None, linux_list=None,
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None,
-                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None,do_bandsteering=False,total_cycles=1):
+                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None,do_bandsteering=False,total_cycles=1,bssids=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -380,6 +380,7 @@ class Throughput(Realm):
         self.interopability_config = interopability_config
         self.do_bandsteering=do_bandsteering
         self.total_cycles = total_cycles
+        self.bssids = bssids if bssids else []
         # Variables related to Robo
         self.robo_ip = robo_ip
         self.angle_list = angle_list if angle_list else [0]
@@ -454,7 +455,16 @@ class Throughput(Realm):
             overall_start_time = datetime.now()
             overall_end_time = overall_start_time + timedelta(seconds=int(args.test_duration) * len(incremental_capacity_list))
             for coord in coordinate_list_with_robo:
-                pause, stopped = self.robot.wait_for_battery()
+                pause, stopped = self.robot.wait_for_battery(lambda: self.monitor(
+                                                        0,
+                                                        individual_df,
+                                                        device_names,
+                                                        incremental_capacity_list,
+                                                        overall_start_time,
+                                                        overall_end_time,
+                                                        is_device_configured
+                                                    )
+                                                )
                 if stopped:
                     break
 
@@ -470,7 +480,6 @@ class Throughput(Realm):
                                                         is_device_configured
                                                     )
                                                 )
-                print(abort)
                 if abort:
                     break
             # To get add last entry in the csv
@@ -1359,6 +1368,8 @@ class Throughput(Realm):
                     if data["status"] != "Running":
                         logger.warning('Test is stopped by the user')
                         test_stopped_by_user = True
+                        if self.do_bandsteering:
+                            return individual_df, test_stopped_by_user
                         break
                 if self.do_bandsteering:
                     return individual_df, test_stopped_by_user
@@ -2351,16 +2362,22 @@ class Throughput(Realm):
 
             # Detect BSSID changes
             mask = df[col] != df[col].shift()
+            filtered_df = df.loc[mask]
+            if self.bssids:
+                filtered_df = df.loc[mask & df[col].isin(self.bssids)]
 
-            bssid_list = df.loc[mask, col].tolist()
-            channel_list = df.loc[mask, channel_col].tolist()
-            timestamp_list = df.loc[mask, 'TIMESTAMP'].tolist()
-            from_coordinate_list = df.loc[mask, 'From Coordinate'].tolist()
-            to_coordinate_list = df.loc[mask, 'To Coordinate'].tolist()
+            bssid_list = filtered_df[col].tolist()
+            channel_list = filtered_df[channel_col].tolist()
+            timestamp_list = filtered_df['TIMESTAMP'].tolist()
+            from_coordinate_list = filtered_df['From Coordinate'].tolist()
+            to_coordinate_list = filtered_df['To Coordinate'].tolist()
             bssid_counts = Counter(bssid_list)
 
             x_axis = list(bssid_counts.keys())      # BSSID values
             y_axis = [[float(i)] for i in list(bssid_counts.values())]
+            if len(self.bssids)>0:
+                x_axis = self.bssids
+                y_axis = [[float(bssid_counts.get(bssid, 0))] for bssid in self.bssids]
             device_name = col.replace('BSSID ', '')
             device_name = col.split()[-1]
             report.set_obj_html(
@@ -2390,24 +2407,6 @@ class Throughput(Realm):
                         _color_name=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
                         
                         )
-            # graph = lf_bar_graph(
-            #         _data_set=y_axis,
-            #         _xaxis_name="BSSID",
-            #         _yaxis_name="Number of Changes",
-            #         _xaxis_categories=x_axis,
-            #         _xaxis_label=x_axis,
-            #         _graph_image_name=f"bssid_change_count_{device_name}",
-            #         _label=x_axis,
-            #         _xaxis_step=1,
-            #         _graph_title=f"BSSID change count – {device_name}",
-            #         _title_size=16,
-            #         _bar_width=0.4,
-            #         _figsize=(18, 6),
-            #         _legend_loc="best",
-            #         _dpi=96,
-            #         _show_bar_value=True,
-            #         _enable_csv=True
-            #     )
             
             graph_png = graph.build_bar_graph()
             report.set_graph_image(graph_png)
@@ -4713,6 +4712,7 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument('--robot_ip', help='hostname for where Robot server is running')
     optional.add_argument('--coordinate', help="Points at which the robot pauses")
     optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
+    optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
 
     args = parser.parse_args()
 
@@ -4870,7 +4870,8 @@ Copyright 2023 Candela Technologies Inc.
                                 coordinate_list=args.coordinate.split(",") if args.coordinate else [],
                                 angle_list=args.rotation.split(",") if args.rotation else [],
                                 do_bandsteering=args.do_bandsteering,
-                                total_cycles=args.total_cycles
+                                total_cycles=args.total_cycles,
+                                bssids=args.bssids.split(",") if args.bssids else []
                                 )
 
         if gave_incremental:
