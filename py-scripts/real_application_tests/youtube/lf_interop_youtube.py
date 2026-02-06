@@ -157,6 +157,7 @@ class Youtube(Realm):
                  angles_list = None,
                  do_robo = False,
                  cycles = None,
+                 bssids = None,
                  do_bandsteering = False,
                  current_cord = "",
                  current_angle = "NA",
@@ -209,6 +210,7 @@ class Youtube(Realm):
         self.device_names = []
         self.resolution = resolution
         self.do_bandsteering=do_bandsteering
+        self.bssids=bssids or []
         self.ap_name = ap_name
         self.ssid = ssid
         self.security = security
@@ -377,7 +379,7 @@ class Youtube(Realm):
         for i in range(0, len(self.lanforge_os_type)):
             cmd = (
                 "python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/youtube/youtube_android_test.py --url %s --duration %s --devices %s --upstream_port %s "
-            ) % (self.url, self.duration, self.serial_list_str, self.host)#upstream_port
+            ) % (self.url, self.duration, self.serial_list_str, self.local)#upstream_port
 
             logging.info(f"Setting command for Android devices: {cmd}")
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[-(i + 1)], cmd)
@@ -856,8 +858,7 @@ class Youtube(Realm):
 
         with open(file_path, 'w') as file:
             json.dump(data, file, indent=4)
-
-
+    
     def add_bandsteering_report_section(self, report=None):
         """
         Bandsteering reporting (Robo-style):
@@ -880,7 +881,6 @@ class Youtube(Realm):
 
         logging.info(f"Bandsteering report dir: {report_dir}")
 
-        # file discovery
         csv_files = glob.glob(os.path.join(report_dir, "*_youtube_stats_report.csv"))
         logging.info(f"Bandsteering CSV files found: {csv_files}")
 
@@ -888,12 +888,13 @@ class Youtube(Realm):
             logging.warning("No youtube_stats_report CSVs found in report dir for bandsteering")
             return
 
-        # Section header
         report.set_obj_html(
             _obj_title="Band Steering Statistics",
             _obj="This section summarizes BSSID changes observed while the robot moved between coordinates."
         )
         report.build_objective()
+
+        allowed_bssids = set(self.bssids)
 
         for csv_file_path in csv_files:
             try:
@@ -902,7 +903,7 @@ class Youtube(Realm):
                 logging.error(f"Unable to read CSV {csv_file_path}: {e}", exc_info=True)
                 continue
 
-            required_cols = {"TimeStamp", "BSSID", "From_Coord", "To_Coord","Channel"}
+            required_cols = {"TimeStamp", "BSSID", "From_Coord", "To_Coord", "Channel"}
             if not required_cols.issubset(df.columns):
                 logging.warning(f"Skipping {csv_file_path}: missing {required_cols - set(df.columns)}")
                 continue
@@ -916,28 +917,46 @@ class Youtube(Realm):
             df["To_Coord"] = df["To_Coord"].fillna("NA").astype(str)
             df["Channel"] = df["Channel"].fillna("NA").astype(str)
 
-            # Change detection
-            mask = df["BSSID"] != df["BSSID"].shift()
+            # Filter only configured BSSIDs (if provided)
+            if allowed_bssids:
+                df = df[df["BSSID"].isin(allowed_bssids)]
+
+            if df.empty:
+                logging.info(f"No matching BSSID rows for {device_name}")
+
+            # Detect change points
+            df["prev_bssid"] = df["BSSID"].shift()
+
+            mask = (
+                (df["BSSID"] != df["prev_bssid"]) &
+                (df["BSSID"] != "NA")
+            )
 
             bssid_list = df.loc[mask, "BSSID"].tolist()
             timestamp_list = df.loc[mask, "TimeStamp"].tolist()
             from_coordinate_list = df.loc[mask, "From_Coord"].tolist()
             to_coordinate_list = df.loc[mask, "To_Coord"].tolist()
-            Channel_list=df.loc[mask,"Channel"].tolist()
+            channel_list = df.loc[mask, "Channel"].tolist()
 
-            x_list = df.loc[mask, "X"].tolist() if "X" in df.columns else ["NA"] * len(bssid_list)
-            y_list = df.loc[mask, "Y"].tolist() if "Y" in df.columns else ["NA"] * len(bssid_list)
+            skip_table = not mask.any()
 
-            if not bssid_list:
-                logging.info(f"No BSSID events found for {device_name}")
-                continue
+            # Count BSSID switches
+            if skip_table:
+                # Ensure all expected BSSIDs show zero
+                bssid_counts = {bssid: 0 for bssid in self.bssids}
+            else:
+                bssid_counts = Counter(bssid_list)
 
-            # Count BSSID occurrences
-            bssid_counts = Counter(bssid_list)
-            x_axis = list(bssid_counts.keys())
-            y_axis = [[float(v)] for v in bssid_counts.values()]
+            # Ensure consistent graph ordering
+            final_bssid_counts = {
+                bssid: bssid_counts.get(bssid, 0)
+                for bssid in self.bssids
+            }
 
-            # Graph
+            x_axis = list(final_bssid_counts.keys())
+            y_axis = [[float(v)] for v in final_bssid_counts.values()]
+
+
             report.set_obj_html(
                 _obj_title=f"BSSID Change Count Of The Client {device_name}",
                 _obj=" "
@@ -969,7 +988,15 @@ class Youtube(Realm):
             report.move_csv_file()
             report.build_graph()
 
-            # Table
+
+            if skip_table:
+                report.set_obj_html(
+                    _obj_title=f"Band Steering Results for {device_name}",
+                    _obj="No band steering events observed for the configured BSSID list."
+                )
+                report.build_objective()
+                continue
+
             report.set_obj_html(
                 _obj_title=f"Band Steering Results for {device_name}",
                 _obj=" "
@@ -979,17 +1006,13 @@ class Youtube(Realm):
             table_df = pd.DataFrame({
                 "TimeStamp": timestamp_list,
                 "BSSID": bssid_list,
-                "Channel":Channel_list,
+                "Channel": channel_list,
                 "From Coordinate": from_coordinate_list,
                 "To Coordinate": to_coordinate_list,
-
-                # "X": x_list,
-                # "Y": y_list
             })
 
             report.set_table_dataframe(table_df)
             report.build_table()
-
         if len(self.robo_obj.charging_timestamps) != 0:
             report.set_obj_html(_obj_title="Charging Timestamps",
                                 _obj="")
@@ -1010,6 +1033,140 @@ class Youtube(Realm):
                                 _obj="Robot did not went to charge during this test")
             report.build_objective()
 
+
+
+    # def add_bandsteering_report_section(self, report=None):
+    #     """
+    #     Bandsteering reporting (Robo-style):
+    #     Reads all youtube stats CSVs from report directory and builds:
+    #     - BSSID change count graph per device
+    #     - Table of BSSID change events
+    #     """
+    #     print(self.bssids,"bssids in report")
+    #     if report is None:
+    #         logging.error("Bandsteering report: report object is None")
+    #         return
+
+    #     if not self.do_bandsteering:
+    #         logging.info("Bandsteering report skipped: do_bandsteering is False")
+    #         return
+
+    #     report_dir = self.report_path_date_time
+    #     if not report_dir or not os.path.isdir(report_dir):
+    #         logging.error(f"Bandsteering report: invalid report dir: {report_dir}")
+    #         return
+
+    #     logging.info(f"Bandsteering report dir: {report_dir}")
+
+    #     # file discovery
+    #     csv_files = glob.glob(os.path.join(report_dir, "*_youtube_stats_report.csv"))
+    #     logging.info(f"Bandsteering CSV files found: {csv_files}")
+
+    #     if not csv_files:
+    #         logging.warning("No youtube_stats_report CSVs found in report dir for bandsteering")
+    #         return
+
+    #     # Section header
+    #     report.set_obj_html(
+    #         _obj_title="Band Steering Statistics",
+    #         _obj="This section summarizes BSSID changes observed while the robot moved between coordinates."
+    #     )
+    #     report.build_objective()
+
+    #     for csv_file_path in csv_files:
+    #         try:
+    #             df = pd.read_csv(csv_file_path)
+    #         except Exception as e:
+    #             logging.error(f"Unable to read CSV {csv_file_path}: {e}", exc_info=True)
+    #             continue
+
+    #         required_cols = {"TimeStamp", "BSSID", "From_Coord", "To_Coord","Channel"}
+    #         if not required_cols.issubset(df.columns):
+    #             logging.warning(f"Skipping {csv_file_path}: missing {required_cols - set(df.columns)}")
+    #             continue
+
+    #         device_name = os.path.basename(csv_file_path).split("_youtube_stats_report")[0]
+
+    #         # Clean columns
+    #         df["BSSID"] = df["BSSID"].fillna("NA").astype(str)
+    #         df["TimeStamp"] = df["TimeStamp"].fillna("NA").astype(str)
+    #         df["From_Coord"] = df["From_Coord"].fillna("NA").astype(str)
+    #         df["To_Coord"] = df["To_Coord"].fillna("NA").astype(str)
+    #         df["Channel"] = df["Channel"].fillna("NA").astype(str)
+
+    #         # Change detection
+    #         mask = df["BSSID"] != df["BSSID"].shift()
+
+    #         bssid_list = df.loc[mask, "BSSID"].tolist()
+    #         timestamp_list = df.loc[mask, "TimeStamp"].tolist()
+    #         from_coordinate_list = df.loc[mask, "From_Coord"].tolist()
+    #         to_coordinate_list = df.loc[mask, "To_Coord"].tolist()
+    #         Channel_list=df.loc[mask,"Channel"].tolist()
+
+    #         x_list = df.loc[mask, "X"].tolist() if "X" in df.columns else ["NA"] * len(bssid_list)
+    #         y_list = df.loc[mask, "Y"].tolist() if "Y" in df.columns else ["NA"] * len(bssid_list)
+
+    #         if not bssid_list:
+    #             logging.info(f"No BSSID events found for {device_name}")
+    #             continue
+
+    #         # Count BSSID occurrences
+    #         bssid_counts = Counter(bssid_list)
+    #         x_axis = list(bssid_counts.keys())
+    #         y_axis = [[float(v)] for v in bssid_counts.values()]
+
+    #         # Graph
+    #         report.set_obj_html(
+    #             _obj_title=f"BSSID Change Count Of The Client {device_name}",
+    #             _obj=" "
+    #         )
+    #         report.build_objective()
+
+    #         graph = lf_bar_graph(
+    #             _data_set=y_axis,
+    #             _xaxis_name="BSSID",
+    #             _yaxis_name="Number of Changes",
+    #             _xaxis_categories=[""],
+    #             _xaxis_label=x_axis,
+    #             _graph_image_name=f"youtube_bssid_change_count_{device_name}",
+    #             _label=x_axis,
+    #             _xaxis_step=1,
+    #             _graph_title=f"YouTube Bandsteering: BSSID change count for device : {device_name}",
+    #             _title_size=16,
+    #             _bar_width=0.15,
+    #             _figsize=(18, 6),
+    #             _dpi=96,
+    #             _show_bar_value=True,
+    #             _enable_csv=True,
+    #         )
+
+    #         graph_png = graph.build_bar_graph()
+    #         report.set_graph_image(graph_png)
+    #         report.move_graph_image()
+    #         report.set_csv_filename(graph_png)
+    #         report.move_csv_file()
+    #         report.build_graph()
+
+    #         # Table
+    #         report.set_obj_html(
+    #             _obj_title=f"Band Steering Results for {device_name}",
+    #             _obj=" "
+    #         )
+    #         report.build_objective()
+
+    #         table_df = pd.DataFrame({
+    #             "TimeStamp": timestamp_list,
+    #             "BSSID": bssid_list,
+    #             "Channel":Channel_list,
+    #             "From Coordinate": from_coordinate_list,
+    #             "To Coordinate": to_coordinate_list,
+
+    #             # "X": x_list,
+    #             # "Y": y_list
+    #         })
+
+    #         report.set_table_dataframe(table_df)
+    #         report.build_table()
     
     def create_report(self, iot_summary=None):
         # Initialize the report object
@@ -1063,7 +1220,7 @@ class Youtube(Realm):
         if self.config:
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration,
+                'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
                 'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
@@ -1076,7 +1233,7 @@ class Youtube(Realm):
             gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration,
+                'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
                 'Resolution': self.resolution,
                 "Configuration": gp_map,
                 'Configured Devices': self.hostname_os_combination,
@@ -1086,7 +1243,7 @@ class Youtube(Realm):
         else:
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration,
+                'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
                 'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
@@ -1709,7 +1866,7 @@ class Youtube(Realm):
             # Test setup info
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration,
+                'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
                 'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac})',
@@ -1726,7 +1883,7 @@ class Youtube(Realm):
             # Test setup info
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration,
+                'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
                 'Resolution': self.resolution,
                 "Configuration": gp_map,
                 'Configured Devices': self.hostname_os_combination,
@@ -1738,7 +1895,7 @@ class Youtube(Realm):
             # Test setup info
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration,
+                'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
                 'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac})',
@@ -2251,6 +2408,7 @@ NOTES:
             '--do_bandsteering',
             help="Specify this flag to perform Bandsteering Scenario",action='store_true'
         )
+        robo.add_argument('--bssids', type=str, help='Comma-separated list of BSSIDs for bandsteering test')
         parser.add_argument("--cycles", type=int, default=1, help="Number of cycles to perform bandsteering")
 
 
@@ -2284,6 +2442,7 @@ NOTES:
         args.duration = duration
         if args.do_bandsteering:
             args.duration = 999999
+            bssids = args.bssids.split(",") if args.bssids else []
         cycles=args.cycles
         
 
@@ -2375,6 +2534,7 @@ NOTES:
                 do_robo=args.do_robo,
                 cycles=args.cycles,
                 do_bandsteering=args.do_bandsteering,
+                bssids=bssids,
                 rotations_enabled=rotations_enabled)
             youtube.start_flask_server()
             args.upstream_port = youtube.change_port_to_ip(args.upstream_port)
