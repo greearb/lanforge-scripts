@@ -4,7 +4,7 @@
 # Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 # Run
-# .\opwn_venv_and_wsl.ps1
+# .\open_env_and_wsl.ps1
 # ================================
 
 $currentPath = $MyInvocation.MyCommand.Path
@@ -20,7 +20,7 @@ function Convert-WindowsPathToWSLPath {
 
     # Extract the drive letter
     $driveLetter = $windowsPath.Substring(0, 2).TrimEnd(':')
-    
+
     # Replace backslashes with forward slashes
     $wslPath = $windowsPath -replace '\\', '/'
 
