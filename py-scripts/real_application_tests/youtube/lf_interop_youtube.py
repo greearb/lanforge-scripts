@@ -120,8 +120,8 @@ RealDevice = lf_base_interop_profile.RealDevice
 from IOT.iot_helper import start_iot_thread, with_iot_params_in_table, add_iot_report_section  # noqa: E402
 
 # Import robo base class module
-robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
-# robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
+# robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
+robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
 
 
 class Youtube(Realm):
@@ -2440,6 +2440,7 @@ NOTES:
         url = args.url
         duration = args.duration if args.duration is not None else 100
         args.duration = duration
+        bssids=None
         if args.do_bandsteering:
             args.duration = 999999
             bssids = args.bssids.split(",") if args.bssids else []
