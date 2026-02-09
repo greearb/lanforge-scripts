@@ -4013,18 +4013,18 @@ class Throughput(Realm):
                 }
 
                 if self.direction == "Bi-direction":
-                    dataframe[" Average Rx Drop B% "] = avg_updrop
-                    dataframe[" Average Rx Drop A% "] = avg_dndrop
+                    dataframe[" Average Rx Drop Upload% "] = avg_updrop
+                    dataframe[" Average Rx Drop Download% "] = avg_dndrop
                 elif self.direction == 'Download':
-                    dataframe[" Average Rx Drop A% "] = avg_dndrop
+                    dataframe[" Average Rx Drop Download% "] = avg_dndrop
                     # adding rx drop while uploading as 0
-                    dataframe[" Average Rx Drop B% "] = [0.0] * len(avg_dndrop)
+                    dataframe[" Average Rx Drop Upload% "] = [0.0] * len(avg_dndrop)
 
                 else:
-                    dataframe[" Average Rx Drop B% "] = avg_updrop
+                    dataframe[" Average Rx Drop Upload% "] = avg_updrop
 
                     # adding rx drop while downloading as 0
-                    dataframe[" Average Rx Drop A% "] = [0.0] * len(avg_updrop)
+                    dataframe[" Average Rx Drop Download% "] = [0.0] * len(avg_updrop)
                 if self.expected_passfail_value or self.device_csv_name:
                     dataframe[" Expected " + self.direction + " rate "] = input_list
                     dataframe[" Status "] = statuslist
@@ -4048,18 +4048,18 @@ class Throughput(Realm):
                     " RTT ": avgrtt
                 }
                 if self.direction == "Bi-direction":
-                    dataframe[" Average Rx Drop B% "] = avg_updrop
-                    dataframe[" Average Rx Drop A% "] = avg_dndrop
+                    dataframe[" Average Rx Drop Upload% "] = avg_updrop
+                    dataframe[" Average Rx Drop Download% "] = avg_dndrop
                 elif self.direction == 'Download':
-                    dataframe[" Average Rx Drop A% "] = avg_dndrop
+                    dataframe[" Average Rx Drop Download% "] = avg_dndrop
                     # adding rx drop while uploading as 0
-                    dataframe[" Average Rx Drop B% "] = [0.0] * len(avg_dndrop)
+                    dataframe[" Average Rx Drop Upload% "] = [0.0] * len(avg_dndrop)
 
                 else:
-                    dataframe[" Average Rx Drop B% "] = avg_updrop
+                    dataframe[" Average Rx Drop Upload% "] = avg_updrop
 
                     # adding rx drop while downloading as 0
-                    dataframe[" Average Rx Drop A% "] = [0.0] * len(avg_updrop)
+                    dataframe[" Average Rx Drop Download% "] = [0.0] * len(avg_updrop)
                 if self.expected_passfail_value or self.device_csv_name:
                     dataframe[" Expected " + self.direction + " rate "] = input_list
                     dataframe[" Status "] = statuslist
