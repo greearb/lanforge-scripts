@@ -109,7 +109,7 @@ import logging
 import requests
 import shutil
 import json
-from lf_graph import lf_bar_graph_horizontal
+from lf_graph import lf_bar_graph_horizontal, lf_bar_graph
 import traceback
 import threading
 from collections import OrderedDict
@@ -136,10 +136,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
-iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
-if os.path.exists(iot_scripts_path):
-    sys.path.insert(0, iot_scripts_path)
-    from test_automation import Automation  # noqa: E402
+# iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
+# if os.path.exists(iot_scripts_path):
+#     sys.path.insert(0, iot_scripts_path)
+#     from test_automation import Automation  # noqa: E402
 
 
 class HttpDownload(Realm):
@@ -149,7 +149,7 @@ class HttpDownload(Realm):
                  device_list=None, get_url_from_file=None, file_path=None, device_csv_name='', expected_passfail_value=None, file_name=None, group_name=None, profile_name=None, eap_method=None,
                  eap_identity=None, ieee80211=None, ieee80211u=None, ieee80211w=None, enable_pkc=None, bss_transition=None, power_save=None, disable_ofdma=None, roam_ft_ds=None, key_management=None,
                  pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60, get_live_view=False, total_floors=0, robot_test=False,
-                 robot_ip=None, coordinate=None, rotation=None, duration=None):
+                 robot_ip=None, coordinate=None, rotation=None, duration=None, do_bandsteering=False, cycles=None):
         # super().__init__(lfclient_host=lfclient_host,
         #                  lfclient_port=lfclient_port)
         self.ssid_list = []
@@ -236,13 +236,19 @@ class HttpDownload(Realm):
         self.coordinate = coordinate
         self.rotation = rotation
         self.rotation_enabled = False
-        if robot_test:
+        if self.robot_test:
+            #  To consider coordinates list and rotation list when running with robot
             self.coordinate_list = coordinate.split(',')
             self.rotation_list = rotation.split(',')
         self.current_coordinate = ""
         self.current_angle = 0
         self.robot_data = {}
         self.robot_obj = {}
+        self.do_bandsteering = do_bandsteering
+        self.cycles = cycles
+        self.individual_device_data = {}
+        self.rx_rate_val = []
+        self.max_bytes_rd = []
 
 # The 'phantom_check' will be handled within the 'get_real_client_list' function
     def get_real_client_list(self):
@@ -678,7 +684,7 @@ class HttpDownload(Realm):
             self.data["remaining_time"] = ["0"] * len(self.macid_list)
             df1 = pd.DataFrame(self.data)
             df1.to_csv("http_datavalues.csv", index=False)
-            if self.robot_test:
+            if not self.do_bandsteering and self.robot_test:
                 # For Robot test, save data for each coordinate and rotation
                 if self.rotation_enabled:
                     self.robot_data.setdefault(self.current_coordinate, {})[self.current_angle] = self.data
@@ -752,6 +758,26 @@ class HttpDownload(Realm):
 
         return l4_dict
 
+    def aggregate_rx_bytes(self,rx_rate_val,max_bytes_rd,rx_rate,bytes_rd):
+        if len(max_bytes_rd) == 0:
+            max_bytes_rd = list(bytes_rd)
+        for i in range(len(max_bytes_rd)):
+            bytes_rd[i] = max(max_bytes_rd[i], bytes_rd[i])
+        max_bytes_rd = list(bytes_rd)
+        # bytes_rd = [round(x / 1000000,4) for x in bytes_rd]
+        rx_rate_val.append(list(rx_rate))
+        # taking average of rx-rate from the previous and current in the first row
+        for j in range(len(rx_rate_val[0])):
+            rx_rate_sum = 0
+            non_zero = 0
+            for i in range(len(rx_rate_val)):
+                if rx_rate_val[i][j] != 0:
+                    rx_rate_sum += rx_rate_val[i][j]
+                    non_zero += 1
+            rx_rate_avg = rx_rate_sum / non_zero if non_zero > 0 else 0  # updating each device's rx rate average in 1st row
+            rx_rate[j] = round(rx_rate_avg, 4)
+        return list(rx_rate_val),list(max_bytes_rd),list(rx_rate),list(bytes_rd)
+    
     def monitor_for_runtime_csv(self, duration):
 
         time_now = datetime.now()
@@ -769,11 +795,16 @@ class HttpDownload(Realm):
         self.get_device_port_details()
         max_bytes_rd = []
         rx_rate_val = []
-        individual_device_data = {}
         # Creating individual Dataframe for each device
         for port in self.port_list:
-            columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI']
-            individual_device_data[port] = pd.DataFrame(columns=columns)
+            if port not in self.individual_device_data:
+                columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI', 'BSSID', 'Channel']
+                if self.do_bandsteering:
+                    columns.append('From Coordinate')
+                    columns.append('To Coordinate')
+                    columns.append('Robot X')
+                    columns.append('Robot Y')
+                self.individual_device_data[port] = pd.DataFrame(columns=columns)
         test_stopped_by_user = False
         monitor_charge_time = current_time
         while (current_time < endtime):
@@ -837,38 +868,28 @@ class HttpDownload(Realm):
             self.data["SSID"] = self.ssid_list
             self.data["Channel"] = self.channel_list
             self.data["Mode"] = self.mode_list
-            rssi_list, tx_rate_list, rx_rate_list = self.get_signal_and_link_speed_data()  # these data collected from port manager
+            rssi_list, tx_rate_list, rx_rate_list, bssid_list, channel_list = self.get_signal_and_link_speed_data()  # these data collected from port manager
             individual_rx_data = []
             individual_rx_data.extend([current_time])
             for i, port in enumerate(self.port_list):
                 # logger.info(f"row data HTTP",row_data)
 
                 try:
-                    row_data = [current_time, bytes_rd[i], url_times[i], rx_rate[i], rx_rate_list[i], tx_rate_list[i], rssi_list[i]]
-                    individual_device_data[port].loc[len(individual_device_data[port])] = row_data
+                    row_data = [current_time, bytes_rd[i], url_times[i], rx_rate[i], rx_rate_list[i], tx_rate_list[i], rssi_list[i], bssid_list[i], channel_list[i]]
+                    if self.do_bandsteering:
+                        robo_x, robo_y, from_coord, to_coord = self.robot_obj.get_robot_pose()
+                        row_data.extend([from_coord, to_coord, robo_x, robo_y])
+                    self.individual_device_data[port].loc[len(self.individual_device_data[port])] = row_data
                 except Exception:
                     # Fail-safe: if any list index/key mismatch occurs while adding row_data,
                     # stop execution to avoid inconsistent results.
                     tb_str = traceback.format_exc()  # capture traceback as string
                     logger.error("An exception occurred:\n%s", tb_str)
                     exit(1)
-            if len(max_bytes_rd) == 0:
-                max_bytes_rd = list(bytes_rd)
-            for i in range(len(max_bytes_rd)):
-                bytes_rd[i] = max(max_bytes_rd[i], bytes_rd[i])
-            max_bytes_rd = list(bytes_rd)
-            # bytes_rd = [round(x / 1000000,4) for x in bytes_rd]
-            rx_rate_val.append(list(rx_rate))
-            # taking average of rx-rate from the previous and current in the first row
-            for j in range(len(rx_rate_val[0])):
-                rx_rate_sum = 0
-                non_zero = 0
-                for i in range(len(rx_rate_val)):
-                    if rx_rate_val[i][j] != 0:
-                        rx_rate_sum += rx_rate_val[i][j]
-                        non_zero += 1
-                rx_rate_avg = rx_rate_sum / non_zero if non_zero > 0 else 0  # updating each device's rx rate average in 1st row
-                rx_rate[j] = round(rx_rate_avg, 4)
+            if not self.do_bandsteering:
+                rx_rate_val,max_bytes_rd,rx_rate,bytes_rd = self.aggregate_rx_bytes(rx_rate_val,max_bytes_rd,rx_rate,bytes_rd)
+            else:
+                self.rx_rate_val,self.max_bytes_rd,rx_rate,bytes_rd = self.aggregate_rx_bytes(self.rx_rate_val,self.max_bytes_rd,rx_rate,bytes_rd)
             # dataset = [round(x / 1000000,4) for x in dataset] #converting bps to mbps
 
             if len(url_times) == len(self.devices_list):
@@ -911,15 +932,16 @@ class HttpDownload(Realm):
                 exit(1)
             if self.dowebgui:
                 df1.to_csv('{}/http_datavalues.csv'.format(self.result_dir), index=False)
-                if self.robot_test:
+                if not self.do_bandsteering and self.robot_test:
                     df1.to_csv(f"{self.result_dir}/{self.current_coordinate}_http_datavalues.csv", index=False)
             elif self.client_type == 'Real':
                 df1.to_csv("http_datavalues.csv", index=False)
                 # IF ROBOT TEST PERFORMED
-                if self.robot_test:
+                if not self.do_bandsteering and self.robot_test:
                     # Save FTP data values for the current coordinate when in robot test
                     df1.to_csv(f"{self.current_coordinate}_http_datavalues.csv", index=False)
-            time.sleep(5)
+            if not self.do_bandsteering:
+                time.sleep(5)
             if self.dowebgui == "True":
                 with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
                                                                                                  self.test_name),
@@ -932,9 +954,11 @@ class HttpDownload(Realm):
                         break
 
             current_time = datetime.now()
+            if self.do_bandsteering:
+                break
         individual_device_csv_names = []  # To store individial device csv names
         # Iterate over each port and its corresponding DataFrame in the dictionary Saving the DataFrame to CSV
-        for port, df in individual_device_data.items():
+        for port, df in self.individual_device_data.items():
             df.to_csv(f"{endtime}-http-{port}.csv", index=False)
             individual_device_csv_names.append(f'{endtime}-http-{port}')
         self.individual_device_csv_names = individual_device_csv_names.copy()
@@ -1305,6 +1329,106 @@ class HttpDownload(Realm):
                 report.set_custom_html(f'<img src="file://{http_img_path}"></img>')
                 report.build_custom()
 
+    def get_bandsteering_stats(self,report):
+        """
+        QOS Band Steering Statistics
+        data format:
+        {
+            dev_name: dataframe,
+            dev_name2: dataframe
+        }
+        """
+        import pandas as pd
+        from collections import Counter
+        data = self.individual_device_data
+        for dev_name, df in data.items():
+
+            if df.empty:
+                continue
+
+            # 1️⃣ Normalize column names
+            rename_map = {
+                "timestamp": "TIMESTAMP",
+                "from_coordinate": "From Coordinate",
+                "to_coordinate": "To Coordinate",
+            }
+            df = df.rename(columns=rename_map)
+
+            # 2️⃣ Detect BSSID change points
+            mask = df["BSSID"] != df["BSSID"].shift()
+
+            bssid_list = df.loc[mask, "BSSID"].tolist()
+            channel_list = df.loc[mask, "Channel"].tolist()
+            timestamp_list = df.loc[mask, "TIMESTAMP"].tolist()
+
+            from_coordinate_list = (
+                df.loc[mask, "From Coordinate"].tolist()
+                if "From Coordinate" in df.columns else []
+            )
+            to_coordinate_list = (
+                df.loc[mask, "To Coordinate"].tolist()
+                if "To Coordinate" in df.columns else []
+            )
+
+            # 3️⃣ Count BSSID switches
+            bssid_counts = Counter(bssid_list)
+
+            if not bssid_counts:
+                continue
+
+            x_axis = list(bssid_counts.keys())
+            y_axis = [[float(v)] for v in bssid_counts.values()]
+
+            # 📊 Graph section
+            report.set_obj_html(
+                _obj_title=f"BSSID Change Count Of The Client {dev_name}",
+                _obj=" "
+            )
+            report.build_objective()
+
+            graph = lf_bar_graph(
+                _data_set=y_axis,
+                _xaxis_name="BSSID",
+                _yaxis_name="Number of Changes",
+                _xaxis_categories=[""],
+                _xaxis_label=x_axis,
+                _graph_image_name=f"bssid_change_count_{dev_name}",
+                _label=x_axis,
+                _xaxis_step=1,
+                _graph_title=f"BSSID change count for device : {dev_name}",
+                _title_size=16,
+                _bar_width=0.15,
+                _figsize=(18, 6),
+                _dpi=96,
+                _show_bar_value=True,
+                _enable_csv=True,
+            )
+
+            graph_png = graph.build_bar_graph()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.set_csv_filename(graph_png)
+            report.move_csv_file()
+            report.build_graph()
+
+            # 📋 Table section
+            report.set_obj_html(
+                _obj_title=f"Band Steering Results for {dev_name}",
+                _obj=" "
+            )
+            report.build_objective()
+
+            table_df = pd.DataFrame({
+                "Timestamp": timestamp_list,
+                "BSSID": bssid_list,
+                "Channel": channel_list,
+                "From Coordinate": from_coordinate_list,
+                "To Coordinate": to_coordinate_list
+            })
+
+            report.set_table_dataframe(table_df)
+            report.build_table()
+
     def generate_report(self, date, num_stations, duration, test_setup_info, dataset, lis, bands, threshold_2g,
                         threshold_5g, threshold_both, dataset2, dataset1,  # summary_table_value,
                         result_data, test_rig, rx_rate,
@@ -1340,7 +1464,10 @@ class HttpDownload(Realm):
             # If robot test, add robot specific info to test setup
             test_setup_info["Robot IP"] = self.robot_ip
             test_setup_info["Coordinates"] = self.coordinate
-            test_setup_info["Rotation"] = self.rotation
+            if not self.do_bandsteering:
+                test_setup_info["Rotation"] = self.rotation
+            else:
+                test_setup_info["No of Cycles"] = self.cycles
         if iot_summary:
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
             report.set_obj_html(
@@ -1362,7 +1489,7 @@ class HttpDownload(Realm):
         report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
         report.build_objective()
-        if self.robot_test:
+        if not self.do_bandsteering and self.robot_test:
             if self.dowebgui and self.get_live_view:
                 # Add live view images to the report
                 self.add_live_view_images_to_report(report)
@@ -1379,6 +1506,8 @@ class HttpDownload(Realm):
             html_file = report.write_html()
             report.write_pdf()
             return
+        if self.do_bandsteering:
+            self.get_bandsteering_stats(report)
         report.set_obj_html("No of times file Downloads", "The below graph represents number of times a file downloads for each client"
                             ". X- axis shows “No of times file downloads and Y-axis shows "
                             "Client names.")
@@ -1623,6 +1752,26 @@ class HttpDownload(Realm):
             report.build_table()
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
+        if self.do_bandsteering:
+            if len(self.robot_obj.charging_timestamps) != 0:
+                report.set_obj_html(_obj_title="Charging Timestamps",
+                                    _obj="")
+                report.build_objective()
+                df = pd.DataFrame(
+                    self.robot_obj.charging_timestamps,
+                    columns=[
+                        "charge_dock_arrival_timestamp",
+                        "charging_completion_timestamp"
+                    ]
+                )
+                # Add S.No column
+                df.insert(0, "S.No", range(1, len(df) + 1))
+                report.set_table_dataframe(df)
+                report.build_table()
+            else:
+                report.set_obj_html(_obj_title="Charging Timestamps",
+                                    _obj="Robot did not went to charge during this test")
+                report.build_objective()
         report.build_footer()
         html_file = report.write_html()
         print("returned file {}".format(html_file))
@@ -1807,6 +1956,8 @@ class HttpDownload(Realm):
         signal_list = []
         link_speed_list = []
         rx_rate_list = []
+        channel_list = []
+        bssid_list = []
         interfaces_dict = dict()
         try:
             port_data = self.local_realm.json_get('/ports/all/')['interfaces']
@@ -1834,7 +1985,17 @@ class HttpDownload(Realm):
                 rx_rate_list.append(interfaces_dict[sta]['rx-rate'])
             else:
                 rx_rate_list.append('-')
-        return signal_list, link_speed_list, rx_rate_list
+        for sta in station_names:
+            if sta in interfaces_dict:
+                bssid_list.append(interfaces_dict[sta]['ap'])
+            else:
+                bssid_list.append('-')
+        for sta in station_names:
+            if sta in interfaces_dict:
+                channel_list.append(interfaces_dict[sta]['channel'])
+            else:
+                channel_list.append('-')
+        return signal_list, link_speed_list, rx_rate_list, bssid_list, channel_list
 
     def monitor_cx(self):
         """
@@ -2026,6 +2187,35 @@ class HttpDownload(Realm):
         self.robot_obj.testname = self.test_name
         self.robot_obj.runtime_dir = self.result_dir
         test_stopped_by_user = False
+        if self.do_bandsteering:
+            matched, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[0])
+            self.robot_obj.do_bandsteering = True
+            if matched:
+                logger.info("Reached the coordinate {}".format(self.coordinate_list[0]))
+                self.start()
+                print("Starting CXs")
+                time.sleep(15)
+            if abort:
+                logger.info("test aborted")
+                exit(0)
+            cycles = self.cycles
+            cycle_coords = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(cycles * len(self.coordinate_list))]
+            for coordinate in cycle_coords:
+                if test_stopped_by_user:
+                    break
+                # Check for battery status before moving to next coordinate
+                if_paused, test_stopped_by_user, test_status = self.robot_obj.wait_for_battery(monitor_function=lambda: self.monitor_for_runtime_csv(self.duration))
+                # If test is stopped by user during battery wait
+                if test_stopped_by_user:
+                    break
+                robo_moved, abort, test_status = self.robot_obj.move_to_coordinate(coordinate,monitor_function=lambda: self.monitor_for_runtime_csv(self.duration))
+                # If robot failed to reach the coordinate
+                if abort:
+                    break
+                if robo_moved:
+                    logger.info("Reached the coordinate {}".format(coordinate))
+            self.stop()
+            return
         for coordinate in range(len(self.coordinate_list)):
             # Check for battery status before moving to next coordinate
             if test_stopped_by_user:
@@ -2510,6 +2700,8 @@ def main():
     optional.add_argument('--robot_ip', type=str, default='', help='hostname for where Robot server is running')
     optional.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")
     optional.add_argument('--rotation', type=str, default='', help="The set of angles to rotate at a particular point")
+    optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
+    optional.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
 
     help_summary = '''\
 lf_webpage.py will verify that N clients are connected on a specified band and can download
@@ -2654,7 +2846,9 @@ times the file is downloaded.
                             robot_ip=args.robot_ip,
                             coordinate=args.coordinate,
                             rotation=args.rotation,
-                            duration=args.duration
+                            duration=args.duration,
+                            do_bandsteering=args.do_bandsteering,
+                            cycles=args.cycles
                             )
         if args.client_type == "Real":
             if not isinstance(args.device_list, list):
