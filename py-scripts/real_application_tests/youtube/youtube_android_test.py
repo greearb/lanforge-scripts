@@ -87,7 +87,7 @@ class Adb:
 
         d = self.u2_sessions[device_serial]
 
-        # Step 1: Open the overflow menu (⋮)
+        d.click(0.2,0.2)
         count = 0
         while (
             "com.google.android.youtube:id/player_overflow_button"
