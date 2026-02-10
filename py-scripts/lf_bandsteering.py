@@ -237,8 +237,9 @@ class ROAMThroughput(RobotClass):
             test_stopped_by_user = False
 
 
-            logger.info("Starting roam cycle %s", self.roam_count + 1)
             coordinate_list_with_robo = [self.coordinates_list[(1 + i) % len(self.coordinates_list)] for i in range(int(self.total_cycles) * len(self.coordinates_list))]
+            curr_cycle = 1
+            logger.info("Starting cycle %s", curr_cycle)
             for coordinate in coordinate_list_with_robo:
                 pause, stopped, all_df = self.wait_for_battery(monitor_function=self.monitor_ap_bssid)
                 # print("Battery pause:", pause, "stopped:", stopped)
@@ -247,6 +248,12 @@ class ROAMThroughput(RobotClass):
                 # if pause:
                 #     self.throughput_tester.start_specific(self.created_cx_lists_keys)
                 matched, abort =self.move_to_coordinate(coordinate, monitor_function=self.monitor_ap_bssid)
+                if coordinate==self.coordinates_list[0]:
+                    curr_cycle += 1
+                    if curr_cycle > self.total_cycles:
+                        logger.info("Completed all {} cycles".format(self.total_cycles))
+                    else:
+                        logger.info("current cycle {}".format(curr_cycle))
                 if abort:
                     logger.info("Testing stopped by user")
                     test_stopped_by_user = True

@@ -133,7 +133,7 @@ import matplotlib.patches as mpatches
 import pandas as pd
 import logging
 import shutil
-from lf_graph import lf_bar_graph_horizontal,lf_bar_graph
+from lf_graph import lf_bar_graph_horizontal
 from typing import List, Optional
 import asyncio
 import csv
@@ -203,8 +203,6 @@ class FtpTest(LFCliBase):
                  robot_ip=None,
                  coordinate=None,
                  rotation=None,
-                 do_bandsteering=False,
-                 cycles=None
                  ):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
 
@@ -281,8 +279,6 @@ class FtpTest(LFCliBase):
         self.cx_list = []
         self.rssi_list = []
         self.tx_rate = []
-        self.individual_device_data = {}
-        self.bssid_list = []
         self.port_rx_rate = []
         self.individual_device_csv_names = []
         self.eap_method = eap_method
@@ -318,17 +314,13 @@ class FtpTest(LFCliBase):
         self.coordinate = coordinate
         self.rotation = rotation
         self.rotation_enabled = False
-        if robot_test:
-            self.coordinate_list = coordinate.split(',')
-            self.rotation_list = rotation.split(',')
+        self.coordinate_list = coordinate.split(',')
+        self.rotation_list = rotation.split(',')
         self.current_coordinate = ""
         self.current_angle = ""
         self.robot_data = {}
         self.robot_obj = {}
-        self.do_bandsteering = do_bandsteering
-        self.cycles = cycles
-        self.rx_rate_val = []
-        self.max_bytes_rd = []
+
         logger.info("Test is Initialized")
 
     def query_realclients(self):
@@ -1041,25 +1033,7 @@ class FtpTest(LFCliBase):
         return result
 
     # FOR WEB-UI // function usd to fetch runtime values and fill the csv.
-    def aggregate_rx_bytes(self,rx_rate_val, max_bytes_rd):
-        for j in range(len(rx_rate_val[0])):
-            rx_rate_sum = 0
-            non_zero = 0
-            for i in range(len(rx_rate_val)):
-                if rx_rate_val[i][j] != 0:
-                    rx_rate_sum += rx_rate_val[i][j]
-                    non_zero += 1
-            rx_rate_average = rx_rate_sum / non_zero if non_zero > 0 else 0
-            self.rx_rate[j] = round(rx_rate_average, 4)
-        dataset = self.rx_rate
-        dataset = [round(x / 1000000, 4) for x in dataset]  # converting bps to mbps
-        # calculating max in bytes rd
-        if len(max_bytes_rd) == 0:
-            max_bytes_rd = list(self.bytes_rd)
-        for i in range(len(max_bytes_rd)):
-            self.bytes_rd[i] = max(max_bytes_rd[i], self.bytes_rd[i])
-        return list(rx_rate_val),list(max_bytes_rd),list(dataset)
-    
+
     def monitor_for_runtime_csv(self):
 
         time_now = datetime.now()
@@ -1073,17 +1047,12 @@ class FtpTest(LFCliBase):
         self.data["url_data"] = []
         max_bytes_rd = []
         rx_rate_val = []
+        individual_device_data = {}
         client_id_list = []
         test_stopped_by_user = False
         for port in self.input_devices_list:
-            if port not in self.individual_device_data:
-                columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI', 'BSSID', 'Channel']
-                if self.do_bandsteering:
-                    columns.append('From Coordinate')
-                    columns.append('To Coordinate')
-                    columns.append('Robot X')
-                    columns.append('Robot Y')
-                self.individual_device_data[port] = pd.DataFrame(columns=columns)
+            columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI']
+            individual_device_data[port] = pd.DataFrame(columns=columns)
             r_id = port.split('.')
             client_id_list.append('.'.join(r_id[:2]))
         monitor_charge_time = current_time
@@ -1143,13 +1112,11 @@ class FtpTest(LFCliBase):
             self.data['client_id'] = client_id_list
             self.data['total_err'] = self.total_err
 
+            rx_rate_val.append(list(self.rx_rate))
             for i, port in enumerate(self.input_devices_list):
                 try:
-                    row_data = [current_time, self.bytes_rd[i], self.url_data[i], self.rx_rate[i], self.port_rx_rate[i], self.tx_rate[i], self.rssi_list[i], self.bssid_list[i],self.channel_list[i]]
-                    if self.do_bandsteering:
-                        robo_x, robo_y, from_coord, to_coord = self.robot_obj.get_robot_pose()
-                        row_data.extend([from_coord, to_coord, robo_x, robo_y])
-                    self.individual_device_data[port].loc[len(self.individual_device_data[port])] = row_data
+                    row_data = [current_time, self.bytes_rd[i], self.url_data[i], self.rx_rate[i], self.port_rx_rate[i], self.tx_rate[i], self.rssi_list[i]]
+                    individual_device_data[port].loc[len(individual_device_data[port])] = row_data
                 except Exception:
                     # Fail-safe: if any list index/key mismatch occurs while adding row_data,
                     # stop execution to avoid inconsistent results.
@@ -1157,17 +1124,25 @@ class FtpTest(LFCliBase):
                     logger.error("An exception occurred:\n%s", tb_str)
                     exit(1)
             # calculating average for rx_rate
-            if self.do_bandsteering:
-                self.rx_rate_val.append(list(self.rx_rate))
-            else:
-                rx_rate_val.append(list(self.rx_rate))
-            
-            if self.do_bandsteering:
-                self.rx_rate_val, self.max_bytes_rd, dataset = self.aggregate_rx_bytes(self.rx_rate_val,self.max_bytes_rd)
-            else:
-                rx_rate_val, max_bytes_rd, dataset = self.aggregate_rx_bytes(rx_rate_val,max_bytes_rd)
-            self.data['Rx Rate(1m)'] = self.rx_rate
+            for j in range(len(rx_rate_val[0])):
+                rx_rate_sum = 0
+                non_zero = 0
+                for i in range(len(rx_rate_val)):
+                    if rx_rate_val[i][j] != 0:
+                        rx_rate_sum += rx_rate_val[i][j]
+                        non_zero += 1
+                rx_rate_average = rx_rate_sum / non_zero if non_zero > 0 else 0
+                self.rx_rate[j] = round(rx_rate_average, 4)
+            dataset = self.rx_rate
+            dataset = [round(x / 1000000, 4) for x in dataset]  # converting bps to mbps
             self.rx_rate = dataset
+            self.data['Rx Rate(1m)'] = self.rx_rate
+            # calculating max in bytes rd
+            if len(max_bytes_rd) == 0:
+                max_bytes_rd = list(self.bytes_rd)
+            for i in range(len(max_bytes_rd)):
+                self.bytes_rd[i] = max(max_bytes_rd[i], self.bytes_rd[i])
+            max_bytes_rd = list(self.bytes_rd)
 
             self.data['Bytes RD'] = self.bytes_rd
 
@@ -1194,7 +1169,7 @@ class FtpTest(LFCliBase):
             total_hours = time_difference.total_seconds() / 3600
             remaining_minutes = (total_hours % 1) * 60
             self.data["start_time"] = [start_time] * len(self.cx_list)
-            if not self.do_bandsteering and self.robot_test:
+            if self.robot_test:
                 # To update end time at each interval
                 end_time = endtime
             self.data["end_time"] = [end_time.strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
@@ -1214,15 +1189,14 @@ class FtpTest(LFCliBase):
                 exit(1)
             if self.dowebgui:
                 df1.to_csv('{}/ftp_datavalues.csv'.format(self.result_dir), index=False)
-                if not self.do_bandsteering and self.robot_test:
+                if self.robot_test:
                     # Save FTP data values for the current coordinate when in robot test
                     df1.to_csv(f"{self.result_dir}/{self.current_coordinate}_ftp_datavalues.csv", index=False)
             if self.clients_type == 'Real':
                 df1.to_csv("ftp_datavalues.csv", index=False)
-                if not self.do_bandsteering and self.robot_test:
+                if self.robot_test:
                     df1.to_csv(f"{self.current_coordinate}_ftp_datavalues.csv", index=False)
-            if not self.do_bandsteering:
-                time.sleep(5)
+            time.sleep(5)
             if self.dowebgui == "True":
                 with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
                                                                                                  self.test_name),
@@ -1234,11 +1208,10 @@ class FtpTest(LFCliBase):
                         logging.info('Test is stopped by the user')
                         self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
                         break
-            if self.do_bandsteering:
-                break
+
             current_time = datetime.now()
         individual_device_csv_names = []
-        for port, df in self.individual_device_data.items():
+        for port, df in individual_device_data.items():
             df.to_csv(f"{endtime}-ftp-{port}.csv", index=False)
             individual_device_csv_names.append(f'{endtime}-ftp-{port}')
         self.individual_device_csv_names = individual_device_csv_names
@@ -1308,7 +1281,7 @@ class FtpTest(LFCliBase):
 
     def get_device_details(self):
         dataset = []
-        self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd, self.rx_rate, self.bssid_list = [], [], [], [], [], [], [], [], [], []
+        self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd, self.rx_rate = [], [], [], [], [], [], [], [], []
         self.total_err = []
         if self.clients_type == "Real":
             self.get_port_data()
@@ -1377,11 +1350,6 @@ class FtpTest(LFCliBase):
                 self.ssid_list.append(interfaces_dict[sta]['ssid'])
             else:
                 self.ssid_list.append('-')
-        for sta in station_names:
-            if sta in interfaces_dict:
-                self.bssid_list.append(interfaces_dict[sta]['ap'])
-            else:
-                self.bssid_list.append('-')
 
     # Updates the status in the running.json file while running a test from the Web UI
     def updating_webui_runningjson(self, obj):
@@ -2115,106 +2083,6 @@ class FtpTest(LFCliBase):
         self.report.set_table_dataframe(dataframe1)
         self.report.build_table()
 
-    def get_bandsteering_stats(self):
-        """
-        QOS Band Steering Statistics
-        data format:
-        {
-            dev_name: dataframe,
-            dev_name2: dataframe
-        }
-        """
-        import pandas as pd
-        from collections import Counter
-        data = self.individual_device_data
-        for dev_name, df in data.items():
-
-            if df.empty:
-                continue
-
-            # 1️⃣ Normalize column names
-            rename_map = {
-                "timestamp": "TIMESTAMP",
-                "from_coordinate": "From Coordinate",
-                "to_coordinate": "To Coordinate",
-            }
-            df = df.rename(columns=rename_map)
-
-            # 2️⃣ Detect BSSID change points
-            mask = df["BSSID"] != df["BSSID"].shift()
-
-            bssid_list = df.loc[mask, "BSSID"].tolist()
-            channel_list = df.loc[mask, "Channel"].tolist()
-            timestamp_list = df.loc[mask, "TIMESTAMP"].tolist()
-
-            from_coordinate_list = (
-                df.loc[mask, "From Coordinate"].tolist()
-                if "From Coordinate" in df.columns else []
-            )
-            to_coordinate_list = (
-                df.loc[mask, "To Coordinate"].tolist()
-                if "To Coordinate" in df.columns else []
-            )
-
-            # 3️⃣ Count BSSID switches
-            bssid_counts = Counter(bssid_list)
-
-            if not bssid_counts:
-                continue
-
-            x_axis = list(bssid_counts.keys())
-            y_axis = [[float(v)] for v in bssid_counts.values()]
-
-            # 📊 Graph section
-            self.report.set_obj_html(
-                _obj_title=f"BSSID Change Count Of The Client {dev_name}",
-                _obj=" "
-            )
-            self.report.build_objective()
-
-            graph = lf_bar_graph(
-                _data_set=y_axis,
-                _xaxis_name="BSSID",
-                _yaxis_name="Number of Changes",
-                _xaxis_categories=[""],
-                _xaxis_label=x_axis,
-                _graph_image_name=f"bssid_change_count_{dev_name}",
-                _label=x_axis,
-                _xaxis_step=1,
-                _graph_title=f"BSSID change count for device : {dev_name}",
-                _title_size=16,
-                _bar_width=0.15,
-                _figsize=(18, 6),
-                _dpi=96,
-                _show_bar_value=True,
-                _enable_csv=True,
-            )
-
-            graph_png = graph.build_bar_graph()
-            self.report.set_graph_image(graph_png)
-            self.report.move_graph_image()
-            self.report.set_csv_filename(graph_png)
-            self.report.move_csv_file()
-            self.report.build_graph()
-
-            # 📋 Table section
-            self.report.set_obj_html(
-                _obj_title=f"Band Steering Results for {dev_name}",
-                _obj=" "
-            )
-            self.report.build_objective()
-
-            table_df = pd.DataFrame({
-                "Timestamp": timestamp_list,
-                "BSSID": bssid_list,
-                "Channel": channel_list,
-                "From Coordinate": from_coordinate_list,
-                "To Coordinate": to_coordinate_list
-            })
-
-            self.report.set_table_dataframe(table_df)
-            self.report.build_table()
-
     def generate_report(self, ftp_data, date, input_setup_info, test_rig, test_tag, dut_hw_version,
                         dut_sw_version, dut_model_num, dut_serial_num, test_id, bands,
                         csv_outfile, local_lf_report_dir, _results_dir_name='ftp_test', report_path='', config_devices="", iot_summary=None):
@@ -2343,11 +2211,8 @@ class FtpTest(LFCliBase):
             # Added Robot details in Test setup information table
             test_setup_info["Robot IP"] = self.robot_ip
             test_setup_info["Coordinates"] = self.coordinate
-            if not self.do_bandsteering:
-                if self.rotation_enabled:
-                    test_setup_info["Rotations"] = self.rotation
-            else:
-                test_setup_info["Total Cycles"] = self.cycles
+            if self.rotation_enabled:
+                test_setup_info["Rotations"] = self.rotation
 
         if iot_summary:
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
@@ -2372,7 +2237,7 @@ class FtpTest(LFCliBase):
             )
         self.report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
         self.report.build_objective()
-        if not self.do_bandsteering and self.robot_test:
+        if self.robot_test:
             if self.dowebgui:
                 # To store heatmap images in report
                 self.add_live_view_images_to_report()
@@ -2404,8 +2269,6 @@ class FtpTest(LFCliBase):
         # self.report.set_table_dataframe(dataframe2)
         # self.report.build_table()
         # self.generate_graph(ftp_data)
-        if self.do_bandsteering:
-            self.get_bandsteering_stats()
         self.report.set_obj_html(
             _obj_title=f"No of times file {self.direction}",
             _obj=f"The below graph represents number of times a file {self.direction} for each client"
@@ -2543,26 +2406,6 @@ class FtpTest(LFCliBase):
             dataframe1 = pd.DataFrame(dataframe)
             self.report.set_table_dataframe(dataframe1)
             self.report.build_table()
-        if self.do_bandsteering:
-            if len(self.robot_obj.charging_timestamps) != 0:
-                self.report.set_obj_html(_obj_title="Charging Timestamps",
-                                    _obj="")
-                self.report.build_objective()
-                df = pd.DataFrame(
-                    self.robot_obj.charging_timestamps,
-                    columns=[
-                        "charge_dock_arrival_timestamp",
-                        "charging_completion_timestamp"
-                    ]
-                )
-                # Add S.No column
-                df.insert(0, "S.No", range(1, len(df) + 1))
-                self.report.set_table_dataframe(df)
-                self.report.build_table()
-            else:
-                self.report.set_obj_html(_obj_title="Charging Timestamps",
-                                    _obj="Robot did not went to charge during this test")
-                self.report.build_objective()
         if iot_summary:
             self.build_iot_report_section(self.report, iot_summary)
         self.report.build_footer()
@@ -3085,13 +2928,6 @@ class FtpTest(LFCliBase):
                 report.set_custom_html('<hr>')
                 report.build_custom()
 
-    # def clear_l4_counters(self):
-    #     for cx in self.cx_list:
-    #         self.json_post("cli-json/clear_endp_counters",{"endp_name" : cx})
-    #         time.sleep(2)
-    #     print('cleared counters for all cx_list')
-    #     time.sleep(10)
-
     def perform_robo(self):
         """
         Controls robot movement through a list of coordinates.
@@ -3112,43 +2948,6 @@ class FtpTest(LFCliBase):
         self.robot_obj.ip = self.host
         self.robot_obj.testname = self.test_name
         self.robot_obj.runtime_dir = self.result_dir
-        if self.do_bandsteering:
-            matched, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[0])
-            self.robot_obj.do_bandsteering = True
-            if matched:
-                logger.info("Reached the coordinate {}".format(self.coordinate_list[0]))
-                self.start(False, False)
-                print("Starting CXs")
-                time.sleep(15)
-            if abort:
-                logger.info("test aborted")
-                exit(0)
-            cycles = self.cycles
-            cycle_coords = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(cycles * len(self.coordinate_list))]
-            for coordinate in cycle_coords:
-                if test_stopped_by_user:
-                    break
-                # Check for battery status before moving to next coordinate
-                if_paused, test_stopped_by_user, test_status = self.robot_obj.wait_for_battery(monitor_function=lambda: self.monitor_for_runtime_csv())
-                # If test is stopped by user during battery wait
-                if test_stopped_by_user:
-                    break
-                robo_moved, abort, test_status = self.robot_obj.move_to_coordinate(coordinate,monitor_function=lambda: self.monitor_for_runtime_csv())
-                # If robot failed to reach the coordinate
-                if abort:
-                    break
-                if robo_moved:
-                    logger.info("Reached the coordinate {}".format(coordinate))
-            self.my_monitor_for_real_devices()
-            self.stop()
-            return
-                
-                
-
-                
-
-
-
         for coordinate in range(len(self.coordinate_list)):
             if test_stopped_by_user:
                 break
@@ -3598,8 +3397,6 @@ INCLUDE_IN_README: False
     optional.add_argument('--robot_ip', type=str, default='', help='hostname for where Robot server is running')
     optional.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")
     optional.add_argument('--rotation', type=str, default='', help="The set of angles to rotate at a particular point")
-    optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
-    optional.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
     # logging configuration
     optional.add_argument(
         "--lf_logger_config_json",
@@ -3795,8 +3592,6 @@ some amount of file data from the FTP server while measuring the time taken by c
                               robot_ip=args.robot_ip,
                               coordinate=args.coordinate,
                               rotation=args.rotation,
-                              do_bandsteering=args.do_bandsteering,
-                              cycles=args.cycles
                               )
 
                 interation_num = interation_num + 1
@@ -3894,13 +3689,10 @@ some amount of file data from the FTP server while measuring the time taken by c
         # If robot test is enabled, add robot specific info to the report
         input_setup_info["Robot IP"] = args.robot_ip
         input_setup_info["Coordinate"] = args.coordinate
-        if not obj.do_bandsteering:
-            input_setup_info["Rotation"] = args.rotation
-        else:
-            input_setup_info["Band Steering Cycles"] = args.cycles
+        input_setup_info["Rotation"] = args.rotation
 
     # FOR WEB-UI // to fetch the last logs of the execution.
-    if args.dowebgui and (not args.robot_test or args.do_bandsteering):
+    if args.dowebgui and not args.robot_test:
         obj.data_for_webui["status"] = ["STOPPED"] * len(obj.url_data)
 
         df1 = pd.DataFrame(obj.data_for_webui)
