@@ -454,6 +454,8 @@ class Throughput(Realm):
                 device_names = created_cx_lists_keys[:to_run_cxs_len[-1][-1]]
             overall_start_time = datetime.now()
             overall_end_time = overall_start_time + timedelta(seconds=int(args.test_duration) * len(incremental_capacity_list))
+            curr_cycle = 1
+            logger.info("Current Cycle: {}".format(curr_cycle))
             for coord in coordinate_list_with_robo:
                 pause, stopped = self.robot.wait_for_battery(lambda: self.monitor(
                                                         0,
@@ -480,6 +482,13 @@ class Throughput(Realm):
                                                         is_device_configured
                                                     )
                                                 )
+                if coord==self.coordinate_list[0]:
+                    curr_cycle += 1
+                    if curr_cycle > int(self.total_cycles):
+                        logger.info("Completed all {} cycles".format(self.total_cycles))
+                    else:
+                        logger.info("current cycle {}".format(curr_cycle))
+                
                 if abort:
                     break
             # To get add last entry in the csv
@@ -492,8 +501,8 @@ class Throughput(Realm):
             all_dataframes.loc[last_idx, "status"] = "Stopped"
 
             last_row_df = all_dataframes.loc[[last_idx]]
-
-            last_row_df.to_csv(f"{args.result_dir}/throughput_data.csv",mode="a",header=False,index=False)
+            if self.dowebgui:
+                last_row_df.to_csv(f"{args.result_dir}/throughput_data.csv",mode="a",header=False,index=False)
             self.stop()
             iterations_before_test_stopped_by_user.append(0)
             self.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
@@ -2589,6 +2598,11 @@ class Throughput(Realm):
                     "Load Type": load_type_name,
                     "Packet Size": packet_size_text
                 }
+            if self.do_bandsteering:
+                del test_setup_info["Traffic Duration in minutes"]
+                test_setup_info["Coordinates"] = self.coordinate_list
+                test_setup_info["Total Cycles"] = self.total_cycles
+
             if iot_summary:
                 test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
             report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")

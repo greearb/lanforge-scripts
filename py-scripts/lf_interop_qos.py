@@ -1442,6 +1442,7 @@ class ThroughputQOS(Realm):
             }
         print(res["throughput_table_df"])
         if self.do_bandsteering:
+            del test_setup_info["Traffic Duration in hours"]
             test_setup_info["Robot IP"] = self.robot_ip
             test_setup_info["Selected Coordinates"] = self.coordinate_list
             test_setup_info["no of cycles"] = self.cycles
@@ -2770,7 +2771,9 @@ class ThroughputQOS(Realm):
                 logger.info("test aborted")
                 exit(0)
             cycles = self.cycles
+            curr_cycle = 1
             cycle_coords = [coord_list[(1 + i) % len(coord_list)] for i in range(cycles * len(coord_list))]
+            logger.info("Current Cycle",curr_cycle)
             for coordinate in cycle_coords:
                 if self.test_stopped_by_user:
                     break
@@ -2784,6 +2787,12 @@ class ThroughputQOS(Realm):
                 )
                 if matched:
                     logger.info("Reached the coordinate {}".format(coordinate))
+                    if coordinate==coord_list[0]:
+                        curr_cycle += 1
+                        if curr_cycle > cycles:
+                            logger.info("Completed all {} cycles".format(self.cycles))
+                        else:
+                            logger.info("current cycle {}".format(curr_cycle))
                 if abort:
                     break
             self.stop()
