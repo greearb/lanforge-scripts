@@ -120,8 +120,8 @@ RealDevice = lf_base_interop_profile.RealDevice
 from IOT.iot_helper import start_iot_thread, with_iot_params_in_table, add_iot_report_section  # noqa: E402
 
 # Import robo base class module
-robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
-# robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
+# robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
+robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
 
 
 class Youtube(Realm):
@@ -379,7 +379,7 @@ class Youtube(Realm):
         for i in range(0, len(self.lanforge_os_type)):
             cmd = (
                 "python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/youtube/youtube_android_test.py --url %s --duration %s --devices %s --upstream_port %s "
-            ) % (self.url, self.duration, self.serial_list_str, self.local)#upstream_port
+            ) % (self.url, self.duration, self.serial_list_str, self.host)#upstream_port
 
             logging.info(f"Setting command for Android devices: {cmd}")
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[-(i + 1)], cmd)
