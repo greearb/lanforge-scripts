@@ -2714,11 +2714,10 @@ NOTES:
         logger.error("An exception occurred:\n%s", tb_str)
     finally:
         if not ('--help' in sys.argv or '-h' in sys.argv):
+            if args.do_webUI:
+                youtube.stop_webui_test()
             if args.do_robo and not args.do_bandsteering:
                 if do_webUI:
-                    youtube.stop_webui_test()
-                    youtube.create_robo_report()
-                else:
                     youtube.create_robo_report()
             else:
                 if do_webUI:
