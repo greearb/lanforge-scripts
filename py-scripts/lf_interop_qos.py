@@ -2773,7 +2773,7 @@ class ThroughputQOS(Realm):
             cycles = self.cycles
             curr_cycle = 1
             cycle_coords = [coord_list[(1 + i) % len(coord_list)] for i in range(cycles * len(coord_list))]
-            logger.info("Current Cycle",curr_cycle)
+            logger.info("Current Cycle {}".format(curr_cycle))
             for coordinate in cycle_coords:
                 if self.test_stopped_by_user:
                     break
