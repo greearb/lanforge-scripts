@@ -838,6 +838,8 @@ class Youtube(Realm):
                 self.create_report()
             else:
                 self.create_robo_report()
+        else:
+            self.create_report()
             
         os._exit(0)
 
