@@ -6,7 +6,6 @@ from ppadb.client import Client as AdbClient
 import requests
 import pytz
 
-
 class ZoomAutomator:
     def __init__(
         self, host="127.0.0.1", port=5037, server_ip="127.0.0.1", server_port=5000
@@ -22,6 +21,7 @@ class ZoomAutomator:
         self.start_time = None
         self.end_time = None
         self.adb_device = None
+        self.stop_signal = False
 
     def set_device(self, serial):
         """Set the target device for automation using its ADB serial number."""
