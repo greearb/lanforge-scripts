@@ -25,6 +25,10 @@ Command Line Interface to run Zoom on multiple devices with Groups and Profiles
 python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
 --wait_time 30  --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
 
+Example-5:
+Command Line Interface to run Zoom test with robo feature
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --server_ip 192.168.214.123 --robo_ip 192.168.200.131 --coordinates 1,2 --rotations 30,40 --do_robo
+
 
 
 NOTES:
@@ -103,8 +107,8 @@ logger = logging.getLogger(__name__)
 
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
-robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
-# robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
+# robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
+robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 
 
 class ZoomAutomation(Realm):
@@ -140,6 +144,7 @@ class ZoomAutomation(Realm):
         api_stats_collection=False,
         do_webui=False,
         cycles=1,
+        bssids=None
     ):
 
         super().__init__(lfclient_host=lanforge_ip)
@@ -248,6 +253,7 @@ class ZoomAutomation(Realm):
         self.cycles = cycles
         self.from_cord = None
         self.to_cord = None
+        self.bssids=bssids or []
 
     def start_flask_server(self):
         @self.app.route("/login_url", methods=["GET", "POST"])
@@ -378,11 +384,11 @@ class ZoomAutomation(Realm):
                         stats["timestamp"] = timestamp
 
                         if self.do_bs:
-                            x, y, from_cord, to_cord = self.robo_obj.get_robot_pose()
+                            x, y, _, _ = self.robo_obj.get_robot_pose()
                             stats["X"] = x
                             stats["Y"] = y
-                            stats["From_Coord"] = from_cord
-                            stats["To_Coord"] = to_cord
+                            stats["From_Coord"] = self.from_cord
+                            stats["To_Coord"] = self.to_cord
                             sta_id = self.hostname_to_station_map.get(
                                 final_filename, None
                             )
@@ -572,8 +578,13 @@ class ZoomAutomation(Realm):
         """
         Gracefully shut down the application.
         """
+        if self.do_robo and self.api_stats_collection:
+                self.generate_report_from_data()
+        elif self.api_stats_collection:
+            self.generate_report_from_api()
+        self.generic_endps_profile.cleanup()
         logger.info("Initiating graceful shutdown...")
-        os.kill(os.getpid(), signal.SIGINT)
+        os._exit(0)
 
     def set_start_time(self):
         self.start_time = datetime.now(self.tz) + timedelta(seconds=60)
@@ -665,7 +676,7 @@ class ZoomAutomation(Realm):
             data = {
                 "alias": gen_name_a,
                 "shelf": shelf,
-                "resource": lanforge_res,
+                "resource": lanforge_res.split(".")[1],
                 "port": "eth0",
                 "type": "gen_generic",
             }
@@ -911,149 +922,198 @@ class ZoomAutomation(Realm):
         print(lf_stats_map)
 
         return lf_stats_map
+    
 
-    def add_bandsteering_report_section(self, report=None, report_path=None):
-        """
-        Bandsteering reporting (Robo-style):
-        Reads all Zoom stats CSVs from report directory and builds:
-        - BSSID change count graph per device
-        - Table of BSSID change events
-        """
-        if report is None:
-            logger.error("Bandsteering report: report object is None")
-            return
+    def add_bandsteering_report_section(self, report=None):
+        try:
 
-        if not self.do_bs:
-            logger.info("Bandsteering report skipped: do_bandsteering is False")
-            return
+            """
+            Bandsteering reporting (Robo-style):
+            Reads all zoom stats CSVs from report directory (self.path) and builds:
+            - BSSID change count graph per device
+            - Table of BSSID change events
+            """
+            if report is None:
+                logger.error("Bandsteering report: report object is None")
+                return
 
-        report_dir = report_path
-        if not report_dir or not os.path.isdir(report_dir):
-            logger.error(f"Bandsteering report: invalid report dir: {report_dir}")
-            return
+            report_dir = self.path
+            
+            if not report_dir or not os.path.isdir(report_dir):
+                logger.error(f"Bandsteering report: invalid report dir: {report_dir}")
+                return
 
-        logger.info(f"Bandsteering report dir: {report_dir}")
+            logging.info(f"Bandsteering report dir: {report_dir}")
 
-        csv_files = []
-        for client in self.real_sta_hostname:
-            client_csv_files = os.path.join(self.path, f"{client}.csv")
-            csv_files.append(client_csv_files)
+            # Search for CSV files in self.path
+            csv_files = glob.glob(os.path.join(report_dir, "*.csv"))
+            logging.info(f"Bandsteering CSV files found: {csv_files}")
 
-        if not csv_files:
-            logger.warning("No CSVs found in report dir for bandsteering")
-            return
+            if not csv_files:
+                logging.warning("No CSVs found in report dir for bandsteering")
+                return
 
-        # Section header
-        report.set_obj_html(
-            _obj_title="Band Steering Statistics",
-            _obj="This section summarizes BSSID changes observed while the robot moved between coordinates.",
-        )
-        report.build_objective()
+            report.set_obj_html(
+                _obj_title="Band Steering Statistics",
+                _obj="This section summarizes BSSID changes observed while the robot moved between coordinates."
+            )
+            report.build_objective()
 
-        for csv_file_path in csv_files:
-            try:
-                df = pd.read_csv(csv_file_path)
-            except Exception as e:
-                logger.error(f"Unable to read CSV {csv_file_path}: {e}", exc_info=True)
-                continue
+            allowed_bssids = set(self.bssids) if self.bssids else set()
 
-            required_cols = {"timestamp", "bssid", "From_Coord", "To_Coord", "channel"}
-            if not required_cols.issubset(df.columns):
-                logger.warning(
-                    f"Skipping {csv_file_path}: missing {required_cols - set(df.columns)}"
+            for csv_file_path in csv_files:
+                try:
+                    df = pd.read_csv(csv_file_path)
+                except Exception as e:
+                    logging.error(f"Unable to read CSV {csv_file_path}: {e}", exc_info=True)
+                    continue
+
+                # Rename columns to match the specific capitalization expected by this logic
+                # Your upload_stats method writes keys in lowercase (timestamp, bssid, channel)
+                df.rename(columns={
+                    'timestamp': 'TimeStamp', 
+                    'bssid': 'BSSID', 
+                    'channel': 'Channel'    
+                }, inplace=True)
+
+                required_cols = {"TimeStamp", "BSSID", "From_Coord", "To_Coord", "Channel"}
+                
+                # Check if this CSV actually contains bandsteering data (skip summary/other CSVs)
+                if not required_cols.issubset(df.columns):
+                    continue
+
+                device_name = os.path.basename(csv_file_path).replace(".csv", "")
+
+                # Clean columns
+                df["BSSID"] = df["BSSID"].fillna("NA").astype(str)
+                df["TimeStamp"] = df["TimeStamp"].fillna("NA").astype(str)
+                df["From_Coord"] = df["From_Coord"].fillna("NA").astype(str)
+                df["To_Coord"] = df["To_Coord"].fillna("NA").astype(str)
+                df["Channel"] = df["Channel"].fillna("NA").astype(str)
+
+                # Filter only configured BSSIDs (if provided)
+                if allowed_bssids:
+                    df = df[df["BSSID"].isin(allowed_bssids)]
+
+                if df.empty:
+                    logging.info(f"No matching BSSID rows for {device_name}")
+
+                # Detect change points
+                df["prev_bssid"] = df["BSSID"].shift()
+
+                mask = (
+                    (df["BSSID"] != df["prev_bssid"]) &
+                    (df["BSSID"] != "NA")
                 )
-                continue
 
-            device_name = os.path.basename(csv_file_path).split(
-                "_youtube_stats_report"
-            )[0]
+                bssid_list = df.loc[mask, "BSSID"].tolist()
+                timestamp_list = df.loc[mask, "TimeStamp"].tolist()
+                from_coordinate_list = df.loc[mask, "From_Coord"].tolist()
+                to_coordinate_list = df.loc[mask, "To_Coord"].tolist()
+                channel_list = df.loc[mask, "Channel"].tolist()
 
-            # Clean columns
-            df["bssid"] = df["bssid"].fillna("NA").astype(str)
-            df["timestamp"] = df["timestamp"].fillna("NA").astype(str)
-            df["From_Coord"] = df["From_Coord"].fillna("NA").astype(str)
-            df["To_Coord"] = df["To_Coord"].fillna("NA").astype(str)
-            df["channel"] = df["channel"].fillna("NA").astype(str)
+                skip_table = not mask.any()
 
-            # Change detection
-            mask = df["bssid"] != df["bssid"].shift()
+                # Count BSSID switches
+                if skip_table:
+                    # Ensure all expected BSSIDs show zero
+                    bssid_counts = {bssid: 0 for bssid in self.bssids}
+                else:
+                    bssid_counts = Counter(bssid_list)
 
-            bssid_list = df.loc[mask, "bssid"].tolist()
-            timestamp_list = df.loc[mask, "timestamp"].tolist()
-            from_coordinate_list = df.loc[mask, "From_Coord"].tolist()
-            to_coordinate_list = df.loc[mask, "To_Coord"].tolist()
-            channel_list = df.loc[mask, "channel"].tolist()
-            x_list = (
-                df.loc[mask, "X"].tolist()
-                if "X" in df.columns
-                else ["NA"] * len(bssid_list)
-            )
-            y_list = (
-                df.loc[mask, "Y"].tolist()
-                if "Y" in df.columns
-                else ["NA"] * len(bssid_list)
-            )
+                # Ensure consistent graph ordering
+                if self.bssids:
+                    final_bssid_counts = {
+                        bssid: bssid_counts.get(bssid, 0)
+                        for bssid in self.bssids
+                    }
+                else:
+                    final_bssid_counts = bssid_counts
 
-            if not bssid_list:
-                logger.info(f"No BSSID events found for {device_name}")
-                continue
+                x_axis = list(final_bssid_counts.keys())
+                y_axis = [[float(v)] for v in final_bssid_counts.values()]
 
-            # Count BSSID occurrences
-            bssid_counts = Counter(bssid_list)
-            x_axis = list(bssid_counts.keys())
-            y_axis = [[float(v)] for v in bssid_counts.values()]
+                report.set_obj_html(
+                    _obj_title=f"BSSID Change Count Of The Client {device_name}",
+                    _obj=" "
+                )
+                report.build_objective()
 
-            # Graph
-            report.set_obj_html(
-                _obj_title=f"BSSID Change Count Of The Client {device_name}", _obj=" "
-            )
-            report.build_objective()
+                graph = lf_bar_graph(
+                    _data_set=y_axis,
+                    _xaxis_name="BSSID",
+                    _yaxis_name="Number of Changes",
+                    _xaxis_categories=[""],
+                    _xaxis_label=x_axis,
+                    _graph_image_name=f"zoom_bssid_change_count_{device_name}",
+                    _label=x_axis,
+                    _xaxis_step=1,
+                    _graph_title=f"Zoom Bandsteering: BSSID change count for device : {device_name}",
+                    _title_size=16,
+                    _bar_width=0.15,
+                    _figsize=(18, 6),
+                    _dpi=96,
+                    _show_bar_value=True,
+                    _enable_csv=True,
+                )
 
-            graph = lf_bar_graph(
-                _data_set=y_axis,
-                _xaxis_name="BSSID",
-                _yaxis_name="Number of Changes",
-                _xaxis_categories=[""],
-                _xaxis_label=x_axis,
-                _graph_image_name=f"zoom_bssid_change_count_{device_name}",
-                _label=x_axis,
-                _xaxis_step=1,
-                _graph_title=f"Zoom Bandsteering: BSSID change count for device : {device_name}",
-                _title_size=16,
-                _bar_width=0.15,
-                _figsize=(18, 6),
-                _dpi=96,
-                _show_bar_value=True,
-                _enable_csv=True,
-            )
+                graph_png = graph.build_bar_graph()
+                report.set_graph_image(graph_png)
+                report.move_graph_image()
+                report.set_csv_filename(graph_png)
+                report.move_csv_file()
+                report.build_graph()
 
-            graph_png = graph.build_bar_graph()
-            report.set_graph_image(graph_png)
-            report.move_graph_image()
-            report.set_csv_filename(graph_png)
-            report.move_csv_file()
-            report.build_graph()
+                if skip_table:
+                    report.set_obj_html(
+                        _obj_title=f"Band Steering Results for {device_name}",
+                        _obj="No band steering events observed for the configured BSSID list."
+                    )
+                    report.build_objective()
+                    continue
 
-            # Table
-            report.set_obj_html(
-                _obj_title=f"Band Steering Results for {device_name}", _obj=" "
-            )
-            report.build_objective()
+                report.set_obj_html(
+                    _obj_title=f"Band Steering Results for {device_name}",
+                    _obj=" "
+                )
+                report.build_objective()
 
-            table_df = pd.DataFrame(
-                {
+                table_df = pd.DataFrame({
                     "TimeStamp": timestamp_list,
                     "BSSID": bssid_list,
                     "Channel": channel_list,
                     "From Coordinate": from_coordinate_list,
                     "To Coordinate": to_coordinate_list,
-                    # "X": x_list,
-                    # "Y": y_list
-                }
-            )
+                })
 
-            report.set_table_dataframe(table_df)
-            report.build_table()
+                report.set_table_dataframe(table_df)
+                report.build_table()
+
+            # Handle Charging Timestamps (Check if robo_obj exists first)
+            if hasattr(self, 'robo_obj') and hasattr(self.robo_obj, 'charging_timestamps') and len(self.robo_obj.charging_timestamps) != 0:
+                report.set_obj_html(_obj_title="Charging Timestamps",
+                                    _obj="")
+                report.build_objective()
+                df = pd.DataFrame(
+                    self.robo_obj.charging_timestamps,
+                    columns=[
+                        "charge_dock_arrival_timestamp",
+                        "charging_completion_timestamp"
+                    ]
+                )
+                # Add S.No column
+                df.insert(0, "S.No", range(1, len(df) + 1))
+                report.set_table_dataframe(df)
+                report.build_table()
+            else:
+                report.set_obj_html(_obj_title="Charging Timestamps",
+                                    _obj="Robot did not go to charge during this test")
+                report.build_objective()
+        except Exception as e:
+            logger.error(f"Exeception Occured {e}")
+            logger.error("Error Occured ", exc_info= True)
+
+   
 
     def run(self):
         self.create_host()
@@ -1120,12 +1180,10 @@ class ZoomAutomation(Realm):
 
                 time.sleep(5)
 
-        if self.api_stats_collection:
-            if self.do_bs:
-                self.stop_signal = True
-                time.sleep(10)
-
-            self.get_final_qos_data()
+        # if self.api_stats_collection:
+        #     self.stop_signal = True
+        #     time.sleep(10)
+            # self.get_final_qos_data()
 
         self.generic_endps_profile.stop_cx()
         self.generic_endps_profile.cleanup()
@@ -2323,15 +2381,14 @@ class ZoomAutomation(Realm):
         )
 
         # Zoom QoS data is typically available ~20 seconds after meeting end.
-        # We wait 60 seconds to be safe and simplify the logic.
-        wait_time = 100
+        # We wait 150 seconds to be safe and simplify the logic.
+        wait_time = 150
         logger.info(
             f"Waiting {wait_time} seconds for Zoom servers to index past meeting QoS data..."
         )
         time.sleep(wait_time)
 
         # 3. Fetch Data (Try 'Past' first, fallback to 'Live')
-        self.participants_qos_last = {}
 
         try:
             logger.info("Attempting to fetch 'past' meeting data...")
@@ -2388,11 +2445,11 @@ class ZoomAutomation(Realm):
 
                     # Add Robot/BS specific data
                     if self.do_bs:
-                        x, y, from_cord, to_cord = self.robo_obj.get_robot_pose()
+                        x, y, _, _ = self.robo_obj.get_robot_pose()
                         stats["X"] = x
                         stats["Y"] = y
-                        stats["From_Coord"] = from_cord
-                        stats["To_Coord"] = to_cord
+                        stats["From_Coord"] = self.from_cord
+                        stats["To_Coord"] = self.to_cord
 
                         sta_id = self.hostname_to_station_map.get(final_filename, None)
                         if sta_id in lf_wifi_data:
@@ -2665,8 +2722,9 @@ and downstream traffic"""
             )
             self.report.build_text_simple()
 
+            # ============================================================
             # audio bitrate graph
-            self.report.set_graph_title("a. Audio Bitrate (Sent/Received)")
+            self.report.set_graph_title("a. Audio Bitrate (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -2710,17 +2768,18 @@ and downstream traffic"""
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Audio Bitrate(sent/received)",
-                _graph_image_name="Audio Bitrate(sent and received)",
-                _label=["Avg Sent", "Avg Recv"],
+                _graph_title="Audio Bitrate(Recevied/Sent)",
+                _graph_image_name="Audio Bitrate(Recevied and Sent)",
+                _label=["Avg Recv", "Avg Sent"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             self.report.set_graph_image(graph_image)
             self.report.move_graph_image()
             self.report.build_graph()
 
+            # ============================================================
             # audio latency graph
-            self.report.set_graph_title("b. Audio Latency (Sent/Received)")
+            self.report.set_graph_title("b. Audio Latency (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -2763,17 +2822,18 @@ and downstream traffic"""
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Audio Latency(sent/received)",
-                _graph_image_name="Audio Latency(sent and received)",
-                _label=["Avg Sent", "Avg Recv"],
+                _graph_title="Audio Latency(received/sent)",
+                _graph_image_name="Audio Latency(received and sent)",
+                _label=["Avg Recv", "Avg Sent"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             self.report.set_graph_image(graph_image)
             self.report.move_graph_image()
             self.report.build_graph()
 
+            #============================================================
             # audio jitter graph
-            self.report.set_graph_title("c. Audio Jitter (Sent/Received)")
+            self.report.set_graph_title("c. Audio Jitter (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -2816,16 +2876,18 @@ and downstream traffic"""
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Audio Jitter(sent/received)",
-                _graph_image_name="Audio Jitter(sent and received)",
-                _label=["Avg Sent", "Avg Recv"],
+                _graph_title="Audio Jitter(Received/Sent)",
+                _graph_image_name="Audio Jitter(received and Sent)",
+                _label=["Avg Recv", "Avg Sent"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             self.report.set_graph_image(graph_image)
             self.report.move_graph_image()
             self.report.build_graph()
+
+            # ================================================================
             # audio packet loss graph
-            self.report.set_graph_title("d. Audio Packet Loss (Sent/Received)")
+            self.report.set_graph_title("d. Audio Packet Loss (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -2868,9 +2930,9 @@ and downstream traffic"""
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Audio Packet Loss(sent/received)",
-                _graph_image_name="Audio Packet Loss(sent and received)",
-                _label=["Avg Sent", "Avg Recv"],
+                _graph_title="Audio Packet Loss(Recevied/Sent)",
+                _graph_image_name="Audio Packet Loss(Recevied and Sent)",
+                _label=["Avg Recv", "Avg Sent"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             self.report.set_graph_image(graph_image)
@@ -2882,7 +2944,7 @@ and downstream traffic"""
             audio_test_details = pd.DataFrame(
                 {
                     "Device Name": [client for client in self.real_sta_hostname],
-                    "Avg Bitrate (kbps) [sent/Received]": [
+                    "Avg Bitrate (kbps) [Recevied/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -2909,7 +2971,7 @@ and downstream traffic"""
                         )
                         for index, client in enumerate(self.real_sta_hostname)
                     ],
-                    "Avg Latency (ms) [sent/Received]": [
+                    "Avg Latency (ms) [Recevied/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -2936,7 +2998,7 @@ and downstream traffic"""
                         )
                         for index, client in enumerate(self.real_sta_hostname)
                     ],
-                    "Avg Jitter (ms) [sent/Received]": [
+                    "Avg Jitter (ms) [Recevied/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -2963,7 +3025,7 @@ and downstream traffic"""
                         )
                         for index, client in enumerate(self.real_sta_hostname)
                     ],
-                    "Avg Pkt Loss (%) [sent/Received]": [
+                    "Avg Pkt Loss (%) [Recevied/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -3008,8 +3070,9 @@ and downstream traffic"""
             )
             self.report.build_text_simple()
 
+            #=============================================================
             # video bitrate graph
-            self.report.set_graph_title("a. Video Bitrate (Sent/Received)")
+            self.report.set_graph_title("a. Video Bitrate (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -3052,17 +3115,18 @@ and downstream traffic"""
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Video Bitrate(sent/received)",
-                _graph_image_name="Video Bitrate(sent and received)",
-                _label=["Avg Sent", "Avg Recv"],
+                _graph_title="Video Bitrate(Recevied/Sent)",
+                _graph_image_name="Video Bitrate(Recevied and Sent)",
+                _label=["Avg Recv", "Avg Sent"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             self.report.set_graph_image(graph_image)
             self.report.move_graph_image()
             self.report.build_graph()
 
+            #=============================================================
             # video latency graph
-            self.report.set_graph_title("b. Video Latency (Sent/Received)")
+            self.report.set_graph_title("b. Video Latency (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -3105,16 +3169,18 @@ and downstream traffic"""
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Video Latency(sent/received)",
-                _graph_image_name="Video Latency(sent and received)",
-                _label=["Avg Sent", "Avg Recv"],
+                _graph_title="Video Latency(Recevied/Sent)",
+                _graph_image_name="Video Latency(Recevied and Sent)",
+                _label=["Avg Recv", "Avg Sent"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             self.report.set_graph_image(graph_image)
             self.report.move_graph_image()
             self.report.build_graph()
+
+            # ============================================================
             # video jitter graph
-            self.report.set_graph_title("c. Video Jitter (Sent/Received)")
+            self.report.set_graph_title("c. Video Jitter (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -3157,16 +3223,18 @@ and downstream traffic"""
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Video Jitter(sent/received)",
-                _graph_image_name="Video Jitter(sent and received)",
-                _label=["Avg Sent", "Avg Recv"],
+                _graph_title="Video Jitter(Recevied/Sent)",
+                _graph_image_name="Video Jitter(Recevied and sent)",
+                _label=["Avg Recv", "Avg Sent"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             self.report.set_graph_image(graph_image)
             self.report.move_graph_image()
             self.report.build_graph()
+
+            #============================================
             # video packet loss graph
-            self.report.set_graph_title("d. Video Packet Loss (Sent/Received)")
+            self.report.set_graph_title("d. Video Packet Loss (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -3209,9 +3277,9 @@ and downstream traffic"""
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Video Packet Loss(sent/received)",
-                _graph_image_name="Video Packet Loss(sent and received)",
-                _label=["Avg Sent", "Avg Recv"],
+                _graph_title="Video Packet Loss(Recevied/Sent)",
+                _graph_image_name="Video Packet Loss(Recevied and Sent)",
+                _label=["Avg Recv", "Avg Sent"],
             )
             graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
             self.report.set_graph_image(graph_image)
@@ -3223,7 +3291,7 @@ and downstream traffic"""
             video_test_details = pd.DataFrame(
                 {
                     "Device Name": [client for client in self.real_sta_hostname],
-                    "Avg Bitrate (kbps) [sent/Received]": [
+                    "Avg Bitrate (kbps) [Recevied/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -3250,7 +3318,7 @@ and downstream traffic"""
                         )
                         for index, client in enumerate(self.real_sta_hostname)
                     ],
-                    "Avg Latency (ms) [sent/Received]": [
+                    "Avg Latency (ms) [Recevied/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -3277,7 +3345,7 @@ and downstream traffic"""
                         )
                         for index, client in enumerate(self.real_sta_hostname)
                     ],
-                    "Avg Jitter (ms) [sent/Received]": [
+                    "Avg Jitter (ms) [Received/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -3304,7 +3372,7 @@ and downstream traffic"""
                         )
                         for index, client in enumerate(self.real_sta_hostname)
                     ],
-                    "Avg Pkt Loss (%) [sent/Received]": [
+                    "Avg Pkt Loss (%) [Recevied/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -3340,7 +3408,7 @@ and downstream traffic"""
             self.report.html += self.report.dataframe_html
         if self.do_bs:
             self.add_bandsteering_report_section(
-                report=self.report, report_path=report_path_date_time
+                report=self.report
             )
         self.report.write_html()
         self.report.write_pdf(_page_size="Legal", _orientation="Landscape")
@@ -3554,6 +3622,7 @@ and downstream traffic"""
             logger.info(f"Upstream port IP {upstream_port}")
         else:
             logger.info(f"Upstream port IP {upstream_port}")
+        self.upstream_port = upstream_port
 
         return upstream_port
 
@@ -3768,7 +3837,7 @@ and downstream traffic"""
     def create_participants(self):
         for i in range(1, len(self.real_sta_os_type)):
             if self.real_sta_os_type[i] == "android":
-
+                print("=============================")
                 print(self.lanforge_port_list[i])
 
                 status, created_cx, created_endp = self.create_android(
@@ -3784,7 +3853,7 @@ and downstream traffic"""
                     f"--serial {self.serial_list[i]} "
                     f"--meeting_url '{self.meet_link}' "
                     f"--participant_name '{self.real_sta_hostname[i]}' "
-                    f"--server_host {self.upstream_port} "
+                    f"--server_host {self.mgr_ip} "
                     f"--server_port 5000"
                 )
                 self.generic_endps_profile.set_cmd(
@@ -4012,6 +4081,7 @@ and downstream traffic"""
                             raw_data = json.load(f)
                         # Parse data to get per-device averages
                         device_data = self.summarize_audio_video(raw_data)
+                        print("checking device data in robo report")
                         print(device_data)
                     except Exception as e:
                         logger.error(f"Error reading {found_files[0]}: {e}")
@@ -4139,17 +4209,18 @@ and downstream traffic"""
         sent_vals = []
         recv_vals = []
 
-        for index, client in enumerate(self.real_sta_hostname):
-            # Handle Host vs Client logic
-            device_key = client if index != 0 else "Host Device"
+        # Iterate directly through hostnames
+        for client in self.real_sta_hostname:
+            # Use the hostname directly as the key to fetch data
+            device_key = client
 
             # Safe Get
             def get_val(key):
                 val = data.get(device_key, {}).get(key)
                 return val if val is not None else 0
 
-            sent_vals.append(get_val(input_key))
-            recv_vals.append(get_val(output_key))
+            sent_vals.append(get_val(output_key))
+            recv_vals.append(get_val(input_key))
 
         # Generate Graph
         bar_graph = lf_bar_graph_horizontal(
@@ -4170,30 +4241,31 @@ and downstream traffic"""
     def _build_results_table(self, data, media_type):
         """Helper for Summary Table"""
 
-        def fmt_val(client, index, key):
-            device_key = client if index != 0 else "Host Device"
-            val = data.get(device_key, {}).get(key)
+        def fmt_val(client, key):
+            val = data.get(client, {}).get(key)
             return val if val is not None else 0
 
         p = media_type
+        
         details = pd.DataFrame(
             {
                 "Device Name": self.real_sta_hostname,
+                # FIXED: Sent uses 'output', Received uses 'input'
                 "Avg Bitrate (kbps) [S/R]": [
-                    f"{fmt_val(c, i, f'{p}_input_bitrate_avg')}/{fmt_val(c, i, f'{p}_output_bitrate_avg')}"
-                    for i, c in enumerate(self.real_sta_hostname)
+                    f"{fmt_val(c, f'{p}_output_bitrate_avg')}/{fmt_val(c, f'{p}_input_bitrate_avg')}"
+                    for c in self.real_sta_hostname
                 ],
                 "Avg Latency (ms) [S/R]": [
-                    f"{fmt_val(c, i, f'{p}_input_latency_avg')}/{fmt_val(c, i, f'{p}_output_latency_avg')}"
-                    for i, c in enumerate(self.real_sta_hostname)
+                    f"{fmt_val(c, f'{p}_output_latency_avg')}/{fmt_val(c, f'{p}_input_latency_avg')}"
+                    for c in self.real_sta_hostname
                 ],
                 "Avg Jitter (ms) [S/R]": [
-                    f"{fmt_val(c, i, f'{p}_input_jitter_avg')}/{fmt_val(c, i, f'{p}_output_jitter_avg')}"
-                    for i, c in enumerate(self.real_sta_hostname)
+                    f"{fmt_val(c, f'{p}_output_jitter_avg')}/{fmt_val(c, f'{p}_input_jitter_avg')}"
+                    for c in self.real_sta_hostname
                 ],
                 "Avg Pkt Loss (%) [S/R]": [
-                    f"{fmt_val(c, i, f'{p}_input_avg_loss_avg')}/{fmt_val(c, i, f'{p}_output_avg_loss_avg')}"
-                    for i, c in enumerate(self.real_sta_hostname)
+                    f"{fmt_val(c, f'{p}_output_avg_loss_avg')}/{fmt_val(c, f'{p}_input_avg_loss_avg')}"
+                    for c in self.real_sta_hostname
                 ],
             }
         )
@@ -4441,7 +4513,7 @@ def main():
         parser.add_argument("--account_id", help="Zoom Account ID")
         parser.add_argument("--client_id", help="Zoom Client ID")
         parser.add_argument("--client_secret", help="Zoom Client Secret")
-        parser.add_argument("--env_file", help="Path to .env file for credentials")
+        parser.add_argument("--env_file", default=".env", help="Path to .env file for credentials")
         parser.add_argument(
             "--download_csv",
             action="store_true",
@@ -4472,6 +4544,8 @@ def main():
         parser.add_argument(
             "--cycles", type=int, default=1, help="Number of cycles to run the test"
         )
+
+        parser.add_argument('--bssids', type=str, help='Comma-separated list of BSSIDs for bandsteering test')
 
         args = parser.parse_args()
 
@@ -4541,6 +4615,7 @@ def main():
                 exit(0)
 
             rotations_enabled = False
+            bssids = []
             if args.do_robo or args.do_bs:
                 args.coordinates = (
                     args.coordinates.split(",") if args.coordinates else []
@@ -4552,6 +4627,10 @@ def main():
                 )
                 if args.rotations:
                     rotations_enabled = True
+                
+                if args.bssids:
+                    bssids = args.bssids.split(",") if args.bssids else []
+
 
             zoom_automation = ZoomAutomation(
                 audio=args.audio,
@@ -4577,6 +4656,7 @@ def main():
                 api_stats_collection=args.api_stats_collection,
                 do_webui=args.do_webUI,
                 cycles=args.cycles,
+                bssids=bssids
             )
             if args.download_csv:
                 zoom_automation.download_csv = True
