@@ -236,8 +236,9 @@ class HttpDownload(Realm):
         self.coordinate = coordinate
         self.rotation = rotation
         self.rotation_enabled = False
-        self.coordinate_list = coordinate.split(',')
-        self.rotation_list = rotation.split(',')
+        if self.robot_test:
+            self.coordinate_list = coordinate.split(',')
+            self.rotation_list = rotation.split(',')
         self.current_coordinate = ""
         self.current_angle = 0
         self.robot_data = {}
