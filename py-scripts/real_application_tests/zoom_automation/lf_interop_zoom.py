@@ -1362,12 +1362,12 @@ class ZoomAutomation(Realm):
         video_path = os.path.join(live_view_dir, video_img_name)
         audio_path = os.path.join(live_view_dir, audio_img_name)
 
-        timeout = 60  # seconds
+        timeout = 90  # seconds
         start_time = time.time()
 
         # 1. Wait for the Video image (Primary trigger)
         # We assume if Video is ready, Audio is likely ready or close behind.
-        while not os.path.exists(video_path):
+        while not (os.path.exists(video_path) and os.path.exists(audio_path)):
             if time.time() - start_time > timeout:
                 logger.error(f"Timeout: {video_img_name} not found within 60 seconds.")
                 break
@@ -1508,6 +1508,9 @@ class ZoomAutomation(Realm):
                     }
                 ]
             )
+
+            if self.do_bs:
+                test_parameters = test_parameters.drop(columns=["Test Duration(min)"], errors='ignore')
 
         report.set_table_dataframe(test_parameters)
         report.build_table()
