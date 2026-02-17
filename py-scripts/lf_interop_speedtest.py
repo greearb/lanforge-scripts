@@ -1,4 +1,54 @@
+'''
+    NAME: lf_interop_speedtest.py
 
+    PURPOSE:
+        The lf_interop_speedtest.py script enables real-world WiFi speed testing for laptop-based clients
+        (Linux, Windows, macOS) and Android mobile devices. iOS is not supported.
+
+        Instead, it focuses on measuring actual end-user experience by capturing metrics such as download/upload speed,
+        latency (ping). The script uses the Speedtest.net service (via browser automation for laptops) to run the tests.
+
+    TO PERFORM SPEED TEST:
+
+        EXAMPLE-1:
+            Run a default speed test using browser-based automation (Selenium)
+            ./lf_interop_speedtest.py \
+                --mgr 192.168.204.74 \
+                --device_list 1.10,1.12 \
+                --instance_name SAMPLE_TEST \
+                --iteration 1 \
+                --upstream_port eth2 \
+                --cleanup
+
+        EXAMPLE-2:
+            Run speed test on robot with each coordinate and rotation
+            ./lf_interop_speedtest.py \
+                --mgr 192.168.204.75 \
+                --device_list 1.10,1.12 \
+                --instance_name SAMPLE_TEST \
+                --iteration 1 \
+                --robot_test \
+                --coordinate 1,2 \
+                --rotation 0,90 \
+                --robot_ip 127.0.0.1:5000 \
+                --upstream_port eth2 \
+                --cleanup
+
+        EXAMPLE-3:
+            Run speed test on robot with each coordinate without rotation
+            ./lf_interop_speedtest.py \
+                --mgr 192.168.204.75 \
+                --device_list 1.10,1.12 \
+                --instance_name SAMPLE_TEST \
+                --iteration 1 \
+                --robot_test \
+                --coordinate 1,2 \
+                --robot_ip 127.0.0.1:5000 \
+                --upstream_port eth2 \
+                --cleanup
+
+'''
+import json
 import sys
 import os
 import csv
@@ -6,20 +56,25 @@ import time
 import shutil
 import importlib
 import logging
-from click import Path
 import paramiko
 import argparse
 import pandas as pd
 from datetime import datetime
+from tabulate import tabulate
 import threading
-from typing import Dict
 
-# Flask is optional; only import when used
+if 'py-json' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+
+from lf_graph import lf_bar_graph
+from lf_report import lf_report
 try:
-    from tabulate import tabulate
-except:
     pass
+    from lf_base_robo import RobotClass  # REAL
+except ImportError:
+    print("[WARN] lf_base_robo not found")
 
+# from lf_robo_base_class import RobotClass  # Fake
 
 logger = logging.getLogger(__name__)
 
@@ -27,38 +82,41 @@ if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
 
-sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-from lf_report import lf_report
-from lf_graph import lf_bar_graph
-
-interop_connectivity = importlib.import_module("py-json.interop_connectivity")
 
 
 class SpeedTest(Realm):
-    def __init__(self,
-                manager_ip=None,
-                port=8080,
-                device_list=None,
-                instance="Speed_Test_Report",
-                iteration=1,
-                do_interopability=False,
-                dowebgui=False,
-                type='ookla',
-                result_dir='local',
-                _debug_on=False):
-        super().__init__(lfclient_host=manager_ip,
-                        debug_=_debug_on)
+    def __init__(
+            self,
+            manager_ip=None,
+            port=8080,
+            device_list=None,
+            instance="Speed_Test_Report",
+            iteration=1,
+            do_interopability=False,
+            type='ookla',
+            result_dir=None,
+            _debug_on=False,
+            robot_test=False,
+            robot_ip=None,
+            coordinate=None,
+            rotation=None,
+            upstream_port=None):
+        super().__init__(
+            lfclient_host=manager_ip,
+            debug_=_debug_on)
         self.manager_ip = manager_ip
         self.manager_port = port
+        self.upstream_port = upstream_port
+
         self.device_list = device_list
         self.instance = instance
         self.iteration = iteration
         self.do_interopability = do_interopability
-        self.dowebgui = dowebgui
         self.result_dir = result_dir
-        self.type=type
+        self.type = type
         self.devices_data = {}
         self.android_data = {}
         self.laptop_data = {}
@@ -74,46 +132,553 @@ class SpeedTest(Realm):
         self._flask_thread = None
         self._post_url = None
 
-        if self.dowebgui:
-            print('Initiating Server for WebGUI Ingest')
-            self.change_port_to_ip()
+        self.robot_test = robot_test
+        self.robot_ip = robot_ip
+        self.robot_port = 5000
+        self.coordinate = coordinate
+        self.rotation = rotation
+
+        self.coordinate_list = coordinate.split(',') if coordinate else []
+        if self.rotation is not None:
+            self.rotation_list = rotation.split(',') if rotation else []
+        else:
+            self.rotation_list = None
+
+        self.current_coordinate = None
+        self.current_rotation = None
+        self.robot_iteration_count = 0
+        self.total_robot_tests = 0
+        if self.robot_test:
+            if self.rotation_list and self.rotation_list[0] != "":
+                self.total_robot_tests = len(self.coordinate_list) * len(self.rotation_list)
+            else:
+                self.total_robot_tests = len(self.coordinate_list)
+
+        if self.coordinate is not None:
+            base_dir = os.path.dirname(os.path.dirname(self.result_dir))
+            nav_data = os.path.join(base_dir, 'nav_data.json')
+            with open(nav_data, "w") as file:
+                json.dump({}, file)
+
+            self.robot_obj = RobotClass(robo_ip=self.robot_ip)  # REAL
+            self.robot_obj.nav_data_path = nav_data  # REAL
+
+            # self.robot_obj = RobotClass() # Fake
+            # self.robot_obj.result_directory=os.path.dirname(nav_data) # Fake
+            # self.robot_obj.robo_ip = f"{self.robot_ip}"  # Fake
+            self.robot_obj.runtime_dir = self.result_dir
+            self.robot_obj.testname = self.instance
+
+        else:
+            self.robot_test = False
+        if self.upstream_port:
+            self.upstream_port = self.change_port_to_ip(self.upstream_port)
+            self._post_url = f"http://{self.upstream_port}:5050/api/speedtest"
+        else:
             self._post_url = f"http://{self.manager_ip}:5050/api/speedtest"
-            self._start_ingest_server() 
-        #reporting variable
+
+        self._start_ingest_server()
+
+        # reporting variable
         self.selected_device_type = set()
         self.selected_resources = None
         self.ip_hostname = {}
         self.result_dict = {
-                            'ip':[],
-                            'hostname':[],
-                            'download_speed':[],
-                            'upload_speed':[],
-                            'download_lat':[],
-                            'upload_lat':[]
-                        }
+            'ip': [],
+            'hostname': [],
+            'download_speed': [],
+            'upload_speed': [],
+            'download_lat': [],
+            'upload_lat': []
+        }
         self.iteration_dict = {}
 
+    def get_expected_post_ips(self):
+        """Get list of IP addresses expected to POST speed test results to the ingest server.
 
-    def change_port_to_ip(self):
-            if self.manager_ip.count('.') != 3:
-                target_port_list = self.name_to_eid(self.manager_ip)
-                shelf, resource, port, _ = target_port_list
+        Returns:
+            list: List of IP addresses configured with --post_url in their test commands
+        """
+        want = []
+        for info in self.devices_data.values():
+            cmd = (info.get('cmd') or '')
+            ip = (info.get('ip') or '')
+            if ip and '--post_url' in cmd:
+                want.append(ip)
+        # de-dup (stable)
+        seen, out = set(), []
+        for ip in want:
+            if ip not in seen:
+                seen.add(ip)
+                out.append(ip)
+        return out
+
+    def has_post_for(self, ip):
+        """Check if speed test results have been received from a specific IP address.
+
+        Args:
+            ip (str): IP address to check for received results
+
+        Returns:
+            bool: True if results have been received, False otherwise
+        """
+        k = ip.replace('.', '_')
+        return (k in self.result_json) or (ip in self.result_json)
+
+    def write_results_to_csv(self, current_iter, csv_file):
+        """Write speed test results to CSV file for a specific iteration.
+        Args:
+            current_iter (int): Current iteration number
+            csv_file (str): Path to CSV file for storing results
+        """
+
+        csv_exists = os.path.isfile(csv_file)
+
+        csv_data = []
+        table_data = []
+
+        received = {}
+        for raw_ip, data in self.result_json.items():
+            ip = raw_ip.replace('_', '.')
+            received[ip] = {
+                "download": data.get("download", "N/A"),
+                "upload": data.get("upload", "N/A"),
+                "Idle Latency": data.get("Idle Latency", "N/A"),
+                "Download Latency": data.get("Download Latency", "N/A"),
+                "Upload Latency": data.get("Upload Latency", "N/A"),
+            }
+
+        expected_ips = list(self.ip_hostname.keys()) or list(self.device_info.keys())
+
+        for ip, data in received.items():
+            dev_type = self.device_info.get(ip, "N/A")
+            hostname_safe = self.ip_hostname.get(ip, ip)
+
+            download = data["download"]
+            upload = data["upload"]
+            idle_latency = data["Idle Latency"]
+            down_latency = data["Download Latency"]
+            up_latency = data["Upload Latency"]
+            csv_data.append([
+                current_iter, self.iteration, ip, dev_type,
+                download, upload, idle_latency, down_latency, up_latency
+            ])
+            table_data.append([
+                current_iter, self.iteration, ip, dev_type,
+                download, upload, idle_latency, down_latency, up_latency
+            ])
+
+            self.result_dict['ip'].append(ip)
+            self.result_dict['hostname'].append(hostname_safe)
+
+            def _num(x):
                 try:
-                    target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
-                    self.manager_ip = target_port_ip
-                except BaseException:
-                    logging.warning(f'The Server port is not an ethernet port. Proceeding with the given {self.manager_ip}.')
-                logging.info(f"Server port IP {self.manager_ip}")
-            else:
-                logging.info(f"Server port IP {self.manager_ip}")
+                    return float(str(x).split()[0])
+                except Exception:
+                    return 0.0
 
-            self.manager_ip = self.manager_ip
+            self.result_dict['download_speed'].append(_num(download))
+            self.result_dict['upload_speed'].append(_num(upload))
+            self.result_dict['download_lat'].append(_num(down_latency))
+            self.result_dict['upload_lat'].append(_num(up_latency))
+
+        missing_ips = [ip for ip in expected_ips if ip not in received]
+        for ip in missing_ips:
+            dev_type = self.device_info.get(ip, "N/A")
+            hostname_safe = self.ip_hostname.get(ip, ip)
+            csv_data.append([
+                current_iter, self.iteration, ip, dev_type,
+                "N/A", "N/A", "N/A", "N/A", "N/A"
+            ])
+            table_data.append([
+                current_iter, self.iteration, ip, dev_type,
+                "N/A", "N/A", "N/A", "N/A", "N/A"
+            ])
+
+            self.result_dict['ip'].append(ip)
+            self.result_dict['hostname'].append(hostname_safe)
+            self.result_dict['download_speed'].append(0.0)
+            self.result_dict['upload_speed'].append(0.0)
+            self.result_dict['download_lat'].append(0.0)
+            self.result_dict['upload_lat'].append(0.0)
+
+        self.iteration_dict[current_iter] = self.result_dict
+        self.result_dict = {
+            'ip': [],
+            'hostname': [],
+            'download_speed': [],
+            'upload_speed': [],
+            'download_lat': [],
+            'upload_lat': []
+        }
+
+        with open(csv_file, "a", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            if not csv_exists:
+                writer.writerow([
+                    "Iteration", "Total Iterations", "IP", "Device Type",
+                    "Download", "Upload", "Idle Latency", "Download Latency", "Upload Latency"
+                ])
+            writer.writerows(csv_data)
+
+        print(f"\n Speedtest Results for Iteration {current_iter}")
+        try:
+            from tabulate import tabulate
+            print(tabulate(
+                table_data,
+                headers=[
+                    "Iteration", "Total Iterations", "IP", "Device Type",
+                    "Download", "Upload", "Idle Latency", "Download Latency", "Upload Latency"],
+                tablefmt="fancy_grid",
+                disable_numparse=True
+            ))
+        except Exception:
+            headers = [
+                "Iteration", "Total Iterations", "IP", "Device Type",
+                "Download", "Upload", "Idle Latency", "Download Latency", "Upload Latency"]
+            print("\t".join(headers))
+            for row in table_data:
+                print("\t".join(str(item) for item in row))
+
+        if missing_ips:
+            print(f"[NOTE] No data received for iteration {current_iter} from: {', '.join(missing_ips)} (filled with N/A)")
+        print("=" * 158)
+
+    def write_robot_results_to_csv(self, test_number, csv_file):
+        """Write robot-assisted test results to CSV file with robot metadata.
+
+        Args:
+            test_number (int): Current robot test iteration number
+            csv_file (str): Path to CSV file for storing results
+        """
+
+        csv_exists = os.path.isfile(csv_file)
+        csv_data = []
+        table_data = []
+
+        # Normalize keys we received this test
+        received = {}
+        for raw_ip, data in self.result_json.items():
+            ip = raw_ip.replace('_', '.')
+            received[ip] = {
+                "download": data.get("download", "N/A"),
+                "upload": data.get("upload", "N/A"),
+                "Idle Latency": data.get("Idle Latency", "N/A"),
+                "Download Latency": data.get("Download Latency", "N/A"),
+                "Upload Latency": data.get("Upload Latency", "N/A"),
+            }
+
+        # Expected devices
+        expected_ips = list(self.ip_hostname.keys()) or list(self.device_info.keys())
+
+        # Emit rows for devices
+        for ip, data in received.items():
+            dev_type = self.device_info.get(ip, "N/A")
+
+            download = data["download"]
+            upload = data["upload"]
+            idle_latency = data["Idle Latency"]
+            down_latency = data["Download Latency"]
+            up_latency = data["Upload Latency"]
+
+            # Add robot-specific columns
+            csv_data.append([
+                test_number,
+                self.total_robot_tests,
+                self.current_coordinate,
+                self.current_rotation,
+                ip,
+                dev_type,
+                download,
+                upload,
+                idle_latency,
+                down_latency,
+                up_latency,
+                "RUNNING"
+            ])
+
+            # Add to table data
+            table_data.append([
+                test_number,
+                self.total_robot_tests,
+                self.current_coordinate,
+                self.current_rotation,
+                ip,
+                dev_type,
+                download,
+                upload,
+                idle_latency,
+                down_latency,
+                up_latency,
+                "RUNNING"
+            ])
+
+        # Handle missing devices
+        missing_ips = [ip for ip in expected_ips if ip not in received]
+        for ip in missing_ips:
+            dev_type = self.device_info.get(ip, "N/A")
+
+            csv_data.append([
+                test_number,
+                self.total_robot_tests,
+                self.current_coordinate,
+                self.current_rotation,
+                ip,
+                dev_type,
+                "N/A", "N/A", "N/A", "N/A", "N/A",
+                "RUNNING"
+            ])
+            table_data.append([
+                test_number,
+                self.total_robot_tests,
+                self.current_coordinate,
+                self.current_rotation,
+                ip,
+                dev_type,
+                "N/A", "N/A", "N/A", "N/A", "N/A",
+                "RUNNING"
+            ])
+
+        # Append to CSV
+        with open(csv_file, "a", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            if not csv_exists:
+                writer.writerow([
+                    "Robot Test Number", "Total Robot Tests", "Coordinate", "Rotation",
+                    "IP", "Device Type", "Download", "Upload",
+                    "Idle Latency", "Download Latency", "Upload Latency",
+                    "Status"
+                ])
+            writer.writerows(csv_data)
+
+        # Print table
+        print(f"\n Robot Speedtest Results for Test #{test_number}")
+        try:
+            from tabulate import tabulate
+            print(tabulate(
+                table_data,
+                headers=[
+                    "Test#", "Total", "Coordinate", "Rotation", "IP", "Device Type",
+                    "Download", "Upload", "Idle Latency", "Download Latency", "Upload Latency",
+                    "Status"
+                ],
+                tablefmt="fancy_grid",
+                disable_numparse=True
+            ))
+        except Exception:
+            headers = [
+                "Test#", "Total", "Coordinate", "Rotation", "IP", "Device Type",
+                "Download", "Upload", "Idle Latency", "Download Latency", "Upload Latency",
+                "Status"
+            ]
+            print("\t".join(headers))
+            for row in table_data:
+                print("\t".join(str(item) for item in row))
+
+        if missing_ips:
+            print(f"[NOTE] No data received for robot test {test_number} from: {', '.join(missing_ips)}")
+        print("=" * 158)
+
+    def store_robot_results_in_iteration_dict(self, test_number):
+        """Store robot test results in iteration dictionary for report generation.
+
+        Args:
+            test_number (int): Current robot test iteration number
+        """
+
+        # Initialize the result_dict for this test
+        self.result_dict = {
+            'ip': [],
+            'hostname': [],
+            'download_speed': [],
+            'upload_speed': [],
+            'download_lat': [],
+            'upload_lat': []
+        }
+
+        # Process received results
+        received = {}
+        for raw_ip, data in self.result_json.items():
+            ip = raw_ip.replace('_', '.')
+            received[ip] = {
+                "download": data.get("download", "N/A"),
+                "upload": data.get("upload", "N/A"),
+                "Idle Latency": data.get("Idle Latency", "N/A"),
+                "Download Latency": data.get("Download Latency", "N/A"),
+                "Upload Latency": data.get("Upload Latency", "N/A"),
+            }
+
+        # Expected devices
+        expected_ips = list(self.ip_hostname.keys()) or list(self.device_info.keys())
+
+        # Store data for devices that reported
+        for ip, data in received.items():
+            # dev_type = self.device_info.get(ip, "N/A")
+            hostname_safe = self.ip_hostname.get(ip, ip)
+
+            download = data["download"]
+            upload = data["upload"]
+            # idle_latency = data["Idle Latency"]
+            down_latency = data["Download Latency"]
+            up_latency = data["Upload Latency"]
+
+            # Accumulate into per-iter dicts for graphs/tables
+            self.result_dict['ip'].append(ip)
+            self.result_dict['hostname'].append(hostname_safe)
+
+            def _num(x):
+                try:
+                    # Handles values like "24.2 Mbps" or "114 ms" or "N/A"
+                    return float(str(x).split()[0])
+                except Exception:
+                    return 0.0
+
+            self.result_dict['download_speed'].append(_num(download))
+            self.result_dict['upload_speed'].append(_num(upload))
+            self.result_dict['download_lat'].append(_num(down_latency))
+            self.result_dict['upload_lat'].append(_num(up_latency))
+
+        # Handle missing devices
+        missing_ips = [ip for ip in expected_ips if ip not in received]
+        for ip in missing_ips:
+            self.device_info.get(ip, "N/A")
+            hostname_safe = self.ip_hostname.get(ip, ip)
+
+            # For graphs: use zeros so categories & lengths stay aligned
+            self.result_dict['ip'].append(ip)
+            self.result_dict['hostname'].append(hostname_safe)
+            self.result_dict['download_speed'].append(0.0)
+            self.result_dict['upload_speed'].append(0.0)
+            self.result_dict['download_lat'].append(0.0)
+            self.result_dict['upload_lat'].append(0.0)
+
+        # Store in iteration_dict using test_number as key
+        self.iteration_dict[test_number] = self.result_dict.copy()
+
+    def perform_single_robot_test(self, test_number, csv_file):
+        """Execute a single speed test iteration for robot-assisted testing.
+
+        Args:
+            test_number (int): Current robot test iteration number
+            csv_file (str): Path to CSV file for storing results
+        """
+
+        print(f"Starting speed test for robot test #{test_number}")
+
+        self.start_generic()
+        print(f"Test started at {self.start_time}")
+        time.sleep(50)  # Speedtest duration wait time
+        self.stop_generic()
+        # time.sleep(20)
+
+        # Wait for posts from all expected devices
+        expected_ips = self.get_expected_post_ips()
+        deadline = time.time() + 120
+        while time.time() < deadline:
+            got = [ip for ip in expected_ips if self.has_post_for(ip)]
+            if len(got) >= len(expected_ips):
+                break
+            time.sleep(1)
+
+        # Store results in iteration_dict for report generation
+        self.store_robot_results_in_iteration_dict(test_number)
+
+        # Write results with robot metadata
+        self.write_robot_results_to_csv(test_number, csv_file)
+        self.result_json = {}
+
+    def perform_robot_testing(self, csv_file):
+        """Execute robot-assisted testing across all coordinates and rotations.
+
+        Args:
+            csv_file (str): Path to CSV file for storing robot test results
+        """
+        test_count = 0
+        # Condition 1: Both coordinates and rotations provided
+        if self.rotation_list and self.rotation_list[0] != "":
+            for coord in self.coordinate_list:
+                coord = coord.strip()
+                print(f"Moving to coordinate: {coord}")
+                robo_moved, abort = self.robot_obj.move_to_coordinate(coord)
+
+                if robo_moved:
+                    for angle in self.rotation_list:
+                        pause_coord, test_stopped_by_user = self.robot_obj.wait_for_battery(self.cleanup)
+                        if pause_coord:
+                            print("Robot battery low. Pausing at current location to charge.")
+                            exit(0)
+
+                        # angle = angle.strip()
+                        print(f"Rotating to angle: {angle}")
+                        robo_rotated = self.robot_obj.rotate_angle(angle)
+
+                        if robo_rotated:
+                            test_count += 1
+                            self.current_coordinate = coord
+                            self.current_rotation = angle
+                            self.robot_iteration_count = test_count
+
+                            print(f"Starting robot test {test_count}/{self.total_robot_tests}")
+                            print(f"Coordinate: {coord}, Rotation: {angle}")
+
+                            # Perform the speed test
+                            self.perform_single_robot_test(test_count, csv_file)
+                        else:
+                            print(f"Failed to rotate to angle {angle}")
+                else:
+                    print(f"Failed to move to coordinate {coord}")
+
+        # Condition 2: Only coordinates provided (no rotations)
+        else:
+            for coord in self.coordinate_list:
+                pause_coord, test_stopped_by_user = self.robot_obj.wait_for_battery(self.cleanup)
+                if pause_coord:
+                    print("Robot battery low. Pausing at current location to charge.")
+                    exit(0)
+
+                coord = coord.strip()
+                print(f"Moving to coordinate: {coord}")
+                robo_moved = self.robot_obj.move_to_coordinate(coord)
+                if robo_moved:
+                    test_count += 1
+                    self.current_coordinate = coord
+                    self.current_rotation = "None"  # No rotation
+                    self.robot_iteration_count = test_count
+
+                    print(f"Starting robot test {test_count}/{self.total_robot_tests}")
+                    print(f"Coordinate: {coord}, Rotation: None")
+
+                    # Perform the speed test
+                    self.perform_single_robot_test(test_count, csv_file)
+                else:
+                    print(f"Failed to move to coordinate {coord}")
+
+        print(f"Completed {test_count} robot tests")
+
+    def change_port_to_ip(self, upstream_port):
+        if upstream_port.count('.') != 3:
+            target_port_list = self.name_to_eid(upstream_port)
+            shelf, resource, port, _ = target_port_list
+            try:
+                target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
+                upstream_port = target_port_ip
+            except BaseException:
+                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
+            logging.info(f"Upstream port IP {upstream_port}")
+        else:
+            logging.info(f"Upstream port IP {upstream_port}")
+
+        return upstream_port
 
     def _start_ingest_server(self):
+        """Start Flask server for ingesting speed test results via HTTP POST.
+
+        Creates a local server on port 5050 to receive test results from clients.
+        """
         try:
             from flask import Flask, request, jsonify
         except Exception:
-            print("[WARN] Flask not installed; --dowebgui ingest disabled.")
+            print("[WARN] Flask not installed; ingest disabled.")
             return
 
         app = Flask(__name__)
@@ -127,16 +692,16 @@ class SpeedTest(Realm):
         def _ingest():
             try:
                 payload = request.get_json(force=True) or {}
-                ip  = (payload.get("ip") or "").strip()
+                ip = (payload.get("ip") or "").strip()
                 host = payload.get("hostname")
                 key = ip.replace('.', '_') if ip else (payload.get("device_id") or payload.get("serial"))
                 rec = {
-                    "download":               f"{payload.get('download_mbps','0')} Mbps",
-                    "upload":                 f"{payload.get('upload_mbps','0')} Mbps",
-                    "Idle Latency":           f"{payload.get('idle_ms','0')} ms",
-                    "Download Latency":       f"{payload.get('download_latency_ms','0')} ms",
-                    "Upload Latency":         f"{payload.get('upload_latency_ms','0')} ms",
-                    "source":                 "ingest"
+                    "download": f"{payload.get('download_mbps', '0')} Mbps",
+                    "upload": f"{payload.get('upload_mbps', '0')} Mbps",
+                    "Idle Latency": f"{payload.get('idle_ms', '0')} ms",
+                    "Download Latency": f"{payload.get('download_latency_ms', '0')} ms",
+                    "Upload Latency": f"{payload.get('upload_latency_ms', '0')} ms",
+                    "source": "ingest"
                 }
 
                 print('[POST] got payload for key:', key, rec)
@@ -145,6 +710,7 @@ class SpeedTest(Realm):
                     if ip and host:
                         parent.ip_hostname[ip] = host
                 print("[INGEST] stored under key:", key)
+                print('Current result_json:', parent.result_json)
                 return jsonify({"stored": True}), 200
             except Exception as e:
                 return jsonify({"stored": False, "error": str(e)}), 400
@@ -154,389 +720,221 @@ class SpeedTest(Realm):
             return jsonify(parent.result_json), 200
 
         def run():
-            # IMPORTANT: bind to all interfaces so other machines clear
-            #  POST
-            app.run(host=self.manager_ip, port=5050, debug=True, use_reloader=False)
+            # IMPORTANT: bind to all interfaces
+            app.run(host='0.0.0.0', port=5050, debug=True, use_reloader=False)
 
         import threading
         self._flask_thread = threading.Thread(target=run, daemon=True)
         self._flask_thread.start()
 
     def _ssh_connect(self, host, username, password):
+        """Establish SSH connection to remote host.
+
+        Args:
+            host (str): Remote host IP address or hostname
+            username (str): SSH username
+            password (str): SSH password
+
+        Returns:
+            paramiko.SSHClient: Connected SSH client object
+        """
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(host, username=username, password=password)
         return ssh
 
-    # def get_device_data(self, resource_data):
-    #     # Get ports
-    #     resource_id = list(resource_data.keys())
-    #     ports = self.json_get('/ports/all')['interfaces']
-    #     interop =  self.json_get('/adb/all')['devices']
-
-    #     for port_data_dict in ports:
-    #         port_id = list(port_data_dict.keys())[0]
-    #         port_id_parts = port_id.split('.')
-    #         resource = port_id_parts[0] + '.' + port_id_parts[1]
-
-    #         # Skip any non-real devices we have decided to not track
-    #         if resource not in resource_id:
-    #             continue
-
-    #         # Need to unpack resource data dict of encapsulating dict that contains it
-    #         port_data_dict = port_data_dict[port_id]
-
-    #         try: 
-    #             if 'phantom' not in port_data_dict or 'down' not in port_data_dict or 'parent dev' not in port_data_dict:
-    #                 logging.error('Malformed json response for endpoint /ports/all')
-    #                 raise ValueError('Malformed json response for endpoint /ports/all')
-
-    #             # Skip phantom or down ports
-    #             if port_data_dict['phantom'] or port_data_dict['down']:
-    #                 continue
-
-    #             # TODO: Support more than one station per real device
-    #             # print(port_data_dict['parent dev'])
-    #             if port_data_dict['parent dev'] != 'wiphy0':
-    #                 continue
-    #         except:
-    #             pass
-
-    #         if resource in resource_data:
-    #             self.devices_data[port_id] = {'device type': None, 'cmd': None, 'ip': None, 'serial': None}
-    #             self.devices_data[port_id]['device type'] = resource_data[resource]['device type']
-    #             self.devices_data[port_id]['ip'] = resource_data[resource]['ctrl-ip']
-    #             self.devices_data[port_id]['hostname'] = resource_data[resource]['hostname']
-    #             self.devices_data[port_id]['ssid'] = port_data_dict.get('ssid', None)
-    #             self.devices_data[port_id]['channel'] = port_data_dict.get('channel', None)
-    #             self.devices_data[port_id]['mac'] = port_data_dict.get('mac', None)
-
-    #             # Reporting purpose
-    #             self.ip_hostname[resource_data[resource]['ctrl-ip']] = resource_data[resource]['hostname']
-
-    #     # Only to know serial of an ADB device
-    #     for res_id in resource_id:
-    #         if resource_data[res_id]['device type'] == 'Android':
-    #             for interop_data_dict in interop:
-    #                 if interop_data_dict[list(interop_data_dict.keys())[0]]['resource-id'] in list(resource_data.keys()):
-    #                     serial = (next((v['name'] for d in interop for k, v in d.items() if v.get('resource-id') == res_id), None))
-    #                     temp = f'{serial}' # {res_id}.
-    #                     self.devices_data[temp] = {'device type': None, 'serial': None, 'ip': None}
-    #                     self.devices_data[temp]['device type'] = resource_data[res_id]['device type']
-    #                     self.devices_data[temp]['ip'] = resource_data[res_id]['ctrl-ip']
-    #                     self.devices_data[temp]['hostname'] = resource_data[res_id]['user']
-    #                     self.devices_data[temp]['serial'] = serial.split(".")[2]
-    #                     self.devices_data[temp]['mac'] = resource_data[res_id].get('wifi mac', None) #TODO need to take this from /adb/all which is interop
-    #                     self.ip_hostname[resource_data[res_id]['ctrl-ip']] = resource_data[res_id]['user']
-
-    #                     # self.devices_data[res_id]['serial'] += f'.{self.devices_data[res_id]['serial']}'
-
-    #     ip_to_key = {}
-    #     final_devices_data = {}
-
-    #     for key, info in self.devices_data.items():
-    #         ip = info.get('ip')
-    #         if not ip:
-    #             continue
-
-    #         if ip not in ip_to_key:
-    #             ip_to_key[ip] = key
-    #             final_devices_data[key] = info.copy()
-    #         else:
-    #             existing_key = ip_to_key[ip]
-
-    #             if 'wlan' in key and 'wlan' not in existing_key:
-    #                 final_devices_data[key] = final_devices_data.pop(existing_key)
-    #                 ip_to_key[ip] = key
-    #                 existing_key = key
-
-    #             for k, v in info.items():
-    #                 if v is not None:
-    #                     final_devices_data[existing_key][k] = v
-
-    #     self.devices_data = final_devices_data
-
-    #     print(self.devices_data)
-
-    # def get_device_data(self, resource_data):
-    #     """
-    #     get_devices_data:
-    #     - /ports/all  ? ssid/channel/mac and the WLAN port key (e.g. '1.11.wlan0')
-    #     - selected resource_data ? ctrl-ip, device type, box hostname
-    #     - /adb/all    ? Android serial (name), user-name (friendly host), wifi mac
-    #     """
-    #     resource_ids = set(resource_data.keys())
-
-    #     ports = self.json_get('/ports/all').get('interfaces', [])
-    #     adb_devices_list = self.json_get('/adb/all').get('devices', [])
-
-    #     adb_by_resource = {}
-    #     for dev_dict in adb_devices_list:
-    #         key = next(iter(dev_dict))
-    #         info = dev_dict[key]
-    #         rid = info.get('resource-id')
-    #         if rid:
-    #             adb_by_resource[rid] = {
-    #                 'name': info.get('name'),
-    #                 'serial': (info.get('name') or ''),  
-    #                 'shelf_resource': info.get('name').rsplit('.', 1)[0],
-    #                 'user_name': info.get('user-name'),
-    #                 'wifi_mac': info.get('wifi mac'),
-    #                 'device_type': info.get('device-type', 'Android')
-    #             }
-
-    #     devices_data = {}
-
-    #     # From /ports/all: capture WLAN ports only, skip phantom/down
-    #     for pd in ports:
-    #         port_id = next(iter(pd))
-    #         pdata = pd[port_id]
-
-    #         # resource id like "1.11" from "1.11.wlan0"
-    #         parts = port_id.split('.')
-    #         if len(parts) < 3:
-    #             continue
-    #         resource = '.'.join(parts[:2])
-
-    #         if resource not in resource_ids:
-    #             continue
-
-    #         try:
-    #             if pdata.get('phantom', True) or pdata.get('down', True):
-    #                 continue
-    #             # keep only real client radios (adjust if you support more)
-    #             if pdata.get('parent dev') != 'wiphy0':
-    #                 continue
-    #         except Exception:
-    #             # best effort: if structure is odd, skip it
-    #             continue
-
-    #         res = resource_data[resource]
-    #         dev_type = res.get('device type')
-    #         ctrl_ip = res.get('ctrl-ip')
-    #         box_hostname = res.get('hostname')
-
-    #         if not ctrl_ip:
-    #             continue
-
-    #         devices_data[port_id] = {
-    #             'device type': dev_type,
-    #             'cmd': None,
-    #             'ip': ctrl_ip,
-    #             'serial': None,
-    #             'hostname': box_hostname,
-    #             'ssid': pdata.get('ssid'),
-    #             'channel': pdata.get('channel'),
-    #             'mac': pdata.get('mac')
-    #         }
-
-    #         # For reporting lookups
-    #         self.ip_hostname[ctrl_ip] = box_hostname
-
-    #     # ---- From /adb/all: add/augment Android rows using serial key 
-    #     for rid in resource_ids:
-    #         res = resource_data[rid]
-    #         if (res.get('device type') or '').lower() != 'android':
-    #             continue
-
-    #         ctrl_ip = res.get('ctrl-ip')
-    #         adb = adb_by_resource.get(rid)
-    #         if not adb:
-    #             continue  # no ADB info for this resource
-    #         print(adb.get('shelf_resource'), adb.get('serial'), adb.get('user_name'))
-
-    #         serial_key = f"{adb.get('shelf_resource')}.wlan0"
-    #         # seed or update a dedicated Android row keyed by serial-key
-    #         row = devices_data.get(serial_key, {})
-    #         row.update({
-    #             'device type': 'Android',
-    #             'ip': ctrl_ip,
-    #             'port': adb.get('shelf_resource'),
-    #             'serial': adb.get('serial').split('.')[-1],
-    #             'hostname': adb.get('user_name') or res.get('hostname') or res.get('user'),  # prefer user-name
-    #             'ssid': row.get('ssid'),      # keep if we already had from wlan0
-    #             'channel': row.get('channel'),
-    #             'mac': adb.get('wifi_mac') or row.get('mac')  # prefer adb wifi mac
-    #         })
-    #         devices_data[serial_key] = row
-    #         print(devices_data)
-
-    #         # Prefer the friendlier hostname for reporting
-    #         if ctrl_ip and adb.get('user_name'):
-    #             self.ip_hostname[ctrl_ip] = adb['user_name']
-    #     exit(0)
-
-    #     # ---- Deduplicate by IP: prefer WLAN key as canonical
-    #     ip_to_key = {}
-    #     final_devices = {}
-
-    #     for key, info in devices_data.items():
-    #         ip = info.get('ip')
-    #         if not ip:
-    #             continue
-
-    #         if ip not in ip_to_key:
-    #             ip_to_key[ip] = key
-    #             final_devices[key] = info.copy()
-    #             continue
-
-    #         # merge into existing canonical
-    #         existing_key = ip_to_key[ip]
-
-    #         # If new key looks like a WLAN port and the existing one does not, swap canonical
-    #         if ('wlan' in key) and ('wlan' not in existing_key):
-    #             # move data over to WLAN key as the canonical
-    #             merged = final_devices.pop(existing_key)
-    #             ip_to_key[ip] = key
-    #             final_devices[key] = merged
-    #             existing_key = key  # new canonical
-
-    #         # Merge non-None (and non-empty) fields into canonical
-    #         for k, v in info.items():
-    #             if v not in (None, ''):
-    #                 final_devices[existing_key][k] = v
-
-    #     # Save back
-    #     self.devices_data = final_devices
-
-    #     # Debug print (optional)
-    #     print(self.devices_data)
-    #     exit(0)
-
     def get_device_data(self, resource_data):
         """
-        get_devices_data:
-        - /ports/all  ? ssid/channel/mac and the WLAN port key (e.g. '1.11.wlan0')
-        - selected resource_data ? ctrl-ip, device type, box hostname
-        - /adb/all    ? Android serial (name), user-name (friendly host), wifi mac
+        get_devices_data: Properly collect device data for all compatible devices
         """
         resource_ids = set(resource_data.keys())
-
         ports = self.json_get('/ports/all').get('interfaces', [])
-        adb_devices_list = self.json_get('/adb/all').get('devices', [])
+        adb_devices_list = self.json_get('/adb/all')
 
         adb_by_resource = {}
-        for dev_dict in adb_devices_list:
-            key = next(iter(dev_dict))
-            info = dev_dict[key]
-            rid = info.get('resource-id')
+        devices = adb_devices_list.get("devices", {})
+
+        # Process ADB devices
+        if isinstance(devices, list):
+            for dev in devices:
+                if not isinstance(dev, dict):
+                    continue
+                key = next(iter(dev))
+                info = dev[key]
+                rid = info.get("resource-id")
+                if rid:
+                    adb_by_resource[rid] = {
+                        'name': info.get('name'),
+                        'serial': info.get('name') or '',
+                        'shelf_resource': (info.get('name') or '').rsplit('.', 1)[0] if '.' in (info.get('name') or '') else '',
+                        'user_name': info.get('user-name'),
+                        'wifi_mac': info.get('wifi mac'),
+                        'device_type': info.get('device-type', 'Android'),
+                        # 'ssid': info.get('ssid_rpt') or info.get('ssid', ''),
+                        # 'channel': info.get('freq', '')
+                    }
+        elif isinstance(devices, dict):
+            rid = devices.get("resource-id")
             if rid:
                 adb_by_resource[rid] = {
-                    'name': info.get('name'),
-                    'serial': (info.get('name') or ''),
-                    'shelf_resource': (info.get('name') or '').rsplit('.', 1)[0],
-                    'user_name': info.get('user-name'),
-                    'wifi_mac': info.get('wifi mac'),
-                    'device_type': info.get('device-type', 'Android')
+                    'name': devices.get('name'),
+                    'serial': devices.get('name') or '',
+                    'shelf_resource': (devices.get('name') or '').rsplit('.', 1)[0] if '.' in (devices.get('name') or '') else '',
+                    'user_name': devices.get('user-name'),
+                    'wifi_mac': devices.get('wifi mac'),
+                    'device_type': devices.get('device-type', 'Android'),
+                    # 'ssid': devices.get('ssid_rpt') or devices.get('ssid', ''),
+                    # 'channel': devices.get('freq', '')
                 }
-
-        def merge_preferring_non_empty(dst: dict, src: dict) -> dict:
-            for k, v in (src or {}).items():
-                if v not in (None, ''):
-                    if dst.get(k) in (None, ''):
-                        dst[k] = v
-            return dst
 
         devices_data = {}
 
-        # From /ports/all: capture WLAN ports only, skip phantom/down
-        for pd in ports:
-            port_id = next(iter(pd))
-            pdata = pd[port_id]
+        # First, collect all ports for each resource to find the best port for each device
+        resource_ports = {}
+        for pds in ports:
+            port_id = next(iter(pds))
+            pdata = pds[port_id]
 
             parts = port_id.split('.')
             if len(parts) < 3:
                 continue
-            resource = '.'.join(parts[:2])
 
+            resource = '.'.join(parts[:2])  # e.g., '1.5'
+
+            # Only process ports belonging to selected resources
             if resource not in resource_ids:
                 continue
 
-            try:
-                if pdata.get('phantom', True) or pdata.get('down', True):
-                    continue
-                if pdata.get('parent dev') != 'wiphy0':
-                    continue
-            except Exception:
+            if resource not in resource_ports:
+                resource_ports[resource] = []
+
+            resource_ports[resource].append((port_id, pdata))
+
+        # Now process each selected resource
+        for resource_id in resource_ids:
+            res = resource_data.get(resource_id, {})
+            if not res:
                 continue
 
-            res = resource_data[resource]
-            dev_type = res.get('device type')
+            dev_type = res.get('device type', '').strip()
             ctrl_ip = res.get('ctrl-ip')
             box_hostname = res.get('hostname')
 
+            # Skip if no control IP
             if not ctrl_ip:
                 continue
 
-            devices_data[port_id] = {
-                'device type': dev_type,
-                'cmd': None,
-                'ip': ctrl_ip,
-                'serial': None,
-                'hostname': box_hostname,
-                'ssid': pdata.get('ssid'),
-                'channel': pdata.get('channel'),
-                'mac': pdata.get('mac')
-            }
-
-            # For reporting lookups
-            if ctrl_ip and box_hostname:
-                self.ip_hostname[ctrl_ip] = box_hostname
-
-        # ---- From /adb/all: move Android rows to a single row keyed by SERIAL
-        for rid in resource_ids:
-            res = resource_data[rid]
-            if (res.get('device type') or '').lower() != 'android':
+            # Determine if this is a compatible device
+            compatible_devices = ['Linux/Interop', 'Windows', 'Mac OS', 'Android']
+            if dev_type not in compatible_devices:
                 continue
 
-            ctrl_ip = res.get('ctrl-ip')
-            adb = adb_by_resource.get(rid)
-            if not adb:
-                continue
+            # For Android devices
+            if dev_type == 'Android':
+                adb_info = adb_by_resource.get(resource_id)
+                if adb_info:
+                    serial_key = adb_info.get('serial', '').split('.')[-1] if '.' in adb_info.get('serial', '') else adb_info.get('serial', '')
+                    if serial_key:
+                        devices_data[serial_key] = {
+                            'device type': 'Android',
+                            'cmd': None,
+                            'ip': ctrl_ip,
+                            'port': adb_info.get('shelf_resource', resource_id),
+                            'serial': serial_key,
+                            'hostname': adb_info.get('user_name') or res.get('hostname') or box_hostname,
+                            # 'ssid': adb_info.get('ssid', ''),
+                            # 'channel': str(adb_info.get('channel', '')),
+                            'mac': adb_info.get('wifi_mac', ''),
+                        }
 
-            serial_key = adb.get('serial').split('.')[-1]  # e.g. R9ZW9098RMZ
-            port_key = f"{rid}.wlan0"                      # e.g. 1.11.wlan0
+                        if ctrl_ip and adb_info.get('user_name'):
+                            self.ip_hostname[ctrl_ip] = adb_info['user_name']
 
-            wlan_row = devices_data.pop(port_key, {})  # <? deletes 1.xx.wlan0 if present
+            # For laptop devices
+            else:
+                # Find the best port for this device
+                best_port = None
+                best_port_data = None
 
-            # Start the serial row with sane defaults
-            serial_row = {
-                'device type': 'Android',
-                'cmd': None,
-                'ip': ctrl_ip or wlan_row.get('ip'),
-                'port': adb.get('shelf_resource'),
-                'serial': serial_key,
-                'hostname': adb.get('user_name') or res.get('hostname') or wlan_row.get('hostname') or res.get('user'),
-                'ssid': wlan_row.get('ssid'),
-                'channel': wlan_row.get('channel'),
-                'mac': adb.get('wifi_mac') or wlan_row.get('mac'),
-            }
+                if resource_id in resource_ports:
+                    for port_id, pdata in resource_ports[resource_id]:
+                        # Skip phantom or down ports
+                        if pdata.get('phantom', True) or pdata.get('down', True):
+                            continue
 
-            # If we had already created a serial row, merge non-empty fields into it
-            if serial_key in devices_data:
-                serial_row = merge_preferring_non_empty(devices_data[serial_key], serial_row)
+                        # Check if port has IP
+                        interface_ip = pdata.get('ip')
+                        if not interface_ip or interface_ip == '0.0.0.0':
+                            continue
 
-            devices_data[serial_key] = serial_row
+                        # Prefer WLAN ports for laptops
+                        port_type = pdata.get('port type', '')
+                        if 'WIFI' in port_type or 'wlan' in port_id.lower():
+                            best_port = port_id
+                            best_port_data = pdata
+                            break  # Prefer WiFi over Ethernet
+                        elif not best_port:  # If no WiFi found, take first Ethernet
+                            best_port = port_id
+                            best_port_data = pdata
 
-            # Prefer hostname for reporting
-            if ctrl_ip and adb.get('user_name'):
-                self.ip_hostname[ctrl_ip] = adb['user_name']
+                if best_port and best_port_data:
+                    interface_ip = best_port_data.get('ip')
+
+                    # Extract SSID and channel
+                    # ssid = best_port_data.get('ssid', '')
+                    # channel_raw = best_port_data.get('channel', '')
+
+                    devices_data[best_port] = {
+                        'device type': dev_type,
+                        'cmd': None,
+                        'ip': interface_ip,
+                        'serial': None,
+                        'hostname': box_hostname,
+                        # 'ssid': ssid,
+                        # 'channel': channel,
+                        'mac': best_port_data.get('mac', ''),
+                        'port': resource_id,
+                    }
+
+                    # For reporting lookups
+                    # if ctrl_ip and box_hostname:
+                    #     self.ip_hostname[ctrl_ip] = box_hostname
+                    if interface_ip and box_hostname:
+                        self.ip_hostname[interface_ip] = box_hostname
+
+                    # Store device info for reporting
+                    self.device_info[interface_ip] = dev_type
 
         self.devices_data = devices_data
-        print(self.devices_data)
+        # print(f"DEBUG: Found {len(devices_data)} devices in devices_data")
+        for key, value in devices_data.items():
+            print(f" {key}: {value}", end="\n\n")
+
+        return devices_data
 
     def filter_devices(self, resources_list):
+        """Filter LANforge resources to include only compatible device types."""
         resource_data = {}
         for resource_data_dict in resources_list:
             resource_id = list(resource_data_dict.keys())[0]
             resource_data_dict = resource_data_dict[resource_id]
-            devices = ['Linux/Interop', 'Windows', 'Mac OS', 'Android']
-            if resource_data_dict['device type'] in devices:
+
+            # More flexible device type matching
+            dev_type = resource_data_dict.get('device type', '').strip()
+            compatible_types = ['Linux/Interop', 'Windows', 'Mac OS', 'Android',
+                                'Linux', 'Mac', 'Ubuntu', 'Windows 10', 'Windows 11']
+
+            # Check if device type contains any compatible string
+            if any(compat_type in dev_type for compat_type in compatible_types):
                 resource_data[resource_id] = resource_data_dict
+
         return resource_data
 
     def get_resource_data(self):
+        """Retrieve and select device resources from LANforge controller.
 
+        Prompts user for device selection if device_list is not pre-configured.
+        """
         resources_list = self.json_get("/resource/all")["resources"]
         resource_data = self.filter_devices(resources_list)
 
@@ -561,7 +959,7 @@ class SpeedTest(Realm):
             print("\n Available Devices:")
             try:
                 print(tabulate(rows, headers=headers, tablefmt="fancy_grid"), disable_numparse=True)
-            except:
+            except Exception:
                 # Print table without using tabulate
                 print("\t".join(headers))
                 for row in rows:
@@ -570,36 +968,68 @@ class SpeedTest(Realm):
             selection = input("\n> Enter ports of devices to run speedtest on (comma-separated): ")
             selected_ids = [str(i.strip()) for i in selection.split(',')]
 
-        print(resource_data)
         self.selected_resources = {res_id: resource_data[res_id] for res_id in selected_ids}
-        print(f"\n Selected Devices:\n{self.selected_resources}")
+
+        for eid, dev in self.selected_resources.items():
+            if dev.get("phantom") is True:
+                print(f"ERROR: Selected device {eid} ({dev.get('hostname', 'unknown')}) is in PHANTOM state")
+                sys.exit(1)
+
+        # Collect device data for selected resources
         self.get_device_data(self.selected_resources)
 
         if self.devices_data:
+            for device_key, dev in self.devices_data.items():
+                dev_type = dev.get('device type', '').strip()
+                ip_address = dev.get('ip', '')
 
-            for device in self.devices_data:
-                dev_type = self.devices_data[device]['device type']
-                
-                # For regular devices (Linux, Windows, Mac)
-                if dev_type == 'Linux/Interop':
-                    self.devices_data[device]['cmd'] = f"DISPLAY=:1 ./vrf_exec.bash {device.split('.')[2]} python3 ookla.py --type {self.type}{' --post_url ' + self._post_url if self.dowebgui and self._post_url else ''} --ip {self.devices_data[device]['ip']}"
-                elif dev_type == 'Windows':
-                    self.devices_data[device]['cmd'] = f"py ookla.py --type {self.type}{' --post_url ' + self._post_url if self.dowebgui and self._post_url else ''} --ip {self.devices_data[device]['ip']}"
-                elif dev_type == 'Mac OS':
-                    self.devices_data[device]['cmd'] = f"python3 ookla.py --type {self.type}{' --post_url ' + self._post_url if self.dowebgui and self._post_url else ''} --ip {self.devices_data[device]['ip']}"
-                
-                # For ADB devices (override previous command if serial exists)
-                if self.devices_data[device].get("serial"):
-                    self.devices_data[device]['cmd'] = f"python3 ookla.py --type adb --adb_devices {self.devices_data[device]['serial']}{' --post_url ' + self._post_url if self.dowebgui and self._post_url else ''} --ip {self.devices_data[device]['ip']}"
-                
-                # REMOVE THIS DUPLICATE SECTION:
-                # if self.dowebgui and self._post_url:
-                #     self.devices_data[device]['cmd'] += f' --post_url {self._post_url}'
+                if not ip_address:
+                    print(f"Warning: No IP address for device {device_key}")
+                    continue
+
+                # Build command based on device type
+                if dev_type == 'Android':
+                    serial = dev.get('serial')
+                    if serial:
+                        dev['cmd'] = (
+                            f"python3 ookla.py --type adb --adb_devices {serial}"
+                            # f"{' --post_url ' + self._post_url if self._post_url else ''}"
+                            f" --post_url http://{self.manager_ip}:5050/api/speedtest"
+                            f" --ip {ip_address}"
+                        )
+                else:
+                    # For laptop devices
+                    if 'Linux' in dev_type:
+                        port_name = device_key.split('.')[-1] if '.' in device_key else device_key
+                        dev['cmd'] = (
+                            f"DISPLAY=:1 ./vrf_exec.bash {port_name} python3 ookla.py --type {self.type}"
+                            f"{' --post_url ' + self._post_url if self._post_url else ''}"
+                            f" --ip {ip_address}"
+                        )
+                    elif 'Windows' in dev_type:
+                        dev['cmd'] = (
+                            f"py ookla.py --type {self.type}"
+                            f"{' --post_url ' + self._post_url if self._post_url else ''}"
+                            f" --ip {ip_address}"
+                        )
+                    elif 'Mac' in dev_type:
+                        dev['cmd'] = (
+                            f"python3 ookla.py --type {self.type}"
+                            f"{' --post_url ' + self._post_url if self._post_url else ''}"
+                            f" --ip {ip_address}"
+                        )
+                    else:
+                        # Default command for other devices
+                        dev['cmd'] = (
+                            f"python3 ookla.py --type {self.type}"
+                            f"{' --post_url ' + self._post_url if self._post_url else ''}"
+                            f" --ip {ip_address}"
+                        )
         else:
             print(" No compatible devices found.")
 
         print("\n Final Device Commands for Speedtest")
-        self.android_data = { #.split('.', 2)[-1]
+        self.android_data = {
             k: v
             for k, v in self.devices_data.items()
             if v.get('device type', '').lower() == 'android'
@@ -614,22 +1044,23 @@ class SpeedTest(Realm):
         print('android_data :=', self.android_data)
         print('laptop_data :=', self.laptop_data)
 
-        if self.laptop_data:
-            for device in self.laptop_data:
-                print(f"{device}   ?  {self.laptop_data[device]['ip']} ({self.laptop_data[device]['device type']}): {self.laptop_data[device]['cmd']}")
-        if self.android_data:
-            for android in self.android_data:
-                print(f"{android}   ?  {self.android_data[android]['ip']} ({self.android_data[android]['device type']}): {self.android_data[android]['cmd']}")
-
     def start_generic(self):
+        """Start all generic endpoint connections for speed testing."""
+        print(f'genCX started at : {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
         self.generic_endps_profile.start_cx()
         self.start_time = datetime.now()
 
     def stop_generic(self):
+        """Stop all generic endpoint connections for speed testing."""
         self.generic_endps_profile.stop_cx()
         self.stop_time = datetime.now()
 
     def get_results(self):
+        """Retrieve speed test results from LANforge generic endpoints.
+
+        Returns:
+            dict: Speed test results from all endpoints
+        """
         logging.debug(self.generic_endps_profile.created_endp)
         results = self.json_get(
             "/generic/{}".format(','.join(self.generic_endps_profile.created_endp)))
@@ -639,36 +1070,12 @@ class SpeedTest(Realm):
             results = results['endpoint']
         return (results)
 
-    def create_cx_do_interop(self, csv_file):
-        for iter in range(1, self.iteration + 1):
-            print(f"\n Starting Interop Iteration {iter} of {self.iteration}")
-            for cx_name in self.generic_endps_profile.created_cx:
-                self.start_specific([cx_name])
-                time.sleep(60)
-                self.stop_specific([cx_name])
-
-                for device in self.devices_data:
-                    os_type = self.devices_data[device]['device type']
-                    remote_path = self.get_remote_file_path_by_os(os_type)
-                    result = self.fetch_remote_speedtest_file(
-                        ip=self.devices_data[device]['ip'],
-                        username="lanforge" if os_type.lower() != 'windows' else "Administrator",
-                        password="lanforge",
-                        remote_path=remote_path
-                    )
-                    print(result)
-
-                self.write_results_to_csv(iter, csv_file)
-                self.result_json = {}
-
-    # def create_cx_incremental(self, increment_values):
-    #     for values in increment_values:
-    #         for cx_name in self.generic_endps_profile.created_cx:
-    #             self.start_specific()
-    #             time.sleep(60)
-    #             self.stop_specific()
-
     def start_specific(self, cx_list):
+        """Start specific endpoint connections for testing.
+
+        Args:
+            cx_list (list): List of connection names to start
+        """
         logging.info("Test started at : {0} ".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         if len(cx_list) > 0:
             for cx in cx_list:
@@ -687,6 +1094,11 @@ class SpeedTest(Realm):
             }, debug_=True)
 
     def stop_specific(self, cx_list):
+        """Stop specific endpoint connections.
+
+        Args:
+            cx_list (list): List of connection names to stop
+        """
         logging.info("Stopping specific CXs...")
         for cx_name in cx_list:
             if self.debug:
@@ -698,14 +1110,21 @@ class SpeedTest(Realm):
             }, debug_=self.debug)
 
     def create(self):
+        """Create generic endpoints and connections for all selected devices.
+
+        Configures both laptop and Android devices for speed testing.
+        """
+        # Determine device types for all selected devices
         device_types = [device['device type'] for device in self.laptop_data.values()]
 
+        # Create generic endpoints for laptop devices
         if self.laptop_data:
             self.generic_endps_profile.create(ports=list(self.laptop_data.keys()), real_client_os_types=device_types)
-            
+
         for endp_name in self.generic_endps_profile.created_endp:
             self.generic_endps_profile.set_cmd(endp_name, cmd=self.laptop_data[endp_name.split('-')[1]]['cmd'])
 
+        # Create generic endpoints for Android devices
         if self.android_data:
             self.android_data = {
                 f"{v['port']}.{k}": v
@@ -717,12 +1136,23 @@ class SpeedTest(Realm):
 
             for endp_name in created_endp:
                 self.generic_endps_profile.set_cmd(endp_name, cmd=self.android_data[(endp_name.split('-')[1]).replace('_', '.')]['cmd'])
-        
+
         print(self.generic_endps_profile.created_endp)
         print(self.generic_endps_profile.created_cx)
 
-
     def create_android(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, real_client_os_types=None):
+        """Create generic endpoints specifically for Android devices.
+
+        Args:
+            ports (list, optional): List of Android port names
+            sleep_time (float, optional): Delay between operations in seconds
+            debug_ (bool, optional): Enable debug mode
+            suppress_related_commands_ (bool, optional): Suppress command output
+            real_client_os_types (list, optional): List of client OS types
+
+        Returns:
+            tuple: (success, created_cx_list, created_endp_list)
+        """
         if ports and real_client_os_types and len(real_client_os_types) == 0:
             logging.error('Real client operating systems types is empty list')
             raise ValueError('Real client operating systems types is empty list')
@@ -737,6 +1167,7 @@ class SpeedTest(Realm):
 
         post_data = []
         endp_tpls = []
+        # Create endpoint templates
         for port_name in ports:
             port_info = self.name_to_eid(port_name)
             resource = port_info[1]
@@ -805,625 +1236,127 @@ class SpeedTest(Realm):
             })
         return True, created_cx, created_endp
 
-    def save_results(self):
-        results = self.get_results()
-        print(results, 'RESULTS')
-        for device in self.generic_endps_profile.created_endp:
-            if(device in list(results[0].keys())):
-                self.result_json[device] = results[0][device]['last results']
+    def add_live_view_images_to_report(self, report):
+        """Add live view heatmap images to the test report.
 
-    def fetch_remote_speedtest_file(self, ip, username, password, remote_path="/home/lanforge/speedtest.txt"):
-        try:
-            print(f"Connecting to {ip} to fetch speedtest.txt")
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(ip, username=username, password=password)
-
-            sftp = ssh.open_sftp()
-            local_path = f"./{ip.replace('.', '_')}_speedtest.txt"
-            sftp.get(remote_path, local_path)
-            sftp.close()
-            ssh.close()
-
-            with open(local_path, "r") as f:
-                content = f.read()
-
-            # Parse download and upload
-            download = upload = idle_latency = down_latency = up_latency = "N/A"
-            for line in content.splitlines():
-                if "Download speed" in line:
-                    download = line.split(":")[1].strip()
-                elif "Upload speed" in line:
-                    upload = line.split(":")[1].strip()
-                elif "Idle Latency" in line:
-                    idle_latency = line.split(":")[1].strip()
-                elif "Download Latency" in line:
-                    down_latency = line.split(":")[1].strip()
-                elif "Upload Latency" in line:
-                    up_latency = line.split(":")[1].strip()
-
-            # Store in result_json
-            self.result_json[ip] = {"upload": upload,
-                                    "download": download,
-                                    "Idle Latency": idle_latency,
-                                    "Download Latency": down_latency,
-                                    "Upload Latency": up_latency
-                                    }
-
-            print(f"{ip} - Download: {download}, Upload: {upload}, Idle Latency: {idle_latency}, Download Latency: {down_latency}, Upload Latency: {up_latency}")
-            return content
-
-        except Exception as e:
-            print(f" Failed to fetch file from {ip}: {e}")
-            self.result_json[ip] = {"download": "Error", "upload": "Error"}
-            return None
-
-    def fetch_android_speedtest_from_lanforge(self, ip, username='lanforge', password='lanforge',
-                                            remote_dir="/home/lanforge"):
+        Args:
+            report (lf_report): Report object to add images to
         """
-        Fetches <ip>_speedtest.txt from LANforge to local machine and parses it.
-        If the file does not exist, sets all values to 0 for that IP.
-        """
-        print(ip, 'fetching speedtest file')
-        remote_file = f"{remote_dir.rstrip('/')}/{ip}_speedtest.txt"
-        local_path = f"./{ip}_speedtest.txt"
+        if self.robot_test:
+            self.total_floors = 1
 
-        try:
-            print(f"Connecting to {self.manager_ip} to fetch {remote_file} and local path {local_path}")
-            ssh = self._ssh_connect(self.manager_ip, username, password)
-            sftp = ssh.open_sftp()
-            sftp.get(remote_file, local_path)
-            sftp.close()
-            ssh.close()
+        for floor in range(0, int(self.total_floors)):
 
-            with open(local_path, "r") as f:
-                content = f.read()
-
-            download = upload = idle_latency = down_latency = up_latency = "N/A"
-            for line in content.splitlines():
-                if "Download speed" in line:
-                    download = line.split(":", 1)[1].strip()
-                elif "Upload speed" in line:
-                    upload = line.split(":", 1)[1].strip()
-                elif "Idle Latency" in line:
-                    idle_latency = line.split(":", 1)[1].strip()
-                elif "Download Latency" in line:
-                    down_latency = line.split(":", 1)[1].strip()
-                elif "Upload Latency" in line:
-                    up_latency = line.split(":", 1)[1].strip()
-
-            self.result_json[ip] = {
-                "download": download,
-                "upload": upload,
-                "Idle Latency": idle_latency,
-                "Download Latency": down_latency,
-                "Upload Latency": up_latency,
-                "local_file": local_path,
-            }
-            print(f"{ip} - D:{download} U:{upload} Idle:{idle_latency} DLat:{down_latency} ULat:{up_latency}")
-            return self.result_json[ip]
-        except Exception as e:
-            print(f"Failed to fetch or parse Android speedtest result for {ip}: {e}")
-            self.result_json[ip] = {
-                "download": "0",
-                "upload": "0",
-                "Idle Latency": "0",
-                "Download Latency": "0",
-                "Upload Latency": "0",
-                "local_file": None,
+            image_paths = {
+                'download_speed': os.path.join(self.result_dir, "live_view_images", f"{self.instance}_download_speed_floor_{floor + 1}.png"),
+                'upload_speed': os.path.join(self.result_dir, "live_view_images", f"{self.instance}_upload_speed_floor_{floor + 1}.png"),
+                'download_latency': os.path.join(self.result_dir, "live_view_images", f"{self.instance}_download_latency_floor_{floor + 1}.png"),
+                'upload_latency': os.path.join(self.result_dir, "live_view_images", f"{self.instance}_upload_latency_floor_{floor + 1}.png")
             }
 
-            return self.result_json[ip]
-
-    # def write_results_to_csv(self, current_iter, csv_file):
-    #     csv_exists = os.path.isfile(csv_file)
-
-    #     csv_data = []
-    #     table_data = []
-
-    #     for ip, data in self.result_json.items():
-    #         ip = ip.replace('_', '.')
-    #         download = data.get("download", "N/A")
-    #         upload = data.get("upload", "N/A")
-    #         idle_latency = data.get("Idle Latency", "N/A")
-    #         down_latency = data.get("Download Latency", "N/A")
-    #         up_latency = data.get("Upload Latency", "N/A")
-    #         csv_data.append([current_iter, self.iteration, ip, self.device_info[ip],
-    #                         download, upload, idle_latency, down_latency, up_latency])
-    #         table_data.append([current_iter, self.iteration, ip, self.device_info[ip],
-    #                             download, upload, idle_latency, down_latency, up_latency])
-
-    #         print('--------------------------')
-    #         print(table_data)
-    #         print(csv_data)
-    #         print(self.ip_hostname)
-    #         print('--------------------------')
-
-    #         self.result_dict['ip'].append(ip)
-    #         self.result_dict['hostname'].append(self.ip_hostname[ip])
-    #         try:
-    #             self.result_dict['download_speed'].append(float(download.split(' ')[0]))
-    #         except Exception:
-    #             self.result_dict['download_speed'].append(0.0)
-    #         try:
-    #             self.result_dict['upload_speed'].append(float(upload.split(' ')[0]))
-    #         except Exception:
-    #             self.result_dict['upload_speed'].append(0.0)
-    #         try:
-    #             self.result_dict['download_lat'].append(float(down_latency.split(' ')[0]))
-    #         except Exception:
-    #             self.result_dict['download_lat'].append(0.0)
-    #         try:
-    #             self.result_dict['upload_lat'].append(float(up_latency.split(' ')[0]))
-    #         except Exception:
-    #             self.result_dict['upload_lat'].append(0.0)
-
-    #     self.iteration_dict[current_iter] = self.result_dict
-    #     self.result_dict = {
-    #                         'ip':[],
-    #                         'hostname':[],
-    #                         'download_speed':[],
-    #                         'upload_speed':[],
-    #                         'download_lat':[],
-    #                         'upload_lat':[]
-    #                     }
-                        
-
-    #     with open(csv_file, "a", newline="") as csvfile:
-    #         writer = csv.writer(csvfile)
-    #         # Write header only once
-    #         if not csv_exists:
-    #             writer.writerow(["Iteration", "Total Iterations", "IP", "Device Type",
-    #                             "Download", "Upload", "Idle Latency", "Download Latency", "Upload Latency"])
-    #         writer.writerows(csv_data)
-
-    #     print("\n Speedtest Results for Iteration", current_iter)
-    #     try:
-    #         print(tabulate(
-    #             table_data,
-    #             headers=["Iteration", "Total Iterations", "IP", "Device Type",
-    #                     "Download", "Upload", "Idle Latency", "Download Latency", "Upload Latency"],
-    #             tablefmt="fancy_grid",
-    #             disable_numparse=True
-    #         ))
-    #     except:
-    #         headers = ["Iteration", "Total Iterations", "IP", "Device Type",
-    #                     "Download", "Upload", "Idle Latency", "Download Latency", "Upload Latency"]
-    #         print("\t".join(headers))
-    #         for row in table_data:
-    #             print("\t".join(str(item) for item in row))
-    #     print("==============================================================================================================================================")
-    #     print(self.iteration_dict)
-
-    
-    def write_results_to_csv(self, current_iter, csv_file,  per_iter_wait_seconds=120):
-
-        # expected_ips = list(self.ip_hostname.keys()) or list(self.device_info.keys())
-        # end = time.time() + per_iter_wait_seconds
-        # while time.time() < end:
-        #     got = 0
-        #     for ip in expected_ips:
-        #         k = ip.replace('.', '_')
-        #         if (k in self.result_json) or (ip in self.result_json):
-        #             got += 1
-        #     if got >= len(expected_ips): break
-        #     time.sleep(2)
-
-
-        csv_exists = os.path.isfile(csv_file)
-
-        csv_data   = []
-        table_data = []
-
-        # 1) Normalize keys we received this iteration
-        received = {}
-        for raw_ip, data in self.result_json.items():
-            ip = raw_ip.replace('_', '.')
-            received[ip] = {
-                "download":          data.get("download", "N/A"),
-                "upload":            data.get("upload", "N/A"),
-                "Idle Latency":      data.get("Idle Latency", "N/A"),
-                "Download Latency":  data.get("Download Latency", "N/A"),
-                "Upload Latency":    data.get("Upload Latency", "N/A"),
+            # Titles for each heatmap type
+            titles = {
+                'download_speed': f'Floor {floor + 1} - Download Speed Heatmap',
+                'upload_speed': f'Floor {floor + 1} - Upload Speed Heatmap',
+                'download_latency': f'Floor {floor + 1} - Download Latency Heatmap',
+                'upload_latency': f'Floor {floor + 1} - Upload Latency Heatmap'
             }
 
-        # 2) Figure out expected devices (from what you selected earlier)
-        # Prefer the IPs you learned during device discovery; fall back to device_info keys.
-        expected_ips = list(self.ip_hostname.keys()) or list(self.device_info.keys())
+            # Wait for all images to be available (with timeout)
+            timeout = 150  # seconds
+            start_time = time.time()
 
-        # 3) Emit rows for devices that DID report
-        for ip, data in received.items():
-            dev_type      = self.device_info.get(ip, "N/A")
-            hostname_safe = self.ip_hostname.get(ip, ip)
+            print(f"Looking for images for floor {floor + 1}:")
+            for img_type, path in image_paths.items():
+                print(f"  {img_type}: {path}")
 
-            download      = data["download"]
-            upload        = data["upload"]
-            idle_latency  = data["Idle Latency"]
-            down_latency  = data["Download Latency"]
-            up_latency    = data["Upload Latency"]
+            # Wait for ALL images for this floor to be available
+            while True:
+                all_exist = all(os.path.exists(path) for path in image_paths.values())
+                if all_exist:
+                    print(f"All images for floor {floor + 1} found")
+                    break
 
-            csv_data.append([current_iter, self.iteration, ip, dev_type,
-                            download, upload, idle_latency, down_latency, up_latency])
-            table_data.append([current_iter, self.iteration, ip, dev_type,
-                            download, upload, idle_latency, down_latency, up_latency])
+                if time.time() - start_time > timeout:
+                    print(f"Timeout: Not all images found for floor {floor + 1} within {timeout} seconds")
+                    for img_type, path in image_paths.items():
+                        if not os.path.exists(path):
+                            print(f"  Missing: {img_type} - {path}")
+                    break
 
-            # Accumulate into per-iter dicts for graphs/tables
-            self.result_dict['ip'].append(ip)
-            self.result_dict['hostname'].append(hostname_safe)
+                time.sleep(5)
 
-            def _num(x):
-                try:
-                    # Handles values like "24.2 Mbps" or "114 ms" or "N/A"
-                    return float(str(x).split()[0])
-                except Exception:
-                    return 0.0
+            for img_type, image_path in image_paths.items():
+                if os.path.exists(image_path):
+                    # Add page break before each image (except first)
+                    report.set_custom_html('<div style="page-break-before: always;"></div>')
+                    report.build_custom()
 
-            self.result_dict['download_speed'].append(_num(download))
-            self.result_dict['upload_speed'].append(_num(upload))
-            self.result_dict['download_lat'].append(_num(down_latency))
-            self.result_dict['upload_lat'].append(_num(up_latency))
+                    # Add title for the heatmap
+                    if img_type in titles:
+                        report.set_custom_html(f'<h4>{titles[img_type]}</h4>')
+                        report.build_custom()
 
-        # 4) Emit rows for devices that did NOT report in this iteration (N/A)
-        missing_ips = [ip for ip in expected_ips if ip not in received]
-        for ip in missing_ips:
-            dev_type      = self.device_info.get(ip, "N/A")
-            hostname_safe = self.ip_hostname.get(ip, ip)
-
-            csv_data.append([current_iter, self.iteration, ip, dev_type,
-                            "N/A", "N/A", "N/A", "N/A", "N/A"])
-            table_data.append([current_iter, self.iteration, ip, dev_type,
-                            "N/A", "N/A", "N/A", "N/A", "N/A"])
-
-            # For graphs: use zeros so categories & lengths stay aligned
-            self.result_dict['ip'].append(ip)
-            self.result_dict['hostname'].append(hostname_safe)
-            self.result_dict['download_speed'].append(0.0)
-            self.result_dict['upload_speed'].append(0.0)
-            self.result_dict['download_lat'].append(0.0)
-            self.result_dict['upload_lat'].append(0.0)
-
-        # 5) Freeze per-iteration snapshot, then reset the accumulator for the next iter
-        self.iteration_dict[current_iter] = self.result_dict
-        self.result_dict = {
-            'ip': [],
-            'hostname': [],
-            'download_speed': [],
-            'upload_speed': [],
-            'download_lat': [],
-            'upload_lat': []
-        }
-
-        # 6) Append to CSV
-        with open(csv_file, "a", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            if not csv_exists:
-                writer.writerow([
-                    "Iteration", "Total Iterations", "IP", "Device Type",
-                    "Download", "Upload", "Idle Latency", "Download Latency", "Upload Latency"
-                ])
-            writer.writerows(csv_data)
-
-        # 7) Pretty print table for the console
-        print(f"\n Speedtest Results for Iteration {current_iter}")
-        try:
-            from tabulate import tabulate
-            print(tabulate(
-                table_data,
-                headers=["Iteration", "Total Iterations", "IP", "Device Type",
-                        "Download", "Upload", "Idle Latency", "Download Latency", "Upload Latency"],
-                tablefmt="fancy_grid",
-                disable_numparse=True
-            ))
-        except Exception:
-            headers = ["Iteration", "Total Iterations", "IP", "Device Type",
-                    "Download", "Upload", "Idle Latency", "Download Latency", "Upload Latency"]
-            print("\t".join(headers))
-            for row in table_data:
-                print("\t".join(str(item) for item in row))
-
-        if missing_ips:
-            print(f"[NOTE] No data received for iteration {current_iter} from: {', '.join(missing_ips)} (filled with N/A)")
-        print("=" * 158)
-        print(self.iteration_dict)
+                    # Add the image
+                    report.set_custom_html(f'<img src="file://{image_path}" style="max-width: 100%; height: auto;"></img>')
+                    report.build_custom()
+                    print(f"Added {img_type} heatmap for floor {floor + 1} to report")
+                else:
+                    print(f"Warning: {img_type} image not found for floor {floor + 1}: {image_path}")
 
     def cleanup(self):
+        """Clean up all created endpoints and connections."""
         self.generic_endps_profile.cleanup()
         self.generic_endps_profile.created_cx = []
         self.generic_endps_profile.created_endp = []
 
-    @staticmethod
-    def get_remote_file_path_by_os(os_type):
-        if os_type.lower() == 'windows':
-            return r"C:\Program Files (x86)\LANforge-Server\speedtest.txt"
-        elif os_type.lower() == 'mac os':
-            return "/Users/lanforge/speedtest.txt"
-        else:
-            return "/home/lanforge/speedtest.txt"
+    def generate_report(self, result_dir_name, do_webgui=False, per_post_timeout=120, poll_interval=2):
+        """Generate comprehensive speed test report with graphs and tables.
 
-
-    # def generate_report(self, result_dir_name):
-    #     import pandas as pd
-    #     import shutil
-    #     import time
-
-    #     print('===============================')
-    #     print('Devices DATA:', self.devices_data)
-    #     print('===============================')
-
-    #     # ---- helper: which devices are expected to POST? ----
-    #     def expected_post_ips():
-    #         want = []
-    #         for k, v in (self.devices_data or {}).items():
-    #             cmd = (v.get('cmd') or '')
-    #             ip  = (v.get('ip')  or '')
-    #             # If this endpoint is launched with --post_url, we expect a POST for this IP.
-    #             if ip and '--post_url' in cmd:
-    #                 want.append(ip)
-    #         # de-dup and keep order
-    #         seen, ans = set(), []
-    #         for ip in want:
-    #             if ip not in seen:
-    #                 seen.add(ip)
-    #                 ans.append(ip)
-    #         return ans
-
-    #     # ---- helper: wait until all expected posts land (or timeout) ----
-    #     def wait_for_posts(expected_ips, timeout_sec=90, poll_sec=1, iter_idx=None):
-    #         deadline = time.time() + timeout_sec
-    #         # We store by key like '192_168_204_54' or occasionally by serial; normalize both.
-    #         def has_post_for(ip):
-    #             k = ip.replace('.', '_')
-    #             return (k in self.result_json) or (ip in self.result_json)
-
-    #         while time.time() < deadline:
-    #             got = [ip for ip in expected_ips if has_post_for(ip)]
-    #             if len(got) >= len(expected_ips):
-    #                 print(f"[INGEST] iteration {iter_idx}: received {len(got)}/{len(expected_ips)} posts.")
-    #                 return True, []
-    #             time.sleep(poll_sec)
-    #         missing = [ip for ip in expected_ips if not has_post_for(ip)]
-    #         print(f"[WARN] iteration {iter_idx}: timed out waiting for posts. "
-    #             f"Got {len(expected_ips) - len(missing)}/{len(expected_ips)}. Missing: {missing}")
-    #         return False, missing
-
-    #     # if you?re running WebGUI mode, enforce n*m posts across n loops (m per loop)
-    #     POST_TIMEOUT_SECS   = 120
-    #     POLL_INTERVAL_SECS  = 1
-    #     will_wait_for_posts = bool(self.dowebgui)
-    #     expected_ips_once   = expected_post_ips()
-    #     expected_m          = len(expected_ips_once)
-    #     if will_wait_for_posts:
-    #         print(f"[INGEST] expecting {expected_m} POST(s) per iteration from: {expected_ips_once}")
-
-    #     if not self.do_interopability:
-    #         report = lf_report(
-    #             _output_pdf="speedtest.pdf",
-    #             _output_html="speedtest.html",
-    #             _results_dir_name=result_dir_name,
-    #             _path=self.result_dir if self.dowebgui else "/home/lanforge/html-reports"
-    #         )
-
-    #         report_path = report.get_path()
-    #         report_path_date_time = report.get_path_date_time()
-
-    #         os.makedirs(report_path_date_time, exist_ok=True)
-    #         if os.path.exists('speedtest_results.csv'):
-    #             try:
-    #                 shutil.move('speedtest_results.csv', report_path_date_time)
-    #             except Exception as e:
-    #                 print(f"[WARN] could not move CSV: {e}")
-
-    #         logger.info("path: {}".format(report_path))
-    #         logger.info("path_date_time: {}".format(report_path_date_time))
-
-    #         report.set_title("Speed Test")
-    #         report.build_banner()
-
-    #         report.set_obj_html(
-    #             _obj_title="Objective",
-    #             _obj=("The Candela Speed Test evaluates AP performance under real-world conditions "
-    #                 "by measuring latency, download speed, and upload speed to reflect end-user experience.")
-    #         )
-    #         report.build_objective()
-
-    #         report.set_obj_html(_obj_title="Input Parameters",
-    #                             _obj="The tables below provide the input parameters for the test.")
-    #         report.build_objective()
-
-    #         # Device counts
-    #         android_devices = windows_devices = linux_devices = mac_devices = 0
-    #         for i in self.devices_data:
-    #             self.selected_device_type.add(self.devices_data[i]['device type'])
-    #             dev_type = self.devices_data[i]['device type']
-    #             if dev_type == 'Android':
-    #                 android_devices += 1
-    #             elif dev_type == 'Windows':
-    #                 windows_devices += 1
-    #             elif dev_type == 'Mac OS' or dev_type == 'Mac':
-    #                 mac_devices += 1
-    #             elif dev_type == 'Linux/Interop':
-    #                 linux_devices += 1
-
-    #         total_devices = ""
-    #         if android_devices > 0: total_devices += f" Android({android_devices})"
-    #         if windows_devices > 0: total_devices += f" Windows({windows_devices})"
-    #         if linux_devices > 0:   total_devices += f" Linux({linux_devices})"
-    #         if mac_devices > 0:     total_devices += f" Mac({mac_devices})"
-
-    #         input_params = {
-    #             "Test name": "Speed Test",
-    #             "Number of Iterations": self.iteration,
-    #             "Number of Selected Devices": f"{len(self.selected_resources)} {total_devices}"
-    #         }
-    #         report.test_setup_table(test_setup_data=input_params, value="Test Configuration")
-
-    #         print('Iteration DATA:', self.iteration_dict)
-
-    #         # --- For each iteration, (optionally) enforce ingest barrier, then graph & table ---
-    #         for iter_idx in sorted(self.iteration_dict.keys()):
-    #             # If ingest mode, wait for m posts for this iteration
-    #             if will_wait_for_posts and expected_m:
-    #                 ok, missing = wait_for_posts(
-    #                     expected_ips_once,
-    #                     timeout_sec=POST_TIMEOUT_SECS,
-    #                     poll_sec=POLL_INTERVAL_SECS,
-    #                     iter_idx=iter_idx
-    #                 )
-    #                 # Continue even if some are missing; we?ll still render what we have
-
-    #             # Graphs
-    #             hostnames = self.iteration_dict[iter_idx].get('hostname', [])
-    #             dl_list   = self.iteration_dict[iter_idx].get('download_speed', [])
-    #             ul_list   = self.iteration_dict[iter_idx].get('upload_speed', [])
-    #             dlat_list = self.iteration_dict[iter_idx].get('download_lat', [])
-    #             ulat_list = self.iteration_dict[iter_idx].get('upload_lat', [])
-
-    #             # Guard: if no data, skip iteration block cleanly
-    #             if not hostnames:
-    #                 print(f"[WARN] iteration {iter_idx}: no hostnames; skipping graphs/tables.")
-    #                 continue
-
-    #             # Per-client speed
-    #             report.set_table_title('Per-Client Speed (Download & Upload)')
-    #             report.build_table_title()
-    #             graph = lf_bar_graph(
-    #                 _data_set=[dl_list, ul_list],
-    #                 _xaxis_name="Device Name",
-    #                 _yaxis_name="Speed (in Mbps)",
-    #                 _xaxis_categories=hostnames,
-    #                 _graph_image_name=f"Download_upload_speed_iter_{iter_idx}",
-    #                 _label=["Download", "Upload"],
-    #                 _color=None,
-    #                 _color_edge='red',
-    #                 _show_bar_value=True,
-    #                 _text_font=7,
-    #                 _text_rotation=None,
-    #                 _enable_csv=True
-    #             )
-    #             report.set_graph_image(graph.build_bar_graph())
-    #             report.move_graph_image()
-    #             report.build_graph()
-
-    #             # Per-client latency
-    #             report.set_table_title('Per-Client Latency (Download & Upload)')
-    #             report.build_table_title()
-    #             graph2 = lf_bar_graph(
-    #                 _data_set=[dlat_list, ulat_list],
-    #                 _xaxis_name="Device Name",
-    #                 _yaxis_name="Latency (in ms)",
-    #                 _xaxis_categories=hostnames,
-    #                 _graph_image_name=f"Download_upload_Latency_iter_{iter_idx}",
-    #                 _label=["Download", "Upload"],
-    #                 _color=None,
-    #                 _color_edge='red',
-    #                 _show_bar_value=True,
-    #                 _text_font=7,
-    #                 _text_rotation=None,
-    #                 _enable_csv=True
-    #             )
-    #             report.set_graph_image(graph2.build_bar_graph())
-    #             report.move_graph_image()
-    #             report.build_graph()
-
-    #             # ---------- Per-Iteration ?Device Data? table (safe alignment) ----------
-    #             # Fast lookups for device metadata
-    #             by_key      = self.devices_data
-    #             by_hostname = {v.get('hostname'): v for v in self.devices_data.values() if v.get('hostname')}
-    #             by_ip       = {v.get('ip'): v for v in self.devices_data.values() if v.get('ip')}
-
-    #             def find_device(host_like=None, ip_like=None):
-    #                 return (
-    #                     (host_like and by_key.get(host_like)) or
-    #                     (host_like and by_hostname.get(host_like)) or
-    #                     (ip_like   and by_ip.get(ip_like)) or
-    #                     {}
-    #                 )
-
-    #             valid_hosts = list(hostnames)
-    #             valid_ips   = self.iteration_dict[iter_idx].get('ip', [])
-    #             # Row count is the larger of hosts or ips; we?ll pad missing with ''
-    #             N = max(len(valid_hosts), len(valid_ips), len(dl_list), len(ul_list), len(dlat_list), len(ulat_list))
-    #             def get_or_blank(a, i): return a[i] if i < len(a) else ''
-
-    #             ip_list, mac_list, ssid_list, device_name_list, channel_list = [], [], [], [], []
-    #             for i in range(N):
-    #                 h = get_or_blank(valid_hosts, i)
-    #                 ip = get_or_blank(valid_ips,   i)
-    #                 info = find_device(host_like=h, ip_like=ip)
-
-    #                 ip_list.append(ip or info.get('ip', ''))
-    #                 mac_list.append(info.get('mac', ''))
-    #                 ssid_list.append(info.get('ssid', ''))
-    #                 device_name_list.append(info.get('hostname', h or ''))
-    #                 channel_list.append(info.get('channel', ''))
-
-    #             # Equalize metric arrays to N so pandas is happy
-    #             def pad_to(lst, n, fill=''):
-    #                 out = list(lst)
-    #                 while len(out) < n: out.append(fill)
-    #                 if len(out) > n: out = out[:n]
-    #                 return out
-
-    #             dl_list   = pad_to(dl_list,   N, '')
-    #             ul_list   = pad_to(ul_list,   N, '')
-    #             dlat_list = pad_to(dlat_list, N, '')
-    #             ulat_list = pad_to(ulat_list, N, '')
-
-    #             test_input_info = {
-    #                 "hostname": device_name_list,
-    #                 "MAC": mac_list,
-    #                 "SSID": ssid_list,
-    #                 "Channel": channel_list,
-    #                 "Download Speed (Mbps)": dl_list,
-    #                 "Upload Speed (Mbps)": ul_list,
-    #                 "Download Latency (ms)": dlat_list,
-    #                 "Upload Latency (ms)": ulat_list,
-    #             }
-
-    #             report.set_table_title(f'<b>Device Data (Iteration {iter_idx})</b>')
-    #             report.build_table_title()
-    #             for k, v in test_input_info.items():
-    #                 print(f" {k}  : {v} ")
-
-    #             report.set_table_dataframe(pd.DataFrame(test_input_info))
-    #             report.build_table()
-
-    #         report.build_footer()
-    #         report.write_html()
-    #         report.write_pdf(_orientation="Landscape")
-
-
-    def generate_report(self, result_dir_name, per_post_timeout=120, poll_interval=2):
+        Args:
+            result_dir_name (str): Directory name for report output
+            do_webgui (bool): Whether the test is triggered from WEBGUI
+            per_post_timeout (int): Timeout for POST operations in seconds
+            poll_interval (int): Interval for polling operations in seconds
         """
-        Build report, guaranteeing per-iteration completeness:
-        - Waits until (#posts seen for iteration i) == (#devices) or timeout.
-        - For devices that never posted in iteration i, inserts NA rows.
-        """
-        import os, time, shutil
-        import pandas as pd
+        report = lf_report(
+            _output_pdf="speedtest.pdf",
+            _output_html="speedtest.html",
+            _results_dir_name=result_dir_name,
+            _path=self.result_dir if self.result_dir is not None else "/home/lanforge/html-reports"
+        )
+        report_path = report.get_path()
+        report_path_date_time = report.get_path_date_time()
+        os.makedirs(report_path, exist_ok=True)
+        os.makedirs(report_path_date_time, exist_ok=True)
 
-        print('===============================')
-        print('Devices DATA:', self.devices_data)
-        print('===============================')
+        all_ips = set()
+        for iter_data in self.iteration_dict.values():
+            all_ips.update(iter_data.get("ip", []))
 
-        # --- Build the canonical device roster (stable order) ---
-        # Roster is list of dicts with hostname/ip/mac/ssid/channel
+        # build roster with fallback info
         roster = []
-        for key, info in self.devices_data.items():
+        devices_by_ip = {}
+        for _key, dev in (self.devices_data or {}).items():
+            ip = dev.get("ip")
+            if not ip:
+                continue
+            devices_by_ip[ip] = dev
+
+        for ip in sorted(all_ips):
+            d = devices_by_ip.get(ip, {})
             roster.append({
-                "key": key,
-                "hostname": info.get("hostname", "") or "",
-                "ip": info.get("ip", "") or "",
-                "mac": info.get("mac", "") or "",
-                "ssid": info.get("ssid", "") or "",
-                "channel": info.get("channel", "") or "",
-                "device_type": info.get("device type", "") or ""
+                "ip": ip,
+                "hostname": d.get("hostname") or self.ip_hostname.get(ip, ip),
+                "device_type": d.get("device type", ""),
+                "mac": d.get("mac", ""),
+                # "ssid": d.get("ssid", ""),
+                # "channel": d.get("channel", "")
             })
-        # sort by hostname, then ip for stable graphs/tables
+
         roster.sort(key=lambda r: (str(r["hostname"]), str(r["ip"])))
         device_count = len(roster)
 
-        # --- Helper: ensure we received m posts for iteration i, otherwise wait (up to timeout) ---
         def wait_for_iteration_posts(iter_idx, expected, timeout_s=per_post_timeout, sleep_s=poll_interval):
             start = time.time()
             while True:
@@ -1431,79 +1364,248 @@ class SpeedTest(Realm):
                 iter_block = self.iteration_dict.get(iter_idx, None)
                 have = len(iter_block["ip"]) if iter_block and "ip" in iter_block else 0
                 if have >= expected:
-                    print(f"[WAIT] Iteration {iter_idx}: received {have}/{expected} posts ? continuing.")
+                    print(f"[WAIT] Iteration {iter_idx}: received {have}/{expected} posts continuing.")
                     return True
                 if time.time() - start >= timeout_s:
                     print(f"[WAIT] Iteration {iter_idx}: timed out at {have}/{expected} posts after {timeout_s}s.")
                     return False
                 time.sleep(sleep_s)
 
-        # --- Reporting only if not interop mode (keeps your original behavior) ---
-        if not self.do_interopability:
-            # Create report and make sure destination dirs exist
-            report = lf_report(
-                _output_pdf="speedtest.pdf",
-                _output_html="speedtest.html",
-                _results_dir_name=result_dir_name,
-                _path=self.result_dir if self.dowebgui else "/home/lanforge/html-reports"
+        try:
+            if self.robot_test:
+                robot_csv = f'speedtest_results_{self.instance}.csv'
+                if os.path.exists(robot_csv):
+                    df = pd.read_csv(robot_csv)
+
+                    if 'Status' in df.columns:
+                        max_test = df['Robot Test Number'].max()
+                        df.loc[df['Robot Test Number'] == max_test, 'Status'] = 'STOPPED'
+
+                    df.to_csv(robot_csv, index=False)
+                    shutil.copy(robot_csv, report_path_date_time)
+                    print(f"Moved robot CSV: {robot_csv}")
+                else:
+                    print(f"Robot CSV not found: {robot_csv}")
+            else:
+                regular_csv = f'speedtest_results_{self.instance}.csv'
+                if os.path.exists(regular_csv):
+                    shutil.move(regular_csv, report_path_date_time)
+                    print(f"Moved regular CSV: {regular_csv}")
+                else:
+                    print(f"Regular CSV not found: {regular_csv}")
+        except Exception as e:
+            print(f"[WARN] could not move CSV: {e}")
+
+        if self.robot_test:
+            iteration_range = sorted(self.iteration_dict.keys())
+        else:
+            iteration_range = list(range(1, self.iteration + 1))
+
+        total_iterations = len(iteration_range)
+
+        report_title = "Robot Speed Test" if self.robot_test else "Speed Test"
+        report.set_title(report_title)
+        report.build_banner()
+
+        report.set_obj_html(
+            _obj_title="Objective",
+            _obj=(
+                "The Candela Speed Test measures Download/Upload speeds and network latency "
+                "to reflect real-world client performance."
             )
-            report_path = report.get_path()
-            report_path_date_time = report.get_path_date_time()
-            os.makedirs(report_path, exist_ok=True)
-            os.makedirs(report_path_date_time, exist_ok=True)
+        )
+        report.build_objective()
 
-            # Move CSV (if created earlier) into timestamp dir, ignore if absent
-            try:
-                if os.path.exists(f'speedtest_results_{self.instance}.csv'):
-                    shutil.move(f'speedtest_results_{self.instance}.csv', report_path_date_time)
-            except Exception as e:
-                print(f"[WARN] could not move CSV: {e}")
+        config_data = {
+            "Test Name": report_title,
+            "Number of Iterations": total_iterations,
+            "Number of Devices": device_count,
+        }
 
-            logger.info("path: {}".format(report_path))
-            logger.info("path_date_time: {}".format(report_path_date_time))
-
-            # --- Title & objective ---
-            report.set_title("Speed Test")
-            report.build_banner()
-
-            report.set_obj_html(
-                _obj_title="Objective",
-                _obj=("The Candela Speed Test evaluates AP performance under real-world conditions by measuring latency, "
-                    "download speed, and upload speed. The goal is to reflect true end-user experience in typical deployments.")
-            )
-            report.build_objective()
-
-            # --- Test configuration summary ---
-            android_devices = windows_devices = linux_devices = mac_devices = 0
-            for r in roster:
-                dt = r["device_type"]
-                if dt == 'Android':
-                    android_devices += 1
-                elif dt == 'Windows':
-                    windows_devices += 1
-                elif dt == 'Mac OS':
-                    mac_devices += 1
-                elif dt == 'Linux/Interop':
-                    linux_devices += 1
-            total_devices = ""
-            if android_devices: total_devices += f" Android({android_devices})"
-            if windows_devices: total_devices += f" Windows({windows_devices})"
-            if linux_devices:   total_devices += f" Linux({linux_devices})"
-            if mac_devices:     total_devices += f" Mac({mac_devices})"
-
-            report.test_setup_table(
-                test_setup_data={
-                    "Test name": "Speed Test",
-                    "Number of Iterations": self.iteration,
-                    "Number of Selected Devices": f"{device_count} {total_devices}".strip()
-                },
-                value="Test Configuration"
+        if self.robot_test:
+            config_data["Coordinates"] = ", ".join(self.coordinate_list)
+            config_data["Rotations"] = (
+                ", ".join(self.rotation_list)
+                if self.rotation_list and self.rotation_list[0] != ""
+                else "None"
             )
 
-            # --- Per-iteration graphs and tables, with NA backfill ---
+        report.test_setup_table(config_data, "Configuration")
+
+        if do_webgui:
+            self.add_live_view_images_to_report(report)
+
+        per_iter = {}
+        rotation_summary = {}
+        missing_notes = []
+
+        for iter_idx in iteration_range:
+
+            block = self.iteration_dict.get(iter_idx, {})
+            ip_to_idx = {ip: i for i, ip in enumerate(block.get("ip", []))}
+
+            host_list = []
+            dls = []
+            uls = []
+            dlat = []
+            ulat = []
+            meta = []
+
+            for dev in roster:
+                ip = dev["ip"]
+                hostname = dev["hostname"]
+                meta.append(dev)
+
+                if ip in ip_to_idx:
+                    j = ip_to_idx[ip]
+                    host_list.append(hostname)
+                    dls.append(block["download_speed"][j])
+                    uls.append(block["upload_speed"][j])
+                    dlat.append(block["download_lat"][j])
+                    ulat.append(block["upload_lat"][j])
+                else:
+                    host_list.append(hostname)
+                    dls.append(0.0)
+                    uls.append(0.0)
+                    dlat.append(0.0)
+                    ulat.append(0.0)
+                    missing_notes.append(f"Iteration {iter_idx}: No data received for {hostname} (IP {ip}).")
+
+            # store clean iteration data
+            per_iter[iter_idx] = {
+                "hostnames": host_list,
+                "download": dls,
+                "upload": uls,
+                "download_lat": dlat,
+                "upload_lat": ulat,
+                "meta": meta
+            }
+            print('DEBUG', per_iter)
+
+            # robot-only aggregation
+            if self.robot_test:
+                if self.rotation_list and self.rotation_list[0] != "":
+                    coord_idx = (iter_idx - 1) // len(self.rotation_list)
+                    rot_idx = (iter_idx - 1) % len(self.rotation_list)
+                    coord = self.coordinate_list[coord_idx]
+                    rotation = self.rotation_list[rot_idx]
+                else:
+                    coord_idx = (iter_idx - 1)
+                    coord = self.coordinate_list[coord_idx]
+                    rotation = "0"
+
+                if rotation not in rotation_summary:
+                    rotation_summary[rotation] = {
+                        "coords": [],
+                        "download": [],
+                        "upload": [],
+                        "download_lat": [],
+                        "upload_lat": []
+                    }
+
+                # aggregate averages per iteration
+                rotation_summary[rotation]["coords"].append(coord)
+                rotation_summary[rotation]["download"].append(sum(dls) / len(dls))
+                rotation_summary[rotation]["upload"].append(sum(uls) / len(uls))
+                rotation_summary[rotation]["download_lat"].append(sum(dlat) / len(dlat))
+                rotation_summary[rotation]["upload_lat"].append(sum(ulat) / len(ulat))
+
+        if self.robot_test:
+            # TODO NEED to add heading of rotation
+            for rotation, data in rotation_summary.items():
+                coords = data["coords"]
+
+                # SPEED GRAPH
+                bar = lf_bar_graph(
+                    _data_set=[data["download"], data["upload"]],
+                    _xaxis_categories=coords,
+                    _xaxis_name="Coordinates",
+                    _yaxis_name="Speed (Mbps)",
+                    _graph_image_name=f"rotation_{rotation}_speed",
+                    _label=["Download", "Upload"],
+                    _show_bar_value=True,
+                )
+                png = bar.build_bar_graph()
+                if png:
+                    report.set_graph_image(png)
+                    report.move_graph_image()
+                    report.build_graph()
+
+                # LATENCY GRAPH
+                bar2 = lf_bar_graph(
+                    _data_set=[data["download_lat"], data["upload_lat"]],
+                    _xaxis_categories=coords,
+                    _xaxis_name="Coordinates",
+                    _yaxis_name="Latency (ms)",
+                    _graph_image_name=f"rotation_{rotation}_latency",
+                    _label=["Download Latency", "Upload Latency"],
+                    _show_bar_value=True,
+                )
+                png2 = bar2.build_bar_graph()
+                if png2:
+                    report.set_graph_image(png2)
+                    report.move_graph_image()
+                    report.build_graph()
+
+            for iter_idx in iteration_range:
+
+                block = per_iter[iter_idx]
+
+                if not self.robot_test:
+                    report.set_table_title(f"Iteration {iter_idx} - Per-Client Speed")
+                    report.build_table_title()
+
+                g = lf_bar_graph(
+                    _data_set=[block["download"], block["upload"]],
+                    _xaxis_categories=block["hostnames"],
+                    _xaxis_name="Device",
+                    _yaxis_name="Speed (Mbps)",
+                    _graph_image_name=f"iter_{iter_idx}_speed",
+                    _label=["Download", "Upload"],
+                    _show_bar_value=True
+                )
+                png = g.build_bar_graph()
+                if png:
+                    report.set_graph_image(png)
+                    report.move_graph_image()
+                    report.build_graph()
+
+                report.set_table_title(f"Iteration {iter_idx} - Per-Client Latency")
+                report.build_table_title()
+
+                g2 = lf_bar_graph(
+                    _data_set=[block["download_lat"], block["upload_lat"]],
+                    _xaxis_categories=block["hostnames"],
+                    _xaxis_name="Device",
+                    _yaxis_name="Latency (ms)",
+                    _graph_image_name=f"iter_{iter_idx}_latency",
+                    _label=["Download Latency", "Upload Latency"],
+                    _show_bar_value=True
+                )
+                png2 = g2.build_bar_graph()
+                if png2:
+                    report.set_graph_image(png2)
+                    report.move_graph_image()
+                    report.build_graph()
+
+                # Table
+                table_df = pd.DataFrame({
+                    "Hostname": block["hostnames"],
+                    "Download (Mbps)": block["download"],
+                    "Upload (Mbps)": block["upload"],
+                    "Download Lat (ms)": block["download_lat"],
+                    "Upload Lat (ms)": block["upload_lat"],
+                })
+
+                report.set_table_title(f"Iteration {iter_idx} - Device Data")
+                report.build_table_title()
+                report.set_table_dataframe(table_df)
+                report.build_table()
+
+        else:
             missing_notes_all = []
-
-            for iter_idx in range(1, self.iteration + 1):
+            print('ROSTER:', roster)
+            for iter_idx in iteration_range:
                 print('Iteration DATA:', self.iteration_dict)
 
                 # Wait until we have m rows or timing out
@@ -1513,7 +1615,6 @@ class SpeedTest(Realm):
                     'ip': [], 'hostname': [], 'download_speed': [], 'upload_speed': [], 'download_lat': [], 'upload_lat': []
                 })
 
-                # Map from IP -> index in lists (iteration_dict keeps parallel arrays)
                 ip_to_idx = {ip: i for i, ip in enumerate(iter_block.get('ip', []))}
 
                 hostnames = []
@@ -1524,8 +1625,8 @@ class SpeedTest(Realm):
 
                 t_hostname = []
                 t_mac = []
-                t_ssid = []
-                t_channel = []
+                # t_ssid = []
+                # t_channel = []
                 t_type = []
 
                 for dev in roster:
@@ -1533,8 +1634,8 @@ class SpeedTest(Realm):
                     host = dev["hostname"]
                     t_hostname.append(host)
                     t_mac.append(dev["mac"])
-                    t_ssid.append(dev["ssid"])
-                    t_channel.append(dev["channel"])
+                    # t_ssid.append(dev["ssid"])
+                    # t_channel.append(dev["channel"])
                     t_type.append(dev["device_type"])
 
                     if ip in ip_to_idx:
@@ -1555,55 +1656,63 @@ class SpeedTest(Realm):
                             f"Iteration {iter_idx}: no POST received for device {host_label} (IP {ip or 'N/A'}); row filled with NA/0."
                         )
 
+                if not hostnames or not dls:
+                    print(f"Warning: No data for iteration {iter_idx}, skipping graphs")
+                    continue
+
                 # ---- Graphs ----
                 report.set_table_title('Per-Client Speed (Download & Upload)')
                 report.build_table_title()
-                graph = lf_bar_graph(
-                    _data_set=[dls, uls],
-                    _xaxis_name="Device Name",
-                    _yaxis_name="Speed (in Mbps)",
-                    _xaxis_categories=hostnames,
-                    _graph_image_name=f"Download_upload_speed_iter_{iter_idx}",
-                    _label=["Download", "Upload"],
-                    _color=None,
-                    _color_edge='red',
-                    _show_bar_value=True,
-                    _text_font=7,
-                    _text_rotation=None,
-                    _enable_csv=True
-                )
-                report.set_graph_image(graph.build_bar_graph())
-                report.move_graph_image()
-                report.build_graph()
+                if hostnames and dls and uls:
+                    graph = lf_bar_graph(
+                        _data_set=[dls, uls],
+                        _xaxis_name="Device Name",
+                        _yaxis_name="Speed (in Mbps)",
+                        _xaxis_categories=hostnames,
+                        _graph_image_name=f"Download_upload_speed_iter_{iter_idx}",
+                        _label=["Download", "Upload"],
+                        _color=None,
+                        _color_edge='red',
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=None,
+                        _figsize=(12, 10),
+                        _xticks_rotation=30,
+                        _enable_csv=True
+                    )
+                    report.set_graph_image(graph.build_bar_graph())
+                    report.move_graph_image()
+                    report.build_graph()
 
-                report.set_table_title('Per-Client Latency (Download & Upload)')
-                report.build_table_title()
-                graph2 = lf_bar_graph(
-                    _data_set=[dlat, ulat],
-                    _xaxis_name="Device Name",
-                    _yaxis_name="Latency (in ms)",
-                    _xaxis_categories=hostnames,
-                    _graph_image_name=f"Download_upload_Latency_iter_{iter_idx}",
-                    _label=["Download", "Upload"],
-                    _color=None,
-                    _color_edge='red',
-                    _show_bar_value=True,
-                    _text_font=7,
-                    _text_rotation=None,
-                    _enable_csv=True
-                )
-                report.set_graph_image(graph2.build_bar_graph())
-                report.move_graph_image()
-                report.build_graph()
+                    report.set_table_title('Per-Client Latency (Download & Upload)')
+                    report.build_table_title()
+                    graph2 = lf_bar_graph(
+                        _data_set=[dlat, ulat],
+                        _xaxis_name="Device Name",
+                        _yaxis_name="Latency (in ms)",
+                        _xaxis_categories=hostnames,
+                        _graph_image_name=f"Download_upload_Latency_iter_{iter_idx}",
+                        _label=["Download", "Upload"],
+                        _color=None,
+                        _color_edge='red',
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=None,
+                        _figsize=(12, 10),
+                        _xticks_rotation=30,
+                        _enable_csv=True
+                    )
+                    report.set_graph_image(graph2.build_bar_graph())
+                    report.move_graph_image()
+                    report.build_graph()
 
-                # ---- Per-iteration device table (aligned, always length m) ----
                 test_input_info = {
-                    # "IP": [dev["ip"] for dev in roster],   # uncomment if you want the IP column
+                    # "IP": [dev["ip"] for dev in roster],  # Uncomment for IP column
                     "hostname": t_hostname,
                     "MAC": t_mac,
                     "Device Type": t_type,
-                    "SSID": t_ssid,
-                    "Channel": t_channel,
+                    # "SSID": t_ssid,
+                    # "Channel": t_channel,
                     "Download Speed (Mbps)": dls,
                     "Upload Speed (Mbps)": uls,
                     "Download Latency (ms)": dlat,
@@ -1618,33 +1727,32 @@ class SpeedTest(Realm):
                 report.set_table_dataframe(pd.DataFrame(test_input_info))
                 report.build_table()
 
-            # If anything was missing, add a ?Notes? block at the end
-            if missing_notes_all:
-                notes_html = "<br>".join(missing_notes_all)
-                report.set_obj_html(_obj_title="Notes", _obj=notes_html)
-                report.build_objective()
+        if missing_notes:
+            report.set_obj_html("Notes", "<br>".join(missing_notes))
+            report.build_objective()
 
-            # Footer + files
-            report.build_footer()
-            report.write_html()
-            report.write_pdf(_orientation="Landscape")
-        print(f"[REPORT] done, files in: {report_path_date_time}")
-
+        # DONE
+        report.build_footer()
+        report.write_html()
+        report.write_pdf(_orientation="Landscape")
+        print(f"[REPORT COMPLETE] Files stored in: {report_path_date_time}")
 
 
 def main():
     help_summary = '''\
-The Candela's Speed Test is designed to evaluate the Access Point (AP) performance under real-world conditions by measuring key network metrics such as latency, download speed, upload speed.
-This test aims to reflect the true end-user experience in typical deployment environments.
+        The Candela Speed Test evaluates Access Point (AP) performance under real-world conditions by measuring key network metrics such as latency, download speed, and upload speed.
+        This test reflects true end-user experience in typical deployment environments.
 
-This test is currently supported only on laptop-based clients, including Linux, Windows, and Mac OS devices.
+        Supported platforms and test methods:
+        - Laptops (Linux, Windows, macOS): Browser-based automation (Selenium)
+        - Android devices: ADB/app-based automation
 
-Key metrics collected include:
-- Download Speed
-- Upload Speed
-- Idle Latency
-- Download Latency
-- Upload Latency
+        Key metrics collected:
+        - Download Speed
+        - Upload Speed
+        - Download Latency
+        - Upload Latency
+
     '''
 
     parser = argparse.ArgumentParser(
@@ -1658,25 +1766,52 @@ Key metrics collected include:
             NAME: lf_interop_speedtest.py
 
             PURPOSE:
-                The lf_interop_speedtest.py script enables users to perform real-world WiFi speed tests using laptop-based clients
-                such as Linux, Windows, and macOS. This test does not support mobile platforms (e.g., Android, iOS).
+                The lf_interop_speedtest.py script enables real-world WiFi speed testing for laptop-based clients
+                (Linux, Windows, macOS) and Android mobile devices. iOS is not supported.
 
                 Instead, it focuses on measuring actual end-user experience by capturing metrics such as download/upload speed,
-                latency (ping). The script uses the Speedtest.net service (via browser automation) to run the tests.
+                latency (ping). The script uses the Speedtest.net service (via browser automation for laptops) to run the tests.
 
-                TO PERFORM SPEED TEST:
+            TO PERFORM SPEED TEST:
 
                 EXAMPLE-1:
-                Run a default speed test using browser-based automation (Selenium)
-
-                python3 lf_interop_speedtest.py --mgr 192.168.204.74
+                    Run a default speed test using browser-based automation (Selenium)
+                    ./lf_interop_speedtest.py \
+                        --mgr 192.168.204.74 \
+                        --device_list 1.10,1.12 \
+                        --instance_name SAMPLE_TEST \
+                        --iteration 1 \
+                        --upstream_port eth2 \
+                        --cleanup
 
                 EXAMPLE-2:
-                Run a speed and interoperability test using browser automation
+                    Run speed test on robot with each coordinate and rotation
+                    ./lf_interop_speedtest.py \
+                        --mgr 192.168.204.75 \
+                        --device_list 1.10,1.12 \
+                        --instance_name SAMPLE_TEST \
+                        --iteration 1 \
+                        --robot_test \
+                        --coordinate 1,2 \
+                        --rotation 0,90 \
+                        --robot_ip 127.0.0.1:5000 \
+                        --upstream_port eth2 \
+                        --cleanup
 
-                python3 lf_interop_speedtest.py --mgr 192.168.204.74 --do_interopability
+                EXAMPLE-3:
+                    Run speed test on robot with each coordinate without rotation
+                    ./lf_interop_speedtest.py \
+                        --mgr 192.168.204.75 \
+                        --device_list 1.10,1.12 \
+                        --instance_name SAMPLE_TEST \
+                        --iteration 1 \
+                        --robot_test \
+                        --coordinate 1,2 \
+                        --robot_ip 127.0.0.1:5000 \
+                        --upstream_port eth2 \
+                        --cleanup
             '''
-        )
+    )
 
     parser = argparse.ArgumentParser(
         prog='interop_speedtest.py',
@@ -1684,54 +1819,88 @@ Key metrics collected include:
     optional = parser.add_argument_group('Optional arguments')
 
     # optional arguments
-    optional.add_argument('--mgr',
-                        type=str,
-                        help='hostname where LANforge GUI is running',
-                        default='localhost')
+    optional.add_argument(
+        '--mgr',
+        type=str,
+        help='hostname where LANforge GUI is running',
+        default='localhost')
 
-    optional.add_argument('--device_list',
-                        type=str,
-                        help='Mention device list (comma seperated)',
-                        )
+    optional.add_argument(
+        '--device_list',
+        type=str,
+        help='Mention device list (comma seperated)',
+    )
 
-    optional.add_argument('--instance_name',
-                        type=str,
-                        default='Speed_Test_report',
-                        help='Mention Test Instance name (report folder name)',
-                        )
-    optional.add_argument('--iteration',
-                        type=int,
-                        default=1,
-                        help='Mention number of iterations for the test.',
-                        )
+    optional.add_argument(
+        '--instance_name',
+        type=str,
+        default='Speed_Test_report',
+        help='Mention Test Instance name (report folder name)',
+    )
 
-    optional.add_argument('--do_interopability',
-                        action='store_true',
-                        help='Ensures test on devices run sequentially')
-    
-    optional.add_argument('--result_dir',
-                        type=str,
-                        default='results',
-                        help='Directory to store test results')
-    
-    optional.add_argument('--dowebgui',
-                        action='store_true',
-                        help='Generates a web GUI report for the test results')
+    optional.add_argument(
+        '--upstream_port',
+        type=str,
+        help='Upstream port IP for clients to POST results (e.g., AP/router IP)',
+        default=None
+    )
 
-    optional.add_argument('--type',
-                        choices=['cli', 'ookla'],
-                        default='ookla',
-                        help='Type of speed test to perform (cli, ookla)')
+    optional.add_argument(
+        '--iteration',
+        type=int,
+        default=1,
+        help='Mention number of iterations for the test.',
+    )
 
-    optional.add_argument('--cleanup',
-                        action='store_true',
-                        help='cleans up generic cx after completion of the test')
+    optional.add_argument(
+        '--do_interopability',
+        action='store_true',
+        help='Ensures test on devices run sequentially')
 
+    optional.add_argument(
+        '--result_dir',
+        type=str,
+        default='results',
+        help='Directory to store test results')
 
-    #TODO Commented lines are for implementation of incremental testing.
-    # optional.add_argument('--do_increment',
-    #                       help='Specify the incremental values for speedtesting as a comma-separated list (e.g., 10,20,30).',
-    #                       default=[])
+    optional.add_argument(
+        '--type',
+        choices=['cli', 'ookla'],
+        default='ookla',
+        help='Type of speed test to perform (cli, ookla)')
+
+    optional.add_argument(
+        '--cleanup',
+        action='store_true',
+        help='cleans up generic cx after completion of the test')
+
+    optional.add_argument(
+        '--robot_test',
+        help='to trigger robot test',
+        action='store_true')
+
+    optional.add_argument(
+        '--do_webgui',
+        help='mention if the test is triggered from WEBGUI',
+        action='store_true')
+
+    optional.add_argument(
+        '--robot_ip',
+        type=str,
+        default='localhost',
+        help='hostname for where Robot server is running')
+
+    optional.add_argument(
+        '--coordinate',
+        type=str,
+        default=None,
+        help="The coordinate contains list of coordinates to be ")
+
+    optional.add_argument(
+        '--rotation',
+        type=str,
+        default=None,
+        help="The set of angles to rotate at a particular point")
 
     parser.add_argument('--help_summary', default=None, action="store_true", help='Show summary of what this script does')
 
@@ -1741,27 +1910,29 @@ Key metrics collected include:
         print(help_summary)
         exit(0)
 
-    #TODO for folder creation purpose only 
-    # folder_name = f"{args.instance_name or 'SpeedTest'}"
-    # os.makedirs(folder_name, exist_ok=True)
-    # csv_file = os.path.join(folder_name, "speedtest_results.csv")
-    
     csv_file = f"speedtest_results_{args.instance_name}.csv"
-    # if not args.dowebgui else f"{args.result_dir}/speedtest_results_{args.instance_name}.csv"
 
-    speedtest_obj = SpeedTest(manager_ip=args.mgr,
-                            device_list=args.device_list,
-                            instance=args.instance_name,
-                            iteration=args.iteration,
-                            do_interopability=args.do_interopability,
-                            result_dir=args.result_dir,
-                            type=args.type,
-                            dowebgui=args.dowebgui)
+    speedtest_obj = SpeedTest(
+        manager_ip=args.mgr,
+        device_list=args.device_list,
+        instance=args.instance_name,
+        iteration=args.iteration,
+        do_interopability=args.do_interopability,
+        result_dir=args.result_dir,
+        type=args.type,
+        robot_test=args.robot_test,
+        robot_ip=args.robot_ip,
+        coordinate=args.coordinate,
+        rotation=args.rotation,
+        upstream_port=args.upstream_port)
+
     speedtest_obj.get_resource_data()
     speedtest_obj.create()
 
-    if args.do_interopability:
-        speedtest_obj.create_cx_do_interop(csv_file)
+    if args.robot_test:
+        csv_file = f"speedtest_results_{args.instance_name}.csv"
+        print(f"Starting robot testing with {speedtest_obj.total_robot_tests} total tests")
+        speedtest_obj.perform_robot_testing(csv_file)
 
     else:
         for iter in range(1, args.iteration + 1):
@@ -1769,7 +1940,7 @@ Key metrics collected include:
 
             speedtest_obj.start_generic()
             print(f"Test started at {speedtest_obj.start_time}")
-            time.sleep(50) # Speedtest duration wait time.
+            time.sleep(50)  # Speedtest duration wait time.
             speedtest_obj.stop_generic()
             time.sleep(20)
 
@@ -1778,7 +1949,7 @@ Key metrics collected include:
                 want = []
                 for info in devices.values():
                     cmd = (info.get('cmd') or '')
-                    ip  = (info.get('ip')  or '')
+                    ip = (info.get('ip') or '')
                     if ip and '--post_url' in cmd:
                         want.append(ip)
                 # de-dup (stable)
@@ -1804,13 +1975,15 @@ Key metrics collected include:
 
             # Finally, write results for this iteration
             speedtest_obj.write_results_to_csv(iter, csv_file)
-            # time.sleep() #TODO Hardcoded wait time to allow all devices to be ready for next iteration.
+
+            time.sleep(5)   # TODO: Hardcoded wait time to allow all devices to be ready for next iteration.
             speedtest_obj.result_json = {}
 
     if args.cleanup:
         speedtest_obj.cleanup()
 
-    speedtest_obj.generate_report(result_dir_name=args.instance_name)
+    speedtest_obj.generate_report(result_dir_name=args.instance_name, do_webgui=args.do_webgui)
+
 
 if __name__ == "__main__":
     main()
