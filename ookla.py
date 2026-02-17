@@ -165,8 +165,8 @@ class SpeedtestAdb:
                 (int(w * 0.48), int(h * 0.40)),
 
                 # Additional taps around the button
-                (350, 650),
-                (650, 350),
+                # (350, 650),
+                # (650, 350),
             ]
         except (ValueError, AttributeError, Exception):
             # Fallback tap coordinates (hardcoded)
