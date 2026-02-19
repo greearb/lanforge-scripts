@@ -306,10 +306,10 @@ class lf_create_ap_auto_json():
                     " --set 'tput_multi_sta' 0",
                     " --set 'tput_multi_band' 0",
                     " --raw_line 'cx_psk_thresh: 500'",
-                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{ap_auto_test_name}'",
                     " --test_rig TEST_RIG ",
                     " --set DUT_SET_NAME",
-                    " --verbosity 11"
+                    " --verbosity 11",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{ap_auto_test_name}'"
                 ]
             }}
             """
