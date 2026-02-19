@@ -319,12 +319,12 @@ class lf_create_wc_json():
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name {wc_test_name}",
                     " --upstream UPSTREAM_PORT --batch_size {wc_batch_size} --loop_iter 1 --protocol '{lf_wc_sta_protocol}' --duration {wc_duration}",
-                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{wc_test_name}'",
                     " --test_rig TEST_RIG ",
                     " --upload_rate '{ul_rate}'",
                     " --download_rate '{dl_rate}'",
                     " --set DUT_SET_NAME",
-                    " --verbosity 11"
+                    " --verbosity 11",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{wc_test_name}'"
                 ]
             }}
             """
