@@ -387,13 +387,13 @@ class lf_create_dp_rvr_json():
                     " --raw_line 'traffic_types: {lf_dp_rvr_traffic_type}' ",
                     " --raw_line 'bandw_options: {lf_dp_rvr_bandwidth}' ",
                     " --raw_line 'spatial_streams: {lf_dp_rvr_spatial_streams}' ",
-                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{dp_rvr_test_name}'",
                     " {attenuator}",
                     " {attenuation}",
                     " --raw_line 'attenuator_mod: 0xf'  ",
                     " --test_rig TEST_RIG ",
                     " --set DUT_SET_NAME",
-                    " --verbosity 11"
+                    " --verbosity 11",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{dp_rvr_test_name}'"
                 ]
             }}
             """
