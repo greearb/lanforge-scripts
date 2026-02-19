@@ -731,6 +731,7 @@ class ZoomAutomation(Realm):
         self.user_list = []
         self.serial_list = []
         self.lanforge_port_list = []
+        self.device_names = []
         self.user_resources = [
             ".".join(item.split(".")[:2]) for item in self.real_sta_list
         ]
@@ -825,21 +826,24 @@ class ZoomAutomation(Realm):
         interop_data = self.json_get("/adb")
         interop_mobile_data = interop_data.get("devices", {})
         self.serial_list = []
+        self.lanforge_port_list = []
         for user in self.user_list:
             if user == "":
                 self.serial_list.append("")
                 self.lanforge_port_list.append("")
             else:
+                user_found = False
                 # 1. Handle Single Device (Flat Dictionary)
                 if isinstance(interop_mobile_data, dict):
                     if interop_mobile_data.get("user-name") == user:
                         # Extract details from 'name' (e.g., '1.1.3200f8664a91a5e9')
                         full_name = interop_mobile_data.get("name")
-                        resource = full_name.split(".")[1]
-                        serial_no = full_name.split(".")[2]
-
-                        self.serial_list.append(serial_no)
-                        self.lanforge_port_list.append(f"1.{resource}.eth0")
+                        if full_name and full_name.count(".") >= 2:
+                            resource = full_name.split(".")[1]
+                            serial_no = full_name.split(".")[2]
+                            self.serial_list.append(serial_no)
+                            self.lanforge_port_list.append(f"1.{resource}.eth0")
+                            user_found = True
                 else:
                     for mobile_device in interop_mobile_data:
                         for serial, device_data in mobile_device.items():
@@ -849,7 +853,14 @@ class ZoomAutomation(Realm):
                                 self.serial_list.append(serial_no)
                                 lanforge_port = f"1.{resource}.eth0"
                                 self.lanforge_port_list.append(lanforge_port)
+                                user_found = True
                                 break
+                        if user_found:
+                            break
+
+                if not user_found:
+                    self.serial_list.append("")
+                    self.lanforge_port_list.append("")
 
         logger.debug(f"Checking serial list {self.serial_list}")
 
@@ -1228,6 +1239,7 @@ class ZoomAutomation(Realm):
             ) in (
                 real_sta_list
             ):  # Iterate over devices in `real_sta_list` to preserve order
+                device_found = False
                 for interface_dict in interfaces:  # Iterate through `interfaces`
                     for (
                         key,
@@ -1247,7 +1259,10 @@ class ZoomAutomation(Realm):
                             final_device_list.append(
                                 key
                             )  # Add to final_device_list in order
+                            device_found = True
                             break  # Stop after finding the first match for the current device to maintain order
+                    if device_found:
+                        break
 
             self.real_sta_list = final_device_list
 
@@ -1257,16 +1272,26 @@ class ZoomAutomation(Realm):
             exit(0)
         # Filter out iOS devices from the real_sta_list before proceeding
         self.real_sta_list = self.filter_ios_devices(self.real_sta_list)
-        # # Add real station data to `self.real_sta_data_dict`
+
+        # Rebuild a clean, ordered and unique station list (avoid mutating while iterating)
+        self.real_sta_data = {}
+        cleaned_sta_list = []
+        seen_sta = set()
+
         for sta_name in self.real_sta_list:
+            if sta_name in seen_sta:
+                continue
             if sta_name not in real_device_obj.devices_data:
-                self.real_sta_list.remove(sta_name)
                 logger.error(
                     "Real station not in devices data, ignoring it from testing"
                 )
                 continue
 
+            seen_sta.add(sta_name)
+            cleaned_sta_list.append(sta_name)
             self.real_sta_data[sta_name] = real_device_obj.devices_data[sta_name]
+
+        self.real_sta_list = cleaned_sta_list
         self.real_sta_os_type = [
             self.real_sta_data[real_sta_name]["ostype"]
             for real_sta_name in self.real_sta_data
@@ -3838,11 +3863,13 @@ and downstream traffic"""
         self.login_completed = False
 
     def create_participants(self):
+        print("=============================")
+        print("Creating Participants with the following details:")
+        print(self.lanforge_port_list)
+        print(self.real_sta_hostname)
+        print(self.serial_list)
         for i in range(1, len(self.real_sta_os_type)):
             if self.real_sta_os_type[i] == "android":
-                print("=============================")
-                print(self.lanforge_port_list[i])
-
                 status, created_cx, created_endp = self.create_android(
                     lanforge_res=self.lanforge_port_list[i],
                     ports=[self.real_sta_list[i]],
