@@ -2192,7 +2192,10 @@ class VideoStreamingTest(Realm):
                 self.data = self.vs_data[self.coordinate_list[coordinate]]["self_data"]
                 shutil.move('video_streaming_realtime_data{}.csv'.format(csv_suffix), report_path_date_time)
                 self.generate_individual_coordinate(report, device_type, username, ssid, mac, channel, mode, rssi, tx_rate, created_incremental_values, keys)
-
+        report.build_footer()
+        report.write_html()
+        report.write_pdf()
+        
     def generate_individual_coordinate(self, report, device_type, username, ssid, mac, channel, mode, rssi, tx_rate, created_incremental_values, keys, report_path=""):
         """
         Generate per-coordinate and per-rotation Video Streaming graphs and tables by
@@ -2434,9 +2437,6 @@ class VideoStreamingTest(Realm):
             dataframe3 = pd.DataFrame(dataframe2)
             report.set_table_dataframe(dataframe3)
             report.build_table()
-        report.build_footer()
-        report.write_html()
-        report.write_pdf()
 
     def perform_robo(self, args, individual_dataframe_columns, cx_order_list, i, actual_start_time, iterations_before_test_stopped_by_user):
         """
