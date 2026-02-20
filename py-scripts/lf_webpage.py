@@ -1327,7 +1327,7 @@ class HttpDownload(Realm):
             if os.path.exists(http_img_path):
                 report.set_custom_html('<div style="page-break-before: always;"></div>')
                 report.build_custom()
-                report.set_custom_html(f'<img src="file://{http_img_path}"></img>')
+                report.set_custom_html(f'<img style="width:1200px" src="file://{http_img_path}"></img>')
                 report.build_custom()
 
     def get_bandsteering_stats(self, report):

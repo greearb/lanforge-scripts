@@ -1960,7 +1960,7 @@ class FtpTest(LFCliBase):
             if os.path.exists(ftp_img_path):
                 self.report.set_custom_html('<div style="page-break-before: always;"></div>')
                 self.report.build_custom()
-                self.report.set_custom_html(f'<img src="file://{ftp_img_path}"></img>')
+                self.report.set_custom_html(f'<img style="width:1200px" src="file://{ftp_img_path}"></img>')
                 self.report.build_custom()
 
     def build_single_graph(self, client_list, data, graph_name, title, x_label, color, direction):
