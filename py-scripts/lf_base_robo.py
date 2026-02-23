@@ -38,6 +38,8 @@ class RobotClass:
         self.from_coordinate = ""
         self.to_coordinate = ""
         self.charging_timestamps = []
+        # max time to reach a point in seconds
+        self.time_to_reach=60 
 
         # Create waypoint list on initialization
         if self.robo_ip is not None:
@@ -207,7 +209,12 @@ class RobotClass:
         abort = False
         moverobo_url = 'http://' + self.robo_ip + '/cmd/nav_name'
         status_url = 'http://' + self.robo_ip + '/reeman/nav_status'
-        requests.post(moverobo_url, json={"point": coord})
+        try:
+            response = requests.post(moverobo_url, json={"point": coord})
+            response.raise_for_status()
+            logging.info("Move command sent successfully")
+        except requests.exceptions.RequestException as e:
+            logging.info("Error occurred:", e)
         for wp in self.waypoint_list:
             if coord in wp:
                 self.target_x = wp[coord]["x"]
@@ -215,11 +222,19 @@ class RobotClass:
 
         retries = 0
         logging.info("Moving to point {}".format(coord))
+        time.sleep(5)
+
+        prev_x, prev_y = None, None
+        last_movement_time = time.time()
+        movement_timeout = self.time_to_reach
+        movement_threshold = 0.05
+        second_check=False
+
         while True:
             matched = False
             try:
                 response = requests.get(status_url, timeout=5)
-                # x_coord, y_coord=self.get_robot_pose()
+                x_coord, y_coord,from_coord,to_coord=self.get_robot_pose()
                 if monitor_function:
                     self.to_coordinate = coord
                     all_dataframes =monitor_function()
@@ -246,6 +261,35 @@ class RobotClass:
                 matched = True
                 self.from_coordinate = coord
                 break
+
+            current_time = time.time()
+
+            if prev_x is not None and prev_y is not None:
+                movement = math.sqrt((x_coord - prev_x) ** 2 + (y_coord - prev_y) ** 2)
+                # print("movementtt",movement)
+                if movement > movement_threshold:
+                    last_movement_time = current_time
+
+            prev_x, prev_y = x_coord, y_coord
+
+            if current_time - last_movement_time > movement_timeout:
+                if second_check:
+                    logging.info("Robot appears stuck. No movement detected.")
+                    matched=False
+                    if self.do_bandsteering:
+                        return matched,abort,all_dataframes
+                    else:
+                        return matched,abort
+                else:
+                    try:
+                        response = requests.post(moverobo_url, json={"point": coord})
+                        response.raise_for_status()
+                        logging.info("Move command sent successfully and waiting for 10sec to observe movement")
+                        time.sleep(10)
+                    except requests.exceptions.RequestException as e:
+                        logging.info("Error occurred:", e)
+                    second_check=True
+                    continue
 
         # Store the coordinate in navdatajson only from webui
         if self.nav_data_path:
