@@ -4225,6 +4225,11 @@ and downstream traffic"""
                 # Add a separator between coordinates
                 self.report.set_custom_html("<hr>")
                 self.report.build_custom()
+    
+    # Safe Get
+    def get_val(self, device_key, key, data):
+        val = data.get(device_key, {}).get(key)
+        return val if val is not None else 0
 
     def _build_metric_graph(
         self, media_type, metric_name, unit, data, input_key, output_key, suffix=""
@@ -4243,14 +4248,8 @@ and downstream traffic"""
         for client in self.real_sta_hostname:
             # Use the hostname directly as the key to fetch data
             device_key = client
-
-            # Safe Get
-            def get_val(key):
-                val = data.get(device_key, {}).get(key)
-                return val if val is not None else 0
-
-            sent_vals.append(get_val(output_key))
-            recv_vals.append(get_val(input_key))
+            sent_vals.append(self.get_val(device_key, output_key, data))
+            recv_vals.append(self.get_val(device_key, input_key, data))
 
         # Generate Graph
         bar_graph = lf_bar_graph_horizontal(
@@ -4270,31 +4269,26 @@ and downstream traffic"""
 
     def _build_results_table(self, data, media_type):
         """Helper for Summary Table"""
-
-        def fmt_val(client, key):
-            val = data.get(client, {}).get(key)
-            return val if val is not None else 0
-
+        
         p = media_type
         
         details = pd.DataFrame(
             {
                 "Device Name": self.real_sta_hostname,
-                # FIXED: Sent uses 'output', Received uses 'input'
                 "Avg Bitrate (kbps) [S/R]": [
-                    f"{fmt_val(c, f'{p}_output_bitrate_avg')}/{fmt_val(c, f'{p}_input_bitrate_avg')}"
+                    f"{self.get_val(c, f'{p}_output_bitrate_avg', data)}/{self.get_val(c, f'{p}_input_bitrate_avg', data)}"
                     for c in self.real_sta_hostname
                 ],
                 "Avg Latency (ms) [S/R]": [
-                    f"{fmt_val(c, f'{p}_output_latency_avg')}/{fmt_val(c, f'{p}_input_latency_avg')}"
+                    f"{self.get_val(c, f'{p}_output_latency_avg', data)}/{self.get_val(c, f'{p}_input_latency_avg', data)}"
                     for c in self.real_sta_hostname
                 ],
                 "Avg Jitter (ms) [S/R]": [
-                    f"{fmt_val(c, f'{p}_output_jitter_avg')}/{fmt_val(c, f'{p}_input_jitter_avg')}"
+                    f"{self.get_val(c, f'{p}_output_jitter_avg', data)}/{self.get_val(c, f'{p}_input_jitter_avg', data)}"
                     for c in self.real_sta_hostname
                 ],
                 "Avg Pkt Loss (%) [S/R]": [
-                    f"{fmt_val(c, f'{p}_output_avg_loss_avg')}/{fmt_val(c, f'{p}_input_avg_loss_avg')}"
+                    f"{self.get_val(c, f'{p}_output_avg_loss_avg', data)}/{self.get_val(c, f'{p}_input_avg_loss_avg', data)}"
                     for c in self.real_sta_hostname
                 ],
             }
