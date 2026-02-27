@@ -6,12 +6,19 @@ PURPOSE: lf_interop_teams.py provides the available devices and allows the user 
 
 EXAMPLE-1:
 Command Line Interface to run Teams:
-python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --participants 3 --duration 1 --audio --video
+python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --duration 1 --audio --video
 
 EXAMPLE-2:
 Command Line Interface to run Teams on Specified Resources:
-python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --participants 3 --duration 1 --audio --video --resources 1.95,1.400,1.300
+python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --duration 1 --audio --video --resources 1.95,1.400,1.300
 
+EXAMPLE-3:
+Command Line Interface to run Teams on Specified Resources with Robo Functionality:
+python3 lf_interop_teams.py --mgr 192.168.207.78 --upstream_port 1.1.eth1 --duration 1 --audio --video --resources 1.95,1.400,1.300 --do_robo --robo_ip 192.168.200.186 --coordinates 3,4,5
+
+EXAMPLE-4:
+Command Line Interface to run Teams on Specified Resources with Robo Functionality and Rotations Enabled:
+python3 lf_interop_teams.py --mgr 192.168.207.78 --upstream_port 1.1.eth1 --duration 1 --audio --video --resources 1.95,1.400,1.300 --do_robo --robo_ip 192.168.200.186 --coordinates 3,4,5 --rotations 30,40
 
 NOTES:
 1. Use 'python3 lf_interop_teams.py --help' to see command line usage and options.
@@ -62,8 +69,10 @@ DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_base_interop_profile = importlib.import_module("py-scripts.lf_base_interop_profile")
 RealDevice = lf_base_interop_profile.RealDevice
 
+# robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
+robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
+
 # Set up logging
-logger = logging.getLogger(__name__)
 log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 
@@ -102,6 +111,14 @@ class TeamsAutomation(Realm):
         do_webui=None,
         test_name=None,
         report_dir=None,
+        rotations_enabled=False,
+        robo_ip=None,
+        coordinates=None,
+        rotations=None,
+        do_robo=None,
+        do_bs=None,
+        cycles=None,
+        bssids=None,
     ):
         super().__init__(lfclient_host=lanforge_ip)
         self.app = Flask(__name__)
@@ -120,9 +137,9 @@ class TeamsAutomation(Realm):
         self.windows = 0
         self.linux = 0
         self.mac = 0
+        self.android = 0
         self.meet_link = None
         self.participants_joined = 0
-        self.test_start = False
         self.start_time = None
         self.end_time = None
         self.audio = None
@@ -173,12 +190,27 @@ class TeamsAutomation(Realm):
         self.do_webui = do_webui
         self.test_name = test_name
         self.report_dir = report_dir
-        self.execute_finally = False
         self.lanforge_port_list = []
         self.serial_list = []
         self.lanforge_os_type = []
         self.device_names = []
         self.user_list = []
+        self.avg_csv_files_list = []
+        self.do_robo = do_robo
+        self.do_bs = do_bs
+
+        if self.do_robo or self.do_bs:
+            self.robo_ip = robo_ip
+            self.rotations = rotations
+            self.robo_obj = robo_base_class.RobotClass(
+                robo_ip=self.robo_ip, angle_list=self.rotations
+            )
+            self.rotations_enabled = rotations_enabled
+            self.coordinates = coordinates
+            self.cycles = cycles
+            self.bssids = bssids
+            self.current_coord = None
+            self.current_rotation = "NA"
 
     def change_port_to_ip(self, upstream_port):
         """
@@ -501,46 +533,102 @@ class TeamsAutomation(Realm):
         self.set_start_time()
         logger.info("TEST WILL BE STARTING")
 
+    def delete_current_csv_files(self):
+        filename_pattern = (
+            f"*_{self.current_coord}_{self.current_rotation}.csv"
+            if self.rotations_enabled
+            else f"*_{self.current_coord}.csv"
+        )
+        csv_files_pattern = os.path.join(self.path, filename_pattern)
+        csv_files = glob.glob(csv_files_pattern)
+
+        for file_path in csv_files:
+            try:
+                os.remove(file_path)
+                logger.info(f"Deleted CSV file: {file_path}")
+            except Exception as e:
+                logger.error(f"Error deleting file {file_path}: {e}")
+
     def monitor_test(self):
+
         while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
             if self.stop_signal:
                 break
 
+            if self.do_robo:
+                pause, _ = self.robo_obj.wait_for_battery()
+                if pause:
+                    self.stop_signal = True
+                    time.sleep(10)
+                    logger.info("Waiting for browser cleanup at client Devices")
+                    if self.rotations_enabled:
+                        logger.info(
+                            f"Current run at coordinate {self.current_coord} with rotation {self.current_rotation} is Ignored due to low battery on Robo"
+                        )
+                        logger.info(
+                            f"Reinitializing the Run at coordinate {self.current_coord} with rotation {self.current_rotation}"
+                        )
+                    else:
+                        logger.info(
+                            f"Current run at coordinate {self.current_coord} is Ignored due to low battery on Robo"
+                        )
+                        logger.info(
+                            f"Reinitializing the Run at coordinate {self.current_coord}"
+                        )
+                    self.reset_variables_for_next_run()
+                    self.delete_current_csv_files()
+                    self.run()
+                    return
+
             time.sleep(5)
 
-    def run(self):
+    def handle_flask_server(self):
         flask_thread = threading.Thread(target=self.start_flask_server)
         flask_thread.daemon = True
         flask_thread.start()
         self.wait_for_flask()
+
+    def run(self):
         self.create_host()
         self.wait_for_login()
         self.create_participants()
         self.wait_for_test_start()
         self.monitor_test()
+        self.stop_signal = True
+        time.sleep(10)
+        if self.do_robo:
+            if self.rotations_enabled:
+                logger.info(
+                    f"Completed one cycle of test for coordinate {self.current_coord} with rotation {self.current_rotation}"
+                )
+            else:
+                logger.info(
+                    f"Completed one cycle of test for coordinate {self.current_coord}"
+                )
+            self.reset_variables_for_next_run()
 
     def generate_report(self):
-        report = lf_report(
+        self.report = lf_report(
             _output_pdf="teams_call_report.pdf",
             _output_html="teams_call_report.html",
             _results_dir_name="teams_call_report",
             _path=self.path,
         )
-        self.report_path_date_time = report.get_path_date_time()
+        self.report_path_date_time = self.report.get_path_date_time()
 
-        report.set_title("Teams Call Automated Report")
-        report.build_banner()
+        self.report.set_title("Teams Call Automated Report")
+        self.report.build_banner()
 
-        report.set_table_title("Objective:")
-        report.build_table_title()
-        report.set_text(
+        self.report.set_table_title("Objective:")
+        self.report.build_table_title()
+        self.report.set_text(
             "The objective is to conduct automated Teams call tests across multiple laptops to gather statistics on sent audio, video, and received audio, video performance."
             + "The test will collect these statistics and store them in a CSV file. Additionally, automated graphs will be generated using the collected data."
         )
-        report.build_text_simple()
+        self.report.build_text_simple()
 
-        report.set_table_title("Test Parameters:")
-        report.build_table_title()
+        self.report.set_table_title("Test Parameters:")
+        self.report.build_table_title()
         testtype = ""
         if self.audio and self.video:
             testtype = "AUDIO & VIDEO"
@@ -552,22 +640,18 @@ class TeamsAutomation(Realm):
         test_parameters = pd.DataFrame(
             [
                 {
-                    "No of Clients": f"W({self.windows}),L({self.linux}),M({self.mac})",
+                    "No of Clients": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
                     "Test Duration(min)": self.duration,
                     "HOST": self.real_sta_list[0],
                     "TEST TYPE": testtype,
                 }
             ]
         )
-        report.set_table_dataframe(test_parameters)
-        report.build_table()
+        self.report.set_table_dataframe(test_parameters)
+        self.report.build_table()
 
-        # Read per-device average metrics
-        df = pd.read_csv(os.path.join(self.path, "teams_call_avg_data.csv"))
-        df.columns = df.columns.str.strip()
-
-        report.set_table_title("Test Devices:")
-        report.build_table_title()
+        self.report.set_table_title("Test Devices:")
+        self.report.build_table_title()
 
         device_details = pd.DataFrame(
             {
@@ -575,8 +659,8 @@ class TeamsAutomation(Realm):
                 "OS Type": self.real_sta_os_types,
             }
         )
-        report.set_table_dataframe(device_details)
-        report.build_table()
+        self.report.set_table_dataframe(device_details)
+        self.report.build_table()
 
         if self.audio:
             metrics = [
@@ -603,85 +687,10 @@ class TeamsAutomation(Realm):
                 ("sent video packets", "Sent Video Packets"),
             ]
 
-        for column, title in metrics:
-            report.set_graph_title(f"Average {title}")
-            report.build_graph_title()
-
-            bar_graph_horizontal = lf_bar_graph_horizontal(
-                _data_set=[df[column].tolist()],
-                _xaxis_name=f"AVG {title}",
-                _yaxis_name="Devices",
-                _yaxis_label=df["Device Name"].tolist(),
-                _yaxis_categories=df["Device Name"].tolist(),
-                _yaxis_step=1,
-                _yticks_font=8,
-                _bar_height=0.25,
-                _color_name=["orange"],
-                _show_bar_value=True,
-                _figsize=(16, len(df) * 1 + 4),
-                _graph_title=f"AVG {title} Per Device",
-                _graph_image_name=title.replace(" ", "_"),
-                _label=[title],
-            )
-            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-            report.set_graph_image(graph_image)
-            report.move_graph_image()
-            report.build_graph()
-
-        if self.audio:
-            selected_columns = [
-                "Device Name",
-                "Sent Audio bitrate(Kbps)",
-                "Sent Audio Packets",
-                "Audio RTT(ms)",
-                "Received Audio Jitter(ms)",
-                "Receievd Audio Packet Loss(%)",
-            ]
-
-            column_headings = {
-                "Device Name": "Device Name",
-                "Sent Audio bitrate(Kbps)": "AVG Sent Audio Bitrate (Kbps)",
-                "Sent Audio Packets": "AVG Sent Audio Packets",
-                "Audio RTT(ms)": "AVG Audio RTT (ms)",
-                "Received Audio Jitter(ms)": "AVG Received Audio Jitter (ms)",
-                "Receievd Audio Packet Loss(%)": "AVG Received Audio Packet Loss (%)",
-            }
-
-            filtered_df = df[selected_columns].rename(columns=column_headings)
-
-            report.set_table_title("Test Audio Results Table")
-            report.build_table_title()
-            report.set_table_dataframe(filtered_df)
-            report.build_table()
-
-        if self.video:
-            selected_columns = [
-                "Device Name",
-                "Sent video bitrate(Mbps)",
-                "Received video bitrate(Mbps)",
-                "Sent video frame rate(fps)",
-                "video RTT (ms)",
-                "sent video packets",
-            ]
-
-            column_headings = {
-                "Device Name": "Device Name",
-                "Sent video bitrate(Mbps)": "AVG Sent Video Bitrate (Mbps)",
-                "Received video bitrate(Mbps)": "AVG Received Video Bitrate (Mbps)",
-                "Sent video frame rate(fps)": "AVG Sent Video Frame Rate (fps)",
-                "video RTT (ms)": "AVG Video RTT (ms)",
-                "sent video packets": "AVG Sent Video Packets",
-            }
-
-            filtered_df = df[selected_columns].rename(columns=column_headings)
-
-            report.set_table_title("Test Video Results Table")
-            report.build_table_title()
-            report.set_table_dataframe(filtered_df)
-            report.build_table()
-
-        report.write_html()
-        report.write_pdf()
+        # Read per-device average metrics
+        self.generate_graphs_and_tables(metrics)
+        self.report.write_html()
+        self.report.write_pdf()
 
     def check_gen_cx(self):
         try:
@@ -941,6 +950,8 @@ class TeamsAutomation(Realm):
                 self.linux += 1
             elif os_type == "macos":
                 self.mac += 1
+            elif os_type == "android":
+                self.android += 1
         logger.info(f"Selected Real Devices: {self.real_sta_list}")
         self.get_device_data()
         self.get_android_device_data()
@@ -1028,6 +1039,10 @@ class TeamsAutomation(Realm):
 
         self.stop_signal = True
         time.sleep(10)
+        self.create_avg_data()
+        self.generate_report()
+        self.move_csv_files()
+        self.generic_endps_profile.cleanup()
         logging.info("Exiting the application.")
         os._exit(0)
 
@@ -1123,7 +1138,19 @@ class TeamsAutomation(Realm):
             for hostname, stats in data.items():
                 self.data_store[hostname] = stats
 
-                csv_file = os.path.join(self.path, f"{hostname}.csv")
+                if self.do_robo:
+                    csv_file = (
+                        os.path.join(
+                            self.path,
+                            f"{hostname}_{self.current_coord}_{self.current_rotation}.csv",
+                        )
+                        if self.rotations_enabled
+                        else os.path.join(
+                            self.path, f"{hostname}_{self.current_coord}.csv"
+                        )
+                    )
+                else:
+                    csv_file = os.path.join(self.path, f"{hostname}.csv")
                 with open(csv_file, mode="a", newline="") as file:
                     writer = csv.writer(file)
 
@@ -1179,6 +1206,12 @@ class TeamsAutomation(Realm):
                             video.get("vi_sent_codec", "NA"),
                             video.get("vi_processing", "NA"),
                         ]
+
+                    if self.do_robo:
+                        row.append(self.current_coord)
+                        if self.rotations_enabled:
+                            row.append(self.current_rotation)
+
                     writer.writerow(row)
 
             return jsonify({"status": "success"}), 200
@@ -1192,23 +1225,87 @@ class TeamsAutomation(Realm):
             sys.exit(0)
 
     def create_avg_data(self):
-        output_file = os.path.join(self.path, "teams_call_avg_data.csv")
+        if self.do_robo:
+            if self.rotations_enabled:
+                output_file = os.path.join(
+                    self.path,
+                    f"teams_call_avg_data_{self.current_coord}_{self.current_rotation}.csv",
+                )
+            else:
+                output_file = os.path.join(
+                    self.path, f"teams_call_avg_data_{self.current_coord}.csv"
+                )
+        else:
+            output_file = os.path.join(self.path, "teams_call_avg_data.csv")
         summary_rows = []
 
-        for csv_path in glob.glob(os.path.join(self.path, "*.csv")):
-            if csv_path.endswith("teams_cred.csv"):
-                continue
-            df = pd.read_csv(csv_path)
+        if self.do_robo:
+            if self.rotations_enabled:
+                logger.info(
+                    f"Creating average data for coordinate {self.current_coord} with rotation {self.current_rotation}"
+                )
+                for csv_path in glob.glob(
+                    os.path.join(
+                        self.path, f"*{self.current_coord}_{self.current_rotation}.csv"
+                    )
+                ):
+                    if csv_path.endswith("teams_cred.csv"):
+                        continue
+                    df = pd.read_csv(csv_path)
 
-            device_name = os.path.splitext(os.path.basename(csv_path))[0]
-            df = df.drop(columns=["timestamp"], errors="ignore")
+                    device_name = os.path.splitext(os.path.basename(csv_path))[0]
+                    df = df.drop(columns=["timestamp"], errors="ignore")
 
-            numeric_cols = df.select_dtypes(include="number").columns
-            averages = df[numeric_cols].mean().round(2)
+                    df = df.apply(pd.to_numeric, errors="coerce")
+                    averages = df.mean().round(2)
 
-            row = averages.to_dict()
-            row["Device Name"] = device_name
-            summary_rows.append(row)
+                    # numeric_cols = df.select_dtypes(include="number").columns
+                    # averages = df[numeric_cols].mean().round(2)
+
+                    row = averages.to_dict()
+                    row["Device Name"] = device_name
+                    summary_rows.append(row)
+
+            else:
+                logger.info(
+                    f"Creating average data for coordinate {self.current_coord} with no rotation"
+                )
+
+                for csv_path in glob.glob(
+                    os.path.join(self.path, f"*{self.current_coord}.csv")
+                ):
+                    if csv_path.endswith("teams_cred.csv"):
+                        continue
+                    df = pd.read_csv(csv_path)
+
+                    device_name = os.path.splitext(os.path.basename(csv_path))[0]
+                    df = df.drop(columns=["timestamp"], errors="ignore")
+
+                    df = df.apply(pd.to_numeric, errors="coerce")
+                    averages = df.mean().round(2)
+
+                    row = averages.to_dict()
+                    row["Device Name"] = device_name
+                    summary_rows.append(row)
+        else:
+            logger.info(f"Creating average data for all devices")
+
+            for csv_path in glob.glob(os.path.join(self.path, "*.csv")):
+                if csv_path.endswith("teams_cred.csv") or csv_path.endswith(
+                    "teams_call_avg_data.csv"
+                ):
+                    continue
+                df = pd.read_csv(csv_path)
+
+                device_name = os.path.splitext(os.path.basename(csv_path))[0]
+                df = df.drop(columns=["timestamp"], errors="ignore")
+
+                df = df.apply(pd.to_numeric, errors="coerce")
+                averages = df.mean().round(2)
+
+                row = averages.to_dict()
+                row["Device Name"] = device_name
+                summary_rows.append(row)
 
         summary_df = pd.DataFrame(summary_rows)
 
@@ -1219,28 +1316,232 @@ class TeamsAutomation(Realm):
 
         summary_df.to_csv(output_file, index=False)
         logger.info(f"Avg data saved to {output_file}")
+        self.avg_csv_files_list.append(
+            {
+                "file": output_file,
+                "coord": self.current_coord if self.do_robo else None,
+                "rotation": (
+                    self.current_rotation
+                    if self.do_robo and self.rotations_enabled
+                    else None
+                ),
+            }
+        )
 
     def stop_test_in_webui(self):
+        """
+        Updates the running_status.json file to mark the test as Completed.
+        """
         try:
-            url = f"http://{self.lanforge_ip}:5454/update_status_yt"
-            headers = {
-                "Content-Type": "application/json",
-            }
+            json_path = os.path.join(self.path, "running_status.json")
 
-            data = {"status": "Completed", "name": self.test_name}
+            # 1. Load existing data or create new dict
+            data = {}
+            if os.path.exists(json_path):
+                with open(json_path, "r") as f:
+                    try:
+                        data = json.load(f)
+                    except json.JSONDecodeError:
+                        data = {}
 
-            response = requests.post(url, json=data, headers=headers)
+            # 2. Update status
+            data["status"] = "Completed"
+            # Optional: Add end time timestamp
+            # data["end_time"] = str(datetime.now())
 
-            if response.status_code == 200:
-                logging.info("Successfully updated STOP status to 'Completed'")
-                pass
-            else:
-                logging.error(
-                    f"Failed to update STOP status: {response.status_code} - {response.text}"
-                )
+            # 3. Write back to file
+            with open(json_path, "w") as f:
+                json.dump(data, f, indent=4)
+
+            logger.info(
+                f"Updated running_status.json with status Completed at {json_path}"
+            )
 
         except Exception as e:
-            logging.error(f"An error occurred while updating status: {e}")
+            logger.error(f"Error updating running_status.json: {e}")
+
+    def reset_variables_for_next_run(self):
+        self.participants_joined = 0
+        self.login_completed = False
+        self.meet_link = ""
+        self.data_store = {}
+        self.cred_index = 0
+        self.generic_endps_profile.cleanup()
+        self.start_time = None
+        self.end_time = None
+        self.stop_signal = False
+        self.generic_endps_profile.created_cx = []
+        self.generic_endps_profile.created_endp = []
+
+    def run_robo_test(self):
+        for coord in self.coordinates:
+            self.robo_obj.wait_for_battery()
+            matched, aborted = self.robo_obj.move_to_coordinate(coord=coord)
+            if matched:
+                self.current_coord = coord
+
+            elif aborted:
+                logger.error(f"Failed to Reach the coordinate {self.current_coord}")
+                sys.exit()
+
+            if self.rotations_enabled:
+                for rotation in self.rotations:
+                    self.robo_obj.wait_for_battery()
+                    rotated = self.robo_obj.rotate_angle(angle_degree=rotation)
+                    if rotated:
+                        self.current_rotation = rotation
+                    else:
+                        logger.error(
+                            f"Failed to Rotate the Angle {self.current_rotation}"
+                        )
+                        sys.exit()
+                    logger.info(
+                        f"Running Robo test for coordinate {coord} with rotation {rotation}"
+                    )
+                    self.run()
+                    self.create_avg_data()
+            else:
+                self.current_rotation = None  # Explicitly clear rotation state
+                logger.info(
+                    f"Running Robo test for coordinate {coord} with no rotation"
+                )
+                self.run()
+                self.create_avg_data()
+
+    def generate_graphs_and_tables(self, metrics):
+        """
+        Generate graphs and tables for the report based on the collected metrics.
+
+        This method reads the average metrics from the generated CSV files, creates
+        visualizations (bar graphs) for each specified metric, and compiles a summary
+        table of average values for all devices. The generated graphs and tables are
+        then added to the report.
+
+        Args:
+            metrics (list of tuples): A list of tuples where each tuple contains the metric name and its corresponding data.
+
+        """
+        for item in self.avg_csv_files_list:
+            csv_file = item.get("file")
+            coord = item.get("coord")
+            rotation = item.get("rotation")
+            df = pd.read_csv(csv_file)
+            df.columns = df.columns.str.strip()
+
+            logger.info(
+                f"checking metrics {metrics} in dataframe columns {df.columns.tolist()}"
+            )
+            logger.info(f"checking metrics dict {metrics}")
+
+            for column, title in metrics:
+                image_name = title.replace(" ", "_")
+                if self.do_robo:
+                    if self.rotations_enabled:
+                        self.report.set_graph_title(
+                            f"Average {title} for {coord} with rotation {rotation}"
+                        )
+                        image_name = f"{image_name}_{coord}_{rotation}"
+                    else:
+                        self.report.set_graph_title(f"Average {title} for {coord}")
+                        image_name = f"{image_name}_{coord}"
+                else:
+                    self.report.set_graph_title(f"Average {title}")
+                self.report.build_graph_title()
+
+                bar_graph_horizontal = lf_bar_graph_horizontal(
+                    _data_set=[df[column].tolist()],
+                    _xaxis_name=f"AVG {title}",
+                    _yaxis_name="Devices",
+                    _yaxis_label=df["Device Name"].tolist(),
+                    _yaxis_categories=df["Device Name"].tolist(),
+                    _yaxis_step=1,
+                    _yticks_font=8,
+                    _bar_height=0.25,
+                    _color_name=["orange"],
+                    _show_bar_value=True,
+                    _figsize=(16, len(df) * 1 + 4),
+                    _graph_title=f"AVG {title} Per Device",
+                    _graph_image_name=image_name,
+                    _label=[title],
+                )
+                graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+                self.report.set_graph_image(graph_image)
+                self.report.move_graph_image()
+                self.report.build_graph()
+
+            if self.audio:
+                selected_columns = [
+                    "Device Name",
+                    "Sent Audio bitrate(Kbps)",
+                    "Sent Audio Packets",
+                    "Audio RTT(ms)",
+                    "Received Audio Jitter(ms)",
+                    "Receievd Audio Packet Loss(%)",
+                ]
+
+                column_headings = {
+                    "Device Name": "Device Name",
+                    "Sent Audio bitrate(Kbps)": "AVG Sent Audio Bitrate (Kbps)",
+                    "Sent Audio Packets": "AVG Sent Audio Packets",
+                    "Audio RTT(ms)": "AVG Audio RTT (ms)",
+                    "Received Audio Jitter(ms)": "AVG Received Audio Jitter (ms)",
+                    "Receievd Audio Packet Loss(%)": "AVG Received Audio Packet Loss (%)",
+                }
+
+                filtered_df = df[selected_columns].rename(columns=column_headings)
+
+                if self.do_robo:
+                    if self.rotations_enabled:
+                        self.report.set_table_title(
+                            f"Average Audio Metrics for {coord} with rotation {rotation}"
+                        )
+                    else:
+                        self.report.set_table_title(
+                            f"Average Audio Metrics for {coord}"
+                        )
+                else:
+                    self.report.set_table_title("Test Audio Results Table")
+
+                self.report.build_table_title()
+                self.report.set_table_dataframe(filtered_df)
+                self.report.build_table()
+
+            if self.video:
+                selected_columns = [
+                    "Device Name",
+                    "Sent video bitrate(Mbps)",
+                    "Received video bitrate(Mbps)",
+                    "Sent video frame rate(fps)",
+                    "video RTT (ms)",
+                    "sent video packets",
+                ]
+
+                column_headings = {
+                    "Device Name": "Device Name",
+                    "Sent video bitrate(Mbps)": "AVG Sent Video Bitrate (Mbps)",
+                    "Received video bitrate(Mbps)": "AVG Received Video Bitrate (Mbps)",
+                    "Sent video frame rate(fps)": "AVG Sent Video Frame Rate (fps)",
+                    "video RTT (ms)": "AVG Video RTT (ms)",
+                    "sent video packets": "AVG Sent Video Packets",
+                }
+
+                filtered_df = df[selected_columns].rename(columns=column_headings)
+
+                if self.do_robo:
+                    if self.rotations_enabled:
+                        self.report.set_table_title(
+                            f"Average Video Metrics for {coord} with rotation {rotation}"
+                        )
+                    else:
+                        self.report.set_table_title(
+                            f"Average Video Metrics for {coord}"
+                        )
+                else:
+                    self.report.set_table_title("Test Video Results Table")
+
+                self.report.build_table_title()
+                self.report.set_table_dataframe(filtered_df)
+                self.report.build_table()
 
 
 def main():
@@ -1278,6 +1579,8 @@ def main():
         required = parser.add_argument_group("Required arguments")
         # Define optional arguments group
         optional = parser.add_argument_group("Optional arguments")
+        # Add robo related arguments
+        robo = parser.add_argument_group("Robo related arguments")
 
         required.add_argument(
             "--mgr",
@@ -1330,6 +1633,36 @@ def main():
             "--report_dir", help="report directory while running test through web ui"
         )
 
+        robo.add_argument("--robo_ip", type=str, help="Specify the robo ip")
+        robo.add_argument(
+            "--coordinates",
+            help="Comma-separated list of coordinate point names (e.g. 1,2,3), each mapping to x and y values",
+        )
+
+        robo.add_argument(
+            "--rotations",
+            help="Comma-separated list of rotation angles (in degrees) to apply at respective points",
+        )
+        robo.add_argument(
+            "--do_robo",
+            help="Specify this flag to perform the test with robo",
+            action="store_true",
+        )
+        robo.add_argument(
+            "--do_bs",
+            help="Specify this flag to perform the test with robo for band steering",
+            action="store_true",
+        )
+        robo.add_argument(
+            "--cycles", type=int, default=1, help="Number of cycles to run the test"
+        )
+
+        robo.add_argument(
+            "--bssids",
+            type=str,
+            help="Comma-separated list of BSSIDs for bandsteering test",
+        )
+
         args = parser.parse_args()
 
         # set the logger level to debug
@@ -1342,6 +1675,20 @@ def main():
             logger_config.lf_logger_config_json = args.lf_logger_config_json
             logger_config.load_lf_logger_config()
 
+        rotations_enabled = False
+        if args.do_robo or args.do_bs:
+            args.coordinates = args.coordinates.split(",") if args.coordinates else []
+            args.rotations = (
+                [float(angle) for angle in args.rotations.split(",")]
+                if args.rotations
+                else []
+            )
+            if args.rotations:
+                rotations_enabled = True
+
+            if args.bssids:
+                args.bssids = args.bssids.split(",") if args.bssids else []
+
         teams = TeamsAutomation(
             lanforge_ip=args.mgr,
             duration=args.duration,
@@ -1353,6 +1700,14 @@ def main():
             do_webui=args.do_webUI,
             test_name=args.testname,
             report_dir=args.report_dir,
+            robo_ip=args.robo_ip,
+            coordinates=args.coordinates,
+            rotations=args.rotations,
+            do_robo=args.do_robo,
+            do_bs=args.do_bs,
+            cycles=args.cycles,
+            bssids=args.bssids,
+            rotations_enabled=rotations_enabled,
         )
 
         teams.upstream_port = teams.change_port_to_ip(args.upstream_port)
@@ -1377,23 +1732,24 @@ def main():
             teams.path = args.report_dir
             teams.update_webui_data()
         teams.load_credentials()
-        teams.run()
-        time.sleep(10)
-        teams.create_avg_data()
-        teams.execute_finally = True
-
+        teams.handle_flask_server()
+        if args.do_robo:
+            teams.run_robo_test()
+        else:
+            teams.run()
+            time.sleep(10)
+            teams.create_avg_data()
     except Exception as e:
         logging.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
         traceback.print_exc()
 
     finally:
         if not ("--help" in sys.argv or "-h" in sys.argv):
-            if teams.execute_finally:
-                teams.stop_signal = True
-                teams.generate_report()
-                teams.move_csv_files()
-                if args.do_webUI:
-                    teams.stop_test_in_webui()
+            teams.stop_signal = True
+            teams.generate_report()
+            teams.move_csv_files()
+            if args.do_webUI:
+                teams.stop_test_in_webui()
                 logger.info("Waiting for Browser Cleanup at Client Side")
                 time.sleep(10)
                 logger.info("Browser Cleanup Completed")
