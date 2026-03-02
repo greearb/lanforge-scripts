@@ -154,25 +154,25 @@ class TeamsAutomation(Realm):
         self.audio = audio
         self.video = video
         self.audio_stats_header = [
-            "Sent Audio bitrate(Kbps)",
+            "Sent Audio Bitrate(Kbps)",
             "Sent Audio Packets",
             "Audio RTT(ms)",
-            "sent Audio codec",
+            "Sent Audio Codec",
             "Received Audio Jitter(ms)",
-            "Receievd Audio Packet Loss(%)",
+            "Received Audio Packet Loss(%)",
             "Received Audio Packets",
-            "Recevied Audio Codec",
+            "Received Audio Codec",
         ]
 
         self.video_stats_header = [
-            "Sent video bitrate(Mbps)",
-            "Received video bitrate(Mbps)",
-            "Sent video frame rate(fps)",
-            "Sent video resolution(px)",
-            "video RTT (ms)",
-            "sent video packets",
-            "sent video codec",
-            "video processing",
+            "Sent Video Bitrate(Mbps)",
+            "Received Video Bitrate(Mbps)",
+            "Sent Video Frame Rate(fps)",
+            "Sent Video Resolution(px)",
+            "Video RTT (ms)",
+            "Sent Video Packets",
+            "Sent Video Codec",
+            "Video Processing",
         ]
 
         if self.audio:
@@ -182,6 +182,7 @@ class TeamsAutomation(Realm):
                 self.header += self.video_stats_header
             else:
                 self.header = ["timestamp"] + self.video_stats_header
+
         self.data_store = {}
         self.stop_signal = False
         self.path = os.path.join(os.getcwd(), "teams_test_results")
@@ -211,6 +212,9 @@ class TeamsAutomation(Realm):
             self.bssids = bssids
             self.current_coord = None
             self.current_rotation = "NA"
+            self.header.append("current_coordinate")
+            if self.rotations_enabled:
+                self.header.append("current_rotation")
 
     def change_port_to_ip(self, upstream_port):
         """
@@ -608,89 +612,95 @@ class TeamsAutomation(Realm):
             self.reset_variables_for_next_run()
 
     def generate_report(self):
-        self.report = lf_report(
-            _output_pdf="teams_call_report.pdf",
-            _output_html="teams_call_report.html",
-            _results_dir_name="teams_call_report",
-            _path=self.path,
-        )
-        self.report_path_date_time = self.report.get_path_date_time()
+        try:
 
-        self.report.set_title("Teams Call Automated Report")
-        self.report.build_banner()
+            self.report = lf_report(
+                _output_pdf="teams_call_report.pdf",
+                _output_html="teams_call_report.html",
+                _results_dir_name="teams_call_report",
+                _path=self.path,
+            )
+            self.report_path_date_time = self.report.get_path_date_time()
 
-        self.report.set_table_title("Objective:")
-        self.report.build_table_title()
-        self.report.set_text(
-            "The objective is to conduct automated Teams call tests across multiple laptops to gather statistics on sent audio, video, and received audio, video performance."
-            + "The test will collect these statistics and store them in a CSV file. Additionally, automated graphs will be generated using the collected data."
-        )
-        self.report.build_text_simple()
+            self.report.set_title("Teams Call Automated Report")
+            self.report.build_banner()
 
-        self.report.set_table_title("Test Parameters:")
-        self.report.build_table_title()
-        testtype = ""
-        if self.audio and self.video:
-            testtype = "AUDIO & VIDEO"
-        elif self.audio:
-            testtype = "AUDIO"
-        elif self.video:
-            testtype = "VIDEO"
+            self.report.set_table_title("Objective:")
+            self.report.build_table_title()
+            self.report.set_text(
+                "The objective is to conduct automated Teams call tests across multiple laptops to gather statistics on sent audio, video, and received audio, video performance."
+                + "The test will collect these statistics and store them in a CSV file. Additionally, automated graphs will be generated using the collected data."
+            )
+            self.report.build_text_simple()
 
-        test_parameters = pd.DataFrame(
-            [
+            self.report.set_table_title("Test Parameters:")
+            self.report.build_table_title()
+            testtype = ""
+            if self.audio and self.video:
+                testtype = "AUDIO & VIDEO"
+            elif self.audio:
+                testtype = "AUDIO"
+            elif self.video:
+                testtype = "VIDEO"
+
+            test_parameters = pd.DataFrame(
+                [
+                    {
+                        "No of Clients": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
+                        "Test Duration(min)": self.duration,
+                        "HOST": self.real_sta_list[0],
+                        "TEST TYPE": testtype,
+                    }
+                ]
+            )
+            self.report.set_table_dataframe(test_parameters)
+            self.report.build_table()
+
+            self.report.set_table_title("Test Devices:")
+            self.report.build_table_title()
+
+            device_details = pd.DataFrame(
                 {
-                    "No of Clients": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
-                    "Test Duration(min)": self.duration,
-                    "HOST": self.real_sta_list[0],
-                    "TEST TYPE": testtype,
+                    "Hostname": self.real_sta_hostname,
+                    "OS Type": self.real_sta_os_types,
                 }
-            ]
-        )
-        self.report.set_table_dataframe(test_parameters)
-        self.report.build_table()
+            )
+            self.report.set_table_dataframe(device_details)
+            self.report.build_table()
 
-        self.report.set_table_title("Test Devices:")
-        self.report.build_table_title()
+            if self.audio:
+                metrics = [
+                    ("Audio RTT(ms)", "Audio RTT (ms)"),
+                    ("Received Audio Jitter(ms)", "Received Audio Jitter (ms)"),
+                    ("Sent Audio Bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
+                ]
 
-        device_details = pd.DataFrame(
-            {
-                "Hostname": self.real_sta_hostname,
-                "OS Type": self.real_sta_os_types,
-            }
-        )
-        self.report.set_table_dataframe(device_details)
-        self.report.build_table()
+            if self.video:
+                # Create bar graphs for each metric
+                metrics = [
+                    ("Sent Video Bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
+                    ("Received Video Bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
+                    ("Sent Video Packets", "Sent Video Packets"),
+                ]
+            if self.audio and self.video:
+                # Create bar graphs for each metric
+                metrics = [
+                    ("Audio RTT(ms)", "Audio RTT (ms)"),
+                    ("Received Audio Jitter(ms)", "Received Audio Jitter (ms)"),
+                    ("Sent Audio Bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
+                    ("Sent Video Bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
+                    ("Received Video Bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
+                    ("Sent Video Packets", "Sent Video Packets"),
+                ]
 
-        if self.audio:
-            metrics = [
-                ("Audio RTT(ms)", "Audio RTT (ms)"),
-                ("Received Audio Jitter(ms)", "Received Audio Jitter (ms)"),
-                ("Sent Audio bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
-            ]
-
-        if self.video:
-            # Create bar graphs for each metric
-            metrics = [
-                ("Sent video bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
-                ("Received video bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
-                ("sent video packets", "Sent Video Packets"),
-            ]
-        if self.audio and self.video:
-            # Create bar graphs for each metric
-            metrics = [
-                ("Audio RTT(ms)", "Audio RTT (ms)"),
-                ("Received Audio Jitter(ms)", "Received Audio Jitter (ms)"),
-                ("Sent Audio bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
-                ("Sent video bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
-                ("Received video bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
-                ("sent video packets", "Sent Video Packets"),
-            ]
-
-        # Read per-device average metrics
-        self.generate_graphs_and_tables(metrics)
-        self.report.write_html()
-        self.report.write_pdf()
+            # Read per-device average metrics
+            self.generate_graphs_and_tables(metrics)
+            self.report.write_html()
+            self.report.write_pdf()
+        except Exception as e:
+            logging.error(f"Error in generate_report function: {e}", exc_info=True)
+        finally:
+            self.move_csv_files()
 
     def check_gen_cx(self):
         try:
@@ -1225,6 +1235,16 @@ class TeamsAutomation(Realm):
             sys.exit(0)
 
     def create_avg_data(self):
+        exclude_cols = [
+            "timestamp",
+            "Sent Audio Codec",
+            "Received Audio Codec",
+            "Sent Video Resolution(px)",
+            "Sent Video Codec",
+            "Video Processing",
+            "current_coordinate",
+            "current_rotation",
+        ]
         if self.do_robo:
             if self.rotations_enabled:
                 output_file = os.path.join(
@@ -1254,7 +1274,7 @@ class TeamsAutomation(Realm):
                     df = pd.read_csv(csv_path)
 
                     device_name = os.path.splitext(os.path.basename(csv_path))[0]
-                    df = df.drop(columns=["timestamp"], errors="ignore")
+                    df = df.drop(columns=exclude_cols, errors="ignore")
 
                     df = df.apply(pd.to_numeric, errors="coerce")
                     averages = df.mean().round(2)
@@ -1279,7 +1299,7 @@ class TeamsAutomation(Realm):
                     df = pd.read_csv(csv_path)
 
                     device_name = os.path.splitext(os.path.basename(csv_path))[0]
-                    df = df.drop(columns=["timestamp"], errors="ignore")
+                    df = df.drop(columns=exclude_cols, errors="ignore")
 
                     df = df.apply(pd.to_numeric, errors="coerce")
                     averages = df.mean().round(2)
@@ -1298,7 +1318,7 @@ class TeamsAutomation(Realm):
                 df = pd.read_csv(csv_path)
 
                 device_name = os.path.splitext(os.path.basename(csv_path))[0]
-                df = df.drop(columns=["timestamp"], errors="ignore")
+                df = df.drop(columns=exclude_cols, errors="ignore")
 
                 df = df.apply(pd.to_numeric, errors="coerce")
                 averages = df.mean().round(2)
@@ -1438,11 +1458,13 @@ class TeamsAutomation(Realm):
                 if self.do_robo:
                     if self.rotations_enabled:
                         self.report.set_graph_title(
-                            f"Average {title} for {coord} with rotation {rotation}"
+                            f"Average {title} for Coordinate {coord} with rotation {rotation}"
                         )
                         image_name = f"{image_name}_{coord}_{rotation}"
                     else:
-                        self.report.set_graph_title(f"Average {title} for {coord}")
+                        self.report.set_graph_title(
+                            f"Average {title} for Coordinate {coord}"
+                        )
                         image_name = f"{image_name}_{coord}"
                 else:
                     self.report.set_graph_title(f"Average {title}")
@@ -1472,20 +1494,20 @@ class TeamsAutomation(Realm):
             if self.audio:
                 selected_columns = [
                     "Device Name",
-                    "Sent Audio bitrate(Kbps)",
+                    "Sent Audio Bitrate(Kbps)",
                     "Sent Audio Packets",
                     "Audio RTT(ms)",
                     "Received Audio Jitter(ms)",
-                    "Receievd Audio Packet Loss(%)",
+                    "Received Audio Packet Loss(%)",
                 ]
 
                 column_headings = {
                     "Device Name": "Device Name",
-                    "Sent Audio bitrate(Kbps)": "AVG Sent Audio Bitrate (Kbps)",
+                    "Sent Audio Bitrate(Kbps)": "AVG Sent Audio Bitrate (Kbps)",
                     "Sent Audio Packets": "AVG Sent Audio Packets",
                     "Audio RTT(ms)": "AVG Audio RTT (ms)",
                     "Received Audio Jitter(ms)": "AVG Received Audio Jitter (ms)",
-                    "Receievd Audio Packet Loss(%)": "AVG Received Audio Packet Loss (%)",
+                    "Received Audio Packet Loss(%)": "AVG Received Audio Packet Loss (%)",
                 }
 
                 filtered_df = df[selected_columns].rename(columns=column_headings)
@@ -1509,20 +1531,20 @@ class TeamsAutomation(Realm):
             if self.video:
                 selected_columns = [
                     "Device Name",
-                    "Sent video bitrate(Mbps)",
-                    "Received video bitrate(Mbps)",
-                    "Sent video frame rate(fps)",
-                    "video RTT (ms)",
-                    "sent video packets",
+                    "Sent Video Bitrate(Mbps)",
+                    "Received Video Bitrate(Mbps)",
+                    "Sent Video Frame Rate(fps)",
+                    "Video RTT (ms)",
+                    "Sent Video Packets",
                 ]
 
                 column_headings = {
                     "Device Name": "Device Name",
-                    "Sent video bitrate(Mbps)": "AVG Sent Video Bitrate (Mbps)",
-                    "Received video bitrate(Mbps)": "AVG Received Video Bitrate (Mbps)",
-                    "Sent video frame rate(fps)": "AVG Sent Video Frame Rate (fps)",
-                    "video RTT (ms)": "AVG Video RTT (ms)",
-                    "sent video packets": "AVG Sent Video Packets",
+                    "Sent Video Bitrate(Mbps)": "AVG Sent Video Bitrate (Mbps)",
+                    "Received Video Bitrate(Mbps)": "AVG Received Video Bitrate (Mbps)",
+                    "Sent Video Frame Rate(fps)": "AVG Sent Video Frame Rate (fps)",
+                    "Video RTT (ms)": "AVG Video RTT (ms)",
+                    "Sent Video Packets": "AVG Sent Video Packets",
                 }
 
                 filtered_df = df[selected_columns].rename(columns=column_headings)
@@ -1530,11 +1552,11 @@ class TeamsAutomation(Realm):
                 if self.do_robo:
                     if self.rotations_enabled:
                         self.report.set_table_title(
-                            f"Average Video Metrics for {coord} with rotation {rotation}"
+                            f"Average Video Metrics for Coordinate {coord} with rotation {rotation}"
                         )
                     else:
                         self.report.set_table_title(
-                            f"Average Video Metrics for {coord}"
+                            f"Average Video Metrics for Coordinate {coord}"
                         )
                 else:
                     self.report.set_table_title("Test Video Results Table")
@@ -1747,7 +1769,6 @@ def main():
         if not ("--help" in sys.argv or "-h" in sys.argv):
             teams.stop_signal = True
             teams.generate_report()
-            teams.move_csv_files()
             if args.do_webUI:
                 teams.stop_test_in_webui()
                 logger.info("Waiting for Browser Cleanup at Client Side")
