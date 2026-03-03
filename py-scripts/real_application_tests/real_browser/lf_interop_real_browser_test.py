@@ -1358,6 +1358,40 @@ class RealBrowserTest(Realm):
                     r.get("cx_name", "NA"),
                 ])
 
+    def get_coordinates_list(self):
+        skipped_list = ['']
+        matched_index = None
+
+        for idx, coordinate in enumerate(self.coordinates_list):
+            matched, abort = self.robo_obj.move_to_coordinate(coordinate)
+            if matched:
+                matched_index = idx
+                break
+            skipped_list.append(coordinate)
+
+        if matched_index is None:
+            logging.info("It couldnt reach any point so ending the test")
+            exit(1)
+
+        n = len(self.coordinates_list)
+        cycles = int(self.cycles)
+
+        cycles_rotated = [
+            self.coordinate_list[(matched_index + i) % n]
+            for i in range(n)
+        ]
+        coordinate_list_with_robo = cycles_rotated * cycles
+
+        coordinate_list_with_robo.append(cycles_rotated[0])
+        for coord in skipped_list:
+            try:
+                coordinate_list_with_robo.remove(coord)
+            except ValueError:
+                pass
+
+        print("Final coordinate list:",coordinate_list_with_robo,skipped_list)
+        return coordinate_list_with_robo
+
     def run_robo_bandsteering_test(self, cx_batch):
         logging.info("[BANDSTEERING] Starting robo band-steering test")
         # -------- BUILD CYCLIC COORDINATES --------
@@ -1403,12 +1437,14 @@ class RealBrowserTest(Realm):
             else:
                 reached, stopped = False, True
 
-            if not reached or stopped:
+            if stopped:
                 logging.error(
                     "[BANDSTEERING] Failed to reach starting coordinate %s. Aborting test.",
                     starting_coord
                 )
                 return
+            # if not reached:
+            #     continue
 
             self.robo_obj.current_coordinate = starting_coord
         else:
@@ -1437,10 +1473,11 @@ class RealBrowserTest(Realm):
         cx_started = True
 
         coord_len = len(base_coords)
-        self.coordinates_list = [
-            base_coords[(i + 1) % coord_len]
-            for i in range(self.cycles * coord_len)
-        ]
+        # self.coordinates_list = [
+        #     base_coords[(i + 1) % coord_len]
+        #     for i in range(self.cycles * coord_len)
+        # ]
+        self.coordinates_list = self.get_coordinates_list()
 
         logging.info(
             "[BANDSTEERING] Final coordinate list: %s",
@@ -1522,6 +1559,8 @@ class RealBrowserTest(Realm):
 
                 if stopped:
                     break
+                if not moved:
+                    continue
 
         finally:
             logging.info("[BANDSTEERING] Final coordinate reached, stopping CX")
@@ -1604,7 +1643,11 @@ class RealBrowserTest(Realm):
             for coordinate in self.coordinates_list:
                 # self.robo_obj.ensure_battery_for_test(duration_min=self.duration, mins_per_percent=self.mins_per_percent)
                 self.robo_obj.wait_for_battery()
-                self.robo_obj.move_to_coordinate(coord=coordinate)
+                matched, abort = self.robo_obj.move_to_coordinate(coord=coordinate)
+                if not matched:
+                    logging.warning(f"Failed to move to coordinate {coordinate}")
+                    continue
+                
                 self.current_cord = coordinate
                 if self.rotations_enabled:
                     for angle in self.angles_list:
@@ -2985,10 +3028,16 @@ class RealBrowserTest(Realm):
                 if self.rotations_enabled:
                     for angle in self.angles_list:
                         csv_file = f"{coordinate}_{angle}_webBrowser.csv"
+                        if not os.path.isfile(csv_file):
+                            logging.warning(f"CSV file {csv_file} does not exist.")
+                            continue
                         self.create_robo_graphs_test_results(csv_file, coordinate, angle)
 
                 else:
                     csv_file = f"{coordinate}_webBrowser.csv"
+                    if not os.path.isfile(csv_file):
+                        logging.warning(f"CSV file {csv_file} does not exist.")
+                        continue
                     self.create_robo_graphs_test_results(csv_file, coordinate)
             # ---------- BANDSTEERING BSSID SECTION ----------
             if self.do_bandsteering:
@@ -3016,6 +3065,40 @@ class RealBrowserTest(Realm):
                         logging.info(f"Moved {filename} to {destination_dir}")
                     else:
                         logging.info(f"{filename} not found in the current directory")
+
+    def get_coordinates_list(self):
+        skipped_list = ['']
+        matched_index = None
+
+        for idx, coordinate in enumerate(self.coordinates_list):
+            matched, abort = self.robo_obj.move_to_coordinate(coordinate)
+            if matched:
+                matched_index = idx
+                break
+            skipped_list.append(coordinate)
+
+        if matched_index is None:
+            logging.info("It couldnt reach any point so ending the test")
+            exit(1)
+
+        n = len(self.coordinates_list)
+        cycles = int(self.cycles)
+
+        cycles_rotated = [
+            self.coordinates_list[(matched_index + i) % n]
+            for i in range(n)
+        ]
+        coordinate_list_with_robo = cycles_rotated * cycles
+
+        coordinate_list_with_robo.append(cycles_rotated[0])
+        for coord in skipped_list:
+            try:
+                coordinate_list_with_robo.remove(coord)
+            except ValueError:
+                pass
+
+        print("Final coordinate list:",coordinate_list_with_robo,skipped_list)
+        return coordinate_list_with_robo
 
     def create_robo_graphs_test_results(self, csv_file, coordinate, angle=None):
         """

@@ -394,6 +394,40 @@ class Throughput(Realm):
             self.coordinates_completed = []
             self.battery_log = {}
 
+    def get_coordinates_list(self):
+        skipped_list = ['']
+        matched_index = None
+
+        for idx, coordinate in enumerate(self.coordinate_list):
+            matched, abort = self.robot.move_to_coordinate(coordinate)
+            if matched:
+                matched_index = idx
+                break
+            skipped_list.append(coordinate)
+
+        if matched_index is None:
+            logging.info("It couldnt reach any point so ending the test")
+            exit(1)
+
+        n = len(self.coordinate_list)
+        cycles = int(self.total_cycles)
+
+        cycles_rotated = [
+            self.coordinate_list[(matched_index + i) % n]
+            for i in range(n)
+        ]
+        coordinate_list_with_robo = cycles_rotated * cycles
+
+        coordinate_list_with_robo.append(cycles_rotated[0])
+        for coord in skipped_list:
+            try:
+                coordinate_list_with_robo.remove(coord)
+            except ValueError:
+                pass
+
+        print("Final coordinate list:",coordinate_list_with_robo,skipped_list)
+        return coordinate_list_with_robo
+
     def perform_robo(self, args, clients_to_run):
         """
         Execute robot-assisted throughput testing across multiple coordinates and angles.
@@ -420,14 +454,18 @@ class Throughput(Realm):
             self.robot.testname = args.test_name
         iterations_before_test_stopped_by_user = []
         test_stopped_by_user = False
+        skipped_list=[]
         # Loop through the coordinate list when coordinates are specified.
         if self.do_bandsteering:
-            self.robot.move_to_coordinate(self.coordinate_list[0])
-            coordinate_list_with_robo = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(int(self.total_cycles) * len(self.coordinate_list))]
+            self.robot.wait_for_battery()
+            coordinate_list_with_robo = self.get_coordinates_list()
             self.robot.do_bandsteering = True
             is_device_configured = True
             columns = []
             to_run_cxs, to_run_cxs_len, created_cx_lists_keys, incremental_capacity_list = self.get_incremental_capacity_list()
+            if self.load_type == "wc_intended_load":
+                # Perform intended load for the current iteration
+                self.perform_intended_load(0, incremental_capacity_list)
 
 
             for client in clients_to_run:
@@ -491,6 +529,8 @@ class Throughput(Realm):
                 
                 if abort:
                     break
+                if not matched:
+                    continue
             # To get add last entry in the csv
             all_dataframes = pd.concat(
                 [df for df in all_dataframes if isinstance(df, pd.DataFrame)],
@@ -504,8 +544,13 @@ class Throughput(Realm):
             if self.dowebgui:
                 last_row_df.to_csv(f"{args.result_dir}/throughput_data.csv",mode="a",header=False,index=False)
             self.stop()
+            if args.postcleanup:
+                self.cleanup()
             iterations_before_test_stopped_by_user.append(0)
             self.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
+            if self.dowebgui:
+                # copying to home directory i.e home/user_name
+                self.copy_reports_to_home_dir()
             exit(1)
         for coord in self.coordinate_list:
             # checking the battery status of robot before moving to a point
@@ -521,6 +566,8 @@ class Throughput(Realm):
                 logger.info("Reached the point {}".format(coord))
             if abort:
                 break
+            if not matched:
+                continue
             individual_dataframe_column = []
 
             to_run_cxs, to_run_cxs_len, created_cx_lists_keys, incremental_capacity_list = self.get_incremental_capacity_list()
@@ -553,6 +600,7 @@ class Throughput(Realm):
 
                 # Check the load type specified by the user
                 if args.load_type == "wc_intended_load":
+                    print("================")
                     # Perform intended load for the current iteration
                     self.perform_intended_load(i, incremental_capacity_list)
                     if i != 0:
@@ -609,6 +657,7 @@ class Throughput(Realm):
                 navdata['status'] = ''
                 navdata['Canbee_location'] = ''
                 navdata['Canbee_angle'] = ''
+                navdata['Test_status'] = 'Completed'
             with open(nav_data, 'w') as x:
                 json.dump(navdata, x, indent=4)
         self.generate_report_robo(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
@@ -1354,8 +1403,8 @@ class Throughput(Realm):
                                            'Running'])
                 if self.do_bandsteering:
                     robot_x, robot_y, from_coordinate, to_coordinate = self.robot.get_robot_pose()
-                    if from_coordinate == to_coordinate:
-                        return individual_df, test_stopped_by_user
+                    # if from_coordinate == to_coordinate:
+                    #     return individual_df, test_stopped_by_user
                     individual_df_data.extend([robot_x, robot_y, from_coordinate, to_coordinate]) 
                 
                 # Appending the data according to the time gap (for webgui)
@@ -1485,8 +1534,8 @@ class Throughput(Realm):
                                            'Running'])
                 if self.do_bandsteering:
                     robot_x, robot_y, from_coordinate, to_coordinate = self.robot.get_robot_pose()
-                    if from_coordinate == to_coordinate:
-                        return individual_df, test_stopped_by_user
+                    # if from_coordinate == to_coordinate:
+                    #     return individual_df, test_stopped_by_user
                     individual_df_data.extend([robot_x, robot_y, from_coordinate, to_coordinate]) 
                 individual_df.loc[len(individual_df)] = individual_df_data
                 individual_df.to_csv('throughput_data.csv', index=False)

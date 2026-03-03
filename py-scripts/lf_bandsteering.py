@@ -97,11 +97,9 @@ class ROAMThroughput(RobotClass):
             # X and Y axis (preserve missing BSSIDs with 0)
             x_axis = list(bssid_counts.keys())
             y_axis = [[float(i)] for i in list(bssid_counts.values())]
-            print("BSSID COUNTS:", x_axis,bssid_counts)
             if(len(self.bssids)>0):
                 x_axis = self.bssids
                 y_axis = [[float(bssid_counts.get(bssid, 0))] for bssid in self.bssids]
-            print("AFTER BSSID COUNTS:", x_axis,y_axis)
 
             # Build graph objective
             report.set_obj_html(
@@ -235,9 +233,19 @@ class ROAMThroughput(RobotClass):
             self.roam_count = 0
             first_coordinate = self.coordinates_list[0]
             test_stopped_by_user = False
-
-
-            coordinate_list_with_robo = [self.coordinates_list[(1 + i) % len(self.coordinates_list)] for i in range(int(self.total_cycles) * len(self.coordinates_list))]
+            # skipped_list = []
+            # for coordinate in self.coordinates_list:
+            #     matched,abort = self.move_to_coordinate(coordinate)
+            #     if matched:
+            #         break
+            #     skipped_list.append(coordinate)
+            # if(len(self.coordinates_list) == len(skipped_list)):
+            #     logging.info("It couldnt reach any point so ending the test")
+            #     return 0
+            # coordinate_list_with_robo = [self.coordinates_list[(i) % len(self.coordinates_list)] for i in range(int(self.total_cycles) * len(self.coordinates_list))]
+            # coordinate_list_with_robo = [x for x in coordinate_list_with_robo if not (x in skipped_list and not skipped_list.remove(x))]
+            coordinate_list_with_robo = self.get_coordinates_list()
+            # coordinate_list_with_robo = [self.coordinates_list[(i) % len(self.coordinates_list)] for i in range(int(self.total_cycles) * len(self.coordinates_list))]
             curr_cycle = 1
             logger.info("Starting cycle %s", curr_cycle)
             for coordinate in coordinate_list_with_robo:
@@ -248,6 +256,8 @@ class ROAMThroughput(RobotClass):
                 # if pause:
                 #     self.throughput_tester.start_specific(self.created_cx_lists_keys)
                 matched, abort =self.move_to_coordinate(coordinate, monitor_function=self.monitor_ap_bssid)
+                if not matched:
+                    continue
                 if coordinate==self.coordinates_list[0]:
                     curr_cycle += 1
                     if curr_cycle > self.total_cycles:
@@ -430,6 +440,35 @@ class ROAMThroughput(RobotClass):
         
         except Exception as e:
             logger.error("Throughput error: %s", e)
+
+    def get_coordinates_list(self):
+        skipped_list = []
+        matched_index = None
+
+        # Step 1: Find first reachable coordinate
+        for idx, coordinate in enumerate(self.coordinates_list):
+            matched, abort = self.move_to_coordinate(coordinate)
+            if matched:
+                matched_index = idx
+                break
+            skipped_list.append(coordinate)
+
+        if matched_index is None:
+            logging.info("It couldnt reach any point so ending the test")
+            return 0
+
+        n = len(self.coordinates_list)
+        cycles = int(self.total_cycles)
+
+        rotated = [
+            self.coordinates_list[(matched_index + i) % n]
+            for i in range(n)
+        ]
+        coordinate_list_with_robo = rotated * cycles
+
+        coordinate_list_with_robo.append(rotated[0])
+        print("ccc",coordinate_list_with_robo)
+        return coordinate_list_with_robo
 
     def get_signal_and_channel_data(self, station_names):
         """

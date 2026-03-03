@@ -2179,6 +2179,8 @@ class VideoStreamingTest(Realm):
 
         self.add_buffer_and_wait_time_images(report=report)
         for coordinate in range(len(passed_coordinates)):
+            if(self.coordinate_list[coordinate] not in self.vs_data):
+                continue
             self.current_coordinate = self.coordinate_list[coordinate]
             csv_suffix = "_{}".format(self.current_coordinate)
             if self.rotation_enabled:
@@ -2437,6 +2439,39 @@ class VideoStreamingTest(Realm):
             dataframe3 = pd.DataFrame(dataframe2)
             report.set_table_dataframe(dataframe3)
             report.build_table()
+    def get_coordinates_list(self):
+        skipped_list = ['']
+        matched_index = None
+
+        for idx, coordinate in enumerate(self.coordinate_list):
+            matched, abort = self.robot.move_to_coordinate(coordinate)
+            if matched:
+                matched_index = idx
+                break
+            skipped_list.append(coordinate)
+
+        if matched_index is None:
+            logging.info("It couldnt reach any point so ending the test")
+            exit(1)
+
+        n = len(self.coordinate_list)
+        cycles = int(self.total_cycles)
+
+        cycles_rotated = [
+            self.coordinate_list[(matched_index + i) % n]
+            for i in range(n)
+        ]
+        coordinate_list_with_robo = cycles_rotated * cycles
+
+        coordinate_list_with_robo.append(cycles_rotated[0])
+        for coord in skipped_list:
+            try:
+                coordinate_list_with_robo.remove(coord)
+            except ValueError:
+                pass
+
+        print("Final coordinate list:",coordinate_list_with_robo,skipped_list)
+        return coordinate_list_with_robo
 
     def perform_robo(self, args, individual_dataframe_columns, cx_order_list, i, actual_start_time, iterations_before_test_stopped_by_user):
         """
@@ -2461,11 +2496,21 @@ class VideoStreamingTest(Realm):
                 self.robot.testname = self.test_name
             passed_coord_list = []
             abort = False
+        skipped_list=[]
         if self.do_bandsteering:
             curr_cycle = 1
             pause_coord, test_stopped_by_user = self.robot.wait_for_battery()
-            self.robot.move_to_coordinate(self.coordinate_list[0])
-            coordinate_list_with_robo = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(int(self.total_cycles) * len(self.coordinate_list))]
+            coordinate_list_with_robo = self.get_coordinates_list()
+            # for coordinate in self.coordinate_list:
+            #     matched,abort = self.robot.move_to_coordinate(coordinate)
+            #     if matched:
+            #         break
+            #     skipped_list.append(coordinate)
+            # if(len(self.coordinate_list) == len(skipped_list)):
+            #     logging.info("It couldnt reach any point so ending the test")
+            #     return 0
+            # coordinate_list_with_robo = [self.coordinate_list[(i) % len(self.coordinate_list)] for i in range(int(self.total_cycles) * len(self.coordinate_list))]
+            # coordinate_list_with_robo = [x for x in coordinate_list_with_robo if not (x in skipped_list and not skipped_list.remove(x))]
             self.robot.do_bandsteering = True
             self.data = {}
             self.data["start_time_webGUI"] = [datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
@@ -2528,6 +2573,8 @@ class VideoStreamingTest(Realm):
                     logger.info("Reached the coordinate {}".format(coordinate))
                 if abort:
                     break
+                if not matched:
+                    continue
                 passed_coord_list.append(coordinate)
                 coordinate_df = pd.DataFrame(columns=individual_dataframe_columns)
                 if matched:
@@ -2665,6 +2712,16 @@ class VideoStreamingTest(Realm):
                                 self.vs_data[int(coordinate)] = {}
                             self.vs_data[int(coordinate)][self.rotation_list[angle]] = params
         test_setup_info = self.create_test_setup_info(media_source=args.media_source, media_quality=args.media_quality)
+        if self.dowebgui:
+            self.copy_reports_to_home_dir()
+            with open(nav_data, 'r') as x:
+                navdata = json.load(x)
+                navdata['status'] = ''
+                navdata['Canbee_location'] = ''
+                navdata['Canbee_angle'] = ''
+                navdata['Test_status'] = 'Completed'
+            with open(nav_data, 'w') as x:
+                json.dump(navdata, x, indent=4)
         self.generate_report_for_robo(test_setup_info, passed_coordinates=passed_coord_list)
 
     def build_iot_report_section(self, report, iot_summary):

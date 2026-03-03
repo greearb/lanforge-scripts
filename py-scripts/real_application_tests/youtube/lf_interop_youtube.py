@@ -1735,7 +1735,9 @@ class Youtube(Realm):
     def perform_robo_test(self):
         for coordinate in self.coordinates_list:
             self.robo_obj.wait_for_battery()
-            self.robo_obj.move_to_coordinate(coord=coordinate)
+            matched,aborted=self.robo_obj.move_to_coordinate(coord=coordinate)
+            if not matched:
+                continue
             self.current_cord = coordinate
             if self.rotations_enabled:
                 for angle in self.angles_list:
@@ -1775,24 +1777,56 @@ class Youtube(Realm):
                     time.sleep(5)
 
                 self.generic_endps_profile.stop_cx()
-   
+
+    def get_coordinates_list(self):
+        skipped_list = []
+        matched_index = None
+
+        # Step 1: Find first reachable coordinate
+        for idx, coordinate in enumerate(self.coordinates_list):
+            matched, abort = self.robo_obj.move_to_coordinate(coordinate)
+            if matched:
+                matched_index = idx
+                break
+            skipped_list.append(coordinate)
+
+        if matched_index is None:
+            logging.info("It couldnt reach any point so ending the test")
+            return 0
+
+        n = len(self.coordinates_list)
+        cycles = int(self.cycles)
+
+        rotated = [
+            self.coordinates_list[(matched_index + i) % n]
+            for i in range(n)
+        ]
+        coordinate_list_with_robo = rotated * cycles
+
+        coordinate_list_with_robo.append(rotated[0])
+        print("ccc",coordinate_list_with_robo)
+        return coordinate_list_with_robo
+
     def perform_robo_bandsteering_test(self):
         logging.info("Starting Band-Steering Robo YouTube Test")
 
         # Start YouTube ONCE
-        matched,aborted=self.robo_obj.move_to_coordinate(self.coordinates_list[0])
-        if matched:
-            self.from_coordinate = self.coordinates_list[0]
-        if aborted:
-            logger.info("test aborted")
-            exit(0)
+        # matched,aborted=self.robo_obj.move_to_coordinate(self.coordinates_list[0])
+        # if matched:
+        #     self.from_coordinate = self.coordinates_list[0]
+        # if aborted:
+        #     logger.info("test aborted")
+        #     exit(0)
+        # if not matched:
+        #     continue
+        coordinate_list_with_robo = self.get_coordinates_list()
         time.sleep(5)
         # print(self.cycles,"the cycles are")
-        print(self.coordinates_list,"the coordinate list")
+        print(coordinate_list_with_robo,"the coordinate list")
         cycles=self.cycles
-        result = [self.coordinates_list[(1 + i) % len(self.coordinates_list)] for i in range(cycles * len(self.coordinates_list))]
-        print(result,"the result coordinates")
-        for coordinate in result:
+        # result = [self.coordinates_list[(1 + i) % len(self.coordinates_list)] for i in range(cycles * len(self.coordinates_list))]
+        print(coordinate_list_with_robo,"the result coordinates")
+        for coordinate in coordinate_list_with_robo:
             logging.info(f"Moving robot to coordinate: {coordinate}")
             if self.to_coordinate == "":
                 self.to_coordinate = coordinate
@@ -1811,6 +1845,8 @@ class Youtube(Realm):
                 logger.info("Reached the coordinate {}".format(coordinate))
             if abort:
                 break
+            if not matched:
+                continue
             self.current_cord = coordinate
             time.sleep(10)
 

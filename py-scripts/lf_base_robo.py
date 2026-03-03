@@ -119,7 +119,7 @@ class RobotClass:
                 data = response.json()
                 battery = data.get("battery", 0)
                 retries = 0
-                if battery <= 20:
+                if battery <= 10:
                     pause = True
                     if stop is not None:
                         stop()
@@ -227,7 +227,7 @@ class RobotClass:
         prev_x, prev_y = None, None
         last_movement_time = time.time()
         movement_timeout = self.time_to_reach
-        movement_threshold = 0.05
+        movement_threshold = 0.8
         second_check=False
 
         while True:
@@ -302,10 +302,12 @@ class RobotClass:
                 navdata['status'] = "Stopped"
                 navdata['Canbee_location'] = ''
                 navdata['Canbee_angle'] = ''
+                navdata['Test_status'] = 'Running' 
             else:
                 navdata['status'] = "Running"
                 navdata['Canbee_location'] = coord
                 navdata['Canbee_angle'] = ''
+                navdata['Test_status'] = 'Running'
             with open(self.nav_data_path, 'w') as x:
                 json.dump(navdata, x, indent=4)
         if self.do_bandsteering:
