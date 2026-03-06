@@ -1464,6 +1464,7 @@ class L3VariableTime(Realm):
             self.robot_obj.testname = self.test_name
             self.robot_obj.coordinate_list=self.coordinate_list
             self.robot_obj.time_to_reach=duration_to_skip
+            self.robot_obj.total_cycles=self.cycles
             self.robot_test_data = {}
             self.multicast_robot_results = {}
         self.test_stopped_user = False
@@ -2393,18 +2394,12 @@ class L3VariableTime(Realm):
 
     def perform_bandsteering(self):
         test_stopped_by_user=False
-        matched, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[0])
+        # matched, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[0])
+        
+        cycle_coords = self.robot_obj.get_coordinates_list()
         self.robot_obj.do_bandsteering = True
-        if matched:
-            logger.info("Reached the coordinate {}".format(self.coordinate_list[0]))
-            ul,dl,ul_pdu_str,dl_pdu_str,atten_val,ul_pdu,dl_pdu,passes,expected_passes,coordinate,rotation = self.start()
-            print("Starting CXs")
-            time.sleep(15)
-        if abort:
-            logger.info("test aborted")
-            exit(0)
-        cycles = self.cycles
-        cycle_coords = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(cycles * len(self.coordinate_list))]
+        ul,dl,ul_pdu_str,dl_pdu_str,atten_val,ul_pdu,dl_pdu,passes,expected_passes,coordinate,rotation = self.start()
+        print("Starting CXs")
         print("cyclecoords",cycle_coords)
         for coordinate in cycle_coords:
             print("movingtoo",coordinate)

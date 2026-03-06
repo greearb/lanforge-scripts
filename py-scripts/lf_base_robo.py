@@ -40,6 +40,7 @@ class RobotClass:
         self.charging_timestamps = []
         # max time to reach a point in seconds
         self.time_to_reach=60
+        self.total_cycles=1
         self.coordinate_list=[] 
 
         # Create waypoint list on initialization
@@ -412,7 +413,7 @@ class RobotClass:
         matched_index = None
 
         for idx, coordinate in enumerate(self.coordinate_list):
-            matched, abort = self.robot.move_to_coordinate(coordinate)
+            matched, abort = self.move_to_coordinate(coordinate)
             if matched:
                 matched_index = idx
                 break

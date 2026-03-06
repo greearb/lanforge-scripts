@@ -149,7 +149,7 @@ class HttpDownload(Realm):
                  device_list=None, get_url_from_file=None, file_path=None, device_csv_name='', expected_passfail_value=None, file_name=None, group_name=None, profile_name=None, eap_method=None,
                  eap_identity=None, ieee80211=None, ieee80211u=None, ieee80211w=None, enable_pkc=None, bss_transition=None, power_save=None, disable_ofdma=None, roam_ft_ds=None, key_management=None,
                  pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60, get_live_view=False, total_floors=0, robot_test=False,
-                 robot_ip=None, coordinate=None, rotation=None, duration=None, do_bandsteering=False, cycles=None,bssids=None):
+                 robot_ip=None, coordinate=None, rotation=None, duration=None, do_bandsteering=False, cycles=None,bssids=None,duration_to_skip=None):
         # super().__init__(lfclient_host=lfclient_host,
         #                  lfclient_port=lfclient_port)
         self.ssid_list = []
@@ -250,6 +250,7 @@ class HttpDownload(Realm):
         self.rx_rate_val = []
         self.max_bytes_rd = []
         self.bssids = bssids.split(',') if bssids else []
+        self.duration_to_skip=duration_to_skip
 
 # The 'phantom_check' will be handled within the 'get_real_client_list' function
     def get_real_client_list(self):
@@ -2206,20 +2207,25 @@ class HttpDownload(Realm):
         self.robot_obj.ip = self.host
         self.robot_obj.testname = self.test_name
         self.robot_obj.runtime_dir = self.result_dir
+        self.robot_obj.coordinate_list=self.coordinate_list
+        self.robot_obj.time_to_reach=self.duration_to_skip
+        self.robot_obj.total_cycles=self.cycles
         test_stopped_by_user = False
         if self.do_bandsteering:
-            matched, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[0])
+            # matched, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[0])
+            cycle_coords=self.robot_obj.get_coordinates_list()
             self.robot_obj.do_bandsteering = True
-            if matched:
-                logger.info("Reached the coordinate {}".format(self.coordinate_list[0]))
-                self.start()
-                print("Starting CXs")
-                time.sleep(15)
-            if abort:
-                logger.info("test aborted")
-                exit(0)
+            # if matched:
+            #     logger.info("Reached the coordinate {}".format(self.coordinate_list[0]))
+            #     self.start()
+            #     print("Starting CXs")
+            #     time.sleep(15)
+            # if abort:
+            #     logger.info("test aborted")
+            #     exit(0)
             cycles = self.cycles
-            cycle_coords = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(cycles * len(self.coordinate_list))]
+            # cycle_coords = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(cycles * len(self.coordinate_list))]
+            self.start()
             for coordinate in cycle_coords:
                 if test_stopped_by_user:
                     break
@@ -2723,6 +2729,8 @@ def main():
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
     optional.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
     optional.add_argument('--bssids', type=str, default='', help='hostname for where Robot server is running')
+    optional.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
+
 
     help_summary = '''\
 lf_webpage.py will verify that N clients are connected on a specified band and can download
@@ -2870,7 +2878,8 @@ times the file is downloaded.
                             duration=args.duration,
                             do_bandsteering=args.do_bandsteering,
                             cycles=args.cycles,
-                            bssids=args.bssids
+                            bssids=args.bssids,
+                            duration_to_skip=args.duration_to_skip
                             )
         if args.client_type == "Real":
             if not isinstance(args.device_list, list):

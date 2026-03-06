@@ -157,7 +157,8 @@ class Ping(Realm):
                  csv_name=None,
                  wait_time=60,
                  floors=None,
-                 get_live_view=None,robo_ip=None,angle_list=None,coordinate_list = [],rotation_enabled=None,local_lf_report_dir=None,do_bandsteering=False,total_cycles=1,bssids=None):
+                 get_live_view=None,robo_ip=None,angle_list=None,coordinate_list = [],rotation_enabled=None,local_lf_report_dir=None,do_bandsteering=False,total_cycles=1,bssids=None,
+                 duration_to_skip=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.host = host
@@ -215,6 +216,9 @@ class Ping(Realm):
         self.currentcoordinate=None
         if robo_ip is not None:
             self.robot=RobotClass(robo_ip=self.robo_ip,angle_list=self.angle_list)
+            self.robot.time_to_reach=duration_to_skip
+            self.robot.coordinate_list=coordinate_list
+            self.robot.total_cycles=total_cycles
         self.coordinate_json={}
         self.coordinates_completed=[]
         self.starttime_track={}
@@ -1838,12 +1842,12 @@ class Ping(Realm):
         # print(self.total_cycles)
         if self.do_bandsteering:
             reached=False
-            reached,abort=self.robot.move_to_coordinate(self.coordinate_list[0])
-            if reached:
-                self.start_generic()
-            coordinate_list_with_robo = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(int(self.total_cycles) * len(self.coordinate_list))]
+            # reached,abort=self.robot.move_to_coordinate(self.coordinate_list[0])
+            coordinate_list_with_robo=self.robot.get_coordinates_list()
+            # coordinate_list_with_robo = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(int(self.total_cycles) * len(self.coordinate_list))]
             self.robot.do_bandsteering = True
             columns = []
+            self.start_generic()
 
             # print("realstationlistt",self.real_sta_list)
             for sta in self.real_sta_list:

@@ -205,7 +205,8 @@ class FtpTest(LFCliBase):
                  rotation=None,
                  do_bandsteering=False,
                  cycles=None,
-                 bssids=None
+                 bssids=None,
+                 duration_to_skip=None
                  ):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
 
@@ -331,6 +332,7 @@ class FtpTest(LFCliBase):
         self.rx_rate_val = []
         self.max_bytes_rd = []
         self.bssids = bssids.split(",") if bssids else []
+        self.duration_to_skip=duration_to_skip
         logger.info("Test is Initialized")
 
     def query_realclients(self):
@@ -3133,19 +3135,15 @@ class FtpTest(LFCliBase):
         self.robot_obj.ip = self.host
         self.robot_obj.testname = self.test_name
         self.robot_obj.runtime_dir = self.result_dir
+        self.robot_obj.time_to_reach=self.duration_to_skip
+        self.robot_obj.total_cycles=self.cycles
+        self.robot_obj.coordinate_list=self.coordinate_list
         if self.do_bandsteering:
-            matched, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[0])
+            cycle_coords=self.robot_obj.get_coordinates_list()
             self.robot_obj.do_bandsteering = True
-            if matched:
-                logger.info("Reached the coordinate {}".format(self.coordinate_list[0]))
-                self.start(False, False)
-                print("Starting CXs")
-                time.sleep(15)
-            if abort:
-                logger.info("test aborted")
-                exit(0)
+            self.start(False, False)
             cycles = self.cycles
-            cycle_coords = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(cycles * len(self.coordinate_list))]
+            # cycle_coords = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(cycles * len(self.coordinate_list))]
             for coordinate in cycle_coords:
                 if test_stopped_by_user:
                     break
@@ -3622,6 +3620,8 @@ INCLUDE_IN_README: False
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
     optional.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
     optional.add_argument('--bssids', type=str, default='', help='hostname for where Robot server is running')
+    optional.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
+
     # logging configuration
     optional.add_argument(
         "--lf_logger_config_json",
@@ -3819,7 +3819,8 @@ some amount of file data from the FTP server while measuring the time taken by c
                               rotation=args.rotation,
                               do_bandsteering=args.do_bandsteering,
                               cycles=args.cycles,
-                              bssids=args.bssids
+                              bssids=args.bssids,
+                              duration_to_skip=args.duration_to_skip
                               )
 
                 interation_num = interation_num + 1

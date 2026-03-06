@@ -223,7 +223,7 @@ class ThroughputQOS(Realm):
                  angle_list=None,
                  do_bandsteering=False,
                  cycles=None,
-                 bssids=None):
+                 bssids=None,duration_to_skip=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -334,6 +334,9 @@ class ThroughputQOS(Realm):
             self.robot = RobotClass(robo_ip=self.robot_ip, angle_list=self.angle_list)
             self.last_rotated_angles = []
             self.charge_point_name = None
+            self.robot.coordinate_list=self.coordinate_list
+            self.robot.time_to_reach=duration_to_skip
+            self.robot.total_cycles=cycles
 
     def os_type(self):
         response = self.json_get("/resource/all")
@@ -3458,6 +3461,7 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
     optional.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
     optional.add_argument('--bssids', type=str, default='', help='Comma separated list of BSSIDs to be used for the test')
+    optional.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
     # IOT ARGS
     parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
     optional.add_argument('--iot_ip',
@@ -3611,7 +3615,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
                                        angle_list=angle_list,
                                        do_bandsteering=args.do_bandsteering,
                                        cycles=args.cycles,
-                                       bssids=args.bssids
+                                       bssids=args.bssids,
+                                       duration_to_skip=args.duration_to_skip
                                        )
         throughput_qos.os_type()
         _, configured_device, _, configuration = throughput_qos.phantom_check()
