@@ -39,7 +39,8 @@ class RobotClass:
         self.to_coordinate = ""
         self.charging_timestamps = []
         # max time to reach a point in seconds
-        self.time_to_reach=60 
+        self.time_to_reach=60
+        self.coordinate_list=[] 
 
         # Create waypoint list on initialization
         if self.robo_ip is not None:
@@ -405,3 +406,37 @@ class RobotClass:
         except Exception as e:
             logging.error("Failed to get robot pose: %s", e)
             return 0,0, self.from_coordinate,self.to_coordinate
+
+    def get_coordinates_list(self):
+        skipped_list = ['']
+        matched_index = None
+
+        for idx, coordinate in enumerate(self.coordinate_list):
+            matched, abort = self.robot.move_to_coordinate(coordinate)
+            if matched:
+                matched_index = idx
+                break
+            skipped_list.append(coordinate)
+
+        if matched_index is None:
+            logging.info("It couldnt reach any point so ending the test")
+            exit(1)
+
+        n = len(self.coordinate_list)
+        cycles = int(self.total_cycles)
+
+        cycles_rotated = [
+            self.coordinate_list[(matched_index + i) % n]
+            for i in range(n)
+        ]
+        coordinate_list_with_robo = cycles_rotated * cycles
+
+        coordinate_list_with_robo.append(cycles_rotated[0])
+        for coord in skipped_list:
+            try:
+                coordinate_list_with_robo.remove(coord)
+            except ValueError:
+                pass
+
+        print("Final coordinate list:",coordinate_list_with_robo,skipped_list)
+        return coordinate_list_with_robo

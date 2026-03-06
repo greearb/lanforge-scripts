@@ -270,7 +270,7 @@ class Throughput(Realm):
                  user_list=None, real_client_list=None, real_client_list1=None, hw_list=None, laptop_list=None, android_list=None, mac_list=None, windows_list=None, linux_list=None,
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None,
-                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None,do_bandsteering=False,total_cycles=1,bssids=None):
+                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None,do_bandsteering=False,total_cycles=1,bssids=None,duration_to_skip=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -393,40 +393,7 @@ class Throughput(Realm):
             self.charge_point_name = None
             self.coordinates_completed = []
             self.battery_log = {}
-
-    def get_coordinates_list(self):
-        skipped_list = ['']
-        matched_index = None
-
-        for idx, coordinate in enumerate(self.coordinate_list):
-            matched, abort = self.robot.move_to_coordinate(coordinate)
-            if matched:
-                matched_index = idx
-                break
-            skipped_list.append(coordinate)
-
-        if matched_index is None:
-            logging.info("It couldnt reach any point so ending the test")
-            exit(1)
-
-        n = len(self.coordinate_list)
-        cycles = int(self.total_cycles)
-
-        cycles_rotated = [
-            self.coordinate_list[(matched_index + i) % n]
-            for i in range(n)
-        ]
-        coordinate_list_with_robo = cycles_rotated * cycles
-
-        coordinate_list_with_robo.append(cycles_rotated[0])
-        for coord in skipped_list:
-            try:
-                coordinate_list_with_robo.remove(coord)
-            except ValueError:
-                pass
-
-        print("Final coordinate list:",coordinate_list_with_robo,skipped_list)
-        return coordinate_list_with_robo
+            self.robot.time_to_reach=duration_to_skip
 
     def perform_robo(self, args, clients_to_run):
         """
@@ -458,7 +425,7 @@ class Throughput(Realm):
         # Loop through the coordinate list when coordinates are specified.
         if self.do_bandsteering:
             self.robot.wait_for_battery()
-            coordinate_list_with_robo = self.get_coordinates_list()
+            coordinate_list_with_robo = self.robot.get_coordinates_list()
             self.robot.do_bandsteering = True
             is_device_configured = True
             columns = []
@@ -4776,6 +4743,7 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument('--coordinate', help="Points at which the robot pauses")
     optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
     optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
+    optional.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
 
     args = parser.parse_args()
 
@@ -4935,6 +4903,7 @@ Copyright 2023 Candela Technologies Inc.
                                 do_bandsteering=args.do_bandsteering,
                                 total_cycles=args.total_cycles,
                                 bssids=args.bssids.split(",") if args.bssids else []
+                                duration_to_skip=args.duration_to_skip
                                 )
 
         if gave_incremental:
