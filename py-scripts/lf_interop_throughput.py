@@ -393,7 +393,8 @@ class Throughput(Realm):
             self.charge_point_name = None
             self.coordinates_completed = []
             self.battery_log = {}
-            self.robot.time_to_reach=duration_to_skip
+            self.robot.time_to_reach=int(duration_to_skip)*60
+            print("======",self.robot.time_to_reach)
 
     def perform_robo(self, args, clients_to_run):
         """
@@ -425,6 +426,8 @@ class Throughput(Realm):
         # Loop through the coordinate list when coordinates are specified.
         if self.do_bandsteering:
             self.robot.wait_for_battery()
+            self.robot.total_cycles=self.total_cycles
+            self.robot.coordinate_list = self.coordinate_list
             coordinate_list_with_robo = self.robot.get_coordinates_list()
             if(len(coordinate_list_with_robo) == 0):
                 logger.info("Test aborted")
@@ -4706,7 +4709,7 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument("--tput_mbps", action="store_true", help="Interpret rated download and upload values as Mbps instead of bytes")
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
     optional.add_argument('--total_cycles', help='Enable bandsteering', default="1")
-    optional.add_argument('--robot_wait_duration', help='Robot wait duration in seconds at obstacle', default="1")
+    optional.add_argument('--duration_to_skip', help='Robot wait duration in seconds at obstacle', default="1")
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
     # IOT ARGS
     parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
@@ -4747,7 +4750,6 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument('--coordinate', help="Points at which the robot pauses")
     optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
     optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
-    optional.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
 
     args = parser.parse_args()
 
@@ -4906,7 +4908,7 @@ Copyright 2023 Candela Technologies Inc.
                                 angle_list=args.rotation.split(",") if args.rotation else [],
                                 do_bandsteering=args.do_bandsteering,
                                 total_cycles=args.total_cycles,
-                                bssids=args.bssids.split(",") if args.bssids else []
+                                bssids=args.bssids.split(",") if args.bssids else [],
                                 duration_to_skip=args.duration_to_skip
                                 )
 

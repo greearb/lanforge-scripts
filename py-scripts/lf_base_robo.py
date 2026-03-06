@@ -42,6 +42,7 @@ class RobotClass:
         self.time_to_reach=60
         self.total_cycles=1
         self.coordinate_list=[] 
+        self.total_cycles=1
 
         # Create waypoint list on initialization
         if self.robo_ip is not None:
@@ -231,7 +232,7 @@ class RobotClass:
         movement_timeout = self.time_to_reach
         movement_threshold = 0.8
         second_check=False
-
+        print("movement_timeout",movement_timeout)
         while True:
             matched = False
             try:

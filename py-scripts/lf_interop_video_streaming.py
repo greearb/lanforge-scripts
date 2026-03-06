@@ -171,7 +171,7 @@ class VideoStreamingTest(Realm):
                  coordinate=None,
                  rotation=None,
                  rotation_enabled=None,
-                 angle_list=None,do_bandsteering =False,total_cycles=1,bssids=None):
+                 angle_list=None,do_bandsteering =False,total_cycles=1,bssids=None,duration_to_skip=None):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         self.adb_device_list = None
         self.host = host
@@ -258,6 +258,7 @@ class VideoStreamingTest(Realm):
             self.robot = RobotClass(robo_ip=self.robot_ip, angle_list=self.angle_list)
             self.last_rotated_angles = []
             self.charge_point_name = None
+            self.robot.time_to_reach=int(duration_to_skip)*60
 
     @property
     def run(self):
@@ -2439,40 +2440,7 @@ class VideoStreamingTest(Realm):
             dataframe3 = pd.DataFrame(dataframe2)
             report.set_table_dataframe(dataframe3)
             report.build_table()
-    def get_coordinates_list(self):
-        skipped_list = ['']
-        matched_index = None
-
-        for idx, coordinate in enumerate(self.coordinate_list):
-            matched, abort = self.robot.move_to_coordinate(coordinate)
-            if matched:
-                matched_index = idx
-                break
-            skipped_list.append(coordinate)
-
-        if matched_index is None:
-            logging.info("It couldnt reach any point so ending the test")
-            exit(1)
-
-        n = len(self.coordinate_list)
-        cycles = int(self.total_cycles)
-
-        cycles_rotated = [
-            self.coordinate_list[(matched_index + i) % n]
-            for i in range(n)
-        ]
-        coordinate_list_with_robo = cycles_rotated * cycles
-
-        coordinate_list_with_robo.append(cycles_rotated[0])
-        for coord in skipped_list:
-            try:
-                coordinate_list_with_robo.remove(coord)
-            except ValueError:
-                pass
-
-        print("Final coordinate list:",coordinate_list_with_robo,skipped_list)
-        return coordinate_list_with_robo
-
+ 
     def perform_robo(self, args, individual_dataframe_columns, cx_order_list, i, actual_start_time, iterations_before_test_stopped_by_user):
         """
         Executes Video Streaming tests using robo across coordinates and rotations, collects per-iteration data,
@@ -2500,7 +2468,9 @@ class VideoStreamingTest(Realm):
         if self.do_bandsteering:
             curr_cycle = 1
             pause_coord, test_stopped_by_user = self.robot.wait_for_battery()
-            coordinate_list_with_robo = self.get_coordinates_list()
+            self.robot.total_cycles=self.total_cycles
+            self.robot.coordinate_list = self.coordinate_list
+            coordinate_list_with_robo = self.robot.get_coordinates_list()
             # for coordinate in self.coordinate_list:
             #     matched,abort = self.robot.move_to_coordinate(coordinate)
             #     if matched:
@@ -3123,7 +3093,7 @@ def main():
     parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
     parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
     # Args for robot testing
-    parser.add_argument('--robot_wait_duration', help='Robot wait duration in seconds at obstacle', default="1")
+    parser.add_argument('--duration_to_skip', help='Robot wait duration in seconds at obstacle', default="1")
     parser.add_argument("--robot_test", help='to trigger robot test', action='store_true')
     parser.add_argument('--robot_ip', type=str, default='localhost', help='hostname for where Robot server is running')
     parser.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")
@@ -3274,7 +3244,8 @@ def main():
                              angle_list=angle_list,
                              do_bandsteering=args.do_bandsteering,
                              total_cycles=args.total_cycles,
-                             bssids=args.bssids.split(",") if args.bssids else []
+                             bssids=args.bssids.split(",") if args.bssids else [],
+                             duration_to_skip=args.duration_to_skip
                              )
     args.upstream_port = obj.change_port_to_ip(args.upstream_port)
     obj.upstream_port = args.upstream_port

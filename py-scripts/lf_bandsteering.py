@@ -27,7 +27,7 @@ class ROAMThroughput(RobotClass):
     def __init__(self, robo_ip="", coordinates="", total_cycles=-1,
                  ssid="", security="", mgr_ip="", port="8080",
                  duration=60, test_name="", upstream_port="eth1",
-                 upload="2560", download="2560", traffic_type=None, packet_size="-1", device_list=None, dowebgui=False, result_dir=None, bssids=""):
+                 upload="2560", download="2560", traffic_type=None, packet_size="-1", device_list=None, dowebgui=False, result_dir=None, bssids="",duration_to_skip="1"):
         super().__init__()
         self.robo_ip = robo_ip
         self.coordinates = coordinates
@@ -62,6 +62,7 @@ class ROAMThroughput(RobotClass):
         logger.info("Moving robot to first coordinate to start the test")
         self.move_to_coordinate(self.coordinates_list[0])
         self.perform_roam_robot()
+        self.time_to_reach=int(duration_to_skip)*60
 
     def get_bandsteering_stats(self, report=None, df=None, device_name=None):
         """
@@ -244,6 +245,8 @@ class ROAMThroughput(RobotClass):
             #     return 0
             # coordinate_list_with_robo = [self.coordinates_list[(i) % len(self.coordinates_list)] for i in range(int(self.total_cycles) * len(self.coordinates_list))]
             # coordinate_list_with_robo = [x for x in coordinate_list_with_robo if not (x in skipped_list and not skipped_list.remove(x))]
+            self.total_cycles=self.total_cycles
+            self.coordinate_list = self.coordinates_list
             coordinate_list_with_robo = self.get_coordinates_list()
             # coordinate_list_with_robo = [self.coordinates_list[(i) % len(self.coordinates_list)] for i in range(int(self.total_cycles) * len(self.coordinates_list))]
             curr_cycle = 1
@@ -441,34 +444,6 @@ class ROAMThroughput(RobotClass):
         except Exception as e:
             logger.error("Throughput error: %s", e)
 
-    def get_coordinates_list(self):
-        skipped_list = []
-        matched_index = None
-
-        # Step 1: Find first reachable coordinate
-        for idx, coordinate in enumerate(self.coordinates_list):
-            matched, abort = self.move_to_coordinate(coordinate)
-            if matched:
-                matched_index = idx
-                break
-            skipped_list.append(coordinate)
-
-        if matched_index is None:
-            logging.info("It couldnt reach any point so ending the test")
-            return 0
-
-        n = len(self.coordinates_list)
-        cycles = int(self.total_cycles)
-
-        rotated = [
-            self.coordinates_list[(matched_index + i) % n]
-            for i in range(n)
-        ]
-        coordinate_list_with_robo = rotated * cycles
-
-        coordinate_list_with_robo.append(rotated[0])
-        print("ccc",coordinate_list_with_robo)
-        return coordinate_list_with_robo
 
     def get_signal_and_channel_data(self, station_names):
         """
@@ -565,6 +540,7 @@ def main():
     parser.add_argument('--dowebgui', help="If true will execute script for webgui", action='store_true')
     parser.add_argument('--result_dir', help='Specify the result dir to store the runtime logs', default='')
     parser.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
+    parser.add_argument('--duration_to_skip', help='Robot wait duration in seconds at obstacle', default="1")
 
 
     args = parser.parse_args(remaining_args)
@@ -586,7 +562,8 @@ def main():
         device_list=args.device_list,
         dowebgui=args.dowebgui,
         result_dir=args.result_dir,
-        bssids=args.bssids
+        bssids=args.bssids,
+        duration_to_skip=args.duration_to_skip
     )
 
 
