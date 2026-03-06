@@ -545,7 +545,7 @@ def main():
     parser.add_argument('--robot_ip', type=str, help='IP address of the Roam robot')
     parser.add_argument('--coordinates', type=str, default='', help="The coordinate contains list of coordinates to be ")
     parser.add_argument('--duration', type=int, default=60, help='Ping duration in seconds')
-    
+    parser.add_argument('--robot_wait_duration', help='Robot wait duration in seconds at obstacle', default="1")
 
 
     parser.add_argument('--total_cycles', type=int, default=-1, help='Total number of cycles to perform')

@@ -3523,6 +3523,7 @@ def main():
         optional.add_argument('--iot_increment', type=str, default='', help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
 
         # ROBO ARGS
+        robo.add_argument('--robot_wait_duration', help='Robot wait duration in seconds at obstacle', default="1")
         robo.add_argument('--robo_ip', type=str, help='Specify the robo ip')
         robo.add_argument(
             '--coordinates',

@@ -3123,6 +3123,7 @@ def main():
     parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
     parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
     # Args for robot testing
+    parser.add_argument('--robot_wait_duration', help='Robot wait duration in seconds at obstacle', default="1")
     parser.add_argument("--robot_test", help='to trigger robot test', action='store_true')
     parser.add_argument('--robot_ip', type=str, default='localhost', help='hostname for where Robot server is running')
     parser.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")

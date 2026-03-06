@@ -4706,6 +4706,7 @@ Copyright 2023 Candela Technologies Inc.
     optional.add_argument("--tput_mbps", action="store_true", help="Interpret rated download and upload values as Mbps instead of bytes")
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
     optional.add_argument('--total_cycles', help='Enable bandsteering', default="1")
+    optional.add_argument('--robot_wait_duration', help='Robot wait duration in seconds at obstacle', default="1")
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
     # IOT ARGS
     parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')

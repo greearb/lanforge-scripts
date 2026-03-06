@@ -1804,6 +1804,7 @@ class Youtube(Realm):
         coordinate_list_with_robo = rotated * cycles
 
         coordinate_list_with_robo.append(rotated[0])
+        coordinate_list_with_robo = [coord for coord in coordinate_list_with_robo if coord not in skipped_list]
         print("ccc",coordinate_list_with_robo)
         return coordinate_list_with_robo
 
@@ -2427,7 +2428,7 @@ NOTES:
         optional.add_argument('--iot_testname', type=str, default='', help='Testname for reporting')
 
         optional.add_argument('--iot_increment', type=str, default='', help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
-
+        robo.add_argument('--robot_wait_duration', help='Robot wait duration in seconds at obstacle', default="1")
         robo.add_argument('--robo_ip', type=str, help='Specify the robo ip')
         robo.add_argument(
             '--coordinates',
