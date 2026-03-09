@@ -3040,6 +3040,8 @@ connectivity problems.
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
     optional.add_argument('--total_cycles', help='Iterations', default="1")
     optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
+    optional.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
+
 
     args = parser.parse_args()
 
@@ -3167,7 +3169,7 @@ connectivity problems.
                 lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=report_duration, do_webUI=do_webUI, debug=debug,
                 ui_report_dir=ui_report_dir, csv_name=args.device_csv_name, expected_passfail_val=args.expected_passfail_value, wait_time=args.wait_time, group_name=group_name,
                 floors=args.floors, get_live_view=args.get_live_view,robo_ip=robo_ip,rotation_enabled=rotation_enabled,coordinate_list=coord_list,angle_list=angle_list,local_lf_report_dir=args.local_lf_report_dir,
-                do_bandsteering=args.do_bandsteering,total_cycles=args.total_cycles,bssids=args.bssids.split(",") if args.bssids else [])
+                do_bandsteering=args.do_bandsteering,total_cycles=args.total_cycles,bssids=args.bssids.split(",") if args.bssids else [],duration_to_skip=args.duration_to_skip)
     ping.pingduration=duration
     # creating virtual stations if --virtual flag is specified
     if args.virtual:

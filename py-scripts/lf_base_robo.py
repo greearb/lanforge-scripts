@@ -412,7 +412,7 @@ class RobotClass:
     def get_coordinates_list(self):
         skipped_list = []
         matched_index = None
-
+        print("coordinatelisttt",self.coordinate_list)
         for idx, coordinate in enumerate(self.coordinate_list):
             matched, abort = self.move_to_coordinate(coordinate)
             if matched:
@@ -428,16 +428,19 @@ class RobotClass:
 
         n = len(self.coordinate_list)
         cycles = int(self.total_cycles)
+        if len(skipped_list) == 0:
+            final_coordinate_list = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(cycles * len(self.coordinate_list))]
+        else:
+            rotated = [
+                self.coordinate_list[(matched_index + i) % n]
+                for i in range(n)
+            ]
 
-        rotated = [
-            self.coordinate_list[(matched_index + i) % n]
-            for i in range(n)
-        ]
+            coordinate_list_with_robo = rotated * cycles
+            print(coordinate_list_with_robo,"-------------------")
 
-        coordinate_list_with_robo = rotated * cycles
-
-        skip_count = len(skipped_list)
-        final_coordinate_list = coordinate_list_with_robo[skip_count:]
+            skip_count = len(skipped_list)
+            final_coordinate_list = coordinate_list_with_robo[skip_count:]
 
         print("Final coordinate list:", final_coordinate_list)
         return final_coordinate_list
