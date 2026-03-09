@@ -2072,7 +2072,10 @@ class Youtube(Realm):
 
         for csv_file in filtered_csv_files:
             try:
-                df = pd.read_csv(csv_file)
+                try:
+                    df = pd.read_csv(csv_file)
+                except FileNotFoundError:
+                    continue
 
                 # Ensure necessary columns exist
                 required_cols = {
