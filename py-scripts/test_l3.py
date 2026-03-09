@@ -2397,6 +2397,9 @@ class L3VariableTime(Realm):
         # matched, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[0])
         
         cycle_coords = self.robot_obj.get_coordinates_list()
+        if(len(cycle_coords) == 0):
+            logger.info("Exiting test")
+            exit(1)
         self.robot_obj.do_bandsteering = True
         ul,dl,ul_pdu_str,dl_pdu_str,atten_val,ul_pdu,dl_pdu,passes,expected_passes,coordinate,rotation = self.start()
         print("Starting CXs")
