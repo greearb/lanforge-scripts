@@ -394,7 +394,6 @@ class Throughput(Realm):
             self.coordinates_completed = []
             self.battery_log = {}
             self.robot.time_to_reach=int(duration_to_skip)*60
-            print("======",self.robot.time_to_reach)
 
     def perform_robo(self, args, clients_to_run):
         """

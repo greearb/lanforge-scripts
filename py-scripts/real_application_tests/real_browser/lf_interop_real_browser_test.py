@@ -194,6 +194,7 @@ class RealBrowserTest(Realm):
                  current_cord="",
                  current_angle=None,
                  rotations_enabled=False,
+                 duration_to_skip=None
                  ):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         # Initialize attributes with provided parameters
@@ -321,6 +322,7 @@ class RealBrowserTest(Realm):
             self.test_start_time = None
             self.cycles = cycles
             self.bandsteering_completed = False
+            self.robo_obj.time_to_reach=int(duration_to_skip)*60
             if bssids:
                 self.bssids = [
                     b.strip().strip('"').strip("'").upper()
@@ -1358,39 +1360,6 @@ class RealBrowserTest(Realm):
                     r.get("cx_name", "NA"),
                 ])
 
-    def get_coordinates_list(self):
-        skipped_list = ['']
-        matched_index = None
-
-        for idx, coordinate in enumerate(self.coordinates_list):
-            matched, abort = self.robo_obj.move_to_coordinate(coordinate)
-            if matched:
-                matched_index = idx
-                break
-            skipped_list.append(coordinate)
-
-        if matched_index is None:
-            logging.info("It couldnt reach any point so ending the test")
-            exit(1)
-
-        n = len(self.coordinates_list)
-        cycles = int(self.cycles)
-
-        cycles_rotated = [
-            self.coordinate_list[(matched_index + i) % n]
-            for i in range(n)
-        ]
-        coordinate_list_with_robo = cycles_rotated * cycles
-
-        coordinate_list_with_robo.append(cycles_rotated[0])
-        for coord in skipped_list:
-            try:
-                coordinate_list_with_robo.remove(coord)
-            except ValueError:
-                pass
-
-        print("Final coordinate list:",coordinate_list_with_robo,skipped_list)
-        return coordinate_list_with_robo
 
     def run_robo_bandsteering_test(self, cx_batch):
         logging.info("[BANDSTEERING] Starting robo band-steering test")
@@ -1477,7 +1446,9 @@ class RealBrowserTest(Realm):
         #     base_coords[(i + 1) % coord_len]
         #     for i in range(self.cycles * coord_len)
         # ]
-        self.coordinates_list = self.get_coordinates_list()
+        self.robo_obj.total_cycles=self.cycles
+        self.robo_obj.coordinate_list = self.coordinates_list
+        self.coordinates_list = self.robo_obj.get_coordinates_list()
 
         logging.info(
             "[BANDSTEERING] Final coordinate list: %s",
@@ -3066,40 +3037,6 @@ class RealBrowserTest(Realm):
                     else:
                         logging.info(f"{filename} not found in the current directory")
 
-    def get_coordinates_list(self):
-        skipped_list = ['']
-        matched_index = None
-
-        for idx, coordinate in enumerate(self.coordinates_list):
-            matched, abort = self.robo_obj.move_to_coordinate(coordinate)
-            if matched:
-                matched_index = idx
-                break
-            skipped_list.append(coordinate)
-
-        if matched_index is None:
-            logging.info("It couldnt reach any point so ending the test")
-            exit(1)
-
-        n = len(self.coordinates_list)
-        cycles = int(self.cycles)
-
-        cycles_rotated = [
-            self.coordinates_list[(matched_index + i) % n]
-            for i in range(n)
-        ]
-        coordinate_list_with_robo = cycles_rotated * cycles
-
-        coordinate_list_with_robo.append(cycles_rotated[0])
-        for coord in skipped_list:
-            try:
-                coordinate_list_with_robo.remove(coord)
-            except ValueError:
-                pass
-
-        print("Final coordinate list:",coordinate_list_with_robo,skipped_list)
-        return coordinate_list_with_robo
-
     def create_robo_graphs_test_results(self, csv_file, coordinate, angle=None):
         """
         Generates graphs and data tables for a specific location (coordinate/angle)
@@ -3523,7 +3460,7 @@ def main():
         optional.add_argument('--iot_increment', type=str, default='', help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
 
         # ROBO ARGS
-        robo.add_argument('--robot_wait_duration', help='Robot wait duration in seconds at obstacle', default="1")
+        robo.add_argument('--duration_to_skip', help='Robot wait duration in seconds at obstacle', default="1")
         robo.add_argument('--robo_ip', type=str, help='Specify the robo ip')
         robo.add_argument(
             '--coordinates',
@@ -3630,6 +3567,7 @@ def main():
                               cycles=args.cycles,
                               bssids=args.bssids,
                               rotations_enabled=rotations_enabled,
+                              duration_to_skip=args.duration_to_skip
                               )
         obj.change_port_to_ip()
 
