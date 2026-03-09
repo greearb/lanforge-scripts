@@ -426,6 +426,9 @@ class Throughput(Realm):
         if self.do_bandsteering:
             self.robot.wait_for_battery()
             coordinate_list_with_robo = self.robot.get_coordinates_list()
+            if(len(coordinate_list_with_robo) == 0):
+                logger.info("Test aborted")
+                exit(1)
             self.robot.do_bandsteering = True
             is_device_configured = True
             columns = []

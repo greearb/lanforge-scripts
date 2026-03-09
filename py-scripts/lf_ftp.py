@@ -3140,6 +3140,9 @@ class FtpTest(LFCliBase):
         self.robot_obj.coordinate_list=self.coordinate_list
         if self.do_bandsteering:
             cycle_coords=self.robot_obj.get_coordinates_list()
+            if(len(cycle_coords) == 0):
+                logger.info("Test aborted")
+                return
             self.robot_obj.do_bandsteering = True
             self.start(False, False)
             cycles = self.cycles

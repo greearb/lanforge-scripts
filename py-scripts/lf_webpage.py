@@ -2214,6 +2214,9 @@ class HttpDownload(Realm):
         if self.do_bandsteering:
             # matched, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[0])
             cycle_coords=self.robot_obj.get_coordinates_list()
+            if(len(cycle_coords) == 0):
+                logger.info("Coordinate list is empty test execution is stopped")
+                return                
             self.robot_obj.do_bandsteering = True
             # if matched:
             #     logger.info("Reached the coordinate {}".format(self.coordinate_list[0]))

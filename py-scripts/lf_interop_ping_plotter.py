@@ -1844,6 +1844,8 @@ class Ping(Realm):
             reached=False
             # reached,abort=self.robot.move_to_coordinate(self.coordinate_list[0])
             coordinate_list_with_robo=self.robot.get_coordinates_list()
+            if(len(coordinate_list_with_robo) == 0):
+                logging.config("Coordinate list is empty")
             # coordinate_list_with_robo = [self.coordinate_list[(1 + i) % len(self.coordinate_list)] for i in range(int(self.total_cycles) * len(self.coordinate_list))]
             self.robot.do_bandsteering = True
             columns = []

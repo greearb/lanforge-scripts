@@ -2760,22 +2760,26 @@ class ThroughputQOS(Realm):
         if self.do_bandsteering:
             self.overall = []
             self.df_for_webui = []
-            matched, abort = self.robot.move_to_coordinate(coord_list[0])
-            self.robot.do_bandsteering = True
-            if matched:
-                logger.info("Reached the coordinate {}".format(coord_list[0]))
-                self.start(False, False)
-                print("Starting CXs")
-                time.sleep(15)
-                test_start_time = datetime.now().strftime("%Y %d %H:%M:%S")
-                print("Test started at: ", test_start_time)
-                print("Monitoring cx and endpoints")
-            if abort:
-                logger.info("test aborted")
+            # matched, abort = self.robot.move_to_coordinate(coord_list[0])
+            cycle_coords=self.robot.get_coordinates_list()
+            if(len(cycle_coords) == 0):
+                logger.info("Test aborted")
                 exit(0)
+            self.robot.do_bandsteering = True
+            # if matched:
+            #     logger.info("Reached the coordinate {}".format(coord_list[0]))
+            #     self.start(False, False)
+            #     print("Starting CXs")
+            #     time.sleep(15)
+            #     test_start_time = datetime.now().strftime("%Y %d %H:%M:%S")
+            #     print("Test started at: ", test_start_time)
+            #     print("Monitoring cx and endpoints")
+            # if abort:
+            #     logger.info("test aborted")
+            #     exit(0)
             cycles = self.cycles
             curr_cycle = 1
-            cycle_coords = [coord_list[(1 + i) % len(coord_list)] for i in range(cycles * len(coord_list))]
+            # cycle_coords = [coord_list[(1 + i) % len(coord_list)] for i in range(cycles * len(coord_list))]
             logger.info("Current Cycle {}".format(curr_cycle))
             for coordinate in cycle_coords:
                 if self.test_stopped_by_user:
