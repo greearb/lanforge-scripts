@@ -1778,36 +1778,7 @@ class Youtube(Realm):
 
                 self.generic_endps_profile.stop_cx()
 
-    def get_coordinates_list(self):
-        skipped_list = []
-        matched_index = None
-
-        # Step 1: Find first reachable coordinate
-        for idx, coordinate in enumerate(self.coordinates_list):
-            matched, abort = self.robo_obj.move_to_coordinate(coordinate)
-            if matched:
-                matched_index = idx
-                break
-            skipped_list.append(coordinate)
-
-        if matched_index is None:
-            logging.info("It couldnt reach any point so ending the test")
-            return 0
-
-        n = len(self.coordinates_list)
-        cycles = int(self.cycles)
-
-        rotated = [
-            self.coordinates_list[(matched_index + i) % n]
-            for i in range(n)
-        ]
-        coordinate_list_with_robo = rotated * cycles
-
-        coordinate_list_with_robo.append(rotated[0])
-        coordinate_list_with_robo = [coord for coord in coordinate_list_with_robo if coord not in skipped_list]
-        print("ccc",coordinate_list_with_robo)
-        return coordinate_list_with_robo
-
+    
     def perform_robo_bandsteering_test(self):
         logging.info("Starting Band-Steering Robo YouTube Test")
 
@@ -1820,7 +1791,9 @@ class Youtube(Realm):
         #     exit(0)
         # if not matched:
         #     continue
-        coordinate_list_with_robo = self.get_coordinates_list()
+        self.robo_obj.total_cycles=self.cycles
+        self.robo_obj.coordinate_list = self.coordinates_list
+        coordinate_list_with_robo = self.robo_obj.get_coordinates_list()
         time.sleep(5)
         # print(self.cycles,"the cycles are")
         print(coordinate_list_with_robo,"the coordinate list")
@@ -2073,8 +2046,10 @@ class Youtube(Realm):
         for csv_file in filtered_csv_files:
             try:
                 try:
+                    print("csvvvv",csv_file)
                     df = pd.read_csv(csv_file)
                 except FileNotFoundError:
+                    logging.info(f"CSV file not found: {csv_file}")
                     continue
 
                 # Ensure necessary columns exist
