@@ -7,19 +7,24 @@
 ##                                                                         ##
 ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####
 
-usage="$0 -u 01-02 -d f8:e3:22:b2:2c -e /home/lanforge/vr_conf/mgt_pipe_1_helper
+usage="$0 -u 01-02 -d f8:e3:22:b2:2c:ab -e /home/lanforge/vr_conf/mgt_pipe_1_helper
+ OR
+$0 -c e0:d3:62:56:09:b3 -d f8:e3:22:b2:2c:ab -e /home/lanforge/vr_conf/mgt_pipe_1_helper
  -u: usb path of bluetooth dongle
+ -c: MAC address of bluetooth dongle
  -d: bluetooth mac of target device
  -e: file for writing out important btstack events
 "
 
 OPTIONAL_ARGS=''
+CMD=''
 
-while getopts ":d:e:u:" opts; do
+while getopts ":d:e:u:c:" opts; do
     case "$opts" in
         d) TARGET_DEVICE="$OPTARG";;
         e) EVENTS_FNAME="$OPTARG";;
         u) USB_PATH="$OPTARG";;
+        c) MAC_ADDR="$OPTARG";;
         *) echo "Unknown Option [$opts]"
     esac
 done
@@ -30,15 +35,30 @@ done
     exit 1
 }
 
-[ -z "$USB_PATH" ] && {
-    echo -e "-u USB PATH of controlling BT dongle required\n"
-    echo "$usage"
-    exit 1
-}
+if [[ -z "$MAC_ADDR"  && -z "$USB_PATH" ]]; then
+   echo -e "Must provide either a USB bus path or a dongle MAC address\n"
+   echo "$usage"
+   exit 1
+fi
+
+if [[ -n "$MAC_ADDR" && -n "$USB_PATH" ]]; then
+   echo -e "Cannot specify -u with -c\n"
+   echo "$usage"
+   exit 1
+fi
 
 if [ -n "$EVENTS_FNAME" ]; then
     OPTIONAL_ARGS+="-e $EVENTS_FNAME"
 fi
+
+if [[ -n "$MAC_ADDR" ]]; then
+   CMD="btstack -c $MAC_ADDR -d $TARGET_DEVICE $OPTIONAL_ARGS"
+fi
+
+if [[ -n "$USB_PATH" ]]; then
+   CMD="btstack -u $USB_PATH -d $TARGET_DEVICE $OPTIONAL_ARGS"
+fi
+
 
 if [ ! -d "/home/lanforge/btstack/" ]; then
     mkdir -p /home/lanforge/btstack
@@ -52,6 +72,7 @@ do_exit() {
     exit $1
 }
 on_interrupt() {
+    echo "btstack_runner got SIGINT!\n"
     kill -s SIGINT $CHILD_PID
     do_exit 0
 }
@@ -63,7 +84,6 @@ echo $$ > $PIDFNAME
 for (( ; ; ))
 do
     # start btstack
-    CMD="btstack -u $USB_PATH -d $TARGET_DEVICE $OPTIONAL_ARGS"
     echo "starting btstack w/ cmd: $CMD"
     ($CMD) &
     CHILD_PID=$!
