@@ -2179,8 +2179,10 @@ class VideoStreamingTest(Realm):
                         tx_rate.append(alias[i]['tx-rate'])
 
         self.add_buffer_and_wait_time_images(report=report)
-        for coordinate in range(len(passed_coordinates)):
-            if(self.coordinate_list[coordinate] not in self.vs_data):
+        for coordinate in range(len(self.coordinate_list)):
+            if(not self.rotation_enabled and self.coordinate_list[coordinate] not in self.vs_data):
+                continue
+            elif(self.rotation_enabled and int(self.coordinate_list[coordinate]) not in self.vs_data):
                 continue
             self.current_coordinate = self.coordinate_list[coordinate]
             csv_suffix = "_{}".format(self.current_coordinate)
