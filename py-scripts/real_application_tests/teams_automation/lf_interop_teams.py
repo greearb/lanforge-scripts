@@ -327,7 +327,12 @@ class TeamsAutomation(Realm):
                 # Detect change points
                 df["prev_bssid"] = df["BSSID"].shift()
 
-                mask = (df["BSSID"] != df["prev_bssid"]) & (df["BSSID"] != "NA")
+                mask = (
+                    (df["BSSID"] != df["prev_bssid"])
+                    & (df["BSSID"] != "NA")
+                    & (df["prev_bssid"] != "NA")
+                    & (df["prev_bssid"].notnull())
+                )
 
                 bssid_list = df.loc[mask, "BSSID"].tolist()
                 timestamp_list = df.loc[mask, "TimeStamp"].tolist()
@@ -383,7 +388,6 @@ class TeamsAutomation(Realm):
                 self.report.set_graph_image(graph_png)
                 self.report.move_graph_image()
                 self.report.set_csv_filename(graph_png)
-                self.report.move_csv_file()
                 self.report.build_graph()
 
                 if skip_table:
@@ -703,7 +707,9 @@ class TeamsAutomation(Realm):
                     f"--meet_link '{self.meet_link}' "
                     f"--participant_name '{self.real_sta_hostname[i]}' "
                     f"--upstream_port {self.upstream_port} "
-                    f"--duration {self.duration}"
+                    f"--duration {self.duration} "
+                    "--audio "
+                    "--video "
                 )
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
@@ -1015,6 +1021,8 @@ class TeamsAutomation(Realm):
 
             # Read per-device average metrics
             self.generate_graphs_and_tables(metrics)
+            if self.do_robo and self.do_webui:
+                self.add_live_view_images_to_report()
             if self.do_bs:
                 self.add_bandsteering_report_section()
             self.report.write_html()
@@ -1373,6 +1381,65 @@ class TeamsAutomation(Realm):
                 dest = os.path.join(self.report_path_date_time, file)
                 shutil.move(src, dest)
 
+    def add_live_view_images_to_report(self):
+        """
+        Waits for and adds the Video and Audio heatmap images for Floor 1.
+        """
+        live_view_dir = os.path.join(self.path, "live_view_images")
+
+        # Define the specific filenames for Floor 1
+        video_img_name = f"teams_video_{self.test_name}_floor1.png"
+        audio_img_name = f"teams_audio_{self.test_name}_floor1.png"
+
+        video_path = os.path.join(live_view_dir, video_img_name)
+        audio_path = os.path.join(live_view_dir, audio_img_name)
+
+        timeout = 90  # seconds
+        start_time = time.time()
+
+        # 1. Wait for the Video image (Primary trigger)
+        # We assume if Video is ready, Audio is likely ready or close behind.
+        while not (os.path.exists(video_path) and os.path.exists(audio_path)):
+            if time.time() - start_time > timeout:
+                logger.error(f"Timeout: {video_img_name} not found within 60 seconds.")
+                break
+            time.sleep(1)
+
+        if os.path.exists(video_path):
+            logger.info(f"Found video heatmap image: {video_path}")
+        else:
+            logger.warning(f"Video heatmap image not found: {video_path}")
+
+        if os.path.exists(audio_path):
+            logger.info(f"Found audio heatmap image: {audio_path}")
+        else:
+            logger.warning(f"Audio heatmap image not found: {audio_path}")
+
+        # 2. Build the HTML Report Content
+        html_content = ""
+
+        # Add Video Map (if found)
+        if os.path.exists(video_path):
+            html_content += (
+                '<div style="page-break-before: always;"></div>'
+                '<h3 style="text-align:center;">Video Heatmap</h3>'
+                f'<div style="text-align:center;"><img src="file://{video_path}" style="width:1200px; height:800px;"></img></div>'
+            )
+
+        # Add Audio Map (if found)
+        # Note: We check specifically for existence here in case only video was generated
+        if os.path.exists(audio_path):
+            html_content += (
+                '<div style="page-break-before: always;"></div>'
+                '<h3 style="text-align:center;">Audio Heatmap</h3>'
+                f'<div style="text-align:center;"><img src="file://{audio_path}" style="width:1200px; height:800px;"></img></div>'
+            )
+
+        # 3. Inject into Report
+        if html_content:
+            self.report.set_custom_html(html_content)
+            self.report.build_custom()
+
     def shutdown(self):
         """
         Gracefully shut down the application.
@@ -1383,8 +1450,8 @@ class TeamsAutomation(Realm):
         time.sleep(10)
         self.create_avg_data()
         self.generate_report()
-        self.move_csv_files()
         self.generic_endps_profile.cleanup()
+        self.stop_test_in_webui()
         logging.info("Exiting the application.")
         os._exit(0)
 
@@ -1480,9 +1547,10 @@ class TeamsAutomation(Realm):
                 data = request.json
 
                 for hostname, stats in data.items():
-                    stats["current_coord"] = self.current_coord
-                    stats["current_rotation"] = self.current_rotation
-                    stats["rotations_enabled"] = self.rotations_enabled
+                    if self.do_robo or self.do_bs:
+                        stats["current_coord"] = self.current_coord
+                        stats["current_rotation"] = self.current_rotation
+                        stats["rotations_enabled"] = self.rotations_enabled
                     self.data_store[hostname] = stats
 
                     if self.do_robo:
@@ -1563,12 +1631,12 @@ class TeamsAutomation(Realm):
                             bs_data = [
                                 "NA",
                                 "NA",
-                                "-",
-                                "-",
-                                "-",
-                                "-",
-                                "-",
-                                "-",
+                                "NA",
+                                "NA",
+                                "NA",
+                                "NA",
+                                "NA",
+                                "NA",
                                 self.from_coordinate,
                                 self.to_coordinate,
                             ]
@@ -2033,6 +2101,8 @@ class TeamsAutomation(Realm):
 
 
 def main():
+    args = None
+    teams = None
     try:
 
         parser = argparse.ArgumentParser(
@@ -2229,11 +2299,12 @@ def main():
         traceback.print_exc()
 
     finally:
-        if not ("--help" in sys.argv or "-h" in sys.argv):
-            teams.stop_signal = True
-            teams.generate_report()
-            if args.do_webUI:
-                teams.stop_test_in_webui()
+        if args is not None and not ("--help" in sys.argv or "-h" in sys.argv):
+            if teams is not None:
+                teams.stop_signal = True
+                if args.do_webUI:
+                    teams.stop_test_in_webui()
+                teams.generate_report()
                 logger.info("Waiting for Browser Cleanup at Client Side")
                 time.sleep(10)
                 logger.info("Browser Cleanup Completed")
