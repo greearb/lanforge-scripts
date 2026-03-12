@@ -1,7 +1,6 @@
 import uiautomator2 as u2
 import time
 from ppadb.client import Client as AdbClient
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 import xml.etree.ElementTree as ET
 from datetime import datetime
 import argparse
@@ -24,14 +23,11 @@ class TeamsAndroid:
         self.host = host
         self.port = port
         self.client = AdbClient(host=self.host, port=self.port)
-        self.devices = {}
-        self.adb_serials = {}
-        self.u2_sessions = {}
+        self.serial = None
+        self.d = None
         self.stats = {}
         self.upstream_port = upstream_port
-        self.test_serials = []
         self.stop_signal = False
-        self.total_serials = []
         self.audio = True
         self.video = True
         self.meet_link = meet_link
@@ -66,52 +62,18 @@ class TeamsAndroid:
         devices = self.client.devices()
         return [d.serial for d in devices]
 
-    def connect_one_device(self, serial, timeout=20):
-        ex = ThreadPoolExecutor(max_workers=1)
-        fut = ex.submit(u2.connect, serial)
+    def connect(self, serial):
         try:
-            d = fut.result(timeout=timeout)
+            self.d = u2.connect(serial)
+            self.serial = serial
             self.logger.info(f"[{serial}] Connected")
-            return serial, d
-        except TimeoutError:
-            self.logger.error(f"[{serial}] ⏳ Connection timeout")
-            fut.cancel()  # best-effort; won't stop a running thread
-            # IMPORTANT: don't wait for the stuck worker
-            ex.shutdown(wait=False, cancel_futures=True)
-            return None, None
+            return True
         except Exception as e:
             self.logger.error(f"[{serial}] Failed to connect: {e}")
-            ex.shutdown(wait=False, cancel_futures=True)
-            return None, None
-        else:
-            ex.shutdown(wait=True)
+            return False
 
-    def connect_multiple_devices(self):
-        sessions = {}
-        with ThreadPoolExecutor(max_workers=len(self.total_serials)) as ex:
-            futures = {
-                ex.submit(self.connect_one_device, serial): serial
-                for serial in self.total_serials
-            }
-            for future in as_completed(futures):
-                serial, d = future.result()
-                if serial and d:
-                    sessions[serial] = d
-        self.u2_sessions = sessions
-        self.test_serials = list(sessions.keys())
-
-    def run_on_multiple_devices(self, device_serials, max_workers=5):
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [
-                executor.submit(self.open_chrome_incognito, serial)
-                for serial in device_serials
-            ]
-            # Wait for all to complete
-            for future in futures:
-                future.result()
-
-    def open_chrome_incognito(self, serial):
-        d = self.u2_sessions[serial]
+    def open_chrome_incognito(self, d):
+        self.logger.info(f"[{d.serial}] open_chrome_incognito: START")
         self.close_meeting(d)
         time.sleep(10)
 
@@ -124,14 +86,14 @@ class TeamsAndroid:
         if btn.wait(timeout=10):  # <-- actively waits up to 5s
             btn.click()
         else:
-            raise Exception(f"Menu button not found for device {d.serial}")
+            raise RuntimeError("Menu button not found")
 
         # Click "New Incognito tab"
         incog_row = d(resourceId="com.android.chrome:id/new_incognito_tab_menu_id")
         if incog_row.wait(timeout=10):
             incog_row.click()
         else:
-            raise Exception(f"Incognito row not found for device {d.serial}")
+            raise RuntimeError("Incognito row not found")
 
         count = 0
         while "com.android.chrome:id/url_bar" not in d.dump_hierarchy():
@@ -139,9 +101,7 @@ class TeamsAndroid:
             self.logger.info(f"Waiting for URL bar to appear for device {d.serial}...")
             count += 1
             if count > 60:
-                raise Exception(
-                    f"URL bar not found in time for device {d.serial} in open_chrome_incognito method"
-                )
+                raise RuntimeError("URL bar not found in time in open_chrome_incognito")
 
         url_bar = d(resourceId="com.android.chrome:id/url_bar")
         if url_bar.wait(timeout=10):
@@ -149,47 +109,43 @@ class TeamsAndroid:
             url_bar.set_text("https://www.google.com")
             d.press("enter")
         else:
-            raise Exception(
-                f"URL bar not found for device {d.serial} in open_chrome_incognito method"
-            )
+            raise RuntimeError("URL bar not found in open_chrome_incognito")
 
         time.sleep(10)
 
-        btn = d(resourceId="com.android.chrome:id/menu_button")
+        # btn = d(resourceId="com.android.chrome:id/menu_button")
 
-        if btn.wait(timeout=10):  # <-- actively waits up to 5s
-            btn.click()
-        else:
-            raise Exception(f"Menu button not found for device {d.serial}")
+        # if btn.wait(timeout=10):  # <-- actively waits up to 5s
+        #     btn.click()
+        # else:
+        #     raise RuntimeError("Menu button not found while enabling desktop site")
 
-        node = d(resourceId="com.android.chrome:id/menu_item_text", text="Desktop site")
-        if node.wait(timeout=10):
-            info = node.info
-            checked = info.get("checked")
+        # node = d(resourceId="com.android.chrome:id/menu_item_text", text="Desktop site")
+        # if node.wait(timeout=10):
+        #     info = node.info
+        #     checked = info.get("checked")
 
-            if checked is True:
-                self.logger.info(
-                    f"Desktop site is already ENABLED for device {d.serial}"
-                )
-            elif checked is False:
-                self.logger.info(
-                    f"Desktop site is DISABLED — enabling now... for device {d.serial}"
-                )
-                node.click()
-                time.sleep(2)
-                self.logger.info(
-                    f"Desktop site ENABLED successfully for device {d.serial}"
-                )
-            else:
-                self.logger.warning(
-                    f"Could not determine checked state for Desktop site for device {d.serial}"
-                )
-        else:
-            raise Exception(f"Desktop site menu item not found for device {d.serial}")
+        #     if checked is True:
+        #         self.logger.info(
+        #             f"Desktop site is already ENABLED for device {d.serial}"
+        #         )
+        #     elif checked is False:
+        #         self.logger.info(
+        #             f"Desktop site is DISABLED — enabling now... for device {d.serial}"
+        #         )
+        #         node.click()
+        #         time.sleep(2)
+        #         self.logger.info(
+        #             f"Desktop site ENABLED successfully for device {d.serial}"
+        #         )
+        #     else:
+        #         self.logger.warning(
+        #             f"Could not determine checked state for Desktop site for device {d.serial}"
+        #         )
+        # else:
+        #     raise RuntimeError("Desktop site menu item not found")
 
-        email, passwd = self.get_credentials()
-
-        self.login_teams(d, email, passwd)
+        self.logger.info(f"[{d.serial}] open_chrome_incognito: PASS")
 
     def get_credentials(self):
         try:
@@ -215,6 +171,7 @@ class TeamsAndroid:
 
     def login_teams(self, d, email, passwd):
         try:
+            self.logger.info(f"[{d.serial}] login_teams: START")
             # Wait for the URL bar and type the Teams URL
             count = 0
             while "com.android.chrome:id/url_bar" not in d.dump_hierarchy():
@@ -224,19 +181,17 @@ class TeamsAndroid:
                 )
                 count += 1
                 if count > 60:
-                    raise Exception(
-                        f"URL bar not found in time for device {d.serial} in login teams method"
-                    )
+                    raise RuntimeError("URL bar not found in time in login_teams")
             url_bar = d(resourceId="com.android.chrome:id/url_bar")
             if url_bar.wait(timeout=10):
                 url_bar.click()
                 url_bar.set_text("https://teams.microsoft.com/v2")
                 d.press("enter")
             else:
-                raise Exception(f"URL bar not found for device {d.serial}")
+                raise RuntimeError("URL bar not found in login_teams")
 
             if not email or not passwd:
-                raise Exception(f"Email or password is None for device {d.serial}")
+                raise RuntimeError("Email or password is None")
             count = 0
             while 'resource-id="i0116"' not in d.dump_hierarchy():
                 self.logger.info(
@@ -245,9 +200,7 @@ class TeamsAndroid:
                 time.sleep(2)
                 count += 1
                 if count > 60:
-                    raise Exception(
-                        f"Email input field not found in time for device {d.serial}"
-                    )
+                    raise RuntimeError("Email input field not found in time")
 
             email_input = d.xpath('//*[@resource-id="i0116"]')
             if email_input.wait(timeout=30):
@@ -255,7 +208,7 @@ class TeamsAndroid:
                 d.press("enter")
             else:
                 self.logger.error(f"Email input not found for device {d.serial}")
-                raise Exception(f"Email input not found for device {d.serial}")
+                raise RuntimeError("Email input not found")
 
             time.sleep(10)
             d.send_keys(passwd)
@@ -264,13 +217,15 @@ class TeamsAndroid:
             time.sleep(5)
             d.press("enter")
             time.sleep(20)
-            self.enter_meeting(d)
+            self.logger.info(f"[{d.serial}] login_teams: PASS")
         except Exception as e:
-            self.logger.error(f"❌ Exception during login for device {d.serial}: {e}")
+            self.logger.exception(f"[{d.serial}] login_teams: FAILED | {e}")
             d.app_stop("com.android.chrome")
+            raise
 
     def enter_meeting(self, d):
         try:
+            self.logger.info(f"[{d.serial}] enter_meeting: START")
             count = 0
             while "com.android.chrome:id/url_bar" not in d.dump_hierarchy():
                 time.sleep(1)
@@ -279,9 +234,7 @@ class TeamsAndroid:
                 )
                 count += 1
                 if count > 60:
-                    raise Exception(
-                        f"❌ URL bar not found in time for device {d.serial} in enter_meeting method"
-                    )
+                    raise RuntimeError("URL bar not found in time in enter_meeting")
 
             url_bar = d(resourceId="com.android.chrome:id/url_bar")
             if url_bar.wait(timeout=10):
@@ -291,9 +244,7 @@ class TeamsAndroid:
                 )
                 d.press("enter")
             else:
-                raise Exception(
-                    f"URL bar not found for device {d.serial} in enter_meeting method"
-                )
+                raise RuntimeError("URL bar not found in enter_meeting")
 
             d.dump_hierarchy()
             time.sleep(10)
@@ -307,8 +258,8 @@ class TeamsAndroid:
                 time.sleep(2)
                 count += 1
                 if count > 120:
-                    raise Exception(
-                        f"❌ 'Allow while visiting the site' button not found in time for device {d.serial}"
+                    raise RuntimeError(
+                        "'Allow while visiting the site' not found in time"
                     )
 
             allow_btn = d(text="Allow while visiting the site")
@@ -330,9 +281,7 @@ class TeamsAndroid:
                     )
 
             else:
-                raise Exception(
-                    f"❌ 'Allow while visiting the site' button not found for device {d.serial}"
-                )
+                raise RuntimeError("'Allow while visiting the site' button not found")
 
             d.dump_hierarchy()
             time.sleep(5)
@@ -345,36 +294,31 @@ class TeamsAndroid:
                 time.sleep(2)
                 count += 1
                 if count > 60:
-                    raise Exception(
-                        f"Camera toggle button not found in time for device {d.serial}"
-                    )
-            
+                    raise RuntimeError("Camera toggle button not found in time")
+
             camera_toggle_btn = d(text="Turn camera on (Ctrl+Shift+O)")
-            if camera_toggle_btn.wait(timeout=60):
+            if camera_toggle_btn.wait(timeout=120):
                 camera_toggle_btn.click()
             else:
-                raise Exception(
-                    f"Camera toggle button not found for device {d.serial}"
-                )
+                raise RuntimeError("Camera toggle button not found")
 
             join_btn = d(resourceId="prejoin-join-button")
             if join_btn.wait(timeout=60):
                 join_btn.click()
             else:
-                raise Exception(f"Join button not found for device {d.serial}")
+                raise RuntimeError("Join button not found")
             time.sleep(10)
-            self.enable_stats(d)
+            self.logger.info(f"[{d.serial}] enter_meeting: PASS")
         except Exception as e:
-            self.logger.error(
-                f"❌ Exception during meeting entry for device {d.serial}: {e}"
-            )
+            self.logger.exception(f"[{d.serial}] enter_meeting: FAILED | {e}")
             d.app_stop("com.android.chrome")
+            raise
 
     def update_participation(self):
 
         endpoint_url = f"{self.base_url}/set_participants_joined"
         try:
-            response = requests.get(endpoint_url)
+            response = requests.get(endpoint_url, timeout=5)
             if response.status_code == 200:
                 self.logger.info("Device participation status updated successfully.")
             else:
@@ -385,53 +329,111 @@ class TeamsAndroid:
             self.logger.error(f"Request error: {e}")
 
     def enable_stats(self, d):
+        self.logger.info(f"[{d.serial}] enable_stats: START")
         self.update_participation()
         time.sleep(10)
-        xml = d.dump_hierarchy()
-        while "callingButtons-showMoreBtn" not in xml:
+        count = 0
+        while "callingButtons-showMoreBtn" not in d.dump_hierarchy():
+            self.logger.info(
+                f"[{d.serial}] Waiting for More button to appear in call controls..."
+            )
             time.sleep(1)
-            xml = d.dump_hierarchy()
-            self.logger.info("Waiting for More button to appear in call controls...")
+            count += 1
+            if count > 180:
+                raise RuntimeError(
+                    "More button did not appear in call controls within 180 seconds"
+                )
         more_btn = d(resourceId="callingButtons-showMoreBtn")
         if more_btn.wait(timeout=180):
             more_btn.click()
         else:
-            self.logger.error("More button not found")
-            return
+            raise RuntimeError("More button not found after UI indicated presence")
         settings_btn = d(resourceId="SettingsMenuControl-id")
         if settings_btn.wait(timeout=60):
             settings_btn.click()
         else:
-            self.logger.error("Settings button not found")
-            return
+            raise RuntimeError("Settings button not found")
         call_health_btn = d(resourceId="call-health-button")
         if call_health_btn.wait(timeout=60):
             call_health_btn.click()
         else:
-            self.logger.error("Call health button not found")
-            return
+            raise RuntimeError("Call health button not found")
 
+        count = 0
         while self.start_time is None or self.end_time is None:
             self.get_start_and_end_time()
+            count += 1
+            if count > 60:
+                self.logger.error(
+                    "Failed to receive start_time and end_time within 2 minutes. Exiting script."
+                )
+                sys.exit(1)
             time.sleep(2)
 
-        while self.start_time > datetime.now(self.tz).isoformat():
+        try:
+            start_dt = datetime.fromisoformat(self.start_time.replace("Z", "+00:00"))
+            end_dt = datetime.fromisoformat(self.end_time.replace("Z", "+00:00"))
+            if start_dt.tzinfo is None:
+                start_dt = self.tz.localize(start_dt)
+            if end_dt.tzinfo is None:
+                end_dt = self.tz.localize(end_dt)
+        except Exception as e:
+            self.logger.error(
+                f"Invalid start_time or end_time format: start_time={self.start_time}, end_time={self.end_time}, error={e}"
+            )
+            sys.exit(1)
+
+        while start_dt > datetime.now(self.tz):
             time.sleep(2)
             self.logger.info("waiting for the start time")
 
-        while self.end_time > datetime.now(self.tz).isoformat():
+        while end_dt > datetime.now(self.tz):
+            audio_stats = {}
+            video_stats = {}
             if self.audio:
                 audio_stats = self.collect_audio_stats(d)
             if self.video:
                 video_stats = self.collect_video_stats(d)
             self.send_stats_to_server(d.serial, audio_stats, video_stats)
+            self.check_stop_signal()
+            if self.stop_signal:
+                self.logger.info("Stop signal received, exiting stats collection loop.")
+                break
 
         self.close_meeting(d)
+        self.logger.info(f"[{d.serial}] enable_stats: PASS")
+
+    def check_stop_signal(self):
+        """Check the stop signal from the Flask server."""
+        try:
+            endpoint_url = f"{self.base_url}/check_stop"
+
+            response = requests.get(
+                endpoint_url, timeout=5
+            )  # Replace with your Flask server URL
+            if response.status_code == 200:
+
+                stop_signal_from_server = response.json().get("stop", False)
+
+                # Only update if the server's stop signal is True
+                if stop_signal_from_server:
+                    self.stop_signal = True
+                    self.logger.info(
+                        "Stop signal received from the server. Exiting the loop."
+                    )
+                else:
+
+                    self.logger.info(
+                        "No stop signal received from the server. Continuing."
+                    )
+            return self.stop_signal
+        except Exception as e:
+            self.logger.error(f"Error checking stop signal: {e}")
 
     def get_start_and_end_time(self):
         endpoint_url = f"{self.base_url}/get_start_end_time"
         try:
-            response = requests.get(endpoint_url)
+            response = requests.get(endpoint_url, timeout=5)
             if response.status_code == 200:
                 data = response.json()
                 self.start_time = data.get("start_time")
@@ -469,31 +471,39 @@ class TeamsAndroid:
         self.logger.info(f"Opened Interop app on device {d.serial}")
 
     def collect_audio_stats(self, d):
+        self.logger.info(f"[{d.serial}] collect_audio_stats: START")
         # Wait until "View more audio data" button appears
+        count = 0
         while "View more audio data" not in d.dump_hierarchy():
             time.sleep(1)
             self.logger.info(
-                f"Waiting for View more audio data button to appear for {d.serial}..."
+                f"[{d.serial}] Waiting for 'View more audio data' button..."
             )
+            count += 1
+            if count > 60:
+                raise RuntimeError(
+                    f"Timeout waiting for 'View more audio data' button on {d.serial}"
+                )
 
         # Open panel
         if d(text="View more audio data").wait(timeout=10):
             try:
                 d(text="View more audio data").click()
+                self.logger.info(f"[{d.serial}] Clicked 'View more audio data' button")
             except Exception as e:
-                self.logger.warning(f"Retrying click due to stale element: {e}")
+                self.logger.warning(
+                    f"[{d.serial}] Retrying click due to stale element: {e}"
+                )
                 time.sleep(5)
                 d(text="View more audio data").click()
         else:
-            self.logger.warning(
-                f"Audio panel not found for device {d.serial}, skipping..."
+            raise RuntimeError(
+                f"Audio panel not found or clickable for device {d.serial}"
             )
-            return
 
         # Wait for all resource-ids 0–7 to appear
         expected_ids = [str(i) for i in range(8)]
-        timeout = 30
-        start = time.time()
+        count = 0
 
         while True:
             xml = d.dump_hierarchy()
@@ -506,14 +516,14 @@ class TeamsAndroid:
 
             missing = set(expected_ids) - present_ids
             if not missing:
-                self.logger.info(f"✅ All Audio resource-ids found for {d.serial}")
+                self.logger.info(f"[{d.serial}] ✅ All Audio resource-ids found")
                 break
 
-            if time.time() - start > timeout:
-                self.logger.warning(
-                    f"⚠️ Timeout waiting for Audio resource-ids {missing} on {d.serial}"
+            count += 1
+            if count > 30:
+                raise RuntimeError(
+                    f"Timeout waiting for Audio resource-ids {missing} on {d.serial}"
                 )
-                break
 
             time.sleep(1)
 
@@ -528,7 +538,9 @@ class TeamsAndroid:
                         if val:
                             return val.replace(strip, "").strip()
             except Exception as e:
-                self.logger.error(f"XML parse failed for {resource_id}: {e}")
+                self.logger.error(
+                    f"[{d.serial}] XML parse failed for {resource_id}: {e}"
+                )
             return default
 
         audio_stats_data = {
@@ -542,50 +554,74 @@ class TeamsAndroid:
             "au_recv_codec": grab("7", "NA"),
         }
 
+        count = 0
         while True:
             xml = d.dump_hierarchy()
             if "Go back to call health root panel" in xml:
                 break
             time.sleep(1)
-            self.logger.info(f"Waiting for go back to call health panel for {d.serial}")
+            self.logger.info(
+                f"[{d.serial}] Waiting for go back to call health panel..."
+            )
+            count += 1
+            if count > 60:
+                raise RuntimeError(
+                    f"Timeout waiting for 'Go back to call health root panel' on {d.serial}"
+                )
 
         if d(text="Go back to call health root panel").wait(timeout=10):
             try:
                 d(text="Go back to call health root panel").click()
+                self.logger.info(
+                    f"[{d.serial}] Clicked 'Go back to call health root panel'"
+                )
             except Exception as e:
-                self.logger.warning(f"Retrying click due to stale element: {e}")
+                self.logger.warning(
+                    f"[{d.serial}] Retrying click due to stale element: {e}"
+                )
                 time.sleep(5)
                 d(text="Go back to call health root panel").click()
+        else:
+            raise RuntimeError(
+                f"'Go back to call health root panel' button not clickable on {d.serial}"
+            )
 
+        self.logger.info(f"[{d.serial}] collect_audio_stats: PASS")
         return audio_stats_data
 
     def collect_video_stats(self, d):
+        self.logger.info(f"[{d.serial}] collect_video_stats: START")
         # Wait until "View more video data" button appears
-        xml = d.dump_hierarchy()
-        while "View more video data" not in xml:
+        count = 0
+        while "View more video data" not in d.dump_hierarchy():
             time.sleep(1)
-            xml = d.dump_hierarchy()
             self.logger.info(
-                f"Waiting for View more video data button to appear for {d.serial}..."
+                f"[{d.serial}] Waiting for 'View more video data' button..."
             )
+            count += 1
+            if count > 60:
+                raise RuntimeError(
+                    f"Timeout waiting for 'View more video data' button on {d.serial}"
+                )
 
         if d(text="View more video data").wait(timeout=10):
             try:
                 d(text="View more video data").click()
+                self.logger.info(f"[{d.serial}] Clicked 'View more video data' button")
             except Exception as e:
-                self.logger.warning(f"Retrying click due to stale element: {e}")
+                self.logger.warning(
+                    f"[{d.serial}] Retrying click due to stale element: {e}"
+                )
                 time.sleep(5)
                 d(text="View more video data").click()
         else:
-            self.logger.warning(
-                f"Video panel not found for device {d.serial}, skipping..."
+            raise RuntimeError(
+                f"'View more video data' panel not found or clickable for device {d.serial}"
             )
-            return
 
         # Wait for all 8 resource-ids (0–7) to appear
         expected_ids = [str(i) for i in range(8)]
-        timeout = 30
-        start = time.time()
+        count = 0
 
         while True:
             xml = d.dump_hierarchy()
@@ -599,14 +635,14 @@ class TeamsAndroid:
 
             missing = set(expected_ids) - present_ids
             if not missing:
-                self.logger.info(f"✅ All video resource-ids found for {d.serial}")
+                self.logger.info(f"[{d.serial}] ✅ All video resource-ids found")
                 break
 
-            if time.time() - start > timeout:
-                self.logger.warning(
+            count += 1
+            if count > 30:
+                raise RuntimeError(
                     f"Timeout waiting for video resource-ids {missing} on {d.serial}"
                 )
-                break
 
             time.sleep(1)
 
@@ -621,7 +657,9 @@ class TeamsAndroid:
                         if val:
                             return val.replace(strip, "").strip()
             except Exception as e:
-                self.logger.error(f"XML parse failed for {resource_id}: {e}")
+                self.logger.error(
+                    f"[{d.serial}] XML parse failed for {resource_id}: {e}"
+                )
             return default
 
         # Collect video stats
@@ -636,21 +674,39 @@ class TeamsAndroid:
             "vi_processing": grab("7", "NA"),
         }
 
+        count = 0
         while True:
             xml = d.dump_hierarchy()
             if "Go back to call health root panel" in xml:
                 break
             time.sleep(1)
-            self.logger.info(f"Waiting for go back to call health panel for {d.serial}")
+            self.logger.info(
+                f"[{d.serial}] Waiting for go back to call health panel..."
+            )
+            count += 1
+            if count > 60:
+                raise RuntimeError(
+                    f"Timeout waiting for 'Go back to call health root panel' on {d.serial}"
+                )
 
         if d(text="Go back to call health root panel").wait(timeout=10):
             try:
                 d(text="Go back to call health root panel").click()
+                self.logger.info(
+                    f"[{d.serial}] Clicked 'Go back to call health root panel'"
+                )
             except Exception as e:
-                self.logger.warning(f"Retrying click due to stale element: {e}")
+                self.logger.warning(
+                    f"[{d.serial}] Retrying click due to stale element: {e}"
+                )
                 time.sleep(5)
                 d(text="Go back to call health root panel").click()
+        else:
+            raise RuntimeError(
+                f"'Go back to call health root panel' button not clickable on {d.serial}"
+            )
 
+        self.logger.info(f"[{d.serial}] collect_video_stats: PASS")
         return video_stats_data
 
     def send_stats_to_server(self, serial, audio_stats, video_stats):
@@ -678,7 +734,9 @@ class TeamsAndroid:
             }
 
         try:
-            response = requests.post(f"{self.base_url}/upload_stats", json=payload)
+            response = requests.post(
+                f"{self.base_url}/upload_stats", json=payload, timeout=5
+            )
             if response.status_code == 200:
                 self.logger.info(f"Stats uploaded for {self.participant_name}")
             else:
@@ -698,6 +756,8 @@ class TeamsAndroid:
 
 if __name__ == "__main__":
 
+    teams_android = None
+
     try:
 
         parser = argparse.ArgumentParser(description="Teams Android Automation")
@@ -706,36 +766,43 @@ if __name__ == "__main__":
             type=str,
             default="",
             help="Comma-separated list of device serials to use. If empty, all connected devices are used.",
+            required=True,
         )
         parser.add_argument(
             "--meet_link",
             type=str,
-            default="https://teams.microsoft.com/meet/4950863846706?p=hR18cFksPeV0cbgMbz",
             help="Teams meeting link to join.",
+            required=True,
         )
         parser.add_argument(
             "--upstream_port",
             type=str,
             default=None,
             help="Upstream port for LANforge connection.",
+            required=True,
         )
         parser.add_argument(
-            "--audio", action="store_true", help="Enable audio stats collection."
+            "--audio",
+            action="store_true",
+            help="Enable audio stats collection.",
         )
         parser.add_argument(
-            "--video", action="store_true", help="Enable video stats collection."
+            "--video",
+            action="store_true",
+            help="Enable video stats collection.",
         )
         parser.add_argument(
             "--duration",
             type=int,
-            default=2,
             help="Duration in minutes to run the test on each device.",
+            required=True,
         )
         parser.add_argument(
             "--participant_name",
             type=str,
             default="Test Participant",
             help="Name to use for the meeting participant.",
+            required=True,
         )
         args = parser.parse_args()
 
@@ -744,56 +811,71 @@ if __name__ == "__main__":
             meet_link=args.meet_link,
             participant_name=args.participant_name,
         )
-        if args.devices:
-            specified_serials = args.devices.split(",")
-            teams_android.logger.info(f"Using specified devices: {specified_serials}")
-        else:
-            specified_serials = None
-            teams_android.logger.info(
-                "No specific devices provided, using all connected devices."
+        teams_android.audio = args.audio
+        teams_android.video = args.video
+        if not teams_android.audio and not teams_android.video:
+            teams_android.logger.error(
+                "At least one of --audio or --video must be enabled."
             )
-        teams_android.total_serials = teams_android.get_devices()
-        teams_android.logger.info(f"Found devices: {teams_android.total_serials}")
-        if "all" in specified_serials:
-            specified_serials = None
-        if specified_serials:
-            teams_android.total_serials = [
-                s for s in teams_android.total_serials if s in specified_serials
-            ]
-            teams_android.logger.info(
-                f"Filtered devices to use: {teams_android.total_serials}"
-            )
-        teams_android.connect_multiple_devices()
-        teams_android.logger.info(f"Connected devices: {teams_android.test_serials}")
+            sys.exit(1)
 
-        if not teams_android.test_serials:
-            teams_android.logger.error("No devices connected, exiting.")
-            exit(1)
-        teams_android.run_on_multiple_devices(
-            teams_android.test_serials,
-            max_workers=len(teams_android.test_serials),
-        )
+        if args.devices:
+            # Although the arg might say comma-separated, we only use the first one
+            serial = args.devices.split(",")[0]
+            teams_android.logger.info(f"Using specified device: {serial}")
+        else:
+            devices = teams_android.get_devices()
+            if not devices:
+                teams_android.logger.error("No devices connected, exiting.")
+                sys.exit(1)
+            serial = devices[0]
+            teams_android.logger.info(
+                f"No specific device provided, using first connected device: {serial}"
+            )
+
+        if not teams_android.connect(serial):
+            teams_android.logger.error("Failed to connect to device, exiting.")
+            sys.exit(1)
+
+        teams_android.logger.info(f"[{teams_android.serial}] Starting automation flow")
+
+        try:
+            teams_android.open_chrome_incognito(teams_android.d)
+            email, passwd = teams_android.get_credentials()
+            teams_android.login_teams(teams_android.d, email, passwd)
+            teams_android.enter_meeting(teams_android.d)
+            teams_android.enable_stats(teams_android.d)
+            teams_android.logger.info(
+                f"[{teams_android.serial}] Automation flow completed"
+            )
+        except RuntimeError as rt_err:
+            teams_android.logger.error(
+                f"[{teams_android.serial}] Flow aborted: {rt_err}"
+            )
+            sys.exit(1)
+
     except Exception as e:
-        teams_android.logger.error(f"Exception in main: {e}")
-        for serial, d in teams_android.u2_sessions.items():
-            teams_android.close_meeting(d)
-        teams_android.logger.info("All meetings closed, exiting.")
+        if teams_android is not None:
+            teams_android.logger.error(f"Exception in main: {e}")
+        else:
+            logging.error(f"Exception in main before TeamsAndroid init: {e}")
+        sys.exit(1)
 
     finally:
-        with ThreadPoolExecutor(max_workers=len(teams_android.u2_sessions)) as executor:
-            futures = {
-                executor.submit(teams_android.open_interop_app, d): serial
-                for serial, d in teams_android.u2_sessions.items()
-            }
+        if teams_android is not None and teams_android.d is not None:
+            try:
+                teams_android.close_meeting(teams_android.d)
+            except Exception as e:
+                teams_android.logger.error(
+                    f"Error closing meeting for {teams_android.serial}: {e}"
+                )
 
-            for future in as_completed(futures):
-                serial = futures[future]
-                try:
-                    future.result()  # wait for this thread to finish
-                    teams_android.logger.info(
-                        f"open_interop_app completed for {serial}"
-                    )
-                except Exception as e:
-                    teams_android.logger.error(
-                        f"Error running open_interop_app for {serial}: {e}"
-                    )
+            try:
+                teams_android.open_interop_app(teams_android.d)
+                teams_android.logger.info(
+                    f"open_interop_app completed for {teams_android.serial}"
+                )
+            except Exception as e:
+                teams_android.logger.error(
+                    f"Error running open_interop_app for {teams_android.serial}: {e}"
+                )
