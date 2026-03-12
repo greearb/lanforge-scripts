@@ -17,6 +17,8 @@ import socket
 import pytz
 import pyautogui
 
+pyautogui.FAILSAFE = False
+
 # 1. Configure the logging system
 logging.basicConfig(
     level=logging.INFO,
@@ -652,6 +654,7 @@ class TeamsHost:
 
 
 def main():
+    team = None
 
     try:
 
@@ -707,13 +710,13 @@ def main():
                 team.send_stats_to_server(hostname, None, video_stats)
             time.sleep(1)
 
-        if team.driver:
-            team.driver.quit()
     except Exception as e:
-        team.driver.quit()
         logger.error(f"An error occurred: {e}")
         traceback.print_exc()
         sys.exit(1)
+    finally:
+        if team and team.driver:
+            team.driver.quit()
 
 
 if __name__ == "__main__":
