@@ -716,7 +716,7 @@ class TeamsAutomation(Realm):
                     f"--device {self.serial_list[i]} "
                     f"--meet_link '{self.meet_link}' "
                     f"--participant_name '{self.real_sta_hostname[i]}' "
-                    f"--upstream_port {self.upstream_port} "
+                    f"--upstream_port {self.lanforge_ip} "
                     "--audio "
                     "--video "
                 )
