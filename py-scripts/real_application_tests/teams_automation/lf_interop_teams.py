@@ -381,13 +381,13 @@ class TeamsAutomation(Realm):
                     _figsize=(18, 6),
                     _dpi=96,
                     _show_bar_value=True,
-                    _enable_csv=True,
+                    # _enable_csv=True,
                 )
 
                 graph_png = graph.build_bar_graph()
                 self.report.set_graph_image(graph_png)
                 self.report.move_graph_image()
-                self.report.set_csv_filename(graph_png)
+                # self.report.set_csv_filename(graph_png)
                 self.report.build_graph()
 
                 if skip_table:
@@ -701,13 +701,22 @@ class TeamsAutomation(Realm):
                 #     f"--upstream_port {self.upstream_port} "
                 #     f"--duration {self.duration}"
                 # )
+                # cmd = (
+                #     f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android.py "
+                #     f"--devices {self.serial_list[i]} "
+                #     f"--meet_link '{self.meet_link}' "
+                #     f"--participant_name '{self.real_sta_hostname[i]}' "
+                #     f"--upstream_port {self.upstream_port} "
+                #     f"--duration {self.duration} "
+                #     "--audio "
+                #     "--video "
+                # )
                 cmd = (
-                    f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android.py "
-                    f"--devices {self.serial_list[i]} "
+                    f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android_app.py "
+                    f"--device {self.serial_list[i]} "
                     f"--meet_link '{self.meet_link}' "
                     f"--participant_name '{self.real_sta_hostname[i]}' "
                     f"--upstream_port {self.upstream_port} "
-                    f"--duration {self.duration} "
                     "--audio "
                     "--video "
                 )
