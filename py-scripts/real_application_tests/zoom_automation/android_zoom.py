@@ -2,9 +2,12 @@ from datetime import datetime, timedelta
 import uiautomator2 as u2
 import time
 import argparse
+import re
+import xml.etree.ElementTree as ET
 from ppadb.client import Client as AdbClient
 import requests
 import pytz
+
 
 class ZoomAutomator:
     def __init__(
@@ -22,6 +25,88 @@ class ZoomAutomator:
         self.end_time = None
         self.adb_device = None
         self.stop_signal = False
+
+    @staticmethod
+    def _parse_bounds(bounds):
+        match = re.match(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", bounds or "")
+        if not match:
+            return None
+        return tuple(map(int, match.groups()))
+
+    def tap_bounds_center(self, d, bounds):
+        parsed = self._parse_bounds(bounds)
+        if not parsed:
+            return False
+
+        left, top, right, bottom = parsed
+        d.click((left + right) // 2, (top + bottom) // 2)
+        return True
+
+    def reveal_zoom_controls(self, d, tap_coords):
+        audio_state, _, _ = self.get_audio_control_info(d)
+        video_state, _, _ = self.get_video_control_info(d)
+        if audio_state is not None or video_state is not None:
+            return
+
+        d.click(*tap_coords)
+        time.sleep(0.8)
+
+        audio_state, _, _ = self.get_audio_control_info(d)
+        video_state, _, _ = self.get_video_control_info(d)
+        if audio_state is not None or video_state is not None:
+            return
+
+        d.click(*tap_coords)
+        time.sleep(1)
+
+    def get_audio_control_info(self, d):
+        """Return audio state and bounds by parsing the current hierarchy dump."""
+        try:
+            root = ET.fromstring(d.dump_hierarchy())
+        except Exception as e:
+            print(f"[{self.device_serial}] Failed to parse audio hierarchy: {e}")
+            return None, None, None
+
+        for node in root.iter("node"):
+            content_desc = node.attrib.get("content-desc", "")
+            if content_desc == "Mute my audio, button":
+                return True, node.attrib.get("bounds"), content_desc
+            if content_desc == "Unmute my audio, button":
+                return False, node.attrib.get("bounds"), content_desc
+
+        return None, None, None
+
+    def get_video_control_info(self, d):
+        """Return Video state and bounds by parsing the current hierarchy dump."""
+        try:
+            root = ET.fromstring(d.dump_hierarchy())
+        except Exception as e:
+            print(f"[{self.device_serial}] Failed to parse video hierarchy: {e}")
+            return None, None, None
+
+        for node in root.iter("node"):
+            content_desc = node.attrib.get("content-desc", "")
+            if content_desc == "Start my video, button":
+                return False, node.attrib.get("bounds"), content_desc
+            if content_desc == "Stop my video, button":
+                return True, node.attrib.get("bounds"), content_desc
+
+        return None, None, None
+
+    def get_leave_control_info(self, d):
+        """Return leave button bounds by parsing the current hierarchy dump."""
+        try:
+            root = ET.fromstring(d.dump_hierarchy())
+        except Exception as e:
+            print(f"[{self.device_serial}] Failed to parse leave hierarchy: {e}")
+            return None, None
+
+        for node in root.iter("node"):
+            content_desc = node.attrib.get("content-desc", "")
+            if content_desc == "Leave, button":
+                return node.attrib.get("bounds"), content_desc
+
+        return None, None
 
     def set_device(self, serial):
         """Set the target device for automation using its ADB serial number."""
@@ -151,13 +236,12 @@ class ZoomAutomator:
         print(f"[{serial}] Waiting to join meeting...")
         time.sleep(10)
 
-        # Tap center to reveal controls
-        d.click(width // 2, height // 2)
-        time.sleep(0.1)
+        # Reveal controls before checking meeting state or toggles.
+        self.reveal_zoom_controls(d, (width // 2, height // 2))
 
         # 6. Check if in meeting
-        leave_button = d(resourceId="us.zoom.videomeetings:id/btnLeave")
-        if leave_button.wait(timeout=2):
+        leave_bounds, _leave_status = self.get_leave_control_info(d)
+        if leave_bounds:
             print(f"[{serial}] Successfully joined the meeting as {participant_name}.")
         else:
             print(f"[{serial}] Warning: Leave button not found. Checking toolbar...")
@@ -170,6 +254,7 @@ class ZoomAutomator:
         while self.end_time is None:
             try:
                 self.get_start_and_end_time()
+                time.sleep(2)
             except Exception as e:
                 print(f"[{serial}] Error fetching start/end time: {e}")
                 time.sleep(5)
@@ -187,15 +272,12 @@ class ZoomAutomator:
 
         # 7. Stay in the meeting
         try:
-            # Tap again before leaving
-            d.click(width // 2, height // 2)
-            time.sleep(1)
+            self.reveal_zoom_controls(d, (width // 2, height // 2))
 
             # 8. Leave the meeting
             print(f"[{serial}] Leaving meeting...")
-            leave_button = d(resourceId="us.zoom.videomeetings:id/btnLeave")
-            if leave_button.exists:
-                leave_button.click()
+            leave_bounds, _leave_status = self.get_leave_control_info(d)
+            if leave_bounds and self.tap_bounds_center(d, leave_bounds):
                 time.sleep(2)
                 leave_confirm = d(text="Leave meeting")
                 if leave_confirm.wait(timeout=5):
@@ -230,7 +312,6 @@ class ZoomAutomator:
     def enable_audio_video(self, d, max_retries=15, tap_coords=(500, 500)):
         """
         Continuously check and enable audio and video until both are enabled or retries exhausted.
-        Zoom toolbar disappears, so we tap screen each loop to keep it visible.
         """
         serial = self.device_serial
         print(f"[{serial}] Ensuring audio and video are enabled...")
@@ -243,66 +324,85 @@ class ZoomAutomator:
             retries += 1
             print(f"[{serial}] Check attempt {retries}/{max_retries}")
 
-            # Tap screen to reveal Zoom controls (toolbar disappears after a while)
-            d.click(*tap_coords)
-            time.sleep(1)
+            self.reveal_zoom_controls(d, tap_coords)
             if not audio_enabled:
                 # --- AUDIO check ---
                 try:
-                    audio_button = d(
-                        resourceId="us.zoom.videomeetings:id/confRecycleAudioButton"
+                    audio_enabled_state, audio_bounds, audio_status = (
+                        self.get_audio_control_info(d)
                     )
-                    if audio_button.exists:
-                        audio_status = (
-                            audio_button.info.get("contentDescription", "") or ""
-                        )
-                        print(f"[{serial}] Audio status: {audio_status}")
+                    print(f"[{serial}] Audio status: {audio_status}")
 
-                        if "Mute my" in audio_status:  # Shows mute = audio already ON
-                            print(f"[{serial}] Audio already enabled")
-                            audio_enabled = True
-                        elif (
-                            "Join Audio" in audio_status
-                            or "Unmute" in audio_status
-                            or "Start my" in audio_status
-                        ):
-                            print(f"[{serial}] Audio is disabled. Enabling...")
-                            audio_button.click()
+                    if audio_enabled_state is True:
+                        print(f"[{serial}] Audio already enabled")
+                        audio_enabled = True
+                    elif audio_enabled_state is False:
+                        print(f"[{serial}] Audio is disabled. Enabling...")
+                        if self.tap_bounds_center(d, audio_bounds):
+                            time.sleep(1)
+                            (
+                                audio_enabled_state,
+                                _audio_bounds,
+                                audio_status,
+                            ) = self.get_audio_control_info(d)
+                            print(f"[{serial}] Audio status after tap: {audio_status}")
+                            if audio_enabled_state is True:
+                                print(f"[{serial}] Audio enabled")
+                                audio_enabled = True
                         else:
-                            print(f"[{serial}] Unknown audio state: {audio_status}")
+                            print(
+                                f"[{serial}] Audio button bounds missing: {audio_bounds}"
+                            )
                     else:
-                        print(f"[{serial}] Audio button not visible")
+                        join_audio = d(text="Join Audio")
+                        if join_audio.exists:
+                            print(f"[{serial}] Audio prompt found. Joining audio...")
+                            join_audio.click()
+                            time.sleep(1)
+                        else:
+                            print(f"[{serial}] Audio button not visible")
                 except Exception as e:
                     print(f"[{serial}] Error checking audio: {e}")
 
             # --- VIDEO check ---
             if not video_enabled:
                 try:
-                    video_button = d(
-                        resourceId="us.zoom.videomeetings:id/confRecycleVideoButton"
+                    video_enabled_state, video_bounds, video_status = (
+                        self.get_video_control_info(d)
                     )
-                    if video_button.exists:
-                        video_status = (
-                            video_button.info.get("contentDescription", "") or ""
-                        )
-                        print(f"[{serial}] Video status: {video_status}")
+                    print(f"[{serial}] Video status: {video_status}")
 
-                        if "Stop my" in video_status:  # Already running
-                            print(f"[{serial}] Video already enabled")
-                            video_enabled = True
-                        elif (
-                            "Start my" in video_status or "Start Video" in video_status
-                        ):
-                            print(f"[{serial}] Video is disabled. Enabling...")
-                            video_button.click()
+                    if video_enabled_state is True:
+                        print(f"[{serial}] Video already enabled")
+                        video_enabled = True
+                    elif video_enabled_state is False:
+                        print(f"[{serial}] Video is disabled. Enabling...")
+                        if self.tap_bounds_center(d, video_bounds):
+                            time.sleep(1)
+                            (
+                                video_enabled_state,
+                                _video_bounds,
+                                video_status,
+                            ) = self.get_video_control_info(d)
+                            print(f"[{serial}] Video status after tap: {video_status}")
+                            if video_enabled_state is True:
+                                print(f"[{serial}] Video enabled")
+                                video_enabled = True
                         else:
-                            print(f"[{serial}] Unknown video state: {video_status}")
+                            print(
+                                f"[{serial}] Video button bounds missing: {video_bounds}"
+                            )
                     else:
-                        print(f"[{serial}] Video button not visible")
+                        join_video = d(text="Join Video")
+                        if join_video.exists:
+                            print(f"[{serial}] Video prompt found. Joining video...")
+                            join_video.click()
+                            time.sleep(1)
+                        else:
+                            print(f"[{serial}] Video button not visible")
                 except Exception as e:
                     print(f"[{serial}] Error checking video: {e}")
 
-            # small pause before next loop
             time.sleep(2)
 
         if audio_enabled and video_enabled:
