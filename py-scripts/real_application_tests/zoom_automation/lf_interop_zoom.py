@@ -182,12 +182,10 @@ class ZoomAutomation(Realm):
         self.stop_signal = False
         self.download_csv = False
         self.csv_file_name = "csvdata.csv"
-        # self.path = "/home/lanforge/lanforge-scripts/py-scripts/zoom_automation/test_results"
         self.path = os.path.join(os.getcwd(), "zoom_test_results")
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
-        # self.path =  '/home/laxmi/Documents/lanforge-scripts/py-scripts/zoom_automation/test_results'
         self.device_names = []
         self.hostname_os_combination = None
 
@@ -195,7 +193,6 @@ class ZoomAutomation(Realm):
         self.audio = audio
         self.video = video
         self.wait_time = wait_time
-        # os.makedirs(self.path, exist_ok=True)
         self.generic_endps_profile = self.new_generic_endp_profile()
         self.generic_endps_profile.name_prefix = "zoom"
         self.generic_endps_profile.type = "zoom"
@@ -254,6 +251,12 @@ class ZoomAutomation(Realm):
         self.from_cord = None
         self.to_cord = None
         self.bssids = bssids or []
+
+        if self.do_bs:
+            self.robo_obj.coordinates_list = self.coordinates_list
+            self.robo_obj.total_cycles = self.cycles
+        self.successful_coords = []
+        self.failed_coords = []
 
     def start_flask_server(self):
         @self.app.route("/login_url", methods=["GET", "POST"])
@@ -1144,22 +1147,8 @@ class ZoomAutomation(Realm):
 
         if self.do_bs:
             time.sleep(60)
-            first_cord = self.coordinates_list[0]
-            matched, aborted = self.robo_obj.move_to_coordinate(coord=first_cord)
-            if matched:
-                self.current_cord = first_cord
-                self.from_cord = first_cord
-            if aborted:
-                logger.error(f"Failed to reach the {first_cord}.")
-                sys.exit()
-
-            print("checking self.coordinates_list", self.coordinates_list)
-            result = [
-                self.coordinates_list[(1 + i) % len(self.coordinates_list)]
-                for i in range(self.cycles * len(self.coordinates_list))
-            ]
-            print("Band-Steering Test coordinates to be visited:", result)
-            for coordinate in result:
+            print("Band-Steering Test coordinates to be visited:", self.bs_coord_result)
+            for coordinate in self.bs_coord_result:
                 logger.info(f"Moving robot to coordinate: {coordinate}")
                 if not self.to_cord:
                     self.to_cord = coordinate
@@ -1173,8 +1162,12 @@ class ZoomAutomation(Realm):
                 matched, aborted = self.robo_obj.move_to_coordinate(coord=coordinate)
                 if matched:
                     self.current_cord = coordinate
+                    self.successful_coords.append(coordinate)
+                else:
+                    self.failed_coords.append(coordinate)
                 if aborted:
                     logger.error(f"Failed to reach the {coordinate}")
+                    self.failed_coords.append(coordinate)
                     sys.exit()
                 time.sleep(10)
 
@@ -3796,8 +3789,12 @@ and downstream traffic"""
             matched, aborted = self.robo_obj.move_to_coordinate(coord=coordinate)
             if matched:
                 self.current_cord = coordinate
-            elif aborted:
+                self.successful_coords.append(coordinate)
+            else:
+                self.failed_coords.append(coordinate)
+            if aborted:
                 logger.error(f"Failed to Reach the coordinate {self.current_cord}")
+                self.failed_coords.append(coordinate)
                 sys.exit()
             if self.rotations_enabled:
                 for angle in self.angles_list:
@@ -3942,7 +3939,12 @@ and downstream traffic"""
             logger.info("WAITING FOR THE TEST TO BE STARTED")
             time.sleep(5)
         self.test_start = False
-
+        if self.do_bs:
+            self.bs_coord_result = self.robo_obj.get_coordinates_list()
+            if self.bs_coord_result:
+                self.from_cord = self.coordinates_list[0]
+                self.successful_coords.append(self.from_cord)
+                self.current_cord = self.from_cord
         self.set_start_time()
         logger.info("TEST WILL BE STARTING")
 

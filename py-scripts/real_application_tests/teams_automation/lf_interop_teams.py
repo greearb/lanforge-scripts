@@ -120,6 +120,7 @@ class TeamsAutomation(Realm):
         do_bs=None,
         cycles=None,
         bssids=None,
+        enable_mobile_stats=False,
     ):
         super().__init__(lfclient_host=lanforge_ip)
         self.app = Flask(__name__)
@@ -202,12 +203,14 @@ class TeamsAutomation(Realm):
         self.do_bs = do_bs
         self.hostname_to_station_map = {}
         self.running_averages = {}
+        self.enable_mobile_stats = enable_mobile_stats
 
         if self.do_robo or self.do_bs:
             self.robo_ip = robo_ip
             self.rotations = rotations
             self.robo_obj = robo_base_class.RobotClass(
-                robo_ip=self.robo_ip, angle_list=self.rotations
+                robo_ip=self.robo_ip,
+                angle_list=self.rotations,
             )
             self.rotations_enabled = rotations_enabled
             self.coordinates = coordinates
@@ -236,6 +239,11 @@ class TeamsAutomation(Realm):
                     ]
                 )
                 self.bs_coord_result = []
+                self.robo_obj.coordinates_list = self.coordinates
+                self.robo_obj.total_cycles = self.cycles
+
+            self.successful_coords = []
+            self.failed_coords = []
 
     def add_bandsteering_report_section(self):
         try:
@@ -701,25 +709,28 @@ class TeamsAutomation(Realm):
                 #     f"--upstream_port {self.upstream_port} "
                 #     f"--duration {self.duration}"
                 # )
-                # cmd = (
-                #     f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android.py "
-                #     f"--devices {self.serial_list[i]} "
-                #     f"--meet_link '{self.meet_link}' "
-                #     f"--participant_name '{self.real_sta_hostname[i]}' "
-                #     f"--upstream_port {self.upstream_port} "
-                #     f"--duration {self.duration} "
-                #     "--audio "
-                #     "--video "
-                # )
-                cmd = (
-                    f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android_app.py "
-                    f"--device {self.serial_list[i]} "
-                    f"--meet_link '{self.meet_link}' "
-                    f"--participant_name '{self.real_sta_hostname[i]}' "
-                    f"--upstream_port {self.lanforge_ip} "
-                    "--audio "
-                    "--video "
-                )
+                if self.enable_mobile_stats:
+                    cmd = (
+                        f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android.py "
+                        f"--devices {self.serial_list[i]} "
+                        f"--meet_link '{self.meet_link}' "
+                        f"--participant_name '{self.real_sta_hostname[i]}' "
+                        f"--upstream_port {self.upstream_port} "
+                        f"--duration {self.duration} "
+                        "--audio "
+                        "--video "
+                    )
+                else:
+
+                    cmd = (
+                        f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android_app.py "
+                        f"--device {self.serial_list[i]} "
+                        f"--meet_link '{self.meet_link}' "
+                        f"--participant_name '{self.real_sta_hostname[i]}' "
+                        f"--upstream_port {self.lanforge_ip} "
+                        "--audio "
+                        "--video "
+                    )
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
@@ -776,19 +787,12 @@ class TeamsAutomation(Realm):
         if len(self.real_sta_list) == self.participants_joined:
             logger.info("All participants have joined the call. Starting the test.")
         if self.do_bs:
-            first_coord = self.coordinates[0]
-            matched, aborted = self.robo_obj.move_to_coordinate(coord=first_coord)
-            if matched:
-                self.current_coord = first_coord
-                self.from_coordinate = first_coord
-                logger.info(f"Successfully reached the {first_coord}.")
-            if aborted:
-                logger.error(f"Failed to reach the {first_coord}.")
-                sys.exit()
-            self.bs_coord_result = [
-                self.coordinates[(1 + i) % len(self.coordinates)]
-                for i in range(self.cycles * len(self.coordinates))
-            ]
+            self.bs_coord_result = self.robo_obj.get_coordinates_list()
+            if self.bs_coord_result:
+                self.from_coordinate = self.coordinates[0]
+                self.successful_coords.append(self.from_coordinate)
+            else:
+                sys.exit(1)
         self.set_start_time()
         logger.info("TEST WILL BE STARTING")
 
@@ -859,8 +863,14 @@ class TeamsAutomation(Realm):
                     )
                     if matched:
                         self.current_coord = coordinate
+                        self.successful_coords.append(coordinate)
+
+                    else:
+                        self.failed_coords.append(coordinate)
+
                     if aborted:
                         logger.error(f"Failed to reach the {coordinate}")
+                        self.failed_coords.append(coordinate)
                         sys.exit()
                     time.sleep(10)
                 return
@@ -1942,9 +1952,13 @@ class TeamsAutomation(Realm):
             matched, aborted = self.robo_obj.move_to_coordinate(coord=coord)
             if matched:
                 self.current_coord = coord
+                self.successful_coords.append(coord)
+            else:
+                self.failed_coords.append(coord)
 
-            elif aborted:
+            if aborted:
                 logger.error(f"Failed to Reach the coordinate {self.current_coord}")
+                self.failed_coords.append(coord)
                 sys.exit()
 
             if self.rotations_enabled:
@@ -2196,6 +2210,11 @@ def main():
         optional.add_argument(
             "--report_dir", help="report directory while running test through web ui"
         )
+        optional.add_argument(
+            "--enable_mobile_stats",
+            action="store_true",
+            help="Used to specify whether to collect mobile stats through chrome browser based UI automation or not",
+        )
 
         robo.add_argument("--robo_ip", type=str, help="Specify the robo ip")
         robo.add_argument(
@@ -2272,6 +2291,7 @@ def main():
             cycles=args.cycles,
             bssids=args.bssids,
             rotations_enabled=rotations_enabled,
+            enable_mobile_stats=args.enable_mobile_stats,
         )
 
         teams.upstream_port = teams.change_port_to_ip(args.upstream_port)
