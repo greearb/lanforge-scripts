@@ -7408,7 +7408,8 @@ class L3VariableTime(Realm):
             # self.report.build_table()
 
             # empty dictionarys evaluate to false , placing tables in output
-            self.get_bandsteering_stats()
+            if self.robo_test and self.do_bandsteering:
+                self.get_bandsteering_stats()
             print("downloadportcsvfiles",self.dl_port_csv_files)
             if bool(self.dl_port_csv_files):
                 for key, value in self.dl_port_csv_files.items():
