@@ -97,9 +97,9 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("lf_interop_zoom.log", mode='w'), # Writes to file
-        logging.StreamHandler(sys.stdout)                     # Writes to terminal
-    ]
+        logging.FileHandler("lf_interop_zoom.log", mode="w"),  # Writes to file
+        logging.StreamHandler(sys.stdout),  # Writes to terminal
+    ],
 )
 
 # 2. Create the logger instance
@@ -144,7 +144,7 @@ class ZoomAutomation(Realm):
         api_stats_collection=False,
         do_webui=False,
         cycles=1,
-        bssids=None
+        bssids=None,
     ):
 
         super().__init__(lfclient_host=lanforge_ip)
@@ -253,7 +253,7 @@ class ZoomAutomation(Realm):
         self.cycles = cycles
         self.from_cord = None
         self.to_cord = None
-        self.bssids=bssids or []
+        self.bssids = bssids or []
 
     def start_flask_server(self):
         @self.app.route("/login_url", methods=["GET", "POST"])
@@ -579,7 +579,7 @@ class ZoomAutomation(Realm):
         Gracefully shut down the application.
         """
         if self.do_robo and self.api_stats_collection:
-                self.generate_report_from_data()
+            self.generate_report_from_data()
         elif self.api_stats_collection:
             self.generate_report_from_api()
         self.generic_endps_profile.cleanup()
@@ -933,7 +933,6 @@ class ZoomAutomation(Realm):
         print(lf_stats_map)
 
         return lf_stats_map
-    
 
     def add_bandsteering_report_section(self, report=None):
         try:
@@ -949,7 +948,7 @@ class ZoomAutomation(Realm):
                 return
 
             report_dir = self.path
-            
+
             if not report_dir or not os.path.isdir(report_dir):
                 logger.error(f"Bandsteering report: invalid report dir: {report_dir}")
                 return
@@ -966,7 +965,7 @@ class ZoomAutomation(Realm):
 
             report.set_obj_html(
                 _obj_title="Band Steering Statistics",
-                _obj="This section summarizes BSSID changes observed while the robot moved between coordinates."
+                _obj="This section summarizes BSSID changes observed while the robot moved between coordinates.",
             )
             report.build_objective()
 
@@ -976,19 +975,30 @@ class ZoomAutomation(Realm):
                 try:
                     df = pd.read_csv(csv_file_path)
                 except Exception as e:
-                    logging.error(f"Unable to read CSV {csv_file_path}: {e}", exc_info=True)
+                    logging.error(
+                        f"Unable to read CSV {csv_file_path}: {e}", exc_info=True
+                    )
                     continue
 
                 # Rename columns to match the specific capitalization expected by this logic
                 # Your upload_stats method writes keys in lowercase (timestamp, bssid, channel)
-                df.rename(columns={
-                    'timestamp': 'TimeStamp', 
-                    'bssid': 'BSSID', 
-                    'channel': 'Channel'    
-                }, inplace=True)
+                df.rename(
+                    columns={
+                        "timestamp": "TimeStamp",
+                        "bssid": "BSSID",
+                        "channel": "Channel",
+                    },
+                    inplace=True,
+                )
 
-                required_cols = {"TimeStamp", "BSSID", "From_Coord", "To_Coord", "Channel"}
-                
+                required_cols = {
+                    "TimeStamp",
+                    "BSSID",
+                    "From_Coord",
+                    "To_Coord",
+                    "Channel",
+                }
+
                 # Check if this CSV actually contains bandsteering data (skip summary/other CSVs)
                 if not required_cols.issubset(df.columns):
                     continue
@@ -1012,10 +1022,7 @@ class ZoomAutomation(Realm):
                 # Detect change points
                 df["prev_bssid"] = df["BSSID"].shift()
 
-                mask = (
-                    (df["BSSID"] != df["prev_bssid"]) &
-                    (df["BSSID"] != "NA")
-                )
+                mask = (df["BSSID"] != df["prev_bssid"]) & (df["BSSID"] != "NA")
 
                 bssid_list = df.loc[mask, "BSSID"].tolist()
                 timestamp_list = df.loc[mask, "TimeStamp"].tolist()
@@ -1035,8 +1042,7 @@ class ZoomAutomation(Realm):
                 # Ensure consistent graph ordering
                 if self.bssids:
                     final_bssid_counts = {
-                        bssid: bssid_counts.get(bssid, 0)
-                        for bssid in self.bssids
+                        bssid: bssid_counts.get(bssid, 0) for bssid in self.bssids
                     }
                 else:
                     final_bssid_counts = bssid_counts
@@ -1046,7 +1052,7 @@ class ZoomAutomation(Realm):
 
                 report.set_obj_html(
                     _obj_title=f"BSSID Change Count Of The Client {device_name}",
-                    _obj=" "
+                    _obj=" ",
                 )
                 report.build_objective()
 
@@ -1078,53 +1084,57 @@ class ZoomAutomation(Realm):
                 if skip_table:
                     report.set_obj_html(
                         _obj_title=f"Band Steering Results for {device_name}",
-                        _obj="No band steering events observed for the configured BSSID list."
+                        _obj="No band steering events observed for the configured BSSID list.",
                     )
                     report.build_objective()
                     continue
 
                 report.set_obj_html(
-                    _obj_title=f"Band Steering Results for {device_name}",
-                    _obj=" "
+                    _obj_title=f"Band Steering Results for {device_name}", _obj=" "
                 )
                 report.build_objective()
 
-                table_df = pd.DataFrame({
-                    "TimeStamp": timestamp_list,
-                    "BSSID": bssid_list,
-                    "Channel": channel_list,
-                    "From Coordinate": from_coordinate_list,
-                    "To Coordinate": to_coordinate_list,
-                })
+                table_df = pd.DataFrame(
+                    {
+                        "TimeStamp": timestamp_list,
+                        "BSSID": bssid_list,
+                        "Channel": channel_list,
+                        "From Coordinate": from_coordinate_list,
+                        "To Coordinate": to_coordinate_list,
+                    }
+                )
 
                 report.set_table_dataframe(table_df)
                 report.build_table()
 
             # Handle Charging Timestamps (Check if robo_obj exists first)
-            if hasattr(self, 'robo_obj') and hasattr(self.robo_obj, 'charging_timestamps') and len(self.robo_obj.charging_timestamps) != 0:
-                report.set_obj_html(_obj_title="Charging Timestamps",
-                                    _obj="")
+            if (
+                hasattr(self, "robo_obj")
+                and hasattr(self.robo_obj, "charging_timestamps")
+                and len(self.robo_obj.charging_timestamps) != 0
+            ):
+                report.set_obj_html(_obj_title="Charging Timestamps", _obj="")
                 report.build_objective()
                 df = pd.DataFrame(
                     self.robo_obj.charging_timestamps,
                     columns=[
                         "charge_dock_arrival_timestamp",
-                        "charging_completion_timestamp"
-                    ]
+                        "charging_completion_timestamp",
+                    ],
                 )
                 # Add S.No column
                 df.insert(0, "S.No", range(1, len(df) + 1))
                 report.set_table_dataframe(df)
                 report.build_table()
             else:
-                report.set_obj_html(_obj_title="Charging Timestamps",
-                                    _obj="Robot did not go to charge during this test")
+                report.set_obj_html(
+                    _obj_title="Charging Timestamps",
+                    _obj="Robot did not go to charge during this test",
+                )
                 report.build_objective()
         except Exception as e:
             logger.error(f"Exeception Occured {e}")
-            logger.error("Error Occured ", exc_info= True)
-
-   
+            logger.error("Error Occured ", exc_info=True)
 
     def run(self):
         self.create_host()
@@ -1194,7 +1204,7 @@ class ZoomAutomation(Realm):
         # if self.api_stats_collection:
         #     self.stop_signal = True
         #     time.sleep(10)
-            # self.get_final_qos_data()
+        # self.get_final_qos_data()
 
         self.generic_endps_profile.stop_cx()
         self.generic_endps_profile.cleanup()
@@ -1535,7 +1545,9 @@ class ZoomAutomation(Realm):
             )
 
             if self.do_bs:
-                test_parameters = test_parameters.drop(columns=["Test Duration(min)"], errors='ignore')
+                test_parameters = test_parameters.drop(
+                    columns=["Test Duration(min)"], errors="ignore"
+                )
 
         report.set_table_dataframe(test_parameters)
         report.build_table()
@@ -2859,7 +2871,7 @@ and downstream traffic"""
             self.report.move_graph_image()
             self.report.build_graph()
 
-            #============================================================
+            # ============================================================
             # audio jitter graph
             self.report.set_graph_title("c. Audio Jitter (Recevied/Sent)")
             self.report.build_graph_title()
@@ -3098,7 +3110,7 @@ and downstream traffic"""
             )
             self.report.build_text_simple()
 
-            #=============================================================
+            # =============================================================
             # video bitrate graph
             self.report.set_graph_title("a. Video Bitrate (Recevied/Sent)")
             self.report.build_graph_title()
@@ -3152,7 +3164,7 @@ and downstream traffic"""
             self.report.move_graph_image()
             self.report.build_graph()
 
-            #=============================================================
+            # =============================================================
             # video latency graph
             self.report.set_graph_title("b. Video Latency (Recevied/Sent)")
             self.report.build_graph_title()
@@ -3260,7 +3272,7 @@ and downstream traffic"""
             self.report.move_graph_image()
             self.report.build_graph()
 
-            #============================================
+            # ============================================
             # video packet loss graph
             self.report.set_graph_title("d. Video Packet Loss (Recevied/Sent)")
             self.report.build_graph_title()
@@ -3435,9 +3447,7 @@ and downstream traffic"""
             )  # have the index be able to be passed in.
             self.report.html += self.report.dataframe_html
         if self.do_bs:
-            self.add_bandsteering_report_section(
-                report=self.report
-            )
+            self.add_bandsteering_report_section(report=self.report)
         self.report.write_html()
         self.report.write_pdf(_page_size="Legal", _orientation="Landscape")
         for client in self.real_sta_hostname:
@@ -3879,7 +3889,7 @@ and downstream traffic"""
                 self.generic_endps_profile.created_cx.extend(created_cx)
                 print(self.generic_endps_profile.created_cx)
                 cmd = (
-                    f"python3 android_zoom.py "
+                    f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/zoom_automation/android_zoom.py "
                     f"--serial {self.serial_list[i]} "
                     f"--meeting_url '{self.meet_link}' "
                     f"--participant_name '{self.real_sta_hostname[i]}' "
@@ -4276,7 +4286,7 @@ and downstream traffic"""
             return val if val is not None else 0
 
         p = media_type
-        
+
         details = pd.DataFrame(
             {
                 "Device Name": self.real_sta_hostname,
@@ -4543,7 +4553,9 @@ def main():
         parser.add_argument("--account_id", help="Zoom Account ID")
         parser.add_argument("--client_id", help="Zoom Client ID")
         parser.add_argument("--client_secret", help="Zoom Client Secret")
-        parser.add_argument("--env_file", default=".env", help="Path to .env file for credentials")
+        parser.add_argument(
+            "--env_file", default=".env", help="Path to .env file for credentials"
+        )
         parser.add_argument(
             "--download_csv",
             action="store_true",
@@ -4575,7 +4587,11 @@ def main():
             "--cycles", type=int, default=1, help="Number of cycles to run the test"
         )
 
-        parser.add_argument('--bssids', type=str, help='Comma-separated list of BSSIDs for bandsteering test')
+        parser.add_argument(
+            "--bssids",
+            type=str,
+            help="Comma-separated list of BSSIDs for bandsteering test",
+        )
 
         args = parser.parse_args()
 
@@ -4657,10 +4673,9 @@ def main():
                 )
                 if args.rotations:
                     rotations_enabled = True
-                
+
                 if args.bssids:
                     bssids = args.bssids.split(",") if args.bssids else []
-
 
             zoom_automation = ZoomAutomation(
                 audio=args.audio,
@@ -4686,7 +4701,7 @@ def main():
                 api_stats_collection=args.api_stats_collection,
                 do_webui=args.do_webUI,
                 cycles=args.cycles,
-                bssids=bssids
+                bssids=bssids,
             )
             if args.download_csv:
                 zoom_automation.download_csv = True
@@ -4855,9 +4870,7 @@ def main():
                         matching_laps = [lap for lap in laptops if lap.startswith(item)]
                         result_list.extend(matching_laps)
                     if not result_list:
-                        logger.info(
-                            "Resources donot exist hence Terminating the test."
-                        )
+                        logger.info("Resources donot exist hence Terminating the test.")
                         return
                     if len(result_list) != len(get_data):
                         logger.info("Few Resources donot exist")
