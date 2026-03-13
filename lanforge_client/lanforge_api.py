@@ -1799,7 +1799,7 @@ class LFJsonCommand(JsonCommand):
                      app_identifier: str = None,               # Identifier that App and adb can both query (mac of wlan0)
                      auth: str = None,                         # WiFi Authentication to be used.
                      bssid: str = None,                        # WiFi BSSID to which this device should connect.
-                     bt_ctrl_dev: str = None,                  # Filepath of device's assigned BT adapter
+                     bt_ctrl_dev: str = None,                  # MAC address or USB path of device's assigned BT adapter
                      bt_mac: str = None,                       # Device's BT MAC address
                      device_type: str = None,                  # Interop device type
                      eap_method: str = None,                   # WiFi EAP method: EAP-TTLS, EAP-PEAP
@@ -2461,10 +2461,21 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_cell_emulator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_cell_emulator(self, 
+                               apn: str = None,                          # APN
                                cur_profile: str = None,                  # Profile that should be running
                                device_type: str = None,                  # Device type
                                ipaddr: str = None,                       # IPv4 address for the Cell Emulator
+                               ipv4_first: str = None,                   # First Available ipv4 address
+                               ipv4_last: str = None,                    # Last Available ipv4 address
+                               ipv6_first: str = None,                   # First available ipv6 address
+                               ipv6_last: str = None,                    # Last available ipv6 address
+                               lte_num: str = None,                      # Number of LTE cells (at least 1 if lte or nsa)
                                model: str = None,                        # Product Model
+                               nr_num: str = None,                       # Number of NR cells (at least 1 if sa or nsa)
+                               pdn_type_ipv4: str = None,                # ipv4 PDN type
+                               pdn_type_ipv6: str = None,                # ipv6 PDN type
+                               plmn: str = None,                         # PLMN
+                               rat: str = None,                          # RAT type (sa, nsa, etc)
                                resource: int = None,                     # Resource number. [W]
                                serno: str = None,                        # Serial number.
                                shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
@@ -2480,14 +2491,36 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if apn is not None:
+            data["apn"] = apn
         if cur_profile is not None:
             data["cur_profile"] = cur_profile
         if device_type is not None:
             data["device_type"] = device_type
         if ipaddr is not None:
             data["ipaddr"] = ipaddr
+        if ipv4_first is not None:
+            data["ipv4_first"] = ipv4_first
+        if ipv4_last is not None:
+            data["ipv4_last"] = ipv4_last
+        if ipv6_first is not None:
+            data["ipv6_first"] = ipv6_first
+        if ipv6_last is not None:
+            data["ipv6_last"] = ipv6_last
+        if lte_num is not None:
+            data["lte_num"] = lte_num
         if model is not None:
             data["model"] = model
+        if nr_num is not None:
+            data["nr_num"] = nr_num
+        if pdn_type_ipv4 is not None:
+            data["pdn_type_ipv4"] = pdn_type_ipv4
+        if pdn_type_ipv6 is not None:
+            data["pdn_type_ipv6"] = pdn_type_ipv6
+        if plmn is not None:
+            data["plmn"] = plmn
+        if rat is not None:
+            data["rat"] = rat
         if resource is not None:
             data["resource"] = resource
         if serno is not None:
@@ -2514,10 +2547,21 @@ class LFJsonCommand(JsonCommand):
         """
         TODO: check for default argument values
         TODO: fix comma counting
-        self.post_add_cell_emulator(cur_profile=param_map.get("cur_profile"),
+        self.post_add_cell_emulator(apn=param_map.get("apn"),
+                                    cur_profile=param_map.get("cur_profile"),
                                     device_type=param_map.get("device_type"),
                                     ipaddr=param_map.get("ipaddr"),
+                                    ipv4_first=param_map.get("ipv4_first"),
+                                    ipv4_last=param_map.get("ipv4_last"),
+                                    ipv6_first=param_map.get("ipv6_first"),
+                                    ipv6_last=param_map.get("ipv6_last"),
+                                    lte_num=param_map.get("lte_num"),
                                     model=param_map.get("model"),
+                                    nr_num=param_map.get("nr_num"),
+                                    pdn_type_ipv4=param_map.get("pdn_type_ipv4"),
+                                    pdn_type_ipv6=param_map.get("pdn_type_ipv6"),
+                                    plmn=param_map.get("plmn"),
+                                    rat=param_map.get("rat"),
                                     resource=param_map.get("resource"),
                                     serno=param_map.get("serno"),
                                     shelf=param_map.get("shelf"),
@@ -4592,6 +4636,7 @@ class LFJsonCommand(JsonCommand):
         BSS_TRANS = 0x400                   # Enable BSS Transition logic
         DHCP_SERVER = 0x1                   # This should provide DHCP server.
         DISABLE_MLO = 0x8000                # Sta created w/out MLO enabled.
+        DISABLE_OBSS_SCAN = 0x80000         # Disable OBSS scanning
         EAP_PEAP = 0x200                    # Enable EAP-PEAP
         EAP_TTLS = 0x80                     # Use 802.1x EAP-TTLS
         ENABLE_POWERSAVE = 0x1000           # Enable power-save when creating stations.
@@ -20299,10 +20344,10 @@ class LFJsonQuery(JsonQuery):
         /adb/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        api, app-id, auth-rpt, bssid, bt+ctrl, bt+ctrl+cx+status, bt+mac, bt+peer+mac, 
-        device, eap-method, eap-user, en-wifi, encryption, entity+id, freq, model, 
-        name, password, phantom, product, release, resource-id, rssi, ssid, ssid-rpt, 
-        timed-out, type, unauth, user-name, wifi+mac, wifi-m
+        api, app-id, auth-rpt, bssid, bt+ctrl, bt+ctrl+cx+status, bt+mac, bt+peer, 
+        bt+peer+mac, device, eap-method, eap-user, en-wifi, encryption, entity+id, 
+        freq, model, name, password, phantom, product, release, resource-id, rssi, 
+        ssid, ssid-rpt, timed-out, type, unauth, user-name, wifi+mac, wifi-m
     Example URL: /adb?fields=api,app-id
 
     Example py-json call (it knows the URL):
@@ -20319,6 +20364,7 @@ class LFJsonQuery(JsonQuery):
         'bt ctrl':           # LANforge bluetooth control device.
         'bt ctrl cx status': # Status of the Bluetooth controller <-> iOS device connection.
         'bt mac':            # Bluetooth MAC address
+        'bt peer':           # Entry is a Bluetooth Peer to real adb device
         'bt peer mac':       # MAC of the USB Bluetooth controller.
         'device':            # Interop device identifier.
         'eap-method':        # WiFi EAP Method for Enterprise Authentication.
@@ -20347,7 +20393,8 @@ class LFJsonQuery(JsonQuery):
         'type':              # Interop device type
         'unauth':            # The device is un-authorized. Enable debugging on device to use it.
                              # (Android only)
-        'user-name':         # LANforge Interop app username for this Interop device.
+        'user-name':         # LANforge Interop app username for this Interop device.This field must
+                             # not be empty when using WebGUI.
         'wifi mac':          # Wifi MAC address
         'wifi-m':            # How this ADB device should attempt to connect to WiFi.Both is the most
                              # robust option for all Android versions.
@@ -25241,8 +25288,8 @@ class LFJsonQuery(JsonQuery):
         buffer, corrupt+1, corrupt+2, corrupt+3, corrupt+4, corrupt+5, corrupt+6, 
         delay, dropfreq+%25, dropped, dup+pkts, dupfreq+%25, eid, elapsed, extrabuf, 
         failed-late, jitfreq+%25, max+rate, maxjitter, maxlate, name, ooo+pkts, qdisc, 
-        reordfrq+%25, run, rx+bytes, rx+pkts, script, serdelay, tx+bytes, tx+drop+%25, 
-        tx+pkts, tx+rate, tx-failed, wps
+        reordfrq+%25, run, rx+bytes, rx+pkts, rx+rate+%283s%29, script, serdelay, tx+bytes, 
+        tx+drop+%25, tx+pkts, tx+rate, tx+rate+%283s%29, tx-failed, wps
     Example URL: /wl-endp?fields=buffer,corrupt+1
 
     Example py-json call (it knows the URL):
@@ -25252,60 +25299,65 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        'buffer':      # Maximum size of receive buffer, in bytes.This is the sum of the amount
-                       # needed for the transit buffers (delay * bandwidth)plus the WanLink
-                       # "Backlog Buffer:" queue size which handles bursts.
-        'corrupt 1':   # Counters for how many times this corruption has been applied.
-        'corrupt 2':   # Counters for how many times this corruption has been applied.
-        'corrupt 3':   # Counters for how many times this corruption has been applied.
-        'corrupt 4':   # Counters for how many times this corruption has been applied.
-        'corrupt 5':   # Counters for how many times this corruption has been applied.
-        'corrupt 6':   # Counters for how many times this corruption has been applied.
-        'delay':       # Base induced latency on received packets, in microseconds.
-        'dropfreq %':  # Frequency out of 1,000,000 to drop a received packet.Select a preset
-                       # value or enter your own.
-        'dropped':     # Total dropped packets on receive.This does not include the tx-failed
-                       # counters.
-        'dup pkts':    # Total duplicate packets generated.
-        'dupfreq %':   # Frequency out of 1,000,000 to duplicate a received packet.Select a
-                       # preset value or enter your own.
-        'eid':         # Entity ID
-        'elapsed':     # Amount of time (seconds) this endpoint has been running (or ran.)
-        'extrabuf':    # Size of "Backlog Buffer:" setting in WanLink configuration in bytes.
-        'failed-late': # Total amount of received packets that could not be transmitted out the
-                       # peer becausethe emulator was overloaded and could not transmit within
-                       # the specified 'lateness'
-        'jitfreq %':   # Frequency out of 1,000,000 that packets should have jitter applied to
-                       # them.Select a preset value or enter your own.
-        'max rate':    # Max transmit rate (bps) for this Endpoint.
-        'maxjitter':   # Maximum additional delay, in microseconds.  See Jitter-Frequency as
-                       # well.
-        'maxlate':     # The maximum lateness in milliseconds allowed before packets will be
-                       # dropped on transmit.If lateness is configured to be automatic, this
-                       # variable will change based onconfigured bandwidth and backlog buffer,
-                       # but will not go below 10ms.
-        'name':        # Endpoint's Name.
-        'ooo pkts':    # Total out of order packets generated.
-        'qdisc':       # Queueing discipline (FIFO, WRR, etc).
-        'reordfrq %':  # Frequency out of 1,000,000 to re-order a received packet.Select a preset
-                       # value or enter your own.
-        'run':         # Is the Endpoint is Running or not.
-        'rx bytes':    # Total received bytes count.
-        'rx pkts':     # Total received packet count.
-        'script':      # Endpoint script state.
-        'serdelay':    # Additional serialization delay for a 1514 byte packet at the configured
-                       # speed (microseconds).
-        'tx bytes':    # Total transmitted bytes count.
-        'tx drop %':   # Packet drop percentage over the last 1 minute.
-        'tx pkts':     # Packets received on the peer interface and transmitted out this
-                       # endpoint's interface.
-        'tx rate':     # The average speed over the last 30 seconds at which we are
-                       # transmittingout the peer interface.This can be thought of as the actual
-                       # transfer rate for packets entering the interfaceassociated with this
-                       # Endpoint.
-        'tx-failed':   # Total amount of received packets that could not be transmitted out the
-                       # peer.This includes any tx-failed-late packets.
-        'wps':         # Enable/Disable showing of WanPaths for individual endpoints.
+        'buffer':       # Maximum size of receive buffer, in bytes.This is the sum of the amount
+                        # needed for the transit buffers (delay * bandwidth)plus the WanLink
+                        # "Backlog Buffer:" queue size which handles bursts.
+        'corrupt 1':    # Counters for how many times this corruption has been applied.
+        'corrupt 2':    # Counters for how many times this corruption has been applied.
+        'corrupt 3':    # Counters for how many times this corruption has been applied.
+        'corrupt 4':    # Counters for how many times this corruption has been applied.
+        'corrupt 5':    # Counters for how many times this corruption has been applied.
+        'corrupt 6':    # Counters for how many times this corruption has been applied.
+        'delay':        # Base induced latency on received packets, in microseconds.
+        'dropfreq %':   # Frequency out of 1,000,000 to drop a received packet.Select a preset
+                        # value or enter your own.
+        'dropped':      # Total dropped packets on receive.This does not include the tx-failed
+                        # counters.
+        'dup pkts':     # Total duplicate packets generated.
+        'dupfreq %':    # Frequency out of 1,000,000 to duplicate a received packet.Select a
+                        # preset value or enter your own.
+        'eid':          # Entity ID
+        'elapsed':      # Amount of time (seconds) this endpoint has been running (or ran.)
+        'extrabuf':     # Size of "Backlog Buffer:" setting in WanLink configuration in bytes.
+        'failed-late':  # Total amount of received packets that could not be transmitted out the
+                        # peer becausethe emulator was overloaded and could not transmit within
+                        # the specified 'lateness'
+        'jitfreq %':    # Frequency out of 1,000,000 that packets should have jitter applied to
+                        # them.Select a preset value or enter your own.
+        'max rate':     # Max transmit rate (bps) for this Endpoint.
+        'maxjitter':    # Maximum additional delay, in microseconds.  See Jitter-Frequency as
+                        # well.
+        'maxlate':      # The maximum lateness in milliseconds allowed before packets will be
+                        # dropped on transmit.If lateness is configured to be automatic, this
+                        # variable will change based onconfigured bandwidth and backlog buffer,
+                        # but will not go below 10ms.
+        'name':         # Endpoint's Name.
+        'ooo pkts':     # Total out of order packets generated.
+        'qdisc':        # Queueing discipline (FIFO, WRR, etc).
+        'reordfrq %':   # Frequency out of 1,000,000 to re-order a received packet.Select a preset
+                        # value or enter your own.
+        'run':          # Is the Endpoint is Running or not.
+        'rx bytes':     # Total received bytes count.
+        'rx pkts':      # Total received packet count.
+        'rx rate (3s)': # The average speed at which we are receiving over the last 3 seconds.
+        'script':       # Endpoint script state.
+        'serdelay':     # Additional serialization delay for a 1514 byte packet at the configured
+                        # speed (microseconds).
+        'tx bytes':     # Total transmitted bytes count.
+        'tx drop %':    # Packet drop percentage over the last 1 minute.
+        'tx pkts':      # Packets received on the peer interface and transmitted out this
+                        # endpoint's interface.
+        'tx rate':      # The average speed over the last 30 seconds at which we are
+                        # transmittingout the peer interface.This can be thought of as the actual
+                        # transfer rate for packets entering the interfaceassociated with this
+                        # Endpoint.
+        'tx rate (3s)': # The average speed over the last 3 seconds at which we are
+                        # transmittingout the peer interface.This can be thought of as the actual
+                        # transfer rate for packets entering the interfaceassociated with this
+                        # Endpoint.
+        'tx-failed':    # Total amount of received packets that could not be transmitted out the
+                        # peer.This includes any tx-failed-late packets.
+        'wps':          # Enable/Disable showing of WanPaths for individual endpoints.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
