@@ -3890,7 +3890,7 @@ and downstream traffic"""
                     f"--serial {self.serial_list[i]} "
                     f"--meeting_url '{self.meet_link}' "
                     f"--participant_name '{self.real_sta_hostname[i]}' "
-                    f"--server_host {self.upstream_port} "
+                    f"--server_host {self.mgr_ip} "
                     f"--server_port 5000"
                 )
                 self.generic_endps_profile.set_cmd(
