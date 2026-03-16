@@ -1812,26 +1812,26 @@ class ZoomAutomation(Realm):
                             min(
                                 temp_min_audio_pktloss_r,
                                 float(
-                                    (row["Sent Audio Packet loss (%)"])
+                                    (row["Receive Audio Packet loss (%)"])
                                     .split(" ")[0]
                                     .replace("%", "")
                                 ),
                             )
                             if temp_min_audio_pktloss_r > 0
                             and float(
-                                (row["Sent Audio Packet loss (%)"])
+                                (row["Receive Audio Packet loss (%)"])
                                 .split(" ")[0]
                                 .replace("%", "")
                             )
                             > 0
                             else (
                                 float(
-                                    (row["Sent Audio Packet loss (%)"])
+                                    (row["Receive Audio Packet loss (%)"])
                                     .split(" ")[0]
                                     .replace("%", "")
                                 )
                                 if float(
-                                    (row["Sent Audio Packet loss (%)"])
+                                    (row["Receive Audio Packet loss (%)"])
                                     .split(" ")[0]
                                     .replace("%", "")
                                 )
@@ -1928,26 +1928,26 @@ class ZoomAutomation(Realm):
                             min(
                                 temp_min_video_pktloss_r,
                                 float(
-                                    (row["Sent Video Packet loss (%)"])
+                                    (row["Receive Video Packet loss (%)"])
                                     .split(" ")[0]
                                     .replace("%", "")
                                 ),
                             )
                             if temp_min_video_pktloss_r > 0
                             and float(
-                                (row["Sent Video Packet loss (%)"])
+                                (row["Receive Video Packet loss (%)"])
                                 .split(" ")[0]
                                 .replace("%", "")
                             )
                             > 0
                             else (
                                 float(
-                                    (row["Sent Video Packet loss (%)"])
+                                    (row["Receive Video Packet loss (%)"])
                                     .split(" ")[0]
                                     .replace("%", "")
                                 )
                                 if float(
-                                    (row["Sent Video Packet loss (%)"])
+                                    (row["Receive Video Packet loss (%)"])
                                     .split(" ")[0]
                                     .replace("%", "")
                                 )
@@ -3890,7 +3890,7 @@ and downstream traffic"""
                     f"--serial {self.serial_list[i]} "
                     f"--meeting_url '{self.meet_link}' "
                     f"--participant_name '{self.real_sta_hostname[i]}' "
-                    f"--server_host {self.mgr_ip} "
+                    f"--server_host {self.upstream_port} "
                     f"--server_port 5000"
                 )
                 self.generic_endps_profile.set_cmd(
