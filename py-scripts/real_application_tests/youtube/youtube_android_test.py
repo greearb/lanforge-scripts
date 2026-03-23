@@ -80,99 +80,134 @@ class Adb:
             )
         logging.info(f"Opened Interop app on device {d.serial}")
 
-    def enable_stats_for_nerds(self, device_serial):
+    def enable_stats_for_nerds(self, serial):
         """
-        Enable 'Stats for nerds' while a video is playing.
+        Enable "Stats for nerds" in YouTube player on the given device.
+
+        Opens the player menu and attempts to locate the option using
+        multiple paths (direct, More, Settings, Advanced) with scrolling
+        and regex-based matching for robustness across UI variations.
+
+        Args:
+            serial (str): Device serial number.
+
+        Returns:
+            bool: True if enabled successfully, else False.
         """
+        d = self.u2_sessions[serial]
+        d.click(0.2, 0.2)
 
-        d = self.u2_sessions[device_serial]
+        def find_and_click_stats():
+            for _ in range(6):
+                # Try text match
+                stats_btn = d(textMatches="(?i).*stats.*nerds.*")
+                if stats_btn.exists:
+                    stats_btn.click()
+                    return True
 
-        # Step 1: Open the overflow menu (⋮)
-        count = 0
-        while (
-            "com.google.android.youtube:id/player_overflow_button"
-            not in d.dump_hierarchy()
-        ):
+                # Try content description match
+                stats_btn_desc = d(descriptionMatches="(?i).*stats.*nerds.*")
+                if stats_btn_desc.exists:
+                    stats_btn_desc.click()
+                    return True
+
+                # Scroll if possible
+                d.swipe_ext("up", scale=0.7)
+                time.sleep(0.8)
+
+            return False
+
+        # Step 1: Make sure player controls are visible
+        for _ in range(2):
+            if d(resourceId="com.google.android.youtube:id/player_overflow_button").exists:
+                break
+            d.click(0.5, 0.5)
             time.sleep(1)
-            logging.info(
-                f"Waiting for overflow button to appear... for serial: {device_serial}"
-            )
-            count += 1
-            if count > 15:
-                logging.info(
-                    f"Timeout waiting for overflow button. for serial: {device_serial}"
-                )
-                return False
-        btn = d(resourceId="com.google.android.youtube:id/player_overflow_button")
-        if btn.wait(timeout=10):  # waits up to 10 seconds for the element to appear
-            btn.click()
-            logging.info(f"☰ Overflow menu opened. for serial: {device_serial}")
-        time.sleep(1)
 
-        # Step 2: Click "More options" inside overflow
-        count = 0
-        while "More " not in d.dump_hierarchy():
-            time.sleep(1)
-            logging.info(
-                f"Waiting for 'More' option to appear... for serial: {device_serial}"
-            )
-            count += 1
-            if count > 15:
-                logging.info(
-                    f"Timeout waiting for 'More' option. for serial: {device_serial}"
-                )
-                return False
-        more_button = d(description="More ")
-        if more_button.wait(timeout=10):
-            more_button.click()
-            logging.info(f"➡️ Entered More submenu. for serial: {device_serial}")
+        overflow = d(resourceId="com.google.android.youtube:id/player_overflow_button")
+        settings_icon = d(descriptionMatches="(?i).*settings.*")
 
-        time.sleep(2)
+        if overflow.exists:
+            overflow.click()
+        elif settings_icon.exists:
+            logging.info("settings icon exists, clicking it")
+            settings_icon.click()
+        else:
+            return False
 
-        d.swipe_ext("up", scale=0.6)
-        time.sleep(3)
-        count = 0
-        while "Stats for nerds " not in d.dump_hierarchy():
-            time.sleep(1)
-            logging.info(
-                f"Waiting for 'Stats for nerds' option to appear... for serial: {device_serial}"
-            )
-            count += 1
-            if count > 15:
-                logging.info(
-                    f"Timeout waiting for 'Stats for nerds' option. for serial: {device_serial}"
-                )
-                return False
-        stats_button = d(description="Stats for nerds ")
-        if stats_button.wait(timeout=10):
-            stats_button.click()
-            logging.info(f"✅ Stats for nerds enabled. for serial: {device_serial}")
+        # Step 2: Try finding Stats immediately (some versions show it directly)
+        if find_and_click_stats():
+            logging.info(f"[{serial}] Stats enabled (direct)")
             return True
 
-    def skip_ads(self, serial):
-        """Continuously check and skip YouTube ads if possible."""
-        try:
-            d = self.u2_sessions[serial]
-            while True:
-                # Look for the "Skip Ads" button
-                if d(textContains="Skip").exists:
-                    d(textContains="Skip").click()
-                    logging.info(f"[{serial}] Skipped ad")
-                    break
-                # Some ads say "Ad" in the title, so wait for them to finish
-                if (
-                    d(descriptionContains="Ad").exists
-                    or d(text="Ad").exists
-                    or d(text="sponsored").exists
-                    or d(text="Sponsored").exists
-                ):
-                    logging.info(f"[{serial}] Ad playing, waiting...")
-                else:
-                    # No ad detected → break
-                    break
-                time.sleep(0.5)
-        except Exception as e:
-            logging.info(f"[{serial}] Ad skip check failed: {e}")
+        # Step 3: Try clicking "More" if present (bottom sheet case)
+        more_btn = d(text="More")
+        if not more_btn.exists:
+            more_btn = d(descriptionMatches="(?i).*more.*")
+
+        if more_btn.exists:
+            more_btn.click()
+            time.sleep(1)
+
+            if find_and_click_stats():
+                logging.info(f"[{serial}] Stats enabled (via More)")
+                return True
+
+        # Step 4: Try clicking "Settings"
+        settings_btn = d(textMatches="(?i).*settings.*")
+        if settings_btn.exists:
+            settings_btn.click()
+            time.sleep(1)
+
+            if find_and_click_stats():
+                logging.info(f"[{serial}] Stats enabled (via Settings)")
+                return True
+
+        # Step 5: Try clicking "Advanced"
+        advanced_btn = d(textMatches="(?i).*advanced.*")
+        if advanced_btn.exists:
+            advanced_btn.click()
+            time.sleep(1)
+
+            if find_and_click_stats():
+                logging.info(f"[{serial}] Stats enabled (via Advanced)")
+                return True
+
+        logging.info(f"[{serial}] Stats not found in any menu path")
+        return False
+
+    def wait_for_video_ui(self, serial, timeout=40):
+        """Wait until YouTube video UI is ready and skip ads if present."""
+        d = self.u2_sessions[serial]
+        start = time.time()
+
+        while time.time() - start < timeout:
+
+            # If skip button exists, click it
+            if d(textContains="Skip").exists:
+                d(textContains="Skip").click()
+                time.sleep(1)
+                continue
+
+            # If Ad label present, wait
+            if (
+                d(descriptionContains="Ad").exists
+                or d(text="Ad").exists
+                or d(textContains="Sponsored").exists
+            ):
+                logging.info(f"[{serial}] Ad playing, waiting...")
+                time.sleep(1)
+                continue
+
+            # Check if overflow button exists (means real video UI is ready)
+            if d(resourceId="com.google.android.youtube:id/player_overflow_button").exists:
+                logging.info(f"[{serial}] Video UI ready")
+                return True
+
+            time.sleep(1)
+
+        logging.info(f"[{serial}] Timeout waiting for video UI")
+        return False
 
     def send_stats_to_server(self):
         url = f"http://{self.upstream_port}:5002/youtube_stats"
@@ -224,8 +259,8 @@ class Adb:
                 elif key == "bandwidth (kbps)":
                     value = float(match.group(1))
                     unit = match.group(2).lower()
-                    if unit == "mbps":
-                        value *= 1000  # normalize to kbps
+                    if unit == "kbps":
+                        value /= 1000  # normalize to mbps
                     stats[key] = round(value, 2)
 
                 elif key == "readahead (s)":
@@ -289,14 +324,14 @@ class Adb:
             "content insert --uri content://settings/system --bind name:s:accelerometer_rotation --bind value:i:0",
         )
 
+        # wait for video ui and try skipping ads if present
+        self.wait_for_video_ui(serial)
+
         # Rotate screen to landscape
         self.execute_cmd(
             serial,
             "content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1",
         )
-
-        # Try skipping ads if present
-        self.skip_ads(serial)
 
         # Enable stats
         self.enable_stats_for_nerds(serial)
