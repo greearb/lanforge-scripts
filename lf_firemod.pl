@@ -253,10 +253,10 @@ if ($show_help) {
 
 # Convert some TOS values that the server likely doesn't understand.
 if ($tos eq "BK") {
-  $tos = 64;
+  $tos = 32;
 }
 elsif ($tos eq "BE") {
-  $tos = 96;
+  $tos = 100;
 }
 elsif ($tos eq "VI") {
   $tos = 128;
