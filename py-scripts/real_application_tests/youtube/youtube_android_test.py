@@ -10,6 +10,9 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 import json
 import logging
+import pytesseract
+import cv2
+import subprocess
 
 logging.basicConfig(
     filename='youtube_test.log',
@@ -306,7 +309,7 @@ class Adb:
         except Exception as e:
             logging.info(f"Error checking stop signal: {e}")
 
-    def run_on_device(self, serial, video_url, delay, duration):
+    def run_on_device(self, serial, video_url, delay, duration, resolution):
         # Force-stop YouTube app if running
         self.execute_cmd(serial, "am force-stop com.google.android.youtube")
         time.sleep(10)
@@ -326,6 +329,8 @@ class Adb:
 
         # wait for video ui and try skipping ads if present
         self.wait_for_video_ui(serial)
+        if resolution:
+            self.set_resolution(serial, resolution)
 
         # Rotate screen to landscape
         self.execute_cmd(
@@ -349,16 +354,279 @@ class Adb:
         logging.info(f"[{serial}] Test completed or stopped.")
 
     def run_on_multiple_devices(
-        self, device_serials, video_url, delay, duration, max_workers=5
+        self, device_serials, video_url, delay, duration, resolution, max_workers=5
     ):
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [
-                executor.submit(self.run_on_device, serial, video_url, delay, duration)
+                executor.submit(self.run_on_device, serial, video_url, delay, duration, resolution)
                 for serial in device_serials
             ]
             # Wait for all to complete
             for future in futures:
                 future.result()
+
+    def get_rows(self, serial, visible_only=False):
+        """
+        Extract clickable rows from YouTube bottom sheet / RecyclerView.
+        """
+
+        d = self.u2_sessions[serial]
+
+        logging.info(f"[{serial}] Dumping UI hierarchy")
+
+        xml = d.dump_hierarchy(compressed=False)
+        root = ET.fromstring(xml)
+
+        # save xml for debugging
+        with open(f"debug_ui_{serial}.xml", "w", encoding="utf-8") as f:
+            f.write(xml)
+
+        rows = []
+        container_found = False
+
+        for node in root.iter("node"):
+
+            res_id = node.attrib.get("resource-id", "")
+            cls = node.attrib.get("class", "")
+
+            if (
+                "bottom_sheet" in res_id
+                or "recycler" in res_id
+                or cls == "androidx.recyclerview.widget.RecyclerView"
+            ):
+
+                container_found = True
+                logging.info(f"[{serial}] Resolution container found → {res_id}")
+
+                for child in node.iter("node"):
+
+                    if child.attrib.get("class") != "android.view.ViewGroup":
+                        continue
+
+                    if child.attrib.get("clickable") != "true":
+                        continue
+
+                    if visible_only and child.attrib.get("visible-to-user") != "true":
+                        continue
+
+                    bounds = child.attrib.get("bounds", "")
+                    nums = re.findall(r"\d+", bounds)
+
+                    if len(nums) != 4:
+                        continue
+
+                    x1, y1, x2, y2 = map(int, nums)
+
+                    # filter small rows
+                    if (y2 - y1) < 60:
+                        continue
+
+                    row = {
+                        "x1": x1,
+                        "y1": y1,
+                        "x2": x2,
+                        "y2": y2,
+                        "adapter_index": int(child.attrib.get("index", -1))
+                    }
+
+                    rows.append(row)
+
+                    logging.info(
+                        f"[{serial}] Row detected index={row['adapter_index']} bounds={bounds}"
+                    )
+
+                break
+
+        if not container_found:
+            logging.warning(f"[{serial}] No RecyclerView / bottom sheet container found")
+
+        rows.sort(key=lambda r: r["adapter_index"])
+
+        logging.info(f"[{serial}] Final row order: {[r['adapter_index'] for r in rows]}")
+
+        return rows
+
+    def click_row(self, serial, row):
+
+        d = self.u2_sessions[serial]
+
+        # calculate center
+        cx = (row["x1"] + row["x2"]) // 2
+        cy = (row["y1"] + row["y2"]) // 2
+
+        width, height = d.window_size()
+
+        logging.info(
+            f"[{serial}] Clicking row index={row['adapter_index']} center=({cx},{cy}) screen=({width},{height})"
+        )
+
+        if cx < 10 or cx > width - 10:
+            logging.warning(f"[{serial}] Invalid click X")
+            return False
+
+        if cy < 50 or cy > height - 50:
+            logging.warning(f"[{serial}] Invalid click Y")
+            return False
+
+        d.click(cx, cy)
+
+        logging.info(f"[{serial}] Row clicked successfully")
+
+        return True
+
+    def detect_resolutions_with_ocr(self, serial):
+        """
+        Capture device screen and use OCR to extract available video resolutions.
+
+        Args:
+            serial (str): Device serial number.
+
+        Returns:
+            list: List of detected resolution strings (e.g., ["144p", "360p", "720p"]).
+                Returns an empty list if screenshot capture or OCR fails.
+
+        Notes:
+            - Requires Tesseract OCR to be installed and accessible.
+            - OCR accuracy depends on screen clarity and preprocessing.
+            - Assumes resolution labels are visible on the screen at capture time.
+        """
+        pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+
+        screenshot_file = f"resolution_screen_{serial}.png"
+
+        logging.info(f"[{serial}] Capturing screenshot")
+
+        try:
+            with open(screenshot_file, "wb") as f:
+                subprocess.run(
+                    ["adb", "-s", serial, "exec-out", "screencap", "-p"],
+                    stdout=f,
+                    check=True
+                )
+        except Exception as e:
+            logging.error(f"[{serial}] Screenshot capture failed: {e}")
+            return []
+
+        img = cv2.imread(screenshot_file)
+
+        if img is None:
+            logging.error(f"[{serial}] Screenshot failed")
+            return []
+
+        logging.info(f"[{serial}] Screenshot shape {img.shape}")
+
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
+
+        cv2.imwrite(f"processed_{serial}.png", thresh)
+
+        text = pytesseract.image_to_string(thresh)
+
+        logging.info(f"[{serial}] OCR text:\n{text}")
+
+        resolutions = re.findall(r"\d{3,4}p(?:\s*Premium)?", text)
+
+        if len(resolutions) > 1 and resolutions[0] in resolutions[1:]:
+            resolutions = resolutions[1:]
+
+        resolutions = list(dict.fromkeys(resolutions))
+
+        logging.info(f"[{serial}] OCR resolutions detected → {resolutions}")
+
+        return resolutions
+
+    def set_resolution(self, serial, resolution):
+        """
+        Set the video playback resolution on YouTube.
+
+        Navigates through the YouTube player settings menu, opens the quality
+        options, selects the advanced menu, and chooses the desired resolution
+        using OCR-based detection and row mapping.
+
+        Args:
+            serial (str): Device serial number.
+            resolution (str): Desired resolution (e.g., "720p", "1080p").
+
+        Returns:
+            bool: True if resolution was successfully set, False otherwise.
+        """
+
+        d = self.u2_sessions[serial]
+
+        logging.info(f"[{serial}] ===== Setting resolution {resolution} =====")
+
+        # show player controls
+        for _ in range(2):
+            if d(resourceId="com.google.android.youtube:id/player_overflow_button").exists:
+                break
+            d.click(0.5, 0.5)
+            time.sleep(1)
+
+        overflow = d(resourceId="com.google.android.youtube:id/player_overflow_button")
+
+        if not overflow.exists:
+            logging.warning(f"[{serial}] Overflow button not found")
+            return False
+
+        logging.info(f"[{serial}] Opening settings menu")
+        overflow.click()
+
+        time.sleep(1)
+
+        quality = d(textMatches="(?i).*quality.*")
+
+        if not quality.exists:
+            quality = d(descriptionMatches="(?i).*quality.*")
+
+        if not quality.wait(timeout=5):
+            logging.warning(f"[{serial}] Quality option not found")
+            return False
+
+        logging.info(f"[{serial}] Opening Quality menu")
+        quality.click()
+
+        time.sleep(1.5)
+
+        # click last row (Advanced)
+        rows = self.get_rows(serial, visible_only=True)
+
+        if not rows:
+            logging.warning(f"[{serial}] No rows found in Quality menu")
+            return False
+
+        logging.info(f"[{serial}] Clicking last row (assumed Advanced)")
+        self.click_row(serial, rows[-1])
+
+        time.sleep(2)
+
+        logging.info(f"[{serial}] Detecting resolutions using OCR")
+
+        resolutions = self.detect_resolutions_with_ocr(serial)
+
+        rows = self.get_rows(serial, visible_only=True)
+
+        logging.info(
+            f"[{serial}] Mapping resolution → rows | OCR={resolutions} rows={[r['adapter_index'] for r in rows]}"
+        )
+
+        if resolution not in resolutions:
+            logging.warning(f"[{serial}] Requested resolution {resolution} not found")
+            return False
+
+        target_index = resolutions.index(resolution)
+
+        if target_index >= len(rows):
+            logging.warning(
+                f"[{serial}] OCR index {target_index} exceeds row count {len(rows)}"
+            )
+            return False
+
+        logging.info(f"[{serial}] Clicking resolution {resolution}")
+
+        self.click_row(serial, rows[target_index])
+
+        return True
 
 
 if __name__ == "__main__":
@@ -390,10 +658,13 @@ if __name__ == "__main__":
         required=True,
         help="Upstream port for LANforge",
     )
+    parser.add_argument("--resolution", type=str, help="give the desired resolution")
+
     args = parser.parse_args()
 
     video_url = args.url  # https://youtu.be/ID2zk0M5U7s?si=hECC-d8tSb5JdiTd
     duration = int(args.duration) * 60  # minutes to seconds
+    resolution = args.resolution
     delay = args.delay
     adb_client = Adb(upstream_port=args.upstream_port)
     device_serials = adb_client.get_devices()
@@ -409,5 +680,6 @@ if __name__ == "__main__":
             video_url,
             delay,
             duration,
+            resolution,
             max_workers=len(test_serials),
         )
