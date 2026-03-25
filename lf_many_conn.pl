@@ -11,7 +11,7 @@
 # have received data before tearing the connection down.  (Errors will be printed
 # to the console if the connection does not start in 15 seconds.)
 
-# Written by Candela Technologies Inc.
+# Copyright (C) 2000-2026 Candela Technologies Inc.
 #  Udated by:
 #
 #
@@ -105,7 +105,7 @@ my $usage = "$0  [--lf1_port {\"port_num ip mask gateway\"}]
 Example:
  $0 --lf1_port \"1 172.22.22.2 255.255.255.0 172.22.22.1\" --lf2_port \"1 172.22.22.3 255.255.255.0 172.22.22.1\" --init_to_dflts yes\n";
 
-GetOptions 
+GetOptions
 (
         'protocol|p=s'          => \$proto,
         'start_cx_num|s=i'      => \$start_cx_num,

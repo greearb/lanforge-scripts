@@ -10,7 +10,7 @@
 # (Errors will be printed to the console if the connection
 # does not start in 15 seconds.)
 
-# Written by Candela Technologies Inc.
+# Copyright (C) 2000-2026 Candela Technologies Inc.
 #  Udated by:
 #
 #
@@ -93,7 +93,7 @@ Example:
 
 my $i = 0;
 
-GetOptions 
+GetOptions
 (
 	'protocol|p=s'		=> \$proto,
 	'start_cx_num|s=i'	=> \$start_cx_num,

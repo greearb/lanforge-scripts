@@ -2,7 +2,7 @@
 
 # This program is used to automatically run LANforge-GUI WiFi Capacity tests.
 
-# Written by Candela Technologies Inc.
+# Copyright (C) 2000-2026 Candela Technologies Inc.
 #  Udated by:
 #
 #

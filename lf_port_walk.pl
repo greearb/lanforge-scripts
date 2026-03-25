@@ -11,7 +11,7 @@
 # This script should be useful for people who are testing firewalls and other
 # types of systems that care about what ports the data is transmitted on...
 #
-# Written by Candela Technologies Inc.
+# Copyright (C) 2000-2026 Candela Technologies Inc.
 #  Udated by:
 #
 #
@@ -62,7 +62,7 @@ my $usage = "$0 [--protocol={tcp | udp | both}] [--start_port={port}] [--end_por
 
 my $i = 0;
 
-GetOptions 
+GetOptions
 (
 	'protocol|p=s'		=> \$proto,
 	'start_port|s=i'	=> \$start_port,
@@ -116,7 +116,7 @@ print "\n\n*****  Starting loop at: $dt  *****\n\n";
 
 # Remove any existing configuration information
 initToDefaults();
-  
+
 print " ***Sleeping 3 seconds for ports to initialize to defaults...\n";
 sleep(3);
 
@@ -186,7 +186,7 @@ for ($i = $start_port; $i<$end_port; $i++) {
       last;
     }
   }
-  
+
   # So, our CXs and endpoints are created...lets start them running.
   if ($do_run_cxs) {
     doCmd("set_cx_state $test_mgr all RUNNING");
@@ -209,7 +209,7 @@ for ($i = $start_port; $i<$end_port; $i++) {
       # Delete the endpoints and cross-connects related to this test manager.
       doCmd("rm_cx $test_mgr $cx_names[$q]");
     }
-    
+
     for ($q = 0; $q<@endpoint_names; $q++) {
       # Delete the endpoints and cross-connects related to this test manager.
       doCmd("rm_endp $endpoint_names[$q]");

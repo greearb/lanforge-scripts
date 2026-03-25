@@ -3,7 +3,7 @@
 # This program is used to stress test the LANforge system, and may be used as
 # an example for others who wish to automate LANforge tests.
 
-# Written by Candela Technologies Inc.
+# Copyright (C) 2000-2026 Candela Technologies Inc.
 #  Updated by: greearb@candelatech.com
 #
 #
@@ -238,4 +238,3 @@ sub doCmd {
   }
   return join("\n", @rslt);
 }
-

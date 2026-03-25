@@ -4,7 +4,7 @@
 # IP4 addresses correlated to username/password combinations            #
 # and get some basic information from LANforge.                         #
 #                                                                       #
-# Written by Candela Technologies Inc.                                  #
+# Copyright (C) 2000-2026 Candela Technologies Inc.                                  #
 #-----------------------------------------------------------------------#
 package main;
 use strict;
@@ -131,7 +131,7 @@ $::t->waitfor("/btbits\>\>/");
 #-----------------------------------------------------------------------#
 #     compat                                                            #
 #-----------------------------------------------------------------------#
-if ( !defined *LANforge::Utils::fmt_cmd ) { 
+if ( !defined *LANforge::Utils::fmt_cmd ) {
    #*LANforge::Utils::fmt_cmd = sub {
    sub LANforge::Utils::fmt_cmd {
       my $self = shift;
@@ -235,8 +235,8 @@ for (my $i = $::first_port; $i <= $::last_port; $i++) {
    # create dummy endpoint
    my $tmp_ep1 = "L4_$port_name$i";
    my $tmp_ep2 = "D_L4_$port_name$i";
-   my $cmd     = $::utils->fmt_cmd( "add_l4_endp", $tmp_ep2, 
-                                       shelf_num, $::resource, "$port_name$i", 
+   my $cmd     = $::utils->fmt_cmd( "add_l4_endp", $tmp_ep2,
+                                       shelf_num, $::resource, "$port_name$i",
                                        "l4_generic", 0, 0, 0, ' ', ' ');
    #print "cmd: $cmd\n";
    $::utils->doCmd($cmd);

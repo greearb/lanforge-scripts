@@ -11,7 +11,7 @@
 # Contact:  support@candelatech.com if you have any questions or suggestions
 #   for improvement.
 
-# Written by Candela Technologies Inc.
+# Copyright (C) 2000-2026 Candela Technologies Inc.
 #  Updated by: greearb@candelatech.com
 #
 #

@@ -3,7 +3,7 @@
 # This program is used to modify the LANforge attenuator (through
 # the LANforge manager/server processes.
 
-# Written by Candela Technologies Inc.
+# Copyright (C) 2000-2026 Candela Technologies Inc.
 #  Udated by:
 #
 #
@@ -59,7 +59,7 @@ if (@ARGV < 2) {
    print $usage;
    exit 0;
 }
-GetOptions 
+GetOptions
 (
    'help|h'          => \$show_help,
    'atten_serno|s=s' => \$atten_serno,

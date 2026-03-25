@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 # This program is used to monitor and manage Layer4 connections
 #
-# Written by Candela Technologies Inc.
+# Copyright (C) 2000-2026 Candela Technologies Inc.
 
 use strict;
 use warnings;

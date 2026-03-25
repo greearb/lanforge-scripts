@@ -2,7 +2,7 @@
 
 # This program creates a UDP broadcast connection
 
-# Written by Candela Technologies Inc.
+# Copyright (C) 2000-2026 Candela Technologies Inc.
 #  Udated by:
 #
 #
@@ -270,7 +270,7 @@ add_endp $endp_a 1 1 eport_a custom_ether -1 NO 512000 0 NO 64 64 CUSTOM NO 32 0
  set_endp_flag $endp_a EnableLinearSrcIPPort 0
  set_endp_flag $endp_a QuiesceAfterRange 0
  set_endp_flag $endp_a QuiesceAfterDuration 0
- set_endp_payload $endp_a CUSTOM ff ff ff ff ff ff 00 90 0b 29 06 f9 08 00 45 00 00 32 53 f5 40 00 40 11 cf 91 0a 1a 01 02 0a 1a 01 ff 00 00 00 00 00 00 e8 9b 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+ set_endp_payload $endp_a CUSTOM ff ff ff ff ff ff 00 90 0b 29 06 f9 08 00 45 00 00 32 53 f5 40 00 40 11 cf 91 0a 1a 01 02 0a 1a 01 ff 00 00 00 00 00 00 e8 9b 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
  set_endp_tos $endp_a DONT-SET 0
 set_script $endp_a NA NA NONE 'NA' 0 0
  set_endp_proxy $endp_a NO
@@ -300,5 +300,3 @@ set_endp_report_timer $endp_b 5000
  set_endp_flag $endp_b ClearPortOnStart 0
 report 'lf_reports' NO NO NO NO
 =cut
-
-
