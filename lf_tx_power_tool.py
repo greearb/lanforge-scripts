@@ -11,7 +11,7 @@ EXAMPLE:
 
 LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2022 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
 
 
 INCLUDE_IN_README
@@ -70,20 +70,20 @@ def convert_per_ss_dbm_to_combined(ss_list):
         mw = convert_dbm_to_mw(value)
         print("mw: {mw}".format(mw=round(mw,8)))
         total_mw += mw
-    
+
     print("total_mw: {total_mw}".format(total_mw=round(total_mw,8)))
 
     combined_dbm = convert_mw_to_dbm(total_mw)
     print("combined_dbm = {combined_dbm}".format(combined_dbm=round(combined_dbm,8)))
 
     return combined_dbm
-    
+
 
 def main():
     parser = argparse.ArgumentParser(
         description="Convert power values from dBm to mW or mW to dBm"
     )
-    
+
     parser.add_argument(
         "--dbm",
         "--dbm2mw",
@@ -126,5 +126,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

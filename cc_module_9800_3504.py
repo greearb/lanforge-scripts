@@ -29,7 +29,7 @@ formula:
 
 
 COPYRIGHT:
-    Copyright 2021 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README
@@ -308,8 +308,8 @@ class create_controller_series_object:
 
         elif self.action in ["ap_dot11_dot11ax_mcs_tx_index_spatial_stream", "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream"]:
             self.command_extend = [
-                "--action", self.action, 
-                "--spatial_stream", str(self.spatial_stream), 
+                "--action", self.action,
+                "--spatial_stream", str(self.spatial_stream),
                 "--mcs_tx_index", str(self.mcs_tx_index)
             ]
             self.command.extend(self.command_extend)
@@ -449,7 +449,7 @@ class create_controller_series_object:
         logger.info("show ap name config role")
         self.action = "show_ap_name_config_role"
         summary = self.send_command()
-        return summary       
+        return summary
 
     def show_ap_bssid_dual_band_6ghz(self):
         logger.info("show ap name  wlan dot11 dual-band")
@@ -1201,18 +1201,18 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
-    # todo have the series passed in 
+    # todo have the series passed in
     # if args.series == "9800":
     def console_setup(self):
         self.no_logging_console()
         self.line_console_0()
 
     def read_ap_config_radio_role(self):
-        logger.info("read the AP if in Manual ") 
+        logger.info("read the AP if in Manual ")
         pss = self.show_ap_name_config_role()
 
         for line in pss.splitlines():
-            if 'Radio Role Op' in line: 
+            if 'Radio Role Op' in line:
                 if 'Manual' in line:
                     self.ap_config_radio_role = 'Manual'
 
@@ -1259,7 +1259,7 @@ class create_controller_series_object:
 
         self.regulatory_domain = "NA"
         self.country_code = "NA"
-        
+
         pss = self.show_ap_summary()
         logger.info(pss)
 
@@ -1283,8 +1283,8 @@ class create_controller_series_object:
                     self.regulatory_domain = m.group(1)
                     logger.info("Regulatory Domain in AP Summary : {domain}".format(domain=myrd))
                     break
-        #Try for new formatting  
-        searchap = False              
+        #Try for new formatting
+        searchap = False
         if self.regulatory_domain == "NA":
             for line in pss.splitlines():
                 if (line.startswith("---------")):
@@ -1355,7 +1355,7 @@ EXAMPLE:
 ./cc_module_9800_3504.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APCC9C.3EF4.DDE0 --series 9800 --prompt "WLC1" --timeout 10 --band '5g'
 
 COPYWRITE
-    Copyright 2021 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README

@@ -5,7 +5,7 @@
 NAME: controller.py
 
 PURPOSE:
-wrapper class to provide common interface to a controller, 
+wrapper class to provide common interface to a controller,
     class methods will hold login information and common commands
 
 SETUP:
@@ -16,7 +16,7 @@ EXAMPLE:
 
 
 COPYRIGHT:
-    Copyright 2021 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README
@@ -54,7 +54,7 @@ class controller:
         self.series_obj = None
 
     # this will create the controller object
-    def create_series_obj(                 
+    def create_series_obj(
                 scheme=None,
                 dest=None,
                 user=None,
@@ -66,7 +66,7 @@ class controller:
                 port=None,
                 timeout=None
                 ):
-        
+
         self.series_obj = self.series_module.create_controller_series_object(
             scheme=scheme,
             dest=dest,
@@ -95,7 +95,7 @@ def main():
 NAME: controller.py
 
 PURPOSE:
-wrapper class to provide common interface to a various series of controller, 
+wrapper class to provide common interface to a various series of controller,
     class methods will hold login information and common commands
 
 SETUP:
@@ -106,7 +106,7 @@ EXAMPLE:
 
 
 COPYWRITE
-    Copyright 2021 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README
@@ -114,10 +114,10 @@ INCLUDE_IN_README
             ''')
 
 # ./cc_9800_3504.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C --series 9800 --prompt "WLC1" --timeout 10
-    
+
     # parser.add_argument("--series_module", type=str, help="series module", required=True)
 
-    # These commands are just needed to interact it can be done in class methods.abs(    
+    # These commands are just needed to interact it can be done in class methods.abs(
     parser.add_argument("--dest", type=str, help="address of the cisco controller", required=True)
     parser.add_argument("--port", type=str, help="control port on the controller", required=True)
     parser.add_argument("--user", type=str, help="credential login/username", required=True)

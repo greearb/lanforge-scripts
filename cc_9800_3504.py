@@ -16,7 +16,7 @@ EXAMPLE:
 
 
 COPYRIGHT:
-    Copyright 2021 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README
@@ -79,7 +79,7 @@ class create_controller_series_object:
             raise ValueError('Controller series must be set: 9800 or 3504')
         else:
             self.series = series
-        
+
         if ap is None:
             raise ValueError('Controller AP  must be set')
         else:
@@ -131,7 +131,7 @@ class create_controller_series_object:
     def send_command(self):
         # for backward compatibility wifi_ctl_9800_3504 expects 'a' for 5g and 'b' for 24b
         self.convert_band()
-        
+
         # Generate command
         if self.action == 'cmd':
             logger.debug("action {action}".format(action=self.action))
@@ -154,7 +154,7 @@ class create_controller_series_object:
                 "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
                 "--action", self.action, "--series", self.series, "--port", self.port, "--prompt", self.prompt]
 
-        
+
         logger.info(self.command)
         # for now do not capture all the output,  have the logger to the work
         advanced = subprocess.run(self.command, capture_output=False, check=True)
@@ -177,10 +177,10 @@ class create_controller_series_object:
         self.action = "no_logging_console"
         self.send_command()
 
-    # The use of "line console 0" command is to connect a switch/router through medium console. 
-    # If there is only one console port, you can only choose "line console 0". 
+    # The use of "line console 0" command is to connect a switch/router through medium console.
+    # If there is only one console port, you can only choose "line console 0".
     # However if you have more than the number goes as 1,2,3,4 ... You can set different or same password to all your console ports.
-    # Note: needed to be set for tx power script 
+    # Note: needed to be set for tx power script
     def line_console_0(self):
         logger.info("line_console_0")
         self.action = "line_console_0"
@@ -193,7 +193,7 @@ class create_controller_series_object:
 
     def show_ap_dot11_5gz_summary(self):
         logger.info("show_ap_dot11_5gz_summary")
-        # TODO advanced was for legacy to 3504, refactor 
+        # TODO advanced was for legacy to 3504, refactor
         self.action = "advanced"
         self.send_command()
 
@@ -222,7 +222,7 @@ EXAMPLE:
 
 
 COPYWRITE
-    Copyright 2021 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README

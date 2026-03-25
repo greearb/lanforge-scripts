@@ -18,7 +18,7 @@ EXAMPLE:
       ./cc_module_test.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap AP687D.B45C.2B24 --series 9800 --prompt "WLC1" --timeout 10 --band '6g' --module 'cc_module_9800_3504' 2>&1 | tee cc_tx_output_6g.txt
 
 COPYRIGHT:
-    Copyright 2021 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README
@@ -277,7 +277,7 @@ class create_module_test_object:
         # self.cs.show_ap_dot11_24gz_summary()
         # show_wlan_summary
         self.cs.show_wlan_summary()
-    
+
     # Test dual-band 6g
     def test_config_tx_power_dual_band_6g_wpa3(self):
         # TODO : leave for now for reference
@@ -286,57 +286,57 @@ class create_module_test_object:
         #
         # WLC1 show ap summary
         # Number of APs: 5
-        # 
-        # AP Name                            Slots    AP Model              Ethernet MAC    Radio MAC       Location                          Country     IP Address                                 State         
+        #
+        # AP Name                            Slots    AP Model              Ethernet MAC    Radio MAC       Location                          Country     IP Address                                 State
         # -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        # APCC9C.3EF4.E0B0                     3      CW9166I-B             cc9c.3ef4.e0b0  10f9.20fd.e7a0  RM204-TB1-9166                    US          172.16.223.41                              Registered    
-        # APCC9C.3EF1.0AE0                     3      CW9164I-B             cc9c.3ef1.0ae0  10f9.20fd.eda0  RM204-TB1-9164                    US          172.16.223.40                              Registered    
-        # AP687D.B45C.25EC                     4      C9136I-B              687d.b45c.25ec  687d.b45f.c5f0  RM204-TB1-AP4                     US          172.16.222.199                             Registered    
-        # AP687D.B45C.2B24                     4      C9136I-B              687d.b45c.2b24  687d.b460.04b0  RM204-TB1-AP5                     US          172.16.222.201                             Registered    
-        # APA453.0E7B.CF9C                     2      C9120AXE-B            a453.0e7b.cf9c  d4ad.bda2.2ce0  RM204-TB1-AP2                     US          172.16.222.176                             Registered    
+        # APCC9C.3EF4.E0B0                     3      CW9166I-B             cc9c.3ef4.e0b0  10f9.20fd.e7a0  RM204-TB1-9166                    US          172.16.223.41                              Registered
+        # APCC9C.3EF1.0AE0                     3      CW9164I-B             cc9c.3ef1.0ae0  10f9.20fd.eda0  RM204-TB1-9164                    US          172.16.223.40                              Registered
+        # AP687D.B45C.25EC                     4      C9136I-B              687d.b45c.25ec  687d.b45f.c5f0  RM204-TB1-AP4                     US          172.16.222.199                             Registered
+        # AP687D.B45C.2B24                     4      C9136I-B              687d.b45c.2b24  687d.b460.04b0  RM204-TB1-AP5                     US          172.16.222.201                             Registered
+        # APA453.0E7B.CF9C                     2      C9120AXE-B            a453.0e7b.cf9c  d4ad.bda2.2ce0  RM204-TB1-AP2                     US          172.16.222.176                             Registered
 
-        # helper commands 
+        # helper commands
         # WLC# ap slots  , shows the ap slots shows slot dual band
-        # show ap dot11 5ghz summary # slot 2 enabled 
-        #   show ap slots check 
+        # show ap dot11 5ghz summary # slot 2 enabled
+        #   show ap slots check
         # show ap dot11 dual-band summary # will show if in 5g or 6g
-        # show ap name <ap name> dot11 
-        # config file / Cisco - yaml file 
-        # 
-        # Flow of script -for roaming - skeleton. 
-        # show ap summary 
+        # show ap name <ap name> dot11
+        # config file / Cisco - yaml file
+        #
+        # Flow of script -for roaming - skeleton.
+        # show ap summary
         # configure wlan - (config file  - security combo)
-        # configure band (config file , 2g/5g/6g) 
-        # config channel / channel width 
-        # AP min state up 
+        # configure band (config file , 2g/5g/6g)
+        # config channel / channel width
+        # AP min state up
         # check admin state of AP
         # Bring down unused band ( if 2g, bring down 5g)
         # show ap dot11 5ghz summary : verify the configuration
         # Siffer capture
-        # 
+        #
         # Client side connections
         # Sniffer verification - 11r configuration (if 11r)
         # check in controller/AP -> client connected -> also check 11r (sh wireless client details)
         # Ping traffic or dup traffie - insure smotth
         # Siffer capture
         # Roam
-        # Siffer verification 
-        # Keep the iteration for above steps from the ping traffice 
-        # Common clean up 
+        # Siffer verification
+        # Keep the iteration for above steps from the ping traffice
+        # Common clean up
         # Table display
         # Isaac : there needs to be a 5g ssid present for 6E to 6E roaming
 
         # Nikita - multi client , pass fail criteria
         # Sythia (Cisco) - 10 20 50 , table per client , number of iterations
         # Nikita - show transitions using bssi , roam time
-        # Sythia would like data per client,  
+        # Sythia would like data per client,
         # pytest / Allure has limitations to show the proper data in Allure
         # Sythia would prefer data as compared to pass / fail
 
         # Nikia - how to push voice traffic when attempting to roam
         # Sythia - VO platinum, VI ,  the clients need to choose traffic (do rdp traffic)
         # ingress / egress configured by wifi controller.
-        # 
+        #
 
 
 
@@ -358,7 +358,7 @@ class create_module_test_object:
         self.cs.line_console_0()
         # summary
         self.cs.show_ap_summary()
-        
+
 
         # set the dual-band slot
         self.cs.ap_dual_band_slot_6g = '2'
@@ -373,7 +373,7 @@ class create_module_test_object:
 
         # ap name APCC9C.3EF4.E0B0 dot11 dual-band slot 2 band 6ghz
         # % Error: AP APCC9C.3EF4.E0B0 Slot 2 - Failed to change band, Radio role selection is not Manual
-        # set the radio role selection 
+        # set the radio role selection
         if self.cs.band == 'dual_band_6g':
             logger.info("ap_dot11_dual_band_6ghz_radio_role_manual_client_serving")
             self.cs.ap_dot11_dual_band_6ghz_radio_role_manual_client_serving()
@@ -477,7 +477,7 @@ class create_module_test_object:
             # enable 24ghz operation status
             self.cs.config_ap_no_dot11_24ghz_shutdown()
             logger.info(pss)
-        
+
 
         if self.cs.band == 'dual_band_6g':
             pss = self.cs.show_ap_dot11_dual_band_6gz_summary()
@@ -512,11 +512,11 @@ class create_module_test_object:
             sleep(5)
             self.cs.ap_name_no_shutdown()
 
-        
+
         # show_wlan_summary
         self.cs.show_wlan_summary()
 
-    
+
     def test_config_tx_power_6g_wpa3(self):
         # TODO : leave for now for reference
         # WLC1#show ap summary
@@ -1229,7 +1229,7 @@ EXAMPLE:
 
 
 COPYWRITE
-    Copyright 2021 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README
