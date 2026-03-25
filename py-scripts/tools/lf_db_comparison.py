@@ -45,7 +45,7 @@ VERIFIED_ON:   17-AUG-2023,
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
+          Copyright (C) 2020-2026 Candela Technologies Inc
 
 INCLUDE_IN_README: False
 """
@@ -905,19 +905,19 @@ EXAMPLE:
         # To compare two different databases:
 
             ./lf_db_comparison.py --mgr localhost --db1 <path of the database-1> --db2 <path of the database-2> --wct --dp --ap_auto
-            
+
             OPTIONS:-
-            
+
             --> To compare two different databases with plotting graphs for each comparision table
-            
+
                 ./lf_db_comparison.py --db1 <path of the database-1> --db2 <path of the database-2> --wct --ap_auto --dp --plot_graphs
-                
+
             --> To compare two different databases with sorting poor comparision results
-            
+
                 ./lf_db_comparison.py --db1 <path of the database-1> --db2 <path of the database-2> --wct --ap_auto --dp --sort_poor_comparison
-                
+
             --> To compare two different databases with plotting graphs and sorting poor comparision results
-            
+
                 ./lf_db_comparison.py --db1 <path of the database-1> --db2 <path of the database-2> --wct --ap_auto --dp --plot_graphs --sort_poor_comparison
 
         # Compare two test runs in a single database using CLI:
@@ -941,7 +941,7 @@ VERIFIED_ON:   17-AUG-2023,
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
+          Copyright (C) 2020-2026 Candela Technologies Inc
 
 INCLUDE_IN_README: False
 
