@@ -15,7 +15,7 @@ VERIFIED_ON:
             GUI version: 5.4.6
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2024 Candela Technologies Inc
+            Copyright (C) 2020-2026 Candela Technologies Inc
 """
 import sys
 import os
@@ -125,7 +125,7 @@ VERIFIED_ON:
             GUI version: 5.4.6
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2024 Candela Technologies Inc
+            Copyright (C) 2020-2026 Candela Technologies Inc
             ''')
 
     required = parser.add_argument_group('required arguments')

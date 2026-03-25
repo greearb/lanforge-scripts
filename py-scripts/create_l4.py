@@ -11,7 +11,7 @@ EXAMPLE:
     ./create_l4.py --mgr <ip-address> --radio wiphy2 --num_stations 4 --upstream_port 1.1.eth1 --ssid <ssid> --passwd <passwd> --security wpa2 --debug
 
 COPYRIGHT:
-    Copyright 2023 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 """
 

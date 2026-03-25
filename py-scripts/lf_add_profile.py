@@ -48,7 +48,7 @@ EXAMPLE:    # Add routed vAP with following configuration:
                 --raw_line          'resource 1.1.0 0'
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2025 Candela Technologies Inc
+            Copyright (C) 2020-2026 Candela Technologies Inc
 """
 
 import argparse
@@ -234,7 +234,7 @@ EXAMPLE:    # Add routed vAP with following configuration:
                 --raw_line          'resource 1.1.0 0'
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2025 Candela Technologies Inc
+            Copyright (C) 2020-2026 Candela Technologies Inc
             ''')
     # http://www.candelatech.com/lfcli_ug.php#add_profile
     parser.add_argument("--host", "--mgr", dest='mgr', help='specify the GUI to connect to')

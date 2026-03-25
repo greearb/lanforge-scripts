@@ -34,7 +34,7 @@ EXAMPLE:
         ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
 
 Use './test_generic.py --help' to see command line usage and options
-Copyright 2021 Candela Technologies Inc
+Copyright (C) 2020-2026 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
 import sys

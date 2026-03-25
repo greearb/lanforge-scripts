@@ -42,7 +42,7 @@ EXAMPLE:    # Bridge with two child bridge ports. No IPv4 configuration specifie
                     --ipv4_gateway  172.16.0.1
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2024 Candela Technologies Inc.
+            Copyright (C) 2020-2026 Candela Technologies Inc.
 """
 import sys
 import os
@@ -248,7 +248,7 @@ EXAMPLE:    # Bridge with two child bridge ports. No IPv4 configuration specifie
                     --ipv4_gateway  172.16.0.1
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2024 Candela Technologies Inc.
+            Copyright (C) 2020-2026 Candela Technologies Inc.
             ''')
 
     parser.add_argument('--bridge_name',

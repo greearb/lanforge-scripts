@@ -8,7 +8,7 @@ Creates a station with specified ssid info (can be real or fake ssid, if fake us
 starts a scan and waits 15 seconds, finally scan results are printed to console
 
 Use './sta_scan_test.py --help' to see command line usage and options
-Copyright 2021 Candela Technologies Inc
+Copyright (C) 2020-2026 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
 

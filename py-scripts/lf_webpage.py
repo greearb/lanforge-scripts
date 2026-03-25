@@ -90,7 +90,7 @@ GUI Version:  5.4.8
 Kernel Version: 6.2.16+
 
 LICENSE :
-Copyright 2023 Candela Technologies Inc
+Copyright (C) 2020-2026 Candela Technologies Inc
 Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README: False
@@ -2374,7 +2374,7 @@ def main():
     Kernel Version: 6.2.16+
 
     LICENSE :
-    Copyright 2023 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
     Free to distribute and modify. LANforge systems must be licensed.
 
     INCLUDE_IN_README: False

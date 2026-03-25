@@ -38,7 +38,7 @@ EXAMPLE (creating a scenario without running it):
 TODO: Create external document
 
 Use './test_fileio.py --help' to see command line usage and options
-Copyright 2021 Candela Technologies Inc
+Copyright (C) 2020-2026 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
 import sys

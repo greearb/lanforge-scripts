@@ -62,7 +62,7 @@ VERIFIED_ON:
             Kernel version: 5.19.17+
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2025 Candela Technologies Inc
+            Copyright (C) 2020-2026 Candela Technologies Inc
 """
 import sys
 import os
@@ -645,7 +645,7 @@ VERIFIED_ON:
             Kernel version: 5.19.17+
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2025 Candela Technologies Inc
+            Copyright (C) 2020-2026 Candela Technologies Inc
             ''')
     # Base options
     parser.add_argument('--mgr',

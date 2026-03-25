@@ -55,7 +55,7 @@ Build version   - 5.4.7
 kernel version  - 6.2.16+
 
 License: Free to distribute and modify. LANforge systems must be licensed.
-Copyright 2023 Candela Technologies Inc.
+Copyright (C) 2020-2026 Candela Technologies Inc.
 
 """
 
@@ -1877,7 +1877,7 @@ This script is a standard library which support different functionality of inter
         kernel version  - 6.2.16+
 
         License: Free to distribute and modify. LANforge systems must be licensed.
-        Copyright 2023 Candela Technologies Inc.
+        Copyright (C) 2020-2026 Candela Technologies Inc.
         """
 
     parser = argparse.ArgumentParser(

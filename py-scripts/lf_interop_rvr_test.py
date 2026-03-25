@@ -7,7 +7,7 @@ PURPOSE: lf_interop_rvr_test.py will measure the performance of stations over a 
 
 python3 -u lf_interop_rvr_test.py --mgr 192.168.244.97 --mgr_port 8080 --upstream eth1 --security wpa2 --ssid "SIDDDD" --password "sdvsdvs" --traffic_type lf_tcp --traffic 10000000 --test_duration 1m --sta_names 1.133.wlan0,1.160.en0 --atten_serno 1008 920 --atten_idx 1,2 all --atten_val "10..10..10"  # noqa: E501
 Use './lf_interop_rvr_test.py --help' to see command line usage and options
-Copyright 2021 Candela Technologies Inc
+Copyright (C) 2020-2026 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
 

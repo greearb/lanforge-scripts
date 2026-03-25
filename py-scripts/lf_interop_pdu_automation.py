@@ -15,7 +15,7 @@ USE './python3 lf_interop_pdu_automation.py --host 192.168.200.50
 
 Note: Please ensure that PDU is powered on and has an ip assigned to it.
 
-Copyright 2021 Candela Technologies Inc
+Copyright (C) 2020-2026 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
 import time

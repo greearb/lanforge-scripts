@@ -17,7 +17,7 @@ EXAMPLE:
         --ssid netgear --passwd admin123 --mode   1 --ap "00:0e:8e:78:e1:76" --test_id --timeout 120 --debug
 
 Use './test_ip_connection.py' --help to see command line usage and options
-Copyright 2021 Candela Technologies Inc
+Copyright (C) 2020-2026 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
 import sys

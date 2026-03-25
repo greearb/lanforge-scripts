@@ -62,7 +62,7 @@ Example : Have script use existing stations from previous run where traffic was 
         --no_stop_traffic
 
 ## COPYRIGHT:
-Copyright 2021 Candela Technologies Inc
+Copyright (C) 2020-2026 Candela Technologies Inc
 
 INCLUDE_IN_README
 """

@@ -96,7 +96,7 @@ VERIFIED_ON:
             Kernel version: 6.2.16+
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2025 Candela Technologies Inc
+            Copyright (C) 2020-2026 Candela Technologies Inc
 """
 
 from lf_base_robo import RobotClass
@@ -3061,7 +3061,7 @@ VERIFIED_ON:
             Kernel version: 6.2.16+
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2025 Candela Technologies Inc
+            Copyright (C) 2020-2026 Candela Technologies Inc
 ''')
 
     required = parser.add_argument_group('Required arguments to run lf_interop_qos.py')

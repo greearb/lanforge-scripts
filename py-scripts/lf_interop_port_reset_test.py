@@ -43,7 +43,7 @@ VERIFIED_ON:   28-OCT-2023,
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
+          Copyright (C) 2020-2026 Candela Technologies Inc
 
 INCLUDE_IN_README: False
 """
@@ -1674,7 +1674,7 @@ VERIFIED_ON:   28-OCT-2023,
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2023 Candela Technologies Inc
+          Copyright (C) 2020-2026 Candela Technologies Inc
 
 INCLUDE_IN_README: False
 ''')

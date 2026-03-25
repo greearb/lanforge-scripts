@@ -135,7 +135,7 @@ SAMPLE TEST CONFIG: --controller_test_1  output from --print_test_config option
 INCLUDE_IN_README
 
 COPYRIGHT:
-    Copyright 2021 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 """

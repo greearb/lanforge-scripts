@@ -42,7 +42,7 @@ EXAMPLE:    # Single QVLAN with QVLAN ID 10 on parent port '1.1.eth3'. No IPv4 c
                     --ipv4_gateway  172.16.0.1
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2024 Candela Technologies Inc.
+            Copyright (C) 2020-2026 Candela Technologies Inc.
 """
 import sys
 import os
@@ -175,7 +175,7 @@ EXAMPLE:    # Single QVLAN with QVLAN ID 10 on parent port '1.1.eth3'. No IPv4 c
                     --ipv4_gateway  172.16.0.1
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2024 Candela Technologies Inc.
+            Copyright (C) 2020-2026 Candela Technologies Inc.
 """)
     # Required arguments
     parser.add_argument('--parent', '--parent_port', '--qvlan_parent',

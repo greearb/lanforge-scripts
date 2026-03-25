@@ -104,7 +104,7 @@ VERIFIED_ON: 15-MAY-2023, Underdevelopment
 
 LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2022 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
 
 INCLUDE_IN_README: False
 """

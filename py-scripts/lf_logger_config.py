@@ -59,7 +59,7 @@ EXAMPLE:
 
 LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2021 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
 
 
 INCLUDE_IN_README

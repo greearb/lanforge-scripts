@@ -9,7 +9,7 @@ NOTES:      Assumes '/home/lanforge/html-reports/' directory present
 EXAMPLE:    See 'lf_report_test.py' for example usage
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2025 Candela Technologies Inc
+            Copyright (C) 2020-2026 Candela Technologies Inc
 
 INCLUDE_IN_README:
             False
@@ -102,7 +102,7 @@ NOTES:      Assumes '/home/lanforge/html-reports/' directory present
 EXAMPLE:    See 'lf_report_test.py' for example usage
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2025 Candela Technologies Inc
+            Copyright (C) 2020-2026 Candela Technologies Inc
 
 INCLUDE_IN_README:
             False

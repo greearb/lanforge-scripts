@@ -46,7 +46,7 @@ NOTES:
 
 
 COPYRIGHT:
-Copyright 2023 Candela Technologies Inc
+Copyright (C) 2020-2026 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 
 """

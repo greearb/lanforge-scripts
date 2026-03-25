@@ -387,7 +387,7 @@ VERIFIED_ON: 05-June-2024,
 
 LICENSE:
           Free to distribute and modify. LANforge systems must be licensed.
-          Copyright 2024 Candela Technologies Inc
+          Copyright (C) 2020-2026 Candela Technologies Inc
 
 INCLUDE_IN_README: False
 

@@ -60,7 +60,7 @@ VERIFIED_ON:
             kernel version: 6.2.16+
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2025 Candela Technologies Inc
+            Copyright (C) 2020-2026 Candela Technologies Inc
 """
 
 from datetime import datetime, timedelta
@@ -1395,7 +1395,7 @@ VERIFIED_ON:
             kernel version: 6.2.16+
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright 2025 Candela Technologies Inc
+            Copyright (C) 2020-2026 Candela Technologies Inc
 ''')
     parser.add_argument('--mode', help='Force specific station mode', default="0")
     parser.add_argument('--traffic_type', help='Type of generated traffic [lf_udp, lf_tcp]', required=False, choices=["lf_udp", "lf_tcp"])

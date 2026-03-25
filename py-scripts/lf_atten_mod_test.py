@@ -14,7 +14,7 @@ EXAMPLE:    Set channel four (zero-indexed) of all attenuators on LANforge syste
 
             Run with '--help' option to see full usage and all options.
 
-Copyright 2021 Candela Technologies Inc
+Copyright (C) 2020-2026 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
 import sys

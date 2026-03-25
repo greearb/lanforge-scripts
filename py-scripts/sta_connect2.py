@@ -23,7 +23,7 @@ EXAMPLE:
         --dut_sw_version 5.4.5 --dut_serial_num 1234
 
 COPYRIGHT:
-    Copyright 2021 Candela Technologies Inc
+    Copyright (C) 2020-2026 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 '''
 

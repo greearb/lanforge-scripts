@@ -86,7 +86,7 @@
     kernel version  - 6.2.16+
 
     License: Free to distribute and modify. LANforge systems must be licensed.
-    Copyright 2023 Candela Technologies Inc.
+    Copyright (C) 2020-2026 Candela Technologies Inc.
 '''
 
 import argparse
@@ -1433,7 +1433,7 @@ connectivity problems.
         kernel version  - 6.2.16+
 
         License: Free to distribute and modify. LANforge systems must be licensed.
-        Copyright 2023 Candela Technologies Inc.
+        Copyright (C) 2020-2026 Candela Technologies Inc.
         '''
     )
     optional = parser.add_argument_group('Optional arguments')
