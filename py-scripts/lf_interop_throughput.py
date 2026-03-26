@@ -422,6 +422,113 @@ class Throughput(Realm):
             self.robot.testname = args.test_name
         iterations_before_test_stopped_by_user = []
         test_stopped_by_user = False
+
+        # if band steering is enabled
+        if self.do_bandsteering:
+            # checking the battery status of robot before moving to a point
+            self.robot.wait_for_battery()
+            self.robot.total_cycles = self.total_cycles
+            self.robot.coordinate_list = self.coordinate_list
+
+            # Fetch coordinates list based on cycles
+            coordinate_list_with_robo = self.robot.get_coordinates_list()
+            if (len(coordinate_list_with_robo) == 0):
+                logger.info("Test aborted")
+                exit(1)
+            self.robot.do_bandsteering = True
+            is_device_configured = True
+            columns = []
+            to_run_cxs, to_run_cxs_len, created_cx_lists_keys, incremental_capacity_list = self.get_incremental_capacity_list()
+            if self.load_type == "wc_intended_load":
+                # Perform intended load for the current iteration
+                self.perform_intended_load(0, incremental_capacity_list)
+
+            for client in clients_to_run:
+                columns.extend([
+                    f'Download{client}', f'Upload{client}',
+                    f'Rx % Drop {client}', f'Tx % Drop{client}',
+                    f'Average RTT {client}', f'RSSI {client}',
+                    f'Tx-Rate {client}', f'Rx-Rate {client}', f'BSSID {client}', f'Channel {client}'
+                ])
+
+            columns.extend([
+                'Overall Download', 'Overall Upload',
+                'Overall Rx % Drop', 'Overall Tx % Drop',
+                'Iteration', 'TIMESTAMP', 'Start_time',
+                'End_time', 'Remaining_Time',
+                'Incremental_list', 'status', 'Robot X', 'Robot Y', 'From Coordinate', 'To Coordinate'
+            ])
+
+            individual_df = pd.DataFrame(columns=columns)
+            device_names = []
+            # start cx
+            for cx in to_run_cxs:
+                self.start_specific(cx)
+                device_names = created_cx_lists_keys[:to_run_cxs_len[-1][-1]]
+            overall_start_time = datetime.now()
+            overall_end_time = overall_start_time + timedelta(seconds=int(args.test_duration) * len(incremental_capacity_list))
+            curr_cycle = 1
+            logger.info("Current Cycle: {}".format(curr_cycle))
+            # Iterate through all the points and monitoring throughput,bandsteering stats and as well as robot position
+            for coord in coordinate_list_with_robo:
+                pause, stopped = self.robot.wait_for_battery(lambda: self.monitor(
+                    0,
+                    individual_df,
+                    device_names,
+                    incremental_capacity_list,
+                    overall_start_time,
+                    overall_end_time,
+                    is_device_configured
+                )
+                )
+                if stopped:
+                    break
+
+                matched, abort, all_dataframes = self.robot.move_to_coordinate(
+                    coord,
+                    monitor_function=lambda: self.monitor(
+                        0,
+                        individual_df,
+                        device_names,
+                        incremental_capacity_list,
+                        overall_start_time,
+                        overall_end_time,
+                        is_device_configured
+                    )
+                )
+                if coord == self.coordinate_list[0]:
+                    curr_cycle += 1
+                    if curr_cycle > int(self.total_cycles):
+                        logger.info("Completed all {} cycles".format(self.total_cycles))
+                    else:
+                        logger.info("current cycle {}".format(curr_cycle))
+
+                if abort:
+                    break
+                if not matched:
+                    continue
+            # To add last entry in the csv
+            all_dataframes = pd.concat(
+                [df for df in all_dataframes if isinstance(df, pd.DataFrame)],
+                ignore_index=True
+            )
+            last_idx = all_dataframes.index[-1]
+
+            all_dataframes.loc[last_idx, "status"] = "Stopped"
+
+            last_row_df = all_dataframes.loc[[last_idx]]
+            if self.dowebgui:
+                last_row_df.to_csv(f"{args.result_dir}/throughput_data.csv", mode="a", header=False, index=False)
+            self.stop()
+            if args.postcleanup:
+                self.cleanup()
+            iterations_before_test_stopped_by_user.append(0)
+            self.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
+            if self.dowebgui:
+                # copying to home directory i.e home/user_name
+                self.copy_reports_to_home_dir()
+            exit(1)
+
         # Loop through the coordinate list when coordinates are specified.
         for coord in self.coordinate_list:
             # checking the battery status of robot before moving to a point
