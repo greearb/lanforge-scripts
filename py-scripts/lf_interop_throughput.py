@@ -269,7 +269,7 @@ class Throughput(Realm):
                  user_list=None, real_client_list=None, real_client_list1=None, hw_list=None, laptop_list=None, android_list=None, mac_list=None, windows_list=None, linux_list=None,
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None,
-                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None):
+                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None, duration_to_skip=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -377,7 +377,9 @@ class Throughput(Realm):
         self.config_dict = {}
         self.configured_devices_check = {}
         self.interopability_config = interopability_config
-
+        self.do_bandsteering = do_bandsteering
+        self.total_cycles = total_cycles
+        self.bssids = bssids if bssids else []
         # Variables related to Robo
         self.robo_ip = robo_ip
         self.angle_list = angle_list if angle_list else [0]
@@ -390,6 +392,9 @@ class Throughput(Realm):
             self.charge_point_name = None
             self.coordinates_completed = []
             self.battery_log = {}
+            self.robot.time_to_reach = int(duration_to_skip) * 60
+            self.robot.coordinate_list = self.coordinate_list
+            self.robot.total_cycles = self.total_cycles
 
     def perform_robo(self, args, clients_to_run):
         """
@@ -432,6 +437,9 @@ class Throughput(Realm):
                 logger.info("Reached the point {}".format(coord))
             if abort:
                 break
+            # To skip a point if there is an obstacle
+            if not matched:
+                continue
             individual_dataframe_column = []
 
             to_run_cxs, to_run_cxs_len, created_cx_lists_keys, incremental_capacity_list = self.get_incremental_capacity_list()
@@ -520,6 +528,7 @@ class Throughput(Realm):
                 navdata['status'] = ''
                 navdata['Canbee_location'] = ''
                 navdata['Canbee_angle'] = ''
+                navdata['Test_status'] = 'Completed'
             with open(nav_data, 'w') as x:
                 json.dump(navdata, x, indent=4)
         self.generate_report_robo(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
@@ -3762,18 +3771,18 @@ class Throughput(Realm):
                 }
 
                 if self.direction == "Bi-direction":
-                    dataframe[" Average Rx Drop B% "] = avg_updrop
-                    dataframe[" Average Rx Drop A% "] = avg_dndrop
+                    dataframe[" Average Rx Drop Upload% "] = avg_updrop
+                    dataframe[" Average Rx Drop Download% "] = avg_dndrop
                 elif self.direction == 'Download':
-                    dataframe[" Average Rx Drop A% "] = avg_dndrop
+                    dataframe[" Average Rx Drop Download% "] = avg_dndrop
                     # adding rx drop while uploading as 0
-                    dataframe[" Average Rx Drop B% "] = [0.0] * len(avg_dndrop)
+                    dataframe[" Average Rx Drop Upload% "] = [0.0] * len(avg_dndrop)
 
                 else:
-                    dataframe[" Average Rx Drop B% "] = avg_updrop
+                    dataframe[" Average Rx Drop Upload% "] = avg_updrop
 
                     # adding rx drop while downloading as 0
-                    dataframe[" Average Rx Drop A% "] = [0.0] * len(avg_updrop)
+                    dataframe[" Average Rx Drop Download% "] = [0.0] * len(avg_updrop)
                 if self.expected_passfail_value or self.device_csv_name:
                     dataframe[" Expected " + self.direction + " rate "] = input_list
                     dataframe[" Status "] = statuslist
@@ -3797,18 +3806,18 @@ class Throughput(Realm):
                     " RTT ": avgrtt
                 }
                 if self.direction == "Bi-direction":
-                    dataframe[" Average Rx Drop B% "] = avg_updrop
-                    dataframe[" Average Rx Drop A% "] = avg_dndrop
+                    dataframe[" Average Rx Drop Upload% "] = avg_updrop
+                    dataframe[" Average Rx Drop Download% "] = avg_dndrop
                 elif self.direction == 'Download':
-                    dataframe[" Average Rx Drop A% "] = avg_dndrop
+                    dataframe[" Average Rx Drop Download% "] = avg_dndrop
                     # adding rx drop while uploading as 0
-                    dataframe[" Average Rx Drop B% "] = [0.0] * len(avg_dndrop)
+                    dataframe[" Average Rx Drop Upload% "] = [0.0] * len(avg_dndrop)
 
                 else:
-                    dataframe[" Average Rx Drop B% "] = avg_updrop
+                    dataframe[" Average Rx Drop Upload% "] = avg_updrop
 
                     # adding rx drop while downloading as 0
-                    dataframe[" Average Rx Drop A% "] = [0.0] * len(avg_updrop)
+                    dataframe[" Average Rx Drop Download% "] = [0.0] * len(avg_updrop)
                 if self.expected_passfail_value or self.device_csv_name:
                     dataframe[" Expected " + self.direction + " rate "] = input_list
                     dataframe[" Status "] = statuslist
@@ -4420,6 +4429,9 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
     optional.add_argument("--interopability_config", action="store_true", help="To do individual configuration for each device in interoperability")
     optional.add_argument("--tput_mbps", action="store_true", help="Interpret rated download and upload values as Mbps instead of bytes")
+    optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
+    optional.add_argument('--total_cycles', help='Enable bandsteering', default="1")
+    optional.add_argument('--duration_to_skip', help='Robot wait duration in seconds at obstacle', default="1")
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
     # IOT ARGS
     parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
@@ -4459,6 +4471,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     optional.add_argument('--robot_ip', help='hostname for where Robot server is running')
     optional.add_argument('--coordinate', help="Points at which the robot pauses")
     optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
+    optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
 
     args = parser.parse_args()
 
@@ -4614,7 +4627,11 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                                 robo_ip=args.robot_ip,
                                 rotation_enabled=True if args.rotation else False,
                                 coordinate_list=args.coordinate.split(",") if args.coordinate else [],
-                                angle_list=args.rotation.split(",") if args.rotation else []
+                                angle_list=args.rotation.split(",") if args.rotation else [],
+                                do_bandsteering=args.do_bandsteering,
+                                total_cycles=args.total_cycles,
+                                bssids=args.bssids.split(",") if args.bssids else [],
+                                duration_to_skip=args.duration_to_skip
                                 )
 
         if gave_incremental:
