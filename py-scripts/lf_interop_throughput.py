@@ -178,6 +178,7 @@ import re
 import threading
 from collections import OrderedDict
 from lf_base_robo import RobotClass
+from collections import Counter
 logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
@@ -193,7 +194,7 @@ from LANforge import LFUtils  # noqa: F401 E402
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 from lf_report import lf_report  # noqa: E402
-from lf_graph import lf_bar_graph_horizontal  # noqa: E402
+from lf_graph import lf_bar_graph_horizontal, lf_bar_graph  # noqa: E402
 # from lf_graph import lf_line_graph  # noqa: E402
 
 from datetime import datetime, timedelta  # noqa: E402
@@ -2323,6 +2324,153 @@ class Throughput(Realm):
             "Configuration Status": ["Pass" if status else "Fail" for status in configured_devices_check.values()]
         }
 
+    def get_bandsteering_stats(self, report=None, df=None, data1=None):
+        """
+        Retrieves and adds bandsteering statistics to the report.
+
+        This function processes the given dataframe to detect BSSID changes
+        (transitions) per device, maps them with corresponding channels,
+        and correlates them with robot movement (coordinates and timestamps).
+        It generates bar graphs for BSSID change counts and tabular reports
+        for band steering events.
+
+        Args:
+            report: Report object used to build graphs and tables.
+            df (pd.DataFrame): Input dataframe containing timestamp, BSSID,
+                            channel, and coordinate data.
+
+        Returns:
+            None
+        """
+
+        # df = pd.DataFrame({
+        #     'TIMESTAMP': [
+        #         '27/01 11:26:39 PM',
+        #         '27/01 11:26:45 PM',
+        #         '27/01 11:26:51 PM',
+        #         '27/01 11:26:57 PM',
+        #         '27/01 11:27:02 PM',
+        #         '27/01 11:27:14 PM',
+        #         '27/01 11:27:20 PM',
+        #         '27/01 11:27:26 PM',
+        #     ],
+
+        #     'BSSID 1.15 Lin ubuntu24': [
+        #         '94:A6:7E:74:26:22',
+        #         '94:A6:7E:74:26:22',
+        #         'AA:BB:CC:DD:EE:FF',
+        #         'AA:BB:CC:DD:EE:FF',
+        #         '94:A6:7E:74:26:22',
+        #         '94:A6:7E:74:26:22',
+        #         '11:22:33:44:55:66',
+        #         '11:22:33:44:55:66',
+        #     ],
+
+        #     'BSSID 1.16 Lin lin34': [
+        #         '94:A6:7E:74:26:22',
+        #         '94:A6:7E:74:26:22',
+        #         '94:A6:7E:74:26:22',
+        #         '94:A6:7E:74:26:22',
+        #         '94:A6:7E:74:26:22',
+        #         '94:A6:7E:74:26:22',
+        #         '11:22:33:44:55:66',
+        #         '11:22:33:44:55:66',
+        #     ],
+
+        #     'Channel 1.15 Lin ubuntu24': [1, 1, 6, 6, 1, 1, 11, 11],
+        #     'Channel1.16 Lin lin34': [36, 36, 36, 36, 36, 36, 44, 44],
+
+        #     'From Coordinate': ['A'] * 8,
+        #     'To Coordinate': ['B'] * 8
+        # })
+
+        bssid_cols = [c for c in df.columns if c.startswith("BSSID")]
+        channel_cols = [c for c in df.columns if c.startswith("Channel")]
+
+        bssid_to_channel = {
+            bssid_col: next(
+                ch for ch in channel_cols
+                if ch.replace("Channel", "").strip() ==
+                bssid_col.replace("BSSID", "").strip()
+            )
+            for bssid_col in bssid_cols
+        }
+
+        for col in bssid_cols:
+
+            channel_col = bssid_to_channel[col]
+
+            # Detect BSSID changes
+            mask = df[col] != df[col].shift()
+            filtered_df = df.loc[mask]
+            if self.bssids:
+                filtered_df = df.loc[mask & df[col].isin(self.bssids)]
+
+            bssid_list = filtered_df[col].tolist()
+            channel_list = filtered_df[channel_col].tolist()
+            timestamp_list = filtered_df['TIMESTAMP'].tolist()
+            from_coordinate_list = filtered_df['From Coordinate'].tolist()
+            to_coordinate_list = filtered_df['To Coordinate'].tolist()
+            bssid_counts = Counter(bssid_list)
+
+            x_axis = list(bssid_counts.keys())      # BSSID values
+            y_axis = [[float(i)] for i in list(bssid_counts.values())]
+            if len(self.bssids) > 0:
+                x_axis = self.bssids
+                y_axis = [[float(bssid_counts.get(bssid, 0))] for bssid in self.bssids]
+            device_name = col.replace('BSSID ', '')
+            device_name = col.split()[-1]
+            report.set_obj_html(
+                _obj_title=f"BSSID change count of the {device_name}",
+                _obj=" ")
+            report.build_objective()
+            graph = lf_bar_graph(_data_set=y_axis,
+                                 _xaxis_name="BSSID",
+                                 _yaxis_name="Number of Changes",
+                                 # _xaxis_categories = [", ".join(x_axis)],
+                                 _xaxis_categories=[""],
+                                 _xaxis_label=x_axis,
+                                 _graph_image_name=f"bssid_change_count_{device_name}",
+                                 _label=x_axis,
+                                 _xaxis_step=1,
+                                 _graph_title=f"BSSID change count – {device_name}",
+                                 _title_size=16,
+                                 _color_edge='black',
+                                 _bar_width=0.15,
+                                 _figsize=(18, 6),
+                                 _legend_loc="best",
+                                 _legend_box=(1.0, 1.0),
+                                 _dpi=96,
+                                 _show_bar_value=True,
+                                 _enable_csv=True,
+                                 _color=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
+                                 _color_name=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
+
+                                 )
+
+            graph_png = graph.build_bar_graph()
+            report.set_graph_image(graph_png)
+            # need to move the graph image to the results directory
+            report.move_graph_image()
+            report.set_csv_filename(graph_png)
+            report.move_csv_file()
+            report.build_graph()
+
+            report.set_obj_html(
+                _obj_title=f"Band Steering Results for {device_name}",
+                _obj=" ")
+            report.build_objective()
+            table_df = {
+                "Timestamp": timestamp_list,
+                "BSSID": bssid_list,
+                "Channel": channel_list,
+                "From Coordinate": from_coordinate_list,
+                "To Coordinate": to_coordinate_list
+            }
+            table_df = pd.DataFrame(table_df)
+            report.set_table_dataframe(table_df)
+            report.build_table()
+
     def generate_report(self, iterations_before_test_stopped_by_user, incremental_capacity_list, data=None, data1=None, report_path='', result_dir_name='Throughput_Test_report',
                         selected_real_clients_names=None, iot_summary=None):
 
@@ -2345,6 +2493,8 @@ class Throughput(Realm):
             # For groups and profiles configuration through webgui
             if self.dowebgui is True and self.group_name:
                 shutil.move('overall_throughput.csv', report_path_date_time)
+            elif self.do_bandsteering:
+                pass
             else:
                 shutil.move('throughput_data.csv', report_path_date_time)
             logger.info("path: {}".format(report_path))
@@ -2477,6 +2627,12 @@ class Throughput(Realm):
                     "Load Type": load_type_name,
                     "Packet Size": packet_size_text
                 }
+            # Add bandsteering related info
+            if self.do_bandsteering:
+                del test_setup_info["Traffic Duration in minutes"]
+                test_setup_info["Coordinates"] = self.coordinate_list
+                test_setup_info["Total Cycles"] = self.total_cycles
+
             if iot_summary:
                 test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
             report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
@@ -2745,6 +2901,10 @@ class Throughput(Realm):
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
                 report.build_graph()
+                # If band steering is enabled, collect and add band steering details to the report
+                if self.do_bandsteering:
+                    self.get_bandsteering_stats(report, data, devices_on_running_trimmed)
+
                 if self.dowebgui and self.get_live_view:
                     # To add live view images coming from the Web-GUI in report
                     self.add_live_view_images_to_report(report)
