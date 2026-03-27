@@ -279,6 +279,8 @@ class FtpTest(LFCliBase):
         self.cx_list = []
         self.rssi_list = []
         self.tx_rate = []
+        self.individual_device_data = {}
+        self.bssid_list = []
         self.port_rx_rate = []
         self.individual_device_csv_names = []
         self.eap_method = eap_method
@@ -1048,12 +1050,11 @@ class FtpTest(LFCliBase):
         self.data["url_data"] = []
         max_bytes_rd = []
         rx_rate_val = []
-        individual_device_data = {}
         client_id_list = []
         test_stopped_by_user = False
         for port in self.input_devices_list:
             columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI']
-            individual_device_data[port] = pd.DataFrame(columns=columns)
+            self.individual_device_data[port] = pd.DataFrame(columns=columns)
             r_id = port.split('.')
             client_id_list.append('.'.join(r_id[:2]))
         monitor_charge_time = current_time
@@ -1117,7 +1118,7 @@ class FtpTest(LFCliBase):
             for i, port in enumerate(self.input_devices_list):
                 try:
                     row_data = [current_time, self.bytes_rd[i], self.url_data[i], self.rx_rate[i], self.port_rx_rate[i], self.tx_rate[i], self.rssi_list[i]]
-                    individual_device_data[port].loc[len(individual_device_data[port])] = row_data
+                    self.individual_device_data[port].loc[len(self.individual_device_data[port])] = row_data
                 except Exception:
                     # Fail-safe: if any list index/key mismatch occurs while adding row_data,
                     # stop execution to avoid inconsistent results.
@@ -1212,7 +1213,7 @@ class FtpTest(LFCliBase):
 
             current_time = datetime.now()
         individual_device_csv_names = []
-        for port, df in individual_device_data.items():
+        for port, df in self.individual_device_data.items():
             df.to_csv(f"{endtime}-ftp-{port}.csv", index=False)
             individual_device_csv_names.append(f'{endtime}-ftp-{port}')
         self.individual_device_csv_names = individual_device_csv_names
@@ -1282,7 +1283,7 @@ class FtpTest(LFCliBase):
 
     def get_device_details(self):
         dataset = []
-        self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd, self.rx_rate = [], [], [], [], [], [], [], [], []
+        self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd, self.rx_rate, self.bssid_list = [], [], [], [], [], [], [], [], [], []
         self.total_err = []
         if self.clients_type == "Real":
             self.get_port_data()
@@ -1351,6 +1352,11 @@ class FtpTest(LFCliBase):
                 self.ssid_list.append(interfaces_dict[sta]['ssid'])
             else:
                 self.ssid_list.append('-')
+        for sta in station_names:
+            if sta in interfaces_dict:
+                self.bssid_list.append(interfaces_dict[sta]['ap'])
+            else:
+                self.bssid_list.append('-')
 
     # Updates the status in the running.json file while running a test from the Web UI
     def updating_webui_runningjson(self, obj):
@@ -1927,7 +1933,7 @@ class FtpTest(LFCliBase):
             if os.path.exists(ftp_img_path):
                 self.report.set_custom_html('<div style="page-break-before: always;"></div>')
                 self.report.build_custom()
-                self.report.set_custom_html(f'<img src="file://{ftp_img_path}"></img>')
+                self.report.set_custom_html(f'<img style="width:1200px" src="file://{ftp_img_path}"></img>')
                 self.report.build_custom()
 
     def build_single_graph(self, client_list, data, graph_name, title, x_label, color, direction):
