@@ -327,7 +327,7 @@ class ADB_DEVICES(Realm):
 
             name = interop_tab_data['name']
 
-            if (interop_tab_data['phantom']):
+            if (str(interop_tab_data['phantom']) == "true" or str(interop_tab_data['phantom']) == "True"):
                 logger.warning(
                     '{} is in phantom state. Please make sure debugging is enabled in developer settings.'.format(name))
 
@@ -354,7 +354,7 @@ class ADB_DEVICES(Realm):
             for device_data in interop_tab_data:
                 device = {}
                 for name, data in device_data.items():
-                    if (data['phantom']):
+                    if (str(data['phantom']) == "true" or str(data['phantom']) == "True"):
                         logger.warning(
                             '{} is in phantom state. Please make sure debugging is enabled in developer settings.'.format(
                                 name))
