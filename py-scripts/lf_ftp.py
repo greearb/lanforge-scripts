@@ -323,7 +323,8 @@ class FtpTest(LFCliBase):
         self.current_angle = ""
         self.robot_data = {}
         self.robot_obj = {}
-
+        self.rx_rate_val = []
+        self.max_bytes_rd = []
         logger.info("Test is Initialized")
 
     def query_realclients(self):
@@ -1035,6 +1036,41 @@ class FtpTest(LFCliBase):
 
         return result
 
+    def aggregate_rx_bytes(self):
+        """
+        Compute average RX rate and update max bytes read.
+
+        - Calculate device-wise average RX rate considering the values from start of test (ignore zero values)
+        - Store averaged RX rates in self.rx_rate (rounded to 4 decimals)
+        - Convert RX rate from bps to Mbps
+        - Update self.bytes_rd with maximum values observed so far
+
+        Args:
+            rx_rate_val (list of list): RX rate values per device over time
+            max_bytes_rd (list): Previously recorded max bytes read
+
+        Returns:
+                - dataset (list): Current average RX rates converted to Mbps
+        """
+
+        for j in range(len(self.rx_rate_val[0])):
+            rx_rate_sum = 0
+            non_zero = 0
+            for i in range(len(self.rx_rate_val)):
+                if self.rx_rate_val[i][j] != 0:
+                    rx_rate_sum += self.rx_rate_val[i][j]
+                    non_zero += 1
+            rx_rate_average = rx_rate_sum / non_zero if non_zero > 0 else 0
+            self.rx_rate[j] = round(rx_rate_average, 4)
+        dataset = self.rx_rate
+        dataset = [round(x / 1000000, 4) for x in dataset]  # converting bps to mbps
+        # calculating max in bytes rd
+        if len(self.max_bytes_rd) == 0:
+            self.max_bytes_rd = list(self.bytes_rd)
+        for i in range(len(self.max_bytes_rd)):
+            self.bytes_rd[i] = max(self.max_bytes_rd[i], self.bytes_rd[i])
+        return list(dataset)
+
     # FOR WEB-UI // function usd to fetch runtime values and fill the csv.
 
     def monitor_for_runtime_csv(self):
@@ -1048,8 +1084,6 @@ class FtpTest(LFCliBase):
         current_time = datetime.now()
         self.data = {}
         self.data["url_data"] = []
-        max_bytes_rd = []
-        rx_rate_val = []
         client_id_list = []
         test_stopped_by_user = False
         for port in self.input_devices_list:
@@ -1114,7 +1148,6 @@ class FtpTest(LFCliBase):
             self.data['client_id'] = client_id_list
             self.data['total_err'] = self.total_err
 
-            rx_rate_val.append(list(self.rx_rate))
             for i, port in enumerate(self.input_devices_list):
                 try:
                     row_data = [current_time, self.bytes_rd[i], self.url_data[i], self.rx_rate[i], self.port_rx_rate[i], self.tx_rate[i], self.rssi_list[i]]
@@ -1126,25 +1159,10 @@ class FtpTest(LFCliBase):
                     logger.error("An exception occurred:\n%s", tb_str)
                     exit(1)
             # calculating average for rx_rate
-            for j in range(len(rx_rate_val[0])):
-                rx_rate_sum = 0
-                non_zero = 0
-                for i in range(len(rx_rate_val)):
-                    if rx_rate_val[i][j] != 0:
-                        rx_rate_sum += rx_rate_val[i][j]
-                        non_zero += 1
-                rx_rate_average = rx_rate_sum / non_zero if non_zero > 0 else 0
-                self.rx_rate[j] = round(rx_rate_average, 4)
-            dataset = self.rx_rate
-            dataset = [round(x / 1000000, 4) for x in dataset]  # converting bps to mbps
-            self.rx_rate = dataset
+            self.rx_rate_val.append(list(self.rx_rate))
+            dataset = self.aggregate_rx_bytes()
             self.data['Rx Rate(1m)'] = self.rx_rate
-            # calculating max in bytes rd
-            if len(max_bytes_rd) == 0:
-                max_bytes_rd = list(self.bytes_rd)
-            for i in range(len(max_bytes_rd)):
-                self.bytes_rd[i] = max(max_bytes_rd[i], self.bytes_rd[i])
-            max_bytes_rd = list(self.bytes_rd)
+            self.rx_rate = dataset
 
             self.data['Bytes RD'] = self.bytes_rd
 
