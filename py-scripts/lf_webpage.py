@@ -245,6 +245,8 @@ class HttpDownload(Realm):
         self.robot_data = {}
         self.robot_obj = {}
         self.individual_device_data = {}
+        self.rx_rate_val = []
+        self.max_bytes_rd = []
 
 # The 'phantom_check' will be handled within the 'get_real_client_list' function
     def get_real_client_list(self):
@@ -754,6 +756,41 @@ class HttpDownload(Realm):
 
         return l4_dict
 
+    def aggregate_rx_bytes(self, rx_rate, bytes_rd):
+        """
+        Compute average RX rate and update max bytes read.
+
+        - Calculate device-wise average RX rate considering the values from start of test (ignore zero values)
+        - Store averaged RX rates in self.rx_rate (rounded to 4 decimals)
+        - Convert RX rate from bps to Mbps
+        - Update self.bytes_rd with maximum values observed so far
+
+        Args:
+            rx_rate_val (list of list): RX rate values per device over time
+            max_bytes_rd (list): Previously recorded max bytes read
+
+        Returns:
+            rx_rate (list): Current averaged RX rates in Mbps
+            bytes_rd (list): Current updated max bytes read
+        """
+        if len(self.max_bytes_rd) == 0:
+            self.max_bytes_rd = list(bytes_rd)
+        for i in range(len(self.max_bytes_rd)):
+            bytes_rd[i] = max(self.max_bytes_rd[i], bytes_rd[i])
+        self.max_bytes_rd = list(bytes_rd)
+        self.rx_rate_val.append(list(rx_rate))
+        # taking average of rx-rate from the previous and current in the first row
+        for j in range(len(self.rx_rate_val[0])):
+            rx_rate_sum = 0
+            non_zero = 0
+            for i in range(len(self.rx_rate_val)):
+                if self.rx_rate_val[i][j] != 0:
+                    rx_rate_sum += self.rx_rate_val[i][j]
+                    non_zero += 1
+            rx_rate_avg = rx_rate_sum / non_zero if non_zero > 0 else 0  # updating each device's rx rate average in 1st row
+            rx_rate[j] = round(rx_rate_avg, 4)
+        return list(rx_rate), list(bytes_rd)
+
     def monitor_for_runtime_csv(self, duration):
 
         time_now = datetime.now()
@@ -769,8 +806,6 @@ class HttpDownload(Realm):
         self.data_for_webui = {}
         self.data_for_webui["client"] = self.devices_list
         self.get_device_port_details()
-        max_bytes_rd = []
-        rx_rate_val = []
         # Creating individual Dataframe for each device
         for port in self.port_list:
             columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI']
@@ -853,23 +888,7 @@ class HttpDownload(Realm):
                     tb_str = traceback.format_exc()  # capture traceback as string
                     logger.error("An exception occurred:\n%s", tb_str)
                     exit(1)
-            if len(max_bytes_rd) == 0:
-                max_bytes_rd = list(bytes_rd)
-            for i in range(len(max_bytes_rd)):
-                bytes_rd[i] = max(max_bytes_rd[i], bytes_rd[i])
-            max_bytes_rd = list(bytes_rd)
-            # bytes_rd = [round(x / 1000000,4) for x in bytes_rd]
-            rx_rate_val.append(list(rx_rate))
-            # taking average of rx-rate from the previous and current in the first row
-            for j in range(len(rx_rate_val[0])):
-                rx_rate_sum = 0
-                non_zero = 0
-                for i in range(len(rx_rate_val)):
-                    if rx_rate_val[i][j] != 0:
-                        rx_rate_sum += rx_rate_val[i][j]
-                        non_zero += 1
-                rx_rate_avg = rx_rate_sum / non_zero if non_zero > 0 else 0  # updating each device's rx rate average in 1st row
-                rx_rate[j] = round(rx_rate_avg, 4)
+            rx_rate, bytes_rd = self.aggregate_rx_bytes(rx_rate, bytes_rd)
             # dataset = [round(x / 1000000,4) for x in dataset] #converting bps to mbps
 
             if len(url_times) == len(self.devices_list):
