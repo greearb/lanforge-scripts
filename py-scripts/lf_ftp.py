@@ -94,6 +94,12 @@ Command Line Interface to run download scenario for Real clients with coordinate
 python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.207.78 --traffic_duration 1m
 --security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 5G --upstream_port eth1 --robot_test --robot_ip 192.168.204.101 --coordinate 3,4 --rotation 30,45
 
+EXAMPLE-18:
+Command Line Interface to run bandsteering using robo with coordinates and cycles download scenario for Real clients
+python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mgr 192.168.207.78 --traffic_duration 1m
+--security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 5G --upstream_port eth1 --robot_test --robot_ip 192.168.204.101
+--coordinate 3,4 --do_bandsteering --cycles 1 --bssids 04:f0:21:94:dc:46
+
 SCRIPT_CLASSIFICATION : Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
@@ -133,13 +139,13 @@ import matplotlib.patches as mpatches
 import pandas as pd
 import logging
 import shutil
-from lf_graph import lf_bar_graph_horizontal
+from lf_graph import lf_bar_graph_horizontal, lf_bar_graph
 from typing import List, Optional
 import asyncio
 import csv
 import traceback
 import threading
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 from lf_base_robo import RobotClass
 
 if sys.version_info[0] != 3:
@@ -203,6 +209,10 @@ class FtpTest(LFCliBase):
                  robot_ip=None,
                  coordinate=None,
                  rotation=None,
+                 do_bandsteering=False,
+                 cycles=None,
+                 bssids=None,
+                 duration_to_skip=None
                  ):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
 
@@ -325,6 +335,10 @@ class FtpTest(LFCliBase):
         self.robot_obj = {}
         self.rx_rate_val = []
         self.max_bytes_rd = []
+        self.bssids = bssids.split(",") if bssids else []
+        self.duration_to_skip = duration_to_skip
+        self.do_bandsteering = do_bandsteering
+        self.cycles = cycles
         logger.info("Test is Initialized")
 
     def query_realclients(self):
@@ -1087,8 +1101,17 @@ class FtpTest(LFCliBase):
         client_id_list = []
         test_stopped_by_user = False
         for port in self.input_devices_list:
-            columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI']
-            self.individual_device_data[port] = pd.DataFrame(columns=columns)
+            # Added this check to handle multiple external monitor calls for band steering.
+            # This is common to both cases and does not affect the current execution.
+            # It simply ensures safe handling when the monitor is invoked from lf_base_robo.
+            if port not in self.individual_device_data:
+                columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI', 'BSSID', 'Channel']
+                if self.do_bandsteering:
+                    columns.append('From Coordinate')
+                    columns.append('To Coordinate')
+                    columns.append('Robot X')
+                    columns.append('Robot Y')
+                self.individual_device_data[port] = pd.DataFrame(columns=columns)
             r_id = port.split('.')
             client_id_list.append('.'.join(r_id[:2]))
         monitor_charge_time = current_time
@@ -1150,7 +1173,10 @@ class FtpTest(LFCliBase):
 
             for i, port in enumerate(self.input_devices_list):
                 try:
-                    row_data = [current_time, self.bytes_rd[i], self.url_data[i], self.rx_rate[i], self.port_rx_rate[i], self.tx_rate[i], self.rssi_list[i]]
+                    row_data = [current_time, self.bytes_rd[i], self.url_data[i], self.rx_rate[i], self.port_rx_rate[i], self.tx_rate[i], self.rssi_list[i], self.bssid_list[i], self.channel_list[i]]
+                    if self.do_bandsteering:
+                        robo_x, robo_y, from_coord, to_coord = self.robot_obj.get_robot_pose()
+                        row_data.extend([from_coord, to_coord, robo_x, robo_y])
                     self.individual_device_data[port].loc[len(self.individual_device_data[port])] = row_data
                 except Exception:
                     # Fail-safe: if any list index/key mismatch occurs while adding row_data,
@@ -1189,7 +1215,7 @@ class FtpTest(LFCliBase):
             total_hours = time_difference.total_seconds() / 3600
             remaining_minutes = (total_hours % 1) * 60
             self.data["start_time"] = [start_time] * len(self.cx_list)
-            if self.robot_test:
+            if not self.do_bandsteering and self.robot_test:
                 # To update end time at each interval
                 end_time = endtime
             self.data["end_time"] = [end_time.strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
@@ -1209,14 +1235,17 @@ class FtpTest(LFCliBase):
                 exit(1)
             if self.dowebgui:
                 df1.to_csv('{}/ftp_datavalues.csv'.format(self.result_dir), index=False)
-                if self.robot_test:
+                if not self.do_bandsteering and self.robot_test:
                     # Save FTP data values for the current coordinate when in robot test
                     df1.to_csv(f"{self.result_dir}/{self.current_coordinate}_ftp_datavalues.csv", index=False)
             if self.clients_type == 'Real':
                 df1.to_csv("ftp_datavalues.csv", index=False)
-                if self.robot_test:
+                if not self.do_bandsteering and self.robot_test:
                     df1.to_csv(f"{self.current_coordinate}_ftp_datavalues.csv", index=False)
-            time.sleep(5)
+            # No sleep is added here for band steering, as we need to capture data every second.
+            # The per-second sleep interval is already handled in lf_base_robo.
+            if not self.do_bandsteering:
+                time.sleep(5)
             if self.dowebgui == "True":
                 with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
                                                                                                  self.test_name),
@@ -1228,7 +1257,10 @@ class FtpTest(LFCliBase):
                         logging.info('Test is stopped by the user')
                         self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
                         break
-
+            # Reusing monitor logic for band steering, but only need one record per call,
+            # so break after first iteration instead of running for full duration.
+            if self.do_bandsteering:
+                break
             current_time = datetime.now()
         individual_device_csv_names = []
         for port, df in self.individual_device_data.items():
@@ -2108,6 +2140,149 @@ class FtpTest(LFCliBase):
         self.report.set_table_dataframe(dataframe1)
         self.report.build_table()
 
+    def get_bandsteering_stats(self):
+        """
+        Generate Band Steering statistics and report for each device.
+
+        This function processes per-device connection data to:
+        - Detect BSSID transitions (band steering events)
+        - Count occurrences of each configured BSSID
+        - Generate a bar graph showing BSSID change counts
+        - Create a detailed table of band steering events (if any)
+
+        Data Source:
+            self.individual_device_data → {
+                dev_name: pandas.DataFrame,
+                ...
+            }
+
+        Expected DataFrame Columns:
+            - timestamp
+            - BSSID
+            - Channel
+            - from_coordinate (optional)
+            - to_coordinate (optional)
+
+        Behavior:
+            - Only considers BSSID changes within the configured BSSID list (self.bssids)
+            - Ignores consecutive duplicate BSSID entries
+            - Skips table generation if no valid band steering events are found
+            - Always generates a graph (even if counts are zero)
+
+        Output:
+            Adds bandstreering statistics to the report for each device, including:
+            - Bar graph of BSSID change counts per device
+            - Table of band steering transitions (if available)
+        """
+
+        data = self.individual_device_data
+        for dev_name, df in data.items():
+
+            if df.empty:
+                continue
+
+            rename_map = {
+                "timestamp": "TIMESTAMP",
+                "from_coordinate": "From Coordinate",
+                "to_coordinate": "To Coordinate",
+            }
+            df = df.rename(columns=rename_map)
+
+            allowed_bssids = set(self.bssids)
+            # Create a mask to detect valid BSSID transitions:
+            # - BSSID changes compared to previous row
+            # - BSSID belongs to configured list
+            mask = (
+                (df["BSSID"] != df["BSSID"].shift()) &
+                (df["BSSID"].isin(allowed_bssids))
+            )
+
+            skip_table = not mask.any()
+
+            if skip_table:
+                # Initialize all BSSID counts to zero if no events found
+                bssid_counts = {bssid: 0 for bssid in self.bssids}
+            else:
+                # Extract filtered data where BSSID transitions occurred
+                bssid_list = df.loc[mask, "BSSID"].tolist()
+                channel_list = df.loc[mask, "Channel"].tolist()
+                timestamp_list = df.loc[mask, "TIMESTAMP"].tolist()
+
+                bssid_counts = Counter(bssid_list)
+
+            from_coordinate_list = (
+                df.loc[mask, "From Coordinate"].tolist()
+                if "From Coordinate" in df.columns and not skip_table else []
+            )
+            to_coordinate_list = (
+                df.loc[mask, "To Coordinate"].tolist()
+                if "To Coordinate" in df.columns and not skip_table else []
+            )
+            # Ensure all configured BSSIDs are present in final count (default = 0)
+            final_bssid_counts = {
+                bssid: bssid_counts.get(bssid, 0)
+                for bssid in self.bssids
+            }
+
+            x_axis = list(final_bssid_counts.keys())
+            y_axis = [[float(v)] for v in final_bssid_counts.values()]
+            self.report.set_obj_html(
+                _obj_title=f"BSSID Change Count Of The Client {dev_name}",
+                _obj=" "
+            )
+            self.report.build_objective()
+
+            graph = lf_bar_graph(
+                _data_set=y_axis,
+                _xaxis_name="BSSID",
+                _yaxis_name="Number of Changes",
+                _xaxis_categories=[""],
+                _xaxis_label=x_axis,
+                _graph_image_name=f"bssid_change_count_{dev_name}",
+                _label=x_axis,
+                _xaxis_step=1,
+                _graph_title=f"BSSID change count for device : {dev_name}",
+                _title_size=16,
+                _bar_width=0.15,
+                _figsize=(18, 6),
+                _dpi=96,
+                _show_bar_value=True,
+                _enable_csv=True,
+            )
+
+            graph_png = graph.build_bar_graph()
+            self.report.set_graph_image(graph_png)
+            self.report.move_graph_image()
+            self.report.set_csv_filename(graph_png)
+            self.report.move_csv_file()
+            self.report.build_graph()
+
+            # If no band steering events, show informational message
+            if skip_table:
+                self.report.set_obj_html(
+                    _obj_title=f"Band Steering Results for {dev_name}",
+                    _obj="No band steering events observed for the configured BSSID list."
+                )
+                self.report.build_objective()
+                continue
+
+            self.report.set_obj_html(
+                _obj_title=f"Band Steering Results for {dev_name}",
+                _obj=" "
+            )
+            self.report.build_objective()
+
+            table_df = pd.DataFrame({
+                "Timestamp": timestamp_list,
+                "BSSID": bssid_list,
+                "Channel": channel_list,
+                "From Coordinate": from_coordinate_list,
+                "To Coordinate": to_coordinate_list
+            })
+
+            self.report.set_table_dataframe(table_df)
+            self.report.build_table()
+
     def generate_report(self, ftp_data, date, input_setup_info, test_rig, test_tag, dut_hw_version,
                         dut_sw_version, dut_model_num, dut_serial_num, test_id, bands,
                         csv_outfile, local_lf_report_dir, _results_dir_name='ftp_test', report_path='', config_devices="", iot_summary=None):
@@ -2236,8 +2411,12 @@ class FtpTest(LFCliBase):
             # Added Robot details in Test setup information table
             test_setup_info["Robot IP"] = self.robot_ip
             test_setup_info["Coordinates"] = self.coordinate
-            if self.rotation_enabled:
-                test_setup_info["Rotations"] = self.rotation
+            if not self.do_bandsteering:
+                if self.rotation_enabled:
+                    test_setup_info["Rotations"] = self.rotation
+            else:
+                del test_setup_info["Traffic Duration "]
+                test_setup_info["Total Cycles"] = self.cycles
 
         if iot_summary:
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
@@ -2262,7 +2441,7 @@ class FtpTest(LFCliBase):
             )
         self.report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
         self.report.build_objective()
-        if self.robot_test:
+        if not self.do_bandsteering and self.robot_test:
             if self.dowebgui:
                 # To store heatmap images in report
                 self.add_live_view_images_to_report()
@@ -2294,6 +2473,8 @@ class FtpTest(LFCliBase):
         # self.report.set_table_dataframe(dataframe2)
         # self.report.build_table()
         # self.generate_graph(ftp_data)
+        if self.do_bandsteering:
+            self.get_bandsteering_stats()
         self.report.set_obj_html(
             _obj_title=f"No of times file {self.direction}",
             _obj=f"The below graph represents number of times a file {self.direction} for each client"
@@ -2431,6 +2612,26 @@ class FtpTest(LFCliBase):
             dataframe1 = pd.DataFrame(dataframe)
             self.report.set_table_dataframe(dataframe1)
             self.report.build_table()
+        # To add charging timestamps of robot in report when bandsteering is enabled
+        if self.do_bandsteering:
+            if len(self.robot_obj.charging_timestamps) != 0:
+                self.report.set_obj_html(_obj_title="Charging Timestamps",
+                                         _obj="")
+                self.report.build_objective()
+                df = pd.DataFrame(
+                    self.robot_obj.charging_timestamps,
+                    columns=[
+                        "charge_dock_arrival_timestamp",
+                        "charging_completion_timestamp"
+                    ]
+                )
+                df.insert(0, "S.No", range(1, len(df) + 1))
+                self.report.set_table_dataframe(df)
+                self.report.build_table()
+            else:
+                self.report.set_obj_html(_obj_title="Charging Timestamps",
+                                         _obj="Robot did not went to charge during this test")
+                self.report.build_objective()
         if iot_summary:
             self.build_iot_report_section(self.report, iot_summary)
         self.report.build_footer()
@@ -2973,6 +3174,34 @@ class FtpTest(LFCliBase):
         self.robot_obj.ip = self.host
         self.robot_obj.testname = self.test_name
         self.robot_obj.runtime_dir = self.result_dir
+        self.robot_obj.time_to_reach = self.duration_to_skip
+        self.robot_obj.total_cycles = self.cycles
+        self.robot_obj.coordinate_list = self.coordinate_list
+        if self.do_bandsteering:
+            cycle_coords = self.robot_obj.get_coordinates_list()
+            if (len(cycle_coords) == 0):
+                logger.info("Test aborted")
+                return
+            self.robot_obj.do_bandsteering = True
+            self.start(False, False)
+            for coordinate in cycle_coords:
+                if test_stopped_by_user:
+                    break
+                # Check for battery status before moving to next coordinate
+                if_paused, test_stopped_by_user, test_status = self.robot_obj.wait_for_battery(monitor_function=lambda: self.monitor_for_runtime_csv())
+                # If test is stopped by user during battery wait
+                if test_stopped_by_user:
+                    break
+                robo_moved, abort, test_status = self.robot_obj.move_to_coordinate(coordinate, monitor_function=lambda: self.monitor_for_runtime_csv())
+                # If robot failed to reach the coordinate
+                if abort:
+                    break
+                if robo_moved:
+                    logger.info("Reached the coordinate {}".format(coordinate))
+            self.my_monitor_for_real_devices()
+            self.stop()
+            return
+
         for coordinate in range(len(self.coordinate_list)):
             if test_stopped_by_user:
                 break
@@ -3422,6 +3651,11 @@ INCLUDE_IN_README: False
     optional.add_argument('--robot_ip', type=str, default='', help='hostname for where Robot server is running')
     optional.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")
     optional.add_argument('--rotation', type=str, default='', help="The set of angles to rotate at a particular point")
+    optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
+    optional.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
+    optional.add_argument('--bssids', type=str, default='', help='hostname for where Robot server is running')
+    optional.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
+
     # logging configuration
     optional.add_argument(
         "--lf_logger_config_json",
@@ -3617,6 +3851,10 @@ some amount of file data from the FTP server while measuring the time taken by c
                               robot_ip=args.robot_ip,
                               coordinate=args.coordinate,
                               rotation=args.rotation,
+                              do_bandsteering=args.do_bandsteering,
+                              cycles=args.cycles,
+                              bssids=args.bssids,
+                              duration_to_skip=args.duration_to_skip
                               )
 
                 interation_num = interation_num + 1
@@ -3714,10 +3952,13 @@ some amount of file data from the FTP server while measuring the time taken by c
         # If robot test is enabled, add robot specific info to the report
         input_setup_info["Robot IP"] = args.robot_ip
         input_setup_info["Coordinate"] = args.coordinate
-        input_setup_info["Rotation"] = args.rotation
+        if not obj.do_bandsteering:
+            input_setup_info["Rotation"] = args.rotation
+        else:
+            input_setup_info["Band Steering Cycles"] = args.cycles
 
     # FOR WEB-UI // to fetch the last logs of the execution.
-    if args.dowebgui and not args.robot_test:
+    if args.dowebgui and (not args.robot_test or args.do_bandsteering):
         obj.data_for_webui["status"] = ["STOPPED"] * len(obj.url_data)
 
         df1 = pd.DataFrame(obj.data_for_webui)
