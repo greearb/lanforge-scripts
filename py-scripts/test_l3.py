@@ -2523,6 +2523,238 @@ class L3VariableTime(Realm):
 
         return client_dict_A
 
+    def process_port_interval_statistics(self, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps, ul, dl, ul_pdu_str,
+                                         dl_pdu_str, ul_pdu, dl_pdu, atten_val, passes, expected_passes, print_pass=False):
+        """
+        Aggregate, process, and store per-interval port statistics for download and upload traffic.
+
+        This method consolidates CSV data collected from multiple ports (EIDs), computes
+        aggregated metrics per time interval, derives delta values between intervals,
+        and generates summary CSV reports. It also records KPI and result summaries,
+        and determines pass/fail status of the test.
+
+        Args:
+            total_dl_bps (float): Total download throughput (bps).
+            total_ul_bps (float): Total upload throughput (bps).
+            total_dl_ll_bps (float): Total download low-latency throughput.
+            total_ul_ll_bps (float): Total upload low-latency throughput.
+            ul (str/int): Configured uplink rate.
+            dl (str/int): Configured downlink rate.
+            ul_pdu_str (str): Uplink PDU size (string format).
+            dl_pdu_str (str): Downlink PDU size (string format).
+            ul_pdu (int): Uplink PDU size.
+            dl_pdu (int): Downlink PDU size.
+            atten_val (float): Attenuation value used during testing.
+            passes (int): Number of successful test passes.
+            expected_passes (int): Expected number of passes.
+            print_pass (bool, optional): Whether to print pass message.
+
+        Returns:
+            None
+
+        """
+        # Write out download totals for each station
+        # port_eids= self.gather_port_eids()
+        # for port_eid in port_eids
+        # Collecting Totals of all stations for all intervals for each collection period
+        # TODO make all port csv files into one concatinated csv files
+        # Create empty dataframe
+        all_dl_ports_df = pd.DataFrame()
+        port_eids = self.gather_port_eids()
+        warnings = 0
+        # if self.use_existing_station_lists:
+        #    port_eids.extend(self.existing_station_lists.copy())
+
+        for port_eid in port_eids:
+            logger.debug("port files: {port_file}".format(
+                port_file=self.dl_port_csv_files[port_eid]))
+            name = self.dl_port_csv_files[port_eid].name
+            logger.debug("name : {name}".format(name=name))
+            df_dl_tmp = pd.read_csv(name)
+            all_dl_ports_df = pd.concat(
+                [all_dl_ports_df, df_dl_tmp], axis=0)
+
+        all_dl_ports_file_name = self.outfile[:-4]
+        all_dl_port_file_name = all_dl_ports_file_name + "-dl-all-eids.csv"
+        all_dl_ports_df.to_csv(all_dl_port_file_name)
+
+        # process "-dl-all-eids.csv to have per iteration loops deltas"
+        all_dl_ports_df.to_csv(all_dl_port_file_name)
+
+        # copy the above pandas dataframe (all_dl_ports_df)
+        all_dl_ports_stations_df = all_dl_ports_df.copy(deep=True)
+        # drop rows that have eth
+        all_dl_ports_stations_df = all_dl_ports_stations_df[~all_dl_ports_stations_df['Name'].str.contains(
+            'eth')]
+        # logger.info(pformat(all_dl_ports_stations_df))
+
+        # save to csv file
+        all_dl_ports_stations_file_name = self.outfile[:-4]
+        all_dl_port_stations_file_name = all_dl_ports_stations_file_name + \
+            "-dl-all-eids-stations.csv"
+        all_dl_ports_stations_df.to_csv(
+            all_dl_port_stations_file_name)
+
+        # we should be able to add the values for each eid
+        # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
+        # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
+        all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
+                                                                                         'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll',
+                                                                                         'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
+        all_dl_ports_stations_sum_file_name = self.outfile[:-4]
+        all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + \
+            "-dl-all-eids-sum-per-interval.csv"
+
+        # add some calculations, will need some selectable graphs
+        logger.info("all_dl_ports_stations_sum_df : {df}".format(
+            df=all_dl_ports_stations_sum_df))
+
+        if all_dl_ports_stations_sum_df.empty:
+            logger.warning(
+                "The dl (download) has no data check the AP connection or configuration")
+            warnings += 1
+
+        else:
+            all_dl_ports_stations_sum_df['Rx-Bps-Diff'] = all_dl_ports_stations_sum_df['Rx-Bps'].diff()
+            all_dl_ports_stations_sum_df['Tx-Bps-Diff'] = all_dl_ports_stations_sum_df['Tx-Bps'].diff()
+            all_dl_ports_stations_sum_df['Rx-Latency-Diff'] = all_dl_ports_stations_sum_df['Rx-Latency'].diff()
+            all_dl_ports_stations_sum_df['Rx-Jitter-Diff'] = all_dl_ports_stations_sum_df['Rx-Jitter'].diff()
+            all_dl_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff()
+            all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff()
+            all_dl_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff()
+            all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff()
+            all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff()
+            all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff()
+
+        # write out the data
+        all_dl_ports_stations_sum_df.to_csv(
+            all_dl_port_stations_sum_file_name)
+
+        # if there are multiple loops then delete the df
+        del all_dl_ports_df
+
+        if self.ap_read:
+            # Consolidate all the ul ports into one file
+            # Create empty dataframe
+            all_ul_ports_df = pd.DataFrame()
+            port_eids = self.gather_port_eids()
+
+            for port_eid in port_eids:
+                logger.debug("ul port files: {port_file}".format(
+                    port_file=self.ul_port_csv_files[port_eid]))
+                name = self.ul_port_csv_files[port_eid].name
+                logger.debug("name : {name}".format(name=name))
+                df_ul_tmp = pd.read_csv(name)
+                all_ul_ports_df = pd.concat(
+                    [all_ul_ports_df, df_ul_tmp], axis=0)
+
+            all_ul_ports_file_name = self.outfile[:-4]
+            all_ul_port_file_name = all_ul_ports_file_name + "-ul-all-eids.csv"
+            all_ul_ports_df.to_csv(all_ul_port_file_name)
+
+            # copy over all_ul_ports_df so as create a dataframe summ of the data for each iteration
+            all_ul_ports_stations_df = all_ul_ports_df.copy(
+                deep=True)
+            # drop rows that have eth
+            all_ul_ports_stations_df = all_ul_ports_stations_df[~all_ul_ports_stations_df['Name'].str.contains(
+                'eth')]
+            logger.info(pformat(all_ul_ports_stations_df))
+
+            # save to csv
+            all_ul_ports_stations_file_name = self.outfile[:-4]
+            all_ul_ports_stations_file_name = all_ul_ports_stations_file_name + \
+                "-ul-all-eids-stations.csv"
+            all_ul_ports_stations_df.to_csv(
+                all_ul_ports_stations_file_name)
+
+            # we add all the values based on the epoch time
+            # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
+            # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
+            all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
+                                                                                             'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll',
+                                                                                             'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
+            all_ul_ports_stations_sum_file_name = self.outfile[:-4]
+            all_ul_port_stations_sum_file_name = all_ul_ports_stations_sum_file_name + \
+                "-ul-all-eids-sum-per-interval.csv"
+
+            # add some calculations, will need some selectable graphs
+            if all_ul_ports_stations_sum_df.empty:
+                logger.warning(
+                    "The ul (upload) has no data check the AP connection or configuration")
+                warnings += 1
+            else:
+                all_ul_ports_stations_sum_df['Rx-Bps-Diff'] = all_ul_ports_stations_sum_df['Rx-Bps'].diff(
+                )
+                all_ul_ports_stations_sum_df['Tx-Bps-Diff'] = all_ul_ports_stations_sum_df['Tx-Bps'].diff(
+                )
+                all_ul_ports_stations_sum_df['Rx-Latency-Diff'] = all_ul_ports_stations_sum_df['Rx-Latency'].diff(
+                )
+                all_ul_ports_stations_sum_df['Rx-Jitter-Diff'] = all_ul_ports_stations_sum_df['Rx-Jitter'].diff(
+                )
+                all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff(
+                )
+                all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff(
+                )
+                all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff(
+                )
+                all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff(
+                )
+                all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff(
+                )
+                all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff(
+                )
+
+            # write out the data
+            all_ul_ports_stations_sum_df.to_csv(
+                all_ul_port_stations_sum_file_name)
+
+            # if there are multiple loops then delete the df
+            del all_ul_ports_df
+
+        # At end of test step, record KPI into kpi.csv
+        self.record_kpi_csv(
+            len(self.station_names_list),
+            ul,
+            dl,
+            ul_pdu_str,
+            dl_pdu_str,
+            atten_val,
+            total_dl_bps,
+            total_ul_bps,
+            total_dl_ll_bps,
+            total_ul_ll_bps)
+
+        # At end of test step, record results information. This is
+        self.record_results_total(
+            len(self.station_names_list),
+            ul,
+            dl,
+            ul_pdu_str,
+            dl_pdu_str,
+            atten_val,
+            total_dl_bps,
+            total_ul_bps,
+            total_dl_ll_bps,
+            total_ul_ll_bps)
+
+        # At end of test if requested store upload and download
+        # stats  TODO add for AP
+        # there is a specifi stop() method
+        # Stop connections.
+        # There is a specific stop
+        # self.cx_profile.stop_cx()
+        # self.multicast_profile.stop_mc()
+        # TODO the passes and expected_passes are not checking anything
+        if warnings > 0:
+            self._fail(" Total warnings:  {warnings}.   Check logs for warnings,  check AP connection ".format(
+                warnings=str(warnings)))
+
+        if passes == expected_passes:
+            # Sets the pass indication
+            self._pass(
+                "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
+                (ul, dl, ul_pdu, dl_pdu), print_pass)
+
     def start(self, print_pass=False, coordinate=None, rotation=None) -> int:
         """Run configured Layer-3 variable time test.
 
@@ -2944,207 +3176,9 @@ class L3VariableTime(Realm):
                                         dl_rx_drop_percent)
 
                             # TODO add collect layer 3 data
-
-                    # Write out download totals for each station
-                    # port_eids= self.gather_port_eids()
-                    # for port_eid in port_eids
-                    # Collecting Totals of all stations for all intervals for each collection period
-                    # TODO make all port csv files into one concatinated csv files
-                    # Create empty dataframe
-                    all_dl_ports_df = pd.DataFrame()
-                    port_eids = self.gather_port_eids()
-                    # if self.use_existing_station_lists:
-                    #    port_eids.extend(self.existing_station_lists.copy())
-
-                    for port_eid in port_eids:
-                        logger.debug("port files: {port_file}".format(
-                            port_file=self.dl_port_csv_files[port_eid]))
-                        name = self.dl_port_csv_files[port_eid].name
-                        logger.debug("name : {name}".format(name=name))
-                        df_dl_tmp = pd.read_csv(name)
-                        all_dl_ports_df = pd.concat(
-                            [all_dl_ports_df, df_dl_tmp], axis=0)
-
-                    all_dl_ports_file_name = self.outfile[:-4]
-                    all_dl_port_file_name = all_dl_ports_file_name + "-dl-all-eids.csv"
-                    all_dl_ports_df.to_csv(all_dl_port_file_name)
-
-                    # process "-dl-all-eids.csv to have per iteration loops deltas"
-                    all_dl_ports_df.to_csv(all_dl_port_file_name)
-
-                    # copy the above pandas dataframe (all_dl_ports_df)
-                    all_dl_ports_stations_df = all_dl_ports_df.copy(deep=True)
-                    # drop rows that have eth
-                    all_dl_ports_stations_df = all_dl_ports_stations_df[~all_dl_ports_stations_df['Name'].str.contains(
-                        'eth')]
-                    # logger.info(pformat(all_dl_ports_stations_df))
-
-                    # save to csv file
-                    all_dl_ports_stations_file_name = self.outfile[:-4]
-                    all_dl_port_stations_file_name = all_dl_ports_stations_file_name + \
-                        "-dl-all-eids-stations.csv"
-                    all_dl_ports_stations_df.to_csv(
-                        all_dl_port_stations_file_name)
-
-                    # we should be able to add the values for each eid
-                    # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
-                    # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
-                    all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
-                                                                                                     'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll',
-                                                                                                     'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
-                    all_dl_ports_stations_sum_file_name = self.outfile[:-4]
-                    all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + \
-                        "-dl-all-eids-sum-per-interval.csv"
-
-                    # add some calculations, will need some selectable graphs
-                    logger.info("all_dl_ports_stations_sum_df : {df}".format(
-                        df=all_dl_ports_stations_sum_df))
-
-                    if all_dl_ports_stations_sum_df.empty:
-                        logger.warning(
-                            "The dl (download) has no data check the AP connection or configuration")
-                        warnings += 1
-
-                    else:
-                        all_dl_ports_stations_sum_df['Rx-Bps-Diff'] = all_dl_ports_stations_sum_df['Rx-Bps'].diff()
-                        all_dl_ports_stations_sum_df['Tx-Bps-Diff'] = all_dl_ports_stations_sum_df['Tx-Bps'].diff()
-                        all_dl_ports_stations_sum_df['Rx-Latency-Diff'] = all_dl_ports_stations_sum_df['Rx-Latency'].diff()
-                        all_dl_ports_stations_sum_df['Rx-Jitter-Diff'] = all_dl_ports_stations_sum_df['Rx-Jitter'].diff()
-                        all_dl_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff()
-                        all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff()
-                        all_dl_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff()
-                        all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff()
-                        all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff()
-                        all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff()
-
-                    # write out the data
-                    all_dl_ports_stations_sum_df.to_csv(
-                        all_dl_port_stations_sum_file_name)
-
-                    # if there are multiple loops then delete the df
-                    del all_dl_ports_df
-
-                    if self.ap_read:
-                        # Consolidate all the ul ports into one file
-                        # Create empty dataframe
-                        all_ul_ports_df = pd.DataFrame()
-                        port_eids = self.gather_port_eids()
-
-                        for port_eid in port_eids:
-                            logger.debug("ul port files: {port_file}".format(
-                                port_file=self.ul_port_csv_files[port_eid]))
-                            name = self.ul_port_csv_files[port_eid].name
-                            logger.debug("name : {name}".format(name=name))
-                            df_ul_tmp = pd.read_csv(name)
-                            all_ul_ports_df = pd.concat(
-                                [all_ul_ports_df, df_ul_tmp], axis=0)
-
-                        all_ul_ports_file_name = self.outfile[:-4]
-                        all_ul_port_file_name = all_ul_ports_file_name + "-ul-all-eids.csv"
-                        all_ul_ports_df.to_csv(all_ul_port_file_name)
-
-                        # copy over all_ul_ports_df so as create a dataframe summ of the data for each iteration
-                        all_ul_ports_stations_df = all_ul_ports_df.copy(
-                            deep=True)
-                        # drop rows that have eth
-                        all_ul_ports_stations_df = all_ul_ports_stations_df[~all_ul_ports_stations_df['Name'].str.contains(
-                            'eth')]
-                        logger.info(pformat(all_ul_ports_stations_df))
-
-                        # save to csv
-                        all_ul_ports_stations_file_name = self.outfile[:-4]
-                        all_ul_ports_stations_file_name = all_ul_ports_stations_file_name + \
-                            "-ul-all-eids-stations.csv"
-                        all_ul_ports_stations_df.to_csv(
-                            all_ul_ports_stations_file_name)
-
-                        # we add all the values based on the epoch time
-                        # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
-                        # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
-                        all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
-                                                                                                         'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll',
-                                                                                                         'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
-                        all_ul_ports_stations_sum_file_name = self.outfile[:-4]
-                        all_ul_port_stations_sum_file_name = all_ul_ports_stations_sum_file_name + \
-                            "-ul-all-eids-sum-per-interval.csv"
-
-                        # add some calculations, will need some selectable graphs
-                        if all_ul_ports_stations_sum_df.empty:
-                            logger.warning(
-                                "The ul (upload) has no data check the AP connection or configuration")
-                            warnings += 1
-                        else:
-                            all_ul_ports_stations_sum_df['Rx-Bps-Diff'] = all_ul_ports_stations_sum_df['Rx-Bps'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Tx-Bps-Diff'] = all_ul_ports_stations_sum_df['Tx-Bps'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Rx-Latency-Diff'] = all_ul_ports_stations_sum_df['Rx-Latency'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Rx-Jitter-Diff'] = all_ul_ports_stations_sum_df['Rx-Jitter'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff(
-                            )
-                            all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff(
-                            )
-
-                        # write out the data
-                        all_ul_ports_stations_sum_df.to_csv(
-                            all_ul_port_stations_sum_file_name)
-
-                        # if there are multiple loops then delete the df
-                        del all_ul_ports_df
-
-                    # At end of test step, record KPI into kpi.csv
-                    self.record_kpi_csv(
-                        len(self.station_names_list),
-                        ul,
-                        dl,
-                        ul_pdu_str,
-                        dl_pdu_str,
-                        atten_val,
-                        total_dl_bps,
-                        total_ul_bps,
-                        total_dl_ll_bps,
-                        total_ul_ll_bps)
-
-                    # At end of test step, record results information. This is
-                    self.record_results_total(
-                        len(self.station_names_list),
-                        ul,
-                        dl,
-                        ul_pdu_str,
-                        dl_pdu_str,
-                        atten_val,
-                        total_dl_bps,
-                        total_ul_bps,
-                        total_dl_ll_bps,
-                        total_ul_ll_bps)
-
-                    # At end of test if requested store upload and download
-                    # stats  TODO add for AP
-                    # there is a specifi stop() method
-                    # Stop connections.
-                    # There is a specific stop
-                    # self.cx_profile.stop_cx()
-                    # self.multicast_profile.stop_mc()
-                    # TODO the passes and expected_passes are not checking anything
-                    if warnings > 0:
-                        self._fail(" Total warnings:  {warnings}.   Check logs for warnings,  check AP connection ".format(
-                            warnings=str(warnings)))
-
-                    if passes == expected_passes:
-                        # Sets the pass indication
-                        self._pass(
-                            "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
-                            (ul, dl, ul_pdu, dl_pdu), print_pass)
+                    # collect stats
+                    self.process_port_interval_statistics(total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps, ul, dl,
+                                                          ul_pdu_str, dl_pdu_str, ul_pdu, dl_pdu, atten_val, passes, expected_passes)
 
         return 0
 
