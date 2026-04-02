@@ -708,6 +708,7 @@ LICENSE:
 INCLUDE_IN_README: False
 
 """
+from lf_base_robo import RobotClass
 import argparse
 import csv
 import datetime
@@ -748,7 +749,6 @@ lf_attenuator = importlib.import_module("py-scripts.lf_atten_mod_test")
 lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
 lf_cleanup = importlib.import_module("py-scripts.lf_cleanup")
 lf_base_robo = importlib.import_module("py-scripts.lf_base_robo")
-from lf_base_robo import RobotClass
 Realm = realm.Realm
 
 logger = logging.getLogger(__name__)
@@ -885,7 +885,11 @@ class L3VariableTime(Realm):
                  robot_test=False,
                  robot_ip=None,
                  coordinate=None,
-                 rotation=None):
+                 rotation=None,
+                 do_bandsteering=False,
+                 cycles=None,
+                 bssids=None,
+                 duration_to_skip=None):
 
         self.eth_endps = []
         self.cx_names = []
@@ -1386,6 +1390,12 @@ class L3VariableTime(Realm):
         self.endp_input_list = endp_input_list
         self.graph_input_list = graph_input_list
         self.real = real
+        # Initialize variables to store aggregated throughput metrics
+        self.total_dl_bps = None
+        self.total_ul_bps = None
+        self.total_dl_ll_bps = None
+        self.total_ul_ll_bps = None
+        self.individual_device_data = {}
 
         # AP information import the module
         if self.ap_read and self.ap_module is not None:
@@ -1433,7 +1443,10 @@ class L3VariableTime(Realm):
         else:
             self.rotation_list = None
         self.robo_test = robot_test
-
+        # Band steering parameters
+        self.do_bandsteering = do_bandsteering
+        self.cycles = cycles
+        self.bssids = bssids.split(",") if bssids else []
         if self.robo_test:
             self.coordinate_list = coordinate.split(',')
             self.robo_ip = robot_ip
@@ -1450,7 +1463,9 @@ class L3VariableTime(Realm):
             self.robot_obj.result_directory = os.path.dirname(nav_data)
             self.robot_obj.runtime_dir = self.result_dir
             self.robot_obj.testname = self.test_name
-
+            self.robot_obj.coordinate_list = self.coordinate_list
+            self.robot_obj.time_to_reach = duration_to_skip
+            self.robot_obj.total_cycles = self.cycles
             self.robot_test_data = {}
             self.multicast_robot_results = {}
         self.test_stopped_user = False
@@ -2271,13 +2286,13 @@ class L3VariableTime(Realm):
                     "coordinate,rotation,total_tx_rate_bps,total_rx_rate_bps,throughput_mbps,average_drop_percent,endpoint_count,timestamp\n"
                 )
             f.write(
-                f"{coordinate},{rotation},{total_tx_rate},{total_rx_rate},{total_rx_rate/1e6:.2f},{avg_drop:.2f},{len(stations_data)},{summary['timestamp']}\n"
+                f"{coordinate},{rotation},{total_tx_rate},{total_rx_rate},{total_rx_rate / 1e6:.2f},{avg_drop:.2f},{len(stations_data)},{summary['timestamp']}\n"
             )
 
         self._write_robot_station_csv(stations_data, summary["timestamp"])
 
         logger.info(
-            f"[RobotTest] Coord={coordinate}, Rot={rotation}, Stations={len(stations_data)}, Avg Throughput={total_rx_rate/1e6:.2f} Mbps"
+            f"[RobotTest] Coord={coordinate}, Rot={rotation}, Stations={len(stations_data)}, Avg Throughput={total_rx_rate / 1e6:.2f} Mbps"
         )
 
     def _write_robot_station_csv(self, stations_data, timestamp):
@@ -6652,7 +6667,7 @@ class L3VariableTime(Realm):
                         avg_rx = df_stations["rx_rate_bps"].mean()
                         avg_drop = df_stations["drop_percent"].mean()
                         self.report.set_custom_html(
-                            f"<p style='font-size:12px;'>Average RX Throughput: <b>{avg_rx/1e6:.2f} Mbps</b><br>"
+                            f"<p style='font-size:12px;'>Average RX Throughput: <b>{avg_rx / 1e6:.2f} Mbps</b><br>"
                             f"Average Drop Rate: <b>{avg_drop:.2f}%</b><br>"
                             f"Total Stations: <b>{len(df_stations)}</b></p>"
                         )
@@ -8726,6 +8741,10 @@ INCLUDE_IN_README: False
     test_l3_parser.add_argument('--robot_ip', type=str, help='IP where Robot server is running')
     test_l3_parser.add_argument('--coordinate', type=str, default=None, help="Provide the coordinates to be placed on heatmap")
     test_l3_parser.add_argument('--rotation', type=str, default=None, help="Provide the rotations involved for each coordinate")
+    test_l3_parser.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
+    test_l3_parser.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
+    test_l3_parser.add_argument('--bssids', type=str, default='', help='hostname for where Robot server is running')
+    test_l3_parser.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
 
     parser.add_argument('--help_summary',
                         default=None,
