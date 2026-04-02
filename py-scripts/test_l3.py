@@ -708,7 +708,6 @@ LICENSE:
 INCLUDE_IN_README: False
 
 """
-from lf_base_robo import RobotClass
 import argparse
 import csv
 import datetime
@@ -727,9 +726,11 @@ import json
 import shutil
 import threading
 from collections import OrderedDict
-
+from collections import Counter
 import asyncio
 import copy
+from lf_graph import lf_bar_graph
+from lf_base_robo import RobotClass
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
@@ -6562,6 +6563,138 @@ class L3VariableTime(Realm):
                 self.report.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
                 self.report.build_custom()
 
+    def get_bandsteering_stats(self):
+        """
+        Analyze band steering statistics from downloaded CSV files and generate reports.
+
+        Args:
+            self:
+                dl_port_csv_files (dict): Dictionary mapping device names to CSV file objects.
+                existing_station_lists (list): List of device names to include for processing.
+                bssids (list): Optional list of BSSIDs to filter results.
+                report (object): Report object used for generating graphs, tables, and HTML output.
+
+        Returns:
+            None
+        """
+        merged_df = None
+        df = None
+        if bool(self.dl_port_csv_files):
+            for key, value in self.dl_port_csv_files.items():
+                if key in self.existing_station_lists:
+                    device_name = key
+                    file_path = value.name
+                    print("fileeepath", file_path)
+                    df = pd.read_csv(file_path)
+                    print(df.columns)
+                    df = df[['Time', 'AP', 'Channel', 'Robot X', 'Robot Y', 'From Coordinate', 'To Coordinate']]
+                    df.rename(columns={
+                        'Time': 'TIMESTAMP',
+                        'AP': f'BSSID {device_name}',
+                        'Channel': f'Channel {device_name}'
+                    }, inplace=True)
+
+                    if merged_df is None:
+                        merged_df = df
+                    else:
+                        # merged_df["From Coordinate"] = df["From Coordinate"]
+                        # merged_df["To Coordinate"] = df["To Coordinate"]
+                        # merged_df["Robot X"] = df["Robot X"]
+                        # merged_df["Robot Y"] = df["Robot Y"]
+                        merged_df = pd.merge(
+                            merged_df,
+                            df,
+                            on=['TIMESTAMP', 'Robot X', 'Robot Y', 'From Coordinate', 'To Coordinate'],
+                            how='outer'
+                        )
+
+        bssid_cols = [c for c in merged_df.columns if c.startswith("BSSID")]
+        channel_cols = [c for c in merged_df.columns if c.startswith("Channel")]
+
+        bssid_to_channel = {
+            bssid_col: next(
+                ch for ch in channel_cols
+                if ch.replace("Channel", "").strip() ==
+                bssid_col.replace("BSSID", "").strip()
+            )
+            for bssid_col in bssid_cols
+        }
+
+        for col in bssid_cols:
+
+            channel_col = bssid_to_channel[col]
+
+            # Detect BSSID changes
+            mask = merged_df[col] != merged_df[col].shift()
+            filtered_df = merged_df.loc[mask]
+            if self.bssids:
+                filtered_df = df.loc[mask & df[col].isin(self.bssids)]
+
+            bssid_list = filtered_df[col].tolist()
+            channel_list = filtered_df[channel_col].tolist()
+            timestamp_list = filtered_df['TIMESTAMP'].tolist()
+            from_coordinate_list = filtered_df['From Coordinate'].tolist()
+            to_coordinate_list = filtered_df['To Coordinate'].tolist()
+            bssid_counts = Counter(bssid_list)
+
+            x_axis = list(bssid_counts.keys())      # BSSID values
+            y_axis = [[float(i)] for i in list(bssid_counts.values())]
+            if len(self.bssids) > 0:
+                x_axis = self.bssids
+                y_axis = [[float(bssid_counts.get(bssid, 0))] for bssid in self.bssids]
+            device_name = col.replace('BSSID ', '')
+            device_name = col.split()[-1]
+            self.report.set_obj_html(
+                _obj_title=f"BSSID change count of the {device_name}",
+                _obj=" ")
+            self.report.build_objective()
+            graph = lf_bar_graph(_data_set=y_axis,
+                                 _xaxis_name="BSSID",
+                                 _yaxis_name="Number of Changes",
+                                 # _xaxis_categories = [", ".join(x_axis)],
+                                 _xaxis_categories=[""],
+                                 _xaxis_label=x_axis,
+                                 _graph_image_name=f"bssid_change_count_{device_name}",
+                                 _label=x_axis,
+                                 _xaxis_step=1,
+                                 _graph_title=f"BSSID change count – {device_name}",
+                                 _title_size=16,
+                                 _color_edge='black',
+                                 _bar_width=0.15,
+                                 _figsize=(18, 6),
+                                 _legend_loc="best",
+                                 _legend_box=(1.0, 1.0),
+                                 _dpi=96,
+                                 _show_bar_value=True,
+                                 _enable_csv=True,
+                                 _color=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
+                                 _color_name=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
+
+                                 )
+
+            graph_png = graph.build_bar_graph()
+            self.report.set_graph_image(graph_png)
+            # need to move the graph image to the results directory
+            self.report.move_graph_image()
+            self.report.set_csv_filename(graph_png)
+            self.report.move_csv_file()
+            self.report.build_graph()
+
+            self.report.set_obj_html(
+                _obj_title=f"Band Steering Results for {device_name}",
+                _obj=" ")
+            self.report.build_objective()
+            table_df = {
+                "Timestamp": timestamp_list,
+                "BSSID": bssid_list,
+                "Channel": channel_list,
+                "From Coordinate": from_coordinate_list,
+                "To Coordinate": to_coordinate_list
+            }
+            table_df = pd.DataFrame(table_df)
+            self.report.set_table_dataframe(table_df)
+            self.report.build_table()
+
     def generate_report(self, config_devices=None, group_device_map=None, iot_summary=None):
         if iot_summary:
             self.report.set_obj_html(
@@ -7157,6 +7290,11 @@ class L3VariableTime(Realm):
             # self.report.build_table()
 
             # empty dictionarys evaluate to false , placing tables in output
+            # If running a robot-based test with band steering enabled,
+            # collect additional band steering performance statistics
+            if self.robo_test and self.do_bandsteering:
+                self.get_bandsteering_stats()
+
             if bool(self.dl_port_csv_files):
                 for key, value in self.dl_port_csv_files.items():
                     if self.csv_data_to_report:
