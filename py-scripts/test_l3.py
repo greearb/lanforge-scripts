@@ -2393,6 +2393,53 @@ class L3VariableTime(Realm):
 
         logger.info(f"Robot test report generated: {csv_filename}")
 
+    def perform_bandsteering(self):
+        """
+        Execute the band steering test workflow.
+
+        This method is invoked when band steering is enabled on the robot system.
+        It retrieves a list of predefined coordinates and iteratively moves the robot
+        through each coordinate while continuously monitoring network performance
+        metrics (uplink/downlink throughput, PDU stats, attenuation, etc.).
+
+        Returns:
+            int: Returns 0 upon completion of the band steering workflow.
+
+        Notes:
+            - The test can be interrupted by the user at any stage.
+            - Monitoring is continuously performed during battery wait and movement.
+            - If the robot fails to move to a coordinate, it skips to the next one.
+        """
+        test_stopped_by_user = False
+
+        cycle_coords = self.robot_obj.get_coordinates_list()
+        if (len(cycle_coords) == 0):
+            logger.info("Exiting test")
+            exit(1)
+        self.robot_obj.do_bandsteering = True
+        ul, dl, ul_pdu_str, dl_pdu_str, atten_val, ul_pdu, dl_pdu, passes, expected_passes, coordinate, rotation = self.start()
+        logger.info("Starting CXs")
+        for coordinate in cycle_coords:
+            if test_stopped_by_user:
+                break
+            # Check for battery status before moving to next coordinate
+            if_paused, test_stopped_by_user, test_data = self.robot_obj.wait_for_battery(monitor_function=lambda: self.monitor(ul, dl, ul_pdu_str, dl_pdu_str, atten_val, coordinate, rotation))
+            # If test is stopped by user during battery wait
+            if test_stopped_by_user:
+                break
+            robo_moved, abort, test_data = self.robot_obj.move_to_coordinate(coordinate, monitor_function=lambda: self.monitor(ul, dl, ul_pdu_str, dl_pdu_str, atten_val, coordinate, rotation))
+            # If robot failed to reach the coordinate
+            if abort:
+                break
+            if not robo_moved:
+                continue
+            if robo_moved:
+                logger.info("Reached the coordinate {}".format(coordinate))
+        self.process_port_interval_statistics(self.total_dl_bps, self.total_ul_bps, self.total_dl_ll_bps, self.total_ul_ll_bps,
+                                              ul, dl, ul_pdu_str, dl_pdu_str, ul_pdu, dl_pdu, atten_val, passes, expected_passes)
+        # total_dl_bps,total_ul_bps,total_dl_ll
+        return 0
+
     def l3_endp_port_data(self, tos):
         """
         Args:
@@ -3257,7 +3304,8 @@ class L3VariableTime(Realm):
             total_dl_rate_ll,
             total_dl_pkts_ll,
             dl_rx_drop_percent,
-            ap_row_tx_dl=''):
+            ap_row_tx_dl='',
+            bandsteering_data=None):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, port_eid
@@ -3282,6 +3330,10 @@ class L3VariableTime(Realm):
                      total_dl_rate_ll,
                      total_dl_pkts_ll,
                      dl_rx_drop_percent]
+
+        # Append band steering (robot movement/position) data when enabled
+        if self.do_bandsteering:
+            row.extend(bandsteering_data)
 
         # Add in info queried from AP.
         if self.ap_read:
@@ -6190,6 +6242,16 @@ class L3VariableTime(Realm):
             'Dl-Rx-Rate-ll',
             'Dl-Rx-Pkts-ll',
             'DL-Rx-Drop-Percent']
+
+        # If band steering feature is enabled, include additional fields
+        # related to robot positioning and movement in the CSV headers
+        if self.do_bandsteering:
+            csv_rx_headers.extend([
+                'Robot X',
+                'Robot Y',
+                'From Coordinate',
+                'To Coordinate'
+            ])
 
         # Add in columns we are going to query from the AP
         if self.ap_read:
@@ -9680,9 +9742,15 @@ and generate a report.
 
     # Run test
     logger.info("Starting test")
+    # Check if this is a robot-based test AND involves multicast traffic types
     if (args.robot_test and any(etype in args.endp_type for etype in ["mc_udp", "mc_udp6"])):
-        logger.info("Multicast robot test detected")
-        ip_var_test.perform_robo()
+        # If band steering is enabled
+        if ip_var_test.do_bandsteering:
+            ip_var_test.perform_bandsteering()
+        else:
+            # Otherwise, run standard multicast robot test
+            logger.info("Multicast robot test detected")
+            ip_var_test.perform_robo()
     else:
         ip_var_test.start(False)
 
