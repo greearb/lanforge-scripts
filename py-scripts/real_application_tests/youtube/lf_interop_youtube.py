@@ -69,11 +69,13 @@ import asyncio
 import json
 import shutil
 import requests
+import glob
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from threading import Thread
 import traceback
 import threading
+from collections import Counter
 
 logger = logging.getLogger(__name__)
 log = logging.getLogger('werkzeug')
@@ -107,9 +109,11 @@ DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_base_interop_profile = importlib.import_module("py-scripts.lf_base_interop_profile")
+robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 
 # Accessing specific classes
 lf_report = lf_report.lf_report
+lf_bar_graph = lf_graph.lf_bar_graph
 lf_bar_graph_horizontal = lf_graph.lf_bar_graph_horizontal
 RealDevice = lf_base_interop_profile.RealDevice
 
@@ -143,7 +147,17 @@ class Youtube(Realm):
                  config=None,
                  selected_groups=None,
                  selected_profiles=None,
-                 config_obj=None
+                 config_obj=None,
+                 robo_ip="127.0.0.1",
+                 coordinates_list=None,
+                 angles_list=None,
+                 do_robo=False,
+                 cycles=None,
+                 bssids=None,
+                 do_bandsteering=False,
+                 current_cord="",
+                 current_angle="NA",
+                 rotations_enabled=False
 
 
                  ):
@@ -177,6 +191,8 @@ class Youtube(Realm):
         self.linux = 0
         self.windows = 0
         self.mac = 0
+        self.to_coordinate = ""
+        self.from_coordinate = ""
         self.result_json = {}
         self.generic_endps_profile = self.new_generic_endp_profile()
         self.generic_endps_profile.type = 'youtube'
@@ -189,6 +205,8 @@ class Youtube(Realm):
         self.devices = base_RealDevice(manager_ip=self.host, selected_bands=[])
         self.device_names = []
         self.resolution = resolution
+        self.do_bandsteering = do_bandsteering
+        self.bssids = bssids or []
         self.ap_name = ap_name
         self.ssid = ssid
         self.security = security
@@ -199,6 +217,7 @@ class Youtube(Realm):
         self.all_stop = False
         self.keys = []
         self.hostname_os_combination = None
+        self.test_name = test_name
         if self.do_webUI:
             self.base_dir = os.path.abspath(os.path.join(ui_report_dir, "../../"))
             self.test_name = test_name
@@ -217,6 +236,29 @@ class Youtube(Realm):
         self.lanforge_port_list = set()
         self.lanforge_os_type = list()
         self.android = 0
+        self.wifi_interface_list = []
+        self.devices_list = []
+        self.hostname_to_station_map = {}
+        self.csv_headers = [
+            "Instance Name", "TimeStamp", "Viewport", "DroppedFrames",
+            "TotalFrames", "CurrentRes", "OptimalRes", "BufferHealth"
+        ]
+        if do_robo and not do_bandsteering:
+            self.csv_headers.append("Angle")
+        if do_bandsteering:
+            self.csv_headers.extend([
+                "BSSID", "Channel", "X", "Y", "From_Coord", "To_Coord"
+            ])
+
+        self.do_robo = do_robo
+        self.robo_ip = robo_ip
+        self.coordinates_list = coordinates_list or []
+        self.angles_list = angles_list or []
+        self.current_cord = current_cord
+        self.current_angle = current_angle
+        self.rotations_enabled = rotations_enabled
+        self.pause = False
+        self.cycles = cycles
 
     def stop(self):
         self.stop_signal = True
@@ -286,6 +328,7 @@ class Youtube(Realm):
         - self.real_sta_hostname: Hostnames for real clients
         - self.generic_endps_profile: Generic endpoint profile object
         - self.new_port_list: Port identifiers for Linux clients
+        - self.wifi_interface_list: Wifi interface names collected for future use
 
         Side Effects:
         - Creates generic endpoints via the profile
@@ -1248,57 +1291,57 @@ class Youtube(Realm):
         """
 
         ports_list = []
-        eid = ""
-        resource_ip = ""
         user_resources = ['.'.join(item.split('.')[:2]) for item in self.real_sta_list]
+        self.device_names = []
+        self.user_list = []
 
         # Step 1: Retrieve information about all resources
         response = self.json_get("/resource/all")
+        resource_data_list = response.get("resources", [])
 
-        # Step 2: Match user-specified resources with available resources sequentially
-        if user_resources:
-            for user_resource in user_resources:
-                if not user_resources:
-                    break
+        # Step 2: Match user-specified resources with available resources in order.
+        for user_resource in user_resources:
+            for resource_entry in resource_data_list:
+                for resource_key, resource_values in resource_entry.items():
+                    if resource_key == user_resource:
+                        self.device_names.append(resource_values['hostname'])
+                        ports_list.append({
+                            'eid': resource_values['eid'],
+                            'ctrl-ip': resource_values['ctrl-ip']
+                        })
+                        self.user_list.append(resource_values['user'])
+                        break
+                else:
+                    continue
+                break
 
-                for key, value in response.items():
-                    if key == "resources":
-                        for element in value:
-                            for resource_key, resource_values in element.items():
-                                # Match the current user_resource
-                                if resource_key == user_resource:
-                                    eid = resource_values["eid"]
-                                    resource_ip = resource_values['ctrl-ip']
-                                    self.device_names.append(resource_values['hostname'])
-                                    ports_list.append({'eid': eid, 'ctrl-ip': resource_ip})
-                                    self.user_list.append(resource_values['user'])
-                                    break
-                            else:
-                                continue
-                            break
         self.mac_list = []
         self.rssi_list = []
         self.link_rate_list = []
         self.ssid_list = []
+        self.wifi_interface_list = []
+
         # Step 3: Retrieve port information
         response_port = self.json_get("/port/all")
+        interfaces_list = response_port.get('interfaces', [])
 
         # Step 4: Match ports associated with retrieved resources in the order of ports_list
         for port_entry in ports_list:
             expected_eid = port_entry['eid']
             matched_ports = []
 
-            for interface in response_port['interfaces']:
+            for interface in interfaces_list:
                 for port, port_data in interface.items():
                     if '.'.join(port.split('.')[:2]) == expected_eid:
                         matched_ports.append((port, port_data))
 
-            for _port, port_data in matched_ports:
+            for port_name, port_data in matched_ports:
                 if port_data.get("parent dev") == 'wiphy0':
                     self.mac_list.append(port_data.get("mac"))
                     self.rssi_list.append(port_data.get("signal"))
                     self.link_rate_list.append(port_data.get("rx-rate"))
                     self.ssid_list.append(port_data.get("ssid"))
+                    self.wifi_interface_list.append(port_name.split('.')[2])
 
         self.new_port_list = [item.split('.')[2] for item in self.real_sta_list]
 
@@ -1368,6 +1411,8 @@ NOTES:
         optional = parser.add_argument_group('Optional arguments')
         # Define webUI specific arguments group
         webUI_args = parser.add_argument_group('webUI arguments')
+        # Define robo specific arguments group
+        robo = parser.add_argument_group('robo arguments')
 
         # Add required arguments
         required.add_argument('--mgr', type=str, help="hostname where LANforge GUI is running", required=True)
@@ -1441,6 +1486,15 @@ NOTES:
         optional.add_argument('--iot_testname', type=str, default='', help='Testname for reporting')
 
         optional.add_argument('--iot_increment', type=str, default='', help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
+
+        robo.add_argument('--robot_wait_duration', help='Robot wait duration in seconds at obstacle', default="1")
+        robo.add_argument('--robo_ip', type=str, help='Specify the robo ip')
+        robo.add_argument('--coordinates', help='Comma-separated list of coordinate point names')
+        robo.add_argument('--rotations', help='Comma-separated list of rotation angles (in degrees)')
+        robo.add_argument('--do_robo', help='Specify this flag to perform the test with robo', action='store_true')
+        robo.add_argument('--do_bandsteering', help='Specify this flag to perform Bandsteering Scenario', action='store_true')
+        robo.add_argument('--bssids', type=str, help='Comma-separated list of BSSIDs for bandsteering test')
+        robo.add_argument('--cycles', type=int, default=1, help='Number of cycles to perform bandsteering')
 
         args = parser.parse_args()
 
