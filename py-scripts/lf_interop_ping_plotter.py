@@ -89,6 +89,7 @@
     Copyright (C) 2020-2026 Candela Technologies Inc.
 '''
 
+from lf_base_robo import RobotClass
 import argparse
 import time
 import sys
@@ -156,7 +157,8 @@ class Ping(Realm):
                  csv_name=None,
                  wait_time=60,
                  floors=None,
-                 get_live_view=None):
+                 get_live_view=None, robo_ip=None, angle_list=None, coordinate_list=None, rotation_enabled=None, local_lf_report_dir=None, do_bandsteering=False, total_cycles=1, bssids=None,
+                 duration_to_skip=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.host = host
@@ -204,6 +206,28 @@ class Ping(Realm):
         self.floors = floors
         self.get_live_view = get_live_view
 
+        # variables related to robot
+        self.coordinate_list = coordinate_list if coordinate_list is not None else []
+        self.rotation_enabled = rotation_enabled
+        self.last_rotated_angles = []
+        self.robo_ip = robo_ip
+        self.angle_list = angle_list if rotation_enabled else [0]
+        self.currentangle = None
+        self.currentcoordinate = None
+        if robo_ip is not None:
+            self.robot = RobotClass(robo_ip=self.robo_ip, angle_list=self.angle_list)
+            self.robot.time_to_reach = duration_to_skip
+            self.robot.coordinate_list = coordinate_list
+            self.robot.total_cycles = total_cycles
+        self.coordinate_json = {}
+        self.coordinates_completed = []
+        self.starttime_track = {}
+        self.local_lf_report_dir = local_lf_report_dir
+        self.pingduration = None
+        self.do_bandsteering = do_bandsteering
+        self.total_cycles = total_cycles
+        self.bssids = bssids if bssids else []
+
     def change_target_to_ip(self):
 
         # checking if target is an IP or a port
@@ -214,7 +238,7 @@ class Ping(Realm):
             try:
                 target_port_ip = self.json_get('/port/{}/{}/{}?fields=ip'.format(shelf, resource, port))['interface']['ip']
                 self.target = target_port_ip
-            except BaseException:
+            except Exception:
                 logging.warning('The target is not an ethernet port. Proceeding with the given target {}.'.format(self.target))
             logging.info(self.target)
         else:
@@ -668,6 +692,37 @@ class Ping(Realm):
             # report.set_csv_filename(uptime_graph)
             # report.move_csv_file()
             report_obj.build_graph()
+
+    def check_stop_status(self):
+        """
+        Check whether the currently running test has been stopped by the user.
+
+        This function looks for a JSON file that tracks the running status of a test.
+        The file is expected to be located in the `Running_instances` directory and
+        named using the pattern: <host>_<test_name>_running.json.
+
+        Returns:
+            bool:
+                True  -> If the test status exists and is not "Running" (i.e., stopped).
+                False -> If the file does not exist or the status is still "Running".
+        """
+        test_name = self.ui_report_dir.split("/")[-1]
+
+        file_path = os.path.join(
+            self.ui_report_dir,
+            "../../Running_instances/{}_{}_running.json".format(self.host, test_name))
+
+        if not os.path.exists(file_path):
+            return False
+
+        with open(file_path, 'r') as f:
+            run_status = json.load(f)
+            # Check if 'status' key exists and if the test is no longer running
+            if 'status' in run_status.keys() and run_status["status"] != "Running":
+                logging.info("Test is stopped by the user")
+                return True
+
+        return False
 
     def store_csv(self, data=None):
         if data is None:
@@ -1576,6 +1631,15 @@ connectivity problems.
                           default=0,
                           help='specify the Number of floors there in the house')
 
+    # Arguments related to Robot
+    optional.add_argument('--robot_ip', help='hostname for where Robot server is running')
+    optional.add_argument('--coordinate', help="The coordinate dictionary consists points and their respective x and y values")
+    optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
+    optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
+    optional.add_argument('--total_cycles', help='Iterations', default="1")
+    optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
+    optional.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
+
     args = parser.parse_args()
 
     if args.help_summary:
@@ -1629,6 +1693,12 @@ connectivity problems.
     pk_passwd = args.pk_passwd
     pac_file = args.pac_file
 
+    # declarations related to robo testcase
+    robo_ip = args.robot_ip
+    angle_list = args.rotation.split(",") if args.rotation else [0]
+    coord_list = args.coordinate.split(",") if args.coordinate else [0]
+    rotation_enabled = bool(args.rotation)
+
     if 's' in duration or 'S' in duration:
         if 's' in duration:
             duration = float(duration.replace('s', '')) / 60
@@ -1662,6 +1732,14 @@ connectivity problems.
         print('--ui_report_dir argument is required when --do_webUI is specified')
         exit(0)
 
+    if do_webUI:
+        # To generate nav_data.json in webui folder
+        base_dir = os.path.dirname(os.path.dirname(ui_report_dir))
+        nav_data = os.path.join(base_dir, 'nav_data.json')
+        # Empty the json before test is initiated
+        with open(nav_data, "w") as file:
+            json.dump({}, file)
+
     debug = args.debug
 
     if debug:
@@ -1685,8 +1763,10 @@ connectivity problems.
     ping = Ping(host=mgr_ip, port=mgr_port, ssid=ssid, security=security, password=password, radio=radio,
                 lanforge_password=mgr_password, target=target, interval=interval, sta_list=[], virtual=args.virtual, real=args.real, duration=report_duration, do_webUI=do_webUI, debug=debug,
                 ui_report_dir=ui_report_dir, csv_name=args.device_csv_name, expected_passfail_val=args.expected_passfail_value, wait_time=args.wait_time, group_name=group_name,
-                floors=args.floors, get_live_view=args.get_live_view)
-
+                floors=args.floors, get_live_view=args.get_live_view, robo_ip=robo_ip, rotation_enabled=rotation_enabled, coordinate_list=coord_list, angle_list=angle_list,
+                local_lf_report_dir=args.local_lf_report_dir, do_bandsteering=args.do_bandsteering, total_cycles=args.total_cycles, bssids=args.bssids.split(",") if args.bssids else [],
+                duration_to_skip=args.duration_to_skip)
+    ping.pingduration = duration
     # creating virtual stations if --virtual flag is specified
     if args.virtual:
 
@@ -1699,6 +1779,8 @@ connectivity problems.
                 '[', '').replace(']', '').replace('\'', ''))
 
     # selecting real clients if --real flag is specified
+    config_devices = {}
+    group_device_map = {}
     if args.real:
         Devices = RealDevice(manager_ip=mgr_ip, selected_bands=[])
         Devices.get_devices()
@@ -1886,7 +1968,7 @@ connectivity problems.
                                     try:
                                         # fetching the first part of the last result e.g., 64 bytes from 192.168.1.61: icmp_seq=28 time=3.66 ms into t_result and the remaining part into t_fail
                                         t_result, t_fail = result.split('***')
-                                    except BaseException:
+                                    except Exception:
                                         continue
                                     t_result = t_result.split()
                                     if 'icmp_seq=' not in result and 'time=' not in result:
@@ -1968,7 +2050,7 @@ connectivity problems.
                                         try:
                                             # fetching the first part of the last result e.g., 64 bytes from 192.168.1.61: icmp_seq=28 time=3.66 ms into t_result and the remaining part into t_fail
                                             t_result, t_fail = result.split('***')
-                                        except BaseException:
+                                        except Exception:
                                             continue  # first line of ping result
                                         t_result = t_result.split()
                                         if 'icmp_seq=' not in result and 'time=' not in result:
@@ -2031,13 +2113,13 @@ connectivity problems.
 
                         hw_version = current_device_data['hw version']
                         if "Win" in hw_version:
-                            os = "Windows"
+                            ostype = "Windows"
                         elif "Linux" in hw_version:
-                            os = "Linux"
+                            ostype = "Linux"
                         elif "Apple" in hw_version:
-                            os = "Mac"
+                            ostype = "Mac"
                         else:
-                            os = "Android"
+                            ostype = "Android"
 
                         ping.result_json[station] = {
                             'command': result_data['command'],
@@ -2051,7 +2133,7 @@ connectivity problems.
                             'channel': current_device_data['channel'],
                             'mode': current_device_data['mode'],
                             'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
-                            'os': os,
+                            'os': ostype,
                             'remarks': [],
                             'last_result': [last_result][0]
                         }
@@ -2068,7 +2150,7 @@ connectivity problems.
                                 try:
                                     # fetching the first part of the last result e.g., 64 bytes from 192.168.1.61: icmp_seq=28 time=3.66 ms into t_result and the remaining part into t_fail
                                     t_result, t_fail = result.split('***')
-                                except BaseException:
+                                except Exception:
                                     continue
                                 t_result = t_result.split()
                                 if 'icmp_seq=' not in result and 'time=' not in result:
@@ -2149,13 +2231,13 @@ connectivity problems.
 
                             hw_version = current_device_data['hw version']
                             if "Win" in hw_version:
-                                os = "Windows"
+                                ostype = "Windows"
                             elif "Linux" in hw_version:
-                                os = "Linux"
+                                ostype = "Linux"
                             elif "Apple" in hw_version:
-                                os = "Mac"
+                                ostype = "Mac"
                             else:
-                                os = "Android"
+                                ostype = "Android"
 
                             ping.result_json[station] = {
                                 'command': ping_data['command'],
@@ -2169,7 +2251,7 @@ connectivity problems.
                                 'channel': current_device_data['channel'],
                                 'mode': current_device_data['mode'],
                                 'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
-                                'os': os,
+                                'os': ostype,
                                 'remarks': [],
                                 'last_result': [last_result][0]
                             }
@@ -2187,7 +2269,7 @@ connectivity problems.
                                         try:
                                             # fetching the first part of the last result e.g., 64 bytes from 192.168.1.61: icmp_seq=28 time=3.66 ms into t_result and the remaining part into t_fail
                                             t_result, t_fail = result.split('***')
-                                        except BaseException:
+                                        except Exception:
                                             continue
                                         t_result = t_result.split()
                                         if 'icmp_seq=' not in result and 'time=' not in result:
