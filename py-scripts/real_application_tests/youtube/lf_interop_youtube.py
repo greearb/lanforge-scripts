@@ -327,8 +327,7 @@ class Youtube(Realm):
         - self.real_sta_os_types: Operating system type for each client
         - self.real_sta_hostname: Hostnames for real clients
         - self.generic_endps_profile: Generic endpoint profile object
-        - self.new_port_list: Port identifiers for Linux clients
-        - self.wifi_interface_list: Wifi interface names collected for future use
+        - self.wifi_interface_list: Wifi interface names used for Linux clients
 
         Side Effects:
         - Creates generic endpoints via the profile
@@ -353,7 +352,7 @@ class Youtube(Realm):
                 cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_types[i] == 'linux':
-                cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.new_port_list[i], self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.wifi_interface_list[i], self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
             elif self.real_sta_os_types[i] == 'macos':
@@ -1272,11 +1271,11 @@ class Youtube(Realm):
         Side Effects:
         - Populates self.device_names with matched device hostnames
         - Populates self.user_list with users associated with each resource
-        - Populates self.new_port_list with port identifiers derived from real stations
         - Populates self.mac_list with MAC addresses for wireless ports
         - Populates self.rssi_list with signal strength values
         - Populates self.link_rate_list with RX link rates
         - Populates self.ssid_list with SSID values
+        - Populates self.wifi_interface_list with wireless interface names for Linux endpoint commands
 
         Notes:
         - The method preserves the order of devices as specified in
@@ -1342,8 +1341,6 @@ class Youtube(Realm):
                     self.link_rate_list.append(port_data.get("rx-rate"))
                     self.ssid_list.append(port_data.get("ssid"))
                     self.wifi_interface_list.append(port_name.split('.')[2])
-
-        self.new_port_list = [item.split('.')[2] for item in self.real_sta_list]
 
 
 def main():
