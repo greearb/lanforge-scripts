@@ -129,9 +129,9 @@ import asyncio
 import csv
 from datetime import datetime, timedelta
 from lf_graph import lf_bar_graph_horizontal
-from lf_graph import lf_line_graph
+from lf_graph import lf_line_graph, lf_bar_graph
 import threading
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 
 
 if sys.version_info[0] != 3:
@@ -176,10 +176,7 @@ class VideoStreamingTest(Realm):
                  coordinate=None,
                  rotation=None,
                  rotation_enabled=None,
-                 angle_list=None,
-                 do_bandsteering=False,
-                 total_cycles=1,
-                 bssids=None):
+                 angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         self.adb_device_list = None
         self.host = host
@@ -1045,7 +1042,6 @@ class VideoStreamingTest(Realm):
 
                 individual_df_data.extend([sum(overall_video_rate), present_time, iteration + 1, actual_start_time.strftime('%Y-%m-%d %H:%M:%S'),
                                            self.data['end_time_webGUI'][0], self.data['remaining_time_webGUI'][0], "Running"])
-                # Append robot's current coordinate and orientation to the data if it's a robot test with bandsteering
                 if self.robot_test and self.do_bandsteering:
                     robot_x, robot_y, from_coordinate, to_coordinate = self.robot.get_robot_pose()
                     if from_coordinate == to_coordinate:
@@ -1664,6 +1660,14 @@ class VideoStreamingTest(Realm):
             dataframe3 = pd.DataFrame(dataframe2)
             report.set_table_dataframe(dataframe3)
             report.build_table()
+        if self.do_bandsteering:
+            devices_on_running_state = []
+            device_names_on_running = []
+            for j in range(created_incremental_values[iter]):
+                devices_on_running_state.append(keys[j])
+                device_names_on_running.append(username[j])
+            # Added bandsteering stats to the report if bandsteering is enabled
+            self.get_bandsteering_stats(report, realtime_dataset, devices_on_running_state, device_names_on_running)
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
         report.build_footer()
@@ -1684,6 +1688,96 @@ class VideoStreamingTest(Realm):
         if not os.path.exists(test_name_dir):
             os.makedirs(test_name_dir)
         shutil.copytree(curr_path, test_name_dir, dirs_exist_ok=True)
+
+    def get_bandsteering_stats(self, report=None, df=None, data1=None, data2=None):
+        """
+        Retrieves and adds bandsteering statistics to the report.
+
+        """
+        bssid_cols = [c for c in df.columns if c.startswith("BSSID")]
+        channel_cols = [c for c in df.columns if c.startswith("Channel")]
+
+        bssid_to_channel = {
+            bssid_col: next(
+                ch for ch in channel_cols
+                if ch.replace("Channel", "").strip() ==
+                bssid_col.replace("BSSID", "").strip()
+            )
+            for bssid_col in bssid_cols
+        }
+        for idx, col in enumerate(bssid_cols):
+
+            channel_col = bssid_to_channel[col]
+
+            # Detect BSSID changes
+            mask = df[col] != df[col].shift()
+            filtered_df = df.loc[mask]
+            if self.bssids:
+                filtered_df = df.loc[mask & df[col].isin(self.bssids)]
+
+            bssid_list = filtered_df[col].tolist()
+            channel_list = filtered_df[channel_col].tolist()
+            timestamp_list = filtered_df['timestamp'].tolist()
+            from_coordinate_list = filtered_df['From Coordinate'].tolist()
+            to_coordinate_list = filtered_df['To Coordinate'].tolist()
+            bssid_counts = Counter(bssid_list)
+
+            x_axis = list(bssid_counts.keys())      # BSSID values
+            y_axis = [[float(i)] for i in list(bssid_counts.values())]
+            if len(self.bssids) > 0:
+                x_axis = self.bssids
+                y_axis = [[float(bssid_counts.get(bssid, 0))] for bssid in self.bssids]
+            device_name = data2[idx]
+            report.set_obj_html(
+                _obj_title=f"BSSID change count of the {device_name}",
+                _obj=" ")
+            report.build_objective()
+            graph = lf_bar_graph(_data_set=y_axis,
+                                 _xaxis_name="BSSID",
+                                 _yaxis_name="Number of Changes",
+                                 # _xaxis_categories = [", ".join(x_axis)],
+                                 _xaxis_categories=[""],
+                                 _xaxis_label=x_axis,
+                                 _graph_image_name=f"bssid_change_count_{device_name}",
+                                 _label=x_axis,
+                                 _xaxis_step=1,
+                                 _graph_title=f"BSSID change count – {device_name}",
+                                 _title_size=16,
+                                 _color_edge='black',
+                                 _bar_width=0.15,
+                                 _figsize=(18, 6),
+                                 _legend_loc="best",
+                                 _legend_box=(1.0, 1.0),
+                                 _dpi=96,
+                                 _show_bar_value=True,
+                                 _enable_csv=True,
+                                 _color=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
+                                 _color_name=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
+
+                                 )
+
+            graph_png = graph.build_bar_graph()
+            report.set_graph_image(graph_png)
+            # need to move the graph image to the results directory
+            report.move_graph_image()
+            report.set_csv_filename(graph_png)
+            report.move_csv_file()
+            report.build_graph()
+
+            report.set_obj_html(
+                _obj_title=f"Band Steering Results for {device_name}",
+                _obj=" ")
+            report.build_objective()
+            table_df = {
+                "Timestamp": timestamp_list,
+                "BSSID": bssid_list,
+                "Channel": channel_list,
+                "From Coordinate": from_coordinate_list,
+                "To Coordinate": to_coordinate_list
+            }
+            table_df = pd.DataFrame(table_df)
+            report.set_table_dataframe(table_df)
+            report.build_table()
 
     def filter_ios_devices(self, device_list):
         """
@@ -2396,14 +2490,15 @@ class VideoStreamingTest(Realm):
             individual_df = pd.DataFrame(columns=individual_dataframe_columns)
             for coord in coordinate_list_with_robo:
                 #  To check for battery level before moving to next coordinate and also monitor cx while moving to next coordinate in bandsteering mode
-                pause, stopped, all_data_frames = self.robot.wait_for_battery(monitor_function=lambda:
-                                                                              self.monitor_for_runtime_csv(args.duration, file_path, individual_df, i, actual_start_time, cx_order_list[i]))
+                pause, stopped, all_data_frames = self.robot.wait_for_battery(
+                    monitor_function=lambda: self.monitor_for_runtime_csv(
+                        args.duration, file_path, individual_df, i, actual_start_time, cx_order_list[i]))
                 if stopped:
                     break
                 # Moving to next coordinate and also monitor cx while moving to next coordinate in bandsteering mode
-                matched, abort, all_data_frames = self.robot.move_to_coordinate(coord,
-                                                                                monitor_function=lambda: self.monitor_for_runtime_csv(args.duration, file_path,
-                                                                                                                                      individual_df, i, actual_start_time, cx_order_list[i]))
+                matched, abort, all_data_frames = self.robot.move_to_coordinate(
+                    coord, monitor_function=lambda: self.monitor_for_runtime_csv(
+                        args.duration, file_path, individual_df, i, actual_start_time, cx_order_list[i]))
                 if coord == self.coordinate_list[0]:
                     curr_cycle += 1
                     if curr_cycle > int(self.total_cycles):
@@ -2586,6 +2681,17 @@ class VideoStreamingTest(Realm):
                                 self.vs_data[int(coordinate)] = {}
                             self.vs_data[int(coordinate)][self.rotation_list[angle]] = params
         test_setup_info = self.create_test_setup_info(media_source=args.media_source, media_quality=args.media_quality)
+        if self.dowebgui:
+            self.copy_reports_to_home_dir()
+            # Update nav_data.json with test completion status for web GUI navigation
+            with open(nav_data, 'r') as x:
+                navdata = json.load(x)
+                navdata['status'] = ''
+                navdata['Canbee_location'] = ''
+                navdata['Canbee_angle'] = ''
+                navdata['Test_status'] = 'Completed'
+            with open(nav_data, 'w') as x:
+                json.dump(navdata, x, indent=4)
         self.generate_report_for_robo(test_setup_info, passed_coordinates=passed_coord_list)
 
     def build_iot_report_section(self, report, iot_summary):
