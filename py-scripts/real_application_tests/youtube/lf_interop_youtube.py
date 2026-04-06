@@ -720,6 +720,18 @@ class Youtube(Realm):
                     device_data[device_name] = last_row
             return jsonify({"result": device_data}), 200
 
+        # useful to simulate wait for battery charging
+        @app.route('/pause_true', methods=['GET'])
+        def pause_true():
+            self.pause = True
+            return jsonify({"pause": self.pause})
+
+        # useful to simulate wait for battery charging
+        @app.route('/pause_false', methods=['GET'])
+        def pause_false():
+            self.pause = False
+            return jsonify({"pause": self.pause})
+
         def run_flask():
             app.run(host="0.0.0.0", port=5002, debug=False, use_reloader=False)
 
