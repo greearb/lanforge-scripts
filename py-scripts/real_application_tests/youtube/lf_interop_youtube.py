@@ -241,7 +241,9 @@ class Youtube(Realm):
         self.hostname_to_station_map = {}
         self.csv_headers = [
             "Instance Name", "TimeStamp", "Viewport", "DroppedFrames",
-            "TotalFrames", "CurrentRes", "OptimalRes", "BufferHealth"
+            "TotalFrames", "CurrentRes", "OptimalRes", "BufferHealth",
+            "VideoCodec", "AudioCodec", "ConnectionSpeedKbps",
+            "NetworkActivityKB", "LiveLatency(sec)"
         ]
         if do_robo and not do_bandsteering:
             self.csv_headers.append("Angle")
@@ -259,6 +261,11 @@ class Youtube(Realm):
         self.rotations_enabled = rotations_enabled
         self.pause = False
         self.cycles = cycles
+        if self.do_robo:
+            self.robo_obj = robo_base_class.RobotClass(
+                robo_ip=self.robo_ip,
+                angle_list=angles_list
+            )
 
     def stop(self):
         self.stop_signal = True
@@ -535,6 +542,9 @@ class Youtube(Realm):
             f"{hostname} ({os_type})"
             for hostname, os_type in zip(self.real_sta_hostname, self.real_sta_os_types)
         ]
+        self.hostname_to_station_map = dict(
+            zip(self.real_sta_hostname, self.real_sta_list)
+        )
 
         for i in range(0, len(self.real_sta_os_types)):
 
@@ -621,6 +631,48 @@ class Youtube(Realm):
             logging.error(f"Failed to fetch data from API. Status code: {response.status_code}")
             return None
 
+    def get_youtube_lf_wifi_stats(self):
+        """
+        Returns dict: { sta_name : { BSSID, RSSI, channel, mode, tx_rate, rx_rate } }
+        """
+        lf_stats_map = {}
+        interfaces_dict = {}
+
+        try:
+            port_data = self.json_get("/ports/all/")["interfaces"]
+            for port in port_data:
+                interfaces_dict.update(port)
+        except Exception as e:
+            logger.error(f"Error fetching port data: {e}")
+            return lf_stats_map
+
+        for sta in self.real_sta_list:
+            lf_stats_map[sta] = {
+                "BSSID": "NA",
+                "RSSI": "NA",
+                "Channel": "NA",
+                "Mode": "NA",
+                "TxRate": "NA",
+                "RxRate": "NA",
+            }
+
+            if sta in interfaces_dict:
+                data = interfaces_dict[sta]
+
+                sig = data.get("signal", "NA")
+                if "dBm" in str(sig):
+                    lf_stats_map[sta]["RSSI"] = sig.split(" ")[0]
+                else:
+                    lf_stats_map[sta]["RSSI"] = sig
+
+                lf_stats_map[sta]["Channel"] = data.get("channel", "NA")
+                lf_stats_map[sta]["Mode"] = data.get("mode", "NA")
+                lf_stats_map[sta]["TxRate"] = data.get("tx-rate", "NA")
+                lf_stats_map[sta]["RxRate"] = data.get("rx-rate", "NA")
+                lf_stats_map[sta]["BSSID"] = data.get("ap", "NA")
+
+        return lf_stats_map
+
     def start_flask_server(self):
         """
         Starts a Flask server with API endpoints for YouTube statistics.
@@ -676,11 +728,38 @@ class Youtube(Realm):
                         "stop": stop
                     }
 
+                    if self.do_robo:
+                        self.stats_api_response[device_name]["current_angle"] = self.current_angle
+                        self.stats_api_response[device_name]["current_cord"] = self.current_cord
+                        self.stats_api_response[device_name]["rotations_enabled"] = self.rotations_enabled
+                        stats["Angle"] = self.current_angle
+
+                    if self.do_robo and self.do_bandsteering:
+                        lf_wifi_map = self.get_youtube_lf_wifi_stats()
+                        sta_name = self.hostname_to_station_map.get(device_name)
+                        if sta_name in lf_wifi_map:
+                            stats["BSSID"] = lf_wifi_map[sta_name]["BSSID"]
+                            stats["Channel"] = lf_wifi_map[sta_name]["Channel"]
+                        else:
+                            stats["BSSID"] = "NA"
+                            stats["Channel"] = "NA"
+
+                        x, y, _fromc, _toc = self.robo_obj.get_robot_pose()
+                        stats["X"] = x
+                        stats["Y"] = y
+                        stats["From_Coord"] = self.from_coordinate
+                        stats["To_Coord"] = self.to_coordinate
+
+                    if self.do_robo and self.current_cord != "" and not self.do_bandsteering:
+                        csv_filename = f"{self.current_cord}_{device_name}_youtube_stats_report.csv"
+                    else:
+                        csv_filename = f"{device_name}_youtube_stats_report.csv"
+
                     if self.do_webUI:
-                        csv_file_path = os.path.join(self.ui_report_dir, f'{device_name}_youtube_stats_report.csv')
+                        csv_file_path = os.path.join(self.ui_report_dir, csv_filename)
                     else:
                         current_path = os.path.dirname(os.path.abspath(__file__))
-                        csv_file_path = os.path.join(current_path, f"{device_name}_youtube_stats_report.csv")
+                        csv_file_path = os.path.join(current_path, csv_filename)
 
                     if csv_file_path not in self.devices_list:
                         self.devices_list.append(csv_file_path)
