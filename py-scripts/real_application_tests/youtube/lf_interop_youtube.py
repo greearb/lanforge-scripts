@@ -594,7 +594,6 @@ class Youtube(Realm):
         Returns:
             dict or None: The fetched data if successful, None otherwise.
         """
-        self.devices_list = []
         url = "http://localhost:5002/youtube_stats"
         response = requests.get(url)
         if response.status_code == 200:
@@ -616,27 +615,6 @@ class Youtube(Realm):
                 else:
                     if float(stats.get("BufferHealth", "100000.0")) < float(self.mydatajson[device_name]["minbufferhealth"]):
                         self.mydatajson[device_name]["minbufferhealth"] = stats.get("BufferHealth", "0.0")
-
-                # Define CSV file path using the device name as the file name
-                if self.do_webUI:
-                    csv_file_path = os.path.join(self.ui_report_dir, f'{device_name}_youtube_stats_report.csv')
-                else:
-                    current_path = os.path.dirname(os.path.abspath(__file__))
-                    csv_file_path = os.path.join(current_path, f"{device_name}_youtube_stats_report.csv")
-
-                self.devices_list.append(csv_file_path)
-
-                file_exists = os.path.isfile(csv_file_path)
-                headers = ["Instance Name", "TimeStamp", "Viewport", "DroppedFrames", "TotalFrames", "CurrentRes", "OptimalRes", "BufferHealth"]
-
-                with open(csv_file_path, mode='a', newline='') as file:
-                    writer = csv.writer(file)
-                    if not file_exists:
-                        writer.writerow(headers)
-                    row = [device_name, timestamp]
-                    for header in headers[2:]:
-                        row.append(stats.get(header, "NA"))
-                    writer.writerow(row)
 
             return self.data
         else:
@@ -697,6 +675,27 @@ class Youtube(Realm):
                         **stats,
                         "stop": stop
                     }
+
+                    if self.do_webUI:
+                        csv_file_path = os.path.join(self.ui_report_dir, f'{device_name}_youtube_stats_report.csv')
+                    else:
+                        current_path = os.path.dirname(os.path.abspath(__file__))
+                        csv_file_path = os.path.join(current_path, f"{device_name}_youtube_stats_report.csv")
+
+                    if csv_file_path not in self.devices_list:
+                        self.devices_list.append(csv_file_path)
+
+                    file_exists = os.path.isfile(csv_file_path)
+                    timestamp = stats.get("Timestamp", "")
+
+                    with open(csv_file_path, mode='a', newline='') as file:
+                        writer = csv.writer(file)
+                        if not file_exists:
+                            writer.writerow(self.csv_headers)
+                        row = [device_name, timestamp]
+                        for header in self.csv_headers[2:]:
+                            row.append(stats.get(header, "NA"))
+                        writer.writerow(row)
 
                 return jsonify({"message": "Stats updated"}), 200
 
