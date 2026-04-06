@@ -91,7 +91,7 @@
 
     Example-17:
     Command Line Interface to run Video Streaming test with Robot at specified coordinates with bandsteering
-    python3 lf_interop_video_streaming.py --mgr 192.168.207.78 --url "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd" --media_source dash  --media_quality 1080P --duration 1m  --debug 
+    python3 lf_interop_video_streaming.py --mgr 192.168.207.78 --url "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd" --media_source dash  --media_quality 1080P --duration 1m  --debug
     --test_name video_streaming_test --robot_test --robot_ip 192.168.204.76 --coordinate 3,4 --total_cycles 1 --do_bandsteering
 
     SCRIPT CLASSIFICATION: Test
@@ -176,7 +176,7 @@ class VideoStreamingTest(Realm):
                  coordinate=None,
                  rotation=None,
                  rotation_enabled=None,
-                 angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None):
+                 angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None, duration_to_skip=None):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         self.adb_device_list = None
         self.host = host
@@ -263,6 +263,7 @@ class VideoStreamingTest(Realm):
             self.robot = RobotClass(robo_ip=self.robot_ip, angle_list=self.angle_list)
             self.last_rotated_angles = []
             self.charge_point_name = None
+            self.robot.time_to_reach = int(duration_to_skip) * 60
 
     @property
     def run(self):
@@ -1666,7 +1667,6 @@ class VideoStreamingTest(Realm):
             for j in range(created_incremental_values[iter]):
                 devices_on_running_state.append(keys[j])
                 device_names_on_running.append(username[j])
-            # Added bandsteering stats to the report if bandsteering is enabled
             self.get_bandsteering_stats(report, realtime_dataset, devices_on_running_state, device_names_on_running)
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
@@ -2683,7 +2683,6 @@ class VideoStreamingTest(Realm):
         test_setup_info = self.create_test_setup_info(media_source=args.media_source, media_quality=args.media_quality)
         if self.dowebgui:
             self.copy_reports_to_home_dir()
-            # Update nav_data.json with test completion status for web GUI navigation
             with open(nav_data, 'r') as x:
                 navdata = json.load(x)
                 navdata['status'] = ''
@@ -3016,9 +3015,9 @@ def main():
 
         Example-15:
         Command Line Interface to run Video Streaming test with Robot at specified coordinates with bandsteering
-        python3 lf_interop_video_streaming.py --mgr 192.168.207.78 --url "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd" --media_source dash  --media_quality 1080P --duration 1m  --debug 
+        python3 lf_interop_video_streaming.py --mgr 192.168.207.78 --url "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd" --media_source dash  --media_quality 1080P --duration 1m  --debug
         --test_name video_streaming_test --robot_test --robot_ip 192.168.204.76 --coordinate 3,4 --total_cycles 1 --do_bandsteering
-        
+
         SCRIPT CLASSIFICATION: Test
 
         SCRIPT_CATEGORIES:   Performance,  Functional, Report Generation
@@ -3098,6 +3097,7 @@ def main():
     parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
     parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
     # Args for robot testing
+    parser.add_argument('--duration_to_skip', help='Robot wait duration in seconds at obstacle', default="1")
     parser.add_argument("--robot_test", help='to trigger robot test', action='store_true')
     parser.add_argument('--robot_ip', type=str, default='localhost', help='hostname for where Robot server is running')
     parser.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")
@@ -3248,7 +3248,8 @@ def main():
                              angle_list=angle_list,
                              do_bandsteering=args.do_bandsteering,
                              total_cycles=args.total_cycles,
-                             bssids=args.bssids.split(",") if args.bssids else []
+                             bssids=args.bssids.split(",") if args.bssids else [],
+                             duration_to_skip=args.duration_to_skip
                              )
     args.upstream_port = obj.change_port_to_ip(args.upstream_port)
     obj.upstream_port = args.upstream_port
