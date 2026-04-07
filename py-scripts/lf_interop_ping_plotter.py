@@ -1345,6 +1345,42 @@ class Ping(Realm):
                         report.set_custom_html(f'<img src="file://{image_path}" style="width:1200px; height:800px;"></img>')
                         report.build_custom()
 
+    def store_bandsteeringcsv(self):
+        """
+        Collects band-steering data for the current monitor iteration.
+
+        Iterates over result_json to extract the BSSID and channel for each connected
+        station, then fetches the robot's current pose to append spatial metadata.
+        If the robot has not moved (from_coordinate equals to_coordinate), the test
+        is flagged for termination.
+
+        Returns:
+            tuple[list, bool]:
+                - individual_df_data (list): A flat list of values representing one
+                CSV row, ordered as: [bssid, channel, ...] per station, followed by
+                [timestamp, robot_x, robot_y, from_coordinate, to_coordinate].
+                Returns a partial list (BSSID/channel only) if stop_status is True.
+                - stop_status (bool): True if the robot has stopped moving, signalling
+                the band-steering test should terminate.
+        """
+        stop_status = False
+        individual_df_data = []
+        # Collect BSSID and channel for each station from the latest result snapshot.
+        # Skip the 'status' key as it is metadata, not a station entry.
+        for key, value in self.result_json.items():
+            if key == 'status':
+                continue
+            individual_df_data.extend([value['bssid'], value['channel']])
+        timestamp = datetime.now().strftime("%d/%m %I:%M:%S %p")
+        # Fetch the robot's current position and the coordinates it is travelling between
+        robot_x, robot_y, from_coordinate, to_coordinate = self.robot.get_robot_pose()
+        if from_coordinate == to_coordinate:
+            stop_status = True
+            return individual_df_data, stop_status
+        individual_df_data.extend([timestamp, robot_x, robot_y, from_coordinate, to_coordinate])
+
+        return individual_df_data, stop_status
+
     def monitor(self, individual_df, Devices=None, rtts=None, rtts_list=None, ping_stats=None,
                 duration=None, coord=None, angle=None, monitor_charge_time=None):
         """
@@ -1688,15 +1724,14 @@ class Ping(Realm):
                 if not self.store_csv():
                     logging.info('Aborted test from webUI')
                     if self.do_bandsteering:
-                        # individual_data,stop_status=self.store_bandsteeringcsv()
+                        individual_data, stop_status = self.store_bandsteeringcsv()
                         stop_status = True
                         individual_df.to_csv('bandsteering_data.csv', index=False)
                         return individual_df, stop_status
                     break
 
             if self.do_bandsteering:
-                # individual_data,stop_status=self.store_bandsteeringcsv()
-                individual_data = []
+                individual_data, stop_status = self.store_bandsteeringcsv()
                 if not stop_status:
                     individual_df.loc[len(individual_df)] = individual_data
                     individual_df.to_csv('bandsteering_data.csv', index=False)
@@ -2487,7 +2522,10 @@ connectivity problems.
     ping.create_generic_endp()
 
     logging.info('{}'.format(*ping.generic_endps_profile.created_cx))
-
+    # Run robot test
+    if robo_ip:
+        ping.perform_robo(Devices, config_devices, group_device_map)
+        exit(1)
     # run the test for the given duration
     logging.info('Running the ping plotter test for {} minutes'.format(duration))
 
