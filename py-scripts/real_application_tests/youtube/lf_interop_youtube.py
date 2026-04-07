@@ -1432,6 +1432,154 @@ class Youtube(Realm):
                     self.ssid_list.append(port_data.get("ssid"))
                     self.wifi_interface_list.append(port_name.split('.')[2])
 
+    def perform_robo_test(self):
+        for coordinate in self.coordinates_list:
+            self.robo_obj.wait_for_battery()
+            matched, aborted = self.robo_obj.move_to_coordinate(coord=coordinate)
+            if not matched:
+                continue
+            self.current_cord = coordinate
+            if self.rotations_enabled:
+                for angle in self.angles_list:
+                    self.robo_obj.wait_for_battery()
+                    self.robo_obj.rotate_angle(angle_degree=angle)
+                    self.current_angle = angle
+                    self.start_generic()
+                    duration = self.duration
+                    end_time = datetime.now() + timedelta(minutes=duration)
+                    logging.info("Starting data collection for coordinate: %s and angle: %s", coordinate, angle)
+                    while datetime.now() < end_time or not self.check_gen_cx():
+                        pause, _ = self.robo_obj.wait_for_battery()
+                        if pause:
+                            self.delete_existing_csvs_for_current_point()
+                            self.generic_endps_profile.stop_cx()
+                            self.start_generic()
+                            end_time = datetime.now() + timedelta(minutes=self.duration)
+
+                        time.sleep(5)
+
+                    self.generic_endps_profile.stop_cx()
+
+            else:
+                self.start_generic()
+                duration = self.duration
+                end_time = datetime.now() + timedelta(minutes=duration)
+                logging.info("Starting data collection for coordinate: %s", coordinate)
+
+                while datetime.now() < end_time or not self.check_gen_cx():
+                    pause, _ = self.robo_obj.wait_for_battery()
+                    if pause:
+                        self.delete_existing_csvs_for_current_point()
+                        self.generic_endps_profile.stop_cx()
+                        self.start_generic()
+                        end_time = datetime.now() + timedelta(minutes=self.duration)
+
+                    time.sleep(5)
+
+                self.generic_endps_profile.stop_cx()
+
+    def perform_robo_bandsteering_test(self):
+        logging.info("Starting Band-Steering Robo YouTube Test")
+
+        self.robo_obj.total_cycles = self.cycles
+        self.robo_obj.coordinate_list = self.coordinates_list
+        coordinate_list_with_robo = self.robo_obj.get_coordinates_list()
+        time.sleep(5)
+        print(coordinate_list_with_robo, "the coordinate list")
+        print(coordinate_list_with_robo, "the result coordinates")
+        for coordinate in coordinate_list_with_robo:
+            logging.info(f"Moving robot to coordinate: {coordinate}")
+            if self.to_coordinate == "":
+                self.to_coordinate = coordinate
+                self.start_generic()
+            else:
+                self.from_coordinate = self.to_coordinate
+                self.to_coordinate = coordinate
+
+            self.robo_obj.wait_for_battery()
+
+            matched, abort = self.robo_obj.move_to_coordinate(coord=coordinate)
+            if matched:
+                logger.info("Reached the coordinate {}".format(coordinate))
+            if abort:
+                break
+            if not matched:
+                continue
+            self.current_cord = coordinate
+            time.sleep(10)
+
+        logging.info("All coordinates completed - stopping Band-Steering Test")
+        self.generic_endps_profile.stop_cx()
+
+        self.stop_bandsteering_test()
+
+    def stop_bandsteering_test(self):
+        logging.info("Stopping Band-Steering YouTube Test")
+
+        try:
+            self.generic_endps_profile.stop_cx()
+        except:
+            pass
+        try:
+            self.generic_endps_profile.cleanup()
+        except:
+            pass
+
+        self.stop_signal = True
+
+        logging.info("Band-Steering Test stopped")
+
+    def remove_angle_data_from_csv(self, csv_file_path):
+        if self.rotations_enabled:
+            if not os.path.exists(csv_file_path):
+                logging.info(f"CSV not found: {csv_file_path}")
+                return
+
+            try:
+                df = pd.read_csv(csv_file_path)
+            except Exception as e:
+                logging.info(f"Unable to read CSV {csv_file_path}: {e}")
+                return
+
+            if "Angle" not in df.columns:
+                logging.info(f"No Angle column in CSV: {csv_file_path}")
+                return
+
+            df["Angle"] = pd.to_numeric(df["Angle"], errors="coerce")
+            df_filtered = df[df["Angle"] != float(self.current_angle)]
+            df_filtered.to_csv(csv_file_path, index=False)
+
+            logging.info(f"Removed all rows for angle {self.current_angle} from {csv_file_path}.")
+
+    def delete_existing_csvs_for_current_point(self):
+        """
+        Deletes existing CSV files for the current coordinate and angle.
+
+        This method constructs the expected CSV file names based on the current
+        coordinate and angle, checks if they exist in the appropriate directory,
+        and deletes them if found. It handles both web UI and non-web UI scenarios.
+
+        """
+        for device_name, _ in self.stats_api_response.items():
+            if self.do_webUI:
+                csv_file_path = os.path.join(self.ui_report_dir, f"{self.current_cord}_{device_name}_youtube_stats_report.csv")
+                if self.rotations_enabled:
+                    self.remove_angle_data_from_csv(csv_file_path)
+                else:
+                    if os.path.isfile(csv_file_path):
+                        os.remove(csv_file_path)
+                        logging.info(f"Deleted existing CSV file: {csv_file_path}")
+
+            else:
+                current_path = os.path.dirname(os.path.abspath(__file__))
+                csv_file_path = os.path.join(current_path, f"{self.current_cord}_{device_name}_youtube_stats_report.csv")
+                if self.rotations_enabled:
+                    self.remove_angle_data_from_csv(csv_file_path)
+                else:
+                    if os.path.isfile(csv_file_path):
+                        os.remove(csv_file_path)
+                        logging.info(f"Deleted existing CSV file: {csv_file_path}")
+
 
 def main():
     try:
