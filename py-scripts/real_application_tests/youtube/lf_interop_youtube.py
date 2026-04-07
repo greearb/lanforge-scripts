@@ -68,7 +68,6 @@ import csv
 import asyncio
 import json
 import shutil
-import requests
 import glob
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
@@ -213,7 +212,6 @@ class Youtube(Realm):
         self.band = band
         self.start_time = None,
         self.est_end_time = None,
-        self.end_time_webgui = []
         self.all_stop = False
         self.keys = []
         self.hostname_os_combination = None
@@ -597,39 +595,6 @@ class Youtube(Realm):
     def stop_generic_cx(self,):
         self.generic_endps_profile.stop_cx()
         self.stop_time = datetime.now()
-
-    def get_data_from_api(self):
-        """
-        Retrieves YouTube streaming statistics from an API endpoint.
-        Returns:
-            dict or None: The fetched data if successful, None otherwise.
-        """
-        url = "http://localhost:5002/youtube_stats"
-        response = requests.get(url)
-        if response.status_code == 200:
-            self.data = response.json()
-            result_data = self.data.get("result", {})
-            for device_name, device_data in result_data.items():
-                stats = {key: value for key, value in device_data.items() if key != "stop"}
-                timestamp = stats.get("Timestamp", {})
-                if device_name not in self.mydatajson:
-                    self.mydatajson[device_name] = {}
-                if "maxbufferhealth" not in self.mydatajson[device_name]:
-                    self.mydatajson[device_name]["maxbufferhealth"] = "0.0"
-                else:
-                    if float(stats.get("BufferHealth", "0.0")) > float(self.mydatajson[device_name]["maxbufferhealth"]):
-                        self.mydatajson[device_name]["maxbufferhealth"] = stats.get("BufferHealth", "0.0")
-
-                if "minbufferhealth" not in self.mydatajson[device_name]:
-                    self.mydatajson[device_name]["minbufferhealth"] = "100000.0"
-                else:
-                    if float(stats.get("BufferHealth", "100000.0")) < float(self.mydatajson[device_name]["minbufferhealth"]):
-                        self.mydatajson[device_name]["minbufferhealth"] = stats.get("BufferHealth", "0.0")
-
-            return self.data
-        else:
-            logging.error(f"Failed to fetch data from API. Status code: {response.status_code}")
-            return None
 
     def get_youtube_lf_wifi_stats(self):
         """
@@ -2505,23 +2470,8 @@ NOTES:
 
                 duration = args.duration
                 end_time = datetime.now() + timedelta(minutes=duration)
-                initial_data = youtube.get_data_from_api()
-
-                while len(initial_data) == 0:
-                    initial_data = youtube.get_data_from_api()
-                    time.sleep(1)
-                if initial_data:
-                    end_time_webgui = []
-                    for i in range(len(youtube.device_names)):
-                        end_time_webgui.append(initial_data['result'].get(youtube.device_names[i], {}).get('stop', False))
-                else:
-                    for _i in range(len(youtube.device_names)):
-                        end_time_webgui.append("")
-
-                end_time = datetime.now() + timedelta(minutes=duration)
 
                 while datetime.now() < end_time or not youtube.check_gen_cx():
-                    youtube.get_data_from_api()
                     time.sleep(1)
 
                 youtube.generic_endps_profile.stop_cx()
