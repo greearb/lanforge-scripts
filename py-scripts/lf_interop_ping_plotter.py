@@ -77,6 +77,11 @@
     python3 lf_interop_ping_plotter.py --mgr 192.168.207.78 --real --target 8.8.8.8 --ping_interval 1 --ping_duration 1m --use_default_config
     --robot_ip 192.168.204.76 --coordinate 3,4 --rotation 45,90
 
+    EXAMPLE-16:
+    Command Line Interface to run ping plotter test with desired resources at desired points with bandsteering using robo
+    python3 lf_interop_ping_plotter.py --mgr 192.168.207.78 --real --target 8.8.8.8 --ping_interval 1 --ping_duration 1m --use_default_config
+    --robot_ip 192.168.204.76 --coordinate 3,4 --do_bandsteering --total_cycles 3 --bssids 94:A6:7E:74:26:33,94:A6:7E:74:26:22
+
 
     SCRIPT_CLASSIFICATION : Test
 
@@ -100,7 +105,7 @@
     Copyright (C) 2020-2026 Candela Technologies Inc.
 '''
 
-from lf_base_robo import RobotClass
+
 import argparse
 import time
 import sys
@@ -123,10 +128,12 @@ if 'py-scripts' not in sys.path:
 
 from lf_base_interop_profile import RealDevice
 from datetime import datetime, timedelta
-from lf_graph import lf_bar_graph_horizontal
+from lf_graph import lf_bar_graph_horizontal, lf_bar_graph
 from lf_report import lf_report
 from station_profile import StationProfile
 from typing import List, Optional
+from collections import Counter
+from lf_base_robo import RobotClass
 # Importing DeviceConfig to apply device configurations for ADB devices and laptops
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 from LANforge import LFUtils  # noqa: E402
@@ -997,6 +1004,12 @@ class Ping(Realm):
                 'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
                 'Duration': self.duration
             }
+            # if bandsteering is enabled
+            if self.do_bandsteering:
+                del test_setup_info["Duration"]
+                test_setup_info["Robot IP"] = self.robo_ip
+                test_setup_info["Selected Coordinates"] = ",".join(self.coordinate_list)
+                test_setup_info["no of cycles"] = self.total_cycles
         # Test setup information table for devices in groups
         else:
             group_names = ', '.join(config_devices.keys())
@@ -1119,6 +1132,9 @@ class Ping(Realm):
             })
             report.set_table_dataframe(individual_report_df)
             report.build_table()
+        # Extract bandsteering graphs
+        if self.do_bandsteering:
+            self.get_bandsteering_stats(report)
 
         # packets sent vs received vs dropped
         report.set_table_title(
@@ -2451,6 +2467,115 @@ class Ping(Realm):
         if self.do_webUI:
             self.copy_reports(report_path_date_time)
 
+    def get_bandsteering_stats(self, report=None):
+        """
+        Retrieves and adds bandsteering statistics to the report.
+
+        This function processes the given dataframe to detect BSSID changes
+        (transitions) per device, maps them with corresponding channels,
+        and correlates them with robot movement (coordinates and timestamps).
+        It generates bar graphs for BSSID change counts and tabular reports
+        for band steering events.
+
+        Args:
+            report: Report object used to build graphs and tables.
+            df (pd.DataFrame): Input dataframe containing timestamp, BSSID,
+                            channel, and coordinate data.
+
+        Returns:
+            None
+        """
+        df = pd.read_csv("bandsteering_data.csv")
+        bssid_cols = [c for c in df.columns if c.startswith("BSSID")]
+        channel_cols = [c for c in df.columns if c.startswith("Channel")]
+
+        bssid_to_channel = {
+            bssid_col: next(
+                ch for ch in channel_cols
+                if ch.replace("Channel", "").strip() ==
+                bssid_col.replace("BSSID", "").strip()
+            )
+            for bssid_col in bssid_cols
+        }
+
+        # print("bssiddcolss",bssid_cols)
+        # print("bassidchannelcolss",bssid_to_channel)
+        for col in bssid_cols:
+
+            channel_col = bssid_to_channel[col]
+
+            # Detect BSSID changes
+            mask = df[col] != df[col].shift()
+            filtered_df = df.loc[mask]
+
+            if self.bssids:
+                filtered_df = df.loc[mask & df[col].isin(self.bssids)]
+
+            bssid_list = filtered_df[col].tolist()
+            channel_list = filtered_df[channel_col].tolist()
+            timestamp_list = filtered_df['TIMESTAMP'].tolist()
+            from_coordinate_list = filtered_df['From Coordinate'].tolist()
+            to_coordinate_list = filtered_df['To Coordinate'].tolist()
+            bssid_counts = Counter(bssid_list)
+
+            x_axis = list(bssid_counts.keys())      # BSSID values
+            y_axis = [[float(i)] for i in list(bssid_counts.values())]
+            if len(self.bssids) > 0:
+                x_axis = self.bssids
+                y_axis = [[float(bssid_counts.get(bssid, 0))] for bssid in self.bssids]
+            device_name = col.replace('BSSID ', '')
+            device_name = col.split()[-1]
+            report.set_obj_html(
+                _obj_title=f"BSSID change count of the {device_name}",
+                _obj=" ")
+            report.build_objective()
+            graph = lf_bar_graph(_data_set=y_axis,
+                                 _xaxis_name="BSSID",
+                                 _yaxis_name="Number of Changes",
+                                 # _xaxis_categories = [", ".join(x_axis)],
+                                 _xaxis_categories=[""],
+                                 _xaxis_label=x_axis,
+                                 _graph_image_name=f"bssid_change_count_{device_name}",
+                                 _label=x_axis,
+                                 _xaxis_step=1,
+                                 _graph_title=f"BSSID change count – {device_name}",
+                                 _title_size=16,
+                                 _color_edge='black',
+                                 _bar_width=0.15,
+                                 _figsize=(18, 6),
+                                 _legend_loc="best",
+                                 _legend_box=(1.0, 1.0),
+                                 _dpi=96,
+                                 _show_bar_value=True,
+                                 _enable_csv=True,
+                                 _color=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
+                                 _color_name=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
+
+                                 )
+
+            graph_png = graph.build_bar_graph()
+            report.set_graph_image(graph_png)
+            # need to move the graph image to the results directory
+            report.move_graph_image()
+            report.set_csv_filename(graph_png)
+            report.move_csv_file()
+            report.build_graph()
+
+            report.set_obj_html(
+                _obj_title=f"Band Steering Results for {device_name}",
+                _obj=" ")
+            report.build_objective()
+            table_df = {
+                "Timestamp": timestamp_list,
+                "BSSID": bssid_list,
+                "Channel": channel_list,
+                "From Coordinate": from_coordinate_list,
+                "To Coordinate": to_coordinate_list
+            }
+            table_df = pd.DataFrame(table_df)
+            report.set_table_dataframe(table_df)
+            report.build_table()
+
 
 def validate_args(args):
     # input sanity
@@ -2595,6 +2720,11 @@ connectivity problems.
         Command Line Interface to run ping plotter test with desired resources at desired points with rotations using robo
         python3 lf_interop_ping_plotter.py --mgr 192.168.207.78 --real --target 8.8.8.8 --ping_interval 1 --ping_duration 1m --use_default_config
         --robot_ip 192.168.204.76 --coordinate 3,4 --rotation 45,90
+
+        EXAMPLE-16:
+        Command Line Interface to run ping plotter test with desired resources at desired points with bandsteering using robo
+        python3 lf_interop_ping_plotter.py --mgr 192.168.207.78 --real --target 8.8.8.8 --ping_interval 1 --ping_duration 1m --use_default_config
+        --robot_ip 192.168.204.76 --coordinate 3,4 --do_bandsteering --total_cycles 3 --bssids 94:A6:7E:74:26:33,94:A6:7E:74:26:22
 
 
 
