@@ -849,6 +849,13 @@ class Youtube(Realm):
         time.sleep(10)
         self.generic_endps_profile.cleanup()
         logging.info("Application Closed sucessfully")
+
+        if self.do_robo and not self.do_bandsteering:
+            self.create_robo_report()
+        else:
+            report_dir = self.ui_report_dir if self.do_webUI else ''
+            self.create_report(self.stats_api_response, report_dir)
+
         os._exit(0)
 
     def updating_webui_runningjson(self, obj):
@@ -2239,10 +2246,21 @@ NOTES:
             logger_config.lf_logger_config_json = args.lf_logger_config_json
             logger_config.load_lf_logger_config()
 
+        rotations_enabled = False
+        if args.do_robo:
+            args.coordinates = args.coordinates.split(',') if args.coordinates else []
+            args.rotations = [float(angle) for angle in args.rotations.split(',')] if args.rotations else []
+            if args.rotations:
+                rotations_enabled = True
+
         mgr_ip = args.mgr
         mgr_port = args.mgr_port
         url = args.url
         duration = args.duration
+        bssids = None
+        if args.do_bandsteering:
+            args.duration = 999999
+            bssids = args.bssids.split(',') if args.bssids else []
 
         do_webUI = args.do_webUI
         ui_report_dir = args.ui_report_dir
@@ -2327,7 +2345,15 @@ NOTES:
                 upstream_port=args.upstream_port,
                 config=args.config,
                 selected_groups=selected_groups,
-                selected_profiles=selected_profiles)
+                selected_profiles=selected_profiles,
+                robo_ip=args.robo_ip,
+                coordinates_list=args.coordinates,
+                angles_list=args.rotations,
+                do_robo=args.do_robo,
+                cycles=args.cycles,
+                do_bandsteering=args.do_bandsteering,
+                bssids=bssids,
+                rotations_enabled=rotations_enabled)
             youtube.start_flask_server()
             args.upstream_port = youtube.change_port_to_ip(args.upstream_port)
 
@@ -2461,36 +2487,46 @@ NOTES:
                 youtube.update_webui()
 
             logging.info("TEST STARTED")
-            logging.info('Running the Youtube Streaming test for {} minutes'.format(duration))
+            if args.do_bandsteering:
+                logging.info('Running the Youtube Streaming until robo finishes all the cycles')
+            else:
+                logging.info('Running the Youtube Streaming test for {} minutes'.format(duration))
 
             time.sleep(10)
 
             youtube.start_time = datetime.now()
-            youtube.start_generic()
-
-            duration = args.duration
-            end_time = datetime.now() + timedelta(minutes=duration)
-            initial_data = youtube.get_data_from_api()
-
-            while len(initial_data) == 0:
-                initial_data = youtube.get_data_from_api()
-                time.sleep(1)
-            if initial_data:
-                end_time_webgui = []
-                for i in range(len(youtube.device_names)):
-                    end_time_webgui.append(initial_data['result'].get(youtube.device_names[i], {}).get('stop', False))
+            if args.do_robo:
+                if args.do_bandsteering:
+                    youtube.perform_robo_bandsteering_test()
+                else:
+                    youtube.perform_robo_test()
             else:
-                for _i in range(len(youtube.device_names)):
-                    end_time_webgui.append("")
+                youtube.start_generic()
 
-            end_time = datetime.now() + timedelta(minutes=duration)
+                duration = args.duration
+                end_time = datetime.now() + timedelta(minutes=duration)
+                initial_data = youtube.get_data_from_api()
 
-            while datetime.now() < end_time or not youtube.check_gen_cx():
-                youtube.get_data_from_api()
-                time.sleep(1)
+                while len(initial_data) == 0:
+                    initial_data = youtube.get_data_from_api()
+                    time.sleep(1)
+                if initial_data:
+                    end_time_webgui = []
+                    for i in range(len(youtube.device_names)):
+                        end_time_webgui.append(initial_data['result'].get(youtube.device_names[i], {}).get('stop', False))
+                else:
+                    for _i in range(len(youtube.device_names)):
+                        end_time_webgui.append("")
 
-            youtube.generic_endps_profile.stop_cx()
-            logging.info("Duration ended")
+                end_time = datetime.now() + timedelta(minutes=duration)
+
+                while datetime.now() < end_time or not youtube.check_gen_cx():
+                    youtube.get_data_from_api()
+                    time.sleep(1)
+
+                youtube.generic_endps_profile.stop_cx()
+                logging.info("Duration ended")
+
             iot_summary = None
             if args.iot_test and args.iot_testname:
                 base = os.path.join("results", args.iot_testname)
@@ -2500,7 +2536,9 @@ NOTES:
                         iot_summary = json.load(f)
 
             logging.info('Stopping the test')
-            if do_webUI:
+            if args.do_robo and not args.do_bandsteering:
+                youtube.create_robo_report()
+            elif do_webUI:
                 youtube.create_report(youtube.stats_api_response, youtube.ui_report_dir, iot_summary=iot_summary)
             else:
                 youtube.create_report(youtube.stats_api_response, '', iot_summary=iot_summary)
@@ -2514,6 +2552,8 @@ NOTES:
         logger.error("An exception occurred:\n%s", tb_str)
     finally:
         if not ('--help' in sys.argv or '-h' in sys.argv):
+            if args.do_webUI:
+                youtube.stop_webui_test()
             youtube.stop()
             logging.info("Waiting for Cleanup of Browsers in Devices")
             time.sleep(10)
