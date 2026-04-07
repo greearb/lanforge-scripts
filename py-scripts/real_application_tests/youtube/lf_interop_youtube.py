@@ -1580,6 +1580,329 @@ class Youtube(Realm):
                         os.remove(csv_file_path)
                         logging.info(f"Deleted existing CSV file: {csv_file_path}")
 
+    def create_robo_report(self):
+        if self.do_webUI:
+            self.report = lf_report(_output_pdf='youtube_streaming.pdf',
+                                    _output_html='youtube_streaming.html',
+                                    _results_dir_name="youtube_streaming_report",
+                                    _path=self.ui_report_dir)
+        else:
+            self.report = lf_report(_output_pdf='youtube_streaming.pdf',
+                                    _output_html='youtube_streaming.html',
+                                    _results_dir_name="youtube_streaming_report",
+                                    _path='')
+        self.report_path = self.report.get_path()
+        self.report_path_date_time = self.report.get_path_date_time()
+
+        self.report.set_title('Youtube Streaming Report')
+        self.report.build_banner()
+
+        self.report.set_obj_html(_obj_title='Objective',
+                                 _obj='''The Objective is to conduct automated Youtube Video Streaming test across multiple laptops to gather statistics. The test
+                            will collect these statistics. Additionally,automated graphs will be generated using the collected data.
+                            ''')
+        self.report.build_objective()
+
+        if self.config:
+            test_setup_info = {
+                'Test Name': 'YouTube Streaming Test',
+                'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
+                'Resolution': self.resolution,
+                'Configured Devices': self.hostname_os_combination,
+                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac})',
+                "Video URL": self.url,
+                "SSID": self.ssid,
+                "Security": self.security,
+
+            }
+
+        elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
+            gp_pairs = zip(self.selected_groups, self.selected_profiles)
+            gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
+
+            test_setup_info = {
+                'Test Name': 'YouTube Streaming Test',
+                'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
+                'Resolution': self.resolution,
+                "Configuration": gp_map,
+                'Configured Devices': self.hostname_os_combination,
+                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac})',
+                "Video URL": self.url,
+
+            }
+        else:
+            test_setup_info = {
+                'Test Name': 'YouTube Streaming Test',
+                'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
+                'Resolution': self.resolution,
+                'Configured Devices': self.hostname_os_combination,
+                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac})',
+                "Video URL": self.url,
+
+            }
+
+        self.report.test_setup_table(
+            test_setup_data=test_setup_info, value='Test Parameters')
+
+        if self.do_webUI:
+            for file_name in os.listdir(self.ui_report_dir):
+                if file_name.endswith('.csv'):
+                    source_file = os.path.join(self.ui_report_dir, file_name)
+                    self.move_files(source_file, self.report_path_date_time)
+        else:
+            for file_name in os.listdir('.'):
+                if file_name.endswith('.csv'):
+                    self.move_files(file_name, self.report_path_date_time)
+
+        original_dir = os.getcwd()
+        os.chdir(self.report_path_date_time)
+
+        for coordinate in self.coordinates_list:
+            if self.rotations_enabled:
+                for angle in self.angles_list:
+                    self.add_frames_graphs_to_report(coordinate, angle)
+            else:
+                self.add_frames_graphs_to_report(coordinate, "NA")
+
+        for hostname in self.real_sta_hostname:
+            self.add_buffer_health_graphs_to_report(hostname)
+        if self.do_webUI:
+            self.add_live_view_images_to_report()
+
+        os.chdir(original_dir)
+
+        self.report.build_custom()
+        self.report.build_footer()
+        self.report.write_html()
+        self.report.write_pdf()
+
+    def add_buffer_health_graphs_to_report(self, hostname):
+        all_csv_files = glob.glob("*.csv")
+        filtered_csv_files = [f for f in all_csv_files if f.endswith(f"{hostname}_youtube_stats_report.csv")]
+
+        if not filtered_csv_files:
+            logging.warning(f"No CSV files found for hostname: {hostname}")
+            return
+
+        combined_data = pd.DataFrame()
+
+        for coord in self.coordinates_list:
+            for file_name in filtered_csv_files:
+                if file_name.startswith(f"{coord}_"):
+                    try:
+                        df = pd.read_csv(file_name)
+                        df["SourceFile"] = file_name
+                        combined_data = pd.concat([combined_data, df], ignore_index=True)
+                    except Exception as e:
+                        logging.error(f"Error reading {file_name}: {e}")
+                        continue
+
+        try:
+            combined_data['TimeStamp'] = pd.to_datetime(combined_data['TimeStamp'], format="%H:%M:%S").dt.time
+        except Exception as e:
+            logging.error(f"Error converting timestamps: {e}")
+            return
+
+        combined_data = combined_data.drop_duplicates(subset='TimeStamp', keep='first')
+
+        timestamps = combined_data['TimeStamp'].apply(lambda time_value: time_value.strftime('%H:%M:%S'))
+        buffer_health = combined_data['BufferHealth']
+
+        _figure, axis = plt.subplots(figsize=(20, 10))
+        plt.plot(timestamps, buffer_health, color='blue', linewidth=2)
+
+        plt.xlabel('Time', fontweight='bold', fontsize=15)
+        plt.ylabel('Buffer Health', fontweight='bold', fontsize=15)
+        plt.title(f'Buffer Health vs Time Graph for {hostname}', fontsize=18)
+
+        if len(timestamps) > 30:
+            tick_interval = len(timestamps) // 30
+            selected_ticks = timestamps[::tick_interval]
+            axis.set_xticks(selected_ticks)
+        else:
+            axis.set_xticks(timestamps)
+
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+
+        output_file = f"{hostname}_combined_buffer_health_vs_time.png"
+        plt.savefig(output_file, dpi=96)
+        plt.close()
+
+        logging.info(f"Combined graph saved for {hostname}: {output_file}")
+
+        self.report.set_graph_title(f'Buffer Health vs Time Graph for {hostname}')
+        self.report.build_graph_title()
+        self.report.set_graph_image(output_file)
+        self.report.build_graph()
+
+    def add_frames_graphs_to_report(self, current_cord, current_angle):
+        """
+            Reads all CSV files in the current directory that start with '<current_cord>_',
+            filters rows up to current_angle, and collects stats:
+            - Instance Name
+            - Max Total Frames
+            - Max Dropped Frames
+            - Viewport
+            - Current Resolution
+            - Optimal Resolution
+            - Max Buffer Health
+            - Min Buffer Health
+        """
+        prefix = f"{current_cord}_"
+        all_csv_files = glob.glob("*.csv")
+
+        filtered_csv_files = [f for f in all_csv_files if f.startswith(prefix)]
+        if not filtered_csv_files:
+            logging.info(f"No CSV files found starting with '{prefix}'.")
+            return {}
+
+        result_dict = {}
+
+        for csv_file in filtered_csv_files:
+            try:
+                try:
+                    df = pd.read_csv(csv_file)
+                except FileNotFoundError:
+                    logging.info(f"CSV file not found: {csv_file}")
+                    continue
+
+                required_cols = {
+                    "Angle", "Instance Name", "TotalFrames", "DroppedFrames",
+                    "Viewport", "CurrentRes", "OptimalRes", "BufferHealth"
+                }
+                missing = required_cols - set(df.columns)
+                if missing:
+                    logging.info(f"Skipping {csv_file}: missing columns {missing}")
+                    continue
+
+                df["Angle"] = pd.to_numeric(df["Angle"], errors="coerce")
+                if current_angle == "NA":
+                    df_filtered = df
+                else:
+                    df_filtered = df[df["Angle"] == float(current_angle)]
+
+                if df_filtered.empty:
+                    logging.info(f"No data <= {current_angle}° in {csv_file}.")
+                    continue
+
+                instance_name = df_filtered["Instance Name"].iloc[0]
+                viewport = df_filtered["Viewport"].iloc[-1]
+                current_res = df_filtered["CurrentRes"].iloc[-1]
+                optimal_res = df_filtered["OptimalRes"].iloc[-1]
+                max_total_frames = df_filtered["TotalFrames"].max()
+                max_dropped_frames = df_filtered["DroppedFrames"].max()
+                max_buffer_health = df_filtered["BufferHealth"].max()
+                min_buffer_health = df_filtered["BufferHealth"].min()
+
+                result_dict[instance_name] = {
+                    "Viewport": viewport,
+                    "Current Resolution": current_res,
+                    "Optimal Resolution": optimal_res,
+                    "Total Frames": int(max_total_frames),
+                    "Dropped Frames": int(max_dropped_frames),
+                    "Max Buffer Health": round(float(max_buffer_health), 2),
+                    "Min Buffer Health": round(float(min_buffer_health), 2),
+                }
+                logging.info(f"Processed {csv_file}: {instance_name}")
+
+            except Exception as e:
+                logging.info(f"Error reading {csv_file}: {e}")
+
+        if current_angle == "NA":
+            self.report.set_graph_title(f"Total Frames vs Dropped Frames at coordinate: {current_cord}")
+        else:
+            self.report.set_graph_title(f"Total Frames vs Dropped Frames at coordinate: {current_cord} and angle: {current_angle}°")
+        self.report.build_graph_title()
+        x_fig_size = 25
+        y_fig_size = len(result_dict) * .5 + 4
+
+        hostnames = list(result_dict.keys())
+        total_frames_list = [result_dict[host]["Total Frames"] for host in hostnames]
+        dropped_frames_list = [result_dict[host]["Dropped Frames"] for host in hostnames]
+        viewport_list = [result_dict[host]["Viewport"] for host in hostnames]
+        current_res_list = [result_dict[host]["Current Resolution"] for host in hostnames]
+        max_buffer_health_list = [result_dict[host]["Max Buffer Health"] for host in hostnames]
+        min_buffer_health_list = [result_dict[host]["Min Buffer Health"] for host in hostnames]
+
+        graph = lf_bar_graph_horizontal(_data_set=[dropped_frames_list, total_frames_list],
+                                        _xaxis_name="No of Frames",
+                                        _yaxis_name="Devices",
+                                        _yaxis_categories=hostnames,
+                                        _graph_image_name=f"Dropped Frames vs Total Frames_{current_cord}_{current_angle}",
+                                        _label=["dropped Frames", "Total Frames"],
+                                        _color=None,
+                                        _color_edge='red',
+                                        _figsize=(x_fig_size, y_fig_size),
+                                        _show_bar_value=True,
+                                        _text_font=6,
+                                        _text_rotation=True,
+                                        _enable_csv=True,
+                                        _legend_loc="upper right",
+                                        _legend_box=(1.1, 1),
+                                        )
+        graph_image = graph.build_bar_graph_horizontal()
+        self.report.set_graph_image(graph_image)
+        self.report.build_graph()
+
+        self.report.set_table_title(f'Test Results for coordinate: {current_cord} and angle: {current_angle}°')
+        self.report.build_table_title()
+
+        test_results = {
+            "Hostname": hostnames,
+            "ViewPort": viewport_list,
+            "Video Resoultion": current_res_list,
+            "Max Buffer Health (Seconds)": max_buffer_health_list,
+            "Min Buffer health (Seconds)": min_buffer_health_list,
+            "Total Frames": total_frames_list,
+            "Dropped Frames": dropped_frames_list,
+
+        }
+
+        test_results_df = pd.DataFrame(test_results)
+        self.report.set_table_dataframe(test_results_df)
+        self.report.build_table()
+
+        logging.info("\nSummary for all devices:")
+        for key, value in result_dict.items():
+            logging.info(f"{key}: {value}")
+
+    def add_live_view_images_to_report(self):
+        """
+        This function looks for live view images for each floor
+        in the 'live_view_images' folder within `self.ui_report_dir`.
+        It waits up to 60 seconds for each image. If an image is found,
+        it's added to the report on a new page; otherwise, it's skipped.
+        """
+        url_image_path = os.path.join(self.ui_report_dir, "live_view_images", f"yt_{self.test_name}_1.png")
+        timeout = 60
+        start_time = time.time()
+
+        while not os.path.exists(url_image_path):
+            if time.time() - start_time > timeout:
+                logging.info("Timeout: Images not found within 60 seconds.")
+                break
+            time.sleep(1)
+        if os.path.exists(url_image_path):
+            html_content = (
+                '<div style="page-break-before: always;"></div>'
+                f'<img src="file://{url_image_path}" style="width:1200px; height:800px;"></img>'
+            )
+
+            self.report.set_custom_html(html_content)
+
+    def stop_webui_test(self):
+        try:
+            file = f"{self.ui_report_dir}/running_status.json"
+            with open(file, 'r') as file_handle:
+                data = json.load(file_handle)
+            data['status'] = "Completed"
+            with open(file, 'w') as file_handle:
+                json.dump(data, file_handle, indent=4)
+            logging.info("WebUI test status updated to Completed.")
+        except Exception as e:
+            logging.error(f"Error in stop_webui_test function {e}", exc_info=True)
+
 
 def main():
     try:
