@@ -1071,6 +1071,545 @@ class RealBrowserTest(Realm):
             else:
                 self.duration = int(self.duration)
 
+    def get_bssid_map(self):
+        """
+        Build a mapping of device hostnames to their associated BSSID (AP MAC).
+
+        Returns:
+            dict: {hostname: bssid} mapping.
+                If data is unavailable, 'NA' is used as default.
+        """
+
+        bssid_map = {}
+
+        try:
+            port_data = self.json_get("/ports/all")["interfaces"]
+            interfaces_dict = {}
+            for port in port_data:
+                interfaces_dict.update(port)
+        except Exception as e:
+            logger.error(f"Failed to fetch ports data for BSSID: {e}")
+            return bssid_map
+
+        # MOBILES
+        for sta in self.phone_data or []:
+            try:
+                eid = self.name_to_eid(sta)
+                resp = self.json_get(f"/resource/{eid[0]}/{eid[1]}/list?fields=user")
+                hostname = resp["resource"].get("user", f"mobile_{eid[1]}")
+            except Exception:
+                hostname = f"mobile_{sta}"
+
+            bssid_map[hostname] = interfaces_dict.get(sta, {}).get("ap", "NA")
+
+        # LAPTOPS
+        for sta in self.laptops or []:
+            try:
+                eid = self.name_to_eid(sta)
+                resp = self.json_get(f"/resource/{eid[0]}/{eid[1]}/list?fields=hostname")
+                hostname = resp["resource"].get("hostname", sta)
+            except Exception:
+                hostname = sta
+
+            bssid_map[hostname] = interfaces_dict.get(sta, {}).get("ap", "NA")
+
+        return bssid_map
+
+    def init_bandsteering_csv(self, device_name):
+        """
+        Initialize a CSV file for a specific device to store bandsteering data.
+
+        - Creates a CSV file per device if it does not already exist.
+        - Writes header columns required for analysis.
+        Args:
+            device_name (str): The name of the device for which to initialize the CSV file.
+        """
+
+        if device_name in self.band_csv_files:
+            return
+
+        filename = os.path.join(
+            self.bandsteering_dir,
+            f"{device_name}_bandsteering.csv"
+        )
+
+        self.band_csv_files[device_name] = filename
+        logger.info("[BANDSTEERING] Creating CSV for device: %s -> %s", device_name, filename)
+        headers = [
+            "timestamp",
+            "device_type",
+            "device_name",
+            "total_urls",
+            "uc_min",
+            "uc_avg",
+            "uc_max",
+            "total_err",
+            "time_to_target_urls",
+            "cx_name",
+            "bssid",
+            "channel",
+            "from_coordinate",
+            "to_coordinate",
+            "robot_x",
+            "robot_y"
+        ]
+
+        with open(filename, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(headers)
+
+    def write_bandsteering_row(self, row):
+        """
+        Append a single row of bandsteering metrics to the device-specific CSV.
+
+        Args:
+            row (dict): Dictionary containing device metrics such as:
+                - timestamp
+                - device_name
+                - total_urls
+                - latency stats (uc_min, uc_avg, uc_max)
+                - errors
+                - coordinates and robot position
+        """
+
+        dev = row["device_name"]
+        self.init_bandsteering_csv(dev)
+
+        with open(self.band_csv_files[dev], "a", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                row["timestamp"],
+                row["device_type"],
+                row["device_name"],
+                row["total_urls"],
+                row["uc_min"],
+                row["uc_avg"],
+                row["uc_max"],
+                row["total_err"],
+                row["time_to_target_urls"],
+                row["cx_name"],
+                row["bssid"],
+                row.get("channel", "NA"),
+                row["from_coordinate"],
+                row["to_coordinate"],
+                row["robot_x"],
+                row["robot_y"]
+            ])
+
+    def collect_bandsteering_values(self):
+        """
+        Collect stats for all devices and RETURN rows.
+        """
+        rows = []
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # ROBOT POSE
+        if self.robo_obj:
+            robot_x, robot_y, from_cord, to_cord = self.robo_obj.get_robot_pose()
+        else:
+            robot_x = robot_y = from_cord = to_cord = None
+
+        bssid_map = self.get_bssid_map()
+        port_data = self.local_realm.json_get("port/list?fields=channel")
+        channel_map = {}
+        for iface in port_data.get("interfaces", []):
+            channel_map.update({
+                k: v.get("channel", "NA")
+                for k, v in iface.items()
+            })
+
+        # LAPTOPS
+        for sta in self.laptops or []:
+            try:
+                eid = self.name_to_eid(sta)
+                resp = self.local_realm.json_get(
+                    f"/resource/{eid[0]}/{eid[1]}/list?fields=hostname"
+                )
+                hostname = resp["resource"].get("hostname", sta)
+            except Exception:
+                hostname = sta
+
+            stats = self.laptop_stats.get(hostname, {})
+
+            if hostname not in self.time_to_target and stats.get("total_urls", 0) >= self.count:
+                self.time_to_target[hostname] = (
+                    datetime.now() - self.test_start_time
+                ).total_seconds()
+
+            rows.append({
+                "timestamp": ts,
+                "device_type": "laptop",
+                "device_name": hostname,
+                "total_urls": stats.get("total_urls", 0),
+                "uc_min": stats.get("uc_min", 0),
+                "uc_avg": stats.get("uc_avg", 0),
+                "uc_max": stats.get("uc_max", 0),
+                "total_err": stats.get("total_err", 0),
+                "time_to_target_urls": self.time_to_target.get(hostname, 0),
+                "cx_name": "NA",
+                "bssid": bssid_map.get(hostname, "NA"),
+                "channel": channel_map.get(sta, "NA"),
+                "from_coordinate": from_cord,
+                "to_coordinate": to_cord,
+                "robot_x": robot_x,
+                "robot_y": robot_y
+            })
+
+        # MOBILES
+        data = self.local_realm.json_get(
+            "layer4/%s/list?fields=name,total-urls,uc-min,uc-avg,uc-max,total-err" %
+            ",".join(self.bandsteering_cx_list)
+        )
+        # logger.info("[BANDSTEERING] Using CX list: %s", self.bandsteering_cx_list)
+
+        endpoint_data = data.get("endpoint", [])
+
+        # NORMALIZE FOR SINGLE OR MULTIPLE CX
+        if isinstance(endpoint_data, dict):
+            endpoint_data = [endpoint_data]
+
+        for ep in endpoint_data:
+            if not isinstance(ep, dict):
+                continue
+
+            # LANforge returns { cx_name : stats }
+            # HANDLE SINGLE vs MULTI CX
+            if "name" in ep:
+                # SINGLE CX case
+                cx_name = ep.get("name")
+                v = ep
+            else:
+                # MULTI CX case
+                cx_name = list(ep.keys())[0]
+                v = ep[cx_name]
+
+            if not isinstance(v, dict):
+                continue
+
+            # RESOURCE EXTRACTION
+            res_no = None
+            m = re.search(r'http(\d+)_l4', cx_name)
+            if m:
+                res_no = m.group(1)
+            else:
+                logger.error("[BANDSTEERING] Failed to extract resource from CX: %s", cx_name)
+                continue
+
+            sta = f"1.{res_no}.wlan0"
+
+            hostname = f"mobile_{res_no}"
+            if res_no:
+                if res_no not in self.robo_mobile_hostname_cache:
+                    resp = self.local_realm.json_get(
+                        f"resource/1/{res_no}/list?fields=user"
+                    )
+                    user = resp["resource"].get("user", "").strip()
+
+                    if not user:
+                        user = f"mobile_{res_no}"
+
+                    self.robo_mobile_hostname_cache[res_no] = user
+
+                hostname = self.robo_mobile_hostname_cache[res_no]
+
+            bssid = bssid_map.get(hostname, "NA")
+
+            if hostname not in self.time_to_target and v.get("total-urls", 0) >= self.count:
+                self.time_to_target[hostname] = (
+                    datetime.now() - self.test_start_time
+                ).total_seconds()
+
+            rows.append({
+                "timestamp": ts,
+                "device_type": "mobile",
+                "device_name": hostname,
+                "total_urls": v.get("total-urls", 0),
+                "uc_min": float(v.get("uc-min", 0)) / 1000,
+                "uc_avg": float(v.get("uc-avg", 0)) / 1000,
+                "uc_max": float(v.get("uc-max", 0)) / 1000,
+                "total_err": v.get("total-err", 0),
+                "time_to_target_urls": self.time_to_target.get(hostname, 0),
+                "cx_name": cx_name,
+
+                # ---- ROBOT related
+                "from_coordinate": from_cord,
+                "to_coordinate": to_cord,
+                "robot_x": robot_x,
+                "robot_y": robot_y,
+                "channel": channel_map.get(sta, "NA"),
+                "bssid": bssid
+            })
+
+        logger.info("[BANDSTEERING] Rows collected this tick: %d", len(rows))
+        logger.info("[DEBUG] CX BATCH: %s", self.bandsteering_cx_list)
+        return rows
+
+    def bandsteering_monitor(self):
+        """
+        Called every second while robot is moving.
+        Collects per-device stats and writes one CSV row.
+        """
+        rows = self.collect_bandsteering_values()
+        logger.info("[DEBUG] CX BATCH: %s", self.cx_batch)
+        time.sleep(1)
+        return rows
+
+    def write_live_webui_csv(self, rows):
+        """
+        REQUIRED for WebUI live graphs.
+        WebUI reads ONLY real_time_data.csv.
+        """
+        headers = [
+            "device_type",
+            "device_name",
+            "total_urls",
+            "uc_min",
+            "uc_avg",
+            "uc_max",
+            "total_err",
+            "time_to_target_urls",
+            "cx_name"
+        ]
+
+        with open("real_time_data.csv", "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(headers)
+
+            for r in rows:
+                writer.writerow([
+                    r.get("device_type"),
+                    r.get("device_name"),
+                    r.get("total_urls", 0),
+                    r.get("uc_min", 0),
+                    r.get("uc_avg", 0),
+                    r.get("uc_max", 0),
+                    r.get("total_err", 0),
+                    r.get("time_to_target_urls", 0),
+                    r.get("cx_name", "NA"),
+                ])
+
+    def run_robo_bandsteering_test(self, cx_batch):
+        logging.info("[BANDSTEERING] Starting robo band-steering test")
+        # build cyclic coordinate list
+        base_coords = list(self.coordinates_list)
+        starting_coord = base_coords[0]
+        self.bandsteering_start_coord = base_coords[0]
+        self.bandsteering_end_coord = base_coords[-1]
+
+        logging.info(
+            "[BANDSTEERING] Ensuring robot reaches starting coordinate %s before starting test",
+            starting_coord
+        )
+
+        pause, stopped = self.robo_obj.wait_for_battery()
+        if stopped:
+            return
+
+        # check robo current position
+        try:
+            curr_x, curr_y, _, _ = self.robo_obj.get_robot_pose()
+            current_coord = self.robo_obj.current_coordinate
+        except Exception:
+            current_coord = None
+
+        logging.info(
+            "[BANDSTEERING] Current robot coordinate: %s | CLI start coordinate: %s",
+            current_coord, starting_coord
+        )
+
+        # move only if needed
+        if current_coord != starting_coord:
+            logging.info(
+                "[BANDSTEERING] Robot not at starting coordinate. Moving to %s",
+                starting_coord
+            )
+
+            result = self.robo_obj.move_to_coordinate(coord=starting_coord)
+
+            if isinstance(result, tuple):
+                _, stopped = result
+            else:
+                _, stopped = False, True
+
+            if stopped:
+                logging.error(
+                    "[BANDSTEERING] Failed to reach starting coordinate %s. Aborting test.",
+                    starting_coord
+                )
+                return
+            # if not reached:
+            #     continue
+
+            self.robo_obj.current_coordinate = starting_coord
+        else:
+            logging.info(
+                "[BANDSTEERING] Robot already at starting coordinate %s. No initial move needed.",
+                starting_coord
+            )
+            self.robo_obj.current_coordinate = starting_coord
+
+        logging.info(
+            "[BANDSTEERING] Robot reached starting coordinate %s. Ready to start band-steering.",
+            starting_coord
+        )
+
+        self.prev_coordinate = starting_coord
+        self.current_cord = starting_coord
+
+        logging.info(
+            "[BANDSTEERING] Starting CX before first movement from %s",
+            starting_coord
+        )
+        self.start_specific(cx_batch)
+        # self.http_profile.start_cx()
+        self.test_start_time = datetime.now()
+        cx_started = True
+
+        self.robo_obj.total_cycles = self.cycles
+        self.robo_obj.coordinate_list = self.coordinates_list
+        self.coordinates_list = self.robo_obj.get_coordinates_list()
+
+        logging.info(
+            "[BANDSTEERING] Final coordinate list: %s",
+            self.coordinates_list
+        )
+
+        self.time_to_target = {}
+        self.band_csv_files = {}
+        self.robo_mobile_hostname_cache = {}
+        # self.prev_coordinate = starting_coord
+
+        # Directory to store bandsteering CSVs
+        self.bandsteering_dir = f"bandsteering_{datetime.now():%Y%m%d_%H%M%S}"
+        os.makedirs(self.bandsteering_dir, exist_ok=True)
+        if not hasattr(self, "phone_data") or not self.phone_data:
+            self.phone_data, _, _, _, _ = self.get_resource_data()
+
+        self.bandsteering_cx_list = cx_batch.copy()
+        # cx_started = False
+
+        try:
+            for _idx, coordinate in enumerate(self.coordinates_list):
+                logging.info(f"[BANDSTEERING] Moving to coordinate {coordinate}")
+
+                self.current_cord = coordinate
+                pause, stopped = self.robo_obj.wait_for_battery()
+                if stopped:
+                    break
+
+                def monitor_wrapper():
+                    rows = self.collect_bandsteering_values()
+
+                    for row in rows:
+                        if not row.get("device_name"):
+                            continue
+                        row["from_coordinate"] = self.prev_coordinate
+                        row["to_coordinate"] = self.current_cord
+
+                        self.write_bandsteering_row(row)
+
+                        name = row["device_name"]
+
+                        if name not in self.laptop_stats:
+                            self.laptop_stats[name] = {
+                                "name": name,
+                                "start_time": self.test_start_time.isoformat()
+                            }
+
+                        self.laptop_stats[name].update({
+                            "total_urls": row.get("total_urls", 0),
+                            "uc_min": row.get("uc_min", 0),
+                            "uc_avg": row.get("uc_avg", 0),
+                            "uc_max": row.get("uc_max", 0),
+                            "total_err": row.get("total_err", 0),
+                            "cx_name": row.get("cx_name", "NA"),
+                            "current_cord": self.current_cord
+                        })
+
+                    # CSV FOR WEBUI GRAPHS
+                    self.write_live_webui_csv(rows)
+
+                    self.prev_coordinate = self.current_cord
+                    time.sleep(1)
+                    return True
+
+                # time.sleep(10)
+                result = self.robo_obj.move_to_coordinate(
+                    coord=coordinate,
+                    monitor_function=monitor_wrapper
+                )
+
+                # NORMALIZE REAL ROBO RETURN
+                if isinstance(result, tuple):
+                    moved = result[0]
+                    stopped = result[1]
+                else:
+                    moved = False
+                    stopped = True
+
+                if stopped:
+                    break
+                if not moved:
+                    continue
+
+        finally:
+            logging.info("[BANDSTEERING] Final coordinate reached, stopping CX")
+            if cx_started:
+                self.http_profile.stop_cx()
+                # self.clear_http_cx_data()
+                self.generic_endps_profile.stop_cx()
+                self.bandsteering_completed = True
+                logger.info("[BANDSTEERING] Bandsteering completed, CXs stopped")
+
+        # CREATE NORMAL real_time_data.csv FOR REPORT
+        if self.bandsteering_completed:
+            logging.info("[BANDSTEERING] Creating  real_time_data.csv for reporting")
+
+            headers = [
+                "device_type",
+                "device_name",
+                "total_urls",
+                "uc_min",
+                "uc_avg",
+                "uc_max",
+                "total_err",
+                "time_to_target_urls",
+                "cx_name"
+            ]
+
+            latest_rows = {}
+
+            # Read last row per device from bandsteering CSVs
+            for csv_file in self.band_csv_files.values():
+                try:
+                    df = pd.read_csv(csv_file)
+                    if df.empty:
+                        continue
+                    last = df.iloc[-1]
+                    latest_rows[last["device_name"]] = last
+                except Exception as e:
+                    logging.warning(f"Failed reading {csv_file}: {e}")
+
+            with open("real_time_data.csv", "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(headers)
+
+                for row in latest_rows.values():
+                    writer.writerow([
+                        row["device_type"],
+                        row["device_name"],
+                        row["total_urls"],
+                        row["uc_min"],
+                        row["uc_avg"],
+                        row["uc_max"],
+                        row["total_err"],
+                        row["time_to_target_urls"],
+                        row["cx_name"]
+                    ])
+
+            self.csv_file_names.append("real_time_data.csv")
+
+        return
+
     def run_test(self, available_resources):
         """
         Runs the test with calculated parameters.
