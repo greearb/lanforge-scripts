@@ -77,7 +77,6 @@ class TeamsAutomation(Realm):
                  upstream_port=None,
                  no_pre_cleanup=None,
                  no_post_cleanup=None,
-                 participants_req=None,
                  audio=None,
                  video=None,
                  do_webui=None,
@@ -104,7 +103,6 @@ class TeamsAutomation(Realm):
         self.mac = 0
         self.meet_link = None
         self.participants_joined = 0
-        self.participants_req = participants_req
         self.start_time = None
         self.end_time = None
         self.audio = None
@@ -699,18 +697,10 @@ class TeamsAutomation(Realm):
                 self.login_completed = bool(login_completed_status)
                 return jsonify({"message": f"Updated login_completed status to {bool(login_completed_status)}"})
 
-        @self.app.route('/get_participants_joined', methods=['GET'])
-        def get_participants_joined():
-            return jsonify({"participants": self.participants_joined})
-
         @self.app.route('/set_participants_joined', methods=['GET'])
         def set_participants_joined():
             self.participants_joined += 1
             return jsonify({"message": f"Updated participants joined status to {self.participants_joined}"})
-
-        @self.app.route('/get_participants_req', methods=['GET'])
-        def get_participants_req():
-            return jsonify({"participants": self.participants_req})
 
         @self.app.route('/get_start_end_time', methods=['GET'])
         def get_start_end_time():
@@ -939,7 +929,6 @@ def main():
             upstream_port=args.upstream_port,
             no_pre_cleanup=args.no_pre_cleanup,
             no_post_cleanup=args.no_post_cleanup,
-            participants_req=args.participants,
             audio=args.audio,
             video=args.video,
             do_webui=args.do_webUI,
