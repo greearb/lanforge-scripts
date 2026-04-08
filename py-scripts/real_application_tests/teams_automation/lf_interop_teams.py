@@ -105,7 +105,6 @@ class TeamsAutomation(Realm):
         self.meet_link = None
         self.participants_joined = 0
         self.participants_req = participants_req
-        self.test_start = False
         self.start_time = None
         self.end_time = None
         self.audio = None
@@ -156,7 +155,6 @@ class TeamsAutomation(Realm):
         self.do_webui = do_webui
         self.test_name = test_name
         self.report_dir = report_dir
-        self.execute_finally = False
 
     def updating_webui_runningjson(self, obj):
         data = {}
@@ -470,6 +468,7 @@ class TeamsAutomation(Realm):
         except Exception as e:
             logging.error(f"Error in check_gen_cx function {e}", exc_info=True)
             logging.info(f"generic endpoint data {generic_endpoint}")
+            return False
 
     def set_start_time(self):
         self.start_time = datetime.now(self.tz) + timedelta(seconds=30)
@@ -713,15 +712,6 @@ class TeamsAutomation(Realm):
         def get_participants_req():
             return jsonify({"participants": self.participants_req})
 
-        @self.app.route('/test_started', methods=['GET', 'POST'])
-        def test_started():
-            if request.method == 'GET':
-                return jsonify({"test_started": self.test_start})
-            elif request.method == 'POST':
-                data = request.json
-                self.test_start = data.get('test_started', False)
-                return jsonify({"message": f"Updated test_start status to {self.test_start}"})
-
         @self.app.route('/get_start_end_time', methods=['GET'])
         def get_start_end_time():
             return jsonify({
@@ -878,6 +868,8 @@ class TeamsAutomation(Realm):
 
 
 def main():
+    args = None
+    teams = None
     try:
 
         parser = argparse.ArgumentParser(
@@ -977,15 +969,14 @@ def main():
         teams.run()
         time.sleep(10)
         teams.create_avg_data()
-        teams.execute_finally = True
 
     except Exception as e:
         logging.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
         traceback.print_exc()
 
     finally:
-        if not ('--help' in sys.argv or '-h' in sys.argv):
-            if teams.execute_finally:
+        if args is not None and not ('--help' in sys.argv or '-h' in sys.argv):
+            if teams is not None:
                 teams.stop_signal = True
                 teams.generate_report()
                 teams.move_csv_files()
