@@ -267,19 +267,33 @@ class TeamsAutomation(Realm):
 
         self.generic_endps_profile.start_cx()
 
-        while not self.test_start:
-
-            logging.info("WAITING FOR THE TEST TO BE STARTED")
-            time.sleep(5)
-
-        self.set_start_time()
-        logging.info("TEST WILL BE STARTING")
+        self.wait_for_test_start()
 
         while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
             if self.stop_signal:
                 break
 
             time.sleep(5)
+
+    def wait_for_test_start(self):
+        check_count = 0
+        while len(self.real_sta_list) != self.participants_joined:
+            logging.info(
+                f"Waiting for all participants to join the call. Joined: {self.participants_joined}, Expected: {len(self.real_sta_list)}"
+            )
+            time.sleep(5)
+            check_count += 1
+            if check_count > 24:
+                logging.warning(
+                    f"Waited for 2 minutes but not all participants joined. Proceeding with the test with the participants that have joined. Joined: {self.participants_joined}, Expected: {len(self.real_sta_list)}"
+                )
+                break
+
+        if len(self.real_sta_list) == self.participants_joined:
+            logging.info("All participants have joined the call. Starting the test.")
+
+        self.set_start_time()
+        logging.info("TEST WILL BE STARTING")
 
     def generate_report(self):
         report = lf_report(_output_pdf='teams_call_report.pdf',
@@ -690,11 +704,10 @@ class TeamsAutomation(Realm):
         def get_participants_joined():
             return jsonify({"participants": self.participants_joined})
 
-        @self.app.route('/set_participants_joined', methods=['POST'])
+        @self.app.route('/set_participants_joined', methods=['GET'])
         def set_participants_joined():
-            data = request.json
-            self.participants_joined = data.get('participants_joined', None)
-            return jsonify({"message": f"Updated participants jopind status to {self.participants_joined}"})
+            self.participants_joined += 1
+            return jsonify({"message": f"Updated participants joined status to {self.participants_joined}"})
 
         @self.app.route('/get_participants_req', methods=['GET'])
         def get_participants_req():
