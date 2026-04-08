@@ -60,6 +60,7 @@ lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_base_interop_profile = importlib.import_module("py-scripts.lf_base_interop_profile")
 RealDevice = lf_base_interop_profile.RealDevice
+robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -85,6 +86,11 @@ class TeamsAutomation(Realm):
                  do_bs=None,
                  do_robo=None,
                  rotations_enabled=False,
+                 robo_ip=None,
+                 coordinates=None,
+                 rotations=None,
+                 cycles=None,
+                 bssids=None,
                  enable_mobile_stats=False
 
                  ):
@@ -157,9 +163,31 @@ class TeamsAutomation(Realm):
             else:
                 self.header = ['timestamp'] + self.video_stats_header
         if self.do_robo or self.do_bs:
+            self.robo_ip = robo_ip
+            self.rotations = rotations
+            self.robo_obj = robo_base_class.RobotClass(
+                robo_ip=self.robo_ip,
+                angle_list=self.rotations,
+            )
+            self.coordinates = coordinates
+            self.cycles = cycles
+            self.bssids = bssids
             self.header.append("current_coordinate")
             if self.rotations_enabled:
                 self.header.append("current_rotation")
+            if self.do_bs:
+                self.from_coordinate = None
+                self.to_coordinate = None
+                self.header.extend([
+                    "x", "y", "signal", "channel", "mode",
+                    "tx_rate", "rx_rate", "bssid",
+                    "from_coordinate", "to_coordinate",
+                ])
+                self.bs_coord_result = []
+                self.robo_obj.coordinates_list = self.coordinates
+                self.robo_obj.total_cycles = self.cycles
+            self.successful_coords = []
+            self.failed_coords = []
         self.data_store = {}
         self.stop_signal = False
         self.path = os.path.join(os.getcwd(), "teams_test_results")
@@ -1333,10 +1361,16 @@ def main():
         optional.add_argument('--lf_logger_config_json', help='lf_logger config json')
         optional.add_argument('--audio', action='store_true')
         optional.add_argument('--video', action='store_true')
-        optional.add_argument('--do_bs', action='store_true', help='specify this flag to enable band-steering timing mode')
-        optional.add_argument('--do_robo', action='store_true', help='specify this flag to enable robo coordinate tracking mode')
-        optional.add_argument('--rotations_enabled', action='store_true', help='specify this flag to enable rotation tracking in robo mode')
         optional.add_argument('--enable_mobile_stats', action='store_true', help='specify this flag to enable mobile stats collection on Android devices')
+
+        robo = parser.add_argument_group('Robo / Band-steering arguments')
+        robo.add_argument('--robo_ip', type=str, help='Specify the robo ip')
+        robo.add_argument('--coordinates', help='Comma-separated list of coordinate point names (e.g. 1,2,3)')
+        robo.add_argument('--rotations', help='Comma-separated list of rotation angles (in degrees)')
+        robo.add_argument('--do_robo', action='store_true', help='specify this flag to enable robo coordinate tracking mode')
+        robo.add_argument('--do_bs', action='store_true', help='specify this flag to enable band-steering timing mode')
+        robo.add_argument('--cycles', type=int, default=1, help='Number of cycles to run the test')
+        robo.add_argument('--bssids', type=str, help='Comma-separated list of BSSIDs for bandsteering test')
         optional.add_argument('--do_webUI', action='store_true', help='useful to specify whether we are running through webui or cli')
         optional.add_argument('--testname', help="report directory while running test through web ui")
         optional.add_argument('--report_dir', help="report directory while running test through web ui")
@@ -1353,6 +1387,19 @@ def main():
             logger_config.lf_logger_config_json = args.lf_logger_config_json
             logger_config.load_lf_logger_config()
 
+        rotations_enabled = False
+        if args.do_robo or args.do_bs:
+            args.coordinates = args.coordinates.split(',') if args.coordinates else []
+            args.rotations = (
+                [float(angle) for angle in args.rotations.split(',')]
+                if args.rotations
+                else []
+            )
+            if args.rotations:
+                rotations_enabled = True
+            if args.bssids:
+                args.bssids = args.bssids.split(',') if args.bssids else []
+
         teams = TeamsAutomation(
             lanforge_ip=args.mgr,
             duration=args.duration,
@@ -1366,7 +1413,12 @@ def main():
             report_dir=args.report_dir,
             do_bs=args.do_bs,
             do_robo=args.do_robo,
-            rotations_enabled=args.rotations_enabled,
+            rotations_enabled=rotations_enabled,
+            robo_ip=args.robo_ip,
+            coordinates=args.coordinates,
+            rotations=args.rotations,
+            cycles=args.cycles,
+            bssids=args.bssids,
             enable_mobile_stats=args.enable_mobile_stats
 
         )
