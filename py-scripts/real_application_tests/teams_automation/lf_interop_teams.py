@@ -455,6 +455,81 @@ class TeamsAutomation(Realm):
             )
             logger.info(f"sending running state to.. {cx_name}")
 
+    def monitor_test(self):
+        while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
+            if self.stop_signal:
+                break
+
+            if self.do_robo:
+                pause, _ = self.robo_obj.wait_for_battery()
+                if pause:
+                    self.stop_signal = True
+                    time.sleep(10)
+                    logger.info("Waiting for browser cleanup at client Devices")
+                    if self.rotations_enabled:
+                        logger.info(
+                            f"Current run at coordinate {self.current_coord} with rotation {self.current_rotation} is Ignored due to low battery on Robo"
+                        )
+                        logger.info(
+                            f"Reinitializing the Run at coordinate {self.current_coord} with rotation {self.current_rotation}"
+                        )
+                    else:
+                        logger.info(
+                            f"Current run at coordinate {self.current_coord} is Ignored due to low battery on Robo"
+                        )
+                        logger.info(
+                            f"Reinitializing the Run at coordinate {self.current_coord}"
+                        )
+                    self.reset_variables_for_next_run()
+                    self.delete_current_csv_files()
+                    self.run()
+                    return
+
+            elif self.do_bs:
+                time.sleep(27)
+                logger.info(
+                    f"Robo will be moving through the following coordinates: {self.bs_coord_result}"
+                )
+                for coordinate in self.bs_coord_result:
+                    if not self.to_coordinate:
+                        self.to_coordinate = coordinate
+                    else:
+                        self.from_coordinate = self.to_coordinate
+                        self.to_coordinate = coordinate
+
+                    self.robo_obj.wait_for_battery()
+
+                    matched, aborted = self.robo_obj.move_to_coordinate(
+                        coord=coordinate
+                    )
+                    if matched:
+                        self.current_coord = coordinate
+                        self.successful_coords.append(coordinate)
+                    else:
+                        self.failed_coords.append(coordinate)
+
+                    if aborted:
+                        logger.error(f"Failed to reach the {coordinate}")
+                        self.failed_coords.append(coordinate)
+                        sys.exit()
+                    time.sleep(10)
+                return
+
+            time.sleep(5)
+
+    def reset_variables_for_next_run(self):
+        self.participants_joined = 0
+        self.login_completed = False
+        self.meet_link = ""
+        self.data_store = {}
+        self.cred_index = 0
+        self.generic_endps_profile.cleanup()
+        self.start_time = None
+        self.end_time = None
+        self.stop_signal = False
+        self.generic_endps_profile.created_cx = []
+        self.generic_endps_profile.created_endp = []
+
     def run(self):
         flask_thread = threading.Thread(target=self.start_flask_server)
         flask_thread.daemon = True
@@ -466,12 +541,19 @@ class TeamsAutomation(Realm):
         self.create_participants()
 
         self.wait_for_test_start()
-
-        while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
-            if self.stop_signal:
-                break
-
-            time.sleep(5)
+        self.monitor_test()
+        self.stop_signal = True
+        time.sleep(10)
+        if self.do_robo:
+            if self.rotations_enabled:
+                logger.info(
+                    f"Completed one cycle of test for coordinate {self.current_coord} with rotation {self.current_rotation}"
+                )
+            else:
+                logger.info(
+                    f"Completed one cycle of test for coordinate {self.current_coord}"
+                )
+            self.reset_variables_for_next_run()
 
     def wait_for_test_start(self):
         check_count = 0
