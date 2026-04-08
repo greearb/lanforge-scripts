@@ -915,11 +915,28 @@ class RealBrowserTest(Realm):
         @self.app.route('/stop_rb', methods=['GET'])
         def stop_rb():
             logging.info("Stopping the test through WEB GUI")
+            self.webui_stop_clicked = True
             response = jsonify({"message": "Stopping Zoom Test"})
             response.status_code = 200
             self.stop()
 
             def shutdown():
+                try:
+                    time.sleep(2)
+
+                    if getattr(self, "report_already_generated", False):
+                        return
+
+                    if self.do_robo and not self.do_bandsteering:
+                        self.create_robo_report()
+                    else:
+                        self.create_report()
+
+                except Exception as e:
+                    logging.error(f"[WEBUI] Report generation failed: {e}", exc_info=True)
+
+                logging.info("[WEBUI] Report generated, exiting process")
+
                 os._exit(0)
             response.call_on_close(shutdown)
             return response
@@ -1039,6 +1056,11 @@ class RealBrowserTest(Realm):
         """
         Convert duration string to minutes.
         """
+        if self.do_robo and self.do_bandsteering:
+            # setting some long duration for bandsteering
+            self.duration = 24 * 60
+            logging.info("[BANDSTEERING] Duration overridden to large value (24h)")
+            return
         if isinstance(self.duration, str):
             if self.duration.endswith(('s', 'S')):
                 self.duration = round(int(self.duration[:-1]) / 60, 2)
