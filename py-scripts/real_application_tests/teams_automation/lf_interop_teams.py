@@ -223,12 +223,42 @@ class TeamsAutomation(Realm):
         logging.error("Flask server did not start within 10 seconds. Exiting.")
         sys.exit(1)
 
-    def run(self):
-        flask_thread = threading.Thread(target=self.start_flask_server)
-        flask_thread.daemon = True
-        flask_thread.start()
-        self.wait_for_flask()
+    def change_port_to_ip(self, upstream_port):
+        """
+        Convert a given port name to its corresponding IP address if it's not already an IP.
 
+        This function checks whether the provided `upstream_port` is a valid IPv4 address.
+        If it's not, it attempts to extract the IP address of the port by resolving it
+        via the internal `name_to_eid()` method and then querying the IP using `json_get()`.
+
+        Args:
+            upstream_port (str): The name or IP of the upstream port. This could be a
+                                 LANforge port name like '1.1.eth1' or an IP address.
+
+        Returns:
+            str: The resolved IP address if the port name was converted successfully,
+                otherwise returns the original input if it was already an IP or
+                if resolution fails.
+        """
+        if upstream_port.count(".") != 3:
+            target_port_list = self.name_to_eid(upstream_port)
+            shelf, resource, port, _ = target_port_list
+            try:
+                target_port_ip = self.json_get(
+                    f"/port/{shelf}/{resource}/{port}?fields=ip"
+                )["interface"]["ip"]
+                upstream_port = target_port_ip
+            except Exception as e:
+                logging.warning(
+                    f"The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}. Exception: {e}"
+                )
+            logging.info(f"Upstream port IP {upstream_port}")
+        else:
+            logging.info(f"Upstream port IP {upstream_port}")
+
+        return upstream_port
+
+    def create_host(self):
         if self.generic_endps_profile.create(ports=[self.real_sta_list[0]], real_client_os_types=[self.real_sta_os_types[0]]):
             logging.info('Real client generic endpoint creation completed.')
         else:
@@ -239,9 +269,7 @@ class TeamsAutomation(Realm):
             cmd = f"py teams_host.py --ip {self.upstream_port}"
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         elif self.real_sta_os_types[0] == 'linux':
-
             cmd = "su -l lanforge ctteams.bash %s %s %s" % (self.wifi_interfaces_list[0], self.upstream_port, "host")
-
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         elif self.real_sta_os_types[0] == 'macos':
             cmd = "sudo bash ctteams.bash %s %s" % (self.upstream_port, "host")
@@ -249,9 +277,9 @@ class TeamsAutomation(Realm):
         self.generic_endps_profile.start_cx()
         time.sleep(5)
 
+    def wait_for_login(self):
         while not self.login_completed:
             try:
-
                 generic_endpoint = self.json_get(f'/generic/{self.generic_endps_profile.created_endp[0]}')
                 endp_status = generic_endpoint["endpoint"]["status"]
                 if endp_status == "Stopped":
@@ -262,6 +290,15 @@ class TeamsAutomation(Realm):
             except Exception as e:
                 logging.info(f"Error while checking login_completed status: {e}")
                 time.sleep(5)
+
+    def run(self):
+        flask_thread = threading.Thread(target=self.start_flask_server)
+        flask_thread.daemon = True
+        flask_thread.start()
+        self.wait_for_flask()
+
+        self.create_host()
+        self.wait_for_login()
 
         if self.generic_endps_profile.create(ports=self.real_sta_list[1:], real_client_os_types=self.real_sta_os_types[1:]):
             logging.info('Real client generic endpoint creation completed.')
