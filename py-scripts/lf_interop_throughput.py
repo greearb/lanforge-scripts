@@ -202,10 +202,10 @@ from datetime import datetime, timedelta  # noqa: E402
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
-iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
-if os.path.exists(iot_scripts_path):
-    sys.path.insert(0, iot_scripts_path)
-    from test_automation import Automation  # noqa: E402
+# iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
+# if os.path.exists(iot_scripts_path):
+#     sys.path.insert(0, iot_scripts_path)
+#     from test_automation import Automation  # noqa: E402
 
 
 class Throughput(Realm):
