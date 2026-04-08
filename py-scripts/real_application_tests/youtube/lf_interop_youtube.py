@@ -6,7 +6,12 @@
 
     EXAMPLE-1:
     Command Line Interface to run YouTube with the specified URL and duration:
-    python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 1 --res 1080p --upstream_port 1.1.eth1
+    python3 lf_interop_youtube.py \
+    --mgr 192.168.214.219 \
+    --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" \
+    --duration 1 \
+    --res 1080p \
+    --upstream_port 1.1.eth1
 
         CASE-1:
         If the given duration is longer than the actual video duration, the video will loop.
@@ -16,13 +21,25 @@
 
     EXAMPLE-2:
     Command Line Interface to run YouTube on multiple devices:
-    python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 2 --res 1080p --upstream_port 1.1.eth1 --resources 1.13,1.14...
+    python3 lf_interop_youtube.py \
+    --mgr 192.168.214.219 \
+    --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" \
+    --duration 2 \
+    --res 1080p \
+    --upstream_port 1.1.eth1 \
+    --resources 1.13,1.14...
 
 
     EXAMPLE-3:
     Command Line Interface to run YouTube without post-cleanup of cross-connections:
-    python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 2 --res 1080p
-    --upstream_port 1.1.eth1 --resources 1.13,1.14... --no_post_cleanup
+    python3 lf_interop_youtube.py \
+    --mgr 192.168.214.219 \
+    --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" \
+    --duration 2 \
+    --res 1080p \
+    --upstream_port 1.1.eth1 \
+    --resources 1.13,1.14... \
+    --no_post_cleanup
 
     EXAMPLE-4:
     Command Line Interface to run YouTube with multiple groups and profiles:
@@ -43,6 +60,38 @@
     Command Line Interface to run the Test along with IOT with device list
     python3 lf_interop_youtube.py --mgr 192.168.207.78 --url https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1 --duration 1
     --test_name Youtube --res 144p --upstream_port 192.168.200.191 --iot_test --iot_testname "youtubeIot" --iot_device_list "switch.smart_plug_1_socket_1"
+
+    Example-8:
+    Command Line Interface to run the new Test at each coordinate with Robo
+
+    python3 lf_interop_youtube.py \
+    --mgr 192.168.214.219 \
+    --upstream_port 1.1.eth1 \
+    --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" \
+    --duration 1 \
+    --res 1080p \
+    --resources 1.13,1.14 \
+    --do_robo \
+    --robo_ip 192.168.50.10 \
+    --coordinates c1,c2,c3
+
+
+    Example-9:
+    Command Line Interface to run the new Test with Robo and rotating to user specified angles at each coordinate
+    
+    python3 py-scripts/real_application_tests/youtube/lf_interop_youtube.py \
+    --mgr 192.168.214.219 \
+    --upstream_port 1.1.eth1 \
+    --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" \
+    --duration 1 \
+    --res 1080p \
+    --resources 1.13,1.14 \
+    --do_robo \
+    --robo_ip 192.168.50.10 \
+    --coordinates c1,c2,c3 \
+    --rotations 0,90,180,270
+
+
 
 
 
@@ -744,7 +793,7 @@ class Youtube(Realm):
                 return jsonify({"message": "Stats updated"}), 200
 
             elif request.method == 'GET':
-                return jsonify({"result": self.stats_api_response}), 200
+                return jsonify(self.stats_api_response), 200
 
             return jsonify({"error": "Invalid request"}), 400
 
@@ -1306,7 +1355,7 @@ class Youtube(Realm):
 
                 endp_status = generic_endpoint["endpoint"].get("status", "")
 
-                if endp_status not in ["Stopped", "WAITING", "NO-CX"]:
+                if endp_status not in ["Stopped", "WAITING", "NO-CX", "PHANTOM", "FTM_WAIT"]:
                     return False
 
             return True
@@ -1822,7 +1871,7 @@ class Youtube(Realm):
         filtered_csv_files = [f for f in all_csv_files if f.endswith(f"{hostname}_youtube_stats_report.csv")]
 
         if not filtered_csv_files:
-            logging.warning(f"No CSV files found for hostname: {hostname}")
+            logging.warning(f"No CSV files found for hostname {hostname} to create buffer health graph")
             return
 
         combined_data = pd.DataFrame()
@@ -1841,7 +1890,7 @@ class Youtube(Realm):
         try:
             combined_data['TimeStamp'] = pd.to_datetime(combined_data['TimeStamp'], format="%H:%M:%S").dt.time
         except Exception as e:
-            logging.error(f"Error converting timestamps: {e}")
+            logging.error(f"Error converting timestamps for hostname {hostname} while creating buffer health graph: {e}")
             return
 
         combined_data = combined_data.drop_duplicates(subset='TimeStamp', keep='first')
@@ -1955,6 +2004,12 @@ class Youtube(Realm):
         else:
             self.report.set_graph_title(f"Total Frames vs Dropped Frames at coordinate: {current_cord} and angle: {current_angle}°")
         self.report.build_graph_title()
+        if not result_dict:
+            if self.rotations_enabled:
+                logging.info(f"No valid data found for coordinate: {current_cord} and angle: {current_angle}. Skipping Frames graph generation.")
+            else:
+                logging.info(f"No valid data found for coordinate: {current_cord}. Skipping Frames graph generation.")
+            return
         x_fig_size = 25
         y_fig_size = len(result_dict) * .5 + 4
 
@@ -1985,8 +2040,10 @@ class Youtube(Realm):
         graph_image = graph.build_bar_graph_horizontal()
         self.report.set_graph_image(graph_image)
         self.report.build_graph()
-
-        self.report.set_table_title(f'Test Results for coordinate: {current_cord} and angle: {current_angle}°')
+        if self.rotations_enabled:
+            self.report.set_table_title(f'Test Results for coordinate: {current_cord} and angle: {current_angle}°')
+        else:
+            self.report.set_table_title(f'Test Results for coordinate: {current_cord}')
         self.report.build_table_title()
 
         test_results = {
@@ -2016,12 +2073,12 @@ class Youtube(Realm):
         it's added to the report on a new page; otherwise, it's skipped.
         """
         url_image_path = os.path.join(self.ui_report_dir, "live_view_images", f"yt_{self.test_name}_1.png")
-        timeout = 60
+        timeout = 120  # seconds
         start_time = time.time()
 
         while not os.path.exists(url_image_path):
             if time.time() - start_time > timeout:
-                logging.info("Timeout: Images not found within 60 seconds.")
+                logging.info(f"Live view Images not found in the respective folder {url_image_path} within 120 seconds. Skipping live view image addition to the report.")
                 break
             time.sleep(1)
         if os.path.exists(url_image_path):
@@ -2090,6 +2147,36 @@ EXAMPLE-5:
 Command Line Interface to run YouTube with Device Configuration:
 python3 lf_interop_youtube.py --mgr 192.168.204.74 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 1
 --ssid NETGEAR_2g_wpa2 --passwd Password@123 --encryp wpa2 --upstream_port 1.1.eth1 --config
+
+Example-6:
+Command Line Interface to run the new Test at each coordinate with Robo
+
+python3 lf_interop_youtube.py \
+--mgr 192.168.214.219 \
+--upstream_port 1.1.eth1 \
+--url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" \
+--duration 1 \
+--res 1080p \
+--resources 1.13,1.14 \
+--do_robo \
+--robo_ip 192.168.50.10 \
+--coordinates c1,c2,c3
+
+
+Example-7:
+Command Line Interface to run the new Test with Robo and rotating to user specified angles at each coordinate
+
+python3 py-scripts/real_application_tests/youtube/lf_interop_youtube.py \
+--mgr 192.168.214.219 \
+--upstream_port 1.1.eth1 \
+--url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" \
+--duration 1 \
+--res 1080p \
+--resources 1.13,1.14 \
+--do_robo \
+--robo_ip 192.168.50.10 \
+--coordinates c1,c2,c3 \
+--rotations 0,90,180,270
 
 
 SCRIPT CLASSIFICATION: Test
@@ -2486,12 +2573,6 @@ NOTES:
                         iot_summary = json.load(f)
 
             logging.info('Stopping the test')
-            if args.do_robo and not args.do_bandsteering:
-                youtube.create_robo_report()
-            elif do_webUI:
-                youtube.create_report(youtube.stats_api_response, youtube.ui_report_dir, iot_summary=iot_summary)
-            else:
-                youtube.create_report(youtube.stats_api_response, '', iot_summary=iot_summary)
 
             # Perform post-test cleanup if not skipped
             if not args.no_post_cleanup:
@@ -2505,6 +2586,12 @@ NOTES:
             if args.do_webUI:
                 youtube.stop_webui_test()
             youtube.stop()
+            if args.do_robo and not args.do_bandsteering:
+                youtube.create_robo_report()
+            elif args.do_webUI:
+                youtube.create_report(youtube.stats_api_response, youtube.ui_report_dir, iot_summary=iot_summary)
+            else:
+                youtube.create_report(youtube.stats_api_response, '', iot_summary=iot_summary)
             logging.info("Waiting for Cleanup of Browsers in Devices")
             time.sleep(10)
 
