@@ -84,7 +84,8 @@ class TeamsAutomation(Realm):
                  report_dir=None,
                  do_bs=None,
                  do_robo=None,
-                 rotations_enabled=False
+                 rotations_enabled=False,
+                 enable_mobile_stats=False
 
                  ):
         super().__init__(lfclient_host=lanforge_ip)
@@ -125,6 +126,7 @@ class TeamsAutomation(Realm):
         self.rotations_enabled = rotations_enabled
         self.current_coord = None
         self.current_rotation = "NA"
+        self.enable_mobile_stats = enable_mobile_stats
         self.audio_stats_header = [
             'Sent Audio Bitrate(Kbps)',
             'Sent Audio Packets',
@@ -291,6 +293,168 @@ class TeamsAutomation(Realm):
                 logging.info(f"Error while checking login_completed status: {e}")
                 time.sleep(5)
 
+    def create_android(
+        self,
+        lanforge_res,
+        ports=None,
+        sleep_time=0.5,
+        debug_=False,
+        suppress_related_commands_=None,
+        real_client_os_types=None,
+    ):
+        if ports and real_client_os_types and len(real_client_os_types) == 0:
+            logger.error("Real client operating systems types is empty list")
+            raise ValueError("Real client operating systems types is empty list")
+        created_cx = []
+        created_endp = []
+
+        if not ports:
+            ports = []
+
+        if self.debug:
+            debug_ = True
+
+        post_data = []
+        endp_tpls = []
+        for port_name in ports:
+            port_info = self.name_to_eid(port_name)
+            resource = port_info[1]
+            shelf = port_info[0]
+            if real_client_os_types:
+                name = port_name
+            else:
+                name = port_info[2]
+
+            gen_name_a = "%s-%s" % ("teams", "_".join(port_name.split(".")))
+            endp_tpls.append((shelf, resource, name, gen_name_a))
+
+        for endp_tpl in endp_tpls:
+            shelf = endp_tpl[0]
+            resource = endp_tpl[1]
+            if real_client_os_types:
+                name = endp_tpl[2].split(".")[2]
+            else:
+                name = endp_tpl[2]
+            gen_name_a = endp_tpl[3]
+
+            data = {
+                "alias": gen_name_a,
+                "shelf": shelf,
+                "resource": lanforge_res.split(".")[1],
+                "port": "eth0",
+                "type": "gen_generic",
+            }
+            self.json_post("cli-json/add_gen_endp", data, debug_=self.debug)
+
+        self.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
+        if sleep_time:
+            time.sleep(sleep_time)
+
+        for endp_tpl in endp_tpls:
+            gen_name_a = endp_tpl[3]
+            self.generic_endps_profile.set_flags(gen_name_a, "ClearPortOnStart", 1)
+
+        for endp_tpl in endp_tpls:
+            name = endp_tpl[2]
+            gen_name_a = endp_tpl[3]
+            cx_name = "CX_%s-%s" % ("generic", gen_name_a)
+            data = {"alias": cx_name, "test_mgr": "default_tm", "tx_endp": gen_name_a}
+            post_data.append(data)
+            created_cx.append(cx_name)
+            created_endp.append(gen_name_a)
+
+        for data in post_data:
+            url = "/cli-json/add_cx"
+            self.json_post(
+                url,
+                data,
+                debug_=debug_,
+                suppress_related_commands_=suppress_related_commands_,
+            )
+        if sleep_time:
+            time.sleep(sleep_time)
+
+        for data in post_data:
+            self.json_post(
+                "/cli-json/show_cx",
+                {"test_mgr": "default_tm", "cross_connect": data["alias"]},
+            )
+        return True, created_cx, created_endp
+
+    def create_participants(self):
+        logger.debug(
+            "Creating participants and setting up the calls with the following details"
+        )
+        logger.debug(self.lanforge_port_list)
+        logger.debug(self.real_sta_hostname)
+        logger.debug(self.serial_list)
+        for i in range(1, len(self.real_sta_os_types)):
+            if self.real_sta_os_types[i] == "android":
+                status, created_cx, created_endp = self.create_android(
+                    lanforge_res=self.lanforge_port_list[i],
+                    ports=[self.real_sta_list[i]],
+                    real_client_os_types=["Linux"],
+                )
+                self.generic_endps_profile.created_endp.extend(created_endp)
+                self.generic_endps_profile.created_cx.extend(created_cx)
+                logger.debug(self.generic_endps_profile.created_cx)
+                if self.enable_mobile_stats:
+                    cmd = (
+                        f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android.py "
+                        f"--devices {self.serial_list[i]} "
+                        f"--meet_link '{self.meet_link}' "
+                        f"--participant_name '{self.real_sta_hostname[i]}' "
+                        f"--upstream_port {self.upstream_port} "
+                        f"--duration {self.duration} "
+                        "--audio "
+                        "--video "
+                    )
+                else:
+                    cmd = (
+                        f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android_app.py "
+                        f"--device {self.serial_list[i]} "
+                        f"--meet_link '{self.meet_link}' "
+                        f"--participant_name '{self.real_sta_hostname[i]}' "
+                        f"--upstream_port {self.lanforge_ip} "
+                        "--audio "
+                        "--video "
+                    )
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+            else:
+                self.generic_endps_profile.create(
+                    ports=[self.real_sta_list[i]],
+                    real_client_os_types=[self.real_sta_os_types[i]],
+                )
+
+        for i in range(1, len(self.real_sta_os_types)):
+            if self.real_sta_os_types[i] == "windows":
+                cmd = f"py teams_client.py --ip {self.upstream_port}"
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+            elif self.real_sta_os_types[i] == 'linux':
+                cmd = "su -l lanforge ctteams.bash %s %s %s" % (
+                    self.wifi_interfaces_list[i], self.upstream_port, "client"
+                )
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+            elif self.real_sta_os_types[i] == 'macos':
+                cmd = "sudo bash ctteams.bash %s %s" % (self.upstream_port, "client")
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+
+            cx_name = self.generic_endps_profile.created_cx[i]
+            self.json_post(
+                "/cli-json/set_cx_state",
+                {"test_mgr": "default_tm", "cx_name": cx_name, "cx_state": "RUNNING"},
+                debug_=True,
+            )
+            logger.info(f"sending running state to.. {cx_name}")
+
     def run(self):
         flask_thread = threading.Thread(target=self.start_flask_server)
         flask_thread.daemon = True
@@ -299,25 +463,7 @@ class TeamsAutomation(Realm):
 
         self.create_host()
         self.wait_for_login()
-
-        if self.generic_endps_profile.create(ports=self.real_sta_list[1:], real_client_os_types=self.real_sta_os_types[1:]):
-            logging.info('Real client generic endpoint creation completed.')
-        else:
-            logging.error('Real client generic endpoint creation failed.')
-            exit(0)
-        for i in range(1, len(self.real_sta_os_types)):
-
-            if self.real_sta_os_types[i] == "windows":
-                cmd = f"py teams_client.py --ip {self.upstream_port}"
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-            elif self.real_sta_os_types[i] == 'linux':
-                cmd = "su -l lanforge ctteams.bash %s %s %s" % (self.wifi_interfaces_list[i], self.upstream_port, "client")
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-            elif self.real_sta_os_types[i] == 'macos':
-                cmd = "sudo bash ctteams.bash %s %s" % (self.upstream_port, "client")
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-
-        self.generic_endps_profile.start_cx()
+        self.create_participants()
 
         self.wait_for_test_start()
 
@@ -1108,6 +1254,7 @@ def main():
         optional.add_argument('--do_bs', action='store_true', help='specify this flag to enable band-steering timing mode')
         optional.add_argument('--do_robo', action='store_true', help='specify this flag to enable robo coordinate tracking mode')
         optional.add_argument('--rotations_enabled', action='store_true', help='specify this flag to enable rotation tracking in robo mode')
+        optional.add_argument('--enable_mobile_stats', action='store_true', help='specify this flag to enable mobile stats collection on Android devices')
         optional.add_argument('--do_webUI', action='store_true', help='useful to specify whether we are running through webui or cli')
         optional.add_argument('--testname', help="report directory while running test through web ui")
         optional.add_argument('--report_dir', help="report directory while running test through web ui")
@@ -1137,7 +1284,8 @@ def main():
             report_dir=args.report_dir,
             do_bs=args.do_bs,
             do_robo=args.do_robo,
-            rotations_enabled=args.rotations_enabled
+            rotations_enabled=args.rotations_enabled,
+            enable_mobile_stats=args.enable_mobile_stats
 
         )
 
