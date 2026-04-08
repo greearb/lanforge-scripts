@@ -1624,12 +1624,18 @@ class RealBrowserTest(Realm):
 
         cx_order_list = self.calculate_cx_order_list()
         cx_batch = cx_order_list[0]
+        if self.do_robo and self.do_bandsteering:
+            self.run_robo_bandsteering_test(cx_batch)
+            return
 
-        if self.do_robo:
+        if self.do_robo and not self.do_bandsteering:
             for coordinate in self.coordinates_list:
                 # self.robo_obj.ensure_battery_for_test(duration_min=self.duration, mins_per_percent=self.mins_per_percent)
                 self.robo_obj.wait_for_battery()
-                self.robo_obj.move_to_coordinate(coord=coordinate)
+                matched, abort = self.robo_obj.move_to_coordinate(coord=coordinate)
+                if not matched:
+                    logging.warning(f"Failed to move to coordinate {coordinate}")
+                    continue            
                 self.current_cord = coordinate
                 if self.rotations_enabled:
                     for angle in self.angles_list:
@@ -2229,7 +2235,8 @@ class RealBrowserTest(Realm):
                 'URL': self.url,
                 'Test Duration (min)': self.duration,
             }
-
+        if self.do_bandsteering and 'Test Duration (min)' in test_setup_info:
+            del test_setup_info['Test Duration (min)']
         return test_setup_info
 
     def generate_pass_fail_list(self, device_type_data, device_names, total_urls):
