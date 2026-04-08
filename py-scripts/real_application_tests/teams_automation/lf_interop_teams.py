@@ -103,7 +103,7 @@ class TeamsAutomation(Realm):
         self.linux = 0
         self.mac = 0
         self.meet_link = None
-        self.participants_joined = None
+        self.participants_joined = 0
         self.participants_req = participants_req
         self.test_start = False
         self.start_time = None
@@ -115,30 +115,30 @@ class TeamsAutomation(Realm):
         self.cred_index = 0
         self.tz = pytz.timezone('Asia/Kolkata')
         self.generic_endps_profile = self.new_generic_endp_profile()
-        self.generic_endps_profile.name_prefix = "zoom"
-        self.generic_endps_profile.type = "zoom"
+        self.generic_endps_profile.name_prefix = "teams"
+        self.generic_endps_profile.type = "teams"
         self.audio = audio
         self.video = video
         self.audio_stats_header = [
-            'Sent Audio bitrate(Kbps)',
+            'Sent Audio Bitrate(Kbps)',
             'Sent Audio Packets',
             'Audio RTT(ms)',
-            'sent Audio codec',
+            'Sent Audio Codec',
             'Received Audio Jitter(ms)',
-            'Receievd Audio Packet Loss(%)',
+            'Received Audio Packet Loss(%)',
             'Received Audio Packets',
-            'Recevied Audio Codec'
+            'Received Audio Codec'
         ]
 
         self.video_stats_header = [
-            'Sent video bitrate(Mbps)',
-            'Received video bitrate(Mbps)',
-            'Sent video frame rate(fps)',
-            'Sent video resolution(px)',
-            'video RTT (ms)',
-            'sent video packets',
-            'sent video codec',
-            'video processing'
+            'Sent Video Bitrate(Mbps)',
+            'Received Video Bitrate(Mbps)',
+            'Sent Video Frame Rate(fps)',
+            'Sent Video Resolution(px)',
+            'Video RTT (ms)',
+            'Sent Video Packets',
+            'Sent Video Codec',
+            'Video Processing'
         ]
 
         if self.audio:
@@ -336,25 +336,25 @@ class TeamsAutomation(Realm):
             metrics = [
                 ("Audio RTT(ms)", "Audio RTT (ms)"),
                 ("Received Audio Jitter(ms)", "Received Audio Jitter (ms)"),
-                ("Sent Audio bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
+                ("Sent Audio Bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
             ]
 
         if self.video:
             # Create bar graphs for each metric
             metrics = [
-                ("Sent video bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
-                ("Received video bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
-                ("sent video packets", "Sent Video Packets"),
+                ("Sent Video Bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
+                ("Received Video Bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
+                ("Sent Video Packets", "Sent Video Packets"),
             ]
         if self.audio and self.video:
             # Create bar graphs for each metric
             metrics = [
                 ("Audio RTT(ms)", "Audio RTT (ms)"),
                 ("Received Audio Jitter(ms)", "Received Audio Jitter (ms)"),
-                ("Sent Audio bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
-                ("Sent video bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
-                ("Received video bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
-                ("sent video packets", "Sent Video Packets"),
+                ("Sent Audio Bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
+                ("Sent Video Bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
+                ("Received Video Bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
+                ("Sent Video Packets", "Sent Video Packets"),
             ]
 
         for column, title in metrics:
@@ -385,20 +385,20 @@ class TeamsAutomation(Realm):
         if self.audio:
             selected_columns = [
                 "Device Name",
-                "Sent Audio bitrate(Kbps)",
+                "Sent Audio Bitrate(Kbps)",
                 "Sent Audio Packets",
                 "Audio RTT(ms)",
                 "Received Audio Jitter(ms)",
-                "Receievd Audio Packet Loss(%)",
+                "Received Audio Packet Loss(%)",
             ]
 
             column_headings = {
                 "Device Name": "Device Name",
-                "Sent Audio bitrate(Kbps)": "AVG Sent Audio Bitrate (Kbps)",
+                "Sent Audio Bitrate(Kbps)": "AVG Sent Audio Bitrate (Kbps)",
                 "Sent Audio Packets": "AVG Sent Audio Packets",
                 "Audio RTT(ms)": "AVG Audio RTT (ms)",
                 "Received Audio Jitter(ms)": "AVG Received Audio Jitter (ms)",
-                "Receievd Audio Packet Loss(%)": "AVG Received Audio Packet Loss (%)",
+                "Received Audio Packet Loss(%)": "AVG Received Audio Packet Loss (%)",
             }
 
             filtered_df = df[selected_columns].rename(columns=column_headings)
@@ -411,20 +411,20 @@ class TeamsAutomation(Realm):
         if self.video:
             selected_columns = [
                 "Device Name",
-                "Sent video bitrate(Mbps)",
-                "Received video bitrate(Mbps)",
-                "Sent video frame rate(fps)",
-                "video RTT (ms)",
-                "sent video packets",
+                "Sent Video Bitrate(Mbps)",
+                "Received Video Bitrate(Mbps)",
+                "Sent Video Frame Rate(fps)",
+                "Video RTT (ms)",
+                "Sent Video Packets",
             ]
 
             column_headings = {
                 "Device Name": "Device Name",
-                "Sent video bitrate(Mbps)": "AVG Sent Video Bitrate (Mbps)",
-                "Received video bitrate(Mbps)": "AVG Received Video Bitrate (Mbps)",
-                "Sent video frame rate(fps)": "AVG Sent Video Frame Rate (fps)",
-                "video RTT (ms)": "AVG Video RTT (ms)",
-                "sent video packets": "AVG Sent Video Packets",
+                "Sent Video Bitrate(Mbps)": "AVG Sent Video Bitrate (Mbps)",
+                "Received Video Bitrate(Mbps)": "AVG Received Video Bitrate (Mbps)",
+                "Sent Video Frame Rate(fps)": "AVG Sent Video Frame Rate (fps)",
+                "Video RTT (ms)": "AVG Video RTT (ms)",
+                "Sent Video Packets": "AVG Sent Video Packets",
             }
 
             filtered_df = df[selected_columns].rename(columns=column_headings)
