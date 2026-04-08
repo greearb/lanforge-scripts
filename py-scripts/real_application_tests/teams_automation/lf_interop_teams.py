@@ -82,7 +82,9 @@ class TeamsAutomation(Realm):
                  do_webui=None,
                  test_name=None,
                  report_dir=None,
-                 do_bs=None
+                 do_bs=None,
+                 do_robo=None,
+                 rotations_enabled=False
 
                  ):
         super().__init__(lfclient_host=lanforge_ip)
@@ -119,6 +121,10 @@ class TeamsAutomation(Realm):
         self.audio = audio
         self.video = video
         self.do_bs = do_bs
+        self.do_robo = do_robo
+        self.rotations_enabled = rotations_enabled
+        self.current_coord = None
+        self.current_rotation = "NA"
         self.audio_stats_header = [
             'Sent Audio Bitrate(Kbps)',
             'Sent Audio Packets',
@@ -148,6 +154,10 @@ class TeamsAutomation(Realm):
                 self.header += self.video_stats_header
             else:
                 self.header = ['timestamp'] + self.video_stats_header
+        if self.do_robo or self.do_bs:
+            self.header.append("current_coordinate")
+            if self.rotations_enabled:
+                self.header.append("current_rotation")
         self.data_store = {}
         self.stop_signal = False
         self.path = os.path.join(os.getcwd(), "teams_test_results")
@@ -617,6 +627,22 @@ class TeamsAutomation(Realm):
 
         self.lanforge_os_type = ["Linux"] * len(self.lanforge_port_list)
 
+    def delete_current_csv_files(self):
+        filename_pattern = (
+            f"*_{self.current_coord}_{self.current_rotation}.csv"
+            if self.rotations_enabled
+            else f"*_{self.current_coord}.csv"
+        )
+        csv_files_pattern = os.path.join(self.path, filename_pattern)
+        csv_files = glob.glob(csv_files_pattern)
+
+        for file_path in csv_files:
+            try:
+                os.remove(file_path)
+                logger.info(f"Deleted CSV file: {file_path}")
+            except Exception as e:
+                logger.error(f"Error deleting file {file_path}: {e}")
+
     def get_device_data(self):
         """
         Collect and correlate device, resource, and port information for real stations.
@@ -855,9 +881,21 @@ class TeamsAutomation(Realm):
             data = request.json
 
             for hostname, stats in data.items():
+                if self.do_robo or self.do_bs:
+                    stats["current_coord"] = self.current_coord
+                    stats["current_rotation"] = self.current_rotation
+                    stats["rotations_enabled"] = self.rotations_enabled
+
                 self.data_store[hostname] = stats
 
-                csv_file = os.path.join(self.path, f'{hostname}.csv')
+                if self.do_robo:
+                    csv_file = (
+                        os.path.join(self.path, f"{hostname}_{self.current_coord}_{self.current_rotation}.csv")
+                        if self.rotations_enabled
+                        else os.path.join(self.path, f"{hostname}_{self.current_coord}.csv")
+                    )
+                else:
+                    csv_file = os.path.join(self.path, f'{hostname}.csv')
                 with open(csv_file, mode='a', newline='') as file:
                     writer = csv.writer(file)
 
@@ -915,6 +953,10 @@ class TeamsAutomation(Realm):
                             video.get("vi_sent_codec", "NA"),
                             video.get("vi_processing", "NA"),
                         ]
+                    if self.do_robo or self.do_bs:
+                        row.append(self.current_coord)
+                        if self.rotations_enabled:
+                            row.append(self.current_rotation)
                     writer.writerow(row)
 
             return jsonify({"status": "success"}), 200
@@ -1027,6 +1069,8 @@ def main():
         optional.add_argument('--audio', action='store_true')
         optional.add_argument('--video', action='store_true')
         optional.add_argument('--do_bs', action='store_true', help='specify this flag to enable band-steering timing mode')
+        optional.add_argument('--do_robo', action='store_true', help='specify this flag to enable robo coordinate tracking mode')
+        optional.add_argument('--rotations_enabled', action='store_true', help='specify this flag to enable rotation tracking in robo mode')
         optional.add_argument('--do_webUI', action='store_true', help='useful to specify whether we are running through webui or cli')
         optional.add_argument('--testname', help="report directory while running test through web ui")
         optional.add_argument('--report_dir', help="report directory while running test through web ui")
@@ -1054,7 +1098,9 @@ def main():
             do_webui=args.do_webUI,
             test_name=args.testname,
             report_dir=args.report_dir,
-            do_bs=args.do_bs
+            do_bs=args.do_bs,
+            do_robo=args.do_robo,
+            rotations_enabled=args.rotations_enabled
 
         )
 
