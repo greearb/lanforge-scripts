@@ -81,7 +81,8 @@ class TeamsAutomation(Realm):
                  video=None,
                  do_webui=None,
                  test_name=None,
-                 report_dir=None
+                 report_dir=None,
+                 do_bs=None
 
                  ):
         super().__init__(lfclient_host=lanforge_ip)
@@ -97,10 +98,11 @@ class TeamsAutomation(Realm):
         self.real_sta_os_types = []
         self.real_sta_hostname = []
         self.hostname_os_combination = []
-        self.wifi_interfaces = []
+        self.wifi_interfaces_list = []
         self.windows = 0
         self.linux = 0
         self.mac = 0
+        self.android = 0
         self.meet_link = None
         self.participants_joined = 0
         self.start_time = None
@@ -116,6 +118,7 @@ class TeamsAutomation(Realm):
         self.generic_endps_profile.type = "teams"
         self.audio = audio
         self.video = video
+        self.do_bs = do_bs
         self.audio_stats_header = [
             'Sent Audio Bitrate(Kbps)',
             'Sent Audio Packets',
@@ -185,7 +188,7 @@ class TeamsAutomation(Realm):
             obj = {
                 "configured_devices": self.real_sta_hostname,
                 "configuration_status": "configured",
-                "no_of_devices": f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac})',
+                "no_of_devices": f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
                 "device_list": self.hostname_os_combination,
             }
             self.updating_webui_runningjson(obj)
@@ -221,7 +224,7 @@ class TeamsAutomation(Realm):
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         elif self.real_sta_os_types[0] == 'linux':
 
-            cmd = "su -l lanforge ctteams.bash %s %s %s" % (self.wifi_interfaces[0], self.upstream_port, "host")
+            cmd = "su -l lanforge ctteams.bash %s %s %s" % (self.wifi_interfaces_list[0], self.upstream_port, "host")
 
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         elif self.real_sta_os_types[0] == 'macos':
@@ -255,7 +258,7 @@ class TeamsAutomation(Realm):
                 cmd = f"py teams_client.py --ip {self.upstream_port}"
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_types[i] == 'linux':
-                cmd = "su -l lanforge ctteams.bash %s %s %s" % (self.wifi_interfaces[i], self.upstream_port, "client")
+                cmd = "su -l lanforge ctteams.bash %s %s %s" % (self.wifi_interfaces_list[i], self.upstream_port, "client")
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_types[i] == 'macos':
                 cmd = "sudo bash ctteams.bash %s %s" % (self.upstream_port, "client")
@@ -319,7 +322,7 @@ class TeamsAutomation(Realm):
 
         test_parameters = pd.DataFrame([{
 
-            'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac})',
+            'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
             'Test Duration(min)': self.duration,
             "HOST": self.real_sta_list[0],
             "TEST TYPE": testtype
@@ -469,8 +472,12 @@ class TeamsAutomation(Realm):
             return False
 
     def set_start_time(self):
-        self.start_time = datetime.now(self.tz) + timedelta(seconds=30)
-        self.end_time = self.start_time + timedelta(minutes=self.duration)
+        if self.do_bs:
+            self.start_time = datetime.now(self.tz) + timedelta(seconds=30)
+            self.end_time = self.start_time + timedelta(days=24)
+        else:
+            self.start_time = datetime.now(self.tz) + timedelta(seconds=30)
+            self.end_time = self.start_time + timedelta(minutes=self.duration)
         return [self.start_time, self.end_time]
 
     def filter_ios_devices(self, device_list):
@@ -618,7 +625,7 @@ class TeamsAutomation(Realm):
             f"{hostname} ({os_type})"
             for hostname, os_type in zip(self.real_sta_hostname, self.real_sta_os_types)
         ]
-        self.wifi_interfaces = [item.split('.')[2] for item in self.real_sta_list]
+        self.wifi_interfaces_list = [item.split('.')[2] for item in self.real_sta_list]
 
         # Count OS types
         for os_type in self.real_sta_os_types:
@@ -628,6 +635,8 @@ class TeamsAutomation(Realm):
                 self.linux += 1
             elif os_type == 'macos':
                 self.mac += 1
+            elif os_type == 'android':
+                self.android += 1
         logger.info(f"Selected Real Devices: {self.real_sta_list}")
 
         return self.real_sta_list
@@ -907,6 +916,7 @@ def main():
         optional.add_argument('--lf_logger_config_json', help='lf_logger config json')
         optional.add_argument('--audio', action='store_true')
         optional.add_argument('--video', action='store_true')
+        optional.add_argument('--do_bs', action='store_true', help='specify this flag to enable band-steering timing mode')
         optional.add_argument('--do_webUI', action='store_true', help='useful to specify whether we are running through webui or cli')
         optional.add_argument('--testname', help="report directory while running test through web ui")
         optional.add_argument('--report_dir', help="report directory while running test through web ui")
@@ -933,7 +943,8 @@ def main():
             video=args.video,
             do_webui=args.do_webUI,
             test_name=args.testname,
-            report_dir=args.report_dir
+            report_dir=args.report_dir,
+            do_bs=args.do_bs
 
         )
 
