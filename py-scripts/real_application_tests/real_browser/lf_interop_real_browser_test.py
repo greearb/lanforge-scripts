@@ -184,15 +184,20 @@ class RealBrowserTest(Realm):
                  selected_groups=None,
                  selected_profiles=None,
                  robo_ip="127.0.0.1",
+                 do_bandsteering=False,
+                 cycles=1,
+                 bssids=None,
                  coordinates_list=None,
                  angles_list=None,
                  do_robo=False,
                  current_cord="",
                  current_angle=None,
                  rotations_enabled=False,
+                 duration_to_skip=None
                  ):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         # Initialize attributes with provided parameters
+        self.original_dir = os.getcwd()
         self.host = host
         self.ssid = ssid
         self.report_ssid = ssid
@@ -221,6 +226,7 @@ class RealBrowserTest(Realm):
         self.mac_list = None
         self.csv_file_names = []
         self.stop_signal = False
+        self.webui_stop_clicked = False
         self.device_targets = {}
         self.mac = 0
         self.windows = 0
@@ -301,6 +307,7 @@ class RealBrowserTest(Realm):
         self.utility = base.UtilityInteropWifi(host_ip=self.host)
         self.serial_list = []
         self.do_robo = do_robo
+        self.do_bandsteering = do_bandsteering
         if self.do_robo:
             self.robo_ip = robo_ip
             self.robo_obj = robo_base_class.RobotClass(robo_ip=self.robo_ip, angle_list=angles_list)
@@ -309,6 +316,19 @@ class RealBrowserTest(Realm):
             self.current_cord = current_cord
             self.current_angle = current_angle
             self.rotations_enabled = rotations_enabled
+            self.band_csv_files = {}
+            self.time_to_target = {}
+            self.test_start_time = None
+            self.cycles = cycles
+            self.bandsteering_completed = False
+            self.robo_obj.time_to_reach = int(duration_to_skip) * 60
+            if bssids:
+                self.bssids = [
+                    b.strip().strip('"').strip("'").upper()
+                    for b in bssids.split(",")
+                ]
+            else:
+                self.bssids = []
             self.robo_csv_files = []
             self.robo_mobile_data = {}
 
