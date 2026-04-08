@@ -156,6 +156,12 @@ class TeamsAutomation(Realm):
         self.do_webui = do_webui
         self.test_name = test_name
         self.report_dir = report_dir
+        self.lanforge_port_list = []
+        self.serial_list = []
+        self.lanforge_os_type = []
+        self.device_names = []
+        self.user_list = []
+        self.hostname_to_station_map = {}
 
     def updating_webui_runningjson(self, obj):
         data = {}
@@ -554,6 +560,103 @@ class TeamsAutomation(Realm):
         self.device_list = filtered_list
         return filtered_list
 
+    def get_android_device_data(self):
+        """
+        Fetch and process Android device information from the ADB interop API.
+
+        This method queries the '/adb' endpoint to retrieve connected Android
+        device details, matches devices against the configured user list,
+        and extracts relevant metadata for test execution.
+
+        Behavior:
+        - Supports both dictionary and list response formats from the API
+        - Filters devices based on matching 'user-name' entries
+        - Extracts device serial numbers and LANforge resource IDs
+        - Builds LANforge port identifiers in the format: 1.<resource>.eth0
+        - Populates internal lists used for endpoint and test setup
+
+        Side Effects:
+        - Updates self.serial_list with Android device serial numbers
+        - Updates self.lanforge_port_list with LANforge port identifiers
+        - Sets self.lanforge_os_type to 'Linux' for all discovered devices
+
+        Returns:
+            None
+        """
+        interop_data = self.json_get('/adb')
+        interop_mobile_data = interop_data.get('devices', {})
+
+        if isinstance(interop_mobile_data, dict):
+            for user in self.user_list:
+                if user != '':
+                    if interop_mobile_data.get('user-name') == user:
+                        serial = interop_mobile_data.get('name', '')
+                        resource = serial.split('.')[1]
+                        serial_no = serial.split('.')[2]
+                        self.serial_list.append(serial_no)
+                        lanforge_port = f"1.{resource}.eth0"
+                        self.lanforge_port_list.append(lanforge_port)
+                else:
+                    self.serial_list.append("")
+                    self.lanforge_port_list.append("")
+        else:
+            for user in self.user_list:
+                if user != '':
+                    for mobile_device in interop_mobile_data:
+                        for serial, device_data in mobile_device.items():
+                            if device_data.get('user-name') == user:
+                                resource = serial.split('.')[1]
+                                serial_no = serial.split('.')[2]
+                                self.serial_list.append(serial_no)
+                                lanforge_port = f"1.{resource}.eth0"
+                                self.lanforge_port_list.append(lanforge_port)
+                                break
+                else:
+                    self.serial_list.append("")
+                    self.lanforge_port_list.append("")
+
+        self.lanforge_os_type = ["Linux"] * len(self.lanforge_port_list)
+
+    def get_device_data(self):
+        """
+        Collect and correlate device, resource, and port information for real stations.
+
+        This method gathers metadata for devices listed in `self.real_sta_list` by:
+        1. Extracting user-specified resource identifiers from real station entries.
+        2. Querying the '/resource/all' API to map resources to device names,
+           controller IPs, EIDs, and associated users.
+        3. Querying the '/port/all' API to locate ports belonging to the matched
+           resources, preserving the order defined by the real station list.
+        4. Extracting wireless-specific attributes for ports associated with
+           the 'wiphy0' parent device.
+
+        Side Effects:
+        - Populates self.device_names with matched device hostnames
+        - Populates self.user_list with users associated with each resource
+
+        Returns:
+            None
+        """
+        ports_list = []
+        user_resources = [".".join(item.split(".")[:2]) for item in self.real_sta_list]
+
+        response = self.json_get("/resource/all")
+        resource_data_list = response.get("resources", [])
+
+        for user_resource in user_resources:
+            for element in resource_data_list:
+                if user_resource in element:
+                    resource_values = element[user_resource]
+                    self.device_names.append(resource_values["hostname"])
+                    self.user_list.append(resource_values["user"])
+                    ports_list.append(
+                        {
+                            "eid": resource_values["eid"],
+                            "ctrl-ip": resource_values["ctrl-ip"],
+                        }
+                    )
+                    break
+
     def select_real_devices(self, real_sta_list=None):
         """
         Selects real devices for testing.
@@ -627,6 +730,10 @@ class TeamsAutomation(Realm):
         ]
         self.wifi_interfaces_list = [item.split('.')[2] for item in self.real_sta_list]
 
+        self.hostname_to_station_map = dict(
+            zip(self.real_sta_hostname, self.real_sta_list)
+        )
+
         # Count OS types
         for os_type in self.real_sta_os_types:
             if os_type == 'windows':
@@ -638,6 +745,9 @@ class TeamsAutomation(Realm):
             elif os_type == 'android':
                 self.android += 1
         logger.info(f"Selected Real Devices: {self.real_sta_list}")
+
+        self.get_device_data()
+        self.get_android_device_data()
 
         return self.real_sta_list
 
