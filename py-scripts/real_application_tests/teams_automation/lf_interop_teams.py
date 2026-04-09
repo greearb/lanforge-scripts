@@ -1033,6 +1033,63 @@ class TeamsAutomation(Realm):
         finally:
             self.move_csv_files()
 
+    def add_live_view_images_to_report(self):
+        """
+        Waits for and adds the Video and Audio heatmap images for Floor 1.
+        """
+        live_view_dir = os.path.join(self.path, "live_view_images")
+
+        # Define the specific filenames for Floor 1
+        video_img_name = f"teams_video_{self.test_name}_floor1.png"
+        audio_img_name = f"teams_audio_{self.test_name}_floor1.png"
+
+        video_path = os.path.join(live_view_dir, video_img_name)
+        audio_path = os.path.join(live_view_dir, audio_img_name)
+
+        timeout = 90  # seconds
+        start_time = time.time()
+
+        # 1. Wait for the Video image (Primary trigger)
+        while not (os.path.exists(video_path) and os.path.exists(audio_path)):
+            if time.time() - start_time > timeout:
+                logger.error(f"Timeout: {video_img_name} not found within 60 seconds.")
+                break
+            time.sleep(1)
+
+        if os.path.exists(video_path):
+            logger.info(f"Found video heatmap image: {video_path}")
+        else:
+            logger.warning(f"Video heatmap image not found: {video_path}")
+
+        if os.path.exists(audio_path):
+            logger.info(f"Found audio heatmap image: {audio_path}")
+        else:
+            logger.warning(f"Audio heatmap image not found: {audio_path}")
+
+        # 2. Build the HTML Report Content
+        html_content = ""
+
+        # Add Video Map (if found)
+        if os.path.exists(video_path):
+            html_content += (
+                '<div style="page-break-before: always;"></div>'
+                '<h3 style="text-align:center;">Video Heatmap</h3>'
+                f'<div style="text-align:center;"><img src="file://{video_path}" style="width:1200px; height:800px;"></img></div>'
+            )
+
+        # Add Audio Map (if found)
+        if os.path.exists(audio_path):
+            html_content += (
+                '<div style="page-break-before: always;"></div>'
+                '<h3 style="text-align:center;">Audio Heatmap</h3>'
+                f'<div style="text-align:center;"><img src="file://{audio_path}" style="width:1200px; height:800px;"></img></div>'
+            )
+
+        # 3. Inject into Report
+        if html_content:
+            self.report.set_custom_html(html_content)
+            self.report.build_custom()
+
     def generate_graphs_and_tables(self, metrics):
         """
         Generate graphs and tables for the report based on the collected metrics.
