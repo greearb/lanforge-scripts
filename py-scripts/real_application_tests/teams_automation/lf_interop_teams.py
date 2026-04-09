@@ -588,6 +588,65 @@ class TeamsAutomation(Realm):
         self.generic_endps_profile.created_cx = []
         self.generic_endps_profile.created_endp = []
 
+    def get_signal_and_channel_data(self):
+        """
+        Returns a dictionary of LANforge stats keyed by station name.
+        Example: {'sta001': {'signal': -55, 'channel': 36, ...}}
+        """
+
+        lf_stats_map = {}
+        interfaces_dict = dict()
+
+        try:
+            # Get raw data from LANforge API
+            port_data = self.json_get("/ports/all/")["interfaces"]
+            for port in port_data:
+                interfaces_dict.update(port)
+        except Exception as e:
+            print(f"Error fetching port data: {e}")
+            return {}
+
+        # Loop through your managed stations (e.g., sta001, sta002)
+        for sta in self.real_sta_list:
+            # Default values if station is missing
+            lf_stats_map[sta] = {
+                "signal": "-",
+                "channel": "-",
+                "mode": "-",
+                "tx_rate": "-",
+                "rx_rate": "-",
+                "bssid": "-",
+            }
+
+            if sta in interfaces_dict:
+                data = interfaces_dict[sta]
+
+                # --- Signal Parsing ---
+                sig = data.get("signal", "-")
+                if "dBm" in str(sig):
+                    lf_stats_map[sta]["signal"] = sig.split(" ")[0]
+                else:
+                    lf_stats_map[sta]["signal"] = sig
+
+                # --- Other Fields ---
+                lf_stats_map[sta]["channel"] = data.get("channel", "-")
+                lf_stats_map[sta]["mode"] = data.get("mode", "-")
+                lf_stats_map[sta]["tx_rate"] = data.get("tx-rate", "-")
+                lf_stats_map[sta]["rx_rate"] = data.get("rx-rate", "-")
+                lf_stats_map[sta]["bssid"] = data.get(
+                    "ap", "-"
+                )  # 'ap' is usually BSSID
+
+        print(lf_stats_map)
+
+        return lf_stats_map
+
+    def handle_flask_server(self):
+        flask_thread = threading.Thread(target=self.start_flask_server)
+        flask_thread.daemon = True
+        flask_thread.start()
+        self.wait_for_flask()
+
     def run(self):
         flask_thread = threading.Thread(target=self.start_flask_server)
         flask_thread.daemon = True
