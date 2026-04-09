@@ -648,11 +648,6 @@ class TeamsAutomation(Realm):
         self.wait_for_flask()
 
     def run(self):
-        flask_thread = threading.Thread(target=self.start_flask_server)
-        flask_thread.daemon = True
-        flask_thread.start()
-        self.wait_for_flask()
-
         self.create_host()
         self.wait_for_login()
         self.create_participants()
@@ -671,6 +666,45 @@ class TeamsAutomation(Realm):
                     f"Completed one cycle of test for coordinate {self.current_coord}"
                 )
             self.reset_variables_for_next_run()
+
+    def run_robo_test(self):
+        for coord in self.coordinates:
+            self.robo_obj.wait_for_battery()
+            matched, aborted = self.robo_obj.move_to_coordinate(coord=coord)
+            if matched:
+                self.current_coord = coord
+                self.successful_coords.append(coord)
+            else:
+                self.failed_coords.append(coord)
+
+            if aborted:
+                logger.error(f"Failed to Reach the coordinate {self.current_coord}")
+                self.failed_coords.append(coord)
+                sys.exit()
+
+            if self.rotations_enabled:
+                for rotation in self.rotations:
+                    self.robo_obj.wait_for_battery()
+                    rotated = self.robo_obj.rotate_angle(angle_degree=rotation)
+                    if rotated:
+                        self.current_rotation = rotation
+                    else:
+                        logger.error(
+                            f"Failed to Rotate the Angle {self.current_rotation}"
+                        )
+                        sys.exit()
+                    logger.info(
+                        f"Running Robo test for coordinate {coord} with rotation {rotation}"
+                    )
+                    self.run()
+                    self.create_avg_data()
+            else:
+                self.current_rotation = None  # Explicitly clear rotation state
+                logger.info(
+                    f"Running Robo test for coordinate {coord} with no rotation"
+                )
+                self.run()
+                self.create_avg_data()
 
     def wait_for_test_start(self):
         check_count = 0
