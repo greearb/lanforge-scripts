@@ -732,6 +732,212 @@ class TeamsAutomation(Realm):
         self.set_start_time()
         logging.info("TEST WILL BE STARTING")
 
+    def add_bandsteering_report_section(self):
+        try:
+
+            """
+            Bandsteering reporting (Robo-style):
+            Reads all zoom stats CSVs from report directory (self.path) and builds:
+            - BSSID change count graph per device
+            - Table of BSSID change events
+            """
+
+            report_dir = self.path
+
+            if not report_dir or not os.path.isdir(report_dir):
+                logger.error(f"Bandsteering report: invalid report dir: {report_dir}")
+                return
+
+            logging.info(f"Bandsteering report dir: {report_dir}")
+
+            # Search for CSV files in self.path
+            csv_files = []
+            for hostname in self.real_sta_hostname:
+                csv_pattern = os.path.join(report_dir, f"*{hostname}*.csv")
+                csv_files.extend(glob.glob(csv_pattern))
+            logging.info(f"Bandsteering CSV files found: {csv_files}")
+
+            if not csv_files:
+                logging.warning("No CSVs found in report dir for bandsteering")
+                return
+
+            self.report.set_obj_html(
+                _obj_title="Band Steering Statistics",
+                _obj="This section summarizes BSSID changes observed while the robot moved between coordinates.",
+            )
+            self.report.build_objective()
+
+            allowed_bssids = set(self.bssids) if self.bssids else set()
+
+            for csv_file_path in csv_files:
+                try:
+                    df = pd.read_csv(csv_file_path)
+                except Exception as e:
+                    logging.error(
+                        f"Unable to read CSV {csv_file_path}: {e}", exc_info=True
+                    )
+                    continue
+
+                # Rename columns to match the specific capitalization expected by this logic
+                df.rename(
+                    columns={
+                        "timestamp": "TimeStamp",
+                        "bssid": "BSSID",
+                        "channel": "Channel",
+                        "from_coordinate": "From_Coord",
+                        "to_coordinate": "To_Coord",
+                    },
+                    inplace=True,
+                )
+
+                required_cols = {
+                    "TimeStamp",
+                    "BSSID",
+                    "From_Coord",
+                    "To_Coord",
+                    "Channel",
+                }
+
+                # Check if this CSV actually contains bandsteering data (skip summary/other CSVs)
+                if not required_cols.issubset(df.columns):
+                    continue
+
+                device_name = os.path.basename(csv_file_path).replace(".csv", "")
+
+                # Clean columns
+                df["BSSID"] = df["BSSID"].fillna("NA").astype(str)
+                df["TimeStamp"] = df["TimeStamp"].fillna("NA").astype(str)
+                df["From_Coord"] = df["From_Coord"].fillna("NA").astype(str)
+                df["To_Coord"] = df["To_Coord"].fillna("NA").astype(str)
+                df["Channel"] = df["Channel"].fillna("NA").astype(str)
+
+                # Filter only configured BSSIDs (if provided)
+                if allowed_bssids:
+                    df = df[df["BSSID"].isin(allowed_bssids)]
+
+                if df.empty:
+                    logging.info(f"No matching BSSID rows for {device_name}")
+
+                # Detect change points
+                df["prev_bssid"] = df["BSSID"].shift()
+
+                mask = (
+                    (df["BSSID"] != df["prev_bssid"])
+                    & (df["BSSID"] != "NA")
+                    & (df["prev_bssid"] != "NA")
+                    & (df["prev_bssid"].notnull())
+                )
+
+                bssid_list = df.loc[mask, "BSSID"].tolist()
+                timestamp_list = df.loc[mask, "TimeStamp"].tolist()
+                from_coordinate_list = df.loc[mask, "From_Coord"].tolist()
+                to_coordinate_list = df.loc[mask, "To_Coord"].tolist()
+                channel_list = df.loc[mask, "Channel"].tolist()
+
+                skip_table = not mask.any()
+
+                # Count BSSID switches
+                if skip_table:
+                    # Ensure all expected BSSIDs show zero
+                    bssid_counts = {bssid: 0 for bssid in self.bssids}
+                else:
+                    bssid_counts = Counter(bssid_list)
+
+                # Ensure consistent graph ordering
+                if self.bssids:
+                    final_bssid_counts = {
+                        bssid: bssid_counts.get(bssid, 0) for bssid in self.bssids
+                    }
+                else:
+                    final_bssid_counts = bssid_counts
+
+                x_axis = list(final_bssid_counts.keys())
+                y_axis = [[float(v)] for v in final_bssid_counts.values()]
+
+                self.report.set_obj_html(
+                    _obj_title=f"BSSID Change Count Of The Client {device_name}",
+                    _obj=" ",
+                )
+                self.report.build_objective()
+
+                graph = lf_bar_graph(
+                    _data_set=y_axis,
+                    _xaxis_name="BSSID",
+                    _yaxis_name="Number of Changes",
+                    _xaxis_categories=[""],
+                    _xaxis_label=x_axis,
+                    _graph_image_name=f"teams_bssid_change_count_{device_name}",
+                    _label=x_axis,
+                    _xaxis_step=1,
+                    _graph_title=f"Teams Bandsteering: BSSID change count for device : {device_name}",
+                    _title_size=16,
+                    _bar_width=0.15,
+                    _figsize=(18, 6),
+                    _dpi=96,
+                    _show_bar_value=True,
+                )
+
+                graph_png = graph.build_bar_graph()
+                self.report.set_graph_image(graph_png)
+                self.report.move_graph_image()
+                self.report.build_graph()
+
+                if skip_table:
+                    self.report.set_obj_html(
+                        _obj_title=f"Teams Band Steering Results for {device_name}",
+                        _obj="No band steering events observed for the configured BSSID list.",
+                    )
+                    self.report.build_objective()
+                    continue
+
+                self.report.set_obj_html(
+                    _obj_title=f"Teams Band Steering Results for {device_name}",
+                    _obj=" ",
+                )
+                self.report.build_objective()
+
+                table_df = pd.DataFrame(
+                    {
+                        "TimeStamp": timestamp_list,
+                        "BSSID": bssid_list,
+                        "Channel": channel_list,
+                        "From Coordinate": from_coordinate_list,
+                        "To Coordinate": to_coordinate_list,
+                    }
+                )
+
+                self.report.set_table_dataframe(table_df)
+                self.report.build_table()
+
+            # Handle Charging Timestamps (Check if robo_obj exists first)
+            if (
+                hasattr(self, "robo_obj")
+                and hasattr(self.robo_obj, "charging_timestamps")
+                and len(self.robo_obj.charging_timestamps) != 0
+            ):
+                self.report.set_obj_html(_obj_title="Charging Timestamps", _obj="")
+                self.report.build_objective()
+                df = pd.DataFrame(
+                    self.robo_obj.charging_timestamps,
+                    columns=[
+                        "charge_dock_arrival_timestamp",
+                        "charging_completion_timestamp",
+                    ],
+                )
+                # Add S.No column
+                df.insert(0, "S.No", range(1, len(df) + 1))
+                self.report.set_table_dataframe(df)
+                self.report.build_table()
+            else:
+                self.report.set_obj_html(
+                    _obj_title="Charging Timestamps",
+                    _obj="Robot did not go to charge during this test",
+                )
+                self.report.build_objective()
+        except Exception as e:
+            logger.error(f"Exeception Occured {e}")
+            logger.error("Error Occured ", exc_info=True)
+
     def generate_report(self):
         report = lf_report(_output_pdf='teams_call_report.pdf',
                            _output_html='teams_call_report.html',
