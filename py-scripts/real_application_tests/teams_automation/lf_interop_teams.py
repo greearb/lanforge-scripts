@@ -1,23 +1,30 @@
 #!/usr/bin/env python3
 """
-    NAME: lf_interop_teams.py
+NAME: lf_interop_teams.py
 
-    PURPOSE: lf_interop_teams.py provides the available devices and allows the user to start Microsoft Teams call conference meeting for the user-specified duration
+PURPOSE: lf_interop_teams.py provides the available devices and allows the user to start Microsoft Teams call conference meeting for the user-specified duration
 
-    EXAMPLE-1:
-    Command Line Interface to run Teams:
-    python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --participants 3 --duration 1 --audio --video
+EXAMPLE-1:
+Command Line Interface to run Teams:
+python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --duration 1 --audio --video
 
-    EXAMPLE-2:
-    Command Line Interface to run Teams on Specified Resources:
-    python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --participants 3 --duration 1 --audio --video --resources 1.95,1.400,1.300
+EXAMPLE-2:
+Command Line Interface to run Teams on Specified Resources:
+python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --duration 1 --audio --video --resources 1.95,1.400,1.300
 
+EXAMPLE-3:
+Command Line Interface to run Teams on Specified Resources with Robo Functionality:
+python3 lf_interop_teams.py --mgr 192.168.207.78 --upstream_port 1.1.eth1 --duration 1 --audio --video --resources 1.95,1.400,1.300 --do_robo --robo_ip 192.168.200.186 --coordinates 3,4,5
 
-    NOTES:
-    1. Use 'python3 lf_interop_teams.py --help' to see command line usage and options.
-    2. Always specify the duration in minutes (for example: --duration 3 indicates a duration of 3 minutes).
-    3. If --resources are not given after passing the CLI, a list of available devices will be displayed on the terminal.
-    4. Enter the resource numbers separated by commas (,) in the resource argument Eg: (1.95,1.200).
+EXAMPLE-4:
+Command Line Interface to run Teams on Specified Resources with Robo Functionality and Rotations Enabled:
+python3 lf_interop_teams.py --mgr 192.168.207.78 --upstream_port 1.1.eth1 --duration 1 --audio --video --resources 1.95,1.400,1.300 --do_robo --robo_ip 192.168.200.186 --coordinates 3,4,5 --rotations 30,40
+
+NOTES:
+1. Use 'python3 lf_interop_teams.py --help' to see command line usage and options.
+2. Always specify the duration in minutes (for example: --duration 3 indicates a duration of 3 minutes).
+3. If --resources are not given after passing the CLI, a list of available devices will be displayed on the terminal.
+4. Enter the resource numbers separated by commas (,) in the resource argument Eg: (1.95,1.200).
 
 """
 import os
@@ -37,6 +44,7 @@ import json
 import sys
 import traceback
 import glob
+from collections import Counter
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
@@ -60,15 +68,34 @@ lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_base_interop_profile = importlib.import_module("py-scripts.lf_base_interop_profile")
 RealDevice = lf_base_interop_profile.RealDevice
+
+# robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
 robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 
 # Set up logging
-logger = logging.getLogger(__name__)
-log = logging.getLogger('werkzeug')
+log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 
 # Import LF logger configuration module
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
+os.makedirs("test_logs", exist_ok=True)
+
+# 1. Configure the logging system
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(
+            f"test_logs/lf_interop_teams_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log",
+            mode="w",
+        ),  # Writes to file
+        logging.StreamHandler(sys.stdout),  # Writes to terminal
+    ],
+)
+
+# 2. Create the logger instance
+logger = logging.getLogger(__name__)
 
 
 class TeamsAutomation(Realm):
