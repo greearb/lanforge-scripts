@@ -50,6 +50,12 @@ Pre-requisites: Real clients should be connected to the LANforge MGR and Interop
             python3 lf_interop_real_browser_test.py --mgr 192.168.207.78 --url "https://google.com" --duration 1m --debug --upstream_port 192.168.200.198
             --coordinates 1 --do_robo --robo_ip 192.168.200.140 --rotations 30 --device_list 1.5,1.11
 
+            Example-9:
+            Command Line Interface to run the Real Browser Test with Robo bandsteering and Device list
+            python3 lf_interop_real_browser_test.py --mgr 192.168.207.78 --duration 1 --url https://www.google.com --device_list 1.11,1.10 --count 10
+            --upstream_port 192.168.204.90 --expected_passfail_value 5 --do_robo --robo_ip 192.168.200.140 --coordinates 3,2,1 --rotations ""
+            --duration_to_skip 1 --do_bandsteering --cycles 1 --bssids 94:A6:7E:74:26:31,94:A6:7E:74:26:22
+
 
             SCRIPT CLASSIFICATION: Test
 
@@ -1338,8 +1344,6 @@ class RealBrowserTest(Realm):
                 "channel": channel_map.get(sta, "NA"),
                 "bssid": bssid
             })
-
-        logger.info("[BANDSTEERING] Rows collected this tick: %d", len(rows))
         logger.info("[DEBUG] CX BATCH: %s", self.bandsteering_cx_list)
         return rows
 
@@ -1635,7 +1639,7 @@ class RealBrowserTest(Realm):
                 matched, abort = self.robo_obj.move_to_coordinate(coord=coordinate)
                 if not matched:
                     logging.warning(f"Failed to move to coordinate {coordinate}")
-                    continue            
+                    continue
                 self.current_cord = coordinate
                 if self.rotations_enabled:
                     for angle in self.angles_list:
@@ -2373,6 +2377,15 @@ class RealBrowserTest(Realm):
                 test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
             report.test_setup_table(
                 test_setup_data=test_setup_info, value='Test Parameters')
+            # Ensure real_time_data.csv is included before graph generation
+            if os.path.isfile("real_time_data.csv") and \
+                    "real_time_data.csv" not in self.csv_file_names:
+                self.csv_file_names.insert(0, "real_time_data.csv")
+
+            # Keep only last iteration for normal full run
+            if not self.webui_stop_clicked and not self.do_bandsteering:
+                if len(self.csv_file_names) > 1:
+                    self.csv_file_names = [self.csv_file_names[-1]]
 
             for i in range(0, len(self.csv_file_names)):
 
@@ -2460,12 +2473,52 @@ class RealBrowserTest(Realm):
                     total_err_data = data['total_err'].tolist()
                 else:
                     raise ValueError("The 'total_err' column was not found in the CSV file.")
+            # bandsteering bssid section
+            if self.do_bandsteering:
+                self.add_bandsteering_bssid_section(report)
+            # robot charging timestamps section
+            if self.do_bandsteering:
+                charging_ts = getattr(self.robo_obj, "charging_timestamps", [])
+
+                if charging_ts:
+                    report.set_obj_html(
+                        _obj_title="Robot Charging Timestamps",
+                        _obj=""
+                    )
+                    report.build_objective()
+
+                    df = pd.DataFrame(
+                        charging_ts,
+                        columns=[
+                            "charge_dock_arrival_timestamp",
+                            "charging_completion_timestamp"
+                        ]
+                    )
+
+                    # Add serial number column
+                    df.insert(0, "S.No", range(1, len(df) + 1))
+
+                    report.set_table_dataframe(df)
+                    report.build_table()
+                else:
+                    report.set_obj_html(
+                        _obj_title="Robot Charging Timestamps",
+                        _obj="Robot did not go to charge during this test"
+                    )
+                    report.build_objective()
 
             report.set_table_title("Final Test Results")
             report.build_table_title()
             if self.selected_groups and self.selected_profiles:
                 if self.expected_passfail_value or self.device_csv_name:
-                    pass_fail_list, test_input_list = self.generate_pass_fail_list(device_type_data, device_names, total_urls)
+
+                    if self.webui_stop_clicked:
+                        logging.info("[REPORT] WebUI stop detected. Skipping PASS/FAIL evaluation.")
+                        pass_fail_list = ["NA"] * len(device_names)
+                        test_input_list = ["NA"] * len(device_names)
+                    else:
+                        pass_fail_list, test_input_list = self.generate_pass_fail_list(
+                            device_type_data, device_names, total_urls)
 
                     final_test_results = {
 
@@ -2509,13 +2562,28 @@ class RealBrowserTest(Realm):
                         continue
                     report.set_table_title(f"{group} Test Results")
                     report.build_table_title()
+                    # Ensure all columns have equal length
+                    max_len = max(len(v) for v in final_test_results.values())
+
+                    for key in final_test_results:
+                        if len(final_test_results[key]) < max_len:
+                            diff = max_len - len(final_test_results[key])
+                            final_test_results[key].extend(["NA"] * diff)
+
                     test_results_df = pd.DataFrame(group_specific_test_results)
                     report.set_table_dataframe(test_results_df)
                     report.build_table()
 
             else:
                 if self.expected_passfail_value or self.device_csv_name:
-                    pass_fail_list, test_input_list = self.generate_pass_fail_list(device_type_data, device_names, total_urls)
+                    if self.webui_stop_clicked:
+                        logging.info("[REPORT] WebUI stop detected. Skipping PASS/FAIL evaluation.")
+                        pass_fail_list = ["NA"] * len(device_names)
+                        test_input_list = ["NA"] * len(device_names)
+                    else:
+                        pass_fail_list, test_input_list = self.generate_pass_fail_list(
+                            device_type_data, device_names, total_urls)
+
                     final_test_results = {
 
                         "Device Type": device_type_data,
@@ -2552,6 +2620,14 @@ class RealBrowserTest(Realm):
                         "Link Speed": tx_rate_data,
 
                     }
+                # Ensure all columns have equal length
+                max_len = max(len(v) for v in final_test_results.values())
+
+                for key in final_test_results:
+                    if len(final_test_results[key]) < max_len:
+                        diff = max_len - len(final_test_results[key])
+                        final_test_results[key].extend(["NA"] * diff)
+
                 test_results_df = pd.DataFrame(final_test_results)
                 report.set_table_dataframe(test_results_df)
                 report.build_table()
@@ -2568,18 +2644,32 @@ class RealBrowserTest(Realm):
         except Exception as e:
             logging.error(f"Error in create_report function {e}", exc_info=True)
         finally:
-            if not self.dowebgui:
-                source_dir = "."
-                destination_dir = self.report_path_date_time
-                self.csv_file_names.append('real_time_data.csv')
+            source_dir = os.getcwd()
+            destination_dir = self.report_path_date_time
+
+            # Only move if report folder exists
+            if os.path.isdir(destination_dir):
+
+                if 'real_time_data.csv' not in self.csv_file_names:
+                    self.csv_file_names.append('real_time_data.csv')
+
                 for filename in self.csv_file_names:
                     source_path = os.path.join(source_dir, filename)
                     destination_path = os.path.join(destination_dir, filename)
+
                     if os.path.isfile(source_path):
-                        shutil.move(source_path, destination_path)
-                        logging.info(f"Moved {filename} to {destination_dir}")
-                    else:
-                        logging.info(f"{filename} not found in the current directory")
+                        try:
+                            shutil.move(source_path, destination_path)
+                            logging.info(f"Moved {filename} to {destination_dir}")
+                        except Exception as e:
+                            logging.warning(f"Could not move {filename}: {e}")
+
+                if self.do_bandsteering and hasattr(self, "bandsteering_dir"):
+                    for fname in os.listdir(self.bandsteering_dir):
+                        src = os.path.join(self.bandsteering_dir, fname)
+                        dst = os.path.join(destination_dir, fname)
+                        if os.path.isfile(src):
+                            shutil.move(src, dst)
 
     def extract_device_data(self, file_path):
         # Load the CSV file
@@ -2920,16 +3010,30 @@ class RealBrowserTest(Realm):
             test_setup_info = self.generate_test_setup_info()
             self.report.test_setup_table(
                 test_setup_data=test_setup_info, value='Test Parameters')
+            # Ensure real_time_data.csv is included before graph generation
+            if os.path.isfile("real_time_data.csv") and \
+                    "real_time_data.csv" not in self.csv_file_names:
+                self.csv_file_names.insert(0, "real_time_data.csv")
 
             for coordinate in self.coordinates_list:
                 if self.rotations_enabled:
                     for angle in self.angles_list:
                         csv_file = f"{coordinate}_{angle}_webBrowser.csv"
+                        if not os.path.isfile(csv_file):
+                            logging.warning(f"CSV file {csv_file} does not exist.")
+                            continue
                         self.create_robo_graphs_test_results(csv_file, coordinate, angle)
 
                 else:
                     csv_file = f"{coordinate}_webBrowser.csv"
+                    if not os.path.isfile(csv_file):
+                        logging.warning(f"CSV file {csv_file} does not exist.")
+                        continue
                     self.create_robo_graphs_test_results(csv_file, coordinate)
+            # bandsteering bssid section
+            if self.do_bandsteering:
+                self.add_bandsteering_bssid_section(self.report)
+
             self.add_live_view_images_to_report()
 
             if self.dowebgui:
@@ -3058,7 +3162,13 @@ class RealBrowserTest(Realm):
                 self.report.set_table_title(f"Final Test Results at coordinate {coordinate}:")
             self.report.build_table_title()
             if self.expected_passfail_value or self.device_csv_name:
-                pass_fail_list, test_input_list = self.generate_pass_fail_list(device_type_data, device_names, total_urls)
+                if self.webui_stop_clicked:
+                    logging.info("[REPORT] WebUI stop detected. Skipping PASS/FAIL evaluation.")
+                    pass_fail_list = ["NA"] * len(device_names)
+                    test_input_list = ["NA"] * len(device_names)
+                else:
+                    pass_fail_list, test_input_list = self.generate_pass_fail_list(
+                        device_type_data, device_names, total_urls)
 
                 final_test_results = {
 
@@ -3101,6 +3211,104 @@ class RealBrowserTest(Realm):
 
         except Exception as e:
             logging.error(f"Error in create_robo_graphs_test_results {e}", exc_info=True)
+
+    def add_bandsteering_bssid_section(self, report):
+        # for bssids things in pdf
+        report.set_table_title("Band Steering – BSSID Transition Analysis")
+        report.build_table_title()
+
+        if not self.bssids:
+            return
+
+        # normalize CLI BSSIDs
+        cli_bssids = [b.strip().upper() for b in self.bssids]
+
+        for csv_file in self.band_csv_files.values():
+
+            if not os.path.exists(csv_file):
+                continue
+
+            df = pd.read_csv(csv_file)
+
+            if df.empty or "bssid" not in df.columns:
+                continue
+
+            device_name = df["device_name"].iloc[0]
+
+            # Normalize CSV
+            df["bssid"] = df["bssid"].astype(str).str.upper().str.strip()
+
+            # Detect transitions from FULL CSV
+            df["prev_bssid"] = df["bssid"].shift()
+
+            transition_mask = (
+                (df["bssid"] != df["prev_bssid"]) &
+                (df["bssid"] != "NA")
+            )
+
+            transition_rows = df[transition_mask]
+
+            # Count only CLI BSSIDs
+            bssid_counts = {b: 0 for b in cli_bssids}
+            transitions = []
+
+            for _, row in transition_rows.iterrows():
+                curr_bssid = row["bssid"]
+
+                if curr_bssid in cli_bssids:
+                    bssid_counts[curr_bssid] += 1
+
+                    transitions.append({
+                        "BSSID": curr_bssid,
+                        "Timestamp": row.get("timestamp", "NA"),
+                        "From Coordinate": row.get("from_coordinate", "NA"),
+                        "To Coordinate": row.get("to_coordinate", "NA"),
+                        "Channel": row.get("channel", "NA")
+                    })
+
+            bssid_list = list(bssid_counts.keys())
+            count_list = list(bssid_counts.values())
+
+            report.set_graph_title(f"BSSID Change Count – {device_name}")
+            report.build_graph_title()
+
+            graph = lf_bar_graph_horizontal(
+                _data_set=[count_list],
+                _xaxis_name="Transition Count",
+                _yaxis_name="BSSID",
+                _yaxis_label=bssid_list,
+                _yaxis_categories=bssid_list,
+                _bar_height=0.25,
+                _show_bar_value=True,
+                _figsize=(18, max(4, len(bssid_list))),
+                _graph_title="BSSID Transitions",
+                _graph_image_name=f"{device_name}_bssid_transitions",
+                _label=["Transitions"]
+            )
+
+            graph_image = graph.build_bar_graph_horizontal()
+            report.set_graph_image(graph_image)
+            report.move_graph_image()
+            report.build_graph()
+
+            report.set_table_title(f"Band Steering Results for {device_name}")
+            report.build_table_title()
+
+            if not transitions:
+                first_row = df.iloc[0]
+                last_row = df.iloc[-1]
+
+                transitions.append({
+                    "BSSID": first_row.get("bssid", "NA"),
+                    "Timestamp": last_row.get("timestamp", "NA"),
+                    "From Coordinate": first_row.get("from_coordinate", "NA"),
+                    "To Coordinate": last_row.get("to_coordinate", "NA"),
+                    "Channel": first_row.get("channel", "NA")
+                })
+
+            transition_df = pd.DataFrame(transitions)
+            report.set_table_dataframe(transition_df)
+            report.build_table()
 
     def clear_http_cx_data(self):
         """Clears endpoint counters for all created HTTP connections."""
@@ -3266,6 +3474,7 @@ def main():
         optional.add_argument('--iot_increment', type=str, default='', help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
 
         # ROBO ARGS
+        robo.add_argument('--duration_to_skip', help='Robot wait duration in seconds at obstacle', default="1")
         robo.add_argument('--robo_ip', type=str, help='Specify the robo ip')
         robo.add_argument(
             '--coordinates',
@@ -3280,6 +3489,24 @@ def main():
             '--do_robo',
             help="Specify this flag to perform the test with robo", action='store_true'
         )
+        robo.add_argument(
+            "--do_bandsteering",
+            action="store_true",
+            help="Enable continuous robo band-steering test"
+        )
+        robo.add_argument(
+            "--cycles",
+            type=int,
+            default=1,
+            help="Number of cycles to repeat coordinates for band-steering"
+        )
+        robo.add_argument(
+            '--bssids',
+            type=str,
+            default='',
+            help='bssid values'
+        )
+
         args = parser.parse_args()
         if args.help_summary:
             print(help_summary)
@@ -3348,7 +3575,11 @@ def main():
                               coordinates_list=args.coordinates,
                               angles_list=args.rotations,
                               do_robo=args.do_robo,
+                              do_bandsteering=args.do_bandsteering,
+                              cycles=args.cycles,
+                              bssids=args.bssids,
                               rotations_enabled=rotations_enabled,
+                              duration_to_skip=args.duration_to_skip
                               )
         obj.change_port_to_ip()
         obj.validate_and_process_args()
@@ -3414,7 +3645,11 @@ def main():
         logger.error("An exception occurred:\n%s", tb_str)
     finally:
         if '--help' not in sys.argv and '-h' not in sys.argv:
-            if args.do_robo:
+            if args.do_robo and args.do_bandsteering:
+                if args.dowebgui:
+                    obj.stop_webui_test()
+                obj.create_report(iot_summary=iot_summary)
+            elif args.do_robo:
                 if args.dowebgui:
                     obj.stop_webui_test()
                 obj.create_robo_report()
