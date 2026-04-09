@@ -99,28 +99,28 @@ logger = logging.getLogger(__name__)
 
 
 class TeamsAutomation(Realm):
-    def __init__(self,
-                 lanforge_ip=None,
-                 duration=None,
-                 upstream_port=None,
-                 no_pre_cleanup=None,
-                 no_post_cleanup=None,
-                 audio=None,
-                 video=None,
-                 do_webui=None,
-                 test_name=None,
-                 report_dir=None,
-                 do_bs=None,
-                 do_robo=None,
-                 rotations_enabled=False,
-                 robo_ip=None,
-                 coordinates=None,
-                 rotations=None,
-                 cycles=None,
-                 bssids=None,
-                 enable_mobile_stats=False
-
-                 ):
+    def __init__(
+        self,
+        lanforge_ip=None,
+        duration=None,
+        upstream_port=None,
+        no_pre_cleanup=None,
+        no_post_cleanup=None,
+        audio=None,
+        video=None,
+        do_webui=None,
+        test_name=None,
+        report_dir=None,
+        rotations_enabled=False,
+        robo_ip=None,
+        coordinates=None,
+        rotations=None,
+        do_robo=None,
+        do_bs=None,
+        cycles=None,
+        bssids=None,
+        enable_mobile_stats=False,
+    ):
         super().__init__(lfclient_host=lanforge_ip)
         self.app = Flask(__name__)
         self.lanforge_ip = lanforge_ip
@@ -154,12 +154,6 @@ class TeamsAutomation(Realm):
         self.generic_endps_profile.type = "teams"
         self.audio = audio
         self.video = video
-        self.do_bs = do_bs
-        self.do_robo = do_robo
-        self.rotations_enabled = rotations_enabled
-        self.current_coord = None
-        self.current_rotation = "NA"
-        self.enable_mobile_stats = enable_mobile_stats
         self.audio_stats_header = [
             'Sent Audio Bitrate(Kbps)',
             'Sent Audio Packets',
@@ -189,6 +183,26 @@ class TeamsAutomation(Realm):
                 self.header += self.video_stats_header
             else:
                 self.header = ['timestamp'] + self.video_stats_header
+        self.data_store = {}
+        self.stop_signal = False
+        self.path = os.path.join(os.getcwd(), "teams_test_results")
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
+        self.do_webui = do_webui
+        self.test_name = test_name
+        self.report_dir = report_dir
+        self.lanforge_port_list = []
+        self.serial_list = []
+        self.lanforge_os_type = []
+        self.device_names = []
+        self.user_list = []
+        self.avg_csv_files_list = []
+        self.do_robo = do_robo
+        self.do_bs = do_bs
+        self.hostname_to_station_map = {}
+        self.running_averages = {}
+        self.enable_mobile_stats = enable_mobile_stats
+
         if self.do_robo or self.do_bs:
             self.robo_ip = robo_ip
             self.rotations = rotations
@@ -196,9 +210,12 @@ class TeamsAutomation(Realm):
                 robo_ip=self.robo_ip,
                 angle_list=self.rotations,
             )
+            self.rotations_enabled = rotations_enabled
             self.coordinates = coordinates
             self.cycles = cycles
             self.bssids = bssids
+            self.current_coord = None
+            self.current_rotation = "NA"
             self.header.append("current_coordinate")
             if self.rotations_enabled:
                 self.header.append("current_rotation")
@@ -215,20 +232,6 @@ class TeamsAutomation(Realm):
                 self.robo_obj.total_cycles = self.cycles
             self.successful_coords = []
             self.failed_coords = []
-        self.data_store = {}
-        self.stop_signal = False
-        self.path = os.path.join(os.getcwd(), "teams_test_results")
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
-        self.do_webui = do_webui
-        self.test_name = test_name
-        self.report_dir = report_dir
-        self.lanforge_port_list = []
-        self.serial_list = []
-        self.lanforge_os_type = []
-        self.device_names = []
-        self.user_list = []
-        self.hostname_to_station_map = {}
 
     def updating_webui_runningjson(self, obj):
         data = {}
