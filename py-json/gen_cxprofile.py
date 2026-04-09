@@ -91,6 +91,8 @@ class GenCXProfile(LFCliBase):
             pass
         elif self.type == "real_browser":
             pass
+        elif self.type == "teams":
+            pass
         else:
             logger.critical("Unknown command type")
             raise ValueError("Unknown command type")
