@@ -78,7 +78,7 @@
 
     Example-9:
     Command Line Interface to run the new Test with Robo and rotating to user specified angles at each coordinate
-    
+
     python3 py-scripts/real_application_tests/youtube/lf_interop_youtube.py \
     --mgr 192.168.214.219 \
     --upstream_port 1.1.eth1 \
@@ -1675,8 +1675,6 @@ class Youtube(Realm):
         self.robo_obj.coordinate_list = self.coordinates_list
         coordinate_list_with_robo = self.robo_obj.get_coordinates_list()
         time.sleep(5)
-        print(coordinate_list_with_robo, "the coordinate list")
-        print(coordinate_list_with_robo, "the result coordinates")
         for coordinate in coordinate_list_with_robo:
             logging.info(f"Moving robot to coordinate: {coordinate}")
             if self.to_coordinate == "":
@@ -1708,12 +1706,12 @@ class Youtube(Realm):
 
         try:
             self.generic_endps_profile.stop_cx()
-        except:
-            pass
+        except Exception as e:
+            logging.error(f"Error stopping CX: {e}")
         try:
             self.generic_endps_profile.cleanup()
-        except:
-            pass
+        except Exception as e:
+            logging.error(f"Error during cleanup of CX: {e}")
 
         self.stop_signal = True
 
