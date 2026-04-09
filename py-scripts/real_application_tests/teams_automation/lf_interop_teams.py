@@ -1559,6 +1559,10 @@ class TeamsAutomation(Realm):
 
         self.stop_signal = True
         time.sleep(10)
+        self.create_avg_data()
+        self.generate_report()
+        self.generic_endps_profile.cleanup()
+        self.stop_test_in_webui()
         logging.info("Exiting the application.")
         os._exit(0)
 
