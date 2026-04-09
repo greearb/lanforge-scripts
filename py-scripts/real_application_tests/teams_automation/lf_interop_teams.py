@@ -722,7 +722,13 @@ class TeamsAutomation(Realm):
 
         if len(self.real_sta_list) == self.participants_joined:
             logging.info("All participants have joined the call. Starting the test.")
-
+        if self.do_bs:
+            self.bs_coord_result = self.robo_obj.get_coordinates_list()
+            if self.bs_coord_result:
+                self.from_coordinate = self.coordinates[0]
+                self.successful_coords.append(self.from_coordinate)
+            else:
+                sys.exit(1)
         self.set_start_time()
         logging.info("TEST WILL BE STARTING")
 
