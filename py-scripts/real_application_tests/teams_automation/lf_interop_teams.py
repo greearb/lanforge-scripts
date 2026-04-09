@@ -1979,27 +1979,34 @@ class TeamsAutomation(Realm):
         )
 
     def stop_test_in_webui(self):
+        """
+        Updates the running_status.json file to mark the test as Completed.
+        """
         try:
-            url = f"http://{self.lanforge_ip}:5454/update_status_yt"
-            headers = {
-                'Content-Type': 'application/json',
-            }
+            json_path = os.path.join(self.path, "running_status.json")
 
-            data = {
-                'status': 'Completed',
-                'name': self.test_name
-            }
+            # 1. Load existing data or create new dict
+            data = {}
+            if os.path.exists(json_path):
+                with open(json_path, "r") as f:
+                    try:
+                        data = json.load(f)
+                    except json.JSONDecodeError:
+                        data = {}
 
-            response = requests.post(url, json=data, headers=headers)
+            # 2. Update status
+            data["status"] = "Completed"
 
-            if response.status_code == 200:
-                logging.info("Successfully updated STOP status to 'Completed'")
-                pass
-            else:
-                logging.error(f"Failed to update STOP status: {response.status_code} - {response.text}")
+            # 3. Write back to file
+            with open(json_path, "w") as f:
+                json.dump(data, f, indent=4)
+
+            logger.info(
+                f"Updated running_status.json with status Completed at {json_path}"
+            )
 
         except Exception as e:
-            logging.error(f"An error occurred while updating status: {e}")
+            logger.error(f"Error updating running_status.json: {e}")
 
 
 def main():
