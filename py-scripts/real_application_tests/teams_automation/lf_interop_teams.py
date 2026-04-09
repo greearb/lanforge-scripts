@@ -1515,31 +1515,125 @@ class TeamsAutomation(Realm):
             sys.exit(0)
 
     def create_avg_data(self):
-        output_file = os.path.join(self.path, "teams_call_avg_data.csv")
+        exclude_cols = [
+            "timestamp",
+            "Sent Audio Codec",
+            "Received Audio Codec",
+            "Sent Video Resolution(px)",
+            "Sent Video Codec",
+            "Video Processing",
+            "current_coordinate",
+            "current_rotation",
+            "x",
+            "y",
+            "signal",
+            "channel",
+            "mode",
+            "tx_rate",
+            "rx_rate",
+            "bssid",
+            "from_coordinate",
+            "to_coordinate",
+        ]
+        if self.do_robo:
+            if self.rotations_enabled:
+                output_file = os.path.join(
+                    self.path,
+                    f"teams_call_avg_data_{self.current_coord}_{self.current_rotation}.csv",
+                )
+            else:
+                output_file = os.path.join(
+                    self.path, f"teams_call_avg_data_{self.current_coord}.csv"
+                )
+        else:
+            output_file = os.path.join(self.path, "teams_call_avg_data.csv")
         summary_rows = []
 
-        for csv_path in glob.glob(os.path.join(self.path, "*.csv")):
-            if csv_path.endswith("teams_cred.csv"):
-                continue
-            df = pd.read_csv(csv_path)
+        if self.do_robo:
+            if self.rotations_enabled:
+                logger.info(
+                    f"Creating average data for coordinate {self.current_coord} with rotation {self.current_rotation}"
+                )
+                for csv_path in glob.glob(
+                    os.path.join(
+                        self.path, f"*{self.current_coord}_{self.current_rotation}.csv"
+                    )
+                ):
+                    if csv_path.endswith("teams_cred.csv"):
+                        continue
+                    df = pd.read_csv(csv_path)
 
-            device_name = os.path.splitext(os.path.basename(csv_path))[0]
-            df = df.drop(columns=["timestamp"], errors="ignore")
+                    device_name = os.path.splitext(os.path.basename(csv_path))[0]
+                    df = df.drop(columns=exclude_cols, errors="ignore")
 
-            numeric_cols = df.select_dtypes(include="number").columns
-            averages = df[numeric_cols].mean().round(2)
+                    df = df.apply(pd.to_numeric, errors="coerce")
+                    averages = df.mean().round(2)
 
-            row = averages.to_dict()
-            row["Device Name"] = device_name
-            summary_rows.append(row)
+                    row = averages.to_dict()
+                    row["Device Name"] = device_name
+                    summary_rows.append(row)
+
+            else:
+                logger.info(
+                    f"Creating average data for coordinate {self.current_coord} with no rotation"
+                )
+
+                for csv_path in glob.glob(
+                    os.path.join(self.path, f"*{self.current_coord}.csv")
+                ):
+                    if csv_path.endswith("teams_cred.csv"):
+                        continue
+                    df = pd.read_csv(csv_path)
+
+                    device_name = os.path.splitext(os.path.basename(csv_path))[0]
+                    df = df.drop(columns=exclude_cols, errors="ignore")
+
+                    df = df.apply(pd.to_numeric, errors="coerce")
+                    averages = df.mean().round(2)
+
+                    row = averages.to_dict()
+                    row["Device Name"] = device_name
+                    summary_rows.append(row)
+        else:
+            logger.info(f"Creating average data for all devices")
+
+            for csv_path in glob.glob(os.path.join(self.path, "*.csv")):
+                if csv_path.endswith("teams_cred.csv") or csv_path.endswith(
+                    "teams_call_avg_data.csv"
+                ):
+                    continue
+                df = pd.read_csv(csv_path)
+
+                device_name = os.path.splitext(os.path.basename(csv_path))[0]
+                df = df.drop(columns=exclude_cols, errors="ignore")
+
+                df = df.apply(pd.to_numeric, errors="coerce")
+                averages = df.mean().round(2)
+
+                row = averages.to_dict()
+                row["Device Name"] = device_name
+                summary_rows.append(row)
 
         summary_df = pd.DataFrame(summary_rows)
 
-        cols = ["Device Name"] + [col for col in summary_df.columns if col != "Device Name"]
+        cols = ["Device Name"] + [
+            col for col in summary_df.columns if col != "Device Name"
+        ]
         summary_df = summary_df[cols]
 
         summary_df.to_csv(output_file, index=False)
         logger.info(f"Avg data saved to {output_file}")
+        self.avg_csv_files_list.append(
+            {
+                "file": output_file,
+                "coord": self.current_coord if self.do_robo else None,
+                "rotation": (
+                    self.current_rotation
+                    if self.do_robo and self.rotations_enabled
+                    else None
+                ),
+            }
+        )
 
     def stop_test_in_webui(self):
         try:
