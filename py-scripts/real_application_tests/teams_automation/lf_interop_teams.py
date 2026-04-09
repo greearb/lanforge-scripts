@@ -1298,90 +1298,215 @@ class TeamsAutomation(Realm):
             shutdown_thread.start()
             return response
 
-        @self.app.route('/upload_stats', methods=['POST'])
+        @self.app.route("/upload_stats", methods=["POST", "GET"])
         def upload_stats():
-            data = request.json
 
-            for hostname, stats in data.items():
-                if self.do_robo or self.do_bs:
-                    stats["current_coord"] = self.current_coord
-                    stats["current_rotation"] = self.current_rotation
-                    stats["rotations_enabled"] = self.rotations_enabled
+            if request.method == "POST":
+                data = request.json
 
-                self.data_store[hostname] = stats
-
-                if self.do_robo:
-                    csv_file = (
-                        os.path.join(self.path, f"{hostname}_{self.current_coord}_{self.current_rotation}.csv")
-                        if self.rotations_enabled
-                        else os.path.join(self.path, f"{hostname}_{self.current_coord}.csv")
-                    )
-                else:
-                    csv_file = os.path.join(self.path, f'{hostname}.csv')
-                with open(csv_file, mode='a', newline='') as file:
-                    writer = csv.writer(file)
-
-                    if os.path.getsize(csv_file) == 0:
-                        writer.writerow(
-                            self.header
-                        )
-                    timestamp = stats.get('timestamp', '')
-                    if self.audio and self.video:
-                        audio = stats.get('audio_stats', {})
-                        video = stats.get('video_stats', {})
-                        row = [
-                            timestamp,
-                            audio.get("au_sent_bitrate", 0),
-                            audio.get("au_sent_pkts", 0),
-                            audio.get("au_rtt", 0),
-                            audio.get("au_sent_codec", "NA"),
-                            audio.get("au_recv_jitter", 0),
-                            audio.get("au_recv_pkt_loss", 0),
-                            audio.get("au_recv_pkts", 0),
-                            audio.get("au_recv_codec", "NA"),
-                            video.get("vi_sent_bitrate", 0),
-                            video.get("vi_recv_bitrate", 0),
-                            video.get("vi_sent_frame_rate", 0),
-                            video.get("vi_sent_res", "NA"),
-                            video.get("vi_rtt", 0),
-                            video.get("vi_sent_pkts", 0),
-                            video.get("vi_sent_codec", "NA"),
-                            video.get("vi_processing", "NA"),
-                        ]
-                    elif self.audio:
-                        audio = stats.get('audio_stats', {})
-                        row = [
-                            timestamp,
-                            audio.get("au_sent_bitrate", 0),
-                            audio.get("au_sent_pkts", 0),
-                            audio.get("au_rtt", 0),
-                            audio.get("au_sent_codec", "NA"),
-                            audio.get("au_recv_jitter", 0),
-                            audio.get("au_recv_pkt_loss", 0),
-                            audio.get("au_recv_pkts", 0),
-                            audio.get("au_recv_codec", "NA"),
-                        ]
-
-                    elif self.video:
-                        video = stats.get('video_stats', {})
-                        row = [
-                            timestamp,
-                            video.get("vi_sent_bitrate", 0),
-                            video.get("vi_recv_bitrate", 0),
-                            video.get("vi_sent_frame_rate", 0),
-                            video.get("vi_sent_res", "NA"),
-                            video.get("vi_rtt", 0),
-                            video.get("vi_sent_pkts", 0),
-                            video.get("vi_sent_codec", "NA"),
-                            video.get("vi_processing", "NA"),
-                        ]
+                for hostname, stats in data.items():
                     if self.do_robo or self.do_bs:
-                        row.append(self.current_coord)
-                        if self.rotations_enabled:
-                            row.append(self.current_rotation)
-                    writer.writerow(row)
+                        stats["current_coord"] = self.current_coord
+                        stats["current_rotation"] = self.current_rotation
+                        stats["rotations_enabled"] = self.rotations_enabled
+                    self.data_store[hostname] = stats
 
-            return jsonify({"status": "success"}), 200
+                    if self.do_robo:
+                        csv_file = (
+                            os.path.join(
+                                self.path,
+                                f"{hostname}_{self.current_coord}_{self.current_rotation}.csv",
+                            )
+                            if self.rotations_enabled
+                            else os.path.join(
+                                self.path, f"{hostname}_{self.current_coord}.csv"
+                            )
+                        )
+                    else:
+                        csv_file = os.path.join(self.path, f"{hostname}.csv")
+                    with open(csv_file, mode="a", newline="") as file:
+                        writer = csv.writer(file)
+
+                        if os.path.getsize(csv_file) == 0:
+                            writer.writerow(self.header)
+                        timestamp = stats.get("timestamp", "")
+                        if self.audio and self.video:
+                            audio = stats.get("audio_stats", {})
+                            video = stats.get("video_stats", {})
+                            row = [
+                                timestamp,
+                                audio.get("au_sent_bitrate", 0),
+                                audio.get("au_sent_pkts", 0),
+                                audio.get("au_rtt", 0),
+                                audio.get("au_sent_codec", "NA"),
+                                audio.get("au_recv_jitter", 0),
+                                audio.get("au_recv_pkt_loss", 0),
+                                audio.get("au_recv_pkts", 0),
+                                audio.get("au_recv_codec", "NA"),
+                                video.get("vi_sent_bitrate", 0),
+                                video.get("vi_recv_bitrate", 0),
+                                video.get("vi_sent_frame_rate", 0),
+                                video.get("vi_sent_res", "NA"),
+                                video.get("vi_rtt", 0),
+                                video.get("vi_sent_pkts", 0),
+                                video.get("vi_sent_codec", "NA"),
+                                video.get("vi_processing", "NA"),
+                            ]
+                        elif self.audio:
+                            audio = stats.get("audio_stats", {})
+                            row = [
+                                timestamp,
+                                audio.get("au_sent_bitrate", 0),
+                                audio.get("au_sent_pkts", 0),
+                                audio.get("au_rtt", 0),
+                                audio.get("au_sent_codec", "NA"),
+                                audio.get("au_recv_jitter", 0),
+                                audio.get("au_recv_pkt_loss", 0),
+                                audio.get("au_recv_pkts", 0),
+                                audio.get("au_recv_codec", "NA"),
+                            ]
+
+                        elif self.video:
+                            video = stats.get("video_stats", {})
+                            row = [
+                                timestamp,
+                                video.get("vi_sent_bitrate", 0),
+                                video.get("vi_recv_bitrate", 0),
+                                video.get("vi_sent_frame_rate", 0),
+                                video.get("vi_sent_res", "NA"),
+                                video.get("vi_rtt", 0),
+                                video.get("vi_sent_pkts", 0),
+                                video.get("vi_sent_codec", "NA"),
+                                video.get("vi_processing", "NA"),
+                            ]
+
+                        if self.do_robo or self.do_bs:
+                            row.append(self.current_coord)
+                            if self.rotations_enabled:
+                                row.append(self.current_rotation)
+                        if self.do_bs:
+                            # Pre-fill exactly 10 default values to ensure CSV alignment never breaks
+                            bs_data = [
+                                "NA",
+                                "NA",
+                                "NA",
+                                "NA",
+                                "NA",
+                                "NA",
+                                "NA",
+                                "NA",
+                                self.from_coordinate,
+                                self.to_coordinate,
+                            ]
+
+                            try:
+                                x, y, _, _ = self.robo_obj.get_robot_pose()
+                                bs_data[0] = x
+                                bs_data[1] = y
+
+                                lf_wifi_data = self.get_signal_and_channel_data()
+                                sta_id = self.hostname_to_station_map.get(
+                                    hostname, None
+                                )
+
+                                if sta_id and sta_id in lf_wifi_data:
+                                    bs_data[2] = lf_wifi_data[sta_id]["signal"]
+                                    bs_data[3] = lf_wifi_data[sta_id]["channel"]
+                                    bs_data[4] = lf_wifi_data[sta_id]["mode"]
+                                    bs_data[5] = lf_wifi_data[sta_id]["tx_rate"]
+                                    bs_data[6] = lf_wifi_data[sta_id]["rx_rate"]
+                                    bs_data[7] = lf_wifi_data[sta_id]["bssid"]
+
+                            except Exception as e:
+                                logger.error(
+                                    f"Error getting data related to BandSteering: {e}"
+                                )
+
+                            # Extend the main row with exactly 10 items, whether the API calls passed or failed
+                            row.extend(bs_data)
+
+                        writer.writerow(row)
+
+                return jsonify({"status": "success"}), 200
+
+            elif request.method == "GET":
+                result = {}
+
+                for hostname, stats in self.data_store.items():
+                    audio = stats.get("audio_stats", {})
+                    video = stats.get("video_stats", {})
+
+                    # Grab current timestamp to prevent double-counting during GET polling
+                    current_timestamp = stats.get("timestamp", "")
+
+                    # Grab current values
+                    au_bitrate = audio.get("au_sent_bitrate", 0)
+                    au_rtt = audio.get("au_rtt", 0)
+                    vi_bitrate = video.get("vi_sent_bitrate", 0)
+                    vi_rtt = video.get("vi_rtt", 0)
+
+                    # 2. If this is the first time seeing this device, initialize its averages
+                    if hostname not in self.running_averages:
+                        self.running_averages[hostname] = {
+                            "Sent Audio bitrate(Kbps)": au_bitrate,
+                            "Audio RTT(ms)": au_rtt,
+                            "Sent video bitrate(Mbps)": vi_bitrate,
+                            "video RTT (ms)": vi_rtt,
+                            "count": 1,
+                            "last_timestamp": current_timestamp,
+                        }
+                    else:
+                        prev = self.running_averages[hostname]
+
+                        # 3. Only calculate a new average if the data point is actually NEW
+                        if prev["last_timestamp"] != current_timestamp:
+                            count = prev["count"]
+                            new_count = count + 1
+
+                            # Update the true running average using the previous value
+                            prev["Sent Audio bitrate(Kbps)"] = (
+                                prev["Sent Audio bitrate(Kbps)"] * count + au_bitrate
+                            ) / new_count
+                            prev["Audio RTT(ms)"] = (
+                                prev["Audio RTT(ms)"] * count + au_rtt
+                            ) / new_count
+                            prev["Sent video bitrate(Mbps)"] = (
+                                prev["Sent video bitrate(Mbps)"] * count + vi_bitrate
+                            ) / new_count
+                            prev["video RTT (ms)"] = (
+                                prev["video RTT (ms)"] * count + vi_rtt
+                            ) / new_count
+
+                            prev["count"] = new_count
+                            prev["last_timestamp"] = current_timestamp
+
+                    # 4. Format the output (rounded to 2 decimals for clean UI)
+                    result[hostname] = {
+                        "Sent Audio Bitrate(Kbps)": round(
+                            self.running_averages[hostname]["Sent Audio bitrate(Kbps)"],
+                            2,
+                        ),
+                        "Audio RTT(ms)": round(
+                            self.running_averages[hostname]["Audio RTT(ms)"], 2
+                        ),
+                        "Sent Video Bitrate(Mbps)": round(
+                            self.running_averages[hostname]["Sent video bitrate(Mbps)"],
+                            2,
+                        ),
+                        "Video RTT (ms)": round(
+                            self.running_averages[hostname]["video RTT (ms)"], 2
+                        ),
+                    }
+
+                    # 5. Attach the robot state
+                    if self.do_robo or self.do_bs:
+                        result[hostname]["robot_state"] = {
+                            "current_coord": self.current_coord,
+                            "current_rotation": self.current_rotation,
+                            "rotations_enabled": self.rotations_enabled,
+                        }
+
+                return jsonify(result), 200
 
         try:
             self.app.run(host='0.0.0.0', port=5005, debug=True, threaded=True, use_reloader=False)
