@@ -2015,9 +2015,9 @@ def main():
     try:
 
         parser = argparse.ArgumentParser(
-            prog='lf_interop_teams.py',
+            prog="lf_interop_teams.py",
             formatter_class=argparse.RawTextHelpFormatter,
-            epilog=''' Allows user to run the Microsoft Teams Call test on a target resource for the given duration. ''',
+            epilog=""" Allows user to run the Microsoft Teams Call test on a target resource for the given duration. """,
             description="""
                 NAME: lf_interop_teams.py
 
@@ -2025,11 +2025,11 @@ def main():
 
                 EXAMPLE-1:
                 Command Line Interface to run Teams:
-                python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --participants 3 --duration 1 --audio --video
+                python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --duration 1 --audio --video
 
                 EXAMPLE-2:
                 Command Line Interface to run Teams on Specified Resources:
-                python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --participants 3 --duration 1 --audio --video --resources 1.95,1.400,1.300
+                python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --duration 1 --audio --video --resources 1.95,1.400,1.300
 
 
                 NOTES:
@@ -2039,39 +2039,98 @@ def main():
                 4. Enter the resource numbers separated by commas (,) in the resource argument Eg: (1.95,1.200).
 
 
-        """)
+        """,
+        )
 
         # Define required arguments group
-        required = parser.add_argument_group('Required arguments')
+        required = parser.add_argument_group("Required arguments")
         # Define optional arguments group
-        optional = parser.add_argument_group('Optional arguments')
+        optional = parser.add_argument_group("Optional arguments")
+        # Add robo related arguments
+        robo = parser.add_argument_group("Robo related arguments")
 
-        required.add_argument('--mgr', type=str, help="hostname where LANforge GUI is running", required=True)
-        required.add_argument('--duration', type=int, help='duration to run the test in min', required=True)
-        required.add_argument('--upstream_port', type=str, help='Specify The Upstream Port name or IP address', required=True)
-        required.add_argument('--participants', type=int, help='No of Devices in the test', required=True)
+        required.add_argument(
+            "--mgr",
+            type=str,
+            help="hostname where LANforge GUI is running",
+            required=True,
+        )
+        required.add_argument(
+            "--upstream_port",
+            type=str,
+            help="Specify The Upstream Port name or IP address",
+            required=True,
+        )
 
         # Add optional arguments
-        optional.add_argument('--resources', help='Specify the real device ports seperated by comma')
-        optional.add_argument('--no_pre_cleanup', action="store_true", help='specify this flag to stop cleaning up generic cxs before the test')
-        optional.add_argument('--no_post_cleanup', action="store_true", help='specify this flag to stop cleaning up generic cxs after the test')
-        optional.add_argument('--log_level', help='Level of the logs to be dispalyed', default='info')
-        optional.add_argument('--lf_logger_config_json', help='lf_logger config json')
-        optional.add_argument('--audio', action='store_true')
-        optional.add_argument('--video', action='store_true')
-        optional.add_argument('--enable_mobile_stats', action='store_true', help='specify this flag to enable mobile stats collection on Android devices')
+        optional.add_argument(
+            "--duration", type=int, help="duration to run the test in min"
+        )
+        optional.add_argument(
+            "--resources", help="Specify the real device ports seperated by comma"
+        )
+        optional.add_argument(
+            "--no_pre_cleanup",
+            action="store_true",
+            help="specify this flag to stop cleaning up generic cxs before the test",
+        )
+        optional.add_argument(
+            "--no_post_cleanup",
+            action="store_true",
+            help="specify this flag to stop cleaning up generic cxs after the test",
+        )
+        optional.add_argument(
+            "--log_level", help="Level of the logs to be dispalyed", default="info"
+        )
+        optional.add_argument("--lf_logger_config_json", help="lf_logger config json")
+        optional.add_argument("--audio", action="store_true")
+        optional.add_argument("--video", action="store_true")
+        optional.add_argument(
+            "--do_webUI",
+            action="store_true",
+            help="useful to specify whether we are running through webui or cli",
+        )
+        optional.add_argument(
+            "--testname", help="report directory while running test through web ui"
+        )
+        optional.add_argument(
+            "--report_dir", help="report directory while running test through web ui"
+        )
+        optional.add_argument(
+            "--enable_mobile_stats",
+            action="store_true",
+            help="Used to specify whether to collect mobile stats through chrome browser based UI automation or not",
+        )
 
-        robo = parser.add_argument_group('Robo / Band-steering arguments')
-        robo.add_argument('--robo_ip', type=str, help='Specify the robo ip')
-        robo.add_argument('--coordinates', help='Comma-separated list of coordinate point names (e.g. 1,2,3)')
-        robo.add_argument('--rotations', help='Comma-separated list of rotation angles (in degrees)')
-        robo.add_argument('--do_robo', action='store_true', help='specify this flag to enable robo coordinate tracking mode')
-        robo.add_argument('--do_bs', action='store_true', help='specify this flag to enable band-steering timing mode')
-        robo.add_argument('--cycles', type=int, default=1, help='Number of cycles to run the test')
-        robo.add_argument('--bssids', type=str, help='Comma-separated list of BSSIDs for bandsteering test')
-        optional.add_argument('--do_webUI', action='store_true', help='useful to specify whether we are running through webui or cli')
-        optional.add_argument('--testname', help="report directory while running test through web ui")
-        optional.add_argument('--report_dir', help="report directory while running test through web ui")
+        robo.add_argument("--robo_ip", type=str, help="Specify the robo ip")
+        robo.add_argument(
+            "--coordinates",
+            help="Comma-separated list of coordinate point names (e.g. 1,2,3), each mapping to x and y values",
+        )
+
+        robo.add_argument(
+            "--rotations",
+            help="Comma-separated list of rotation angles (in degrees) to apply at respective points",
+        )
+        robo.add_argument(
+            "--do_robo",
+            help="Specify this flag to perform the test with robo",
+            action="store_true",
+        )
+        robo.add_argument(
+            "--do_bs",
+            help="Specify this flag to perform the test with robo for band steering",
+            action="store_true",
+        )
+        robo.add_argument(
+            "--cycles", type=int, default=1, help="Number of cycles to run the test"
+        )
+
+        robo.add_argument(
+            "--bssids",
+            type=str,
+            help="Comma-separated list of BSSIDs for bandsteering test",
+        )
 
         args = parser.parse_args()
 
@@ -2087,16 +2146,17 @@ def main():
 
         rotations_enabled = False
         if args.do_robo or args.do_bs:
-            args.coordinates = args.coordinates.split(',') if args.coordinates else []
+            args.coordinates = args.coordinates.split(",") if args.coordinates else []
             args.rotations = (
-                [float(angle) for angle in args.rotations.split(',')]
+                [float(angle) for angle in args.rotations.split(",")]
                 if args.rotations
                 else []
             )
             if args.rotations:
                 rotations_enabled = True
+
             if args.bssids:
-                args.bssids = args.bssids.split(',') if args.bssids else []
+                args.bssids = args.bssids.split(",") if args.bssids else []
 
         teams = TeamsAutomation(
             lanforge_ip=args.mgr,
@@ -2109,52 +2169,57 @@ def main():
             do_webui=args.do_webUI,
             test_name=args.testname,
             report_dir=args.report_dir,
-            do_bs=args.do_bs,
-            do_robo=args.do_robo,
-            rotations_enabled=rotations_enabled,
             robo_ip=args.robo_ip,
             coordinates=args.coordinates,
             rotations=args.rotations,
+            do_robo=args.do_robo,
+            do_bs=args.do_bs,
             cycles=args.cycles,
             bssids=args.bssids,
-            enable_mobile_stats=args.enable_mobile_stats
-
+            rotations_enabled=rotations_enabled,
+            enable_mobile_stats=args.enable_mobile_stats,
         )
 
-        teams.realdevice = RealDevice(manager_ip=args.mgr,
-                                      server_ip="192.168.1.61",
-                                      ssid_2g='Test Configured',
-                                      passwd_2g='',
-                                      encryption_2g='',
-                                      ssid_5g='Test Configured',
-                                      passwd_5g='',
-                                      encryption_5g='',
-                                      ssid_6g='Test Configured',
-                                      passwd_6g='',
-                                      encryption_6g='',
-                                      selected_bands=['5G'])
+        teams.upstream_port = teams.change_port_to_ip(args.upstream_port)
+
+        teams.realdevice = RealDevice(
+            manager_ip=args.mgr,
+            server_ip="192.168.1.61",
+            ssid_2g="Test Configured",
+            passwd_2g="",
+            encryption_2g="",
+            ssid_5g="Test Configured",
+            passwd_5g="",
+            encryption_5g="",
+            ssid_6g="Test Configured",
+            passwd_6g="",
+            encryption_6g="",
+            selected_bands=["5G"],
+        )
 
         teams.select_real_devices(real_sta_list=args.resources)
         if args.do_webUI:
             teams.path = args.report_dir
             teams.update_webui_data()
         teams.load_credentials()
-        teams.run()
-        time.sleep(10)
-        teams.create_avg_data()
-
+        teams.handle_flask_server()
+        if args.do_robo:
+            teams.run_robo_test()
+        else:
+            teams.run()
+            time.sleep(10)
+            teams.create_avg_data()
     except Exception as e:
-        logging.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
+        logger.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
         traceback.print_exc()
 
     finally:
-        if args is not None and not ('--help' in sys.argv or '-h' in sys.argv):
+        if args is not None and not ("--help" in sys.argv or "-h" in sys.argv):
             if teams is not None:
                 teams.stop_signal = True
-                teams.generate_report()
-                teams.move_csv_files()
                 if args.do_webUI:
                     teams.stop_test_in_webui()
+                teams.generate_report()
                 logger.info("Waiting for Browser Cleanup at Client Side")
                 time.sleep(10)
                 logger.info("Browser Cleanup Completed")
