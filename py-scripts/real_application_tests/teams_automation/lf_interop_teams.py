@@ -939,160 +939,236 @@ class TeamsAutomation(Realm):
             logger.error("Error Occured ", exc_info=True)
 
     def generate_report(self):
-        report = lf_report(_output_pdf='teams_call_report.pdf',
-                           _output_html='teams_call_report.html',
-                           _results_dir_name="teams_call_report",
-                           _path=self.path)
-        self.report_path_date_time = report.get_path_date_time()
+        try:
 
-        report.set_title("Teams Call Automated Report")
-        report.build_banner()
-
-        report.set_table_title("Objective:")
-        report.build_table_title()
-        report.set_text("The objective is to conduct automated Teams call tests across multiple laptops to gather statistics on sent audio, video, and received audio, video performance." +
-                        "The test will collect these statistics and store them in a CSV file. Additionally, automated graphs will be generated using the collected data.")
-        report.build_text_simple()
-
-        report.set_table_title("Test Parameters:")
-        report.build_table_title()
-        testtype = ""
-        if self.audio and self.video:
-            testtype = "AUDIO & VIDEO"
-        elif self.audio:
-            testtype = "AUDIO"
-        elif self.video:
-            testtype = "VIDEO"
-
-        test_parameters = pd.DataFrame([{
-
-            'No of Clients': f'W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
-            'Test Duration(min)': self.duration,
-            "HOST": self.real_sta_list[0],
-            "TEST TYPE": testtype
-
-        }])
-        report.set_table_dataframe(test_parameters)
-        report.build_table()
-
-        # Read per-device average metrics
-        df = pd.read_csv(os.path.join(self.path, "teams_call_avg_data.csv"))
-        df.columns = df.columns.str.strip()
-
-        report.set_table_title("Test Devices:")
-        report.build_table_title()
-
-        device_details = pd.DataFrame({
-            'Hostname': self.real_sta_hostname,
-            'OS Type': self.real_sta_os_types,
-        })
-        report.set_table_dataframe(device_details)
-        report.build_table()
-
-        if self.audio:
-            metrics = [
-                ("Audio RTT(ms)", "Audio RTT (ms)"),
-                ("Received Audio Jitter(ms)", "Received Audio Jitter (ms)"),
-                ("Sent Audio Bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
-            ]
-
-        if self.video:
-            # Create bar graphs for each metric
-            metrics = [
-                ("Sent Video Bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
-                ("Received Video Bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
-                ("Sent Video Packets", "Sent Video Packets"),
-            ]
-        if self.audio and self.video:
-            # Create bar graphs for each metric
-            metrics = [
-                ("Audio RTT(ms)", "Audio RTT (ms)"),
-                ("Received Audio Jitter(ms)", "Received Audio Jitter (ms)"),
-                ("Sent Audio Bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
-                ("Sent Video Bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
-                ("Received Video Bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
-                ("Sent Video Packets", "Sent Video Packets"),
-            ]
-
-        for column, title in metrics:
-            report.set_graph_title(f"Average {title}")
-            report.build_graph_title()
-
-            bar_graph_horizontal = lf_bar_graph_horizontal(
-                _data_set=[df[column].tolist()],
-                _xaxis_name=f"AVG {title}",
-                _yaxis_name="Devices",
-                _yaxis_label=df["Device Name"].tolist(),
-                _yaxis_categories=df["Device Name"].tolist(),
-                _yaxis_step=1,
-                _yticks_font=8,
-                _bar_height=.25,
-                _color_name=["orange"],
-                _show_bar_value=True,
-                _figsize=(16, len(df) * 1 + 4),
-                _graph_title=f"AVG {title} Per Device",
-                _graph_image_name=title.replace(" ", "_"),
-                _label=[title]
+            self.report = lf_report(
+                _output_pdf="teams_call_report.pdf",
+                _output_html="teams_call_report.html",
+                _results_dir_name="teams_call_report",
+                _path=self.path,
             )
-            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-            report.set_graph_image(graph_image)
-            report.move_graph_image()
-            report.build_graph()
+            self.report_path_date_time = self.report.get_path_date_time()
 
-        if self.audio:
-            selected_columns = [
-                "Device Name",
-                "Sent Audio Bitrate(Kbps)",
-                "Sent Audio Packets",
-                "Audio RTT(ms)",
-                "Received Audio Jitter(ms)",
-                "Received Audio Packet Loss(%)",
-            ]
+            self.report.set_title("Teams Call Automated Report")
+            self.report.build_banner()
 
-            column_headings = {
-                "Device Name": "Device Name",
-                "Sent Audio Bitrate(Kbps)": "AVG Sent Audio Bitrate (Kbps)",
-                "Sent Audio Packets": "AVG Sent Audio Packets",
-                "Audio RTT(ms)": "AVG Audio RTT (ms)",
-                "Received Audio Jitter(ms)": "AVG Received Audio Jitter (ms)",
-                "Received Audio Packet Loss(%)": "AVG Received Audio Packet Loss (%)",
-            }
+            self.report.set_table_title("Objective:")
+            self.report.build_table_title()
+            self.report.set_text(
+                "The objective is to conduct automated Teams call tests across multiple laptops to gather statistics on sent audio, video, and received audio, video performance."
+                + "The test will collect these statistics and store them in a CSV file. Additionally, automated graphs will be generated using the collected data."
+            )
+            self.report.build_text_simple()
 
-            filtered_df = df[selected_columns].rename(columns=column_headings)
+            self.report.set_table_title("Test Parameters:")
+            self.report.build_table_title()
+            testtype = ""
+            if self.audio and self.video:
+                testtype = "AUDIO & VIDEO"
+            elif self.audio:
+                testtype = "AUDIO"
+            elif self.video:
+                testtype = "VIDEO"
 
-            report.set_table_title("Test Audio Results Table")
-            report.build_table_title()
-            report.set_table_dataframe(filtered_df)
-            report.build_table()
+            test_parameters = pd.DataFrame(
+                [
+                    {
+                        "No of Clients": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
+                        "Test Duration(min)": self.duration,
+                        "HOST": self.real_sta_list[0],
+                        "TEST TYPE": testtype,
+                    }
+                ]
+            )
+            self.report.set_table_dataframe(test_parameters)
+            self.report.build_table()
 
-        if self.video:
-            selected_columns = [
-                "Device Name",
-                "Sent Video Bitrate(Mbps)",
-                "Received Video Bitrate(Mbps)",
-                "Sent Video Frame Rate(fps)",
-                "Video RTT (ms)",
-                "Sent Video Packets",
-            ]
+            self.report.set_table_title("Test Devices:")
+            self.report.build_table_title()
 
-            column_headings = {
-                "Device Name": "Device Name",
-                "Sent Video Bitrate(Mbps)": "AVG Sent Video Bitrate (Mbps)",
-                "Received Video Bitrate(Mbps)": "AVG Received Video Bitrate (Mbps)",
-                "Sent Video Frame Rate(fps)": "AVG Sent Video Frame Rate (fps)",
-                "Video RTT (ms)": "AVG Video RTT (ms)",
-                "Sent Video Packets": "AVG Sent Video Packets",
-            }
+            device_details = pd.DataFrame(
+                {
+                    "Hostname": self.real_sta_hostname,
+                    "OS Type": self.real_sta_os_types,
+                }
+            )
+            self.report.set_table_dataframe(device_details)
+            self.report.build_table()
 
-            filtered_df = df[selected_columns].rename(columns=column_headings)
+            if self.audio:
+                metrics = [
+                    ("Audio RTT(ms)", "Audio RTT (ms)"),
+                    ("Received Audio Jitter(ms)", "Received Audio Jitter (ms)"),
+                    ("Sent Audio Bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
+                ]
 
-            report.set_table_title("Test Video Results Table")
-            report.build_table_title()
-            report.set_table_dataframe(filtered_df)
-            report.build_table()
+            if self.video:
+                # Create bar graphs for each metric
+                metrics = [
+                    ("Sent Video Bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
+                    ("Received Video Bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
+                    ("Sent Video Packets", "Sent Video Packets"),
+                ]
+            if self.audio and self.video:
+                # Create bar graphs for each metric
+                metrics = [
+                    ("Audio RTT(ms)", "Audio RTT (ms)"),
+                    ("Received Audio Jitter(ms)", "Received Audio Jitter (ms)"),
+                    ("Sent Audio Bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
+                    ("Sent Video Bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
+                    ("Received Video Bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
+                    ("Sent Video Packets", "Sent Video Packets"),
+                ]
 
-        report.write_html()
-        report.write_pdf()
+            # Read per-device average metrics
+            self.generate_graphs_and_tables(metrics)
+            if self.do_robo and self.do_webui:
+                self.add_live_view_images_to_report()
+            if self.do_bs:
+                self.add_bandsteering_report_section()
+            self.report.write_html()
+            self.report.write_pdf()
+        except Exception as e:
+            logging.error(f"Error in generate_report function: {e}", exc_info=True)
+        finally:
+            self.move_csv_files()
+
+    def generate_graphs_and_tables(self, metrics):
+        """
+        Generate graphs and tables for the report based on the collected metrics.
+
+        This method reads the average metrics from the generated CSV files, creates
+        visualizations (bar graphs) for each specified metric, and compiles a summary
+        table of average values for all devices. The generated graphs and tables are
+        then added to the report.
+
+        Args:
+            metrics (list of tuples): A list of tuples where each tuple contains the metric name and its corresponding data.
+
+        """
+        for item in self.avg_csv_files_list:
+            csv_file = item.get("file")
+            coord = item.get("coord")
+            rotation = item.get("rotation")
+            df = pd.read_csv(csv_file)
+            df.columns = df.columns.str.strip()
+
+            logger.info(
+                f"checking metrics {metrics} in dataframe columns {df.columns.tolist()}"
+            )
+            logger.info(f"checking metrics dict {metrics}")
+
+            for column, title in metrics:
+                image_name = title.replace(" ", "_")
+                if self.do_robo:
+                    if self.rotations_enabled:
+                        self.report.set_graph_title(
+                            f"Average {title} for Coordinate {coord} with rotation {rotation}"
+                        )
+                        image_name = f"{image_name}_{coord}_{rotation}"
+                    else:
+                        self.report.set_graph_title(
+                            f"Average {title} for Coordinate {coord}"
+                        )
+                        image_name = f"{image_name}_{coord}"
+                else:
+                    self.report.set_graph_title(f"Average {title}")
+                self.report.build_graph_title()
+
+                bar_graph_horizontal = lf_bar_graph_horizontal(
+                    _data_set=[df[column].tolist()],
+                    _xaxis_name=f"AVG {title}",
+                    _yaxis_name="Devices",
+                    _yaxis_label=df["Device Name"].tolist(),
+                    _yaxis_categories=df["Device Name"].tolist(),
+                    _yaxis_step=1,
+                    _yticks_font=8,
+                    _bar_height=0.25,
+                    _color_name=["orange"],
+                    _show_bar_value=True,
+                    _figsize=(16, len(df) * 1 + 4),
+                    _graph_title=f"AVG {title} Per Device",
+                    _graph_image_name=image_name,
+                    _label=[title],
+                )
+                graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+                self.report.set_graph_image(graph_image)
+                self.report.move_graph_image()
+                self.report.build_graph()
+
+            if self.audio:
+                selected_columns = [
+                    "Device Name",
+                    "Sent Audio Bitrate(Kbps)",
+                    "Sent Audio Packets",
+                    "Audio RTT(ms)",
+                    "Received Audio Jitter(ms)",
+                    "Received Audio Packet Loss(%)",
+                ]
+
+                column_headings = {
+                    "Device Name": "Device Name",
+                    "Sent Audio Bitrate(Kbps)": "AVG Sent Audio Bitrate (Kbps)",
+                    "Sent Audio Packets": "AVG Sent Audio Packets",
+                    "Audio RTT(ms)": "AVG Audio RTT (ms)",
+                    "Received Audio Jitter(ms)": "AVG Received Audio Jitter (ms)",
+                    "Received Audio Packet Loss(%)": "AVG Received Audio Packet Loss (%)",
+                }
+
+                filtered_df = df[selected_columns].rename(columns=column_headings)
+
+                if self.do_robo:
+                    if self.rotations_enabled:
+                        self.report.set_table_title(
+                            f"Average Audio Metrics for {coord} with rotation {rotation}"
+                        )
+                    else:
+                        self.report.set_table_title(
+                            f"Average Audio Metrics for {coord}"
+                        )
+                else:
+                    self.report.set_table_title("Test Audio Results Table")
+
+                self.report.build_table_title()
+                self.report.set_table_dataframe(filtered_df)
+                self.report.build_table()
+
+            if self.video:
+                selected_columns = [
+                    "Device Name",
+                    "Sent Video Bitrate(Mbps)",
+                    "Received Video Bitrate(Mbps)",
+                    "Sent Video Frame Rate(fps)",
+                    "Video RTT (ms)",
+                    "Sent Video Packets",
+                ]
+
+                column_headings = {
+                    "Device Name": "Device Name",
+                    "Sent Video Bitrate(Mbps)": "AVG Sent Video Bitrate (Mbps)",
+                    "Received Video Bitrate(Mbps)": "AVG Received Video Bitrate (Mbps)",
+                    "Sent Video Frame Rate(fps)": "AVG Sent Video Frame Rate (fps)",
+                    "Video RTT (ms)": "AVG Video RTT (ms)",
+                    "Sent Video Packets": "AVG Sent Video Packets",
+                }
+
+                filtered_df = df[selected_columns].rename(columns=column_headings)
+
+                if self.do_robo:
+                    if self.rotations_enabled:
+                        self.report.set_table_title(
+                            f"Average Video Metrics for Coordinate {coord} with rotation {rotation}"
+                        )
+                    else:
+                        self.report.set_table_title(
+                            f"Average Video Metrics for Coordinate {coord}"
+                        )
+                else:
+                    self.report.set_table_title("Test Video Results Table")
+
+                self.report.build_table_title()
+                self.report.set_table_dataframe(filtered_df)
+                self.report.build_table()
 
     def check_gen_cx(self):
         try:
