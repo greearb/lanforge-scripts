@@ -91,7 +91,11 @@
     --coordinates c1,c2,c3 \
     --rotations 0,90,180,270
 
-
+    Example-9:
+    Command Line Interface to run the Test with Robo bandsteering
+    python3 lf_interop_youtube.py --mgr 192.168.207.78 --url "https://youtu.be/BHACKCNDMW8?si=mjPduPJ5a7KmCUAS" --duration 1  --upstream_port 192.168.204.90 --res 144p
+    --do_robo --robo_ip 192.168.200.101 --coordinates 3,2,1 --rotations "" --robot_wait_duration 1 --do_bandsteering --cycles 2
+    --bssids 94:A6:7E:74:26:22,94:A6:7E:74:26:31
 
 
 
