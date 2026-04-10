@@ -20,6 +20,10 @@ EXAMPLE-4:
 Command Line Interface to run Teams on Specified Resources with Robo Functionality and Rotations Enabled:
 python3 lf_interop_teams.py --mgr 192.168.207.78 --upstream_port 1.1.eth1 --duration 1 --audio --video --resources 1.95,1.400,1.300 --do_robo --robo_ip 192.168.200.186 --coordinates 3,4,5 --rotations 30,40
 
+Example-5:
+Command Line Interface to run Teams on Specified Resources with Band Steering Functionality:
+python3 lf_interop_teams.py --mgr 192.168.207.78 --resources 1.15,1.11 --upstream_port 192.168.200.135 --audio --video --coordinates 1,4 --robo_ip 192.168.200.186 --do_bs --cycles 2 --bssids 94:A6:7E:74:26:22,94:A6:7E:74:26:33
+
 NOTES:
 1. Use 'python3 lf_interop_teams.py --help' to see command line usage and options.
 2. Always specify the duration in minutes (for example: --duration 3 indicates a duration of 3 minutes).
@@ -228,7 +232,7 @@ class TeamsAutomation(Realm):
                     "from_coordinate", "to_coordinate",
                 ])
                 self.bs_coord_result = []
-                self.robo_obj.coordinates_list = self.coordinates
+                self.robo_obj.coordinate_list = self.coordinates
                 self.robo_obj.total_cycles = self.cycles
             self.successful_coords = []
             self.failed_coords = []
@@ -462,7 +466,7 @@ class TeamsAutomation(Realm):
                         f"--devices {self.serial_list[i]} "
                         f"--meet_link '{self.meet_link}' "
                         f"--participant_name '{self.real_sta_hostname[i]}' "
-                        f"--upstream_port {self.upstream_port} "
+                        f"--upstream_port {self.lanforge_ip} "
                         f"--duration {self.duration} "
                         "--audio "
                         "--video "
@@ -2030,6 +2034,18 @@ def main():
                 EXAMPLE-2:
                 Command Line Interface to run Teams on Specified Resources:
                 python3 lf_interop_teams.py --mgr 192.168.204.75 --upstream_port 1.1.eth1 --duration 1 --audio --video --resources 1.95,1.400,1.300
+
+                EXAMPLE-3:
+                Command Line Interface to run Teams on Specified Resources with Robo Functionality:
+                python3 lf_interop_teams.py --mgr 192.168.207.78 --upstream_port 1.1.eth1 --duration 1 --audio --video --resources 1.95,1.400,1.300 --do_robo --robo_ip 192.168.200.186 --coordinates 3,4,5
+
+                EXAMPLE-4:
+                Command Line Interface to run Teams on Specified Resources with Robo Functionality and Rotations Enabled:
+                python3 lf_interop_teams.py --mgr 192.168.207.78 --upstream_port 1.1.eth1 --duration 1 --audio --video --resources 1.95,1.400,1.300 --do_robo --robo_ip 192.168.200.186 --coordinates 3,4,5 --rotations 30,40
+
+                Example-5:
+                Command Line Interface to run Teams on Specified Resources with Band Steering Functionality:
+                python3 lf_interop_teams.py --mgr 192.168.207.78 --resources 1.15,1.11 --upstream_port 192.168.200.135 --audio --video --coordinates 1,4 --robo_ip 192.168.200.186 --do_bs --cycles 2 --bssids 94:A6:7E:74:26:22,94:A6:7E:74:26:33
 
 
                 NOTES:
