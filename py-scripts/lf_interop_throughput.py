@@ -78,6 +78,11 @@
         python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
         --robot_ip 192.168.204.101 --coordinate 3,4 --rotation 30,60,90
 
+        EXAMPLE-16:
+        Command Line Interface to run download scenario with desired resources at desired points with bandsteering using robo
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --robot_ip 192.168.204.144 --coordinate 3,4 --do_bandsteering --total_cycles 2 --bssids 94:A6:7E:74:26:33,94:A6:7E:74:26:22
+
     TO PERFORM INTEROPABILITY TEST:
 
         EXAMPLE-1:
@@ -3795,7 +3800,6 @@ class Throughput(Realm):
                                 upload_values_list = data_for_angle['Overall Upload'][data_for_angle['Iteration'] == i + 1].values.tolist()
                             else:
                                 upload_values_list = data['Overall Upload'][data['Iteration'] == i + 1].values.tolist()
-                            data_set_in_graph.append(upload_values_list)
                             data_set_in_graph.append(upload_values_list)
                             devices_data_to_create_bar_graph.append(upload_data)
                             label_data = ['Upload']
