@@ -749,10 +749,7 @@ class TeamsAutomation(Realm):
             check_count += 1
             if check_count > 24:
                 logging.warning(
-                    f"Waited for 2 minutes but not all participants joined. Proceeding with the test with the participants that have joined. Joined: {
-                        self.participants_joined}, Expected: {
-                        len(
-                            self.real_sta_list)}"
+                    f"Proceeding with the test with the participants that have joined. Joined: {self.participants_joined}, Expected: {len(self.real_sta_list)}"
                 )
                 break
 
