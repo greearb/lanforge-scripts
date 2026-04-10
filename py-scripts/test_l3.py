@@ -8387,6 +8387,10 @@ wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius&&80211r_pms
              --coordinate 21,29
              --robot_ip 192.168.200.179
 
+        # Example : Command Line Interface to run Multicast robo test for bandsteering
+        python3 test_l3.py  --lfmgr 192.168.207.78 --test_duration 1m --polling_interval 1s --upstream_port eth1 --endp_type mc_udp --rates_are_totals --side_b_min_bps=10000000 --test_tag test_l3 --cleanup_cx --tos BE --real
+        --robot_test --coordinate 10,29 --robot_ip 192.168.200.179 --do_bandsteering --cycles 3 --bssids 94:A6:7E:74:26:33,94:A6:7E:74:26:22
+
 SCRIPT_CLASSIFICATION:  Creation & Runs Traffic
 
 SCRIPT_CATEGORIES:  Performance, Functional,  KPI Generation,  Report Generation
