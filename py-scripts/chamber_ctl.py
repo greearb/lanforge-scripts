@@ -128,11 +128,11 @@ class Turntable(Realm):
                                           speed_rpm=self.speed,
                                           position=self.position,
                                           tilt=self.tilt)
-        time.sleep(0.125)
         if no_settle is False:
             logging.warning("not waiting for chamber settings to take effect")
             return
 
+        time.sleep(0.125)
         if float(self.found_chamber[Turntable.CURRENT_POSITION]) == float(self.position) \
                 and float(self.found_chamber[Turntable.CURRENT_TILT]) == float(self.tilt):
             logging.warning("requested position %s, current reported position is %s" % (self.position, self.found_chamber[Turntable.CURRENT_POSITION]))
@@ -273,7 +273,7 @@ def main():
         description="Operate a LANForge-connected turntable. "
                     "NOTE: \"--position\" and \"--tilt\" will override their adjust argument counterparts")
     parser.add_argument("--host", "--mgr",
-                        help='specify the GUI to connect to, assumes port 8080')
+                        help='specify the GUI to connect to, assumes port 8080', default="localhost")
     parser.add_argument("--debug",
                         action="store_true",
                         help='turn on debugging')
@@ -290,7 +290,7 @@ def main():
     parser.add_argument("--position",
                         type=float,
                         help="Set the turn table position to an absolute position (between 0.0 and 359.9). "
-                             "Position resolution is 1/10th of a degree.""")
+                             "Position resolution is 1/10th of a degree.")
     parser.add_argument("--adjust_position",
                         type=float,
                         help="Adjust the turn table position a few degrees relative to current position. "
