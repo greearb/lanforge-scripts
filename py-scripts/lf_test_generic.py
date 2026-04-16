@@ -1223,7 +1223,10 @@ def main():
     optional.add_argument('--destination_url_lfcurl', help='destination url for lfcurl', default=None)
     optional.add_argument('--loop_count', help='determines the number of loops to use in lf_curl and lfping', default=None)
     optional.add_argument('--interval', help='ping interval configuration', default=0.2)
-    optional.add_argument('--target', help='Target for lfping (ex: www.google.com). ALSO arg to specify IP address (if server is OFF lanforge, ex: 192.168.101.1) or LANforge eid (if server port is ON lanfoge, ex: 1.1.eth3) of iperf3 server used for iperf3-client target.', default=None)  # noqa: E501
+    optional.add_argument('--target',
+                          help="""Target for lfping (ex: www.google.com). ALSO arg to specify IP address
+                          (if server is OFF lanforge, ex: 192.168.101.1) or LANforge eid
+                          (if server port is ON lanfoge, ex: 1.1.eth3) of iperf3 server used for iperf3-client target.""", default=None)
     optional.add_argument('--client_port', help="the port number of the iperf client endpoint. example: -p 5011", default=None)
     optional.add_argument('--server_port', help="the port number of the iperf server endpoint. example: -p 5011", default=None)
 
