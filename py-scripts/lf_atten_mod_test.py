@@ -12,6 +12,9 @@ EXAMPLE:    Set channel four (zero-indexed) of all attenuators on LANforge syste
             to attenuation value 0 ddB (0.0 dB).
             Command: './lf_atten_mod_test.py --mgr 192.168.200.12 --atten_serno 2324 --atten_idx all --atten_val 0'
 
+            Set first 3 channels:
+            Command: './lf_atten_mod_test.py --mgr 192.168.200.12 --atten_serno 1.1.2324 --atten_idx 0,1,2 --atten_val 100'
+
             Run with '--help' option to see full usage and all options.
 
 Copyright (C) 2020-2026 Candela Technologies Inc
@@ -39,7 +42,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class CreateAttenuator(Realm):
-    def __init__(self, host, port, serno, idx, val,
+    def __init__(self, host, port, serno, idx, val, query,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -48,15 +51,17 @@ class CreateAttenuator(Realm):
         self.serno = serno
         self.idx = idx
         self.val = val
+        self.query = query
         self.attenuator_profile = self.new_attenuator_profile()
         self.attenuator_profile.atten_idx = self.idx
         self.attenuator_profile.atten_val = self.val
         self.attenuator_profile.atten_serno = self.serno
 
     def build(self):
-        self.attenuator_profile.create()
-        self.attenuator_profile.show()
-
+        if self.query:
+            self.attenuator_profile.show()
+        else:
+            self.attenuator_profile.create()
 
 def main():
     # create_basic_argparse defined in lanforge-scripts/py-json/LANforge/lfcli_base.py
@@ -76,10 +81,13 @@ EXAMPLE:    Set channel four (zero-indexed) of all attenuators on LANforge syste
             Set channel all channels of attenuator 2324 on LANforge system \'192.168.200.12\'
             to attenuation value 0 ddB (0.0 dB).
             Command: './lf_atten_mod_test.py --mgr 192.168.200.12 --atten_serno 2324 --atten_idx all --atten_val 0'
+            Set first 3 channels:
+            Command: './lf_atten_mod_test.py --mgr 192.168.200.12 --atten_serno 1.1.2324 --atten_idx 0,1,2 --atten_val 100'
 ''')
     parser.add_argument('--atten_serno', help='Serial number for requested attenuator, or \'all\'',              default='all')
-    parser.add_argument('--atten_idx',   help='Attenuator index eg. For module 1 = 0, module 2 = 1, or \'all\'', default='all')
+    parser.add_argument('--atten_idx',   help='Attenuator index:  For module 1 = 0, first 3 modules: 0,1,2, or \'all\'', default='all')
     parser.add_argument('--atten_val',   help='Requested attenuation in 1/10ths of dB (ddB).',                   default=0)
+    parser.add_argument('--query',   help='Just query the attenuator settings, do not set.',                   default=0)
 
     args = parser.parse_args()
     help_summary = '''\
@@ -95,7 +103,8 @@ lf_atten_mod_test.py is used to modify and/or read the LANforge Attenuator setti
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    atten_mod_test = CreateAttenuator(host=args.mgr, port=args.mgr_port, serno=args.atten_serno, idx=args.atten_idx, val=args.atten_val, _debug_on=args.debug)
+    atten_mod_test = CreateAttenuator(host=args.mgr, port=args.mgr_port, serno=args.atten_serno, idx=args.atten_idx,
+                                      val=args.atten_val, query=args.query, _debug_on=args.debug)
     atten_mod_test.build()
 
 

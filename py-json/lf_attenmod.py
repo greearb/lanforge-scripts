@@ -52,7 +52,6 @@ class ATTENUATORProfile(LFCliBase):
     def show(self):
         logger.info("Show Attenuators.........")
         response = self.json_get("/attenuators/")
-        time.sleep(0.01)
         if response is None:
             logger.critical(response)
             logger.critical("Cannot find any endpoints")
@@ -74,23 +73,26 @@ class ATTENUATORProfile(LFCliBase):
             raise ValueError('No attenuators in response')
 
     def create(self):
-        if self.atten_idx == 'all':
-            self.atten_idx = "all"
-        else:
-            if int(self.atten_idx) > 7 and self.atten_idx != "all":
-                logger.critical("Attenuation idx value must be 7 or less")
-                raise ValueError("Attenuation idx value must be 7 or less")
         if int(self.atten_val) > 955:
-            logger.critical("Attenuation ddB value must be 955 or less")
-            raise ValueError("Attenuation ddB value must be 955 or less")
+            self.atten_val = 995
+        if int(self.atten_val) < 0:
+            self.atten_val = 995
 
-        logger.info("Setting Attenuator...")
-        self.set_command_param("set_attenuator", "serno", self.atten_serno)
-        self.set_command_param("set_attenuator", "atten_idx", self.atten_idx)
+        eid = LFUtils.name_to_eid(self.atten_serno)
+        logger.info("Setting Attenuator %s.%s.%s idx: %s val: %s..." % (eid[0], eid[1], eid[2], self.atten_idx, self.atten_val))
+
+        self.set_command_param("set_attenuator", "shelf", eid[0])
+        self.set_command_param("set_attenuator", "resource", eid[1])
+        self.set_command_param("set_attenuator", "serno", eid[2])
         self.set_command_param("set_attenuator", "val", self.atten_val)
-        set_attenuators = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_attenuator", debug_=self.debug)
-        set_attenuators.addPostData(self.atten_data)
-        time.sleep(0.01)
-        set_attenuators.jsonPost(self.debug)
-        time.sleep(10)
+        indices = self.atten_idx.split(",")
+        for idx in indices:
+            if idx != 'all':
+                if int(idx) > 7:
+                    logger.critical("Attenuation idx value must be 7 or less")
+                    raise ValueError("Attenuation idx value must be 7 or less")
+            self.set_command_param("set_attenuator", "atten_idx", idx)
+            set_attenuators = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_attenuator", debug_=self.debug)
+            set_attenuators.addPostData(self.atten_data)
+            set_attenuators.jsonPost(self.debug)
         print("\n")
