@@ -543,7 +543,7 @@ class GenTest():
             types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}
             if self.security in types.keys():
                 add_sta_flags = []
-                set_port_interest = ['rpt_timer', ' current_flags', 'dhcp']
+                set_port_interest = ['rpt_timer', 'current_flags', 'dhcp']
                 set_port_current = ['use_dhcp']
                 # add appropriate flags for security
                 if self.security != "open":
