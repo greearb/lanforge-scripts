@@ -63,6 +63,7 @@ class CreateAttenuator(Realm):
         else:
             self.attenuator_profile.create()
 
+
 def main():
     # create_basic_argparse defined in lanforge-scripts/py-json/LANforge/lfcli_base.py
     parser = Realm.create_bare_argparse(
