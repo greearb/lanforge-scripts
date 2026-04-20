@@ -2716,13 +2716,1297 @@ class ZoomAutomation(Realm):
         self.device_list = filtered_list
         return filtered_list
 
+    def add_bandsteering_report_section(self, report=None):
+        try:
+
+            """
+            Bandsteering reporting (Robo-style):
+            Reads all zoom stats CSVs from report directory (self.path) and builds:
+            - BSSID change count graph per device
+            - Table of BSSID change events
+            """
+            if report is None:
+                logger.error("Bandsteering report: report object is None")
+                return
+
+            report_dir = self.path
+
+            if not report_dir or not os.path.isdir(report_dir):
+                logger.error(f"Bandsteering report: invalid report dir: {report_dir}")
+                return
+
+            logger.info(f"Bandsteering report dir: {report_dir}")
+
+            # Search for CSV files in self.path
+            csv_files = glob.glob(os.path.join(report_dir, "*.csv"))
+            logger.info(f"Bandsteering CSV files found: {csv_files}")
+
+            if not csv_files:
+                logger.warning("No CSVs found in report dir for bandsteering")
+                return
+
+            report.set_obj_html(
+                _obj_title="Band Steering Statistics",
+                _obj="This section summarizes BSSID changes observed while the robot moved between coordinates.",
+            )
+            report.build_objective()
+
+            allowed_bssids = set(self.bssids) if self.bssids else set()
+
+            for csv_file_path in csv_files:
+                try:
+                    df = pd.read_csv(csv_file_path)
+                except Exception as e:
+                    logger.error(
+                        f"Unable to read CSV {csv_file_path}: {e}", exc_info=True
+                    )
+                    continue
+
+                # Rename columns to match the specific capitalization expected by this logic
+                df.rename(
+                    columns={
+                        "timestamp": "TimeStamp",
+                        "bssid": "BSSID",
+                        "channel": "Channel",
+                    },
+                    inplace=True,
+                )
+
+                required_cols = {
+                    "TimeStamp",
+                    "BSSID",
+                    "From_Coord",
+                    "To_Coord",
+                    "Channel",
+                }
+
+                # Check if this CSV actually contains bandsteering data (skip summary/other CSVs)
+                if not required_cols.issubset(df.columns):
+                    continue
+
+                device_name = os.path.basename(csv_file_path).replace(".csv", "")
+
+                # Clean columns
+                df["BSSID"] = df["BSSID"].fillna("NA").astype(str)
+                df["TimeStamp"] = df["TimeStamp"].fillna("NA").astype(str)
+                df["From_Coord"] = df["From_Coord"].fillna("NA").astype(str)
+                df["To_Coord"] = df["To_Coord"].fillna("NA").astype(str)
+                df["Channel"] = df["Channel"].fillna("NA").astype(str)
+
+                # Filter only configured BSSIDs (if provided)
+                if allowed_bssids:
+                    df = df[df["BSSID"].isin(allowed_bssids)]
+
+                if df.empty:
+                    logging.info(f"No matching BSSID rows for {device_name}")
+
+                # Detect change points
+                df["prev_bssid"] = df["BSSID"].shift()
+
+                mask = (
+                    (df["BSSID"] != df["prev_bssid"])
+                    & (df["BSSID"] != "NA")
+                    & (df["prev_bssid"] != "NA")
+                    & (df["prev_bssid"].notnull())
+                )
+
+                bssid_list = df.loc[mask, "BSSID"].tolist()
+                timestamp_list = df.loc[mask, "TimeStamp"].tolist()
+                from_coordinate_list = df.loc[mask, "From_Coord"].tolist()
+                to_coordinate_list = df.loc[mask, "To_Coord"].tolist()
+                channel_list = df.loc[mask, "Channel"].tolist()
+
+                skip_table = not mask.any()
+
+                # Count BSSID switches
+                if skip_table:
+                    # Ensure all expected BSSIDs show zero
+                    bssid_counts = {bssid: 0 for bssid in self.bssids}
+                else:
+                    bssid_counts = Counter(bssid_list)
+
+                # Ensure consistent graph ordering
+                if self.bssids:
+                    final_bssid_counts = {
+                        bssid: bssid_counts.get(bssid, 0) for bssid in self.bssids
+                    }
+                else:
+                    final_bssid_counts = bssid_counts
+
+                x_axis = list(final_bssid_counts.keys())
+                y_axis = [[float(v)] for v in final_bssid_counts.values()]
+
+                report.set_obj_html(
+                    _obj_title=f"BSSID Change Count Of The Client {device_name}",
+                    _obj=" ",
+                )
+                report.build_objective()
+
+                graph = lf_bar_graph(
+                    _data_set=y_axis,
+                    _xaxis_name="BSSID",
+                    _yaxis_name="Number of Changes",
+                    _xaxis_categories=[""],
+                    _xaxis_label=x_axis,
+                    _graph_image_name=f"zoom_bssid_change_count_{device_name}",
+                    _label=x_axis,
+                    _xaxis_step=1,
+                    _graph_title=f"Zoom Bandsteering: BSSID change count for device : {device_name}",
+                    _title_size=16,
+                    _bar_width=0.15,
+                    _figsize=(18, 6),
+                    _dpi=96,
+                    _show_bar_value=True,
+                    _enable_csv=True,
+                )
+
+                graph_png = graph.build_bar_graph()
+                report.set_graph_image(graph_png)
+                report.move_graph_image()
+                report.set_csv_filename(graph_png)
+                report.move_csv_file()
+                report.build_graph()
+
+                if skip_table:
+                    report.set_obj_html(
+                        _obj_title=f"Band Steering Results for {device_name}",
+                        _obj="No band steering events observed for the configured BSSID list.",
+                    )
+                    report.build_objective()
+                    continue
+
+                report.set_obj_html(
+                    _obj_title=f"Band Steering Results for {device_name}", _obj=" "
+                )
+                report.build_objective()
+
+                table_df = pd.DataFrame(
+                    {
+                        "TimeStamp": timestamp_list,
+                        "BSSID": bssid_list,
+                        "Channel": channel_list,
+                        "From Coordinate": from_coordinate_list,
+                        "To Coordinate": to_coordinate_list,
+                    }
+                )
+
+                report.set_table_dataframe(table_df)
+                report.build_table()
+
+            # Handle Charging Timestamps (Check if robo_obj exists first)
+            if (
+                hasattr(self, "robo_obj")
+                and hasattr(self.robo_obj, "charging_timestamps")
+                and len(self.robo_obj.charging_timestamps) != 0
+            ):
+                report.set_obj_html(_obj_title="Charging Timestamps", _obj="")
+                report.build_objective()
+                df = pd.DataFrame(
+                    self.robo_obj.charging_timestamps,
+                    columns=[
+                        "charge_dock_arrival_timestamp",
+                        "charging_completion_timestamp",
+                    ],
+                )
+                # Add S.No column
+                df.insert(0, "S.No", range(1, len(df) + 1))
+                report.set_table_dataframe(df)
+                report.build_table()
+            else:
+                report.set_obj_html(
+                    _obj_title="Charging Timestamps",
+                    _obj="Robot did not go to charge during this test",
+                )
+                report.build_objective()
+        except Exception as e:
+            logger.error(f"Exeception Occured {e}")
+            logger.error("Error Occured ", exc_info=True)
+
+    def add_live_view_images_to_report(self):
+        """
+        Waits for and adds the Video and Audio heatmap images for Floor 1.
+        """
+        live_view_dir = os.path.join(self.path, "live_view_images")
+
+        # Define the specific filenames for Floor 1
+        video_img_name = f"zoom_video_{self.testname}_floor1.png"
+        audio_img_name = f"zoom_audio_{self.testname}_floor1.png"
+
+        video_path = os.path.join(live_view_dir, video_img_name)
+        audio_path = os.path.join(live_view_dir, audio_img_name)
+
+        timeout = 90  # seconds
+        start_time = time.time()
+
+        # 1. Wait for the Video image (Primary trigger)
+        while not (os.path.exists(video_path) and os.path.exists(audio_path)):
+            if time.time() - start_time > timeout:
+                logger.error(f"Timeout: {video_img_name} not found within 60 seconds.")
+                break
+            time.sleep(1)
+
+        if os.path.exists(video_path):
+            logger.info(f"Found video heatmap image: {video_path}")
+        else:
+            logger.warning(f"Video heatmap image not found: {video_path}")
+
+        if os.path.exists(audio_path):
+            logger.info(f"Found audio heatmap image: {audio_path}")
+        else:
+            logger.warning(f"Audio heatmap image not found: {audio_path}")
+
+        # 2. Build the HTML Report Content
+        html_content = ""
+
+        # Add Video Map (if found)
+        if os.path.exists(video_path):
+            html_content += (
+                '<div style="page-break-before: always;"></div>'
+                '<h3 style="text-align:center;">Video Heatmap</h3>'
+                f'<div style="text-align:center;"><img src="file://{video_path}" style="width:1200px; height:800px;"></img></div>'
+            )
+
+        # Add Audio Map (if found)
+        if os.path.exists(audio_path):
+            html_content += (
+                '<div style="page-break-before: always;"></div>'
+                '<h3 style="text-align:center;">Audio Heatmap</h3>'
+                f'<div style="text-align:center;"><img src="file://{audio_path}" style="width:1200px; height:800px;"></img></div>'
+            )
+
+        # 3. Inject into Report
+        if html_content:
+            self.report.set_custom_html(html_content)
+
+    def generate_report_from_api(self):
+        self.report = lf_report(
+            _output_pdf="zoom_call_report.pdf",
+            _output_html="zoom_call_report.html",
+            _results_dir_name="zoom_call_report",
+            _path=self.path,
+        )
+        self.report_path_date_time = self.report.get_path_date_time()
+        self.report.set_title("Zoom Call Automated Report")
+        self.report.build_banner()
+        self.report.set_table_title("Objective:")
+        self.report.build_table_title()
+        self.report.set_text(
+            """The Zoom Conference Test is designed to evaluate an Access Point ability
+                to handle real-time conferencing workloads when multiple clients, including Windows,
+                Linux, macOS, and Android devices, participate in a Zoom meeting. The test measures
+                the AP's efficiency in managing audio, video, and screen share traffic while maintaining
+                acceptable latency, jitter, packet loss, and bitrate. Additional observations include client
+                connection stability, airtime fairness, and MOS Score. The expected behavior is for the
+                Access Point to sustain consistent Zoom performance as the client load increases,
+                ensuring reliable conferencing quality without significant degradation across upstream
+                and downstream traffic
+            """
+        )
+        self.report.build_text_simple()
+        self.report.set_table_title("Test Parameters:")
+        self.report.build_table_title()
+        testtype = ""
+        if self.audio and self.video:
+            testtype = "AUDIO & VIDEO"
+        elif self.audio:
+            testtype = "AUDIO"
+        elif self.video:
+            testtype = "VIDEO"
+
+        # lambda function to convert min to HH:MM:SS
+        to_hms = (
+            lambda mins: f"{int(mins * 60 // 3600):02}:{int((mins * 60 % 3600) // 60):02}:{int(mins * 60 % 60):02}"
+        )
+
+        if self.config:
+            test_parameters = pd.DataFrame(
+                [
+                    {
+                        "Test Name": "Zoom Conference Call Test",
+                        "Date": time.strftime("%d-%m-%Y", time.localtime()),
+                        "Configured Devices": self.hostname_os_combination,
+                        "Zoom Meeting ID": self.remote_login_url,
+                        "Devices Used": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
+                        "Test Duration": to_hms(self.duration),
+                        "EMAIL ID": self.signin_email,
+                        "PASSWORD": self.signin_passwd,
+                        "HOST": self.real_sta_list[0],
+                        "TEST TYPE": testtype,
+                        "SSID": self.ssid,
+                        "Security": self.security,
+                    }
+                ]
+            )
+        elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
+            gp_pairs = zip(self.selected_groups, self.selected_profiles)
+            gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
+
+            test_parameters = pd.DataFrame(
+                [
+                    {
+                        "Test Name": "Zoom Conference Call Test",
+                        "Date": time.strftime("%d-%m-%Y", time.localtime()),
+                        "Configuration": gp_map,
+                        "Configured Devices": self.hostname_os_combination,
+                        "Zoom Meeting ID": self.remote_login_url,
+                        "Devices Used": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
+                        "Test Duration": to_hms(self.duration),
+                        "EMAIL ID": self.signin_email,
+                        "PASSWORD": self.signin_passwd,
+                        "HOST": self.real_sta_list[0],
+                        "TEST TYPE": testtype,
+                        "Iterations": self.cycles,
+                    }
+                ]
+            )
+        else:
+            test_params_list = [
+                {
+                    "Test Name": "Zoom Conference Call Test",
+                    "Date": time.strftime("%d-%m-%Y", time.localtime()),
+                    "Devices Used": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
+                    "EMAIL ID": self.signin_email,
+                    "PASSWORD": self.signin_passwd,
+                    "HOST": self.real_sta_list[0],
+                    "TEST TYPE": testtype,
+                }
+            ]
+            if self.do_robo or self.do_bs:
+                test_params_list[0].update(
+                    {
+                        "Coordinates": self.coordinates_list,
+                    }
+                )
+                if self.do_bs:
+                    test_params_list[0].update(
+                        {
+                            "Iterations": self.cycles,
+                        }
+                    )
+            test_parameters = pd.DataFrame(test_params_list)
+        self.report.set_table_dataframe(test_parameters)
+        self.report.build_table()
+
+        device_data = self._get_report_device_data()
+
+        if not self.download_csv:
+            self.report.set_table_title("Test Devices:")
+            self.report.build_table_title()
+            device_details = pd.DataFrame(
+                {
+                    "Hostname": self.real_sta_hostname,
+                    "OS Type": self.real_sta_os_type,
+                    "MAC": self.mac_list,
+                    "RSSI": self.rssi_list,
+                    "Link Rate": self.link_rate_list,
+                    "SSID": self.ssid_list,
+                    "Role in call": [
+                        "Host" if index == 0 else "Participant"
+                        for index, hostname in enumerate(self.real_sta_hostname)
+                    ],
+                }
+            )
+        else:
+            csv_device_data = {}
+            try:
+                if not os.path.exists(os.path.join(os.getcwd(), self.csv_file_name)):
+                    logger.error(f"File not found: {self.csv_file_name}")
+                    self.report.set_table_title("Test Devices:")
+                    self.report.build_table_title()
+                    device_details = pd.DataFrame(
+                        {
+                            "Hostname": self.real_sta_hostname,
+                            "OS Type": self.real_sta_os_type,
+                            "MAC": self.mac_list,
+                            "SSID": self.ssid_list,
+                            "Role in call": [
+                                "Host" if index == 0 else "Participant"
+                                for index, hostname in enumerate(self.real_sta_hostname)
+                            ],
+                        }
+                    )
+                else:
+                    csv_device_data = self.summarize_csv_audio_video(self.csv_file_name)
+                    device_data = csv_device_data
+                    self.report.set_table_title("Test Devices:")
+                    self.report.build_table_title()
+                    device_details = pd.DataFrame(
+                        {
+                            "Hostname": self.real_sta_hostname,
+                            "OS Type": self.real_sta_os_type,
+                            "MAC": self.mac_list,
+                            "SSID": self.ssid_list,
+                            "Role in call": [
+                                "Host" if index == 0 else "Participant"
+                                for index, hostname in enumerate(self.real_sta_hostname)
+                            ],
+                            "Overall Audio MOS": [
+                                csv_device_data.get(client, {}).get("audio_mos_avg")
+                                or 0
+                                for client in self.real_sta_hostname
+                            ],
+                            "Overall Video MOS": [
+                                csv_device_data.get(client, {}).get("video_mos_avg")
+                                or 0
+                                for client in self.real_sta_hostname
+                            ],
+                        }
+                    )
+            except Exception as e:
+                logger.error(f"Error while getting/reading: {self.csv_file_name}: {e}")
+                device_data = self._get_report_device_data()
+                self.report.set_table_title("Test Devices:")
+                self.report.build_table_title()
+                device_details = pd.DataFrame(
+                    {
+                        "Hostname": self.real_sta_hostname,
+                        "OS Type": self.real_sta_os_type,
+                        "MAC": self.mac_list,
+                        "SSID": self.ssid_list,
+                        "Role in call": [
+                            "Host" if index == 0 else "Participant"
+                            for index, hostname in enumerate(self.real_sta_hostname)
+                        ],
+                    }
+                )
+        self.report.set_table_dataframe(device_details)
+        self.report.build_table()
+
+        if self.audio:
+            self.report.set_table_title("1. Audio Performance")
+            self.report.build_table_title()
+
+            self.report.set_text(
+                """Audio quality is evaluated through latency, jitter, bitrate, and packet loss, ensuring clear communication and consistent voice transmission."""
+            )
+            self.report.build_text_simple()
+
+            # audio bitrate graph
+            self.report.set_graph_title("a. Audio Bitrate (Recevied/Sent)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (device_data.get(client, {}).get("audio_input_bitrate_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (device_data.get(client, {}).get("audio_output_bitrate_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
+            y_data_set = self.real_sta_hostname
+
+            x_fig_size = 18
+            y_fig_size = len(self.real_sta_hostname) * 1 + 4
+            bar_graph_horizontal = lf_bar_graph_horizontal(
+                _data_set=x_data_set,
+                _xaxis_name="Bitrate (Kbps)",
+                _yaxis_name="Devices",
+                _yaxis_label=y_data_set,
+                _yaxis_categories=y_data_set,
+                _yaxis_step=1,
+                _yticks_font=8,
+                _bar_height=0.20,
+                _color_name=["blue", "orange"],
+                _show_bar_value=True,
+                _figsize=(x_fig_size, y_fig_size),
+                _graph_title="Audio Bitrate(Recevied/Sent)",
+                _graph_image_name="Audio Bitrate(Recevied and Sent)",
+                _label=["Avg Recv", "Avg Sent"],
+            )
+            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
+
+            # audio latency graph
+            self.report.set_graph_title("b. Audio Latency (Recevied/Sent)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (device_data.get(client, {}).get("audio_input_latency_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (device_data.get(client, {}).get("audio_output_latency_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
+            y_data_set = self.real_sta_hostname
+            x_fig_size = 18
+            y_fig_size = len(self.real_sta_hostname) * 1 + 4
+            bar_graph_horizontal = lf_bar_graph_horizontal(
+                _data_set=x_data_set,
+                _xaxis_name="Latency (ms)",
+                _yaxis_name="Devices",
+                _yaxis_label=y_data_set,
+                _yaxis_categories=y_data_set,
+                _yaxis_step=1,
+                _yticks_font=8,
+                _bar_height=0.20,
+                _color_name=["blue", "orange"],
+                _show_bar_value=True,
+                _figsize=(x_fig_size, y_fig_size),
+                _graph_title="Audio Latency(received/sent)",
+                _graph_image_name="Audio Latency(received and sent)",
+                _label=["Avg Recv", "Avg Sent"],
+            )
+            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
+
+            # audio jitter graph
+            self.report.set_graph_title("c. Audio Jitter (Recevied/Sent)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (device_data.get(client, {}).get("audio_input_jitter_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (device_data.get(client, {}).get("audio_output_jitter_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
+            y_data_set = self.real_sta_hostname
+            x_fig_size = 18
+            y_fig_size = len(self.real_sta_hostname) * 1 + 4
+            bar_graph_horizontal = lf_bar_graph_horizontal(
+                _data_set=x_data_set,
+                _xaxis_name="Jitter (ms)",
+                _yaxis_name="Devices",
+                _yaxis_label=y_data_set,
+                _yaxis_categories=y_data_set,
+                _yaxis_step=1,
+                _yticks_font=8,
+                _bar_height=0.20,
+                _color_name=["blue", "orange"],
+                _show_bar_value=True,
+                _figsize=(x_fig_size, y_fig_size),
+                _graph_title="Audio Jitter(Received/Sent)",
+                _graph_image_name="Audio Jitter(received and Sent)",
+                _label=["Avg Recv", "Avg Sent"],
+            )
+            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
+
+            # audio packet loss graph
+            self.report.set_graph_title("d. Audio Packet Loss (Recevied/Sent)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (device_data.get(client, {}).get("audio_input_avg_loss_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (device_data.get(client, {}).get("audio_output_avg_loss_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
+            y_data_set = self.real_sta_hostname
+            x_fig_size = 18
+            y_fig_size = len(self.real_sta_hostname) * 1 + 4
+            bar_graph_horizontal = lf_bar_graph_horizontal(
+                _data_set=x_data_set,
+                _xaxis_name="Packet Loss (%)",
+                _yaxis_name="Devices",
+                _yaxis_label=y_data_set,
+                _yaxis_categories=y_data_set,
+                _yaxis_step=1,
+                _yticks_font=8,
+                _bar_height=0.20,
+                _color_name=["blue", "orange"],
+                _show_bar_value=True,
+                _figsize=(x_fig_size, y_fig_size),
+                _graph_title="Audio Packet Loss(Recevied/Sent)",
+                _graph_image_name="Audio Packet Loss(Recevied and Sent)",
+                _label=["Avg Recv", "Avg Sent"],
+            )
+            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
+
+            self.report.set_table_title("Test Audio Results Table:")
+            self.report.build_table_title()
+            audio_test_details = pd.DataFrame(
+                {
+                    "Device Name": [client for client in self.real_sta_hostname],
+                    "Avg Bitrate (kbps) [Recevied/Sent]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_input_bitrate_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_output_bitrate_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                    "Avg Latency (ms) [Recevied/Sent]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_input_latency_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_output_latency_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                    "Avg Jitter (ms) [Recevied/Sent]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_input_jitter_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_output_jitter_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                    "Avg Pkt Loss (%) [Recevied/Sent]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_input_avg_loss_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "audio_output_avg_loss_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                }
+            )
+            self.report.set_table_dataframe(audio_test_details)
+            self.report.dataframe_html = self.report.dataframe.to_html(
+                index=False, justify="center", render_links=True, escape=False
+            )
+            self.report.html += self.report.dataframe_html
+        if self.video:
+            self.report.set_table_title("2. Video Performance")
+            self.report.build_table_title()
+
+            self.report.set_text(
+                "Video traffic stresses the Access Point with higher bandwidth demand. "
+                "Performance is validated by maintaining resolution, frame rate, "
+                "and minimal loss under increasing client loads."
+            )
+            self.report.build_text_simple()
+
+            # video bitrate graph
+            self.report.set_graph_title("a. Video Bitrate (Recevied/Sent)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (device_data.get(client, {}).get("video_input_bitrate_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (device_data.get(client, {}).get("video_output_bitrate_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
+            y_data_set = self.real_sta_hostname
+            x_fig_size = 18
+            y_fig_size = len(self.real_sta_hostname) * 1 + 4
+            bar_graph_horizontal = lf_bar_graph_horizontal(
+                _data_set=x_data_set,
+                _xaxis_name="Bitrate (kbps)",
+                _yaxis_name="Devices",
+                _yaxis_label=y_data_set,
+                _yaxis_categories=y_data_set,
+                _yaxis_step=1,
+                _yticks_font=8,
+                _bar_height=0.20,
+                _color_name=["blue", "orange"],
+                _show_bar_value=True,
+                _figsize=(x_fig_size, y_fig_size),
+                _graph_title="Video Bitrate(Recevied/Sent)",
+                _graph_image_name="Video Bitrate(Recevied and Sent)",
+                _label=["Avg Recv", "Avg Sent"],
+            )
+            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
+
+            # video latency graph
+            self.report.set_graph_title("b. Video Latency (Recevied/Sent)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (device_data.get(client, {}).get("video_input_latency_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (device_data.get(client, {}).get("video_output_latency_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
+            y_data_set = self.real_sta_hostname
+            x_fig_size = 18
+            y_fig_size = len(self.real_sta_hostname) * 1 + 4
+            bar_graph_horizontal = lf_bar_graph_horizontal(
+                _data_set=x_data_set,
+                _xaxis_name="Latency (ms)",
+                _yaxis_name="Devices",
+                _yaxis_label=y_data_set,
+                _yaxis_categories=y_data_set,
+                _yaxis_step=1,
+                _yticks_font=8,
+                _bar_height=0.20,
+                _color_name=["blue", "orange"],
+                _show_bar_value=True,
+                _figsize=(x_fig_size, y_fig_size),
+                _graph_title="Video Latency(Recevied/Sent)",
+                _graph_image_name="Video Latency(Recevied and Sent)",
+                _label=["Avg Recv", "Avg Sent"],
+            )
+            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
+
+            # video jitter graph
+            self.report.set_graph_title("c. Video Jitter (Recevied/Sent)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (device_data.get(client, {}).get("video_input_jitter_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (device_data.get(client, {}).get("video_output_jitter_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
+            y_data_set = self.real_sta_hostname
+            x_fig_size = 18
+            y_fig_size = len(self.real_sta_hostname) * 1 + 4
+            bar_graph_horizontal = lf_bar_graph_horizontal(
+                _data_set=x_data_set,
+                _xaxis_name="Jitter (ms)",
+                _yaxis_name="Devices",
+                _yaxis_label=y_data_set,
+                _yaxis_categories=y_data_set,
+                _yaxis_step=1,
+                _yticks_font=8,
+                _bar_height=0.20,
+                _color_name=["blue", "orange"],
+                _show_bar_value=True,
+                _figsize=(x_fig_size, y_fig_size),
+                _graph_title="Video Jitter(Recevied/Sent)",
+                _graph_image_name="Video Jitter(Recevied and sent)",
+                _label=["Avg Recv", "Avg Sent"],
+            )
+            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
+
+            # video packet loss graph
+            self.report.set_graph_title("d. Video Packet Loss (Recevied/Sent)")
+            self.report.build_graph_title()
+            x_data_set = [
+                [
+                    (device_data.get(client, {}).get("video_input_avg_loss_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+                [
+                    (device_data.get(client, {}).get("video_output_avg_loss_avg") or 0)
+                    for index, client in enumerate(self.real_sta_hostname)
+                ],
+            ]
+            y_data_set = self.real_sta_hostname
+            x_fig_size = 18
+            y_fig_size = len(self.real_sta_hostname) * 1 + 4
+            bar_graph_horizontal = lf_bar_graph_horizontal(
+                _data_set=x_data_set,
+                _xaxis_name="Packet Loss (%)",
+                _yaxis_name="Devices",
+                _yaxis_label=y_data_set,
+                _yaxis_categories=y_data_set,
+                _yaxis_step=1,
+                _yticks_font=8,
+                _bar_height=0.20,
+                _color_name=["blue", "orange"],
+                _show_bar_value=True,
+                _figsize=(x_fig_size, y_fig_size),
+                _graph_title="Video Packet Loss(Recevied/Sent)",
+                _graph_image_name="Video Packet Loss(Recevied and Sent)",
+                _label=["Avg Recv", "Avg Sent"],
+            )
+            graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
+            self.report.set_graph_image(graph_image)
+            self.report.move_graph_image()
+            self.report.build_graph()
+
+            self.report.set_table_title("Test Video Results Table:")
+            self.report.build_table_title()
+            video_test_details = pd.DataFrame(
+                {
+                    "Device Name": [client for client in self.real_sta_hostname],
+                    "Avg Bitrate (kbps) [Recevied/Sent]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_input_bitrate_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_output_bitrate_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                    "Avg Latency (ms) [Recevied/Sent]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_input_latency_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_output_latency_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                    "Avg Jitter (ms) [Received/Sent]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_input_jitter_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_output_jitter_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                    "Avg Pkt Loss (%) [Recevied/Sent]": [
+                        "{}/{}".format(
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_input_avg_loss_avg"
+                                )
+                                or 0
+                            ),
+                            (
+                                device_data.get(client, {}).get(
+                                    "video_output_avg_loss_avg"
+                                )
+                                or 0
+                            ),
+                        )
+                        for index, client in enumerate(self.real_sta_hostname)
+                    ],
+                }
+            )
+            self.report.set_table_dataframe(video_test_details)
+            self.report.dataframe_html = self.report.dataframe.to_html(
+                index=False, justify="center", render_links=True, escape=False
+            )
+            self.report.html += self.report.dataframe_html
+        if self.do_bs:
+            self.add_bandsteering_report_section(report=self.report)
+        self.report.write_html()
+        self.report.write_pdf(_page_size="Legal", _orientation="Landscape")
+        for client in self.real_sta_hostname:
+            file_to_move_path = os.path.join(self.path, f"{client}.csv")
+            self.move_files(file_to_move_path, self.report_path_date_time)
+        if self.download_csv:
+            self.move_files(
+                os.path.join(os.getcwd(), self.csv_file_name),
+                self.report_path_date_time,
+            )
+        self.move_files(
+            os.path.join(
+                os.getcwd(), "zoom_api_responses", f"{self.remote_login_url}_qos.json"
+            ),
+            self.report_path_date_time,
+        )
+        self.move_files(
+            os.path.join(
+                os.getcwd(),
+                "zoom_api_responses",
+                f"{self.remote_login_url}_raw_qos.json",
+            ),
+            self.report_path_date_time,
+        )
+
+    def generate_report_from_data(self):
+        """
+        Main function to generate report from API data.
+        """
+        # --- Initialize Report ---
+        self.report = lf_report(
+            _output_pdf="zoom_call_report.pdf",
+            _output_html="zoom_call_report.html",
+            _results_dir_name="zoom_call_report",
+            _path=self.path,
+        )
+        report_path_date_time = self.report.get_path_date_time()
+        self.report.set_title("Zoom Call Automated Report")
+        self.report.build_banner()
+
+        # --- Objective Section ---
+        self.report.set_table_title("Objective:")
+        self.report.build_table_title()
+        self.report.set_text(
+            """The Zoom Conference Test is designed to evaluate an Access Point ability
+                to handle real-time conferencing workloads when multiple clients, including Windows,
+                Linux, macOS, and Android devices, participate in a Zoom meeting...
+            """
+        )
+        self.report.build_text_simple()
+
+        # --- Test Parameters Table ---
+        self.report.set_table_title("Test Parameters:")
+        self.report.build_table_title()
+
+        testtype = (
+            "AUDIO & VIDEO"
+            if (self.audio and self.video)
+            else ("AUDIO" if self.audio else "VIDEO")
+        )
+        to_hms = (
+            lambda mins: f"{int(mins * 60 // 3600):02}:{int((mins * 60 % 3600) // 60):02}:{int(mins * 60 % 60):02}"
+        )
+
+        param_data = {
+            "Test Name": "Zoom Conference Call Test",
+            "Date": time.strftime("%d-%m-%Y", time.localtime()),
+            "Devices Used": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
+            "Zoom Meeting ID": (
+                self.remote_login_url if not self.do_robo else "Robo-Multi-Location"
+            ),
+            "Test Duration": to_hms(self.duration),
+            "TEST TYPE": testtype,
+            "Mode": "Robo Motion" if self.do_robo else "Static",
+        }
+
+        # Add conditional fields
+        if self.config:
+            param_data["Configured Devices"] = self.hostname_os_combination
+            param_data["SSID"] = self.ssid
+            param_data["Security"] = self.security
+        elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
+            gp_pairs = zip(self.selected_groups, self.selected_profiles)
+            gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
+            param_data["Configuration"] = gp_map
+            param_data["Configured Devices"] = self.hostname_os_combination
+
+        self.report.set_table_dataframe(pd.DataFrame([param_data]))
+        self.report.build_table()
+
+        # ROBO MODE: Iterate through Coords/Angles and generate device graphs for each
+        self._generate_robo_per_location_report()
+
+        if self.do_webui:
+            self.add_live_view_images_to_report()
+
+        # --- Finalize Report ---
+        self.report.build_custom()
+        self.report.write_html()
+        self.report.write_pdf(_page_size="Legal", _orientation="Landscape")
+        self._move_report_files(report_path_date_time)
+
+    def _generate_robo_per_location_report(self):
+        """
+        Iterates through every coordinate and angle, loads the specific JSON,
+        and generates Device-Specific Bar Graphs (Device Name on Y-Axis).
+        """
+        coords = self.coordinates_list if self.coordinates_list else ["0,0,0"]
+
+        for coord in coords:
+            # Determine angles loop
+            if self.rotations_enabled and self.angles_list:
+                angles_loop = self.angles_list
+            else:
+                angles_loop = [self.current_angle]
+
+            for angle in angles_loop:
+                # 1. Heading for this Location
+                if self.rotations_enabled:
+                    heading = f"Audio and Video graphs at coordinate {coord} and angle {angle}"
+                else:
+                    heading = f"Audio and Video graphs at coordinate {coord}"
+                self.report.set_table_title(heading)
+                self.report.build_table_title()
+
+                # 2. Load Data
+                json_pattern = f"*_{coord}_{angle}_qos.json"
+                file_path = os.path.join("zoom_api_responses", json_pattern)
+                found_files = glob.glob(file_path)
+                device_data = {}
+                if found_files:
+                    try:
+                        with open(found_files[0], "r") as f:
+                            raw_data = json.load(f)
+                        device_data = self._get_report_device_data(raw_data)
+                    except Exception as e:
+                        logger.error(f"Error reading {found_files[0]}: {e}")
+                        self.report.set_text(f"Error loading data for {coord}/{angle}")
+                        self.report.build_text_simple()
+                        continue
+                else:
+                    self.report.set_text(f"No data found for {coord}/{angle}")
+                    self.report.build_text_simple()
+                    continue
+
+                # 3. Generate Audio Graphs (Device on Y-Axis)
+                if self.audio:
+                    suffix = f"_{coord}_{angle}"
+                    self._build_metric_graph(
+                        "Audio", "Bitrate", "Kbps", device_data,
+                        "audio_input_bitrate_avg", "audio_output_bitrate_avg", suffix,
+                    )
+                    self._build_metric_graph(
+                        "Audio", "Latency", "ms", device_data,
+                        "audio_input_latency_avg", "audio_output_latency_avg", suffix,
+                    )
+                    self._build_metric_graph(
+                        "Audio", "Jitter", "ms", device_data,
+                        "audio_input_jitter_avg", "audio_output_jitter_avg", suffix,
+                    )
+                    self._build_metric_graph(
+                        "Audio", "Packet Loss", "%", device_data,
+                        "audio_input_avg_loss_avg", "audio_output_avg_loss_avg", suffix,
+                    )
+                    self._build_results_table(device_data, "audio")
+
+                # 4. Generate Video Graphs (Device on Y-Axis)
+                if self.video:
+                    suffix = f"_{coord}_{angle}"
+                    self._build_metric_graph(
+                        "Video", "Bitrate", "Kbps", device_data,
+                        "video_input_bitrate_avg", "video_output_bitrate_avg", suffix,
+                    )
+                    self._build_metric_graph(
+                        "Video", "Latency", "ms", device_data,
+                        "video_input_latency_avg", "video_output_latency_avg", suffix,
+                    )
+                    self._build_metric_graph(
+                        "Video", "Jitter", "ms", device_data,
+                        "video_input_jitter_avg", "video_output_jitter_avg", suffix,
+                    )
+                    self._build_metric_graph(
+                        "Video", "Packet Loss", "%", device_data,
+                        "video_input_avg_loss_avg", "video_output_avg_loss_avg", suffix,
+                    )
+                    self._build_results_table(device_data, "video")
+
+                # Add a separator between coordinates
+                self.report.set_custom_html("<hr>")
+                self.report.build_custom()
+
+    def _build_metric_graph(
+        self, media_type, metric_name, unit, data, input_key, output_key, suffix=""
+    ):
+        """
+        Helper to build standard horizontal bar graphs with Device Names on Y-Axis.
+        """
+        self.report.set_graph_title(f"{media_type} {metric_name} (Sent/Received)")
+        self.report.build_graph_title()
+
+        sent_vals = []
+        recv_vals = []
+
+        for client in self.real_sta_hostname:
+            device_key = client
+
+            def get_val(key):
+                val = data.get(device_key, {}).get(key)
+                return val if val is not None else 0
+
+            sent_vals.append(get_val(output_key))
+            recv_vals.append(get_val(input_key))
+
+        bar_graph = lf_bar_graph_horizontal(
+            _data_set=[sent_vals, recv_vals],
+            _xaxis_name=f"{metric_name} ({unit})",
+            _yaxis_name="Devices",
+            _yaxis_categories=self.real_sta_hostname,
+            _graph_title=f"{media_type} {metric_name}",
+            _graph_image_name=f"{media_type}_{metric_name}{suffix}",
+            _label=["Avg Sent", "Avg Recv"],
+            _figsize=(18, len(self.real_sta_hostname) * 1 + 4),
+            _color_name=["blue", "orange"],
+        )
+        self.report.set_graph_image(bar_graph.build_bar_graph_horizontal())
+        self.report.move_graph_image()
+        self.report.build_graph()
+
+    def _build_results_table(self, data, media_type):
+        """Helper for Summary Table"""
+
+        def fmt_val(client, key):
+            val = data.get(client, {}).get(key)
+            return val if val is not None else 0
+
+        p = media_type
+
+        details = pd.DataFrame(
+            {
+                "Device Name": self.real_sta_hostname,
+                "Avg Bitrate (kbps) [S/R]": [
+                    f"{fmt_val(c, f'{p}_output_bitrate_avg')}/{fmt_val(c, f'{p}_input_bitrate_avg')}"
+                    for c in self.real_sta_hostname
+                ],
+                "Avg Latency (ms) [S/R]": [
+                    f"{fmt_val(c, f'{p}_output_latency_avg')}/{fmt_val(c, f'{p}_input_latency_avg')}"
+                    for c in self.real_sta_hostname
+                ],
+                "Avg Jitter (ms) [S/R]": [
+                    f"{fmt_val(c, f'{p}_output_jitter_avg')}/{fmt_val(c, f'{p}_input_jitter_avg')}"
+                    for c in self.real_sta_hostname
+                ],
+                "Avg Pkt Loss (%) [S/R]": [
+                    f"{fmt_val(c, f'{p}_output_avg_loss_avg')}/{fmt_val(c, f'{p}_input_avg_loss_avg')}"
+                    for c in self.real_sta_hostname
+                ],
+            }
+        )
+        self.report.set_table_dataframe(details)
+        self.report.dataframe_html = self.report.dataframe.to_html(
+            index=False, justify="center", render_links=True, escape=False
+        )
+        self.report.html += self.report.dataframe_html
+
+    def _move_report_files(self, report_path_date_time):
+        """
+        Helper to move CSVs, and Robo JSONs to the report folder.
+        """
+        # 1. Move Client CSV files
+        if self.do_robo:
+            for coord in self.coordinates_list:
+                if self.rotations_enabled:
+                    for angle in self.angles_list:
+                        for client in self.real_sta_hostname:
+                            csv_path = os.path.join(
+                                self.path,
+                                f"{client}_{coord}_{angle}.csv",
+                            )
+                            if os.path.exists(csv_path):
+                                self.move_files(csv_path, report_path_date_time)
+                else:
+                    for client in self.real_sta_hostname:
+                        csv_path = os.path.join(self.path, f"{client}_{coord}.csv")
+                        if os.path.exists(csv_path):
+                            self.move_files(csv_path, report_path_date_time)
+
+        # 2. Move Robo JSONs (Wildcard search for Multi-Location files)
+        if self.do_robo:
+            pattern = os.path.join(os.getcwd(), "zoom_api_responses", "*_qos.json")
+            for f in glob.glob(pattern):
+                self.move_files(f, report_path_date_time)
+
+    def stop_webui(self):
+        """
+        Updates the running_status.json file to mark the test as Completed.
+        """
+        try:
+            json_path = os.path.join(self.path, "running_status.json")
+
+            # 1. Load existing data or create new dict
+            data = {}
+            if os.path.exists(json_path):
+                with open(json_path, "r") as f:
+                    try:
+                        data = json.load(f)
+                    except json.JSONDecodeError:
+                        data = {}
+
+            # 2. Update status
+            data["status"] = "Completed"
+
+            # 3. Write back to file
+            with open(json_path, "w") as f:
+                json.dump(data, f, indent=4)
+
+            logger.info(f"Updated running_status.json at {json_path}")
+
+        except Exception as e:
+            logger.error(f"Error updating running_status.json: {e}")
+
+    def run_robo_test(self):
+        for coordinate in self.coordinates_list:
+            self.robo_obj.wait_for_battery()
+            matched, aborted = self.robo_obj.move_to_coordinate(coord=coordinate)
+            if matched:
+                self.current_cord = coordinate
+                self.successful_coords.append(coordinate)
+            else:
+                self.failed_coords.append(coordinate)
+            if aborted:
+                logger.error(f"Failed to Reach the coordinate {self.current_cord}")
+                self.failed_coords.append(coordinate)
+                sys.exit()
+            if self.rotations_enabled:
+                for angle in self.angles_list:
+                    self.robo_obj.wait_for_battery()
+                    rotated = self.robo_obj.rotate_angle(angle_degree=angle)
+                    if rotated:
+                        self.current_angle = angle
+                    else:
+                        logger.error(f"Failed to Rotate the Angle {self.current_angle}")
+                        sys.exit()
+                    self.run()
+                    self.participants_joined = 0
+
+            else:
+                self.run()
+                self.participants_joined = 0
+
 
 def main():
     try:
         parser = argparse.ArgumentParser(
             prog=__file__,
             formatter_class=argparse.RawTextHelpFormatter,
-            description=textwrap.dedent('''
+            description=textwrap.dedent("""
                 Zoom Automation Script
                 PURPOSE: lf_interop_zoom.py provides the available devices and allows the user to start Zoom call conference meeting for the user-specified duration
 
@@ -2745,58 +4029,277 @@ def main():
                 Command Line Interface to run Zoom with Groups and Profiles:
                 python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
                 --wait_time 30 --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
-            ''')
+            """),
         )
-        parser.add_argument('--duration', type=int, required=True, help="Duration of the Zoom meeting in minutes")
-        parser.add_argument('--lanforge_ip', type=str, required=True, help="LANforge IP address")
-        parser.add_argument('--signin_email', type=str, required=True, help="Sign-in email")
-        parser.add_argument('--signin_passwd', type=str, required=True, help="Sign-in password")
-        parser.add_argument('--participants', type=int, required=True, help="no of participanrs")
-        parser.add_argument('--audio', action='store_true')
-        parser.add_argument('--video', action='store_true')
-        parser.add_argument("--wait_time", type=int, default=30, help='time set to wait for the csv files')
-        parser.add_argument('--log_level', help='Level of the logs to be dispalyed')
-        parser.add_argument('--lf_logger_config_json', help='lf_logger config json')
-        parser.add_argument('--resources', help="resources participated in the test")
-        parser.add_argument('--do_webUI', action='store_true', help='useful to specify whether we are running through webui or cli')
-        parser.add_argument('--report_dir', help="report directory while running test through web ui")
-        parser.add_argument('--testname', help="report directory while running test through web ui")
-        parser.add_argument('--zoom_host', help="Host of the test")
+        parser.add_argument(
+            "--duration",
+            type=int,
+            required=True,
+            help="Duration of the Zoom meeting in minutes",
+        )
+        parser.add_argument(
+            "--lanforge_ip", type=str, required=True, help="LANforge IP address"
+        )
+        parser.add_argument(
+            "--signin_email", type=str, required=True, help="Sign-in email"
+        )
+        parser.add_argument(
+            "--signin_passwd", type=str, required=True, help="Sign-in password"
+        )
+        parser.add_argument(
+            "--participants", type=int, required=True, help="no of participanrs"
+        )
+        parser.add_argument("--audio", action="store_true")
+        parser.add_argument("--video", action="store_true")
+        parser.add_argument(
+            "--wait_time",
+            type=int,
+            default=30,
+            help="time set to wait for the csv files",
+        )
+        parser.add_argument("--log_level", help="Level of the logs to be dispalyed")
+        parser.add_argument("--lf_logger_config_json", help="lf_logger config json")
+        parser.add_argument("--resources", help="resources participated in the test")
+        parser.add_argument(
+            "--do_webUI",
+            action="store_true",
+            help="useful to specify whether we are running through webui or cli",
+        )
+        parser.add_argument(
+            "--report_dir", help="report directory while running test through web ui"
+        )
+        parser.add_argument(
+            "--testname", help="report directory while running test through web ui"
+        )
+        parser.add_argument("--zoom_host", help="Host of the test")
 
         # Arguments Related to Device Configurations
-        parser.add_argument('--file_name', help="File name for DeviceConfig")
+        parser.add_argument("--file_name", help="File name for DeviceConfig")
 
-        parser.add_argument('--group_name', type=str, help='specify the group name')
-        parser.add_argument('--profile_name', type=str, help='specify the profile name')
+        parser.add_argument("--group_name", type=str, help="specify the group name")
+        parser.add_argument("--profile_name", type=str, help="specify the profile name")
 
-        parser.add_argument("--ssid", default=None, help='specify ssid on which the test will be running')
-        parser.add_argument("--passwd", default=None, help='specify encryption password  on which the test will '
-                            'be running')
-        parser.add_argument("--encryp", default=None, help='specify the encryption type  on which the test will be '
-                            'running eg :open|psk|psk2|sae|psk2jsae')
+        parser.add_argument(
+            "--ssid",
+            default=None,
+            help="specify ssid on which the test will be running",
+        )
+        parser.add_argument(
+            "--passwd",
+            default=None,
+            help="specify encryption password  on which the test will " "be running",
+        )
+        parser.add_argument(
+            "--encryp",
+            default=None,
+            help="specify the encryption type  on which the test will be "
+            "running eg :open|psk|psk2|sae|psk2jsae",
+        )
 
-        parser.add_argument("--eap_method", type=str, default='DEFAULT', help="Specify the EAP method for authentication.")
-        parser.add_argument("--eap_identity", type=str, default='DEFAULT', help="Specify the EAP identity for authentication.")
-        parser.add_argument("--ieee8021x", action="store_true", help='Enables IEEE 802.1x support.')
-        parser.add_argument("--ieee80211u", action="store_true", help='Enables IEEE 802.11u (Hotspot 2.0) support.')
-        parser.add_argument("--ieee80211w", type=int, default=1, help='Enables IEEE 802.11w (Management Frame Protection) support.')
-        parser.add_argument("--enable_pkc", action="store_true", help='Enables pkc support.')
-        parser.add_argument("--bss_transition", action="store_true", help='Enables BSS transition support.')
-        parser.add_argument("--power_save", action="store_true", help='Enables power-saving features.')
-        parser.add_argument("--disable_ofdma", action="store_true", help='Disables OFDMA support.')
-        parser.add_argument("--roam_ft_ds", action="store_true", help='Enables fast BSS transition (FT) support')
-        parser.add_argument("--key_management", type=str, default='DEFAULT', help='Specify the key management method (e.g., WPA-PSK, WPA-EAP)')
-        parser.add_argument("--pairwise", type=str, default='NA', help='Specify the pairwise cipher')
-        parser.add_argument("--private_key", type=str, default='NA', help='Specify EAP private key certificate file.')
-        parser.add_argument("--ca_cert", type=str, default='NA', help='Specify the CA certificate file name')
-        parser.add_argument("--client_cert", type=str, default='NA', help='Specify the client certificate file name')
-        parser.add_argument("--pk_passwd", type=str, default='NA', help='Specify the password for the private key')
-        parser.add_argument("--pac_file", type=str, default='NA', help='Specify the pac file name')
-        parser.add_argument("--upstream_port", type=str, default='NA', help='Specify the upstream port', required=True)
-        parser.add_argument('--help_summary', help='Show summary of what this script does', default=None)
-        parser.add_argument("--expected_passfail_value", help="Specify the expected urlcount value for pass/fail")
-        parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
-        parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
+        parser.add_argument(
+            "--eap_method",
+            type=str,
+            default="DEFAULT",
+            help="Specify the EAP method for authentication.",
+        )
+        parser.add_argument(
+            "--eap_identity",
+            type=str,
+            default="DEFAULT",
+            help="Specify the EAP identity for authentication.",
+        )
+        parser.add_argument(
+            "--ieee8021x", action="store_true", help="Enables IEEE 802.1x support."
+        )
+        parser.add_argument(
+            "--ieee80211u",
+            action="store_true",
+            help="Enables IEEE 802.11u (Hotspot 2.0) support.",
+        )
+        parser.add_argument(
+            "--ieee80211w",
+            type=int,
+            default=1,
+            help="Enables IEEE 802.11w (Management Frame Protection) support.",
+        )
+        parser.add_argument(
+            "--enable_pkc", action="store_true", help="Enables pkc support."
+        )
+        parser.add_argument(
+            "--bss_transition",
+            action="store_true",
+            help="Enables BSS transition support.",
+        )
+        parser.add_argument(
+            "--power_save", action="store_true", help="Enables power-saving features."
+        )
+        parser.add_argument(
+            "--disable_ofdma", action="store_true", help="Disables OFDMA support."
+        )
+        parser.add_argument(
+            "--roam_ft_ds",
+            action="store_true",
+            help="Enables fast BSS transition (FT) support",
+        )
+        parser.add_argument(
+            "--key_management",
+            type=str,
+            default="DEFAULT",
+            help="Specify the key management method (e.g., WPA-PSK, WPA-EAP)",
+        )
+        parser.add_argument(
+            "--pairwise", type=str, default="NA", help="Specify the pairwise cipher"
+        )
+        parser.add_argument(
+            "--private_key",
+            type=str,
+            default="NA",
+            help="Specify EAP private key certificate file.",
+        )
+        parser.add_argument(
+            "--ca_cert",
+            type=str,
+            default="NA",
+            help="Specify the CA certificate file name",
+        )
+        parser.add_argument(
+            "--client_cert",
+            type=str,
+            default="NA",
+            help="Specify the client certificate file name",
+        )
+        parser.add_argument(
+            "--pk_passwd",
+            type=str,
+            default="NA",
+            help="Specify the password for the private key",
+        )
+        parser.add_argument(
+            "--pac_file", type=str, default="NA", help="Specify the pac file name"
+        )
+        parser.add_argument(
+            "--upstream_port",
+            type=str,
+            default="NA",
+            help="Specify the upstream port",
+            required=True,
+        )
+        parser.add_argument(
+            "--help_summary", help="Show summary of what this script does", default=None
+        )
+        parser.add_argument(
+            "--expected_passfail_value",
+            help="Specify the expected urlcount value for pass/fail",
+        )
+        parser.add_argument(
+            "--device_csv_name",
+            type=str,
+            help="Specify the device csv name for pass/fail",
+            default=None,
+        )
+        parser.add_argument(
+            "--config",
+            action="store_true",
+            help="specify this flag whether to config devices or not",
+        )
+
+        # argument related to api stats collection
+        parser.add_argument(
+            "--api_stats_collection",
+            action="store_true",
+            help="Specify if using business account to get the stats using api",
+        )
+        parser.add_argument("--account_id", help="Zoom Account ID")
+        parser.add_argument("--client_id", help="Zoom Client ID")
+        parser.add_argument("--client_secret", help="Zoom Client Secret")
+        parser.add_argument(
+            "--env_file", default=".env", help="Path to .env file for credentials"
+        )
+        parser.add_argument(
+            "--download_csv",
+            action="store_true",
+            help="Specify if wanted to collect csv from dashboard. Only works with business account",
+        )
+
+        # Arguments related to robo feature
+        robo_group = parser.add_argument_group(
+            "Robo Arguments", "Arguments related to robot movement and coordinates"
+        )
+        robo_group.add_argument("--robo_ip", type=str, help="Specify the robo ip")
+        robo_group.add_argument(
+            "--coordinates",
+            help="Comma-separated list of coordinate point names (e.g. 1,2,3), each mapping to x and y values",
+        )
+        robo_group.add_argument(
+            "--rotations",
+            help="Comma-separated list of rotation angles (in degrees) to apply at respective points",
+        )
+        robo_group.add_argument(
+            "--do_robo",
+            help="Specify this flag to perform the test with robo",
+            action="store_true",
+        )
+
+        # Arguments related to band steering
+        bandsteering_group = parser.add_argument_group(
+            "Band Steering Arguments", "Arguments related to band steering tests"
+        )
+        bandsteering_group.add_argument(
+            "--bssids",
+            type=str,
+            help="Comma-separated list of BSSIDs for bandsteering test",
+        )
+        bandsteering_group.add_argument(
+            "--do_bs",
+            help="Specify this flag to perform the test with robo for band steering",
+            action="store_true",
+        )
+
+        # Arguments related to roaming
+        roaming_group = parser.add_argument_group(
+            "Roaming Arguments",
+            "Arguments related to roaming, sniffing, and cycle configuration",
+        )
+        roaming_group.add_argument(
+            "--do_roam",
+            help="Specify this flag to perform the test with robo for Roaming",
+            action="store_true",
+        )
+        roaming_group.add_argument(
+            "--cycles", type=int, default=1, help="Number of cycles to run the test"
+        )
+        roaming_group.add_argument(
+            "--wait_at_point",
+            type=int,
+            help="Robot wait duration in seconds before sniffing starts and stops",
+            default=30,
+        )
+        roaming_group.add_argument(
+            "--res_lf_ip", help="Resource manager IP address", default="10.17.1.208"
+        )
+        roaming_group.add_argument(
+            "--sniff_radio_2g", help="Sniffer Radio", default="1.2.wiphy0"
+        )
+        roaming_group.add_argument(
+            "--sniff_radio_5g", help="Sniffer Radio", default="1.2.wiphy1"
+        )
+        roaming_group.add_argument(
+            "--sniff_radio_6g", help="Sniffer Radio", default="1.2.wiphy2"
+        )
+        roaming_group.add_argument(
+            "--sniff_channel_2g", help="Channel", type=str, default="11"
+        )
+        roaming_group.add_argument(
+            "--sniff_channel_5g", help="Channel", type=str, default="44"
+        )
+        roaming_group.add_argument(
+            "--sniff_channel_6g", help="Channel", type=str, default="239"
+        )
+        roaming_group.add_argument(
+            "--ap_coordinates",
+            help="Comma-separated list of AP coordinates for start/stop sniffing",
+            default="",
+        )
 
         args = parser.parse_args()
 
@@ -2810,235 +4313,373 @@ def main():
             logger_config.lf_logger_config_json = args.lf_logger_config_json
             logger_config.load_lf_logger_config()
 
-        if True:
-            if args.expected_passfail_value is not None and args.device_csv_name is not None:
-                logging.error("Specify either expected_passfail_value or device_csv_name")
-                exit(1)
+        if (
+            args.expected_passfail_value is not None
+            and args.device_csv_name is not None
+        ):
+            logger.error("Specify either expected_passfail_value or device_csv_name")
+            exit(1)
 
-            if args.group_name is not None:
-                args.group_name = args.group_name.strip()
-                selected_groups = args.group_name.split(',')
-            else:
-                selected_groups = []
+        if args.group_name is not None:
+            args.group_name = args.group_name.strip()
+            selected_groups = args.group_name.split(",")
+        else:
+            selected_groups = []
 
-            if args.profile_name is not None:
-                args.profile_name = args.profile_name.strip()
-                selected_profiles = args.profile_name.split(',')
-            else:
-                selected_profiles = []
+        if args.profile_name is not None:
+            args.profile_name = args.profile_name.strip()
+            selected_profiles = args.profile_name.split(",")
+        else:
+            selected_profiles = []
 
-            if len(selected_groups) != len(selected_profiles):
-                logging.error("Number of groups should match number of profiles")
-                exit(0)
-            elif args.group_name is not None and args.profile_name is not None and args.file_name is not None and args.resources is not None:
-                logging.error("Either group name or device list should be entered not both")
-                exit(0)
-            elif args.ssid is not None and args.profile_name is not None:
-                logging.error("Either ssid or profile name should be given")
-                exit(0)
-            elif args.file_name is not None and (args.group_name is None or args.profile_name is None):
-                logging.error("Please enter the correct set of arguments")
-                exit(0)
-            elif args.config and ((args.ssid is None or (args.passwd is None and args.security.lower() != 'open') or (args.passwd is None and args.security is None))):
-                logging.error("Please provide ssid password and security for configuration of devices")
-                exit(0)
+        if len(selected_groups) != len(selected_profiles):
+            logger.error("Number of groups should match number of profiles")
+            exit(0)
+        elif (
+            args.group_name is not None
+            and args.profile_name is not None
+            and args.file_name is not None
+            and args.resources is not None
+        ):
+            logger.error("Either group name or device list should be entered not both")
+            exit(0)
+        elif args.ssid is not None and args.profile_name is not None:
+            logger.error("Either ssid or profile name should be given")
+            exit(0)
+        elif args.file_name is not None and (
+            args.group_name is None or args.profile_name is None
+        ):
+            logger.error("Please enter the correct set of arguments")
+            exit(0)
+        elif args.config and (
+            (
+                args.ssid is None
+                or args.encryp is None
+                or (args.passwd is None and args.encryp.lower() != "open")
+            )
+        ):
+            logger.error(
+                "Please provide ssid password and security for configuration of devices"
+            )
+            exit(0)
 
-            zoom_automation = ZoomAutomation(audio=args.audio, video=args.video, lanforge_ip=args.lanforge_ip, wait_time=args.wait_time, testname=args.testname,
-                                             upstream_port=args.upstream_port, config=args.config, selected_groups=selected_groups, selected_profiles=selected_profiles, ssid=args.ssid)
-            args.upstream_port = zoom_automation.change_port_to_ip(args.upstream_port)
-            realdevice = RealDevice(manager_ip=args.lanforge_ip,
-                                    server_ip="192.168.1.61",
-                                    ssid_2g='Test Configured',
-                                    passwd_2g='',
-                                    encryption_2g='',
-                                    ssid_5g='Test Configured',
-                                    passwd_5g='',
-                                    encryption_5g='',
-                                    ssid_6g='Test Configured',
-                                    passwd_6g='',
-                                    encryption_6g='',
-                                    selected_bands=['5G'])
-            laptops = realdevice.get_devices()
+        rotations_enabled = False
+        bssids = []
+        if args.do_robo or args.do_bs or args.do_roam:
+            args.coordinates = args.coordinates.split(",") if args.coordinates else []
+            args.rotations = (
+                [float(angle) for angle in args.rotations.split(",")]
+                if args.rotations
+                else []
+            )
+            if args.rotations:
+                rotations_enabled = True
 
-            if args.file_name:
-                new_filename = args.file_name.removesuffix(".csv")
-            else:
-                new_filename = args.file_name
-            config_obj = DeviceConfig.DeviceConfig(lanforge_ip=args.lanforge_ip, file_name=new_filename, wait_time=args.wait_time)
-            zoom_automation.config_obj = config_obj
+            if args.bssids:
+                bssids = args.bssids.split(",") if args.bssids else []
 
-            if not args.expected_passfail_value and args.device_csv_name is None:
-                config_obj.device_csv_file(csv_name="device.csv")
-            if args.group_name is not None and args.file_name is not None and args.profile_name is not None:
-                selected_groups = args.group_name.split(',')
-                selected_profiles = args.profile_name.split(',')
-                config_devices = {}
-                for i in range(len(selected_groups)):
-                    config_devices[selected_groups[i]] = selected_profiles[i]
+        zoom_automation = ZoomAutomation(
+            audio=args.audio,
+            video=args.video,
+            lanforge_ip=args.lanforge_ip,
+            wait_time=args.wait_time,
+            testname=args.testname,
+            upstream_port=args.upstream_port,
+            config=args.config,
+            selected_groups=selected_groups,
+            selected_profiles=selected_profiles,
+            robo_ip=args.robo_ip,
+            coordinates_list=args.coordinates,
+            angles_list=args.rotations,
+            do_robo=args.do_robo,
+            rotations_enabled=rotations_enabled,
+            signin_email=args.signin_email,
+            signin_passwd=args.signin_passwd,
+            duration=args.duration,
+            participants_req=args.participants,
+            env_file=args.env_file,
+            do_bs=args.do_bs,
+            api_stats_collection=args.api_stats_collection,
+            do_webui=args.do_webUI,
+            cycles=args.cycles,
+            bssids=bssids,
+            do_roam=args.do_roam,
+            sniff_radio_2g=args.sniff_radio_2g,
+            sniff_radio_5g=args.sniff_radio_5g,
+            sniff_radio_6g=args.sniff_radio_6g,
+            sniff_channel_2g=args.sniff_channel_2g,
+            sniff_channel_5g=args.sniff_channel_5g,
+            sniff_channel_6g=args.sniff_channel_6g,
+            wait_at_point=args.wait_at_point,
+            resource_ip=args.res_lf_ip,
+            ap_coordinates=args.ap_coordinates,
+        )
+        if args.download_csv:
+            zoom_automation.download_csv = True
+        args.upstream_port = zoom_automation.change_port_to_ip(args.upstream_port)
+        realdevice = RealDevice(
+            manager_ip=args.lanforge_ip,
+            server_ip="192.168.1.61",
+            ssid_2g="Test Configured",
+            passwd_2g="",
+            encryption_2g="",
+            ssid_5g="Test Configured",
+            passwd_5g="",
+            encryption_5g="",
+            ssid_6g="Test Configured",
+            passwd_6g="",
+            encryption_6g="",
+            selected_bands=["5G"],
+        )
+        laptops = realdevice.get_devices()
 
-                config_obj.initiate_group()
-                asyncio.run(config_obj.connectivity(config_devices))
+        if args.file_name:
+            new_filename = args.file_name.removesuffix(".csv")
+        else:
+            new_filename = args.file_name
+        config_obj = DeviceConfig.DeviceConfig(
+            lanforge_ip=args.lanforge_ip, file_name=new_filename
+        )
 
-                adbresponse = config_obj.adb_obj.get_devices()
-                resource_manager = config_obj.laptop_obj.get_devices()
-                all_res = {}
-                df1 = config_obj.display_groups(config_obj.groups)
-                groups_list = df1.to_dict(orient='list')
-                group_devices = {}
+        if not args.expected_passfail_value and args.device_csv_name is None:
+            config_obj.device_csv_file(csv_name="device.csv")
+        if (
+            args.group_name is not None
+            and args.file_name is not None
+            and args.profile_name is not None
+        ):
+            selected_groups = args.group_name.split(",")
+            selected_profiles = args.profile_name.split(",")
+            config_devices = {}
+            for i in range(len(selected_groups)):
+                config_devices[selected_groups[i]] = selected_profiles[i]
 
-                for adb in adbresponse:
-                    group_devices[adb['serial']] = adb['eid']
-                for res in resource_manager:
-                    all_res[res['hostname']] = res['shelf'] + '.' + res['resource']
-                eid_list = []
-                for grp_name in groups_list.keys():
-                    for g_name in selected_groups:
-                        if grp_name == g_name:
-                            for j in groups_list[grp_name]:
-                                if j in group_devices.keys():
-                                    eid_list.append(group_devices[j])
-                                elif j in all_res.keys():
-                                    eid_list.append(all_res[j])
-                if args.zoom_host in eid_list:
-                    # Remove the existing instance of args.zoom_host from the list
-                    eid_list.remove(args.zoom_host)
-                    # Insert args.zoom_host at the beginning of the list
-                    eid_list.insert(0, args.zoom_host)
+            config_obj.initiate_group()
+            asyncio.run(config_obj.connectivity(config_devices))
 
-                args.resources = ",".join(id for id in eid_list)
-            else:
-                config_dict = {
-                    'ssid': args.ssid,
-                    'passwd': args.passwd,
-                    'enc': args.encryp,
-                    'eap_method': args.eap_method,
-                    'eap_identity': args.eap_identity,
-                    'ieee80211': args.ieee8021x,
-                    'ieee80211u': args.ieee80211u,
-                    'ieee80211w': args.ieee80211w,
-                    'enable_pkc': args.enable_pkc,
-                    'bss_transition': args.bss_transition,
-                    'power_save': args.power_save,
-                    'disable_ofdma': args.disable_ofdma,
-                    'roam_ft_ds': args.roam_ft_ds,
-                    'key_management': args.key_management,
-                    'pairwise': args.pairwise,
-                    'private_key': args.private_key,
-                    'ca_cert': args.ca_cert,
-                    'client_cert': args.client_cert,
-                    'pk_passwd': args.pk_passwd,
-                    'pac_file': args.pac_file,
-                    'server_ip': args.upstream_port,
+            adbresponse = config_obj.adb_obj.get_devices()
+            resource_manager = config_obj.laptop_obj.get_devices()
+            all_res = {}
+            df1 = config_obj.display_groups(config_obj.groups)
+            groups_list = df1.to_dict(orient="list")
+            group_devices = {}
 
-                }
-                if args.resources:
-                    all_devices = config_obj.get_all_devices()
-                    if args.group_name is None and args.file_name is None and args.profile_name is None:
-                        dev_list = args.resources.split(',')
-                        if not args.do_webUI:
-                            args.zoom_host = args.zoom_host.strip()
-                            if args.zoom_host in dev_list:
-                                dev_list.remove(args.zoom_host)
-                            dev_list.insert(0, args.zoom_host)
-                        if args.config:
-                            conn_dev_list = ['.'.join(device.split('.')[:2]) for device in dev_list]
-                            dev_list = asyncio.run(config_obj.connectivity(device_list=conn_dev_list, wifi_config=config_dict))
+            for adb in adbresponse:
+                group_devices[adb["serial"]] = adb["eid"]
+            for res in resource_manager:
+                all_res[res["hostname"]] = res["shelf"] + "." + res["resource"]
+            eid_list = []
+            for grp_name in groups_list.keys():
+                for g_name in selected_groups:
+                    if grp_name == g_name:
+                        for j in groups_list[grp_name]:
+                            if j in group_devices.keys():
+                                eid_list.append(group_devices[j])
+                            elif j in all_res.keys():
+                                eid_list.append(all_res[j])
+            if args.zoom_host in eid_list:
+                # Remove the existing instance of args.zoom_host from the list
+                eid_list.remove(args.zoom_host)
+                # Insert args.zoom_host at the beginning of the list
+                eid_list.insert(0, args.zoom_host)
 
-                        if not args.do_webUI:
-                            if args.zoom_host in dev_list:
-                                dev_list.remove(args.zoom_host)
-                            dev_list.insert(0, args.zoom_host)
-                        args.resources = ",".join(id for id in dev_list)
-                else:
-                    # If no resources provided, prompt user to select devices manually
+            args.resources = ",".join(id for id in eid_list)
+        else:
+            config_dict = {
+                "ssid": args.ssid,
+                "passwd": args.passwd,
+                "enc": args.encryp,
+                "eap_method": args.eap_method,
+                "eap_identity": args.eap_identity,
+                "ieee80211": args.ieee8021x,
+                "ieee80211u": args.ieee80211u,
+                "ieee80211w": args.ieee80211w,
+                "enable_pkc": args.enable_pkc,
+                "bss_transition": args.bss_transition,
+                "power_save": args.power_save,
+                "disable_ofdma": args.disable_ofdma,
+                "roam_ft_ds": args.roam_ft_ds,
+                "key_management": args.key_management,
+                "pairwise": args.pairwise,
+                "private_key": args.private_key,
+                "ca_cert": args.ca_cert,
+                "client_cert": args.client_cert,
+                "pk_passwd": args.pk_passwd,
+                "pac_file": args.pac_file,
+                "server_ip": args.upstream_port,
+            }
+            if args.resources:
+                all_devices = config_obj.get_all_devices()
+                if (
+                    args.group_name is None
+                    and args.file_name is None
+                    and args.profile_name is None
+                ):
+                    dev_list = args.resources.split(",")
+                    if not args.do_webUI:
+                        args.zoom_host = args.zoom_host.strip()
+                        if args.zoom_host in dev_list:
+                            dev_list.remove(args.zoom_host)
+                        dev_list.insert(0, args.zoom_host)
                     if args.config:
-                        all_devices = config_obj.get_all_devices()
-                        device_list = []
-                        for device in all_devices:
-                            if device["type"] != 'laptop':
-                                device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
-                            elif device["type"] == 'laptop':
-                                device_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
-                        print("Available Devices For Testing")
-                        for device in device_list:
-                            print(device)
-                        zm_host = input("Enter Host Resource for the Test : ")
-                        zm_host = zm_host.strip()
-                        args.resources = input("Enter client Resources to run the test :")
-                        args.resources = zm_host + "," + args.resources
-                        dev1_list = args.resources.split(',')
-                        dev1_list = asyncio.run(config_obj.connectivity(device_list=dev1_list, wifi_config=config_dict))
-                        if not args.do_webUI:
-                            if args.zoom_host in dev1_list:
-                                dev1_list.remove(args.zoom_host)
-                            dev1_list.insert(0, args.zoom_host)
-                        args.resources = ",".join(id for id in dev1_list)
-            result_list = []
-            if not args.do_webUI:
-                if args.resources:
-                    resources = args.resources.split(',')
-                    resources = [r for r in resources if len(r.split('.')) > 1]
-                    # resources = sorted(resources, key=lambda x: int(x.split('.')[1]))
-                    get_data = zoom_automation.select_real_devices(real_device_obj=realdevice, real_sta_list=resources)
-                    for item in get_data:
-                        item = item.strip()
-                        # Find and append the matching lap to result_list
-                        matching_laps = [lap for lap in laptops if lap.startswith(item)]
-                        result_list.extend(matching_laps)
-                    if not result_list:
-                        logging.info("Resources donot exist hence Terminating the test.")
-                        return
-                    if len(result_list) != len(get_data):
-                        logging.info("Few Resources donot exist")
-                else:
-                    resources = zoom_automation.select_real_devices(real_device_obj=realdevice)
+                        asyncio.run(
+                            config_obj.connectivity(
+                                device_list=dev_list, wifi_config=config_dict
+                            )
+                        )
+                    args.resources = ",".join(id for id in dev_list)
             else:
-                if args.do_webUI:
-                    zoom_automation.path = args.report_dir
-                resources = args.resources.split(',')
-                extracted_parts = [res.split('.')[:2] for res in resources]
-                formatted_parts = ['.'.join(parts) for parts in extracted_parts]
+                # If no resources provided, prompt user to select devices manually
+                if args.config:
+                    all_devices = config_obj.get_all_devices()
+                    device_list = []
+                    for device in all_devices:
+                        if device["type"] != "laptop":
+                            device_list.append(
+                                device["shelf"]
+                                + "."
+                                + device["resource"]
+                                + " "
+                                + device["serial"]
+                            )
+                        elif device["type"] == "laptop":
+                            device_list.append(
+                                device["shelf"]
+                                + "."
+                                + device["resource"]
+                                + " "
+                                + device["hostname"]
+                            )
+                    print("Available Devices For Testing")
+                    for device in device_list:
+                        print(device)
+                    zm_host = input("Enter Host Resource for the Test : ")
+                    zm_host = zm_host.strip()
+                    args.resources = input("Enter client Resources to run the test :")
+                    args.resources = zm_host + "," + args.resources
+                    dev1_list = args.resources.split(",")
+                    asyncio.run(
+                        config_obj.connectivity(
+                            device_list=dev1_list, wifi_config=config_dict
+                        )
+                    )
 
-                zoom_automation.select_real_devices(real_device_obj=realdevice, real_sta_list=formatted_parts)
-                if args.do_webUI:
+        result_list = []
+        if not args.do_webUI:
+            if args.resources:
+                resources = args.resources.split(",")
+                resources = [r for r in resources if len(r.split(".")) > 1]
+                # resources = sorted(resources, key=lambda x: int(x.split('.')[1]))
+                get_data = zoom_automation.select_real_devices(
+                    real_device_obj=realdevice, real_sta_list=resources
+                )
+                for item in get_data:
+                    item = item.strip()
+                    # Find and append the matching lap to result_list
+                    matching_laps = [lap for lap in laptops if lap.startswith(item)]
+                    result_list.extend(matching_laps)
+                if not result_list:
+                    logger.info("Resources donot exist hence Terminating the test.")
+                    return
+                if len(result_list) != len(get_data):
+                    logger.info("Few Resources donot exist")
+            else:
+                resources = zoom_automation.select_real_devices(
+                    real_device_obj=realdevice
+                )
+        else:
+            if args.do_webUI:
+                zoom_automation.path = args.report_dir
+            resources = args.resources.split(",")
+            extracted_parts = [res.split(".")[:2] for res in resources]
+            formatted_parts = [".".join(parts) for parts in extracted_parts]
 
-                    if len(zoom_automation.real_sta_hostname) == 0:
-                        logging.info("No device is available to run the test")
-                        obj = {
-                            "status": "Stopped",
-                            "configuration_status": "configured"
-                        }
-                        zoom_automation.updating_webui_runningjson(obj)
-                        return
-                    else:
-                        obj = {
-                            "configured_devices": zoom_automation.real_sta_hostname,
-                            "configuration_status": "configured",
-                            "no_of_devices": f' Total({len(zoom_automation.real_sta_os_type)}) : W({zoom_automation.windows}),L({zoom_automation.linux}),M({zoom_automation.mac})',
-                            "device_list": zoom_automation.hostname_os_combination,
+            zoom_automation.select_real_devices(
+                real_device_obj=realdevice, real_sta_list=formatted_parts
+            )
+            if args.do_webUI:
 
-                        }
-                        zoom_automation.updating_webui_runningjson(obj)
+                if len(zoom_automation.real_sta_hostname) == 0:
+                    logger.info("No device is available to run the test")
+                    obj = {
+                        "status": "Stopped",
+                        "configuration_status": "configured",
+                    }
+                    zoom_automation.updating_webui_runningjson(obj)
+                    return
+                else:
+                    obj = {
+                        "configured_devices": zoom_automation.real_sta_hostname,
+                        "configuration_status": "configured",
+                        "no_of_devices": f" Total({len(zoom_automation.real_sta_os_type)}) : W({zoom_automation.windows}),L({zoom_automation.linux}),M({zoom_automation.mac})",
+                        "device_list": zoom_automation.hostname_os_combination,
+                    }
+                    zoom_automation.updating_webui_runningjson(obj)
 
-            if not zoom_automation.check_tab_exists():
-                logging.error('Generic Tab is not available.\nAborting the test.')
-                exit(0)
+        if not zoom_automation.check_tab_exists():
+            logger.error("Generic Tab is not available.\nAborting the test.")
+            exit(0)
 
-            zoom_automation.run(args.duration, args.upstream_port, args.signin_email, args.signin_passwd, args.participants)
-            zoom_automation.data_store.clear()
+        zoom_automation.handle_flask_server()
+        zoom_automation.get_resource_data()
+        zoom_automation.get_ports_data()
+        zoom_automation.get_interop_data()
+
+        if args.api_stats_collection:
+            # load environment file if specified
+            if args.env_file:
+                if os.path.exists(args.env_file):
+                    load_dotenv(args.env_file)
+                    logger.info(f"Loaded environment variables from {args.env_file}")
+                else:
+                    raise FileNotFoundError(f".env file '{args.env_file}' not found")
+
+            # Fetching zoom credentials for account
+            zoom_automation.account_id = args.account_id or os.environ.get("ACCOUNT_ID")
+            zoom_automation.client_id = args.client_id or os.environ.get("CLIENT_ID")
+            zoom_automation.client_secret = args.client_secret or os.environ.get(
+                "CLIENT_SECRET"
+            )
+
+            if not all(
+                [
+                    zoom_automation.account_id,
+                    zoom_automation.client_id,
+                    zoom_automation.client_secret,
+                ]
+            ):
+                logger.info("Exiting test.")
+                raise ValueError(
+                    "Missing Zoom credentials (account_id, client_id, client_secret)"
+                )
+
+        if args.do_robo:
+            zoom_automation.run_robo_test()
+        else:
+            zoom_automation.run()
+        zoom_automation.data_store.clear()
+        if not args.api_stats_collection:
             zoom_automation.generate_report()
-            logging.info("Test Completed Sucessfully")
+        logger.info("Test Completed Sucessfully")
     except Exception as e:
-        logging.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
-        tb_str = traceback.format_exc()  # capture traceback as string
-        logger.error("An exception occurred:\n%s", tb_str)
+        logger.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
+        traceback.print_exc()
     finally:
-        if not ('--help' in sys.argv or '-h' in sys.argv):
-            zoom_automation.redis_client.set('login_completed', 0)
+        if not ("--help" in sys.argv or "-h" in sys.argv):
             zoom_automation.stop_signal = True
-            logging.info("Waiting for Browser Cleanup in Laptops")
+            logger.info("Waiting for Browser Cleanup in Laptops")
             time.sleep(10)
+
+            if args.do_robo and args.api_stats_collection:
+                zoom_automation.generate_report_from_data()
+            elif args.api_stats_collection:
+                zoom_automation.generate_report_from_api()
+            time.sleep(5)
+            if zoom_automation.do_webui:
+                zoom_automation.stop_webui()
             zoom_automation.generic_endps_profile.cleanup()
+            zoom_automation.move_ping_logs()
+            logger.info("Done.")
 
 
 if __name__ == "__main__":
