@@ -6853,7 +6853,7 @@ class L3VariableTime(Realm):
         tos_list = ['BK', 'BE', 'VI', 'VO']
 
         # Generate per-coordinate/rotation graphs and tables for robot test
-        if self.robo_test:
+        if self.robo_test and not self.do_bandsteering:
             logger.info("Building per-coordinate/rotation graphs and tables for robot test (from memory dict)")
             self.add_live_view_images_to_report()
             if not hasattr(self, "multicast_robot_results") or not self.multicast_robot_results:
