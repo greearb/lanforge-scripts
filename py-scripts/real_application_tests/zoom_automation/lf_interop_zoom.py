@@ -334,142 +334,247 @@ class ZoomAutomation(Realm):
         self.wait_for_flask()
 
     def start_flask_server(self):
-        @self.app.route('/login_url', methods=['GET', 'POST'])
+        @self.app.route("/login_url", methods=["GET", "POST"])
         def login_url():
-            if request.method == 'GET':
+            if request.method == "GET":
                 return jsonify({"login_url": self.remote_login_url})
-            elif request.method == 'POST':
+            elif request.method == "POST":
                 data = request.json
-                self.remote_login_url = data.get('login_url', '')
-                return jsonify({"message": f"Updated login_url to {self.remote_login_url}"})
+                self.remote_login_url = data.get("login_url", "")
+                return jsonify(
+                    {"message": f"Updated login_url to {self.remote_login_url}"}
+                )
 
-        @self.app.route('/login_passwd', methods=['GET', 'POST'])
+        @self.app.route("/login_passwd", methods=["GET", "POST"])
         def login_passwd():
-            if request.method == 'GET':
+            if request.method == "GET":
                 return jsonify({"login_passwd": self.remote_login_passwd})
-            elif request.method == 'POST':
+            elif request.method == "POST":
                 data = request.json
-                self.remote_login_passwd = data.get('login_passwd', '')
+                self.remote_login_passwd = data.get("login_passwd", "")
                 return jsonify({"message": "Password updated successfully."})
 
-        @self.app.route('/meeting_link', methods=['GET', 'POST'])
+        @self.app.route("/meeting_link", methods=["GET", "POST"])
         def meeting_link():
-            if request.method == 'GET':
+            if request.method == "GET":
                 return jsonify({"meet_link": self.meet_link})
-            elif request.method == 'POST':
+            elif request.method == "POST":
                 data = request.json
-                self.meet_link = data.get('meet_link', '')
+                self.meet_link = data.get("meet_link", "")
+                self.meet_link = self.meet_link.rsplit(".", 1)[0] + ".1"
+
+                logger.info(f"Zoom host Updated Meet link: {self.meet_link}")
                 return jsonify({"message": "Meeting Link Updated sucessfully"})
 
-        @self.app.route('/login_completed', methods=['GET', 'POST'])
+        @self.app.route("/login_completed", methods=["GET"])
         def login_completed():
-            if request.method == 'GET':
-                login_completed_status = self.redis_client.get('login_completed')
-                return jsonify({"login_completed": bool(int(login_completed_status)) if login_completed_status else False})
+            if request.method == "GET":
+                self.login_completed = True
+                return jsonify({"status": "login_completed"}), 200
 
-            elif request.method == 'POST':
-                data = request.json
-                login_completed_status = int(data.get('login_completed', 0))
-                self.redis_client.set('login_completed', login_completed_status)
-                return jsonify({"message": f"Updated login_completed status to {bool(login_completed_status)}"})
-
-        @self.app.route('/get_host_email', methods=['GET'])
+        @self.app.route("/get_host_email", methods=["GET"])
         def get_host_email():
             return jsonify({"host_email": self.signin_email})
 
-        @self.app.route('/get_host_passwd', methods=['GET'])
+        @self.app.route("/get_host_passwd", methods=["GET"])
         def get_host_passwd():
             return jsonify({"host_passwd": self.signin_passwd})
 
-        @self.app.route('/get_participants_joined', methods=['GET'])
+        @self.app.route("/get_participants_joined", methods=["GET"])
         def get_participants_joined():
             return jsonify({"participants": self.participants_joined})
 
-        @self.app.route('/set_participants_joined', methods=['POST'])
+        @self.app.route("/set_participants_joined", methods=["POST"])
         def set_participants_joined():
             data = request.json
-            self.participants_joined = data.get('participants_joined', None)
-            return jsonify({"message": f"Updated participants jopind status to {self.participants_joined}"})
+            self.participants_joined = data.get("participants_joined", None)
+            return jsonify(
+                {
+                    "message": f"Updated participants joined status to {self.participants_joined}"
+                }
+            )
 
-        @self.app.route('/get_participants_req', methods=['GET'])
+        @self.app.route("/get_participants_req", methods=["GET"])
         def get_participants_req():
             return jsonify({"participants": self.participants_req})
 
-        @self.app.route('/test_started', methods=['GET', 'POST'])
+        @self.app.route("/test_started", methods=["GET", "POST"])
         def test_started():
-            if request.method == 'GET':
+            if request.method == "GET":
                 return jsonify({"test_started": self.test_start})
-            elif request.method == 'POST':
+            elif request.method == "POST":
                 data = request.json
-                self.test_start = data.get('test_started', False)
-                return jsonify({"message": f"Updated test_start status to {self.test_start}"})
+                self.test_start = data.get("test_started", False)
+                return jsonify(
+                    {"message": f"Updated test_start status to {self.test_start}"}
+                )
 
-        @self.app.route('/clients_disconnected', methods=['POST'])
+        @self.app.route("/clients_disconnected", methods=["POST"])
         def client_disconnected():
             data = request.json
-            self.clients_disconnected = data.get('clients_disconnected', False)
-            return jsonify({"message": f"Updated clients_disconnected status to {self.clients_disconnected}"})
+            self.clients_disconnected = data.get("clients_disconnected", False)
+            return jsonify(
+                {
+                    "message": f"Updated clients_disconnected status to {self.clients_disconnected}"
+                }
+            )
 
-        @self.app.route('/get_start_end_time', methods=['GET'])
+        @self.app.route("/get_start_end_time", methods=["GET"])
         def get_start_end_time():
-            return jsonify({
-                "start_time": self.start_time.isoformat() if self.start_time is not None else None,
-                "end_time": self.end_time.isoformat() if self.end_time is not None else None
-            })
+            return jsonify(
+                {
+                    "start_time": (
+                        self.start_time.isoformat()
+                        if self.start_time is not None
+                        else None
+                    ),
+                    "end_time": (
+                        self.end_time.isoformat() if self.end_time is not None else None
+                    ),
+                }
+            )
 
-        @self.app.route('/stats_opt', methods=['GET'])
+        @self.app.route("/stats_opt", methods=["GET"])
         def stats_to_be_collected():
-            return jsonify({
-                'audio_stats': self.audio,
-                "video_stats": self.video
-            })
+            return jsonify({"audio_stats": self.audio, "video_stats": self.video})
 
-        @self.app.route('/check_stop', methods=['GET'])
+        @self.app.route("/check_stop", methods=["GET"])
         def check_stop():
             return jsonify({"stop": self.stop_signal})
 
-        @self.app.route('/upload_stats', methods=['POST'])
+        @self.app.route("/upload_stats", methods=["POST", "GET"])
         def upload_stats():
-            data = request.json
-            for hostname, stats in data.items():
-                self.data_store[hostname] = stats
-            for hostname, stats in data.items():
+            if self.do_robo or self.do_bs or self.api_stats_collection:
+                self.get_live_data()
+                summary_data = self._get_summary_zoom_stats()
+                if summary_data:
+                    if self.do_bs:
+                        lf_wifi_data = self.get_signal_and_channel_data_dict()
+                    for hostname, stats in summary_data.items():
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        stats["timestamp"] = timestamp
 
-                csv_file = os.path.join(self.path, f'{hostname}.csv')
-                with open(csv_file, mode='a', newline='') as file:
-                    writer = csv.writer(file)
+                        if self.do_bs:
+                            x, y, _, _ = self.robo_obj.get_robot_pose()
+                            stats["X"] = x
+                            stats["Y"] = y
+                            stats["From_Coord"] = self.from_cord
+                            stats["To_Coord"] = self.to_cord
+                            sta_id = self.hostname_to_station_map.get(
+                                hostname, None
+                            )
 
-                    if os.path.getsize(csv_file) == 0:
-                        writer.writerow(self.header)
+                            if sta_id in lf_wifi_data:
+                                stats.update(lf_wifi_data[sta_id])
+                            else:
+                                stats.update(
+                                    {
+                                        "signal": "-",
+                                        "channel": "-",
+                                        "mode": "-",
+                                        "tx_rate": "-",
+                                        "rx_rate": "-",
+                                        "bssid": "-",
+                                    }
+                                )
 
-                    timestamp = stats.get('timestamp', '')
-                    audio = stats.get('audio_stats', {})
-                    video = stats.get('video_stats', {})
+                        if self.do_robo or self.do_bs:
+                            stats["current_cord"] = self.current_cord
+                            if self.rotations_enabled:
+                                stats["rotations_enabled"] = self.rotations_enabled
+                                stats["current_angle"] = self.current_angle
+                            else:
+                                stats["rotations_enabled"] = False
 
-                    row = [
-                        timestamp,
-                        audio.get('frequency_sent', '0'), audio.get('latency_sent', '0'), audio.get('jitter_sent', '0'), audio.get('packet_loss_sent', '0'),
-                        audio.get('frequency_received', '0'), audio.get('latency_received', '0'), audio.get('jitter_received', '0'), audio.get('packet_loss_received', '0'),
-                        video.get('latency_sent', '0'), video.get('jitter_sent', '0'), video.get('packet_loss_sent', '0'),
-                        video.get('resolution_sent', '0'), video.get('frames_per_second_sent', '0'),
-                        video.get('latency_received', '0'), video.get('jitter_received', '0'), video.get('packet_loss_received', '0'),
-                        video.get('resolution_received', '0'), video.get('frames_per_second_received', '0')
-                    ]
-                    writer.writerow(row)
+                        # --- CSV FILE PATH GENERATION ---
+                        if self.do_robo:
+                            if self.rotations_enabled:
+                                csv_name = f"{hostname}_{self.current_cord}_{self.current_angle}.csv"
+                            else:
+                                csv_name = f"{hostname}_{self.current_cord}.csv"
+                        else:
+                            csv_name = f"{hostname}.csv"
 
-            return jsonify({"status": "success"}), 200
+                        csv_file = os.path.join(self.path, csv_name)
 
-        @self.app.route('/get_latest_stats', methods=['GET'])
+                        # --- WRITING DATA TO CSV ---
+                        file_exists = (
+                            os.path.isfile(csv_file) and os.path.getsize(csv_file) > 0
+                        )
+
+                        with open(csv_file, mode="a", newline="") as file:
+                            headers = list(stats.keys())
+                            writer = csv.DictWriter(file, fieldnames=headers)
+
+                            if not file_exists:
+                                writer.writeheader()
+
+                            writer.writerow(stats)
+
+                return "Live Data Processed", 200
+            else:
+                data = request.json
+                for hostname, stats in data.items():
+                    self.data_store[hostname] = stats
+                for hostname, stats in data.items():
+                    if self.do_robo:
+                        if self.rotations_enabled:
+                            csv_file = os.path.join(
+                                self.path,
+                                f"{hostname}_{self.current_cord}_{self.current_angle}.csv",
+                            )
+                        else:
+                            csv_file = os.path.join(
+                                self.path, f"{hostname}_{self.current_cord}.csv"
+                            )
+                    else:
+                        csv_file = os.path.join(self.path, f"{hostname}.csv")
+                    with open(csv_file, mode="a", newline="") as file:
+                        writer = csv.writer(file)
+
+                        if os.path.getsize(csv_file) == 0:
+                            writer.writerow(self.header)
+
+                        timestamp = stats.get("timestamp", "")
+                        audio = stats.get("audio_stats", {})
+                        video = stats.get("video_stats", {})
+
+                        row = [
+                            timestamp,
+                            audio.get("frequency_sent", "0"),
+                            audio.get("latency_sent", "0"),
+                            audio.get("jitter_sent", "0"),
+                            audio.get("packet_loss_sent", "0"),
+                            audio.get("frequency_received", "0"),
+                            audio.get("latency_received", "0"),
+                            audio.get("jitter_received", "0"),
+                            audio.get("packet_loss_received", "0"),
+                            video.get("latency_sent", "0"),
+                            video.get("jitter_sent", "0"),
+                            video.get("packet_loss_sent", "0"),
+                            video.get("resolution_sent", "0"),
+                            video.get("frames_per_second_sent", "0"),
+                            video.get("latency_received", "0"),
+                            video.get("jitter_received", "0"),
+                            video.get("packet_loss_received", "0"),
+                            video.get("resolution_received", "0"),
+                            video.get("frames_per_second_received", "0"),
+                        ]
+                        writer.writerow(row)
+
+                return jsonify({"status": "success"}), 200
+
+        @self.app.route("/get_latest_stats", methods=["GET"])
         def get_latest_stats():
             # Return the latest data for all hostnames
-            return jsonify(self.data_store), 200
+            return jsonify(self._get_summary_zoom_stats()), 200
 
-        @self.app.route('/stop_zoom', methods=['GET'])
+        @self.app.route("/stop_zoom", methods=["GET"])
         def stop_zoom():
             """
             Endpoint to stop the Zoom test and trigger a graceful application shutdown.
             """
-            logging.info("Stopping the test through web UI")
+            logger.info("Stopping the test through web UI")
             self.stop_signal = True  # Signal to stop the application
             # Respond to the client
             response = jsonify({"message": "Stopping Zoom Test"})
@@ -479,10 +584,98 @@ class ZoomAutomation(Realm):
             shutdown_thread.start()
             return response
 
+        @self.app.route("/download_csv", methods=["GET"])
+        def download_csv_flag():
+            return jsonify({"download_csv": self.download_csv})
+
+        @self.app.route("/upload_csv", methods=["POST"])
+        def upload_csv_data():
+            try:
+                data = request.json
+
+                if not data:
+                    return (
+                        jsonify({"status": "error", "message": "No JSON received"}),
+                        400,
+                    )
+
+                filename = data.get("filename", "csvdata.csv")
+                self.csv_file_name = f"received_{filename}"
+                rows = data.get("rows", [])
+                if not rows:
+                    return (
+                        jsonify({"status": "error", "message": "No rows received"}),
+                        400,
+                    )
+
+                filepath = f"received_{filename}"
+                logger.info(
+                    f"Data Received from Zoom dashboard is stored at: {filepath}"
+                )
+                with open(filepath, "w", newline="") as f:
+                    writer = csv.writer(f)
+                    if rows:
+                        writer.writerows(rows)
+                self.is_csv_available = True
+
+                return (
+                    jsonify(
+                        {
+                            "status": "success",
+                            "message": f"Received {len(rows)} rows from {filename}",
+                            "saved_as": filepath,
+                        }
+                    ),
+                    200,
+                )
+
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+
+        @self.app.route("/upload_ping_log", methods=["POST"])
+        def upload_ping_log():
+            try:
+                if "file" not in request.files:
+                    return jsonify({"status": "error", "message": "Missing file"}), 400
+
+                f = request.files["file"]
+                participant_name = request.form.get(
+                    "participant_name", "unknown_participant"
+                )
+
+                if not f.filename:
+                    return (
+                        jsonify({"status": "error", "message": "Empty filename"}),
+                        400,
+                    )
+
+                ping_dir = os.path.join(self.path, "ping_logs")
+                os.makedirs(ping_dir, exist_ok=True)
+
+                # Force controlled filename format to avoid unsafe names from client
+                save_name = f"{participant_name}_ping.log"
+                save_path = os.path.join(ping_dir, save_name)
+                f.save(save_path)
+
+                return (
+                    jsonify(
+                        {
+                            "status": "success",
+                            "message": "Ping log uploaded",
+                            "saved_as": save_path,
+                        }
+                    ),
+                    200,
+                )
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+
         try:
-            self.app.run(host='0.0.0.0', port=5000, debug=True, threaded=True, use_reloader=False)
+            self.app.run(
+                host="0.0.0.0", port=5000, debug=True, threaded=True, use_reloader=False
+            )
         except Exception as e:
-            logging.info(f"Error starting Flask server: {e}")
+            logger.info(f"Error starting Flask server: {e}")
             sys.exit(0)
 
     def shutdown(self):
