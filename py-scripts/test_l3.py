@@ -890,7 +890,7 @@ class L3VariableTime(Realm):
                  do_bandsteering=False,
                  cycles=None,
                  bssids=None,
-                 duration_to_skip=None):
+                 duration_to_skip=60):
 
         self.eth_endps = []
         self.cx_names = []
@@ -9825,6 +9825,11 @@ and generate a report.
         robot_ip=args.robot_ip,
         coordinate=args.coordinate,
         rotation=args.rotation,
+
+        do_bandsteering=args.do_bandsteering,
+        duration_to_skip=args.duration_to_skip,
+        cycles=args.cycles,
+        bssids=args.bssids,
 
         # wifi extra configuration
         key_mgmt_list=key_mgmt_list,
