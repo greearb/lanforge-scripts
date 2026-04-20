@@ -1,37 +1,46 @@
 #!/usr/bin/env python3
 """
-    NAME: lf_interop_zoom.py
+NAME: lf_interop_zoom.py
 
-    PURPOSE: lf_interop_zoom.py provides the available devices and allows the user to start Zoom call conference meeting for the user-specified duration
+PURPOSE: lf_interop_zoom.py provides the available devices and allows the user to start Zoom call conference meeting for the user-specified duration
 
-    EXAMPLE-1:
-    Command Line Interface to run Zoom with specified duration:
-    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123
+EXAMPLE-1:
+Command Line Interface to run Zoom with specified duration:
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123
 
-    EXAMPLE-2:
-    Command Line Interface to run Zoom on multiple devices:
-    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
-    --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 192.168.214.123
+EXAMPLE-2:
+Command Line Interface to run Zoom on multiple devices:
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
+  --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 192.168.214.123
 
-    Example-3:
-    Command Line Interface to run Zoom on multiple devices with Device Configuration
-    python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
-    --upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
+Example-3:
+Command Line Interface to run Zoom on multiple devices with Device Configuration
+python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+--upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
 
-    Example-4:
-    Command Line Interface to run Zoom on multiple devices with Groups and Profiles
-    python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
-    --wait_time 30  --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
+Example-4:
+Command Line Interface to run Zoom on multiple devices with Groups and Profiles
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+--wait_time 30  --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
+
+Example-5:
+Command Line Interface to run Zoom test with robo feature
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123 --robo_ip 192.168.200.131 --coordinates 1,2 --rotations 30,40 --do_robo
+
+Example-6:
+Command Line Interface to get Mos Score in the report:
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
+--resources 1.400,1.375 --zoom_host 1.95 --upstream_port 1.1.eth1 --api_stats_collection --env_file .env --download_csv
 
 
-
-    NOTES:
-    1. Use './lf_interop_zoom.py --help' to see command line usage and options.
-    2. Always specify the duration in minutes (for example: --duration 3 indicates a duration of 3 minutes).
-    3. If --resources are not given after passing the CLI, a list of available devices (laptops) will be displayed on the terminal.
-    4. Enter the resource numbers separated by commas (,) in the resource argument.
+NOTES:
+1. Use './lf_interop_zoom.py --help' to see command line usage and options.
+2. Always specify the duration in minutes (for example: --duration 3 indicates a duration of 3 minutes).
+3. If --resources are not given after passing the CLI, a list of available devices (laptops) will be displayed on the terminal.
+4. Enter the resource numbers separated by commas (,) in the resource argument.
 
 """
+
 import os
 import csv
 import time
@@ -47,13 +56,20 @@ import shutil
 import logging
 import json
 import asyncio
-import redis
 import sys
 import traceback
 import textwrap
+from requests.auth import HTTPBasicAuth
+from dotenv import load_dotenv
+import re
+import glob
+from collections import Counter
+import signal
+import platform
+import subprocess
 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 
@@ -76,13 +92,26 @@ lf_base_interop_profile = importlib.import_module("py-scripts.lf_base_interop_pr
 RealDevice = lf_base_interop_profile.RealDevice
 
 # Set up logging
+flask_server_logger = logging.getLogger(__name__)
+flask_server_log = logging.getLogger("werkzeug")
+flask_server_log.setLevel(logging.ERROR)
+
+# 1. Configure the logging system
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("lf_interop_zoom.log", mode="w"),  # Writes to file
+        logging.StreamHandler(sys.stdout),  # Writes to terminal
+    ],
+)
+
+# 2. Create the logger instance
 logger = logging.getLogger(__name__)
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
 
-
-# Import LF logger configuration module
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
+robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 
 
 class ZoomAutomation(Realm):
