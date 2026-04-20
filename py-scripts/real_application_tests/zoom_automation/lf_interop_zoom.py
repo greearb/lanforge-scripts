@@ -115,19 +115,52 @@ robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 
 
 class ZoomAutomation(Realm):
-    def __init__(self, ssid="SSID", band="5G", security="wpa2", apname="AP Name", audio=True, video=True, lanforge_ip=None,
-                 upstream_port='0.0.0.0', wait_time=30, devices=None, testname=None, config=None, selected_groups=None, selected_profiles=None):
+    def __init__(
+        self,
+        ssid="SSID",
+        band="5G",
+        security="wpa2",
+        apname="AP Name",
+        audio=True,
+        video=True,
+        lanforge_ip=None,
+        upstream_port="0.0.0.0",
+        wait_time=30,
+        devices=None,
+        testname=None,
+        config=None,
+        selected_groups=None,
+        selected_profiles=None,
+        robo_ip="127.0.0.1",
+        coordinates_list=None,
+        angles_list=None,
+        do_robo=False,
+        current_cord="",
+        current_angle="",
+        rotations_enabled=False,
+        signin_email="",
+        signin_passwd="",
+        duration=None,
+        participants_req=None,
+        env_file=None,
+        do_bs=False,
+        api_stats_collection=False,
+        do_webui=False,
+        cycles=1,
+        bssids=None,
+        wait_at_point=30,
+        resource_ip=None,
+    ):
 
         super().__init__(lfclient_host=lanforge_ip)
         self.upstream_port = upstream_port
         self.mgr_ip = lanforge_ip
         self.app = Flask(__name__)
-        self.redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
-        self.redis_client.set('login_completed', 0)
         self.devices = devices
         self.windows = 0
         self.linux = 0
         self.mac = 0
+        self.android = 0
         self.real_sta_os_type = []
         self.real_sta_hostname = []
         self.real_sta_list = []
@@ -136,27 +169,31 @@ class ZoomAutomation(Realm):
         self.login_completed = False  # Initially set to False
         self.remote_login_url = ""  # Initialize remote login URL
         self.remote_login_passwd = ""  # Initialize remote login password
-        self.signin_email = ""
-        self.signin_passwd = ""
+        self.signin_email = signin_email
+        self.signin_passwd = signin_passwd
         self.test_start = False
         self.start_time = None
         self.end_time = None
         self.participants_joined = 0
-        self.participants_req = None
+        self.participants_req = participants_req
         self.ap_name = apname
         self.ssid = ssid
         self.band = band
         self.security = security
-        self.tz = pytz.timezone('Asia/Kolkata')
+        self.tz = pytz.timezone("Asia/Kolkata")
         self.meet_link = None
         self.zoom_host = None
         self.testname = testname
         self.stop_signal = False
+        self.download_csv = False
+        self.csv_file_name = "csvdata.csv"
         self.path = os.path.join(os.getcwd(), "zoom_test_results")
         if not os.path.exists(self.path):
             os.makedirs(self.path)
+
         self.device_names = []
         self.hostname_os_combination = None
+
         self.clients_disconnected = False
         self.audio = audio
         self.video = video
@@ -165,17 +202,70 @@ class ZoomAutomation(Realm):
         self.generic_endps_profile.name_prefix = "zoom"
         self.generic_endps_profile.type = "zoom"
         self.data_store = {}
-        self.header = ["timestamp",
-                       "Sent Audio Frequency (khz)", "Sent Audio Latency (ms)", "Sent Audio Jitter (ms)", "Sent Audio Packet loss (%)",
-                       "Receive Audio Frequency (khz)", "Receive Audio Latency (ms)", "Receive Audio Jitter (ms)", "Receive Audio Packet loss (%)",
-                       "Sent Video Latency (ms)", "Sent Video Jitter (ms)", "Sent Video Packet loss (%)", "Sent Video Resolution (khz)",
-                       "Sent Video Frames ps (khz)", "Receive Video Latency (ms)", "Receive Video Jitter (ms)", "Receive Video Packet loss (%)",
-                       "Receive Video Resolution (khz)", "Receive Video Frames ps (khz)"
-                       ]
+        self.header = [
+            "timestamp",
+            "Sent Audio Frequency (khz)",
+            "Sent Audio Latency (ms)",
+            "Sent Audio Jitter (ms)",
+            "Sent Audio Packet loss (%)",
+            "Receive Audio Frequency (khz)",
+            "Receive Audio Latency (ms)",
+            "Receive Audio Jitter (ms)",
+            "Receive Audio Packet loss (%)",
+            "Sent Video Latency (ms)",
+            "Sent Video Jitter (ms)",
+            "Sent Video Packet loss (%)",
+            "Sent Video Resolution (khz)",
+            "Sent Video Frames ps (khz)",
+            "Receive Video Latency (ms)",
+            "Receive Video Jitter (ms)",
+            "Receive Video Packet loss (%)",
+            "Receive Video Resolution (khz)",
+            "Receive Video Frames ps (khz)",
+        ]
         self.config = config
-        self.selected_groups = selected_groups
-        self.selected_profiles = selected_profiles
-        self.config_obj = None
+        self.selected_groups = list(selected_groups or [])
+        self.selected_profiles = list(selected_profiles or [])
+        self.duration = duration
+        # Single container for raw Zoom QoS and summarized report data.
+        self.zoom_stats_data = {"raw_qos": [], "summary": {}}
+        self.env_file = env_file
+
+        self.do_robo = do_robo
+        self.do_bs = do_bs
+        if self.do_robo or self.do_bs:
+            self.robo_ip = robo_ip
+            self.robo_obj = robo_base_class.RobotClass(
+                robo_ip=self.robo_ip, angle_list=angles_list
+            )
+            self.coordinates_list = coordinates_list
+            self.angles_list = angles_list
+            self.current_cord = current_cord
+            self.current_angle = current_angle
+            self.rotations_enabled = rotations_enabled
+            self.robo_csv_files = []
+
+        self.account_id = None
+        self.client_id = None
+        self.client_secret = None
+        self.api_stats_collection = api_stats_collection
+        self.do_webui = do_webui
+        self.cycles = cycles
+        self.from_cord = None
+        self.to_cord = None
+        self.bssids = bssids or []
+        logger.info("Zoom Automation Initialized with the following parameters:")
+        if self.do_bs:
+            self.robo_obj.coordinate_list = self.coordinates_list
+            self.robo_obj.total_cycles = self.cycles
+            logger.info(
+                f"User mentioned coordinates list: {self.robo_obj.coordinate_list}"
+            )
+        self.successful_coords = []
+        self.failed_coords = []
+        self.is_csv_available = False
+        self.wait_at_point = int(wait_at_point)
+        self.resource_ip = resource_ip
 
     def start_flask_server(self):
         @self.app.route('/login_url', methods=['GET', 'POST'])
@@ -333,37 +423,41 @@ class ZoomAutomation(Realm):
         """
         Gracefully shut down the application.
         """
-        logging.info("Initiating graceful shutdown...")
-
-        self.stop_signal = True
-        time.sleep(10)
-        logging.info("Exiting the application.")
+        if self.do_robo and self.api_stats_collection:
+            self.generate_report_from_data()
+        elif self.api_stats_collection:
+            self.generate_report_from_api()
+        self.generic_endps_profile.cleanup()
+        logger.info("Initiating graceful shutdown...")
         os._exit(0)
 
     def set_start_time(self):
-        self.start_time = datetime.now(self.tz) + timedelta(seconds=30)
-        self.end_time = self.start_time + timedelta(minutes=self.duration)
+        self.start_time = datetime.now(self.tz) + timedelta(seconds=60)
+        if self.do_bs:
+            self.end_time = self.start_time + timedelta(minutes=300000)
+        else:
+            self.end_time = self.start_time + timedelta(minutes=self.duration)
         return [self.start_time, self.end_time]
 
     def check_gen_cx(self):
         try:
 
             for gen_endp in self.generic_endps_profile.created_endp:
-                generic_endpoint = self.json_get(f'/generic/{gen_endp}')
+                generic_endpoint = self.json_get(f"/generic/{gen_endp}")
 
                 if not generic_endpoint or "endpoint" not in generic_endpoint:
-                    logging.info(f"Error fetching endpoint data for {gen_endp}")
+                    logger.info(f"Error fetching endpoint data for {gen_endp}")
                     return False
 
                 endp_status = generic_endpoint["endpoint"].get("status", "")
 
-                if endp_status == "Run":
+                if endp_status not in ["Stopped", "WAITING", "NO-CX"]:
                     return False
 
             return True
         except Exception as e:
-            logging.error(f"Error in check_gen_cx function {e}", exc_info=True)
-            logging.info(f"generic endpoint data {generic_endpoint}")
+            logger.error(f"Error in check_gen_cx function {e}", exc_info=True)
+            logger.info(f"generic endpoint data {generic_endpoint}")
 
     def wait_for_flask(self, url="http://127.0.0.1:5000/get_latest_stats", timeout=10):
         """Wait until the Flask server is up, but exit if it takes longer than `timeout` seconds."""
@@ -372,11 +466,11 @@ class ZoomAutomation(Realm):
             try:
                 response = requests.get(url, timeout=1)
                 if response.status_code == 200:
-                    logging.info("✅ Flask server is up and running!")
+                    logging.info("Flask server is up and running!")
                     return
             except requests.exceptions.ConnectionError:
                 time.sleep(1)
-        logging.error("❌ Flask server did not start within 10 seconds. Exiting.")
+        logging.error("Flask server did not start within 10 seconds. Exiting.")
         sys.exit(1)
 
     def run(self, duration, upstream_port, signin_email, signin_passwd, participants):
