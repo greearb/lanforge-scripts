@@ -400,7 +400,7 @@ class Android():
 
             name = interop_tab_data['name']
 
-            if (interop_tab_data['phantom']):
+            if (str(interop_tab_data['phantom']).lower() == "true"):
                 logger.warning(
                     '{} is in phantom state. Please make sure debugging is enabled in developer settings.'.format(name))
 
@@ -420,7 +420,7 @@ class Android():
         else:
             for device_data in interop_tab_data:
                 for name, data in device_data.items():
-                    if (data['phantom']):
+                    if (str(data['phantom']).lower() == "true"):
                         logger.warning(
                             '{} is in phantom state. Please make sure debugging is enabled in developer settings.'.format(
                                 name))
