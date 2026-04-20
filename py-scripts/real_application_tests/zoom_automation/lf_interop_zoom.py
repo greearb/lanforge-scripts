@@ -1332,6 +1332,581 @@ class ZoomAutomation(Realm):
         # Return the sorted list of selected real station names
         return self.real_sta_list
 
+    def get_signal_and_channel_data_dict(self):
+        """
+        Returns a dictionary of LANforge stats keyed by station name.
+        Example: {'sta001': {'lf_signal': -55, 'lf_channel': 36, ...}}
+        """
+        lf_stats_map = {}
+        interfaces_dict = dict()
+
+        try:
+            # Get raw data from LANforge API
+            port_data = self.json_get("/ports/all/")["interfaces"]
+            for port in port_data:
+                interfaces_dict.update(port)
+        except Exception as e:
+            logger.error(f"Error fetching port data: {e}")
+            return {}
+
+        # Loop through your managed stations (e.g., sta001, sta002)
+        for sta in self.real_sta_list:
+            # Default values if station is missing
+            lf_stats_map[sta] = {
+                "signal": "-",
+                "channel": "-",
+                "mode": "-",
+                "tx_rate": "-",
+                "rx_rate": "-",
+                "bssid": "-",
+            }
+
+            if sta in interfaces_dict:
+                data = interfaces_dict[sta]
+
+                # --- Signal Parsing ---
+                sig = data.get("signal", "-")
+                if "dBm" in str(sig):
+                    lf_stats_map[sta]["signal"] = sig.split(" ")[0]
+                else:
+                    lf_stats_map[sta]["signal"] = sig
+
+                # --- Other Fields ---
+                lf_stats_map[sta]["channel"] = data.get("channel", "-")
+                lf_stats_map[sta]["mode"] = data.get("mode", "-")
+                lf_stats_map[sta]["tx_rate"] = data.get("tx-rate", "-")
+                lf_stats_map[sta]["rx_rate"] = data.get("rx-rate", "-")
+                lf_stats_map[sta]["bssid"] = data.get(
+                    "ap", "-"
+                )  # 'ap' is usually BSSID
+
+        return lf_stats_map
+
+    def get_access_token(self, account_id, client_id, client_secret):
+        token_url = f"https://zoom.us/oauth/token?grant_type=account_credentials&account_id={account_id}"
+        response = requests.post(
+            token_url, auth=HTTPBasicAuth(client_id, client_secret)
+        )
+        if response.status_code == 200:
+            access_token = response.json().get("access_token")
+            return access_token
+        else:
+            raise Exception(
+                f"Failed to get access token: {response.status_code} {response.text}"
+            )
+
+    def get_participants_qos(self, meeting_id, access_token, test_type="past"):
+        url = f"https://api.zoom.us/v2/metrics/meetings/{meeting_id}/participants/qos"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        params = {"type": test_type}
+        all_participants = []
+        next_page_token = None
+
+        try:
+            while True:
+                if next_page_token:
+                    params["next_page_token"] = next_page_token
+
+                response = requests.get(url, headers=headers, params=params)
+                if response.status_code == 200:
+                    data = response.json()
+                    participants = data.get("participants", [])
+                    all_participants.extend(participants)
+                    next_page_token = data.get("next_page_token")
+                    if not next_page_token:
+                        break
+                else:
+                    raise Exception(
+                        f"Failed to get participants QoS: {response.status_code} {response.text}"
+                    )
+        except Exception as e:
+            cached_qos = self._get_raw_zoom_stats()
+            if cached_qos:
+                logger.warning(
+                    f"Failed to get participants QoS for {test_type}. Using last cached participant QoS data: {e}"
+                )
+                return cached_qos
+            raise
+
+        if all_participants:
+            return self._set_raw_zoom_stats(all_participants)
+
+        cached_qos = self._get_raw_zoom_stats()
+        if cached_qos:
+            logger.warning(
+                f"Zoom API returned no participant QoS data for {test_type}. Using last cached participant QoS data."
+            )
+            return cached_qos
+
+        logger.warning(
+            f"Zoom API returned no participant QoS data for {test_type} and no cached data is available."
+        )
+        return []
+
+    def save_json(self, data, filename):
+        os.makedirs("zoom_api_responses", exist_ok=True)
+        path = os.path.join("zoom_api_responses", filename)
+        with open(path, "w") as f:
+            json.dump(data, f, indent=2)
+
+    def get_live_data(self):
+        try:
+            # retrieving with past meetings
+            token = self.get_access_token(
+                self.account_id, self.client_id, self.client_secret
+            )
+            self._set_raw_zoom_stats(
+                self.get_participants_qos(self.remote_login_url, token, "live")
+            )
+            self.summarize_audio_video(self._get_raw_zoom_stats())
+
+        except Exception as e:
+            logger.info(
+                f"Unable to fetch live meeting data...retrying in 5 seconds {e}"
+            )
+
+    def get_final_qos_data(self):
+        # 1. Check Credentials (using instance variables)
+        if not all([self.account_id, self.client_id, self.client_secret]):
+            logger.error("Exiting test due to missing credentials.")
+            raise ValueError(
+                "Missing Zoom credentials (self.account_id, self.client_id, self.client_secret)"
+            )
+
+        meeting_id = self.remote_login_url
+        logger.info(f"Meeting ID: {meeting_id}")
+
+        # 2. Get Token & Wait for Data Indexing
+        token = self.get_access_token(
+            self.account_id, self.client_id, self.client_secret
+        )
+
+        # Zoom QoS data is typically available ~20 seconds after meeting end.
+        # We wait 150 seconds to be safe and simplify the logic.
+        wait_time = 150
+        logger.info(
+            f"Waiting {wait_time} seconds for Zoom servers to index past meeting QoS data..."
+        )
+        time.sleep(wait_time)
+
+        # 3. Fetch Data (Try 'Past' first, fallback to 'Live')
+        try:
+            logger.info("Attempting to fetch 'past' meeting data...")
+            past_qos_data = self.get_participants_qos(meeting_id, token, "past")
+
+            # If past data is empty, raise error to trigger fallback
+            if not past_qos_data:
+                raise ValueError("Zoom API returned empty data for past meeting.")
+
+        except Exception as e:
+            logger.warning(
+                f"Could not fetch 'past' data ({e}). Falling back to 'live' meeting data..."
+            )
+            try:
+                self.get_participants_qos(meeting_id, token, "live")
+            except Exception as e_live:
+                logger.error(f"Failed to fetch both past and live data: {e_live}")
+
+        # 4. Summarize and Save JSON
+        raw_qos_data = self._get_raw_zoom_stats()
+        summary_data = self.summarize_audio_video(raw_qos_data)
+
+        # Construct JSON filename
+        if self.do_robo:
+            json_name = (
+                f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json"
+            )
+        else:
+            json_name = f"{meeting_id}_qos.json"
+
+        self.save_json(raw_qos_data, json_name)
+
+        # 5. Write to CSV (Integrated Logic)
+        if self.do_robo or self.do_bs or self.api_stats_collection:
+            if summary_data:
+                logger.info("Writing final QoS data to CSV...")
+
+                # Fetch Wifi Data if needed
+                lf_wifi_data = {}
+                if self.do_bs:
+                    try:
+                        lf_wifi_data = self.get_signal_and_channel_data_dict()
+                    except Exception as e:
+                        logger.warning(f"Could not fetch WiFi data for CSV: {e}")
+
+                for hostname, stats in summary_data.items():
+                    final_filename = hostname
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    stats["timestamp"] = timestamp
+
+                    # Add Robot/BS specific data
+                    if self.do_bs:
+                        x, y, _, _ = self.robo_obj.get_robot_pose()
+                        stats["X"] = x
+                        stats["Y"] = y
+                        stats["From_Coord"] = self.from_cord
+                        stats["To_Coord"] = self.to_cord
+
+                        sta_id = self.hostname_to_station_map.get(final_filename, None)
+                        if sta_id in lf_wifi_data:
+                            stats.update(lf_wifi_data[sta_id])
+                        else:
+                            stats.update(
+                                {
+                                    "signal": "-",
+                                    "channel": "-",
+                                    "mode": "-",
+                                    "tx_rate": "-",
+                                    "rx_rate": "-",
+                                    "bssid": "-",
+                                }
+                            )
+
+                    # Add Coordinate/Angle data
+                    if self.do_robo or self.do_bs:
+                        stats["current_cord"] = self.current_cord
+                        if self.rotations_enabled:
+                            stats["rotations_enabled"] = self.rotations_enabled
+                            stats["current_angle"] = self.current_angle
+                        else:
+                            stats["rotations_enabled"] = False
+
+                    # Generate CSV Filename
+                    if self.do_robo:
+                        if self.rotations_enabled:
+                            csv_name = f"{final_filename}_{self.current_cord}_{self.current_angle}.csv"
+                        else:
+                            csv_name = f"{final_filename}_{self.current_cord}.csv"
+                    else:
+                        csv_name = f"{final_filename}.csv"
+
+                    csv_file = os.path.join(self.path, csv_name)
+
+                    # Write to File
+                    try:
+                        file_exists = (
+                            os.path.isfile(csv_file) and os.path.getsize(csv_file) > 0
+                        )
+
+                        with open(csv_file, mode="a", newline="") as file:
+                            headers = list(stats.keys())
+                            writer = csv.DictWriter(file, fieldnames=headers)
+
+                            if not file_exists:
+                                writer.writeheader()
+
+                            writer.writerow(stats)
+                    except Exception as e:
+                        logger.error(f"Failed to write CSV for {hostname}: {e}")
+
+    def parse_value(self, value):
+        """Convert Zoom string values to float. Handles kbps, ms, and %."""
+        if not value or value in ["-", ""]:
+            return None
+        try:
+            return float(value.split()[0].replace("%", ""))
+        except Exception as e:
+            logger.error(f"Error parsing value '{value}': {e}")
+            return None
+
+    def parse_zoom_value(self, value):
+        """
+        Convert Zoom string metrics into a float.
+        Handles cases like:
+        - "123 kbps"
+        - "21 ms"
+        - "5.6 %"
+        - "21 ms/40 ms"
+        - "Good(4.41)"
+        - "-" or empty values
+        """
+        if not value or str(value).strip() in ["-", ""]:
+            return None
+
+        value = str(value).strip()
+
+        # Handle formats like "Good(4.41)"
+        if re.match(r"^[A-Za-z]+\([\d.]+\)$", value):
+            return value
+
+        # Handle "21 ms/40 ms" (avg/max -> take avg only)
+        if "/" in value:
+            avg_part = value.split("/", 1)[0].strip()
+
+            # Missing avg like "-/3.9 %" should not use max
+            if avg_part in ["", "-"]:
+                return None
+
+            nums = re.findall(r"[\d.]+", avg_part)
+            return float(nums[0]) if nums else None
+
+        # General case: "123 kbps", "45 ms", "6.7 %"
+        try:
+            return float(value.split()[0].replace("%", ""))
+        except Exception:
+            return None
+
+    def _clean_zoom_participant_name(self, participant_name):
+        if participant_name is None:
+            return None
+
+        return str(participant_name).replace("(Guest)", "").strip()
+
+    def _get_raw_zoom_stats(self):
+        raw_qos = self.zoom_stats_data.get("raw_qos", [])
+        return raw_qos if isinstance(raw_qos, list) else []
+
+    def _set_raw_zoom_stats(self, raw_qos):
+        self.zoom_stats_data["raw_qos"] = list(raw_qos) if raw_qos else []
+        return self.zoom_stats_data["raw_qos"]
+
+    def _get_summary_zoom_stats(self):
+        summary = self.zoom_stats_data.get("summary", {})
+        return summary if isinstance(summary, dict) else {}
+
+    def _set_summary_zoom_stats(self, summary):
+        self.zoom_stats_data["summary"] = summary if isinstance(summary, dict) else {}
+        return self.zoom_stats_data["summary"]
+
+    def _get_report_device_data(self, source_data=None):
+        if source_data is not None:
+            if isinstance(source_data, dict):
+                return source_data
+            if isinstance(source_data, list):
+                return self.summarize_audio_video(source_data) if source_data else {}
+            return {}
+
+        summary_data = self._get_summary_zoom_stats()
+        if summary_data:
+            return summary_data
+
+        raw_qos_data = self._get_raw_zoom_stats()
+        if raw_qos_data:
+            return self.summarize_audio_video(raw_qos_data)
+
+        return {}
+
+    def _match_summary_data_to_hostnames(self, summary, host_key=None):
+        if not summary or not self.real_sta_hostname:
+            return summary
+
+        normalized_summary = {}
+        used_source_keys = set()
+        target_host_key = self.real_sta_hostname[0]
+
+        if host_key in summary:
+            host_stats = dict(summary[host_key])
+            host_stats["is_host"] = True
+            normalized_summary[target_host_key] = host_stats
+            used_source_keys.add(host_key)
+
+        remaining_source_keys = [
+            key for key in summary.keys() if key not in used_source_keys
+        ]
+        remaining_target_keys = [
+            hostname
+            for hostname in self.real_sta_hostname
+            if hostname not in normalized_summary
+        ]
+
+        for hostname in list(remaining_target_keys):
+            cleaned_hostname = self._clean_zoom_participant_name(hostname)
+            matched_source_key = next(
+                (
+                    source_key
+                    for source_key in remaining_source_keys
+                    if self._clean_zoom_participant_name(source_key)
+                    and cleaned_hostname
+                    and self._clean_zoom_participant_name(source_key)
+                    == cleaned_hostname
+                ),
+                None,
+            )
+            if matched_source_key is None:
+                continue
+
+            normalized_summary[hostname] = dict(summary[matched_source_key])
+            used_source_keys.add(matched_source_key)
+            remaining_source_keys.remove(matched_source_key)
+
+        for source_key, stats in summary.items():
+            if source_key not in used_source_keys:
+                normalized_summary[source_key] = dict(stats)
+        self._set_summary_zoom_stats(normalized_summary)
+        if self.do_robo:
+            self.save_json(
+                self._get_summary_zoom_stats(),
+                f"{self.remote_login_url}_{self.current_cord}_{self.current_angle}_qos.json",
+            )
+            self.save_json(
+                self._get_raw_zoom_stats(),
+                f"{self.remote_login_url}_{self.current_cord}_{self.current_angle}_raw_qos.json",
+            )
+        else:
+            self.save_json(
+                self._get_summary_zoom_stats(), f"{self.remote_login_url}_qos.json"
+            )
+            self.save_json(
+                self._get_raw_zoom_stats(), f"{self.remote_login_url}_raw_qos.json"
+            )
+        return normalized_summary
+
+    def summarize_csv_audio_video(self, csv_path):
+        # Step 1: Find the correct header line
+        with open(csv_path, "r", encoding="utf-8-sig") as f:
+            lines = f.readlines()
+
+        meeting_summary = pd.read_csv(csv_path, nrows=1, encoding="utf-8-sig")
+        csv_host_name = None
+        if not meeting_summary.empty and "Host" in meeting_summary.columns:
+            host_value = meeting_summary.iloc[0].get("Host")
+            if pd.notna(host_value):
+                csv_host_name = self._clean_zoom_participant_name(host_value)
+
+        # Step 2: Find the line index where real participant data header starts
+        header_line_idx = None
+        for i, line in enumerate(lines):
+            if line.strip().startswith("Participant,"):
+                header_line_idx = i
+                break
+
+        if header_line_idx is None:
+            raise ValueError(
+                "Could not find the participant metrics section in the CSV."
+            )
+
+        # Step 3: Read only the participant section
+        df = pd.read_csv(csv_path, skiprows=header_line_idx, encoding="utf-8-sig")
+        df.columns = df.columns.str.strip()
+
+        # Mapping from JSON-style keys to CSV columns
+        metric_map = {
+            # Audio
+            "audio_output_bitrate_avg": "Audio (Sending) Bitrate",
+            "audio_input_bitrate_avg": "Audio (Receiving) Bitrate",
+            "audio_output_latency_avg": "Audio (Sending) Latency-Avg/Max",
+            "audio_input_latency_avg": "Audio (Receiving) Latency-Avg/Max",
+            "audio_output_jitter_avg": "Audio (Sending) Jitter-Avg/Max",
+            "audio_input_jitter_avg": "Audio (Receiving) Jitter-Avg/Max",
+            "audio_output_avg_loss_avg": "Audio (Sending) Packet Loss-Avg/Max",
+            "audio_input_avg_loss_avg": "Audio (Receiving) Packet Loss-Avg/Max",
+            "audio_mos_avg": "Audio Quality",
+            # Video
+            "video_output_bitrate_avg": "Video (Sending) Bitrate",
+            "video_input_bitrate_avg": "Video (Receiving) Bitrate",
+            "video_output_latency_avg": "Video (Sending) Latency-Avg/Max",
+            "video_input_latency_avg": "Video (Receiving) Latency-Avg/Max",
+            "video_output_jitter_avg": "Video (Sending) Jitter-Avg/Max",
+            "video_input_jitter_avg": "Video (Receiving) Jitter-Avg/Max",
+            "video_output_avg_loss_avg": "Video (Sending) Packet Loss-Avg/Max",
+            "video_input_avg_loss_avg": "Video (Receiving) Packet Loss-Avg/Max",
+            "video_output_frame_rate_avg": "Video (Sending) Frame Rate",
+            "video_input_frame_rate_avg": "Video (Receiving) Frame Rate",
+            "video_mos_avg": "Video Quality",
+        }
+
+        summary = {}
+        host_device_key = None
+
+        for index, row in df.iterrows():
+            participant_value = row.get("Participant")
+            if pd.isna(participant_value):
+                continue
+
+            device = self._clean_zoom_participant_name(participant_value)
+            if not device:
+                continue
+
+            summary[device] = {key: None for key in metric_map}
+            summary[device]["is_host"] = False
+
+            for metric_key, csv_column in metric_map.items():
+                raw_value = row.get(csv_column)
+                parsed_value = self.parse_zoom_value(raw_value)
+                if isinstance(parsed_value, float):
+                    summary[device][metric_key] = round(parsed_value, 2)
+                else:
+                    summary[device][metric_key] = parsed_value
+
+            if (
+                csv_host_name
+                and self._clean_zoom_participant_name(device)
+                and self._clean_zoom_participant_name(device) == csv_host_name
+            ):
+                summary[device]["is_host"] = True
+                host_device_key = device
+            elif index == 0 and host_device_key is None:
+                host_device_key = device
+
+        if not summary:
+            return summary
+
+        if host_device_key not in summary:
+            host_device_key = next(iter(summary))
+
+        summary[host_device_key]["is_host"] = True
+        return self._match_summary_data_to_hostnames(summary, host_device_key)
+
+    def summarize_audio_video(self, json_data):
+        """
+        Summarize per-device audio and video stats: avg/max of bitrate, jitter, latency, packet loss.
+
+        Args:
+            json_data (list): Zoom JSON as list of participants.
+
+        Returns:
+            dict: {device_name: {metric_field_avg/max: value, ...}}
+        """
+        if not json_data:
+            summary_data = self._get_summary_zoom_stats()
+            return summary_data if summary_data else {}
+
+        metrics = ["audio_input", "audio_output", "video_input", "video_output"]
+        fields = ["bitrate", "latency", "jitter", "avg_loss", "frame_rate"]
+
+        summary = {}
+        count = 0
+        host_device_key = None
+        for index, participant in enumerate(json_data):
+            participant_name = participant.get(
+                "user_name"
+            ) or "Unknown Device {count}".format(count=count + 1)
+            device = self._clean_zoom_participant_name(participant_name)
+            if device not in summary:
+                summary[device] = {
+                    f"{m}_{f}_avg": None for m in metrics for f in fields
+                }
+                summary[device].update(
+                    {"is_host": participant.get("is_original_host", False)}
+                )
+                if participant.get("is_original_host", False):
+                    host_device_key = device
+
+            temp_values = {m: {f: [] for f in fields} for m in metrics}
+
+            for sample in participant.get("user_qos", []):
+                for m in metrics:
+                    data = sample.get(m, {})
+                    for f in fields:
+                        val = self.parse_value(data.get(f))
+                        if val is not None:
+                            temp_values[m][f].append(val)
+
+            # calculate avg and max
+            for m in metrics:
+                for f in fields:
+                    vals = temp_values[m][f]
+                    if vals:
+                        summary[device][f"{m}_{f}_avg"] = round(
+                            sum(vals) / len(vals), 2
+                        )
+
+        if summary and host_device_key not in summary:
+            host_device_key = next(iter(summary))
+            summary[host_device_key]["is_host"] = True
+
+        return self._match_summary_data_to_hostnames(summary, host_device_key)
+
     def check_tab_exists(self):
         """
         Checks if the 'generic' tab exists by making a JSON GET request.
