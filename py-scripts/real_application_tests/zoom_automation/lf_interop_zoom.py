@@ -732,51 +732,134 @@ class ZoomAutomation(Realm):
         logging.error("Flask server did not start within 10 seconds. Exiting.")
         sys.exit(1)
 
-    def run(self, duration, upstream_port, signin_email, signin_passwd, participants):
-        # Store the email and password in the instance
-        self.signin_email = signin_email
-        self.signin_passwd = signin_passwd
-        self.duration = duration
-        self.upstream_port = upstream_port
-        self.participants_req = participants
-        flask_thread = threading.Thread(target=self.start_flask_server)
-        flask_thread.daemon = True
-        flask_thread.start()
-        self.wait_for_flask()
-        ports_list = []
-        eid = ""
-        resource_ip = ""
-        user_resources = ['.'.join(item.split('.')[:2]) for item in self.real_sta_list]
+    def create_android(
+        self,
+        lanforge_res,
+        ports=None,
+        sleep_time=0.5,
+        debug_=False,
+        suppress_related_commands_=None,
+        real_client_os_types=None,
+    ):
+        if ports and real_client_os_types and len(real_client_os_types) == 0:
+            logger.error("Real client operating systems types is empty list")
+            raise ValueError("Real client operating systems types is empty list")
+        created_cx = []
+        created_endp = []
+
+        if not ports:
+            ports = []
+
+        if self.debug:
+            debug_ = True
+
+        post_data = []
+        endp_tpls = []
+        for port_name in ports:
+            port_info = self.name_to_eid(port_name)
+            resource = port_info[1]
+            shelf = port_info[0]
+            if real_client_os_types:
+                name = port_name
+            else:
+                name = port_info[2]
+
+            gen_name_a = "%s-%s" % ("zoom", "_".join(port_name.split(".")))
+            endp_tpls.append((shelf, resource, name, gen_name_a))
+
+        for endp_tpl in endp_tpls:
+            shelf = endp_tpl[0]
+            resource = endp_tpl[1]
+            if real_client_os_types:
+                name = endp_tpl[2].split(".")[2]
+            else:
+                name = endp_tpl[2]
+            gen_name_a = endp_tpl[3]
+
+            data = {
+                "alias": gen_name_a,
+                "shelf": shelf,
+                "resource": lanforge_res.split(".")[1],
+                "port": "eth0",
+                "type": "gen_generic",
+            }
+            self.json_post("cli-json/add_gen_endp", data, debug_=self.debug)
+
+        self.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
+        if sleep_time:
+            time.sleep(sleep_time)
+
+        for endp_tpl in endp_tpls:
+            gen_name_a = endp_tpl[3]
+            self.generic_endps_profile.set_flags(gen_name_a, "ClearPortOnStart", 1)
+
+        for endp_tpl in endp_tpls:
+            name = endp_tpl[2]
+            gen_name_a = endp_tpl[3]
+            cx_name = "CX_%s-%s" % ("generic", gen_name_a)
+            data = {"alias": cx_name, "test_mgr": "default_tm", "tx_endp": gen_name_a}
+            post_data.append(data)
+            created_cx.append(cx_name)
+            created_endp.append(gen_name_a)
+
+        for data in post_data:
+            url = "/cli-json/add_cx"
+            self.json_post(
+                url,
+                data,
+                debug_=debug_,
+                suppress_related_commands_=suppress_related_commands_,
+            )
+        if sleep_time:
+            time.sleep(sleep_time)
+
+        for data in post_data:
+            self.json_post(
+                "/cli-json/show_cx",
+                {"test_mgr": "default_tm", "cross_connect": data["alias"]},
+            )
+        return True, created_cx, created_endp
+
+    def get_resource_data(self):
+        self.ports_list = []
+        self.user_list = []
+        self.serial_list = []
+        self.lanforge_port_list = []
+        self.device_names = []
+        self.user_resources = [
+            ".".join(item.split(".")[:2]) for item in self.real_sta_list
+        ]
 
         # Step 1: Retrieve information about all resources
         response = self.json_get("/resource/all")
 
         # Step 2: Match user-specified resources with available resources sequentially
-        if user_resources:
-            # Iterate through user_resources sequentially, processing each value only once
-            for user_resource in user_resources:
-                # Break loop if no more user_resources left to process
-                if not user_resources:
-                    break
+        if self.user_resources:
+            resources = response.get("resources", [])
+            for user_resource in self.user_resources:
+                found = False
+                for element in resources:
+                    if user_resource in element:
+                        resource_values = element[user_resource]
+                        eid = resource_values["eid"]
+                        resource_ip = resource_values["ctrl-ip"]
+                        hostname = resource_values["hostname"]
+                        user = resource_values["user"]
 
-                for key, value in response.items():
-                    if key == "resources":
-                        for element in value:
-                            for resource_key, resource_values in element.items():
-                                # Match the current user_resource
-                                if resource_key == user_resource:
-                                    eid = resource_values["eid"]
-                                    resource_ip = resource_values['ctrl-ip']
-                                    self.device_names.append(resource_values['hostname'])
-                                    ports_list.append({'eid': eid, 'ctrl-ip': resource_ip})
-                                    break
-                            else:
-                                # Continue outer loop only if no break occurred
-                                continue
-                            # Break if a match was found and processed
-                            break
+                        self.device_names.append(hostname)
+                        self.ports_list.append({"eid": eid, "ctrl-ip": resource_ip})
+                        self.user_list.append(user)
 
-        gen_ports_list = []
+                        found = True
+                        break
+
+                if not found:
+                    logger.warning(
+                        f"Resource {user_resource} not found in LANforge response"
+                    )
+
+    def get_ports_data(self):
+        self.gen_ports_list = []
         self.mac_list = []
         self.rssi_list = []
         self.link_rate_list = []
@@ -786,36 +869,36 @@ class ZoomAutomation(Realm):
         response_port = self.json_get("/port/all")
 
         # Step 4: Match ports associated with retrieved resources in the order of ports_list
-        for port_entry in ports_list:
+        for port_entry in self.ports_list:
             # Extract the eid and ctrl-ip from the current ports_list entry
-            expected_eid = port_entry['eid']
+            expected_eid = port_entry["eid"]
 
             # Iterate over the port interfaces to find a matching port
-            for interface in response_port['interfaces']:
-                for port, _ in interface.items():
+            for interface in response_port["interfaces"]:
+                for port, port_data in interface.items():
                     # Extract the first two segments of the port identifier to match with expected_eid
-                    result = '.'.join(port.split('.')[:2])
+                    result = ".".join(port.split(".")[:2])
 
                     # Check if the result matches the current expected eid from ports_list
                     if result == expected_eid:
-                        gen_ports_list.append(port.split('.')[-1])
+                        self.gen_ports_list.append(port.split(".")[-1])
                         break
                 else:
                     continue
                 break
 
-        for port_entry in ports_list:
+        for port_entry in self.ports_list:
             # Extract the eid and ctrl-ip from the current ports_list entry
-            expected_eid = port_entry['eid']
+            expected_eid = port_entry["eid"]
 
             # Iterate over the port interfaces to find a matching port
-            for interface in response_port['interfaces']:
+            for interface in response_port["interfaces"]:
                 for port, port_data in interface.items():
                     # Extract the first two segments of the port identifier to match with expected_eid
-                    result = '.'.join(port.split('.')[:2])
+                    result = ".".join(port.split(".")[:2])
 
                     # Check if the result matches the current expected eid from ports_list
-                    if result == expected_eid and port_data["parent dev"] == 'wiphy0':
+                    if result == expected_eid and port_data["parent dev"] == "wiphy0":
                         self.mac_list.append(port_data["mac"])
                         self.rssi_list.append(port_data["signal"])
                         self.link_rate_list.append(port_data["rx-rate"])
@@ -825,82 +908,301 @@ class ZoomAutomation(Realm):
                 else:
                     continue
                 break
-        self.new_port_list = [item.split('.')[2] for item in self.real_sta_list]
+        self.wifi_interface_list = [item.split(".")[2] for item in self.real_sta_list]
 
-        if self.generic_endps_profile.create(ports=[self.real_sta_list[0]], real_client_os_types=[self.real_sta_os_type[0]]):
-            logging.info('Real client generic endpoint creation completed.')
+    def get_interop_data(self):
+        interop_data = self.json_get("/adb")
+        interop_mobile_data = interop_data.get("devices", {})
+        self.serial_list = []
+        self.lanforge_port_list = []
+        for user in self.user_list:
+            if user == "":
+                self.serial_list.append("")
+                self.lanforge_port_list.append("")
+            else:
+                user_found = False
+                # 1. Handle Single Device (Flat Dictionary)
+                if isinstance(interop_mobile_data, dict):
+                    if interop_mobile_data.get("user-name") == user:
+                        # Extract details from 'name' (e.g., '1.1.3200f8664a91a5e9')
+                        full_name = interop_mobile_data.get("name")
+                        if full_name and full_name.count(".") >= 2:
+                            resource = full_name.split(".")[1]
+                            serial_no = full_name.split(".")[2]
+                            self.serial_list.append(serial_no)
+                            self.lanforge_port_list.append(f"1.{resource}.eth0")
+                            user_found = True
+                else:
+                    for mobile_device in interop_mobile_data:
+                        for serial, device_data in mobile_device.items():
+                            if device_data.get("user-name") == user:
+                                resource = serial.split(".")[1]
+                                serial_no = serial.split(".")[2]
+                                self.serial_list.append(serial_no)
+                                lanforge_port = f"1.{resource}.eth0"
+                                self.lanforge_port_list.append(lanforge_port)
+                                user_found = True
+                                break
+                        if user_found:
+                            break
+
+                if not user_found:
+                    self.serial_list.append("")
+                    self.lanforge_port_list.append("")
+
+        logger.debug(f"Checking serial list {self.serial_list}")
+
+    def delete_current_csv_files(self):
+        filename_pattern = (
+            f"*_{self.current_cord}_{self.current_angle}.csv"
+            if self.rotations_enabled
+            else f"*_{self.current_cord}.csv"
+        )
+        csv_files_pattern = os.path.join(self.path, filename_pattern)
+        csv_files = glob.glob(csv_files_pattern)
+
+        for file_path in csv_files:
+            try:
+                os.remove(file_path)
+                logger.info(f"Deleted CSV file: {file_path}")
+            except Exception as e:
+                logger.error(f"Error deleting file {file_path}: {e}")
+
+    def create_host(self):
+        if self.generic_endps_profile.create(
+            ports=[self.real_sta_list[0]],
+            real_client_os_types=[self.real_sta_os_type[0]],
+        ):
+            logger.info("Real client generic endpoint creation completed.")
         else:
-            logging.error('Real client generic endpoint creation failed.')
+            logger.error("Real client generic endpoint creation failed.")
             exit(0)
 
         if self.real_sta_os_type[0] == "windows":
             cmd = f"py zoom_host.py --ip {self.upstream_port}"
-            self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
-        elif self.real_sta_os_type[0] == 'linux':
-
-            cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[0], self.upstream_port, "host")
-
-            self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
-        elif self.real_sta_os_type[0] == 'macos':
+            self.generic_endps_profile.set_cmd(
+                self.generic_endps_profile.created_endp[0], cmd
+            )
+        elif self.real_sta_os_type[0] == "linux":
+            cmd = "su -l lanforge ctzoom.bash %s %s %s" % (
+                self.wifi_interface_list[0],
+                self.upstream_port,
+                "host",
+            )
+            self.generic_endps_profile.set_cmd(
+                self.generic_endps_profile.created_endp[0], cmd
+            )
+        elif self.real_sta_os_type[0] == "macos":
             cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "host")
-            self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
+            self.generic_endps_profile.set_cmd(
+                self.generic_endps_profile.created_endp[0], cmd
+            )
         self.generic_endps_profile.start_cx()
         time.sleep(5)
 
+        logger.debug(f"checking real sta list {self.real_sta_list}")
+        logger.debug(f"checking real sta os type {self.real_sta_os_type}")
+
+    def wait_for_host_ready(self):
         while not self.login_completed:
             try:
-                self.login_completed = bool(int(self.redis_client.get('login_completed') or 0))
-
-                generic_endpoint = self.json_get(f'/generic/{self.generic_endps_profile.created_endp[0]}')
+                generic_endpoint = self.json_get(
+                    f"/generic/{self.generic_endps_profile.created_endp[0]}"
+                )
                 endp_status = generic_endpoint["endpoint"]["status"]
                 if endp_status == "Stopped":
-                    logging.info("Failed to Start the Host Device")
+                    logger.error("Failed to Start the Host Device")
                     self.generic_endps_profile.cleanup()
                     sys.exit(1)
                 time.sleep(5)
             except Exception as e:
-                logging.info(f"Error while checking login_completed status: {e}")
+                logger.error(f"Error while checking login_completed status: {e}")
                 time.sleep(5)
 
-        if self.generic_endps_profile.create(ports=self.real_sta_list[1:], real_client_os_types=self.real_sta_os_type[1:]):
-            logging.info('Real client generic endpoint creation completed.')
-        else:
-            logging.error('Real client generic endpoint creation failed.')
-            exit(0)
-        for i in range(1, len(self.real_sta_os_type)):
+        self.meet_link = f"https://us04web.zoom.us/j/{self.remote_login_url}?pwd={self.remote_login_passwd}"
+        logger.info(f"Meet link for android devices: {self.meet_link}")
 
+        # Save meet link in a text file under self.path
+        try:
+            meet_link_file = os.path.join(self.path, "meet_link.txt")
+            with open(meet_link_file, "w") as f:
+                f.write(self.meet_link + "\n")
+            logger.info(f"Meet link saved to: {meet_link_file}")
+        except Exception as e:
+            logger.error(f"Failed to save meet link file: {e}")
+
+        self.login_completed = False
+
+    def create_participants(self):
+        for i in range(1, len(self.real_sta_os_type)):
+            if self.real_sta_os_type[i] == "android":
+                status, created_cx, created_endp = self.create_android(
+                    lanforge_res=self.lanforge_port_list[i],
+                    ports=[self.real_sta_list[i]],
+                    real_client_os_types=["Linux"],
+                )
+                self.generic_endps_profile.created_endp.extend(created_endp)
+                self.generic_endps_profile.created_cx.extend(created_cx)
+                cmd = (
+                    f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/zoom_automation/android_zoom.py "
+                    f"--serial {self.serial_list[i]} "
+                    f"--meeting_url '{self.meet_link}' "
+                    f"--participant_name '{self.real_sta_hostname[i]}' "
+                    f"--server_host {self.mgr_ip} "
+                    f"--server_port 5000"
+                )
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+
+            else:
+                self.generic_endps_profile.create(
+                    ports=[self.real_sta_list[i]],
+                    real_client_os_types=[self.real_sta_os_type[i]],
+                )
+
+        for i in range(1, len(self.real_sta_os_type)):
             if self.real_sta_os_type[i] == "windows":
                 cmd = f"py zoom_client.py --ip {self.upstream_port}"
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-            elif self.real_sta_os_type[i] == 'linux':
-                cmd = "su -l lanforge ctzoom.bash %s %s %s" % (self.new_port_list[i], self.upstream_port, "client")
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-            elif self.real_sta_os_type[i] == 'macos':
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+            elif self.real_sta_os_type[i] == "linux":
+                cmd = "su -l lanforge ctzoom.bash %s %s %s" % (
+                    self.wifi_interface_list[i],
+                    self.upstream_port,
+                    "client",
+                )
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
+            elif self.real_sta_os_type[i] == "macos":
                 cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "client")
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
+                self.generic_endps_profile.set_cmd(
+                    self.generic_endps_profile.created_endp[i], cmd
+                )
 
-        self.start_client_cx()
+            cx_name = self.generic_endps_profile.created_cx[i]
+            self.json_post(
+                "/cli-json/set_cx_state",
+                {"test_mgr": "default_tm", "cx_name": cx_name, "cx_state": "RUNNING"},
+                debug_=True,
+            )
+            logger.info(f"Sending running state to.. {cx_name}")
 
+    def wait_for_test_start(self):
+        # Wait for the test to be started
+        count = 0
         while not self.test_start:
-
-            logging.info("WAITING FOR THE TEST TO BE STARTED")
+            logger.info("WAITING FOR THE TEST TO BE STARTED")
             time.sleep(5)
-
+            count += 1
+            if count > 36:
+                logger.error(
+                    "Unable to get the Test Start signal Even after 3 minutes. Exiting."
+                )
+                sys.exit(1)
+        self.test_start = False
+        if self.do_bs:
+            self.bs_coord_result = self.robo_obj.get_coordinates_list()
+            logger.info(f"Total Coordinates to be Visited: {self.bs_coord_result}")
+            if self.bs_coord_result:
+                self.from_cord = self.coordinates_list[0]
+                self.successful_coords.append(self.from_cord)
+                self.current_cord = self.from_cord
         self.set_start_time()
-        logging.info("TEST WILL BE STARTING")
+        logger.info("TEST WILL BE STARTING")
 
-        while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
+    def run(self):
+        self.create_host()
+        self.wait_for_host_ready()
+        self.create_participants()
+        self.wait_for_test_start()
 
-            time.sleep(5)
+        if self.do_bs:
+            time.sleep(60)
 
-    def start_client_cx(self):
-        client_cx = self.generic_endps_profile.created_cx[1:]
-        for cx_name in client_cx:
-            self.json_post("/cli-json/set_cx_state", {
-                "test_mgr": "default_tm",
-                "cx_name": cx_name,
-                "cx_state": "RUNNING"
-            }, debug_=True)
+            try:
+                logger.info(
+                    f"Band-Steering Test coordinates to be visited: {self.bs_coord_result}"
+                )
+
+                if not self.bs_coord_result:
+                    logger.error(
+                        "No coordinates available (bs_coord_result is empty). Skipping BS test."
+                    )
+                    self.stop_signal = True
+                    return
+
+                for idx, coordinate in enumerate(self.bs_coord_result):
+                    logger.info(f"Moving robot to coordinate: {coordinate}")
+                    self.from_cord = self.to_cord
+                    self.to_cord = coordinate
+
+                    # Battery safety
+                    self.robo_obj.wait_for_battery()
+
+                    matched, aborted = self.robo_obj.move_to_coordinate(
+                        coord=coordinate
+                    )
+                    if matched:
+                        self.current_cord = coordinate
+                        self.successful_coords.append(coordinate)
+                    else:
+                        self.failed_coords.append(coordinate)
+                    if aborted:
+                        logger.error(f"Failed to reach the {coordinate}")
+                        self.failed_coords.append(coordinate)
+                        sys.exit()
+
+                logger.info(
+                    "All coordinates completed — stopping Band-Steering Test"
+                )
+                self.stop_signal = True
+                time.sleep(5)
+            except Exception as e:
+                logger.error(f"Error during band-steering operation: {e}", exc_info=True)
+
+            finally:
+                count = 0
+                if self.download_csv:
+                    while not self.is_csv_available:
+                        count += 1
+                        if count > 60:
+                            logger.warning(
+                                "CSV data from Zoom dashboard is not available after waiting for 5 minutes. Proceeding with report generation without CSV data."
+                            )
+                            break
+                        logger.info(
+                            "Waiting for CSV data from Zoom dashboard to be available before proceeding with the Report generation and cleanup"
+                        )
+                        time.sleep(5)
+
+        else:
+            while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
+                if self.do_robo:
+                    pause, _ = self.robo_obj.wait_for_battery()
+                    if pause:
+                        self.stop_signal = True
+                        self.generic_endps_profile.stop_cx()
+                        self.generic_endps_profile.cleanup()
+                        self.delete_current_csv_files()
+                        self.start_time = None
+                        self.end_time = None
+                        time.sleep(20)
+                        self.stop_signal = False
+                        self.participants_joined = 0
+                        self.create_host()
+                        self.wait_for_host_ready()
+                        self.create_participants()
+                        self.wait_for_test_start()
+                logger.info("Monitoring the Test")
+                time.sleep(5)
+        if self.do_robo:
+            self.generic_endps_profile.stop_cx()
+            self.generic_endps_profile.cleanup()
+            self.start_time = None
+            self.end_time = None
 
     def select_real_devices(self, real_device_obj, real_sta_list=None):
         final_device_list = []
@@ -927,7 +1229,6 @@ class ZoomAutomation(Realm):
         9. Returns the sorted list of selected real station names.
 
         """
-        real_device_obj.get_devices()
         # Query and retrieve all user-defined real stations if `real_sta_list` is not provided
         if real_sta_list is None:
             self.real_sta_list, _, _ = real_device_obj.query_user()
@@ -936,35 +1237,76 @@ class ZoomAutomation(Realm):
             interfaces = interface_data["interfaces"]
             final_device_list = []  # Initialize the list
 
-            for device in real_sta_list:  # Iterate over devices in `real_sta_list` to preserve order
+            for (
+                device
+            ) in (
+                real_sta_list
+            ):  # Iterate over devices in `real_sta_list` to preserve order
+                device_found = False
                 for interface_dict in interfaces:  # Iterate through `interfaces`
-                    for key, value in interface_dict.items():  # Iterate through items of each interface dictionary
+                    for (
+                        key,
+                        value,
+                    ) in (
+                        interface_dict.items()
+                    ):  # Iterate through items of each interface dictionary
                         # Check conditions for adding the device
                         key_parts = key.split(".")
                         extracted_key = ".".join(key_parts[:2])
-                        if extracted_key == device and not value["phantom"] and not value["down"] and value["parent dev"] != "":
-                            final_device_list.append(key)  # Add to final_device_list in order
+                        if (
+                            extracted_key == device
+                            and not value["phantom"]
+                            and not value["down"]
+                            and value["parent dev"] != ""
+                        ):
+                            final_device_list.append(
+                                key
+                            )  # Add to final_device_list in order
+                            device_found = True
                             break  # Stop after finding the first match for the current device to maintain order
+                    if device_found:
+                        break
 
             self.real_sta_list = final_device_list
 
         # Log an error and exit if no real stations are selected for testing
         if len(self.real_sta_list) == 0:
-            logger.error('There are no real devices in this testbed. Aborting test')
+            logger.error("There are no real devices in this testbed. Aborting test")
             exit(0)
         # Filter out iOS devices from the real_sta_list before proceeding
         self.real_sta_list = self.filter_ios_devices(self.real_sta_list)
-        # # Add real station data to `self.real_sta_data_dict`
+
+        # Rebuild a clean, ordered and unique station list (avoid mutating while iterating)
+        self.real_sta_data = {}
+        cleaned_sta_list = []
+        seen_sta = set()
+
         for sta_name in self.real_sta_list:
+            if sta_name in seen_sta:
+                continue
             if sta_name not in real_device_obj.devices_data:
-                self.real_sta_list.remove(sta_name)
-                logger.error('Real station not in devices data, ignoring it from testing')
+                logger.error(
+                    "Real station not in devices data, ignoring it from testing"
+                )
                 continue
 
+            seen_sta.add(sta_name)
+            cleaned_sta_list.append(sta_name)
             self.real_sta_data[sta_name] = real_device_obj.devices_data[sta_name]
 
-        self.real_sta_os_type = [self.real_sta_data[real_sta_name]['ostype'] for real_sta_name in self.real_sta_data]
-        self.real_sta_hostname = [self.real_sta_data[real_sta_name]['hostname'] for real_sta_name in self.real_sta_data]
+        self.real_sta_list = cleaned_sta_list
+        self.real_sta_os_type = [
+            self.real_sta_data[real_sta_name]["ostype"]
+            for real_sta_name in self.real_sta_data
+        ]
+        self.real_sta_hostname = [
+            (
+                self.real_sta_data[real_sta_name]["hostname"]
+                if self.real_sta_data[real_sta_name]["ostype"] != "android"
+                else self.real_sta_data[real_sta_name]["user"]
+            )
+            for real_sta_name in self.real_sta_data
+        ]
 
         self.zoom_host = self.real_sta_list[0]
         self.hostname_os_combination = [
@@ -972,13 +1314,20 @@ class ZoomAutomation(Realm):
             for hostname, os_type in zip(self.real_sta_hostname, self.real_sta_os_type)
         ]
 
-        for _, value in self.real_sta_data.items():
-            if value['ostype'] == 'windows':
+        for key, value in self.real_sta_data.items():
+            if value["ostype"] == "windows":
                 self.windows = self.windows + 1
-            elif value['ostype'] == 'macos':
+            elif value["ostype"] == "macos":
                 self.mac = self.mac + 1
-            elif value['ostype'] == 'linux':
+            elif value["ostype"] == "linux":
                 self.linux = self.linux + 1
+            elif value["ostype"] == "android":
+                self.android = self.android + 1
+
+        # Create mapping: { 'Hostname': 'Station_ID' }
+        self.hostname_to_station_map = dict(
+            zip(self.real_sta_hostname, self.real_sta_list)
+        )
 
         # Return the sorted list of selected real station names
         return self.real_sta_list
