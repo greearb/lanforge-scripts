@@ -267,6 +267,72 @@ class ZoomAutomation(Realm):
         self.wait_at_point = int(wait_at_point)
         self.resource_ip = resource_ip
 
+    def stop_previous_flask_server(self):
+        """
+        Forcefully kills any process currently listening on port 5000 (Linux/Darwin only).
+        """
+        port = 5000
+        logger.info(
+            f"Checking for processes using port {port} to forcefully kill them..."
+        )
+
+        current_os = platform.system()
+
+        try:
+            if current_os in ["Linux", "Darwin"]:
+                # Find PID on Linux/Mac using lsof
+                command = f"lsof -t -i:{port}"
+                try:
+                    output = subprocess.check_output(command, shell=True, text=True)
+                    pids = output.strip().split("\n")
+                    for pid in pids:
+                        if pid.strip():
+                            logger.info(
+                                f"Killing process {pid} on port {port} ({current_os})..."
+                            )
+                            os.kill(int(pid.strip()), signal.SIGKILL)
+                except subprocess.CalledProcessError:
+                    logger.info(f"No process found using port {port} on {current_os}.")
+                    logger.info(f"Port {port} is clear, ready to start Flask server.")
+                    pass
+            else:
+                logger.warning(
+                    f"Unsupported OS: {current_os}. Expected Linux or Darwin. Cannot automatically clear port {port}."
+                )
+
+        except Exception as e:
+            logger.warning(f"Error while trying to clear port {port}: {e}")
+
+    def move_ping_logs(self):
+        source_dir = os.path.join(self.path, "ping_logs")
+        if not os.path.isdir(source_dir):
+            logger.info(f"No ping_logs directory found at {source_dir}")
+            return
+
+        destination_dir = os.path.join(self.report_path_date_time, "ping_logs")
+        os.makedirs(self.report_path_date_time, exist_ok=True)
+
+        # If destination exists, merge files and remove source
+        if os.path.exists(destination_dir):
+            for file_name in os.listdir(source_dir):
+                src_file = os.path.join(source_dir, file_name)
+                dst_file = os.path.join(destination_dir, file_name)
+                if os.path.isfile(src_file):
+                    shutil.move(src_file, dst_file)
+            shutil.rmtree(source_dir, ignore_errors=True)
+            logger.info(f"Merged ping logs into {destination_dir}")
+        else:
+            shutil.move(source_dir, destination_dir)
+            logger.info(f"Moved ping logs folder to {destination_dir}")
+
+    def handle_flask_server(self):
+        self.stop_previous_flask_server()
+        time.sleep(5)  # Ensure the port is released before starting the server
+        flask_thread = threading.Thread(target=self.start_flask_server)
+        flask_thread.daemon = True
+        flask_thread.start()
+        self.wait_for_flask()
+
     def start_flask_server(self):
         @self.app.route('/login_url', methods=['GET', 'POST'])
         def login_url():
