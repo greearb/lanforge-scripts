@@ -425,8 +425,8 @@ class Youtube(Realm):
 
         for i in range(0, len(self.lanforge_os_type)):
             cmd = (
-                "python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/youtube/youtube_android_test.py --url %s --duration %s --devices %s --upstream_port %s "
-            ) % (self.url, self.duration, self.serial_list_str, self.host)
+                "python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/youtube/youtube_android_test.py --url %s --duration %s --devices %s --upstream_port %s --resolution %s "
+            ) % (self.url, self.duration, self.serial_list_str, self.host, self.resolution)
 
             logging.info(f"Setting command for Android devices: {cmd}")
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[-(i + 1)], cmd)
