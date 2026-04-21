@@ -6,12 +6,12 @@ PURPOSE: lf_interop_zoom.py provides the available devices and allows the user t
 
 EXAMPLE-1:
 Command Line Interface to run Zoom with specified duration:
-python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123 --api_stats_collection --env_file .env
 
 EXAMPLE-2:
 Command Line Interface to run Zoom on multiple devices:
-python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
-  --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 192.168.214.123
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --api_stats_collection --env_file .env
+--resources 1.400,1.375 --zoom_host 1.95 --upstream_port 192.168.214.123
 
 Example-3:
 Command Line Interface to run Zoom on multiple devices with Device Configuration
@@ -25,12 +25,17 @@ python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin
 
 Example-5:
 Command Line Interface to run Zoom test with robo feature
-python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123 --robo_ip 192.168.200.131 --coordinates 1,2 --rotations 30,40 --do_robo
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123 --robo_ip 192.168.200.131 --coordinates 1,2 --rotations 30,40 --do_robo --api_stats_collection --env_file .env --download_csv
 
 Example-6:
 Command Line Interface to get Mos Score in the report:
 python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
 --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 1.1.eth1 --api_stats_collection --env_file .env --download_csv
+
+Example-7:
+Command Line Interface to run Zoom test with robo feature and BS:
+python3 lf_interop_zoom.py --lanforge_ip "10.17.1.208" --signin_email "demo@gmail.com" --signin_passwd "demo123" --participants 2 --audio --video --upstream_port 10.17.1.68 --robo_ip 127.0.0.1:6000
+--coordinates 1,2 --cycles 2 --do_bs --api_stats_collection --env_file .env --bssids 00:11:22:33:44:55,66:77:88:99:AA:BB
 
 
 NOTES:
@@ -150,6 +155,7 @@ class ZoomAutomation(Realm):
         bssids=None,
         wait_at_point=30,
         resource_ip=None,
+        do_roam=False,
     ):
 
         super().__init__(lfclient_host=lanforge_ip)
@@ -4012,29 +4018,41 @@ def main():
 
                 EXAMPLE-1:
                 Command Line Interface to run Zoom with specified duration:
-                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
-                --upstream_port 1.1.eth1
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123 --api_stats_collection --env_file .env
 
                 EXAMPLE-2:
                 Command Line Interface to run Zoom on multiple devices:
-                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
-                --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 1.1.eth1
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --api_stats_collection --env_file .env
+                --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 192.168.214.123
 
-                EXAMPLE-3:
-                Command Line Interface to run Zoom on multiple devices with Device Configuration:
-                python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+                Example-3:
+                Command Line Interface to run Zoom on multiple devices with Device Configuration
+                python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
                 --upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
 
-                EXAMPLE-4:
-                Command Line Interface to run Zoom with Groups and Profiles:
-                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
-                --wait_time 30 --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
+                Example-4:
+                Command Line Interface to run Zoom on multiple devices with Groups and Profiles
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
+                --wait_time 30  --group_name group1,group2 --profile_name netgear5g,netgear2g --file_name grplaptops.csv --zoom_host 1.95 --upstream_port 1.1.eth1
+
+                Example-5:
+                Command Line Interface to run Zoom test with robo feature
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123 --robo_ip 192.168.200.131 --coordinates 1,2 --rotations 30,40 --do_robo --api_stats_collection --env_file .env --download_csv
+
+                Example-6:
+                Command Line Interface to get Mos Score in the report:
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
+                --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 1.1.eth1 --api_stats_collection --env_file .env --download_csv
+
+                Example-7:
+                Command Line Interface to run Zoom test with robo feature and BS:
+                python3 lf_interop_zoom.py --lanforge_ip "10.17.1.208" --signin_email "demo@gmail.com" --signin_passwd "demo123" --participants 2 --audio --video --upstream_port 10.17.1.68 --robo_ip 127.0.0.1:6000
+                --coordinates 1,2 --cycles 2 --do_bs --api_stats_collection --env_file .env --bssids 00:11:22:33:44:55,66:77:88:99:AA:BB
             """),
         )
         parser.add_argument(
             "--duration",
             type=int,
-            required=True,
             help="Duration of the Zoom meeting in minutes",
         )
         parser.add_argument(
@@ -4047,7 +4065,7 @@ def main():
             "--signin_passwd", type=str, required=True, help="Sign-in password"
         )
         parser.add_argument(
-            "--participants", type=int, required=True, help="no of participanrs"
+            "--participants", type=int, required=True, help="Number of participants in the Zoom meeting"
         )
         parser.add_argument("--audio", action="store_true")
         parser.add_argument("--video", action="store_true")
@@ -4055,7 +4073,7 @@ def main():
             "--wait_time",
             type=int,
             default=30,
-            help="time set to wait for the csv files",
+            help="Time set to wait for the CSV files",
         )
         parser.add_argument("--log_level", help="Level of the logs to be dispalyed")
         parser.add_argument("--lf_logger_config_json", help="lf_logger config json")
@@ -4404,15 +4422,6 @@ def main():
             cycles=args.cycles,
             bssids=bssids,
             do_roam=args.do_roam,
-            sniff_radio_2g=args.sniff_radio_2g,
-            sniff_radio_5g=args.sniff_radio_5g,
-            sniff_radio_6g=args.sniff_radio_6g,
-            sniff_channel_2g=args.sniff_channel_2g,
-            sniff_channel_5g=args.sniff_channel_5g,
-            sniff_channel_6g=args.sniff_channel_6g,
-            wait_at_point=args.wait_at_point,
-            resource_ip=args.res_lf_ip,
-            ap_coordinates=args.ap_coordinates,
         )
         if args.download_csv:
             zoom_automation.download_csv = True
@@ -4670,15 +4679,16 @@ def main():
             logger.info("Waiting for Browser Cleanup in Laptops")
             time.sleep(10)
 
+            if zoom_automation.do_webui:
+                zoom_automation.stop_webui()
+
             if args.do_robo and args.api_stats_collection:
                 zoom_automation.generate_report_from_data()
             elif args.api_stats_collection:
                 zoom_automation.generate_report_from_api()
             time.sleep(5)
-            if zoom_automation.do_webui:
-                zoom_automation.stop_webui()
             zoom_automation.generic_endps_profile.cleanup()
-            zoom_automation.move_ping_logs()
+            # zoom_automation.move_ping_logs()
             logger.info("Done.")
 
 
