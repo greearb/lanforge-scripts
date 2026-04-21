@@ -32,6 +32,8 @@ pip_packages: list = [
     'simple-geometry',
     'websocket-client',
     'xlsxwriter',
+    'pytesseract',
+    'opencv-python',
 ]
 
 
