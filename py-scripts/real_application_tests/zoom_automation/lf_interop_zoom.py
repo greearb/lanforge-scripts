@@ -6,12 +6,13 @@ PURPOSE: lf_interop_zoom.py provides the available devices and allows the user t
 
 EXAMPLE-1:
 Command Line Interface to run Zoom with specified duration:
-python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123 --api_stats_collection --env_file .env
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123"
+--participants 3 --audio --video --upstream_port 192.168.214.123 --api_stats_collection --env_file .env
 
 EXAMPLE-2:
 Command Line Interface to run Zoom on multiple devices:
-python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --api_stats_collection --env_file .env
---resources 1.400,1.375 --zoom_host 1.95 --upstream_port 192.168.214.123
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123"
+--participants 3 --audio --video --api_stats_collection --env_file .env --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 192.168.214.123
 
 Example-3:
 Command Line Interface to run Zoom on multiple devices with Device Configuration
@@ -25,17 +26,19 @@ python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin
 
 Example-5:
 Command Line Interface to run Zoom test with robo feature
-python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123 --robo_ip 192.168.200.131 --coordinates 1,2 --rotations 30,40 --do_robo --api_stats_collection --env_file .env --download_csv
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123"
+--participants 3 --audio --video --upstream_port 192.168.214.123 --robo_ip 192.168.200.131 --coordinates 1,2 --rotations 30,40 --do_robo --api_stats_collection --env_file .env --download_csv
 
 Example-6:
 Command Line Interface to get Mos Score in the report:
-python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video
---resources 1.400,1.375 --zoom_host 1.95 --upstream_port 1.1.eth1 --api_stats_collection --env_file .env --download_csv
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123"
+--participants 3 --audio --video --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 1.1.eth1 --api_stats_collection --env_file .env --download_csv
 
 Example-7:
 Command Line Interface to run Zoom test with robo feature and BS:
-python3 lf_interop_zoom.py --lanforge_ip "10.17.1.208" --signin_email "demo@gmail.com" --signin_passwd "demo123" --participants 2 --audio --video --upstream_port 10.17.1.68 --robo_ip 127.0.0.1:6000
---coordinates 1,2 --cycles 2 --do_bs --api_stats_collection --env_file .env --bssids 00:11:22:33:44:55,66:77:88:99:AA:BB
+python3 lf_interop_zoom.py --lanforge_ip "10.17.1.208" --signin_email "demo@gmail.com" --signin_passwd "demo123"
+--participants 2 --audio --video --upstream_port 10.17.1.68 --robo_ip 127.0.0.1:6000 --coordinates 1,2 --cycles 2
+--do_bs --api_stats_collection --env_file .env --bssids 00:11:22:33:44:55,66:77:88:99:AA:BB
 
 
 NOTES:
@@ -881,7 +884,7 @@ class ZoomAutomation(Realm):
 
             # Iterate over the port interfaces to find a matching port
             for interface in response_port["interfaces"]:
-                for port, port_data in interface.items():
+                for port, _port_data in interface.items():
                     # Extract the first two segments of the port identifier to match with expected_eid
                     result = ".".join(port.split(".")[:2])
 
@@ -1140,7 +1143,7 @@ class ZoomAutomation(Realm):
                     self.stop_signal = True
                     return
 
-                for idx, coordinate in enumerate(self.bs_coord_result):
+                for _idx, coordinate in enumerate(self.bs_coord_result):
                     logger.info(f"Moving robot to coordinate: {coordinate}")
                     self.from_cord = self.to_cord
                     self.to_cord = coordinate
@@ -1320,7 +1323,7 @@ class ZoomAutomation(Realm):
             for hostname, os_type in zip(self.real_sta_hostname, self.real_sta_os_type)
         ]
 
-        for key, value in self.real_sta_data.items():
+        for _key, value in self.real_sta_data.items():
             if value["ostype"] == "windows":
                 self.windows = self.windows + 1
             elif value["ostype"] == "macos":
@@ -1873,7 +1876,7 @@ class ZoomAutomation(Realm):
         summary = {}
         count = 0
         host_device_key = None
-        for index, participant in enumerate(json_data):
+        for _index, participant in enumerate(json_data):
             participant_name = participant.get(
                 "user_name"
             ) or "Unknown Device {count}".format(count=count + 1)
@@ -3861,14 +3864,10 @@ class ZoomAutomation(Realm):
         recv_vals = []
 
         for client in self.real_sta_hostname:
-            device_key = client
-
-            def get_val(key):
-                val = data.get(device_key, {}).get(key)
-                return val if val is not None else 0
-
-            sent_vals.append(get_val(output_key))
-            recv_vals.append(get_val(input_key))
+            sent_val = data.get(client, {}).get(output_key)
+            recv_val = data.get(client, {}).get(input_key)
+            sent_vals.append(sent_val if sent_val is not None else 0)
+            recv_vals.append(recv_val if recv_val is not None else 0)
 
         bar_graph = lf_bar_graph_horizontal(
             _data_set=[sent_vals, recv_vals],
@@ -4018,17 +4017,18 @@ def main():
 
                 EXAMPLE-1:
                 Command Line Interface to run Zoom with specified duration:
-                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123 --api_stats_collection --env_file .env
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123"
+                --participants 3 --audio --video --upstream_port 192.168.214.123 --api_stats_collection --env_file .env
 
                 EXAMPLE-2:
                 Command Line Interface to run Zoom on multiple devices:
-                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --api_stats_collection --env_file .env
-                --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 192.168.214.123
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123"
+                --participants 3 --audio --video --api_stats_collection --env_file .env --resources 1.400,1.375 --zoom_host 1.95 --upstream_port 192.168.214.123
 
                 Example-3:
                 Command Line Interface to run Zoom on multiple devices with Device Configuration
-                python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000" --participants 2 --audio --video
-                --upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
+                python3 lf_interop_zoom.py --duration 1 --lanforge_ip "192.168.204.74" --signin_email "Demo@gmail.com" --signin_passwd "Demo@10203000"
+                --participants 2 --audio --video --upstream_port 1.1.eth1 --zoom_host 1.95 --resources 1.400,1.360 --ssid NETGEAR_2G_wpa2 --passwd Password@123 --encryp wpa2 --config
 
                 Example-4:
                 Command Line Interface to run Zoom on multiple devices with Groups and Profiles
@@ -4037,7 +4037,9 @@ def main():
 
                 Example-5:
                 Command Line Interface to run Zoom test with robo feature
-                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --upstream_port 192.168.214.123 --robo_ip 192.168.200.131 --coordinates 1,2 --rotations 30,40 --do_robo --api_stats_collection --env_file .env --download_csv
+                python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123"
+                --participants 3 --audio --video --upstream_port 192.168.214.123 --robo_ip 192.168.200.131 --coordinates 1,2 --rotations 30,40 --do_robo
+                --api_stats_collection --env_file .env --download_csv
 
                 Example-6:
                 Command Line Interface to get Mos Score in the report:
@@ -4046,8 +4048,9 @@ def main():
 
                 Example-7:
                 Command Line Interface to run Zoom test with robo feature and BS:
-                python3 lf_interop_zoom.py --lanforge_ip "10.17.1.208" --signin_email "demo@gmail.com" --signin_passwd "demo123" --participants 2 --audio --video --upstream_port 10.17.1.68 --robo_ip 127.0.0.1:6000
-                --coordinates 1,2 --cycles 2 --do_bs --api_stats_collection --env_file .env --bssids 00:11:22:33:44:55,66:77:88:99:AA:BB
+                python3 lf_interop_zoom.py --lanforge_ip "10.17.1.208" --signin_email "demo@gmail.com" --signin_passwd "demo123"
+                --participants 2 --audio --video --upstream_port 10.17.1.68 --robo_ip 127.0.0.1:6000 --coordinates 1,2 --cycles 2 --do_bs --api_stats_collection
+                --env_file .env --bssids 00:11:22:33:44:55,66:77:88:99:AA:BB
             """),
         )
         parser.add_argument(
