@@ -364,10 +364,13 @@ class Ping(Realm):
         logging.debug(self.generic_endps_profile.created_endp)
         results = self.json_get(
             "/generic/{}".format(','.join(self.generic_endps_profile.created_endp)))
-        if (len(self.generic_endps_profile.created_endp) > 1):
+        if (len(self.generic_endps_profile.created_endp) > 1) and 'endpoints' in results.keys():
             results = results['endpoints']
         else:
-            results = results['endpoint']
+            try:
+                results = results['endpoint']
+            except Exception as e:
+                logger.error(f"Endpoint not found {e}")
         return (results)
 
     def generate_remarks(self, station_ping_data):
