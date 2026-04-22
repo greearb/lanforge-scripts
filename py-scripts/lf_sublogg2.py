@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+import sys  # noqa F401
 import logging
+import importlib  # noqa F401
 
 logger = logging.getLogger(__name__)
 
