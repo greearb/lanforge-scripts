@@ -44,16 +44,16 @@ This script installs python3 webGUI package dependencies.
                 'xlsxwriter', 'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search',
                 'pyserial', 'pexpect-serial', 'scp', 'scipy', 'simple-geometry', 'kaleido', 'psutil', 'aiohttp', 'bs4',
                 'django', 'django-celery-beat', 'django-enum-choices', 'django-timezone-field',
-                'flower', 'jsonfield', 'matplotlib', 'psycopg2-binary', 'wheel', 'pytest', 'pytest-html', 'pytest-json',
+                'flower', 'jsonfield', 'psycopg2-binary', 'wheel', 'pytest', 'pytest-html', 'pytest-json',
                 'django-celery-results', 'celery', 'pytest-json-report', 'pytest-metadata', 'python-dateutil',
-                'requests', 'pillow', 'tabulate', 'selenium', 'scapy', 'redis', 'djangorestframework']
+                'requests', 'pillow', 'tabulate', 'selenium', 'scapy', 'redis', 'djangorestframework', 'httpx', 'channels', 'django-cors-headers']
     if args.pyjwt:
         packages.append('pyjwt')
     else:
         print('Not installing PyJWT')
     # Adding XiaB webGUI dependencies with --xiab flag
     if args.xiab:
-        packages.extend(['channels', 'django-cors-headers', 'uvicorn[standard]', 'python-dotenv'])
+        packages.extend(['uvicorn[standard]', 'python-dotenv'])
     else:
         print('Not installing XiaB dependencies')
     packages_installed = []
