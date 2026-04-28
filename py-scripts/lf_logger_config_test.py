@@ -4,6 +4,7 @@ import sys
 import os
 import logging
 import importlib
+import argparse
 
 import lf_sublogg
 # import time
@@ -47,12 +48,31 @@ class lf_local_log_method:
 
 def main():
 
+    help_summary = '''\
+    lf_logger_config_test.py is an example on how to use json input to configure the logger
+'''
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--log_level', help='Set logging level: debug | info | warning | error | critical')
+
+    parser.add_argument('--help_summary',
+                        default=None,
+                        action="store_true",
+                        help='Show summary of what this script does')
+
+    args = args = parser.parse_args()
+
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+
     # Configure the logging class to configure the root logger
     # properties
     logger_config = lf_logger_config.lf_logger_config()
 
     # Example of setting the level to debug for base config
-    logger_config.set_level_debug()
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
 
     # example of different time stap
     # logger_config.set_asctime()
