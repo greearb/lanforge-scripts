@@ -6584,9 +6584,7 @@ class L3VariableTime(Realm):
                 if key in self.existing_station_lists:
                     device_name = key
                     file_path = value.name
-                    print("fileeepath", file_path)
                     df = pd.read_csv(file_path)
-                    print(df.columns)
                     df = df[['Time', 'AP', 'Channel', 'Robot X', 'Robot Y', 'From Coordinate', 'To Coordinate']]
                     df.rename(columns={
                         'Time': 'TIMESTAMP',
@@ -6628,7 +6626,7 @@ class L3VariableTime(Realm):
             mask = merged_df[col] != merged_df[col].shift()
             filtered_df = merged_df.loc[mask]
             if self.bssids:
-                filtered_df = df.loc[mask & df[col].isin(self.bssids)]
+                filtered_df = merged_df.loc[mask & merged_df[col].isin(self.bssids)]
 
             bssid_list = filtered_df[col].tolist()
             channel_list = filtered_df[channel_col].tolist()
