@@ -712,6 +712,40 @@ class inspect_sql:
                                         self.test_result = "Good"
                                         background = self.background_green
                                         self.performance_good += 1
+                                # negative logic like Stations Failed IP if zero is a good thing
+                                elif 'Max Stations IP' in df_data_1['short-description']:
+                                    if ((float(df_data_2['numeric-score']) == 0.0)):
+                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
+                                        background = self.background_red
+                                        self.performance_critical += 1
+                                        self.test_result = "Critical"
+                                    else:
+                                        logger.info("Performance Good {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
+                                        self.test_result = "Good"
+                                        background = self.background_green
+                                        self.performance_good += 1
+                                elif 'Auth Timeouts' in df_data_1['short-description']:
+                                    if ((float(df_data_2['numeric-score']) != 0.0)):
+                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
+                                        background = self.background_red
+                                        self.performance_critical += 1
+                                        self.test_result = "Critical"
+                                    else:
+                                        logger.info("Performance Good {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
+                                        self.test_result = "Good"
+                                        background = self.background_green
+                                        self.performance_good += 1
+                                elif 'Association Rejects' in df_data_1['short-description']:
+                                    if ((float(df_data_2['numeric-score']) != 0.0)):
+                                        logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
+                                        background = self.background_red
+                                        self.performance_critical += 1
+                                        self.test_result = "Critical"
+                                    else:
+                                        logger.info("Performance Good {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
+                                        self.test_result = "Good"
+                                        background = self.background_green
+                                        self.performance_good += 1
                                 else:
                                     logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                     self.test_result = "Critical"
