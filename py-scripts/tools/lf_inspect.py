@@ -435,7 +435,7 @@ class inspect_sql:
                                             background = self.background_green
                                             self.performance_good += 1
                                     elif 'Auth Timeouts' in df_data_1['short-description']:
-                                        if ((float(df_data_2['numeric-score']) == 0.0)):
+                                        if ((float(df_data_2['numeric-score']) != 0.0)):
                                             logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                             background = self.background_red
                                             self.performance_critical += 1
@@ -446,7 +446,7 @@ class inspect_sql:
                                             background = self.background_green
                                             self.performance_good += 1
                                     elif 'Association Rejects' in df_data_1['short-description']:
-                                        if ((float(df_data_2['numeric-score']) == 0.0)):
+                                        if ((float(df_data_2['numeric-score']) != 0.0)):
                                             logger.info("Performance Critical {percent} {description}".format(percent=percent_delta, description=df_data_2['short-description']))
                                             background = self.background_red
                                             self.performance_critical += 1
