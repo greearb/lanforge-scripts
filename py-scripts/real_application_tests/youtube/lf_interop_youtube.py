@@ -1805,7 +1805,7 @@ class Youtube(Realm):
                 is_sniffing = False
                 cycle_map = {}
 
-                test_folder_name = time.strftime("%Y-%m-%d_%H-%M-%S") + "_" + self.test_name
+                test_folder_name = time.strftime("%Y-%m-%d_%H-%M-%S") + "_" + "youtube_roaming"
 
                 # -----------------------------
                 # INITIAL POSITION
