@@ -1757,6 +1757,7 @@ class Youtube(Realm):
                     sniff_channel=self.sniff_channel_6g,
                     moni_name="moni6g"
                 )
+                sniffer_obj1.clear_monitor_interfaces()
                 if self.do_webUI:
                         self.report = lf_report(_output_pdf='youtube_streaming.pdf',
                                                 _output_html='youtube_streaming.html',
@@ -1959,11 +1960,11 @@ class Youtube(Realm):
 
             finally:
 
-                if self.do_webUI:
-                    sniffer.run_command_and_fetch_folder(remote_folder, self.ui_report_dir,self.management_roam_time,self.data_roam_time, "Youtube")
-                else:
-                    print("entereddddddd",self.report)
-                    sniffer.run_command_and_fetch_folder(remote_folder, self.report,self.management_roam_time,self.data_roam_time, "Youtube")
+                # if self.do_webUI:
+                #     sniffer.run_command_and_fetch_folder(remote_folder, self.ui_report_dir,self.management_roam_time,self.data_roam_time, "Youtube")
+                # else:
+                #     print("entereddddddd",self.report)
+                #     sniffer.run_command_and_fetch_folder(remote_folder, self.report,self.management_roam_time,self.data_roam_time, "Youtube")
                 if sniffer:
                     sniffer.close()
                 sniffer_obj1.clear_monitor_interfaces()
