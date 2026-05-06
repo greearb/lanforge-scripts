@@ -2172,9 +2172,23 @@ EXAMPLE: For multiple station and multiple iteration
             ''')
     required = parser.add_argument_group('Required arguments')
 
-    required.add_argument('--mgr', help='lanforge ip', default="192.168.100.221")
-    required.add_argument('--lanforge_port', help='lanforge port', type=int, default=8080)
-    required.add_argument('--lanforge_ssh_port', help='lanforge ssh port', type=int, default=22)
+    # LANforge connection settings
+    parser.add_argument("-m", "--mgr",
+                        dest="lanforge_ip",
+                        type=str,
+                        default="localhost",
+                        help="Hostname or IP address of the LANforge GUI machine (localhost is default)")
+    parser.add_argument("-o", "--port", "--lanforge_port",
+                        dest="lanforge_port",
+                        type=int,
+                        default=8080,
+                        help="IP Port the LANforge GUI is listening on (8080 is default)")
+    parser.add_argument("--lf_ssh_port", "--lanforge_ssh_port",
+                        dest="lanforge_ssh_port",
+                        type=int,
+                        default=22,
+                        help="LANforge system SSH port used to SSH in and pull reports")
+
     required.add_argument('--ap1_bssid', type=str, help='AP1 bssid', default="68:7d:b4:5f:5c:3b")
     required.add_argument('--ap2_bssid', type=str, help='AP2 bssid', default="14:16:9d:53:58:cb")
     required.add_argument('--twog_radios', help='Twog radio', default=None)
