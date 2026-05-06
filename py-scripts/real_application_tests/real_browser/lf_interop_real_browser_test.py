@@ -317,6 +317,7 @@ class RealBrowserTest(Realm):
         if self.do_robo:
             self.robo_ip = robo_ip
             self.robo_obj = robo_base_class.RobotClass(robo_ip=self.robo_ip, angle_list=angles_list)
+            self.robo_obj.robo_ip = self.robo_ip
             self.coordinates_list = coordinates_list
             self.angles_list = angles_list
             self.current_cord = current_cord
@@ -904,7 +905,7 @@ class RealBrowserTest(Realm):
             if user == '':
                 self.serial_list.append('')
             else:
-                if type(interop_mobile_data) is dict:
+                if isinstance(interop_mobile_data, dict):
                     serial_no = interop_mobile_data.get("name").split('.')[2]
                     self.serial_list.append(serial_no)
                 else:
@@ -1632,6 +1633,11 @@ class RealBrowserTest(Realm):
             self.run_robo_bandsteering_test(cx_batch)
             return
 
+        if self.do_robo and self.dowebgui:
+            # Generates nav_data.json in the webgui folder (used by base_class.py)
+            base_dir = os.path.dirname(os.path.dirname(self.result_dir))
+            nav_data = os.path.join(base_dir, 'nav_data.json')
+            self.robo_obj.nav_data_path = nav_data
         if self.do_robo and not self.do_bandsteering:
             for coordinate in self.coordinates_list:
                 # self.robo_obj.ensure_battery_for_test(duration_min=self.duration, mins_per_percent=self.mins_per_percent)
@@ -3034,9 +3040,9 @@ class RealBrowserTest(Realm):
             if self.do_bandsteering:
                 self.add_bandsteering_bssid_section(self.report)
 
-            self.add_live_view_images_to_report()
-
+            # Capture live view images only if the test is initiated from the WebUI
             if self.dowebgui:
+                self.add_live_view_images_to_report()
                 os.chdir(self.original_dir)
             self.report.build_custom()
             self.report.build_footer()
