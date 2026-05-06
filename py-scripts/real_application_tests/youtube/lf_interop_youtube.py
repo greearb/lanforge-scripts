@@ -331,6 +331,8 @@ class Youtube(Realm):
         self.rotations_enabled = rotations_enabled
         self.pause = False
         self.cycles = cycles
+        self.sniffer = None
+        self.remote_folder = None
         if self.do_robo:
             self.robo_obj = robo_base_class.RobotClass(
                 robo_ip=self.robo_ip,
@@ -1959,14 +1961,15 @@ class Youtube(Realm):
                 logger.error(traceback.format_exc())
 
             finally:
-
+                self.sniffer = sniffer
+                self.remote_folder = remote_folder
                 # if self.do_webUI:
                 #     sniffer.run_command_and_fetch_folder(remote_folder, self.ui_report_dir,self.management_roam_time,self.data_roam_time, "Youtube")
                 # else:
                 #     print("entereddddddd",self.report)
                 #     sniffer.run_command_and_fetch_folder(remote_folder, self.report,self.management_roam_time,self.data_roam_time, "Youtube")
-                if sniffer:
-                    sniffer.close()
+                # if sniffer:
+                #     sniffer.close()
                 sniffer_obj1.clear_monitor_interfaces()
                 self.stop_bandsteering_test()
 
@@ -2924,6 +2927,21 @@ NOTES:
         logger.error("An exception occurred:\n%s", tb_str)
     finally:
         if not ('--help' in sys.argv or '-h' in sys.argv):
+            if(args.do_roaming):
+                if args.do_webUI:
+                    youtube.stop()
+                    youtube.create_report(youtube.stats_api_response, youtube.ui_report_dir, iot_summary=iot_summary)
+                    youtube.sniffer.run_command_and_fetch_folder(
+                        youtube.remote_folder,
+                        youtube.ui_report_dir,
+                        youtube.management_roam_time,
+                        youtube.data_roam_time,
+                        "Youtube Streaming"
+                    )
+                    youtube.stop_webui_test()
+                    youtube.sniffer.close()
+                    return 
+                    
             if args.do_webUI:
                 youtube.stop_webui_test()
             youtube.stop()
@@ -2935,6 +2953,7 @@ NOTES:
                 youtube.create_report(youtube.stats_api_response, '', iot_summary=iot_summary)
             logging.info("Waiting for Cleanup of Browsers in Devices")
             time.sleep(10)
+
 
 
 if __name__ == "__main__":
