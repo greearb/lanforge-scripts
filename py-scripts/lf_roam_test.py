@@ -190,8 +190,8 @@ class HardRoam(Realm):
                  debug=False,
                  soft_roam=False,
                  sta_type=None,
-                 multicast=None
-                 ):
+                 multicast=None,
+                 **kwargs):
         super().__init__(lanforge_ip,
                          lanforge_port)
         self.lanforge_ip = lanforge_ip
@@ -2189,20 +2189,71 @@ EXAMPLE: For multiple station and multiple iteration
                         default=22,
                         help="LANforge system SSH port used to SSH in and pull reports")
 
-    required.add_argument('--ap1_bssid', type=str, help='AP1 bssid', default="68:7d:b4:5f:5c:3b")
-    required.add_argument('--ap2_bssid', type=str, help='AP2 bssid', default="14:16:9d:53:58:cb")
-    required.add_argument('--twog_radios', help='Twog radio', default=None)
-    required.add_argument('--fiveg_radios', help='Fiveg radio', default="1.1.wiphy1")
-    required.add_argument('--sixg_radios', help='Sixg radio', default=None)
-    required.add_argument('--band', help='eg. --band "twog" or sixg', default="fiveg")
-    required.add_argument('--sniff_radio', help='eg. --sniff_radio "wiphy2', default="wiphy2")
-    required.add_argument('--num_sta', help='eg. --num_sta 1', type=int, default=1)
-    required.add_argument('--ssid_name', help='eg. --ssid_name "ssid_5g"', default="RoamAP5g")
-    required.add_argument('--security', help='eg. --security "wpa2"', default="wpa2")
-    required.add_argument('--security_key', help='eg. --security_key "something"', default="something")
-    required.add_argument('--upstream', help='eg. --upstream "eth2"', default="eth2")
+    # Test settings
+    required.add_argument('--band',
+                          default="fiveg",
+                          help="Band in which to run test (e.g. 'fiveg')")
+    required.add_argument("--iters", "--iteration", "--iterations",
+                          dest="iteration",
+                          type=int,
+                          default=1,
+                          help="Number of test iterations")
+
+    required.add_argument('--ap1_bssid',
+                          dest="c1_bssid",
+                          type=str,
+                          default="68:7d:b4:5f:5c:3b",
+                          help='AP1 bssid')
+    required.add_argument('--ap2_bssid',
+                          dest="c2_bssid",
+                          type=str,
+                          default="14:16:9d:53:58:cb",
+                          help='AP2 bssid')
+
+    # Packet capture settings
+    required.add_argument('--sniff_radio',
+                          default="wiphy2",
+                          help="Radio used for packet capture")
+
+    # Station creation settings
+    required.add_argument('--num_sta',
+                          type=int,
+                          default=1,
+                          help="Number of stations to create")
+
+    required.add_argument('--twog_radios',
+                          dest="twog_radio",
+                          default=None,
+                          help="2.4 GHz radios (used for station creation)")
+    required.add_argument('--fiveg_radios',
+                          dest="fiveg_radio",
+                          default="1.1.wiphy1",
+                          help="5 GHz radios (used for station creation)")
+    required.add_argument('--sixg_radios',
+                          dest="sixg_radio",
+                          default="1.1.wiphy1",
+                          help="6 GHz radios (used for station creation)")
+
+    required.add_argument("--ssid", "--ssid_name",
+                          type=str,
+                          default="RoamAP5g",
+                          help="Common SSID for AP DUTs (used for station creation)")
+    required.add_argument('--security',
+                          type=str,
+                          default="wpa2",
+                          help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
+    required.add_argument("--password", "--security_key",
+                          dest="security_key",
+                          type=str,
+                          default="something")
+
+    required.add_argument('--upstream',
+                          type=str,
+                          default="eth2",
+                          help="Upstream port for traffic generation")
+
+    # TODO: Cleanup and move to respective sections
     required.add_argument('--duration', help='duration', default=None)
-    required.add_argument('--iteration', help='Number of iterations', type=int, default=1)
     required.add_argument('--channel', help='Channel', type=str, default="40")
     required.add_argument('--option', help='eg. --option "ota', default="ota")
     required.add_argument('--iteration_based', help='Iteration based', default=False, action='store_true')
@@ -2222,6 +2273,7 @@ EXAMPLE: For multiple station and multiple iteration
 
     optional = parser.add_argument_group('Optional arguments')
 
+    # AP controller parameters
     optional.add_argument('--scheme', help='', default="ssh")
     optional.add_argument('--dest', help='', default="localhost")
     optional.add_argument('--user', help='', default="admin")
@@ -2240,63 +2292,17 @@ EXAMPLE: For multiple station and multiple iteration
 
 
 def main():
-    help_summary = '''\
-    The script is designed to support both hard and soft roaming, ensuring a smooth transition for devices between
-    access points (APs). Additionally, the script captures packets in two scenarios: when a device is connected to
-    an AP and when it roams from one AP to another. These captured packets help analyze the performance and stability
-    of the roaming process. In essence, the script serves as a thorough test for assessing how well APs handle
-    roaming and the overall network stability when clients move between different access points.
-
-    The roaming test will create stations with advanced/802.1x and 11r key management, create CX traffic between upstream
-    port and stations, run traffic and generate a report.
-            '''
-
     args = parse_args()
 
-    # help summary
+    help_summary = "This script will test station roaming, both hard (forced) and soft (attenuation-based)" \
+                   "and generate a report upon completion. Support for packet capture is also included."
+
     if args.help_summary:
         print(help_summary)
         exit(0)
 
-    obj = HardRoam(lanforge_ip=args.mgr,
-                   lanforge_port=args.lanforge_port,
-                   lanforge_ssh_port=args.lanforge_ssh_port,
-                   c1_bssid=args.ap1_bssid,
-                   c2_bssid=args.ap2_bssid,
-                   fiveg_radio=args.fiveg_radios,
-                   twog_radio=args.twog_radios,
-                   sixg_radio=args.sixg_radios,
-                   band=args.band,
-                   sniff_radio_=args.sniff_radio,
-                   num_sta=args.num_sta,
-                   security=args.security,
-                   security_key=args.security_key,
-                   ssid=args.ssid_name,
-                   upstream=args.upstream,
-                   duration=args.duration,
-                   iteration=args.iteration,
-                   channel=args.channel,
-                   option=args.option,
-                   duration_based=args.duration_based,
-                   iteration_based=args.iteration_based,
-                   dut_name=args.dut_name,
-                   traffic_type=args.traffic_type,
-                   scheme="ssh",
-                   dest="localhost",
-                   user="admin",
-                   passwd="Cisco123",
-                   prompt="WLC2",
-                   series_cc="9800",
-                   ap="AP687D.B45C.1D1C",
-                   port="8888",
-                   band_cc="5g",
-                   timeout="10",
-                   identity=args.identity,
-                   ttls_pass=args.ttls_pass,
-                   soft_roam=args.soft_roam,
-                   sta_type=args.sta_type,
-                   multicast=args.multicast
-                   )
+    obj = HardRoam(**vars(args), sniff_radio_=args.sniff_radio)
+
     x = os.getcwd()
     print("Current Working Directory :", x)
     file = obj.generate_csv()
