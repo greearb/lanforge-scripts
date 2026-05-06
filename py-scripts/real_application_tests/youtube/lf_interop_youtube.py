@@ -289,6 +289,8 @@ class Youtube(Realm):
         self.android = 0
         self.wifi_interface_list = []
         self.devices_list = []
+        self.max_buffer = {}
+        self.min_buffer = {}
         self.hostname_to_station_map = {}
         self.csv_headers = [
             "Instance Name", "TimeStamp", "Viewport", "DroppedFrames",
@@ -737,6 +739,21 @@ class Youtube(Realm):
                         continue
                     device_name = key
                     stats = value
+                    buffer_val = stats.get("BufferHealth")
+                    if buffer_val not in [None, "", "NA"]:
+                        try:
+                            buffer_val = float(buffer_val)
+
+                            # Initialize if first time
+                            if device_name not in self.max_buffer:
+                                self.max_buffer[device_name] = buffer_val
+                                self.min_buffer[device_name] = buffer_val
+                            else:
+                                self.max_buffer[device_name] = max(self.max_buffer[device_name], buffer_val)
+                                self.min_buffer[device_name] = min(self.min_buffer[device_name], buffer_val)
+
+                        except Exception:
+                            pass
                     stop = data.get("stop", False)
 
                     if device_name not in self.stats_api_response:
@@ -1060,7 +1077,9 @@ class Youtube(Realm):
                                 _obj="Robot did not went to charge during this test")
             report.build_objective()
 
-    def create_report(self, data, ui_report_dir, iot_summary=None):
+    def create_report(self, data=None, ui_report_dir=None, iot_summary=None):
+        data = data or self.stats_api_response
+        ui_report_dir = ui_report_dir or self.ui_report_dir
 
         result_data = data
         for device, stats in result_data.items():
@@ -1185,8 +1204,8 @@ class Youtube(Realm):
 
                 dropped_frames = stats.get("DroppedFrames", "0")
                 total_frames = stats.get("TotalFrames", "0")
-                max_buffer_health = stats.get("maxbufferhealth", "0,0")
-                min_buffer_health = stats.get("minbufferhealth", "0.0")
+                max_buffer_health_list.append(self.max_buffer.get(hostname, 0.0))
+                min_buffer_health_list.append(self.min_buffer.get(hostname, 0.0))
                 try:
                     dropped_frames_list.append(int(dropped_frames))
                 except ValueError:
@@ -1196,16 +1215,6 @@ class Youtube(Realm):
                     total_frames_list.append(int(total_frames))
                 except ValueError:
                     total_frames_list.append(0)
-                try:
-                    max_buffer_health_list.append(float(max_buffer_health))
-                except ValueError:
-                    max_buffer_health_list.append(0.0)
-
-                try:
-                    min_buffer_health_list.append(float(min_buffer_health))
-                except ValueError:
-                    min_buffer_health_list.append(0.0)
-
             else:
                 viewport_list.append("NA")
                 current_res_list.append("NA")
@@ -1627,6 +1636,10 @@ class Youtube(Realm):
                     self.wifi_interface_list.append(port_name.split('.')[2])
 
     def perform_robo_test(self):
+        if self.do_webUI:
+            base_dir = os.path.dirname(os.path.dirname(self.ui_report_dir))
+            nav_data = os.path.join(base_dir, 'nav_data.json')  # To generate nav_data.json in webgui folder
+            self.robo_obj.nav_data_path = nav_data
         for coordinate in self.coordinates_list:
             self.robo_obj.wait_for_battery()
             matched, aborted = self.robo_obj.move_to_coordinate(coord=coordinate)
