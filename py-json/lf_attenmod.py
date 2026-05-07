@@ -50,7 +50,6 @@ class ATTENUATORProfile(LFCliBase):
             self.atten_data[param_name] = param_value
 
     def show(self):
-        logger.info("Show Attenuators.........")
         response = self.json_get("/attenuators/")
         if response is None:
             logger.critical(response)
