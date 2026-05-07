@@ -1839,12 +1839,12 @@ class HardRoam(Realm):
             # dataset = [[9, 7 , 4], [1, 3, 4]]
             graph = lf_graph.lf_bar_graph(_data_set=dataset,
                                           _xaxis_name="Total Number Of Stations = " + str(self.num_sta),
-                                          _yaxis_name="Total Number of iterations = " + str(self.iteration),
-                                          _xaxis_categories=x_axis_category, _label=["PASS", "FAIL"], _xticks_font=8,
+                                          _yaxis_name="Total Number of Iterations = " + str(self.iteration),
+                                          _xaxis_categories=x_axis_category, _label=["Pass", "Fail"], _xticks_font=8,
                                           _graph_image_name="11r roam client per iteration graph",
                                           _color=['forestgreen', 'red', 'blueviolet'], _color_edge='black',
                                           _figsize=(13, 5), _xaxis_step=1,
-                                          _graph_title="Client Performance Over %s Iterations" % (str(self.iteration)),
+                                          _graph_title="Client Roaming Performance Over %s Iteration(s)" % (str(self.iteration)),
                                           _show_bar_value=True, _text_font=12, _text_rotation=45, _enable_csv=True,
                                           _legend_loc="upper right", _legend_fontsize=12, _legend_box=(1.12, 1.01),
                                           _remove_border=['top', 'right', 'left'], _alignment={"left": 0.011}, )
@@ -1856,20 +1856,22 @@ class HardRoam(Realm):
             logging.info(str(e))
             print(str(e))
 
-    # Report generation function
     def generate_report(self, csv_list, kernel_lst, current_path=None):
         try:
             option, band_, station_, iteration__ = None, None, None, None
+
             if self.option == 'ota':
                 option = "OTA"
             else:
                 option = "OTD"
+
             if self.band == "fiveg":
-                band_ = "5G"
+                band_ = "5 GHz"
             elif self.band == "twog":
-                band_ = "2G"
+                band_ = "2 GHz"
             elif self.band == "sixg":
-                band_ = "6G"
+                band_ = "6 GHz"
+
             if int(self.num_sta) > 1:
                 station_ = "Multi"
             else:
@@ -1879,6 +1881,7 @@ class HardRoam(Realm):
                 iteration__ = "Multi"
             else:
                 iteration__ = "Single"
+
             if self.soft_roam:
                 dir_name = "Soft_Roam_Test_" + str(band_) + "_" + str(option) + "_" + str(station_) + "Client_" + str(
                     iteration__) + "_Iteration"
@@ -1889,8 +1892,13 @@ class HardRoam(Realm):
                     iteration__) + "_Iteration"
                 out_html = "hard_roam.html"
                 pdf_name = "Hard_roam_test.pdf"
-            report = lf_report_pdf.lf_report(_path="", _results_dir_name=dir_name, _output_html=out_html,
+
+            # Initialize report object
+            report = lf_report_pdf.lf_report(_path="",
+                                             _results_dir_name=dir_name,
+                                             _output_html=out_html,
                                              _output_pdf=pdf_name)
+
             if current_path is not None:
                 report.current_path = os.path.dirname(os.path.abspath(current_path))
             report_path = report.get_report_path()
@@ -1900,22 +1908,23 @@ class HardRoam(Realm):
                 report.move_data(directory="kernel_log", _file_name=str(i))
             date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
             test_setup_info = {
-                "DUT Name": self.dut_name,
+                "Name(s)": self.dut_name,
                 "SSID": self.ssid_name,
-                "Test Duration": self.test_duration,
             }
+
+            # Report title
             if self.soft_roam:
-                report.set_title("SOFT ROAM (11r) TEST")
+                report.set_title("Soft Roam (11r) Test")
             else:
                 if self.sta_type == "normal":
-                    report.set_title("HARD ROAM TEST")
+                    report.set_title("Hard Roam Test")
                 else:
-                    report.set_title("HARD ROAM (11r) TEST")
+                    report.set_title("Hard Roam (11r) Test")
             report.set_date(date)
             report.build_banner_cover()
             report.set_table_title("Test Setup Information")
             report.build_table_title()
-            report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
+            report.test_setup_table(value="Device Under Test", test_setup_data=test_setup_info)
             report.set_obj_html("Objective",
                                 "The Roaming test is a type of performance test that is performed on wireless Access Points (APs)"
                                 " to evaluate their ability to support 802.11r (Fast BSS Transition) standard for fast and seamless"
@@ -1934,7 +1943,7 @@ class HardRoam(Realm):
                                 " allowing for a faster and more secure transition. Soft roaming with 11r is designed to be seamless,"
                                 " allowing the device to move from one Access Point to another without any interruption in connectivity.")
             report.build_objective()
-            report.set_obj_html("Client per iteration Graph",
+            report.set_obj_html("Client Per-Iteration Graph",
                                 "The below graph provides information about out of total iterations how many times each client got Pass or Fail")
             report.build_objective()
             graph = self.generate_client_pass_fail_graph(csv_list=csv_list)
@@ -2001,58 +2010,63 @@ class HardRoam(Realm):
                     p = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Pcap file Name")
                     lf = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Log File")
                     r = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Remark")
+
                 if self.multicast == "True":
                     table = {
-                        "iterations": y,
-                        "Bssid before": z,
-                        "Bssid After": u,
-                        "PASS/FAIL": h,
+                        "Iteration": y,
+                        "BSSID Before Roam": z,
+                        "BSSID After Roam": u,
+                        "Pass/Fail": h,
                         "Remark": r
                     }
                 else:
                     table = {
-                        "iterations": y,
-                        "Bssid before": z,
-                        "Bssid After": u,
-                        "Roam Time(ms)": t,
-                        "PASS/FAIL": h,
-                        "pcap file name": p,
+                        "Iteration": y,
+                        "BSSID Before Roam": z,
+                        "BSSID After Roam": u,
+                        "Roam Time (ms)": t,
+                        "Pass/Fail": h,
+                        "Packet Capture File": p,
                         "Log File": lf,
                         "Remark": r
                     }
                 if self.multicast != "True":
                     if not self.log_file:
                         del table["Log File"]
-                print("Tabel Data :", table)
+
+                logger.debug("Report table data:", table)
                 test_setup = pd.DataFrame(table)
                 report.set_table_dataframe(test_setup)
                 report.build_table()
+
             if self.option == 'ota':
-                testname = 'over the air'
+                testname = "Over the air"
             else:
-                testname = 'over the ds'
+                testname = "Over the DS"
+
             test_input_infor = {
-                "LANforge ip": self.lanforge_ip,
-                "LANforge port": self.lanforge_port,
-                "test start time": self.start_time,
-                "test end time": self.end_time,
+                "LANforge IP": self.lanforge_ip,
+                "LANforge API Port": self.lanforge_port,
+                "Test Start": self.start_time,
+                "Test End": self.end_time,
                 "Bands": self.band,
-                "Upstream": self.upstream,
-                "Stations": self.num_sta,
-                "iterations": self.iteration,
+                "Iterations": self.iteration,
+                "Upstream Port": self.upstream,
+                "Stations Count": self.num_sta,
                 "SSID": self.ssid_name,
                 "Security": self.security,
-                "Client mac": self.mac_data,
-                'Test': testname,
-                "Contact": "support@candelatech.com"
+                "Client MACs": self.mac_data,
+                "Test": testname,
             }
-            report.set_table_title("Test basic Information")
+
+            report.set_table_title("Test Basic Information")
             report.build_table_title()
             report.test_setup_table(value="Information", test_setup_data=test_input_infor)
             report.build_footer()
             report.write_html()
             report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
             return report_path
+
         except Exception as e:
             print(str(e))
             logging.info(str(e))
