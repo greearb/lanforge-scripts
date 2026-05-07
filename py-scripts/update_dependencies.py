@@ -34,6 +34,9 @@ pip_packages: list = [
     'xlsxwriter',
     'pytesseract',
     'opencv-python',
+    'flask',
+    'pytz',
+    'python-dotenv',
 ]
 
 
