@@ -346,10 +346,7 @@ class HardRoam(Realm):
                 sta_list.append(j)
         return sta_list
 
-    # Create N - number of clients of advanced configuration on lf
-    def create_n_clients(self, start_id=0, sta_prefix=None, num_sta=None, dut_ssid=None,
-                         dut_security=None, dut_passwd=None, radio=None):
-
+    def create_stations(self, radio):
         local_realm = realm.Realm(lfclient_host=self.lanforge_ip, lfclient_port=self.lanforge_port)
         station_profile = local_realm.new_station_profile()
 
@@ -361,9 +358,9 @@ class HardRoam(Realm):
             radio = self.sixg_radios
 
         logger.info(f"Using LANforge radio(s) {radio} for test station(s)")
-        station_list = LFUtils.portNameSeries(prefix_=sta_prefix,
-                                              start_id_=start_id,
-                                              end_id_=num_sta - 1,
+        station_list = LFUtils.portNameSeries(prefix_="sta",
+                                              start_id_=0,
+                                              end_id_=self.num_sta - 1,
                                               padding_number_=10000,
                                               radio=radio)
         if not self.soft_roam:
@@ -377,7 +374,7 @@ class HardRoam(Realm):
                 station_profile.set_command_flag("add_sta", "ft-roam-over-ds", 1)
 
         if self.sta_type == "11r-sae-802.1x":
-            dut_passwd = "[BLANK]"
+            self.security_key = "[BLANK]"
 
         # Settings for all stations
         station_profile.use_security(self.security, self.ssid_name, self.security_key)
@@ -413,7 +410,7 @@ class HardRoam(Realm):
                                            passwd=self.ttls_pass)
 
         # Create stations
-        logger.info(f"Creating {num_sta} test stations configurated for test AP SSID {dut_ssid}")
+        logger.info(f"Creating {self.num_sta} test stations configurated for test AP SSID {self.ssid_name}")
         logger.debug(f"Creating stations: {station_list}")
         station_profile.create(radio=radio, sta_names_=station_list)
 
@@ -447,7 +444,7 @@ class HardRoam(Realm):
             # exit()
             return True
         else:
-            logger.error(f"One or more stations did not connect to test AP SSID {dut_ssid}")
+            logger.error(f"One or more stations did not connect to test AP SSID {self.ssid_name}")
             return False
 
     # create a multicast profile
@@ -659,18 +656,16 @@ class HardRoam(Realm):
             self.start_sniffer(radio_channel=self.channel, radio=self.sniff_radio,
                                test_name="roam_" + str(self.sta_type) + "_" + str(self.option) + "start" + "_",
                                duration=3600)
+
             if self.band == "twog":
                 self.local_realm.reset_port(self.twog_radios)
-                self.create_n_clients(sta_prefix="wlan1", num_sta=self.num_sta, dut_ssid=self.ssid_name,
-                                      dut_security=self.security, dut_passwd=self.security_key, radio=self.twog_radios)
-            if self.band == "fiveg":
+                self.create_stations(radio=self.twog_radios)
+            elif self.band == "fiveg":
                 self.local_realm.reset_port(self.fiveg_radios)
-                self.create_n_clients(sta_prefix="wlan", num_sta=self.num_sta, dut_ssid=self.ssid_name,
-                                      dut_security=self.security, dut_passwd=self.security_key, radio=self.fiveg_radios)
-            if self.band == "sixg":
+                self.create_stations(radio=self.fiveg_radios)
+            else:
                 self.local_realm.reset_port(self.sixg_radios)
-                self.create_n_clients(sta_prefix="wlan", num_sta=self.num_sta, dut_ssid=self.ssid_name,
-                                      dut_security=self.security, dut_passwd=self.security_key, radio=self.sixg_radios)
+                self.create_stations(radio=self.sixg_radios)
 
             # Check if all stations have ip or not
             sta_list = self.get_station_list()
