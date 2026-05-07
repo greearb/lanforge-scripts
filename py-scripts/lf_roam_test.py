@@ -356,17 +356,7 @@ class HardRoam(Realm):
             radio = self.twog_radios
         if self.band == "sixg":
             radio = self.sixg_radios
-        sta_list = self.get_station_list()
-        print("Available list of stations on lanforge-GUI :", sta_list)
-        logging.info(str(sta_list))
-        if not sta_list:
-            print("No stations are available on lanforge-GUI")
-            logging.info("No stations are available on lanforge-GUI")
-        else:
-            station_profile.cleanup(sta_list, delay=1)
-            LFUtils.wait_until_ports_disappear(base_url=local_realm.lfclient_url,
-                                               port_list=sta_list,
-                                               debug=True)
+
         print("Creating stations.")
         logging.info("Creating stations.")
         station_list = LFUtils.portNameSeries(prefix_=sta_prefix, start_id_=start_id,
