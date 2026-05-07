@@ -352,6 +352,7 @@ class HardRoam(Realm):
 
         local_realm = realm.Realm(lfclient_host=self.lanforge_ip, lfclient_port=self.lanforge_port)
         station_profile = local_realm.new_station_profile()
+
         if self.band == "fiveg":
             radio = self.fiveg_radios
         if self.band == "twog":
@@ -359,37 +360,34 @@ class HardRoam(Realm):
         if self.band == "sixg":
             radio = self.sixg_radios
 
-        logger.info("Creating stations.")
+        logger.info(f"Using LANforge radio(s) {radio} for test station(s)")
         station_list = LFUtils.portNameSeries(prefix_=sta_prefix, start_id_=start_id,
                                               end_id_=num_sta - 1, padding_number_=10000,
                                               radio=radio)
         if self.sta_type == "normal":
             if not self.soft_roam:
+                logger.info("Soft roam disabled")
                 station_profile.set_command_flag("add_sta", "disable_roam", 1)
-            if self.soft_roam:
-                logger.info("Soft roam true")
+            else:
+                logger.info("Soft roam enabled")
                 if self.option == "otds":
-                    print("OTDS present")
+                    logger.info("Enabling 802.11r FT-DS")
                     station_profile.set_command_flag("add_sta", "ft-roam-over-ds", 1)
 
         if self.sta_type == "11r-sae-802.1x":
             dut_passwd = "[BLANK]"
+
+        # Settings for all stations
         station_profile.use_security(dut_security, dut_ssid, dut_passwd)
         station_profile.set_number_template("00")
-
         station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-
         station_profile.set_command_param("set_port", "report_timer", 1500)
+        station_profile.set_command_flag("set_port", "rpt_timer", 1) # TODO: Is this redundant?
 
-        # connect station to particular bssid
-        # self.station_profile.set_command_param("add_sta", "ap", self.bssid[0])
-
-        station_profile.set_command_flag("set_port", "rpt_timer", 1)
         if self.sta_type == "11r":
             station_profile.set_command_flag("add_sta", "80211u_enable", 0)
             station_profile.set_command_flag("add_sta", "8021x_radius", 1)
             if not self.soft_roam:
-                # station_profile.ssid_pass = self.security_key
                 station_profile.set_command_flag("add_sta", "disable_roam", 1)
             if self.soft_roam:
                 logger.info("Soft roam true")
@@ -466,8 +464,6 @@ class HardRoam(Realm):
             if self.soft_roam:
                 if self.option == "otds":
                     station_profile.set_command_flag("add_sta", "ft-roam-over-ds", 1)
-            # station_profile.set_command_flag("add_sta", "disable_roam", 1)
-            # station_profile.set_command_flag("add_sta", "ap", "68:7d:b4:5f:5c:3f")
             station_profile.set_wifi_extra(key_mgmt="FT-EAP     ",
                                            pairwise="[BLANK]",
                                            group="[BLANK]",
@@ -493,35 +489,43 @@ class HardRoam(Realm):
                                            ipaddr_type_avail="NA",
                                            network_auth_type="NA",
                                            anqp_3gpp_cell_net="NA")
+
+        # Create stations
+        logger.info(f"Creating {num_sta} test stations configurated for test AP SSID {dut_ssid}")
+        logger.debug(f"Creating stations: {station_list}")
         station_profile.create(radio=radio, sta_names_=station_list)
-        logger.info("Waiting for ports to appear")
+
+        logger.info("Waiting stations to initialize")
         local_realm.wait_until_ports_appear(sta_list=station_list)
 
         if self.soft_roam:
-            for sta_name in station_list:
-                sta = sta_name.split(".")[2]  # TODO:  Use name_to_eid
-                # wpa_cmd = "roam " + str(checker2)
+            bgscan_config = 'bgscan="simple:30:-65:300"'
+            logger.info(f"Enabling background scanning for test stations: {bgscan_config}")
 
+            for sta_name in station_list:
+                logger.debug(f"Enabling background scanning for station {sta_name}")
+                sta = sta_name.split(".")[2]  # TODO:  Use name_to_eid
                 bgscan = {
                     "shelf": 1,
                     "resource": 1,  # TODO:  Do not hard-code resource, get it from radio eid I think.
                     "port": str(sta),
                     "type": 'NA',
-                    "text": 'bgscan="simple:30:-65:300"'
+                    "text": bgscan_config,
                 }
-
-                logger.info(str(bgscan))
                 self.local_realm.json_post("/cli-json/set_wifi_custom", bgscan)
-                # time.sleep(2)
 
+        # Bring up stations
+        logger.info("Setting stations to active state")
         station_profile.admin_up()
-        logger.info("Waiting for ports to admin up")
+
+        # Wait for stations to connect
+        logger.info("Waiting for stations to connect (associate and configure IP)")
         if local_realm.wait_for_ip(station_list):
-            logger.info("All stations got IPs")
+            logger.info("All stations connected")
             # exit()
             return True
         else:
-            logger.info("Stations failed to get IPs")
+            logger.error(f"One or more stations did not connect to test AP SSID {dut_ssid}")
             return False
 
     # create a multicast profile
