@@ -39,7 +39,6 @@ class AttenuatorSerial(LFCliBase):
 
     def show(self, debug=False):
         ser_no_list = []
-        print("Show Attenuators.........")
         response = self.json_get("/attenuators/")
         time.sleep(0.01)
         if response is None:
