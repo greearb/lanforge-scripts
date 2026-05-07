@@ -148,6 +148,9 @@ modify = importlib.import_module("py-scripts.lf_atten_mod_test")
 multicast_profile = importlib.import_module("py-json.multicast_profile")
 
 
+TIME_FORMAT = '%y %b %d %H:%M:%S'
+
+
 class HardRoam(Realm):
     def __init__(self, lanforge_ip=None,
                  lanforge_port=None,
@@ -727,16 +730,12 @@ class HardRoam(Realm):
             message = None, None
 
             # Start Timer
-            test_time = datetime.now()
-            test_time = test_time.strftime("%b %d %H:%M:%S")
-            print("Test started at ", test_time)
-            logging.info("Test started at " + str(test_time))
-            self.start_time = test_time
+            self.start_time = datetime.now().strftime(TIME_FORMAT)
+            logger.debug(f"Test start time: {self.start_time}")
 
             # Getting two BSSID's for roam
             self.final_bssid.extend([self.c1_bssid, self.c2_bssid])
-            print("Final BSSID's are :", self.final_bssid)
-            logging.info("Final BSSID's are :" + str(self.final_bssid))
+            logger.info(f"Roaming target BSSIDs: {self.final_bssid}")
 
             # If 'Soft Roam' is selected, initially set the attenuator to zero.
             if self.soft_roam:
@@ -1777,15 +1776,12 @@ class HardRoam(Realm):
                 else:
                     print("Stations failed to get ip")
                     logging.info("Stations failed to get ip")
-            test_end = datetime.now()
-            test_end = test_end.strftime("%b %d %H:%M:%S")
-            print("Test Ended At ", test_end)
-            logging.info("Test Ended At " + str(test_end))
-            self.end_time = test_end
-            s1 = test_time
-            s2 = test_end  # for example
-            fmt = '%b %d %H:%M:%S'
-            self.test_duration = datetime.strptime(s2, fmt) - datetime.strptime(s1, fmt)
+
+            self.end_time = datetime.now().strftime(TIME_FORMAT)
+            self.test_duration = datetime.strptime(self.end_time, TIME_FORMAT) - datetime.strptime(self.start_time, TIME_FORMAT)
+
+            logger.info("Test complete")
+
             return kernel_log, message
 
     # except Exception as e:
