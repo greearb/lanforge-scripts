@@ -11,16 +11,20 @@ jobs:
     name: Run Linter
     steps:
       - name: Check out source repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Cached for subsequent steps, see:
       # https://github.com/actions/setup-python#caching-packages-dependencies
       - name: Set up Python environment
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.7"
           cache: "pip"
 
+      # TODO: GitHub to deprecate Node 20 in June 2026. Unfortunately, this action does
+      # not offer an updated version, so will need to investigate an alternative or updated fork.
+      # https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+      # https://github.com/py-actions/flake8/issues/252
       - name: flake8 Lint
         uses: py-actions/flake8@v2
         with:
@@ -33,12 +37,12 @@ jobs:
     name: Help and Help Summary Check
     steps:
       - name: Check out source repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Cached for subsequent steps, see:
       # https://github.com/actions/setup-python#caching-packages-dependencies
       - name: Set up Python environment
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.7"
           cache: "pip"
