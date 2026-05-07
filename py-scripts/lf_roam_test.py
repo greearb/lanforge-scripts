@@ -353,142 +353,64 @@ class HardRoam(Realm):
         local_realm = realm.Realm(lfclient_host=self.lanforge_ip, lfclient_port=self.lanforge_port)
         station_profile = local_realm.new_station_profile()
 
-        if self.band == "fiveg":
-            radio = self.fiveg_radios
         if self.band == "twog":
             radio = self.twog_radios
-        if self.band == "sixg":
+        elif self.band == "fiveg":
+            radio = self.fiveg_radios
+        else:
             radio = self.sixg_radios
 
         logger.info(f"Using LANforge radio(s) {radio} for test station(s)")
-        station_list = LFUtils.portNameSeries(prefix_=sta_prefix, start_id_=start_id,
-                                              end_id_=num_sta - 1, padding_number_=10000,
+        station_list = LFUtils.portNameSeries(prefix_=sta_prefix,
+                                              start_id_=start_id,
+                                              end_id_=num_sta - 1,
+                                              padding_number_=10000,
                                               radio=radio)
-        if self.sta_type == "normal":
-            if not self.soft_roam:
-                logger.info("Soft roam disabled")
-                station_profile.set_command_flag("add_sta", "disable_roam", 1)
-            else:
-                logger.info("Soft roam enabled")
-                if self.option == "otds":
-                    logger.info("Enabling 802.11r FT-DS")
-                    station_profile.set_command_flag("add_sta", "ft-roam-over-ds", 1)
+        if not self.soft_roam:
+            logger.info("Soft roam disabled")
+            station_profile.set_command_flag("add_sta", "disable_roam", 1)
+        else:
+            logger.info("Soft roam enabled")
+
+            if self.option == "otds":
+                logger.info("Enabling 802.11r FT-DS")
+                station_profile.set_command_flag("add_sta", "ft-roam-over-ds", 1)
 
         if self.sta_type == "11r-sae-802.1x":
             dut_passwd = "[BLANK]"
 
         # Settings for all stations
-        station_profile.use_security(dut_security, dut_ssid, dut_passwd)
-        station_profile.set_number_template("00")
+        station_profile.use_security(self.security, self.ssid_name, self.security_key)
         station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         station_profile.set_command_param("set_port", "report_timer", 1500)
-        station_profile.set_command_flag("set_port", "rpt_timer", 1) # TODO: Is this redundant?
+        station_profile.set_command_flag("add_sta", "80211u_enable", 0)
 
-        if self.sta_type == "11r":
-            station_profile.set_command_flag("add_sta", "80211u_enable", 0)
-            station_profile.set_command_flag("add_sta", "8021x_radius", 1)
-            if not self.soft_roam:
-                station_profile.set_command_flag("add_sta", "disable_roam", 1)
-            if self.soft_roam:
-                logger.info("Soft roam true")
-                if self.option == "otds":
-                    print("OTDS present")
-                    station_profile.set_command_flag("add_sta", "ft-roam-over-ds", 1)
-            station_profile.set_wifi_extra(key_mgmt="FT-PSK     ",
-                                           pairwise="",
-                                           group="",
-                                           psk="",
-                                           eap="",
-                                           identity="",
-                                           passwd="",
-                                           pin="",
-                                           phase1="NA",
-                                           phase2="NA",
-                                           pac_file="NA",
-                                           private_key="NA",
-                                           pk_password="NA",
-                                           hessid="00:00:00:00:00:01",
-                                           realm="localhost.localdomain",
-                                           client_cert="NA",
-                                           imsi="NA",
-                                           milenage="NA",
-                                           domain="localhost.localdomain",
-                                           roaming_consortium="NA",
-                                           venue_group="NA",
-                                           network_type="NA",
-                                           ipaddr_type_avail="NA",
-                                           network_auth_type="NA",
-                                           anqp_3gpp_cell_net="NA")
-        if self.sta_type == "11r-sae":
+        # WPA3 requires PMF (802.11w)
+        if "sae" in self.sta_type:
             station_profile.set_command_flag("add_sta", "ieee80211w", 2)
-            station_profile.set_command_flag("add_sta", "80211u_enable", 0)
-            station_profile.set_command_flag("add_sta", "8021x_radius", 1)
-            # station_profile.set_command_flag("add_sta", "disable_roam", 1)
-            if not self.soft_roam:
-                station_profile.set_command_flag("add_sta", "disable_roam", 1)
-            if self.soft_roam:
-                if self.option == "otds":
-                    station_profile.set_command_flag("add_sta", "ft-roam-over-ds", 1)
-            station_profile.set_wifi_extra(key_mgmt="FT-SAE     ",
-                                           pairwise="",
-                                           group="",
-                                           psk="",
-                                           eap="",
-                                           identity="",
-                                           passwd="",
-                                           pin="",
-                                           phase1="NA",
-                                           phase2="NA",
-                                           pac_file="NA",
-                                           private_key="NA",
-                                           pk_password="NA",
-                                           hessid="00:00:00:00:00:01",
-                                           realm="localhost.localdomain",
-                                           client_cert="NA",
-                                           imsi="NA",
-                                           milenage="NA",
-                                           domain="localhost.localdomain",
-                                           roaming_consortium="NA",
-                                           venue_group="NA",
-                                           network_type="NA",
-                                           ipaddr_type_avail="NA",
-                                           network_auth_type="NA",
-                                           anqp_3gpp_cell_net="NA")
-        if self.sta_type == "11r-sae-802.1x":
-            station_profile.set_command_flag("set_port", "rpt_timer", 1)
-            station_profile.set_command_flag("add_sta", "ieee80211w", 2)
-            station_profile.set_command_flag("add_sta", "80211u_enable", 0)
-            station_profile.set_command_flag("add_sta", "8021x_radius", 1)
-            if not self.soft_roam:
-                station_profile.set_command_flag("add_sta", "disable_roam", 1)
-            if self.soft_roam:
-                if self.option == "otds":
-                    station_profile.set_command_flag("add_sta", "ft-roam-over-ds", 1)
-            station_profile.set_wifi_extra(key_mgmt="FT-EAP     ",
-                                           pairwise="[BLANK]",
-                                           group="[BLANK]",
-                                           psk="[BLANK]",
+
+        if self.sta_type == "11r" or self.sta_type == "11r-sae":
+            if self.sta_type == "11r":
+                key_mgmt = "FT-PSK"
+            else:
+                key_mgmt = "FT-SAE"
+
+            # Have to set 'Advanced/802.1X' flag in order for 'psk' argument to take.
+            # This works around limitation in the GUI which does a check for 'Key/Phrase'
+            # length when WPA/WPA2/WPA3 enabled (but that field is sadly also cleared here)
+            station_profile.set_wifi_extra(key_mgmt=key_mgmt,
+                                           psk=self.security_key)
+            station_profile.set_command_flag(command_name="add_sta",
+                                             param_name="8021x_radius",
+                                             value=1)  # Enable Advanced/802.1X flag
+        elif self.sta_type == "11r-sae-802.1x":
+            station_profile.set_command_flag(command_name="add_sta",
+                                             param_name="8021x_radius",
+                                             value=1)  # Enable Advanced/802.1X flag
+            station_profile.set_wifi_extra(key_mgmt="FT-EAP",
                                            eap="TTLS",
                                            identity=self.identity,
-                                           passwd=self.ttls_pass,
-                                           pin="",
-                                           phase1="NA",
-                                           phase2="NA",
-                                           pac_file="NA",
-                                           private_key="NA",
-                                           pk_password="NA",
-                                           hessid="00:00:00:00:00:01",
-                                           realm="localhost.localdomain",
-                                           client_cert="NA",
-                                           imsi="NA",
-                                           milenage="NA",
-                                           domain="localhost.localdomain",
-                                           roaming_consortium="NA",
-                                           venue_group="NA",
-                                           network_type="NA",
-                                           ipaddr_type_avail="NA",
-                                           network_auth_type="NA",
-                                           anqp_3gpp_cell_net="NA")
+                                           passwd=self.ttls_pass)
 
         # Create stations
         logger.info(f"Creating {num_sta} test stations configurated for test AP SSID {dut_ssid}")
