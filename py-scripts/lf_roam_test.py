@@ -373,7 +373,6 @@ class HardRoam(Realm):
                                               end_id_=num_sta - 1, padding_number_=10000,
                                               radio=radio)
         if self.sta_type == "normal":
-            station_profile.set_command_flag("add_sta", "power_save_enable", 1)
             if not self.soft_roam:
                 station_profile.set_command_flag("add_sta", "disable_roam", 1)
             if self.soft_roam:
@@ -408,7 +407,6 @@ class HardRoam(Realm):
                 if self.option == "otds":
                     print("OTDS present")
                     station_profile.set_command_flag("add_sta", "ft-roam-over-ds", 1)
-            station_profile.set_command_flag("add_sta", "power_save_enable", 1)
             station_profile.set_wifi_extra(key_mgmt="FT-PSK     ",
                                            pairwise="",
                                            group="",
@@ -444,7 +442,6 @@ class HardRoam(Realm):
             if self.soft_roam:
                 if self.option == "otds":
                     station_profile.set_command_flag("add_sta", "ft-roam-over-ds", 1)
-            station_profile.set_command_flag("add_sta", "power_save_enable", 1)
             station_profile.set_wifi_extra(key_mgmt="FT-SAE     ",
                                            pairwise="",
                                            group="",
@@ -481,7 +478,6 @@ class HardRoam(Realm):
                 if self.option == "otds":
                     station_profile.set_command_flag("add_sta", "ft-roam-over-ds", 1)
             # station_profile.set_command_flag("add_sta", "disable_roam", 1)
-            station_profile.set_command_flag("add_sta", "power_save_enable", 1)
             # station_profile.set_command_flag("add_sta", "ap", "68:7d:b4:5f:5c:3f")
             station_profile.set_wifi_extra(key_mgmt="FT-EAP     ",
                                            pairwise="[BLANK]",
