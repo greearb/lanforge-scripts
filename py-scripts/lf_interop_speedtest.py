@@ -60,6 +60,7 @@ import paramiko
 import argparse
 import pandas as pd
 from datetime import datetime
+import subprocess
 import threading
 try:
     from tabulate import tabulate
@@ -673,11 +674,68 @@ class SpeedTest(Realm):
 
         return upstream_port
 
+    def _kill_existing_process(self):
+        """
+        Kill any existing speedtest process using port 5050.
+
+        NOTE:
+        Use this only because port 5050 is dedicated for this speedtest Flask ingest server.
+        """
+        try:
+            print("[INFO] Checking and clearing existing process on port 5050...")
+
+            # Preferred Linux way
+            result = subprocess.run(
+                ["fuser", "-k", "5050/tcp"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+
+            if result.returncode == 0:
+                print("[INFO] Existing process on port 5050 killed successfully.")
+            else:
+                print("[INFO] No existing process found on port 5050.")
+
+            time.sleep(1)
+
+        except FileNotFoundError:
+            print("[WARN] fuser not found. Trying lsof + kill fallback.")
+
+            try:
+                result = subprocess.run(
+                    ["lsof", "-ti", ":5050"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+
+                pids = [pid.strip() for pid in result.stdout.splitlines() if pid.strip()]
+
+                if not pids:
+                    print("[INFO] No existing process found on port 5050.")
+                    return
+
+                for pid in pids:
+                    print(f"[INFO] Killing PID {pid} using port 5050")
+                    subprocess.run(["kill", "-9", pid])
+
+                time.sleep(1)
+
+            except Exception as e:
+                print(f"[WARN] Could not clear port 5050 using lsof fallback: {e}")
+
+        except Exception as e:
+            print(f"[WARN] Could not clear port 5050: {e}")
+
     def _start_ingest_server(self):
         """Start Flask server for ingesting speed test results via HTTP POST.
 
         Creates a local server on port 5050 to receive test results from clients.
         """
+        # Kill Exisiting process with 5050 port
+        self._kill_existing_process()
+
         try:
             from flask import Flask, request, jsonify
         except Exception:
@@ -724,7 +782,7 @@ class SpeedTest(Realm):
 
         def run():
             # IMPORTANT: bind to all interfaces
-            app.run(host='0.0.0.0', port=5050, debug=True, use_reloader=False)
+            app.run(host='0.0.0.0', port=5050, debug=False, use_reloader=False, threaded=True)
 
         import threading
         self._flask_thread = threading.Thread(target=run, daemon=True)
