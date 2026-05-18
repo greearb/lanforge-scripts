@@ -99,6 +99,7 @@ class ADB_DEVICES(Realm):
     def __init__(self, lanforge_ip=None,
                  port=8080,
                  _debug_on=False,
+                 app_flags='0'
                  ):
         super().__init__(lfclient_host=lanforge_ip,
                          debug_=_debug_on)
@@ -110,8 +111,9 @@ class ADB_DEVICES(Realm):
 
         # adb get url
         self.adb_url = '/adb/'
-
+        self.app_flags = app_flags
     # stop app
+
     async def stop_app(self, port_list=None):
         port_list = [] if port_list is None else port_list
         if (port_list == []):
@@ -275,6 +277,9 @@ class ADB_DEVICES(Realm):
                         username, server_ip, curr_ssid, curr_passwd, curr_encryption
                     )
                 )
+
+                if self.app_flags.lower() != 'na':
+                    adb_cmd += ' --es app_flags {}'.format(self.app_flags)
 
                 data = {
                     'shelf': 1,
@@ -915,7 +920,7 @@ class DeviceConfig(Realm):
     def __init__(self, lanforge_ip=None,
                  port=8080, file_name=None,
                  _debug_on=False, csv_name=None, create_csv=False,
-                 wait_time=60
+                 wait_time=60, app_flags='0'
                  ):
         super().__init__(lfclient_host=lanforge_ip,
                          debug_=_debug_on)
@@ -926,7 +931,7 @@ class DeviceConfig(Realm):
         self.csv_name = csv_name
         self.wait_time = wait_time
         # Objects for alptops and adb class
-        self.adb_obj = ADB_DEVICES(lanforge_ip=self.lanforge_ip)
+        self.adb_obj = ADB_DEVICES(lanforge_ip=self.lanforge_ip, app_flags=app_flags)
         self.laptop_obj = LAPTOPS(lanforge_ip=self.lanforge_ip)
 
         # available devices
@@ -942,6 +947,7 @@ class DeviceConfig(Realm):
 
         # wifi profiles
         self.profile_data = []
+        self.app_flags = app_flags
 
     def get_all_devices(self, adb=True, laptops=True):
         adb_devices = []
@@ -1862,14 +1868,17 @@ if __name__ == "__main__":
     parser.add_argument("--client_cert", type=str, default='NA', help='Specify the client certificate file name')
     parser.add_argument("--pk_passwd", type=str, default='NA', help='Specify the password for the private key')
     parser.add_argument("--pac_file", type=str, default='NA', help='Specify the pac file name')
-
+    parser.add_argument(
+        "--app_flags",
+        default='0',
+        help="Specify WiFi connection method for the WeCan app: 'NA' omits app_flags from adb command, 0 = 'connect to WiFi within app'/'best effort', 1 = 'none'/'connect to WiFi with gestures'.")
     args = parser.parse_args()
 
     if args.help_summary:
         print(help_summary)
         exit(0)
 
-    obj = DeviceConfig(lanforge_ip=args.lanforge_ip, file_name=args.file_name, wait_time=args.wait_time)
+    obj = DeviceConfig(lanforge_ip=args.lanforge_ip, file_name=args.file_name, wait_time=args.wait_time, app_flags=args.app_flags)
     if args.config:
         if args.ssid is None:
             logger.error('For configuration need to Specify SSID , Password(Optional for "open" type security) and Security')
