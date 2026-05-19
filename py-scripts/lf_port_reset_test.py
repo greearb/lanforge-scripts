@@ -328,9 +328,9 @@ INCLUDE_IN_README: False
                         help="Path to file to save graph_groups to on local system",
                         default=None)
     parser.add_argument("--local_lf_report_dir",
-                        help="Path to directory to pull remote report data to on local system",
+                        help="""--local_lf_report_dir <where to pull reports to>  default '' means put in current working directory,
+                            must also have --pull_report also set to pull reports""",
                         default="")
-
     parser.add_argument("--lf_logger_config_json",
                         help="Path to logger JSON configuration")
     parser.add_argument('--help_summary',
