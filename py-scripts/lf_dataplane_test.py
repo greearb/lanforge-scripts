@@ -702,9 +702,8 @@ INCLUDE_IN_README:
                         help="Path to file to save graph_groups to on local system",
                         default=None)
     parser.add_argument("--local_lf_report_dir",
-                        help="Path to directory to pull remote report data to on local system",
-                        default="")
-
+                        help="""--local_lf_report_dir <where to pull reports to>  default '' means put in current working directory,
+                            must also have --pull_report also set to pull reports""")
     # Logging configuration
     parser.add_argument("--lf_logger_config_json",
                         help="Path to logger JSON configuration")
@@ -727,6 +726,13 @@ def validate_args(args):
 
     This should be run after JSON overrides are applied.
     """
+    if not args.pull_report and args.local_lf_report_dir is not None:
+        logger.warning("""local_lf_report_dir set and --pull_report not set,
+              reports will not be pulled to the local_lf_report_dir
+              unless --pull_report also set""")
+    if args.local_lf_report_dir is None:
+        args.local_report_dir = ""
+
     # TODO: Can properly move some of this code to a helper, specifically mapping checks
     # Traffic configuration
     if args.traffic_directions:
