@@ -280,8 +280,8 @@ def main():
     parser.add_argument("--dut6", default="",
                         help="Specify 6Ghz DUT used by this test, example: 'TR398-DUT-r750 ruckus-r750-6g 4c:b1:cd:18:e8:eb (3)'")
     parser.add_argument("--local_lf_report_dir",
-                        help="--local_lf_report_dir <where to pull reports to>  default '' means put in current working directory",
-                        default="")
+                        help="""--local_lf_report_dir <where to pull reports to>  default '' means put in current working directory,
+                            must also have --pull_report also set to pull reports""")
     parser.add_argument('--help_summary', help='Show summary of what this script does', default=None,
                         action="store_true")
 
@@ -291,6 +291,13 @@ def main():
     if args.help_summary:
         print(help_summary)
         exit(0)
+
+    if not args.pull_report and args.local_lf_report_dir is not None:
+        print("""local_lf_report_dir set and --pull_report not set,
+              reports will not be pulled to the local_lf_report_dir
+              unless --pull_report also set""")
+    if args.local_lf_report_dir is None:
+        args.local_report_dir = ""
 
     cv_base_adjust_parser(args)
 
