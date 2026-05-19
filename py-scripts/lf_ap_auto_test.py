@@ -439,8 +439,8 @@ the options and how best to input data.
 
     parser.add_argument("--verbosity", default="5", help="Specify verbosity of the report values 1 - 11 default 5")
     parser.add_argument("--local_lf_report_dir",
-                        help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
-                        default="")
+                        help="""--local_lf_report_dir <where to pull reports to>  default '' means put in current working directory,
+                            must also have --pull_report also set to pull reports""")
     parser.add_argument("--lf_report_dir",
                         help="--lf_report_dir <where to pull reports from>  default '' put where dataplane script run from",
                         default="")
@@ -469,6 +469,13 @@ the options and how best to input data.
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
     cv_base_adjust_parser(args)
+
+    if not args.pull_report and args.local_lf_report_dir is not None:
+        logger.warning("""local_lf_report_dir set and --pull_report not set,
+              reports will not be pulled to the local_lf_report_dir
+              unless --pull_report also set""")
+    if args.local_lf_report_dir is None:
+        args.local_report_dir = ""
 
     CV_Test = ApAutoTest(lf_host=args.mgr,
                          lf_port=args.port,
