@@ -127,6 +127,19 @@ class Android():
         # adb get url
         self.adb_url = 'http://{}:{}/adb'.format(self.lanforge_ip, self.port)
 
+        self.adb_data = self.get_adb_data()
+
+    def get_adb_data(self):
+        """Fetch ADB device data from the LANforge API endpoint."""
+        try:
+            response = requests.get(self.adb_url, timeout=10)
+            response.raise_for_status()
+            adb_data = response.json()["devices"]
+        except Exception as e:
+            print(f"Failed to get adb data: {e}")
+            adb_data = []
+        return adb_data
+
     # request function to send json post request to the adb api
     def post_data(self, url, data):
         logger.info("ANDROID API {} {} {}".format(url, data, datetime.now()))
@@ -151,9 +164,10 @@ class Android():
         # Added key for adb request
         for port_data in port_list:
             shelf, resource, serial, band = port_data
+            resource = self.get_adb_resource_lf(serial)
             data = {
                 'shelf': 1,
-                'resource': 1,
+                'resource': resource,
                 'adb_id': serial,
                 # key=8  modification for adb API to add faster callback option
                 'key': 8,
@@ -183,10 +197,10 @@ class Android():
         data_list = []
         for port_data in port_list:
             shelf, resource, serial, *extra = port_data
-
+            resource = self.get_adb_resource_lf(serial)
             data = {
                 'shelf': 1,
-                'resource': 1,
+                'resource': resource,
                 'adb_id': serial,
                 # key=8  modification for adb API to add faster callback option
                 'key': 8,
@@ -196,6 +210,20 @@ class Android():
 
         loop = asyncio.get_event_loop()
         tasks = [loop.run_in_executor(None, self.post_data, self.post_url, data) for data in data_list]
+
+    def get_adb_resource_lf(self, serial):
+        """
+            Determine which LANforge (Manager LANforge / Resource LANforge)
+            the given Android device is connected to and return its resource.
+        """
+        if self.adb_data is None:
+            self.adb_data = self.get_adb_data()
+        for dev in self.adb_data:
+            key = next(iter(dev))
+            eid = key.split('.')
+            if eid[2] == serial:
+                return eid[1]
+        return None
 
     async def reboot_android(self, port_list=[], state='enable'):
         if (port_list == []):
@@ -212,10 +240,10 @@ class Android():
         data_list = []
         for port_data in port_list:
             shelf, resource, serial, *extra = port_data
-
+            resource = self.get_adb_resource_lf(serial)
             data = {
                 'shelf': 1,
-                'resource': 1,
+                'resource': resource,
                 'adb_id': serial,
                 # key=8  modification for adb API to add faster callback option
                 'key': 8,
@@ -238,10 +266,10 @@ class Android():
         data_list = []
         for port_data in port_list:
             shelf, resource, serial, *extra = port_data
-
+            resource = self.get_adb_resource_lf(serial)
             data = {
                 'shelf': 1,
-                'resource': 1,
+                'resource': resource,
                 'id': serial,
                 'type': 'adb'
             }
@@ -306,9 +334,10 @@ class Android():
             username = self.get_username(shelf, resource)
             # adding enable wifi option for android clients as a prerequisite step by-default
             command = 'shell svc wifi enable'
+            resource_lf = self.get_adb_resource_lf(serial)
             data = {
                 'shelf': 1,
-                'resource': 1,
+                'resource': resource_lf,
                 'adb_id': serial,
                 # key=8  modification for adb API to add faster callback option
                 'key': 8,
@@ -319,7 +348,7 @@ class Android():
             if (username is None):
                 # logger.warning('The device with serial {} not found'.format(serial))
                 username = \
-                    requests.get('http://{}:{}/adb/1/1/{}'.format(self.lanforge_ip, self.port, serial)).json()['devices'][
+                    requests.get('http://{}:{}/adb/1/{}/{}'.format(self.lanforge_ip, self.port, resource_lf, serial)).json()['devices'][
                         'user-name']
 
             # check if the encryption is personal
@@ -350,7 +379,7 @@ class Android():
                     curr_eap_identity, curr_passwd)
                 data = {
                     'shelf': 1,
-                    'resource': 1,
+                    'resource': resource_lf,
                     'adb_id': serial,
                     # key=8  modification for adb API to add faster callback option
                     'key': 8,
@@ -369,7 +398,7 @@ class Android():
                     username, self.server_ip, curr_ssid, curr_passwd, curr_encryption)
                 data = {
                     'shelf': 1,
-                    'resource': 1,
+                    'resource': resource_lf,
                     'adb_id': serial,
                     # key=8  modification for adb API to add faster callback option
                     'key': 8,
