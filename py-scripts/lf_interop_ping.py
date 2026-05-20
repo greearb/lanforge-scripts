@@ -159,14 +159,18 @@ class Ping(Realm):
                  total_floors: int = None,
                  get_live_view: bool = None,
                  result_dir: str = None,
+                 sta_to_res=False,
+                 sta_port=None,
+                 res_ip="",
+                 configure=False,
                  clients_type="",
                  use_existing_sta_list=False,
-                 existing_sta_list="",
-                 configure=None
+                 existing_sta_list=""
                  ):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.configure = configure
+        self.sta_to_res = sta_to_res
 
         if clients_type == "both" or (real and virtual):
             self.real = True
@@ -219,7 +223,7 @@ class Ping(Realm):
             self.sta_list = lis
             logger.info(f"final station list {self.sta_list}")
         self.use_existing_sta_list = use_existing_sta_list
-        
+
         self.ssid_list = []
         self.host = host
         self.lanforge_password = lanforge_password
@@ -279,13 +283,13 @@ class Ping(Realm):
         self.test_input_list = []
         self.percent_pac_loss = []
         self.wait_time = wait_time
-
-
-
-
-
-
-
+        self.sta_to_res = sta_to_res
+        self.sta_port = sta_port
+        self.sta_res_list = []
+        self.res_ip_list = res_ip.split(',') if res_ip else []
+        self.res_ip_dict = {}
+        self.cx_dev_map = {}
+        self.cx_ip_map = {}
         self.last_written_seq = {}
         # self.last_Result_per_Station = {}
         self.start_time = None
@@ -354,8 +358,9 @@ class Ping(Realm):
 
         # Need real stations to run interop test
         if (len(self.real_sta_list) == 0):
-            logger.error('There are no real devices in this testbed. Aborting test')
-            exit(0)
+            if not self.sta_to_res or (self.sta_to_res and len(self.res_ip_list) == 0):
+                logger.error('There are no real devices in this testbed. Aborting test')
+                exit(0)
 
         logging.info(self.real_sta_list)
 
@@ -404,6 +409,27 @@ class Ping(Realm):
         else:
             return True
 
+    # For removing generic endpoints that are created by sta_to_res scenario
+
+    def clear_cx_startswith(self, prefix="GENERIC"):
+        results = self.json_get(
+            "/generic/all?fields=name")
+        data = results  # replace with your actual variable
+
+        generic_names = []
+
+        for endpoint in data.get("endpoints", []):
+            for key, value in endpoint.items():
+                name = value.get("name", "")
+                if name.startswith(prefix):
+                    generic_names.append(name)
+                    self.generic_endps_profile.created_cx.append("CX_{}".format(name))
+                    self.generic_endps_profile.created_endp.append(name)
+        logging.info('Cleaning up generic endpoints if exists')
+        self.generic_endps_profile.cleanup()
+        self.generic_endps_profile.created_cx = []
+        self.generic_endps_profile.created_endp = []
+
     def create_generic_endp(self):
         # Virtual stations are tracked in same list as real stations, so need to separate them
         # in order to create generic endpoints for just the virtual stations
@@ -416,7 +442,31 @@ class Ping(Realm):
                 logging.error('Virtual client generic endpoint creation failed.')
                 exit(0)
 
-        if (self.real): 
+        if (self.real):
+            if self.sta_to_res:
+                print("innn")
+                print("IPS", self.res_ip_list)
+                self.update_ip_lists()
+                self.res_ip_list = set(self.res_ip_list)
+                ips = self.res_ip_list.copy()
+                print(ips)
+                if len(ips) == 0:
+                    logger.error("There are no IPs available , please check dev list / res_ip's")
+                    exit(0)
+                i = 1
+                eth_port = self.name_to_eid(self.sta_port)
+                for ip in ips:
+                    self.generic_endps_profile.dest = ip
+                    self.generic_endps_profile.name_prefix = "GENERIC_{}".format(ip)
+                    self.cx_dev_map["GENERIC_{}-{}".format(ip, eth_port[2])] = self.res_ip_dict.get(ip, "")
+                    self.cx_ip_map["GENERIC_{}-{}".format(ip, eth_port[2])] = ip
+                    if (self.generic_endps_profile.create(ports=[self.sta_port], sleep_time=.5)):
+                        logging.info('Real client generic endpoint creation completed.')
+                    else:
+                        logging.error('Real client generic endpoint creation failed.')
+                        exit(0)
+                    i += 1
+                return
             real_sta_os_types = [self.real_sta_data_dict[real_sta_name]['ostype'] for real_sta_name in self.real_sta_data_dict]
 
             if (self.generic_endps_profile.create(ports=self.real_sta_list, sleep_time=.5, real_client_os_types=real_sta_os_types)):
@@ -596,13 +646,22 @@ class Ping(Realm):
 
     # Sets the result json for real stations and also populates ping_stats and rtts which are used for generating remarks and graphs respectively
     def monitor_real(self, result_data, Devices, ping_stats, rtts, rtts_list):
-        devices = self.real_sta_list
+        devices = self.res_ip_list if self.sta_to_res else self.real_sta_list
         if isinstance(result_data, dict):
             for station in devices:
-                current_device_data = Devices.devices_data[station]
+                if self.sta_to_res:
+                    try:
+                        name = self.res_ip_dict.get(station, "")
+                        # logger.info(f"name {name} station {station}")
+                        current_device_data = Devices.devices_data[name]
+                        # logger.info(current_device_data)
+                    except BaseException:
+                        current_device_data = {}
+                else:
+                    current_device_data = Devices.devices_data[station]
 
                 # logging.info(current_device_data)
-                if (station in result_data['name']):
+                if (station in result_data['name'] and not self.sta_to_res) or self.sta_to_res:
                     # logging.info(result_data['last results'].split('\n'))
                     if len(result_data['last results']) != 0:
                         result = result_data['last results'].split('\n')
@@ -719,7 +778,18 @@ class Ping(Realm):
                     self.result_json[station]['rtts'] = rtts[station]
                     self.result_json[station]['remarks'] = self.generate_remarks(self.result_json[station])
 
-        
+        else:
+            for station in devices:
+                if self.sta_to_res:
+                    try:
+                        name = self.res_ip_dict.get(station, "")
+                        # logger.info(f"name {name} station {station}")
+                        current_device_data = Devices.devices_data[name]
+                        # logger.info(current_device_data)
+                    except BaseException:
+                        current_device_data = {}
+                else:
+                    current_device_data = Devices.devices_data[station]
 
                 # logger.info(f"current device data {current_device_data} for station {station}")
 
@@ -862,7 +932,12 @@ class Ping(Realm):
 
         for device_name, device_data in self.result_json.items():
 
-            if device_data['os'] == "Virtual":
+            if self.sta_to_res:
+                csv_file = os.path.join(
+                    csv_dir,
+                    f"sta_to_res_{device_name.replace('.', '_')}.csv"
+                )
+            elif device_data['os'] == "Virtual":
                 csv_file = os.path.join(
                     csv_dir,
                     f"sta_{device_name.replace('.', '_')}.csv"
@@ -1080,8 +1155,14 @@ class Ping(Realm):
 
         return (remarks)
 
+    def update_ip_lists(self):
+        for dev in self.real_sta_list:
+            ip = self.change_port_to_ip(upstream_port=dev, skip_info_logs=True)
+            if ip != "":
+                self.res_ip_list.append(ip)
+                self.res_ip_dict[ip] = dev
     # Converts an upstream port name to its corresponding IP address if it's not already in IP format.
-    
+
     def change_port_to_ip(self, upstream_port, skip_info_logs=False):
         if upstream_port.count('.') != 3:
             target_port_list = self.name_to_eid(upstream_port)
@@ -1289,6 +1370,9 @@ class Ping(Realm):
                 'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
                 'Duration (in minutes)': self.duration
             }
+        if self.sta_to_res:
+            del test_setup_info["Website / IP"]
+            test_setup_info["Ips"] = self.res_ip_list
         report.test_setup_table(
             test_setup_data=test_setup_info, value='Test Setup Information')
 
@@ -1482,10 +1566,17 @@ class Ping(Realm):
                         dataframe1 = pd.DataFrame(dataframe)
                         report.set_table_dataframe(dataframe1)
                         report.build_table()
-
             else:
-                dataframe1 = pd.DataFrame({
-                    'Wireless Client': self.device_names,
+                if self.sta_to_res:
+                    dataframe1 = pd.DataFrame({
+                        'Endpoint': [self.res_ip_dict.get(x, "") + "/" + x if self.res_ip_dict.get(x, False) else x for x in self.device_names],
+                        'Packets Sent': self.packets_sent,
+                        'Packets Received': self.packets_received,
+                        'Packets Loss': self.packets_dropped,
+                    })
+                else:
+                    dataframe1 = pd.DataFrame({
+                        'Wireless Client': self.device_names,
                         'Client Type': self.types,
                         'OS Type': os_type,
                         'MAC': self.device_mac,
@@ -1497,7 +1588,7 @@ class Ping(Realm):
                         'Packets Sent': self.packets_sent,
                         'Packets Received': self.packets_received,
                         'Packets Loss': self.packets_dropped,
-                })
+                    })
                 if self.expected_passfail_val or self.csv_name:
                     dataframe1[" Percentage of Packet loss %"] = self.percent_pac_loss
                     dataframe1['Expected Packet loss %'] = self.test_input_list
@@ -1565,9 +1656,16 @@ class Ping(Realm):
         report.set_csv_filename(graph_png)
         report.move_csv_file()
         report.build_graph()
-
-        if self.real and self.virtual:
+        if self.sta_to_res:
             dataframe2 = pd.DataFrame({
+                'Endpoint': [self.res_ip_dict.get(x, "") + "/" + x if self.res_ip_dict.get(x, False) else x for x in self.device_names],
+                'Min Latency (ms)': self.device_min,
+                'Average Latency (ms)': self.device_avg,
+                'Max Latency (ms)': self.device_max
+            })
+        else:
+            if self.real and self.virtual:
+                dataframe2 = pd.DataFrame({
                     'Wireless Client': self.device_names,
                     'Client Type': self.types,
                     'OS Type': ["Virtual Station" if x == "Virtual" else x for x in os_type],
@@ -1581,8 +1679,8 @@ class Ping(Realm):
                     'Average Latency (ms)': self.device_avg,
                     'Max Latency (ms)': self.device_max
                 })
-        elif self.real:
-            dataframe2 = pd.DataFrame({
+            elif self.real:
+                dataframe2 = pd.DataFrame({
                     'Wireless Client': self.device_names,
                     'Client Type': self.types,
                     'OS Type': os_type,
@@ -1596,8 +1694,8 @@ class Ping(Realm):
                     'Average Latency (ms)': self.device_avg,
                     'Max Latency (ms)': self.device_max
                 })
-        else:
-            dataframe2 = pd.DataFrame({
+            else:
+                dataframe2 = pd.DataFrame({
                     'Wireless Client': self.device_names,
                     'Client Type': self.types,
                     'OS Type': ["Virtual Station" if x == "Virtual" else x for x in os_type],
@@ -1611,6 +1709,7 @@ class Ping(Realm):
                     'Average Latency (ms)': self.device_avg,
                     'Max Latency (ms)': self.device_max
                 })
+
         report.set_table_dataframe(dataframe2)
         report.build_table()
 
@@ -1740,27 +1839,46 @@ def validate_args(args):
             logger.error("Existing station list must be specified when using existing stations")
             exit(1)
     if args.clients_type == "" and not args.real and not args.virtual:
+        if not args.sta_to_res:
+            logger.info('either --clients_type or --real or --virtual or --sta_to_res should be given')
+            logger.info('proceeding with ping test with all available real clients since no client type is specified and sta_to_res is not selected')
             args.clients_type = "real"
+            exit(1)
+        else:
+            args.clients_type = "real"
+            logger.info("proceeding with ping test based on sta_to_res scenario")
     if (args.clients_type == "virtual" or args.clients_type == "both" or args.virtual) and args.radio is None:
-        logger.error('--radio required')
-        exit(1)
+        if not args.use_existing_sta_list:
+            logger.error('--radio required')
+            exit(1)
     if (args.clients_type == "virtual" or args.clients_type == "both" or args.virtual) and args.ssid is None:
-        logger.error('--ssid required for virtual stations')
-        exit(1)
+        if not args.use_existing_sta_list or (args.clients_type == "both" and not args.use_default_config):
+            logger.error('--ssid required for virtual stations')
+            exit(1)
+        else:
+            if args.use_default_config is False:
+                logger.error('--ssid required for Wi-Fi configuration or enable --use_default_config')
+                exit(1)
+
     if args.ssid and args.passwd and args.group_name and args.profile_name:
         logger.error('either --ssid,--password,--security or --profile_name,--group_name should be given')
         exit(1)
     if args.use_default_config is False and args.group_name is None and args.file_name is None and args.profile_name is None:
         if args.ssid is None:
-            logger.error('--ssid required for Wi-Fi configuration')
-            exit(1)
+            if not args.use_existing_sta_list:
+                logger.error('--ssid required for virtual stations')
+                exit(1)
+            else:
+                if args.use_default_config is False:
+                    logger.error('--ssid required for Wi-Fi configuration or enable --use_default_config')
+                    exit(1)
 
-        if args.security.lower() != 'open' and args.passwd == '[BLANK]':
+        if not args.use_existing_sta_list and args.security.lower() != 'open' and args.passwd == '[BLANK]':
             logger.error('--passwd required for Wi-Fi configuration')
             exit(1)
 
-        if args.server_ip is None:
-            logger.error('--server_ip or upstream ip required for Wi-fi configuration')
+        if args.server_ip is None and args.sta_port is None:
+            logger.error('--server_ip or --sta_port required for Wi-fi configuration')
             exit(1)
         if args.group_name and (args.file_name is None or args.profile_name is None):
             logger.error("Please provide file name and profile name for group configuration")
@@ -1998,11 +2116,23 @@ effectively over the network and pinpoint potential issues affecting connectivit
     parser.add_argument('--expected_passfail_value', help='Enter the expected packet loss', default=None)
     parser.add_argument('--device_csv_name', type=str, help='Enter the csv name to store expected values', default=None)
     parser.add_argument('--wait_time', type=int, help="Enter the maximum wait time for configurations to apply", default=60)
+    parser.add_argument("--sta_to_res", action="store_true", help='Enables pinging from sta port to multiple')
+    parser.add_argument("--sta_port", type=str, default="eth1", help='station that uses to multiple clients')
+    # parser.add_argument("--sta_port", type=str,default="eth1" , help='station that uses to multiple clients')
+    parser.add_argument('--device_list', help='Enter the devices on which the test should be run', default=[])
+    parser.add_argument('--res_ip', help='resources IPs to ping from station, comma seperated', default=[])
     parser.add_argument("--existing_sta_list", type=str, default="", help="List of existing stations to be passed when creating cross connections, example: 1.1.sta001,1.1.sta002")
     parser.add_argument("--use_existing_sta_list", action="store_true", help="Whether to use existing stations for cross connections if provided in --existing_sta_list", default=False)
 
     args = parser.parse_args()
 
+    if args.sta_to_res:
+        if not args.sta_port:
+            logger.error("Specify --sta_port")
+            exit(0)
+        elif not args.device_list and not args.res_ip:
+            logger.error("Specify either device list / res_ip")
+            exit(0)
     if args.help_summary:
         print(help_summary)
         exit(0)
@@ -2053,6 +2183,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
     client_cert = args.client_cert
     pk_passwd = args.pk_passwd
     pac_file = args.pac_file
+    dev_list = args.device_list
 
     if (debug):
         print('''Specified configuration:
@@ -2075,28 +2206,31 @@ effectively over the network and pinpoint potential issues affecting connectivit
 
     # ping object creation
     ping = Ping(
-                host=mgr_ip,
-                port=mgr_port,
-                ssid=ssid,
-                security=security,
-                password=password,
-                radio=radio,
-                lanforge_password=mgr_password,
-                target=target,
-                interval=interval,
-                sta_list=[],
-                virtual=args.virtual,
-                real=args.real,
-                duration=duration,
-                debug=debug,
-                csv_name=args.device_csv_name,
-                expected_passfail_val=args.expected_passfail_value,
-                wait_time=args.wait_time,
-                group_name=group_name,
-                configure=configure,
-                clients_type=args.clients_type,
-                use_existing_sta_list=args.use_existing_sta_list,
-                existing_sta_list=args.existing_sta_list)
+        host=mgr_ip,
+        port=mgr_port,
+        ssid=ssid,
+        security=security,
+        password=password,
+        radio=radio,
+        lanforge_password=mgr_password,
+        target=target,
+        interval=interval,
+        sta_list=[],
+        virtual=args.virtual,
+        real=args.real,
+        duration=duration,
+        debug=debug,
+        csv_name=args.device_csv_name,
+        expected_passfail_val=args.expected_passfail_value,
+        wait_time=args.wait_time,
+        group_name=group_name,
+        sta_to_res=args.sta_to_res,
+        sta_port=args.sta_port,
+        res_ip=args.res_ip,
+        configure=configure,
+        clients_type=args.clients_type,
+        use_existing_sta_list=args.use_existing_sta_list,
+        existing_sta_list=args.existing_sta_list)
 
     # changing the target from port to IP
     ping.change_target_to_ip()
@@ -2129,13 +2263,22 @@ effectively over the network and pinpoint potential issues affecting connectivit
                     config_devices[selected_groups[i]] = selected_profiles[i]
                 obj.initiate_group()
                 group_device_map = obj.get_groups_devices(data=selected_groups, groupdevmap=True)
+                ip_upstream = 0
+                if ping.sta_to_res:
+                    ip_upstream = ping.change_port_to_ip(args.sta_port)
+                logger.info(f"this is the ip_upstream {ip_upstream} and server ip {server_ip} and args.sta_port {args.sta_port}")
+                exit(1)
                 # Configure devices in the selected group with the selected profile
-                eid_list = asyncio.run(obj.connectivity(config=config_devices, upstream=server_ip))
+                eid_list = asyncio.run(obj.connectivity(config=config_devices, upstream=ip_upstream if ping.sta_to_res else server_ip))
                 Devices.get_devices()
                 ping.select_real_devices(real_devices=Devices, device_list=eid_list)
             # Case 2: Device list is empty but config flag is True — prompt the user to input device details for configuration
             else:
                 all_devices = obj.get_all_devices()
+                ip_upstream = 0
+                if ping.sta_to_res:
+                    ip_upstream = ping.change_port_to_ip(args.sta_port)
+                logger.info(f"this is the ip_upstream {ip_upstream} and server ip {server_ip} and args.sta_port {args.sta_port}")
                 device_list = []
                 config_dict = {
                     'ssid': ssid,
@@ -2158,7 +2301,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
                     'client_cert': client_cert,
                     'pk_passwd': pk_passwd,
                     'pac_file': pac_file,
-                    'server_ip': server_ip,
+                    'server_ip': ip_upstream if ping.sta_to_res else server_ip,
                 }
                 for device in all_devices:
                     if device["type"] == 'laptop':
@@ -2166,7 +2309,12 @@ effectively over the network and pinpoint potential issues affecting connectivit
                     else:
                         device_list.append(device["eid"] + " " + device["serial"])
                 logger.info(f"Available devices: {device_list}")
-                dev_list = input("Enter the desired resources to run the test:").split(',')
+                if ping.sta_to_res and not dev_list:
+                    dev_list = []
+                elif not dev_list:
+                    dev_list = input("Enter the desired resources to run the test:").split(',')
+                else:
+                    dev_list = dev_list.split(",")
                 dev_list = asyncio.run(obj.connectivity(device_list=dev_list, wifi_config=config_dict))
                 Devices.get_devices()
                 ping.select_real_devices(real_devices=Devices, device_list=dev_list)
@@ -2175,12 +2323,20 @@ effectively over the network and pinpoint potential issues affecting connectivit
         else:
             device_list = ping.Devices.get_devices()
             logger.info(f"Available devices: {device_list}")
-            dev_list = input("Enter the desired resources to run the test:").split(',')
+            # dev_list = input("Enter the desired resources to run the test:").split(',')
+            if ping.sta_to_res and not dev_list:
+                dev_list = []
+            elif not dev_list:
+                dev_list = input("Enter the desired resources to run the test:").split(',')
+            else:
+                dev_list = dev_list.split(",")
             ping.select_real_devices(real_devices=Devices, device_list=dev_list)
 
     # station precleanup
-    if not args.use_existing_sta_list:
+    if not ping.sta_to_res and not args.use_existing_sta_list:
         ping.cleanup()
+    else:
+        ping.clear_cx_startswith("GENERIC")
 
     # building station if virtual
     if (ping.virtual):
@@ -2214,6 +2370,47 @@ effectively over the network and pinpoint potential issues affecting connectivit
         port, port_data = list(ports.keys())[0], list(ports.values())[0]
         ports_data[port] = port_data
 
+    if args.sta_to_res:
+        duration = duration * 60
+        loop_timer = 0
+        rtts = {}
+        rtts_list = []
+        ping_stats = {}
+        ping.data_dict = {}
+
+        for station in ping.res_ip_list:
+            # name = "res_ip_" + station
+            rtts[station] = {}
+            ping.data_dict[station] = {}
+            ping_stats[station] = {
+                'sent': [],
+                'received': [],
+                'dropped': []
+            }
+        while (loop_timer <= duration):
+            t_init = datetime.now()
+            try:
+                result_data = ping.get_results()
+                # print(result_data)
+                if isinstance(result_data, dict):
+                    if 'UNKNOWN' in result_data['name']:
+                        raise ValueError("There are no valid generic endpoints to run the test")
+                else:
+                    keys = [list(d.keys())[0] for d in result_data]
+                    keys = [key for key in keys if 'UNKNOWN' not in key]
+                    if len(keys) == 0:
+                        raise ValueError("There are no valid generic endpoints to run the test")
+            except ValueError as e:
+                logger.info(result_data)
+                logger.error(e)
+                exit(0)
+
+            ping.monitor_real(result_data, Devices, ping_stats, rtts, rtts_list)
+            ping.generate_real_time_csv()
+            time.sleep(1)
+            t_end = datetime.now()
+            loop_timer += abs(t_init - t_end).total_seconds()
+    else:
         duration = duration * 60
         loop_timer = 0
         # logging.info(ping.result_json)
@@ -2275,7 +2472,12 @@ effectively over the network and pinpoint potential issues affecting connectivit
     print(f"ping.result_json:  \n \n{ping.result_json}")
     for device_name, device_data in ping.result_json.items():
 
-        if device_data['os'] == "Virtual":
+        if ping.sta_to_res:
+            csv_file = os.path.join(
+                csv_dir,
+                f"sta_to_res_{device_name.replace('.', '_')}.csv"
+            )
+        elif device_data['os'] == "Virtual":
             csv_file = os.path.join(
                 csv_dir,
                 f"sta_{device_name.replace('.', '_')}.csv"
