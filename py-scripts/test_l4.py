@@ -683,6 +683,100 @@ Generic command example:
 --requests_per_ten 600 --test_type bytes-wr --debug
 ---------------------------
 
+NAME: test_l4.py
+
+PURPOSE:
+test_l4.py will create stations and endpoints to generate and verify layer-4 traffic
+
+This script will monitor the urls/s, bytes-rd, or bytes-wr attribute of the endpoints.
+These attributes can be tested over FTP using a --ftp flag.
+If the monitored value does not continually increase, this test will not pass.
+
+SETUP:
+    The test may be run with a single LF, the eth port that is connected to the lan or wan
+    of the AP will be updated to host http, ftp. The IP on the eth port will be queried.
+    In the examples below LANforge eth2 had IP  http://192.168.50.217/
+
+    To enable the host http and ftp on eth port:
+        Port tab->Modify Port->Select FTP, Select HTTP for that eth port
+        the ftp files just upload right to /home/lanforge
+
+LANforge does have large files for ftp tests located in
+    /var/www/html/data*bin :  data_slug_128K.bin   data_slug_256K.bin  data_slug_4K.bin data_slug_2048K.bin  data_slug_48K.bin
+    /usr/local/lanforge/nginx/html/*.bin : 10m.bin  1m.bin  2m.bin  3m.bin  500k.bin
+
+    http service is nginx and that serves /usr/local/lanforge/nginx/html
+    ftp serves /var/ftp
+
+    To create the large file in /home/lanforge:
+    [lanforge@ct523c-3ba3 ~]$ dd if=/dev/urandom of=/home/lanforge/large-file.bin bs=1k count=10240
+    10240+0 records in
+    10240+0 records out
+    10485760 bytes (10 MB, 10 MiB) copied, 0.0469094 s, 224 MB/s
+
+    The test can see the /home/lanforge directory .  The destination file may be in
+    /home/lanforge/tmp/larg-file-dest.bin
+
+
+COOKBOOKS:
+    http://candelatech.com/cookbook.php?vol=fire&book=Introduction+to+Layer+4-7+Traffic
+    https://www.candelatech.com/cookbook.php?vol=wifire&book=UE_Testing_WiFi_Capacity_Test_with_Layer_4_7
+    https://www.candelatech.com/cookbook.php?vol=wifire&book=AP+Testing:Using+the+Port+Monitor
+
+NOTES:
+
+This script replaces the functionality of test_ipv4_l4.py, test_ipv4_l4_ftp_upload.py, test_ipv4_l4_ftp_urls_per_ten.py,
+test_ipv4_l4_ftp_wifi.py, test_ipv4_l4_urls_per_ten.py, test_ipv4_l4_urls_per_ten.py, test_ipv4_l4_wifi.py
+
+EXAMPLE (urls/s):
+    ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
+                 --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
+                 --url "dl http://upstream_port_ip/ /dev/null" --requests_per_ten 600 --test_type 'urls'
+                 --report_file test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
+                 --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
+
+EXAMPLE (bytes-rd):
+    ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
+                 --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 2m
+                 --url "dl http://upstream_port_ip/ /dev/null" --requests_per_ten 600 --test_type bytes-rd
+                 --report_file test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
+                 --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
+
+EXAMPLE (ftp urls/s):
+    ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
+                 --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
+                 --url "ul ftp://lanforge:lanforge@upstream_port_ip/large-file.bin /home/lanforge/large-file.bin"
+                 --requests_per_ten 600 --test_type 'urls' --report_file test_l4.csv --test_rig Test-Lab
+                 --test_tag L4 --dut_hw_version Linux --dut_model_num 1 --dut_sw_version 5.4.5
+                 --dut_serial_num 1234 --test_id "L4 data"
+
+EXAMPLE (ftp bytes-wr):
+    ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
+                 --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
+                 --url "ul ftp://lanforge:lanforge@upstream_port_ip/large-file.bin /home/lanforge/large-file.bin"
+                 --requests_per_ten 600 --test_type bytes-wr --report_file test_l4.csv --test_rig Test-Lab
+                 --test_tag L4 --dut_hw_version Linux --dut_model_num 1 --dut_sw_version 5.4.5
+                 --dut_serial_num 1234 --test_id "L4 data"
+
+EXAMPLE (ftp bytes-rd):
+    ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
+                 --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
+                 --url "dl ftp://upstream_port_ip /dev/null" --requests_per_ten 600 --test_type bytes-rd
+                 --report_file test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
+                 --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
+
+EXAMPLE (using existing stations):
+    ./test_l4.py --mgr localhost --upstream_port eth1 --use_ports "sta000 sta0001"
+                 --test_duration 1m --url "dl http://192.168/-.103/ /dev/null"
+                 --requests_per_ten 600 --test_type 'urls' --test_rig Test-Lab
+                 --dut_hw_version Linux --test_id "L4 data"
+
+EXAMPLE (using existing MACVLANS):
+    ./test_l4.py --mgr localhost --upstream_port eth1 --use_ports eth1#0 --test_duration 1m
+                 --url "dl http://192.168/-.103/ /dev/null" --requests_per_ten 600 --test_type 'urls'
+                 --test_rig Test-Lab --dut_hw_version Linux --test_id "L4 data"
+
+
             ''')
     test_l4_parser = parser.add_argument_group('arguments defined in test_l4.py file')
 
