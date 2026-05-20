@@ -294,34 +294,55 @@ class StationProfile:
         security_type = security_type.lower()
 
         self.add_sta_data["ssid"] = ssid
-        if security_type in SECURITY_TYPES.keys():
-            if (ssid is None) or (ssid == ""):
-                raise ValueError("use_security: %s requires ssid" % security_type)
-            if (passwd is None) or (passwd == ""):
-                raise ValueError("use_security: %s requires passphrase, NA or [BLANK]" % security_type)
-            for name in SECURITY_TYPES.values():
-                if name in self.desired_add_sta_flags and name in self.desired_add_sta_flags_mask:
-                    self.desired_add_sta_flags.remove(name)
-                    self.desired_add_sta_flags_mask.remove(name)
-            if security_type != "open":
-                self.desired_add_sta_flags.append(SECURITY_TYPES[security_type])
-                # self.set_command_flag("add_sta", types[security_type], 1)
-                self.desired_add_sta_flags_mask.append(SECURITY_TYPES[security_type])
+        if (ssid is None) or (ssid == ""):
+            raise ValueError("use_security: %s requires ssid" % security_type)
+        if (passwd is None) or (passwd == ""):
+            raise ValueError("use_security: %s requires passphrase, NA or [BLANK]" % security_type)
+        for name in SECURITY_TYPES.values():
+            if name in self.desired_add_sta_flags and name in self.desired_add_sta_flags_mask:
+                self.desired_add_sta_flags.remove(name)
+                self.desired_add_sta_flags_mask.remove(name)
+        if security_type != "open":
+            if ',' in security_type:
+                protocols = [p.strip() for p in security_type.split(',')]
+                for protocol in protocols:
+                    if protocol in SECURITY_TYPES.keys():
+                        self.desired_add_sta_flags.append(SECURITY_TYPES[protocol])
+                        self.desired_add_sta_flags_mask.append(SECURITY_TYPES[protocol])
+                        if protocol == "wpa3":
+                            self.set_command_param("add_sta", "ieee80211w", 2)
+                        if protocol == "owe":
+                            self.set_wifi_extra(key_mgmt="OWE")
+                            # 802.11u is not necessary when owe selected
+                            if "80211u_enable" in self.desired_add_sta_flags:
+                                self.desired_add_sta_flags.remove("80211u_enable")
+                            self.set_command_param("add_sta", "ieee80211w", 2)
+                            self.set_command_flag("add_sta", "8021x_radius", 1)
+                            self.set_command_flag("add_sta", "use-owe", 1)
+                    else:
+                        logger.warning(f"security_type: {security_type} not valid security type")
             else:
-                passwd = "[BLANK]"
-            self.set_command_param("add_sta", "ssid", ssid)
-            self.set_command_param("add_sta", "key", passwd)
-            # unset any other security flag before setting our present flags
-            if security_type == "wpa3":
-                self.set_command_param("add_sta", "ieee80211w", 2)
-            if security_type == "owe":
-                self.set_wifi_extra(key_mgmt="OWE")
-                # 802.11u is not necessary when owe selected
-                if "80211u_enable" in self.desired_add_sta_flags:
-                    self.desired_add_sta_flags.remove("80211u_enable")
-                self.set_command_param("add_sta", "ieee80211w", 2)
-                self.set_command_flag("add_sta", "8021x_radius", 1)
-                self.set_command_flag("add_sta", "use-owe", 1)
+                if security_type in SECURITY_TYPES.keys():
+                    self.desired_add_sta_flags.append(SECURITY_TYPES[security_type])
+                    # self.set_command_flag("add_sta", types[security_type], 1)
+                    self.desired_add_sta_flags_mask.append(SECURITY_TYPES[security_type])
+                else:
+                    logger.warning(f"security_type: {protocol} not valid security type")
+        else:
+            passwd = "[BLANK]"
+        self.set_command_param("add_sta", "ssid", ssid)
+        self.set_command_param("add_sta", "key", passwd)
+        # unset any other security flag before setting our present flags
+        if security_type == "wpa3":
+            self.set_command_param("add_sta", "ieee80211w", 2)
+        if security_type == "owe":
+            self.set_wifi_extra(key_mgmt="OWE")
+            # 802.11u is not necessary when owe selected
+            if "80211u_enable" in self.desired_add_sta_flags:
+                self.desired_add_sta_flags.remove("80211u_enable")
+            self.set_command_param("add_sta", "ieee80211w", 2)
+            self.set_command_flag("add_sta", "8021x_radius", 1)
+            self.set_command_flag("add_sta", "use-owe", 1)
 
     @staticmethod
     def station_mode_to_number(mode):
