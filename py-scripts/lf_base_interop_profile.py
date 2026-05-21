@@ -108,7 +108,7 @@ class BaseInteropWifi(Realm):
         self.release = release
         self.debug = _debug_on
         self.screen_size_prcnt = screen_size_prcnt
-        self.supported_sdk = ["11", "12", "13", "14", "15"]
+        self.supported_sdk = ["11", "12", "13", "14", "15", "16"]
         self.supported_devices_names = []
         self.supported_devices_resource_id = None
         self.log_dur = log_dur
