@@ -1507,7 +1507,8 @@ class RealBrowserTest(Realm):
                     for row in rows:
                         if not row.get("device_name"):
                             continue
-                        row["from_coordinate"] = self.prev_coordinate
+                        # Store the coordinate before robot movement starts.
+                        row["from_coordinate"] = self.start_coordinate
                         row["to_coordinate"] = self.current_cord
 
                         self.write_bandsteering_row(row)
@@ -1533,9 +1534,11 @@ class RealBrowserTest(Realm):
                     # CSV FOR WEBUI GRAPHS
                     self.write_live_webui_csv(rows)
 
-                    self.prev_coordinate = self.current_cord
                     time.sleep(1)
                     return True
+
+                # Save current coordinate before robot movement starts.
+                self.start_coordinate = self.prev_coordinate
 
                 # time.sleep(10)
                 result = self.robo_obj.move_to_coordinate(
@@ -1550,6 +1553,9 @@ class RealBrowserTest(Realm):
                 else:
                     moved = False
                     stopped = True
+
+                # Update previous coordinate after each movement attempt.
+                self.prev_coordinate = self.current_cord
 
                 if stopped:
                     break
@@ -3301,15 +3307,14 @@ class RealBrowserTest(Realm):
             report.build_table_title()
 
             if not transitions:
-                first_row = df.iloc[0]
                 last_row = df.iloc[-1]
 
                 transitions.append({
-                    "BSSID": first_row.get("bssid", "NA"),
+                    "BSSID": last_row.get("bssid", "NA"),
                     "Timestamp": last_row.get("timestamp", "NA"),
-                    "From Coordinate": first_row.get("from_coordinate", "NA"),
+                    "From Coordinate": last_row.get("from_coordinate", "NA"),
                     "To Coordinate": last_row.get("to_coordinate", "NA"),
-                    "Channel": first_row.get("channel", "NA")
+                    "Channel": last_row.get("channel", "NA")
                 })
 
             transition_df = pd.DataFrame(transitions)
