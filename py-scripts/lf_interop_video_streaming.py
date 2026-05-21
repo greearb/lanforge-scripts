@@ -3382,6 +3382,8 @@ def main():
         obj.incremental = [len(available_resources)]
 
     if args.webgui_incremental:
+        # Intialize incremental values based on the input provided in webgui
+        obj.webgui_incremental = args.webgui_incremental
         incremental = [int(x) for x in args.webgui_incremental.split(',')]
         if (len(args.webgui_incremental) == 1 and incremental[0] != len(resource_list_sorted)) or (len(args.webgui_incremental) > 1):
             obj.incremental = incremental
