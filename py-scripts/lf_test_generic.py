@@ -1378,7 +1378,7 @@ This script also *does not* use any other file except lanforge_api.py.
     print("Done with connection monitoring")
 
     lf_generic_test.stop()
-    # lf_generic_test.generate_report()
+    lf_generic_test.generate_report()
     lf_generic_test.cleanup()
 
 
