@@ -168,7 +168,7 @@ class SpeedtestAdb:
                 # (350, 650),
                 # (650, 350),
             ]
-        except (ValueError, AttributeError, Exception):
+        except Exception:
             # Fallback tap coordinates (hardcoded)
             taps = [
                 (530, 930), (360, 610), (540, 900), (580, 1000),
