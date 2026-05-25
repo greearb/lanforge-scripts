@@ -262,6 +262,23 @@
 
     NOTE : Add traffic related args from EXAMPLE 1
 
+    EXAMPLE-5: Import and use lf_multi_traffic in another script by passing CLI-equivalent arguments as function parameters
+
+    from lf_multi_traffic import initialize_multitraffic_obj
+
+    base_class_obj = initialize_multitraffic_obj(
+        mgr="192.168.207.78",
+        upstream_port="eth1",
+        parallel_tests="ping_test",
+
+        ping_target="www.google.com",
+        ping_interval=5,
+        ping_duration=1,
+        ping_device_list="1.4,1.11,1.12",
+    )
+
+    base_class_obj.start_scenario()
+
 
     NOTES:
     1. Duration format: s (seconds), m (minutes), h (hours)
@@ -509,6 +526,23 @@ class MultiTraffic(Realm):
         self.robot_lock = Lock()
         self.robot_rotate_call_counter = Value('i', 0)
         self.robot_call_counter = Value('i', 0)
+
+    def start_scenario(self):
+        """
+        Validate configured test scenarios and initiate execution.
+
+        This method:
+        - Validates all configured series and parallel test arguments.
+        - Prepares duration mappings for each test.
+        - Stores validated duration configuration.
+        - Starts execution of the configured traffic test scenarios.
+
+        Returns:
+            None
+        """
+        tests_to_run_series, tests_to_run_parallel, duration_dict = validate_arguments(self.args, self.test_map, self.args_dict)
+        self.duration_dict = duration_dict.copy()
+        self.start_tests(self.test_map, tests_to_run_series, tests_to_run_parallel, self.duration_dict, self.args, self.args_dict)
 
     def start_tests(self, test_map, tests_to_run_series, tests_to_run_parallel, duration_dict, args, args_dict):
         """
@@ -12782,7 +12816,7 @@ def normalise_time(value):
         return value  # unknown suffix → unchanged
 
 
-def parse_args():
+def parse_args(return_parser=False):
     parser = argparse.ArgumentParser(
         prog="lf_multi_traffic.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -13049,6 +13083,23 @@ def parse_args():
 
     NOTE : Add traffic related args from EXAMPLE 1
 
+    EXAMPLE-5: Import and use lf_multi_traffic in another script by passing CLI-equivalent arguments as function parameters
+
+    from lf_multi_traffic import initialize_multitraffic_obj
+
+    base_class_obj = initialize_multitraffic_obj(
+        mgr="192.168.207.78",
+        upstream_port="eth1",
+        parallel_tests="ping_test",
+
+        ping_target="www.google.com",
+        ping_interval=5,
+        ping_duration=1,
+        ping_device_list="1.4,1.11,1.12",
+    )
+
+    base_class_obj.start_scenario()
+
 
 
     NOTES:
@@ -13096,6 +13147,7 @@ def parse_args():
     parser.add_argument('--result_dir', help="Specify the result dir to store the runtime logs <Do not use in CLI, --used by webui>", default='')
     parser.add_argument('--no_cleanup', help='Do not cleanup before exit', action='store_true')
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
+    parser.add_argument('--run_specific_scenario', action='store_true', help='Specify the scenario to run just by giving CLI as function call')
     # PING ARGS
     # without config
     parser.add_argument('--ping_test',
@@ -13637,8 +13689,9 @@ def parse_args():
     parser.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
     parser.add_argument('--bssids', type=str, default='', help='hostname for where Robot server is running')
     parser.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
-    #
 
+    if return_parser:
+        return parser
     args = parser.parse_args()
     return args
 
@@ -13761,6 +13814,9 @@ or a combination of both, with configurable execution priority.
     if args.help_summary:
         print(help_summary)
         exit(0)
+    if args.run_specific_scenario:
+        run_specific_scenario()
+        exit(0)
     args.zoom_duration = normalise_time(args.zoom_duration)
     args.ping_duration = normalise_time(args.ping_duration)
     args.teams_duration = normalise_time(args.teams_duration)
@@ -13880,6 +13936,106 @@ def save_logs():
 
     logger.info(f"Test logs saved to {log_filename}")
     return log_filename
+
+
+def convert_kwargs_to_cli_list(kwargs):
+    """
+    Convert keyword arguments into CLI-compatible argument list format.
+
+    Boolean arguments are added as standalone flags when True,
+    while other argument types are added as key-value pairs.
+
+    Args:
+        kwargs (dict):
+            Dictionary containing argument names and values.
+
+    Returns:
+        list:
+            CLI-style argument list suitable for argparse parsing.
+    """
+    cli_list = []
+    for key, value in kwargs.items():
+        if isinstance(value, bool):
+            if value:
+                cli_list.append("--{}".format(str(key)))
+        else:
+            cli_list.append("--{}".format(key))
+            cli_list.append(str(value))
+    return cli_list
+
+
+def initialize_multitraffic_obj(**kwargs):
+    """
+    Initialize and configure the MultiTraffic base class object.
+
+    This function:
+    - Converts keyword arguments into CLI-compatible format.
+    - Parses and normalizes execution arguments.
+    - Creates test mappings for supported traffic tests.
+    - Initializes the MultiTraffic execution object.
+    - Returns a fully configured MultiTraffic instance.
+
+    Args:
+        **kwargs:
+            Arbitrary keyword arguments representing CLI parameters
+            or configuration values for test execution.
+
+    Returns:
+        MultiTraffic:
+            Configured MultiTraffic class instance ready for execution.
+    """
+    global test_results_list
+    test_results_list = manager.list()
+    cli_list = None
+    cli = False
+    if "cli" in kwargs:
+        cli = kwargs["cli"]
+    if "cli_list" in kwargs:
+        cli_list = kwargs["cli_list"]
+    if cli and cli_list:
+        # TODO directly placing cli_list and validation
+        pass
+    else:
+        cli_list = convert_kwargs_to_cli_list(kwargs)
+    parser = parse_args(return_parser=True)
+    args = parser.parse_args(cli_list)
+    args.zoom_duration = normalise_time(args.zoom_duration)
+    args.ping_duration = normalise_time(args.ping_duration)
+    args.teams_duration = normalise_time(args.teams_duration)
+    args_dict = vars(args)
+    test_map = {
+        "ping_test": (run_ping_test, "PING TEST"),
+        "http_test": (run_http_test, "HTTP TEST"),
+        "ftp_test": (run_ftp_test, "FTP TEST"),
+        "qos_test": (run_qos_test, "QoS TEST"),
+        "vs_test": (run_vs_test, "VIDEO STREAMING TEST"),
+        "thput_test": (run_thput_test, "THROUGHPUT TEST"),
+        "mcast_test": (run_mcast_test, "MULTICAST TEST"),
+        "yt_test": (run_yt_test, "YOUTUBE TEST"),
+        "rb_test": (run_rb_test, "REAL BROWSER TEST"),
+        "zoom_test": (run_zoom_test, "ZOOM TEST"),
+        "teams_test": (run_teams_test, "TEAMS TEST"),
+    }
+    multi_traffic_obj = MultiTraffic(
+        ip=args.mgr,
+        port=args.mgr_port,
+        order_priority=args.order_priority,
+        test_name=args.test_name,
+        result_dir=args.result_dir,
+        dowebgui=args.dowebgui,
+        no_cleanup=args.no_cleanup,
+        robot_test=args.robot_test,
+        robot_ip=args.robot_ip,
+        coordinate=args.coordinate,
+        rotation=args.rotation,
+        do_bandsteering=args.do_bandsteering,
+        bssids=args.bssids,
+        cycles=args.cycles,
+        duration_to_skip=args.duration_to_skip,
+        args=args,
+        args_dict=args_dict,
+        test_map=test_map)
+    return multi_traffic_obj
 
 
 def run_ping_test(args, multi_traffic_obj: MultiTraffic):
@@ -14362,6 +14518,95 @@ def run_teams_test(args, multi_traffic_obj: MultiTraffic):
         bssids=args.bssids,
         upstream_port=args.upstream_port,
     )
+
+
+def run_specific_scenario():
+    """
+    Example scenario runner for executing predefined multi-traffic tests.
+
+    This function demonstrates how to:
+    - Import and use `initialize_multitraffic_obj` from another script.
+    - Pass CLI-equivalent arguments directly as keyword parameters.
+    - Configure multiple traffic test types in a single scenario.
+    - Initialize the MultiTraffic base object programmatically.
+    - Start execution of the configured traffic test scenario.
+
+    Example:
+        from lf_multi_traffic import initialize_multitraffic_obj
+
+    Returns:
+        None
+    """
+    base_class_obj = initialize_multitraffic_obj(
+        mgr="192.168.207.78",
+        upstream_port="eth1",
+        parallel_tests="ping_test,qos_test,ftp_test,http_test,mcast_test,vs_test,thput_test",
+
+        ping_target="www.google.com",
+        ping_interval=5,
+        ping_duration=1,
+        ping_device_list="1.4,1.11,1.12",
+
+        qos_tos="VO,VI,BE,BK",
+        qos_duration="1m",
+        qos_device_list="1.4,1.11,1.12",
+        qos_traffic_type="lf_tcp",
+        qos_download=10000000,
+
+        ftp_duration="1m",
+        ftp_file_size="5MB",
+        ftp_device_list="1.4,1.11,1.12",
+        ftp_bands="5G",
+
+        http_duration="1m",
+        http_file_size="5MB",
+        http_device_list="1.4,1.11,1.12",
+        http_bands="5G",
+
+        mcast_tos="VO",
+        mcast_test_duration="1m",
+        mcast_side_b_min_bps=10000000,
+        mcast_device_list="1.4,1.11,1.12",
+        mcast_endp_type="mc_udp",
+
+        vs_url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+        vs_media_source="hls",
+        vs_media_quality="4k",
+        vs_duration="1m",
+        vs_device_list="1.4,1.11,1.12",
+
+        thput_test_duration="1m",
+        thput_traffic_type="lf_udp",
+        thput_device_list="1.4,1.11,1.12",
+        thput_upload=10000000,
+
+        rb_duration="1m",
+        rb_device_list="1.4,1.11,1.12",
+        rb_webgui_incremental="no_increment",
+        rb_count=10,
+
+        yt_url="https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1",
+        yt_duration="1m",
+        yt_res="144p",
+        yt_device_list="1.4,1.11,1.12",
+
+        zoom_signin_email="candelatech2@gmail.com",
+        zoom_signin_passwd="CANDELAtech1@530048",
+        zoom_duration=2,
+        zoom_host="1.4",
+        zoom_participants=2,
+        zoom_device_list="1.4,1.11,1.12",
+        zoom_audio=True,
+        zoom_video=True,
+
+        teams_duration="2m",
+        teams_device_list="1.4,1.11,1.12",
+        teams_audio=True,
+        teams_video=True,
+
+        no_cleanup=True
+    )
+    base_class_obj.start_scenario()
 
 
 if __name__ == "__main__":
