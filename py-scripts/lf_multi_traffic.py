@@ -277,9 +277,9 @@
     SCRIPT_CATEGORIES: Performance, Functional, Automation
 
     VERIFIED_ON:
-    Working date - 09/04/2026
-    Build version - 5.5.2
-    kernel version - 6.15.6+
+    Working date - 21/04/2026
+    Build version - 5.5.3
+    kernel version - 6.18.14+
 
     LICENSE :
     Copyright (C) 2020-2026 Candela Technologies Inc
@@ -12851,9 +12851,9 @@ def parse_args():
     SCRIPT_CATEGORIES: Performance, Functional, Automation
 
     VERIFIED_ON:
-    Working date - 09/04/2026
-    Build version - 5.5.2
-    kernel version - 6.15.6+
+    Working date - 21/04/2026
+    Build version - 5.5.3
+    kernel version - 6.18.14+
 
     LICENSE :
     Copyright (C) 2020-2026 Candela Technologies Inc
