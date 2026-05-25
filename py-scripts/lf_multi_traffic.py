@@ -393,7 +393,7 @@ class MultiTraffic(Realm):
     """
 
     def __init__(self, ip='localhost', port=8080, order_priority="series", result_dir="", dowebgui=False, test_name='', no_cleanup=False,
-                 robot_test=False, robot_ip=None, coordinate=None, rotation=None, do_bandsteering=False, bssids=None, cycles=1, duration_to_skip=None):
+                 robot_test=False, robot_ip=None, coordinate=None, rotation=None, do_bandsteering=False, bssids=None, cycles=1, duration_to_skip=None, test_map=None, args=None, args_dict=None):
         super().__init__(lfclient_host=ip,
                          lfclient_port=port)
         self.lanforge_ip = ip
@@ -460,6 +460,9 @@ class MultiTraffic(Realm):
         self.rotation_list = rotation.split(',')
         self.bssids = bssids.split(",") if bssids else []
         self.rotation_enabled = True if rotation != '' else False
+        self.test_map = test_map
+        self.args = args
+        self.args_dict = args_dict if args else {}
         # Multi-threading/multiprocessing synchronization events for individual test completions
         self.ftp_done_event = Event()
         self.qos_done_event = Event()
@@ -506,6 +509,217 @@ class MultiTraffic(Realm):
         self.robot_lock = Lock()
         self.robot_rotate_call_counter = Value('i', 0)
         self.robot_call_counter = Value('i', 0)
+
+    def start_tests(self, test_map, tests_to_run_series, tests_to_run_parallel, duration_dict, args, args_dict):
+        """
+        Start and manage execution of configured traffic test suites.
+
+        Args:
+            test_map (dict):
+                Mapping of test names to corresponding execution functions and labels.
+
+            tests_to_run_series (list):
+                List of test names scheduled for sequential execution.
+
+            tests_to_run_parallel (list):
+                List of test names scheduled for parallel execution.
+
+            duration_dict (dict):
+                Dictionary containing duration values for each test.
+
+            args (argparse.Namespace):
+                Parsed command-line arguments.
+
+            args_dict (dict):
+                Dictionary version of parsed command-line arguments.
+
+        Returns:
+            None
+        """
+        iszoom = 'zoom_test' in tests_to_run_parallel or 'zoom_test' in tests_to_run_series
+        isrb = 'rb_test' in tests_to_run_parallel or 'rb_test' in tests_to_run_series
+        isyt = 'yt_test' in tests_to_run_parallel or 'yt_test' in tests_to_run_series
+        self.series_tests = tests_to_run_series
+        self.parallel_tests = tests_to_run_parallel
+        self.misc_clean_up(layer3=True, layer4=True, generic=True, port_5000=iszoom, port_5002=isyt, port_5003=isrb)
+        if args.series_tests or args.parallel_tests:
+            series_threads = []
+            parallel_threads = []
+            # Process series tests
+            if args.series_tests:
+                ordered_series_tests = args.series_tests.split(',')
+                if args.dowebgui:
+                    gen_order = ["ping_test", "qos_test", "ftp_test", "http_test", "mcast_test", "vs_test", "thput_test", "yt_test", "rb_test", "zoom_test", "teams_test"]
+                    temp_ord_list = []
+                    for test_name in gen_order:
+                        if test_name in ordered_series_tests:
+                            temp_ord_list.append(test_name)
+                    ordered_series_tests = temp_ord_list.copy()
+                for idx, test_name in enumerate(ordered_series_tests):
+                    test_name = test_name.strip().lower()
+                    if test_name in test_map:
+                        func, label = test_map[test_name]
+                        args.current = "series"
+                        if test_name in ['rb_test', 'zoom_test', 'yt_test', 'teams_test']:
+                            if test_name == "rb_test":
+                                obj_no = 1
+                                while f"rb_test_{obj_no}" in self.rb_obj_dict["series"]:
+                                    obj_no += 1
+                                obj_name = f"rb_test_{obj_no}"
+                                self.rb_obj_dict["series"][obj_name] = manager.dict({"obj": None, "data": None})
+                                logging.debug("Adding rb_test object to parallel execution")
+                            elif test_name == "yt_test":
+                                obj_no = 1
+                                while f"yt_test_{obj_no}" in self.yt_obj_dict["series"]:
+                                    obj_no += 1
+                                obj_name = f"yt_test_{obj_no}"
+                                self.yt_obj_dict["series"][obj_name] = manager.dict({"obj": None, "data": None})
+                            elif test_name == "zoom_test":
+                                obj_no = 1
+                                while f"zoom_test_{obj_no}" in self.zoom_obj_dict["series"]:
+                                    obj_no += 1
+                                obj_name = f"zoom_test_{obj_no}"
+                                self.zoom_obj_dict["series"][obj_name] = manager.dict({"obj": None, "data": None})
+                                logging.debug("Adding zoom_test object to parallel execution")
+                            elif test_name == "teams_test":
+                                obj_no = 1
+                                while f"teams_test_{obj_no}" in self.teams_obj_dict["series"]:
+                                    obj_no += 1
+                                obj_name = f"teams_test_{obj_no}"
+                                self.teams_obj_dict["series"][obj_name] = manager.dict({"obj": None, "data": None})
+                                logging.debug("Adding teams_test object to parallel execution")
+                            series_threads.append(multiprocessing.Process(target=run_test_safe(func, f"{label} [Series {idx + 1}]", args, self, duration_dict[test_name])))
+                        else:
+                            series_threads.append(threading.Thread(
+                                target=run_test_safe(func, f"{label} [Series {idx + 1}]", args, self, duration_dict[test_name])
+                            ))
+                    else:
+                        logging.warning(f"Unknown test '{test_name}' in --series_tests")
+
+            # Process parallel tests
+            if args.parallel_tests:
+                """
+                Process parallel test configurations, enforcing order when web GUI reporting is enabled.
+                Initializes appropriate threading or multiprocessing workers based on test type requirements.
+                """
+                ordered_parallel_tests = args.parallel_tests.split(',')
+
+                if args.dowebgui:
+                    gen_order = ["ping_test", "qos_test", "ftp_test", "http_test", "mcast_test", "vs_test", "thput_test", "yt_test", "rb_test", "zoom_test", "teams_test"]
+                    ordered_parallel_tests = [t for t in gen_order if t in ordered_parallel_tests]
+
+                for idx, test_name in enumerate(ordered_parallel_tests):
+                    test_name = test_name.strip().lower()
+                    if test_name in test_map:
+                        func, label = test_map[test_name]
+                        args.current = "parallel"
+                        if test_name in ['rb_test', 'zoom_test', 'yt_test', 'teams_test']:
+                            if test_name == "rb_test":
+                                self.rb_obj_dict["parallel"]["rb_test"] = manager.dict({"obj": None, "data": None})
+                                logging.debug("Adding rb_test object to parallel execution")
+                            elif test_name == "yt_test":
+                                self.yt_obj_dict["parallel"]["yt_test"] = manager.dict({"obj": None, "data": None})
+                                logging.debug("Adding yt_test object to parallel execution")
+                            elif test_name == "zoom_test":
+                                self.zoom_obj_dict["parallel"]["zoom_test"] = manager.dict({"obj": None, "data": None})
+                                logging.debug("Adding zoom_test object to parallel execution")
+                            elif test_name == "teams_test":
+                                self.teams_obj_dict["parallel"]["teams_test"] = manager.dict({"obj": None, "data": None})
+                                logging.debug("Adding teams_test object to parallel execution")
+
+                            parallel_threads.append(multiprocessing.Process(
+                                target=run_test_safe(func, f"{label} [Parallel {idx + 1}]", args, self, duration_dict[test_name])
+                            ))
+                        else:
+                            parallel_threads.append(threading.Thread(
+                                target=run_test_safe(func, f"{label} [Parallel {idx + 1}]", args, self, duration_dict[test_name])
+                            ))
+                    else:
+                        logging.warning(f"Unknown test '{test_name}' in --parallel_tests")
+
+            if args.dowebgui:
+                """
+                Initialize overall execution status and tracking CSV for Web GUI reporting.
+                """
+                self.overall_status = {
+                    "ping": "notstarted", "qos": "notstarted", "ftp": "notstarted", "http": "notstarted",
+                    "mc": "notstarted", "vs": "notstarted", "thput": "notstarted", "rb": "notstarted",
+                    "zoom": "notstarted", "yt": "notstarted", "teams": "notstarted",
+                    "time": datetime.datetime.now().strftime("%Y %d %H:%M:%S"),
+                    "status": "running", "current_mode": "tbd", "current_test_name": "tbd"
+                }
+                self.overall_csv.append(self.overall_status.copy())
+                df1 = pd.DataFrame(self.overall_csv)
+                df1.to_csv(f'{args.result_dir}/overall_status.csv', index=False)
+
+            """
+            Execute scheduled test scenarios sequentially and/or in parallel according to priority.
+            """
+            if args.order_priority == 'series':
+                self.current_exec = "series"
+                for t in series_threads:
+                    t.start()
+                    t.join()
+                    self.series_index += 1
+
+                # Then run parallel tests
+                if parallel_threads:
+                    self.misc_clean_up(layer3=True, layer4=True, generic=True, port_5000=iszoom, port_5002=isyt, port_5003=isrb)
+                    logging.info('Starting parallel tests...')
+                    time.sleep(10)
+
+                self.current_exec = "parallel"
+                for t in parallel_threads:
+                    t.start()
+
+                self.parallel_index = 0
+                for t in parallel_threads:
+                    t.join()
+                    self.parallel_index += 1
+
+            else:
+                self.current_exec = "parallel"
+                for t in parallel_threads:
+                    t.start()
+
+                for t in parallel_threads:
+                    t.join()
+
+                if series_threads:
+                    self.misc_clean_up(layer3=True, layer4=True, generic=True, port_5000=iszoom, port_5002=isyt, port_5003=isrb)
+                    logging.info('Starting series tests...')
+                    time.sleep(5)
+
+                self.current_exec = "series"
+                for t in series_threads:
+                    t.start()
+                    t.join()
+        else:
+            logger.error("Provide either --parallel_tests or --series_tests")
+            exit(1)
+
+        """
+        Finalize test execution: perform cleanup, save logs, generate the overall report,
+        and update the Web GUI status if applicable.
+        """
+        self.misc_clean_up(layer3=True, layer4=True, generic=True, port_5000=iszoom, port_5002=isyt, port_5003=isrb)
+        log_file = save_logs()
+        logging.info(f"Logs saved to: {log_file}")
+
+        test_results_df = pd.DataFrame(list(test_results_list))
+        self.generate_overall_report(test_results_df=test_results_df, args_dict=args_dict)
+
+        if self.dowebgui:
+            try:
+                self.overall_status["status"] = "completed"
+                self.overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
+                self.overall_csv.append(self.overall_status.copy())
+                df1 = pd.DataFrame(self.overall_csv)
+                df1.to_csv(f'{self.result_dir}/overall_status.csv', index=False)
+            except Exception as e:
+                logging.error(f"Error while writing status file for webui: {e}")
+
+        logging.info(f"\nTest Results Summary:\n{test_results_df}")
 
     def webgui_stop_check(self, test_name):
         """
@@ -7958,7 +8172,7 @@ class MultiTraffic(Realm):
                             test_setup_info = {
                                 'Configuration': configmap,
                                 'Website / IP': curr_ping_obj.target,
-                                'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(curr_ping_obj.sta_list), len(curr_ping_obj.sta_list) - len(curr_ping_obj.real_sta_list), curr_ping_obj.android, curr_ping_obj.windows, curr_ping_obj.linux, curr_ping_obj.mac), # noqa E501
+                                'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(curr_ping_obj.sta_list), len(curr_ping_obj.sta_list) - len(curr_ping_obj.real_sta_list), curr_ping_obj.android, curr_ping_obj.windows, curr_ping_obj.linux, curr_ping_obj.mac),  # noqa E501
                                 'Duration (in minutes)': curr_ping_obj.duration
                             }
                         if self.robot_test and not self.do_bandsteering:
@@ -13429,59 +13643,38 @@ def parse_args():
     return args
 
 
-def main():
-    '''
-    Main Execution Block
-    --------------------
-    Initializes the command-line argument parser, defines argument flags,
-    and orchestrates test suite execution for the MULTI TRAFFIC TEST.
-    '''
-    args = parse_args()
-    help_summary = '''\
-lf_multi_traffic.py is used to execute multiple testcases
-either in series, parallel, or hybrid mode.
-The script supports running tests sequentially (series), simultaneously (parallel),
-or a combination of both, with configurable execution priority.
-'''
-    if args.help_summary:
-        print(help_summary)
-        exit(0)
-    args.zoom_duration = normalise_time(args.zoom_duration)
-    args.ping_duration = normalise_time(args.ping_duration)
-    args.teams_duration = normalise_time(args.teams_duration)
-    args_dict = vars(args)
-    duration_dict = {}
-    multi_traffic_obj = MultiTraffic(
-        ip=args.mgr,
-        port=args.mgr_port,
-        order_priority=args.order_priority,
-        test_name=args.test_name,
-        result_dir=args.result_dir,
-        dowebgui=args.dowebgui,
-        no_cleanup=args.no_cleanup,
-        robot_test=args.robot_test,
-        robot_ip=args.robot_ip,
-        coordinate=args.coordinate,
-        rotation=args.rotation,
-        do_bandsteering=args.do_bandsteering,
-        bssids=args.bssids,
-        cycles=args.cycles,
-        duration_to_skip=args.duration_to_skip)
-    # Map available test flags to their respective execution methods
-    test_map = {
-        "ping_test": (run_ping_test, "PING TEST"),
-        "http_test": (run_http_test, "HTTP TEST"),
-        "ftp_test": (run_ftp_test, "FTP TEST"),
-        "qos_test": (run_qos_test, "QoS TEST"),
-        "vs_test": (run_vs_test, "VIDEO STREAMING TEST"),
-        "thput_test": (run_thput_test, "THROUGHPUT TEST"),
-        "mcast_test": (run_mcast_test, "MULTICAST TEST"),
-        "yt_test": (run_yt_test, "YOUTUBE TEST"),
-        "rb_test": (run_rb_test, "REAL BROWSER TEST"),
-        "zoom_test": (run_zoom_test, "ZOOM TEST"),
-        "teams_test": (run_teams_test, "TEAMS TEST"),
-    }
+def validate_arguments(args, test_map, args_dict):
+    """
+    Validate command-line arguments and prepare test execution metadata.
 
+    This function:
+    - Ensures at least one test suite is provided.
+    - Validates test names against the supported test map.
+    - Detects duplicate test entries.
+    - Validates and prepares duration configuration for tests.
+    - Generates execution-ready series and parallel test lists.
+
+    Args:
+        args (argparse.Namespace):
+            Parsed command-line arguments.
+
+        test_map (dict):
+            Mapping of supported test names and execution handlers.
+
+        args_dict (dict):
+            Dictionary version of parsed command-line arguments.
+
+    Returns:
+        tuple:
+            tests_to_run_series (list):
+                Validated list of sequential tests.
+
+            tests_to_run_parallel (list):
+                Validated list of parallel tests.
+
+            duration_dict (dict):
+                Dictionary mapping test names to execution durations.
+    """
     # Ensure at least one test suite is provided
     if not args.series_tests and not args.parallel_tests:
         logger.error("Please provide tests cases --parallel_tests or --series_tests")
@@ -13520,7 +13713,7 @@ or a combination of both, with configurable execution priority.
     if args.parallel_tests and (len(tests_to_run_parallel) != len(set(tests_to_run_parallel))):
         logger.error("in --parallel dont specify duplicate tests")
         exit(0)
-
+    duration_dict = {}
     duration_flag = False
     if args.series_tests:
         for test in args.series_tests.split(','):
@@ -13548,192 +13741,65 @@ or a combination of both, with configurable execution priority.
             logger.error(f"wrong duration type for {test_name}")
     if duration_flag:
         exit(1)
+    return tests_to_run_series, tests_to_run_parallel, duration_dict
+
+
+def main():
+    '''
+    Main Execution Block
+    --------------------
+    Initializes the command-line argument parser, defines argument flags,
+    and orchestrates test suite execution for the MULTI TRAFFIC TEST.
+    '''
+    args = parse_args()
+    help_summary = '''\
+lf_multi_traffic.py is used to execute multiple testcases
+either in series, parallel, or hybrid mode.
+The script supports running tests sequentially (series), simultaneously (parallel),
+or a combination of both, with configurable execution priority.
+'''
+    if args.help_summary:
+        print(help_summary)
+        exit(0)
+    args.zoom_duration = normalise_time(args.zoom_duration)
+    args.ping_duration = normalise_time(args.ping_duration)
+    args.teams_duration = normalise_time(args.teams_duration)
+    args_dict = vars(args)
+    test_map = {
+        "ping_test": (run_ping_test, "PING TEST"),
+        "http_test": (run_http_test, "HTTP TEST"),
+        "ftp_test": (run_ftp_test, "FTP TEST"),
+        "qos_test": (run_qos_test, "QoS TEST"),
+        "vs_test": (run_vs_test, "VIDEO STREAMING TEST"),
+        "thput_test": (run_thput_test, "THROUGHPUT TEST"),
+        "mcast_test": (run_mcast_test, "MULTICAST TEST"),
+        "yt_test": (run_yt_test, "YOUTUBE TEST"),
+        "rb_test": (run_rb_test, "REAL BROWSER TEST"),
+        "zoom_test": (run_zoom_test, "ZOOM TEST"),
+        "teams_test": (run_teams_test, "TEAMS TEST"),
+    }
+    multi_traffic_obj = MultiTraffic(
+        ip=args.mgr,
+        port=args.mgr_port,
+        order_priority=args.order_priority,
+        test_name=args.test_name,
+        result_dir=args.result_dir,
+        dowebgui=args.dowebgui,
+        no_cleanup=args.no_cleanup,
+        robot_test=args.robot_test,
+        robot_ip=args.robot_ip,
+        coordinate=args.coordinate,
+        rotation=args.rotation,
+        do_bandsteering=args.do_bandsteering,
+        bssids=args.bssids,
+        cycles=args.cycles,
+        duration_to_skip=args.duration_to_skip,
+        test_map=test_map)
+    # Map available test flags to their respective execution methods
+    tests_to_run_series, tests_to_run_parallel, duration_dict = validate_arguments(args, test_map, args_dict)
     multi_traffic_obj.duration_dict = duration_dict.copy()
     # args.current = "series"
-    iszoom = 'zoom_test' in tests_to_run_parallel or 'zoom_test' in tests_to_run_series
-    isrb = 'rb_test' in tests_to_run_parallel or 'rb_test' in tests_to_run_series
-    isyt = 'yt_test' in tests_to_run_parallel or 'yt_test' in tests_to_run_series
-    multi_traffic_obj.series_tests = tests_to_run_series
-    multi_traffic_obj.parallel_tests = tests_to_run_parallel
-    multi_traffic_obj.misc_clean_up(layer3=True, layer4=True, generic=True, port_5000=iszoom, port_5002=isyt, port_5003=isrb)
-    if args.series_tests or args.parallel_tests:
-        series_threads = []
-        parallel_threads = []
-        # Process series tests
-        if args.series_tests:
-            ordered_series_tests = args.series_tests.split(',')
-            if args.dowebgui:
-                gen_order = ["ping_test", "qos_test", "ftp_test", "http_test", "mcast_test", "vs_test", "thput_test", "yt_test", "rb_test", "zoom_test", "teams_test"]
-                temp_ord_list = []
-                for test_name in gen_order:
-                    if test_name in ordered_series_tests:
-                        temp_ord_list.append(test_name)
-                ordered_series_tests = temp_ord_list.copy()
-            for idx, test_name in enumerate(ordered_series_tests):
-                test_name = test_name.strip().lower()
-                if test_name in test_map:
-                    func, label = test_map[test_name]
-                    args.current = "series"
-                    if test_name in ['rb_test', 'zoom_test', 'yt_test', 'teams_test']:
-                        if test_name == "rb_test":
-                            obj_no = 1
-                            while f"rb_test_{obj_no}" in multi_traffic_obj.rb_obj_dict["series"]:
-                                obj_no += 1
-                            obj_name = f"rb_test_{obj_no}"
-                            multi_traffic_obj.rb_obj_dict["series"][obj_name] = manager.dict({"obj": None, "data": None})
-                            logging.debug("Adding rb_test object to parallel execution")
-                        elif test_name == "yt_test":
-                            obj_no = 1
-                            while f"yt_test_{obj_no}" in multi_traffic_obj.yt_obj_dict["series"]:
-                                obj_no += 1
-                            obj_name = f"yt_test_{obj_no}"
-                            multi_traffic_obj.yt_obj_dict["series"][obj_name] = manager.dict({"obj": None, "data": None})
-                        elif test_name == "zoom_test":
-                            obj_no = 1
-                            while f"zoom_test_{obj_no}" in multi_traffic_obj.zoom_obj_dict["series"]:
-                                obj_no += 1
-                            obj_name = f"zoom_test_{obj_no}"
-                            multi_traffic_obj.zoom_obj_dict["series"][obj_name] = manager.dict({"obj": None, "data": None})
-                            logging.debug("Adding zoom_test object to parallel execution")
-                        elif test_name == "teams_test":
-                            obj_no = 1
-                            while f"teams_test_{obj_no}" in multi_traffic_obj.teams_obj_dict["series"]:
-                                obj_no += 1
-                            obj_name = f"teams_test_{obj_no}"
-                            multi_traffic_obj.teams_obj_dict["series"][obj_name] = manager.dict({"obj": None, "data": None})
-                            logging.debug("Adding teams_test object to parallel execution")
-                        series_threads.append(multiprocessing.Process(target=run_test_safe(func, f"{label} [Series {idx + 1}]", args, multi_traffic_obj, duration_dict[test_name])))
-                    else:
-                        series_threads.append(threading.Thread(
-                            target=run_test_safe(func, f"{label} [Series {idx + 1}]", args, multi_traffic_obj, duration_dict[test_name])
-                        ))
-                else:
-                    logging.warning(f"Unknown test '{test_name}' in --series_tests")
-
-        # Process parallel tests
-        if args.parallel_tests:
-            """
-            Process parallel test configurations, enforcing order when web GUI reporting is enabled.
-            Initializes appropriate threading or multiprocessing workers based on test type requirements.
-            """
-            ordered_parallel_tests = args.parallel_tests.split(',')
-
-            if args.dowebgui:
-                gen_order = ["ping_test", "qos_test", "ftp_test", "http_test", "mcast_test", "vs_test", "thput_test", "yt_test", "rb_test", "zoom_test", "teams_test"]
-                ordered_parallel_tests = [t for t in gen_order if t in ordered_parallel_tests]
-
-            for idx, test_name in enumerate(ordered_parallel_tests):
-                test_name = test_name.strip().lower()
-                if test_name in test_map:
-                    func, label = test_map[test_name]
-                    args.current = "parallel"
-                    if test_name in ['rb_test', 'zoom_test', 'yt_test', 'teams_test']:
-                        if test_name == "rb_test":
-                            multi_traffic_obj.rb_obj_dict["parallel"]["rb_test"] = manager.dict({"obj": None, "data": None})
-                            logging.debug("Adding rb_test object to parallel execution")
-                        elif test_name == "yt_test":
-                            multi_traffic_obj.yt_obj_dict["parallel"]["yt_test"] = manager.dict({"obj": None, "data": None})
-                            logging.debug("Adding yt_test object to parallel execution")
-                        elif test_name == "zoom_test":
-                            multi_traffic_obj.zoom_obj_dict["parallel"]["zoom_test"] = manager.dict({"obj": None, "data": None})
-                            logging.debug("Adding zoom_test object to parallel execution")
-                        elif test_name == "teams_test":
-                            multi_traffic_obj.teams_obj_dict["parallel"]["teams_test"] = manager.dict({"obj": None, "data": None})
-                            logging.debug("Adding teams_test object to parallel execution")
-
-                        parallel_threads.append(multiprocessing.Process(
-                            target=run_test_safe(func, f"{label} [Parallel {idx + 1}]", args, multi_traffic_obj, duration_dict[test_name])
-                        ))
-                    else:
-                        parallel_threads.append(threading.Thread(
-                            target=run_test_safe(func, f"{label} [Parallel {idx + 1}]", args, multi_traffic_obj, duration_dict[test_name])
-                        ))
-                else:
-                    logging.warning(f"Unknown test '{test_name}' in --parallel_tests")
-
-        if args.dowebgui:
-            """
-            Initialize overall execution status and tracking CSV for Web GUI reporting.
-            """
-            multi_traffic_obj.overall_status = {
-                "ping": "notstarted", "qos": "notstarted", "ftp": "notstarted", "http": "notstarted",
-                "mc": "notstarted", "vs": "notstarted", "thput": "notstarted", "rb": "notstarted",
-                "zoom": "notstarted", "yt": "notstarted", "teams": "notstarted",
-                "time": datetime.datetime.now().strftime("%Y %d %H:%M:%S"),
-                "status": "running", "current_mode": "tbd", "current_test_name": "tbd"
-            }
-            multi_traffic_obj.overall_csv.append(multi_traffic_obj.overall_status.copy())
-            df1 = pd.DataFrame(multi_traffic_obj.overall_csv)
-            df1.to_csv(f'{args.result_dir}/overall_status.csv', index=False)
-
-        """
-        Execute scheduled test scenarios sequentially and/or in parallel according to priority.
-        """
-        if args.order_priority == 'series':
-            multi_traffic_obj.current_exec = "series"
-            for t in series_threads:
-                t.start()
-                t.join()
-                multi_traffic_obj.series_index += 1
-
-            # Then run parallel tests
-            if parallel_threads:
-                multi_traffic_obj.misc_clean_up(layer3=True, layer4=True, generic=True, port_5000=iszoom, port_5002=isyt, port_5003=isrb)
-                logging.info('Starting parallel tests...')
-                time.sleep(10)
-
-            multi_traffic_obj.current_exec = "parallel"
-            for t in parallel_threads:
-                t.start()
-
-            multi_traffic_obj.parallel_index = 0
-            for t in parallel_threads:
-                t.join()
-                multi_traffic_obj.parallel_index += 1
-
-        else:
-            multi_traffic_obj.current_exec = "parallel"
-            for t in parallel_threads:
-                t.start()
-
-            for t in parallel_threads:
-                t.join()
-
-            if series_threads:
-                multi_traffic_obj.misc_clean_up(layer3=True, layer4=True, generic=True, port_5000=iszoom, port_5002=isyt, port_5003=isrb)
-                logging.info('Starting series tests...')
-                time.sleep(5)
-
-            multi_traffic_obj.current_exec = "series"
-            for t in series_threads:
-                t.start()
-                t.join()
-    else:
-        logger.error("Provide either --parallel_tests or --series_tests")
-        exit(1)
-
-    """
-    Finalize test execution: perform cleanup, save logs, generate the overall report,
-    and update the Web GUI status if applicable.
-    """
-    multi_traffic_obj.misc_clean_up(layer3=True, layer4=True, generic=True, port_5000=iszoom, port_5002=isyt, port_5003=isrb)
-    log_file = save_logs()
-    logging.info(f"Logs saved to: {log_file}")
-
-    test_results_df = pd.DataFrame(list(test_results_list))
-    multi_traffic_obj.generate_overall_report(test_results_df=test_results_df, args_dict=args_dict)
-
-    if multi_traffic_obj.dowebgui:
-        try:
-            multi_traffic_obj.overall_status["status"] = "completed"
-            multi_traffic_obj.overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
-            multi_traffic_obj.overall_csv.append(multi_traffic_obj.overall_status.copy())
-            df1 = pd.DataFrame(multi_traffic_obj.overall_csv)
-            df1.to_csv(f'{multi_traffic_obj.result_dir}/overall_status.csv', index=False)
-        except Exception as e:
-            logging.error(f"Error while writing status file for webui: {e}")
-
-    logging.info(f"\nTest Results Summary:\n{test_results_df}")
+    multi_traffic_obj.start_tests(test_map, tests_to_run_series, tests_to_run_parallel, duration_dict, args, args_dict)
 
 
 def run_test_safe(test_func, test_name, args, multi_traffic_obj, duration):
