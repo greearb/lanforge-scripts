@@ -1438,27 +1438,23 @@ class InteropPortReset(Realm):
 
                     d_name, device_type, model, user_name, release = [], [], [], [], []  # noqa: F841
 
-                    for y in all_devices:
-                        if "1.1." in y:
-                            d_name.append(self.interop.get_device_details(device=y, query="name"))
-                            device_type.append(self.interop.get_device_details(device=y, query="device-type"))
-                            # model.append(self.interop.get_device_details(device=y, query="model"))
-                            user_name.append(self.interop.get_device_details(device=y, query="user-name"))
-                            # release.append(self.interop.get_device_details(device=y, query="release"))
+                    for dev in self.adb_device_list:
+                        d_name.append(self.interop.get_device_details(device=dev, query="name"))
+                        device_type.append(self.interop.get_device_details(device=dev, query="device-type"))
+                        user_name.append(self.interop.get_device_details(device=dev, query="user-name"))
+                    for dev in self.all_laptops:
+                        d_name.append(dev)
+                        user_name.append(self.interop.get_laptop_devices_details(device=dev, query="host_name"))
+                        hw_version = self.interop.get_laptop_devices_details(device=dev, query="hw_version")
+                        if "Linux" in hw_version:
+                            dev_type = "Linux"
+                        elif "Win" in hw_version:
+                            dev_type = "Windows"
+                        elif "Apple" in hw_version:
+                            dev_type = "Apple"
                         else:
-                            d_name.append(y)
-                            user_name.append(self.interop.get_laptop_devices_details(device=y, query="host_name"))
-                            hw_version = self.interop.get_laptop_devices_details(device=y, query="hw_version")
-                            if "Linux" in hw_version:
-                                dev_type = "Linux"
-                            elif "Win" in hw_version:
-                                dev_type = "Windows"
-                            elif "Apple" in hw_version:
-                                dev_type = "Apple"
-                            else:
-                                dev_type = ""
-                            device_type.append(dev_type)
-                            # release.append("")
+                            dev_type = ""
+                        device_type.append(dev_type)
                     s_no = []
                     for i in range(len(d_name)):
                         s_no.append(i + 1)
@@ -1506,27 +1502,23 @@ class InteropPortReset(Realm):
 
                 d_name, device_type, model, user_name, release = [], [], [], [], []  # noqa: F841
 
-                for y in all_devices:
-                    if "1.1." in y:
-                        d_name.append(self.interop.get_device_details(device=y, query="name"))
-                        device_type.append(self.interop.get_device_details(device=y, query="device-type"))
-                        # model.append(self.interop.get_device_details(device=y, query="model"))
-                        user_name.append(self.interop.get_device_details(device=y, query="user-name"))
-                        # release.append(self.interop.get_device_details(device=y, query="release"))
+                for dev in self.adb_device_list:
+                    d_name.append(self.interop.get_device_details(device=dev, query="name"))
+                    device_type.append(self.interop.get_device_details(device=dev, query="device-type"))
+                    user_name.append(self.interop.get_device_details(device=dev, query="user-name"))
+                for dev in self.all_laptops:
+                    d_name.append(dev)
+                    user_name.append(self.interop.get_laptop_devices_details(device=dev, query="host_name"))
+                    hw_version = self.interop.get_laptop_devices_details(device=dev, query="hw_version")
+                    if "Linux" in hw_version:
+                        dev_type = "Linux"
+                    elif "Win" in hw_version:
+                        dev_type = "Windows"
+                    elif "Apple" in hw_version:
+                        dev_type = "Apple"
                     else:
-                        d_name.append(y)
-                        user_name.append(self.interop.get_laptop_devices_details(device=y, query="host_name"))
-                        hw_version = self.interop.get_laptop_devices_details(device=y, query="hw_version")
-                        if "Linux" in hw_version:
-                            dev_type = "Linux"
-                        elif "Win" in hw_version:
-                            dev_type = "Windows"
-                        elif "Apple" in hw_version:
-                            dev_type = "Apple"
-                        else:
-                            dev_type = ""
-                        device_type.append(dev_type)
-                        # release.append("")
+                        dev_type = ""
+                    device_type.append(dev_type)
                 s_no = []
                 for i in range(len(d_name)):
                     s_no.append(i + 1)
