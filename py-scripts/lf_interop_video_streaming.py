@@ -887,7 +887,11 @@ class VideoStreamingTest(Realm):
                         tx_rate.append(alias[i]['tx-rate'])
                         rx_rate.append(alias[i]['rx-rate'])
                         bssid.append(alias[i]['ap'])
-                        channel.append(alias[i]['channel'])
+                        channel_value = str(alias[i].get('channel', ''))
+                        if channel_value in ('', '0', '-1'):
+                            channel.append('NA')
+                        else:
+                            channel.append(alias[i]['channel'])
 
         rssi = [0 if i.strip() == "" else int(i) for i in rssi]
         return rssi, tx_rate, bssid, channel
@@ -938,7 +942,11 @@ class VideoStreamingTest(Realm):
                             mac.append(alias[i]['mac'])
                             mode.append(alias[i]['mode'])
                             rssi.append(alias[i]['signal'])
-                            channel.append(alias[i]['channel'])
+                            channel_value = str(alias[i].get('channel', ''))
+                            if channel_value in ('', '0', '-1'):
+                                channel.append('NA')
+                            else:
+                                channel.append(alias[i]['channel'])
                             tx_rate.append(alias[i]['tx-rate'])
                             rx_rate.append(alias[i]['rx-rate'])
                             bssid.append(alias[i]['ap'])
@@ -1441,7 +1449,11 @@ class VideoStreamingTest(Realm):
                         mac.append(alias[i]['mac'])
                         mode.append(alias[i]['mode'])
                         rssi.append(alias[i]['signal'])
-                        channel.append(alias[i]['channel'])
+                        channel_value = str(alias[i].get('channel', ''))
+                        if channel_value in ('', '0', '-1'):
+                            channel.append('NA')
+                        else:
+                            channel.append(alias[i]['channel'])
                         tx_rate.append(alias[i]['tx-rate'])
         total_urls = self.data["total_urls"]
         total_err = self.data["total_err"]
@@ -2178,7 +2190,11 @@ class VideoStreamingTest(Realm):
                         mac.append(alias[i]['mac'])
                         mode.append(alias[i]['mode'])
                         rssi.append(alias[i]['signal'])
-                        channel.append(alias[i]['channel'])
+                        channel_value = str(alias[i].get('channel', ''))
+                        if channel_value in ('', '0', '-1'):
+                            channel.append('NA')
+                        else:
+                            channel.append(alias[i]['channel'])
                         tx_rate.append(alias[i]['tx-rate'])
 
         self.add_buffer_and_wait_time_images(report=report)
