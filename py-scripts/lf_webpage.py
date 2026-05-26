@@ -1329,7 +1329,11 @@ class HttpDownload(Realm):
             for interface in self.response_port['interfaces']:
                 for port, port_data in interface.items():
                     if port in self.port_list:
-                        self.channel_list.append(str(port_data['channel']))
+                        channel_value = str(port_data.get('channel', ''))
+                        if channel_value in ('', '0', '-1'):
+                            self.channel_list.append('NA')
+                        else:
+                            self.channel_list.append(channel_value)
                         self.mode_list.append(str(port_data['mode']))
                         self.ssid_list.append(str(port_data['ssid']))
 
@@ -1629,7 +1633,11 @@ class HttpDownload(Realm):
             for interface in self.response_port['interfaces']:
                 for port, port_data in interface.items():
                     if port in self.port_list:
-                        self.channel_list.append(str(port_data['channel']))
+                        channel_value = str(port_data.get('channel', ''))
+                        if channel_value in ('', '0', '-1'):
+                            self.channel_list.append('NA')
+                        else:
+                            self.channel_list.append(channel_value)
                         self.mode_list.append(str(port_data['mode']))
                         self.ssid_list.append(str(port_data['ssid']))
         elif self.client_type == "Virtual":
@@ -1637,7 +1645,11 @@ class HttpDownload(Realm):
             for interface in self.response_port['interfaces']:
                 for port, port_data in interface.items():
                     if port in self.station_list[0]:
-                        self.channel_list.append(str(port_data['channel']))
+                        channel_value = str(port_data.get('channel', ''))
+                        if channel_value in ('', '0', '-1'):
+                            self.channel_list.append('NA')
+                        else:
+                            self.channel_list.append(channel_value)
                         self.mode_list.append(str(port_data['mode']))
                         self.macid_list.append(str(port_data['mac']))
                         self.ssid_list.append(str(port_data['ssid']))
@@ -2062,9 +2074,11 @@ class HttpDownload(Realm):
                 bssid_list.append('-')
         for sta in station_names:
             if sta in interfaces_dict:
-                channel_list.append(interfaces_dict[sta]['channel'])
-            else:
-                channel_list.append('-')
+                channel_value = str(interfaces_dict[sta].get('channel', ''))
+                if channel_value in ('', '0', '-1'):
+                    channel_list.append('NA')
+                else:
+                    channel_list.append(interfaces_dict[sta]['channel'])
         return signal_list, link_speed_list, rx_rate_list, bssid_list, channel_list
 
     def monitor_cx(self):
