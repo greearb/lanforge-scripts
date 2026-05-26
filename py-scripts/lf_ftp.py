@@ -1389,7 +1389,11 @@ class FtpTest(LFCliBase):
                 self.port_rx_rate.append('-')
         for sta in station_names:
             if sta in interfaces_dict:
-                self.channel_list.append(interfaces_dict[sta]['channel'])
+                channel_value = str(interfaces_dict[sta].get('channel', ''))
+                if channel_value in ('', '0', '-1'):
+                    self.channel_list.append('NA')
+                else:
+                    self.channel_list.append(interfaces_dict[sta]['channel'])
             else:
                 self.channel_list.append('-')
         for sta in station_names:
@@ -1428,7 +1432,11 @@ class FtpTest(LFCliBase):
             for interface in response_port['interfaces']:
                 for port, port_data in interface.items():
                     if port in self.station_list:
-                        self.channel_list.append(str(port_data['channel']))
+                        channel_value = str(port_data.get('channel', ''))
+                        if channel_value in ('', '0', '-1'):
+                            self.channel_list.append('NA')
+                        else:
+                            self.channel_list.append(channel_value)
                         self.mode_list.append(str(port_data['mode']))
                         self.mac_id_list.append(str(port_data['mac']))
                         self.ssid_list.append(str(port_data['ssid']))
@@ -1437,7 +1445,11 @@ class FtpTest(LFCliBase):
             for interface in response_port['interfaces']:
                 for port, port_data in interface.items():
                     if port in self.input_devices_list:
-                        self.channel_list.append(str(port_data['channel']))
+                        channel_value = str(port_data.get('channel', ''))
+                        if channel_value in ('', '0', '-1'):
+                            self.channel_list.append('NA')
+                        else:
+                            self.channel_list.append(channel_value)
                         self.mode_list.append(str(port_data['mode']))
                         self.ssid_list.append(str(port_data['ssid']))
 
@@ -1524,7 +1536,11 @@ class FtpTest(LFCliBase):
         for interface in response_port['interfaces']:
             for port, port_data in interface.items():
                 if port in self.input_devices_list:
-                    self.channel_list.append(str(port_data['channel']))
+                    channel_value = str(port_data.get('channel', ''))
+                    if channel_value in ('', '0', '-1'):
+                        self.channel_list.append('NA')
+                    else:
+                        self.channel_list.append(channel_value)
                     self.mode_list.append(str(port_data['mode']))
                     self.ssid_list.append(str(port_data['ssid']))
         if self.dowebgui:
