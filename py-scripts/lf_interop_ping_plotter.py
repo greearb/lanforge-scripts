@@ -911,7 +911,11 @@ class Ping(Realm):
             self.packets_dropped.append(int(device_data['ping_stats']['dropped'][-1]))
             self.device_names.append(device_data['name'])
             self.device_modes.append(device_data['mode'])
-            self.device_channels.append(device_data['channel'])
+            channel_value = str(device_data.get('channel', ''))
+            if channel_value in ('', '0', '-1'):
+                self.device_channels.append('NA')
+            else:
+                self.device_channels.append(device_data['channel'])
             self.device_mac.append(device_data['mac'])
             self.device_ips.append(device_data['ip'])
             self.device_bssid.append(device_data['bssid'])
@@ -2176,7 +2180,11 @@ class Ping(Realm):
                     self.packets_dropped.append(int(device_data['ping_stats']['dropped'][-1]))
                     self.device_names.append(device_data['name'])
                     self.device_modes.append(device_data['mode'])
-                    self.device_channels.append(device_data['channel'])
+                    channel_value = str(device_data.get('channel', ''))
+                    if channel_value in ('', '0', '-1'):
+                        self.device_channels.append('NA')
+                    else:
+                        self.device_channels.append(device_data['channel'])
                     self.device_mac.append(device_data['mac'])
                     self.device_ips.append(device_data['ip'])
                     self.device_bssid.append(device_data['bssid'])
