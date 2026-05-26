@@ -1060,7 +1060,11 @@ class Throughput(Realm):
                 signal_list.append('-')
         for sta in station_names:
             if sta in interfaces_dict:
-                channel_list.append(interfaces_dict[sta]['channel'])
+                channel_value = str(interfaces_dict[sta].get('channel', ''))
+                if channel_value in ('', '0', '-1'):
+                    channel_list.append('NA')
+                else:
+                    channel_list.append(interfaces_dict[sta]['channel'])
             else:
                 channel_list.append('-')
         for sta in station_names:
