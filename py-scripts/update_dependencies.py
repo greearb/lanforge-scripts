@@ -37,6 +37,8 @@ pip_packages: list = [
     'flask',
     'pytz',
     'python-dotenv',
+    'pure-python-adb',
+    'uiautomator2',
 ]
 
 
