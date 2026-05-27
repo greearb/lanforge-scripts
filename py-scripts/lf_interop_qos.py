@@ -559,7 +559,7 @@ class ThroughputQOS(Realm):
         for eid in resource_eid_list2:
             for i in self.mac_id1_list:
                 if eid in i:
-                    self.mac_id_list.append(i.strip(eid + ' '))
+                    self.mac_id_list.append(i.split(' ', 1)[1])
         logger.info("MAC ID LIST {}" .format(self.mac_id_list))
         return self.input_devices_list, self.real_client_list, self.mac_id_list, config_devices
         # user desired real client list 1.1 OnePlus, 1.1 Apple for report generation ---
