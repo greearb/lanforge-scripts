@@ -563,7 +563,7 @@ class FtpTest(LFCliBase):
         for eid in resource_eid_list2:
             for i in self.mac_id1_list:
                 if eid in i:
-                    self.mac_id_list.append(i.strip(eid + ' '))
+                    self.mac_id_list.append(i.split(' ', 1)[1])
         logging.info("MAC ID LIST %s", self.mac_id_list)
         return self.real_client_list, config_devices
 
