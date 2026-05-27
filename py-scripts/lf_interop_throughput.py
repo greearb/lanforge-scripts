@@ -987,7 +987,7 @@ class Throughput(Realm):
         for eid in resource_eid_list2:
             for i in self.mac_id1_list:
                 if eid in i:
-                    self.mac_id_list.append(i.strip(eid + ' '))
+                    self.mac_id_list.append(i.split(' ', 1)[1])
         # Runtime data for webui for configuration
         if self.dowebgui and not self.interopability_config:
             if len(configure_list) == 0:
