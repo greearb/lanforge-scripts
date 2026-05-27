@@ -2049,6 +2049,10 @@ class VideoStreamingTest(Realm):
                 test_setup_info["Coordinates"] = self.coordinate
                 if self.do_bandsteering:
                     test_setup_info["Total Cycles"] = self.total_cycles
+                else:
+                    test_setup_info["Duration (min)"] = self.duration
+            else:
+                test_setup_info["Duration (min)"] = self.duration
             test_setup_info['Incremental Values'] = self.test_setup_info_incremental_values
             # test_setup_info['Total Duration (min)'] = str(self.test_setup_info_total_duration)
             return test_setup_info
