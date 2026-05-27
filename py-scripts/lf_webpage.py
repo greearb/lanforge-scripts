@@ -461,7 +461,7 @@ class HttpDownload(Realm):
         for eid in resource_eid_list2:
             for i in mac_id_list1:
                 if eid in i:
-                    mac_id_list2.append(i.strip(eid + ' '))
+                    mac_id_list2.append(i.split(' ', 1)[1])
         logger.info("MAC ID LIST: %s", mac_id_list2)
         self.port_list, self.devices_list, self.macid_list = input_devices_list, real_client_list1, mac_id_list2
         # user desired real client list 1.1 OnePlus, 1.1 Apple for report generation ---
