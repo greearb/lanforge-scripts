@@ -116,6 +116,7 @@ class RobotClass:
         # charge_dock_move_start_timestamp = ""
         charge_dock_arrival_timestamp = ""
         charging_completion_timestamp = ""
+        battery_retries = 0
         while True:
             try:
                 response = requests.get(battery_url, timeout=5)
@@ -196,11 +197,16 @@ class RobotClass:
                     return pause, stopped
 
             except Exception as e:
-                logging.info("[ERROR] Failed to check battery: {}".format(e))
-                stopped = True
-                if monitor_function:
-                    return pause, stopped, {}
-                return pause, stopped
+                battery_retries += 1
+                logging.info("[ERROR] Failed to check battery: {}. Retry {}/15".format(e, battery_retries))
+
+                if battery_retries >= 15:
+                    stopped = True
+                    if monitor_function:
+                        return pause, stopped, {}
+                    return pause, stopped
+
+                time.sleep(4)
 
     def move_to_coordinate(self, coord, monitor_function=None):
         """
