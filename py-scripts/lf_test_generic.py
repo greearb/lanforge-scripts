@@ -108,6 +108,7 @@ class GenTest():
                  radio=None, file_output_lfcurl=None, lf_logger_json=None, log_level="debug", loop_count=None,
                  _debug_on=False, _exit_on_error=False, die_on_error=False, _exit_on_fail=False):
         self.host = host
+        self.port = port
         self.lf_user = lf_user
         self.lf_passwd = lf_passwd
         self.ssid = ssid
