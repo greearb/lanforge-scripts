@@ -101,6 +101,7 @@ if sys.version_info[0] != 3:
 
 class GenTest():
     def __init__(self, lf_user, lf_passwd, ssid, security, passwd,
+                 udp, receive,
                  name_prefix, num_stations, port_mgr_cols, gen_tab_cols, report_file_path, output_format="csv", client_port=None, server_port=None,
                  host="localhost", port=8080, create_report=False, use_existing_eid=None, monitor_interval="2s",
                  test_duration="20s", test_type="ping", target=None, cmd=None, spdtest_no_download=False, spdtest_no_upload=False, spdtest_single_connection=False,
@@ -117,6 +118,9 @@ class GenTest():
         self.security = security
         self.passwd = passwd
         self.name_prefix = name_prefix
+
+        self.udp = udp
+        self.receive = receive
 
         # Generic test args
         self.cmd = cmd
@@ -826,7 +830,12 @@ class GenTest():
                 server_ip_addr = self.eid_to_ip(self.name_to_eid(self.target))
             else:
                 server_ip_addr = self.target
-            cmd = cmd + str(" -c %s" % server_ip_addr) + " -t 60 --tos 0 -b 1K " + str("--bind_dev %s" % eid_name)
+            cmd = cmd + str(" -c %s" % server_ip_addr)
+            if self.udp:
+                cmd = cmd + " -u "
+            if self.receive:
+                cmd = cmd + " -R "
+            cmd = cmd + " -t 60 --tos 0 -b 1K " + str("--bind_dev %s" % eid_name)
             cmd = cmd + " -i 3 --pidfile /tmp/lf_helper_iperf3_%s.pid" % alias
             if (self.client_port):
                 # add port that should match server_port
@@ -1240,6 +1249,10 @@ def main():
     optional.add_argument('--ap', help='Used to force a connection to a particular AP, bssid of specific AP', default=None)
     optional.add_argument('--security', help='security for station ssids. options: {open | wep | wpa | wpa2 | wpa3}')
 
+    # additional Client Configuration
+    optional.add_argument('--udp', '--UDP', dest='udp', action="store_true", help='Set client mode to UDP, default is TCP')
+    optional.add_argument('--receive', '--rcv',  dest='receive', action="store_true", help='Set client mode to receive, default is transmit')
+
     # dut info
     optional.add_argument("--dut_hw_version", help="dut hw version for kpi.csv, hardware version of the device under test", default="")
     optional.add_argument("--dut_sw_version", help="dut sw version for kpi.csv, software version of the device under test", default="")
@@ -1342,6 +1355,8 @@ This script also *does not* use any other file except lanforge_api.py.
                               port_mgr_cols=args.port_mgr_cols,
                               gen_tab_cols=args.gen_tab_cols,
                               security=args.security,
+                              udp=args.udp,
+                              receive=args.receive,
                               test_duration=args.test_duration,
                               monitor_interval=args.monitor_interval,
                               file_output_lfcurl=args.file_output_lfcurl,
