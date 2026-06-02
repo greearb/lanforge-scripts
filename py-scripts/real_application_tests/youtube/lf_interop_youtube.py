@@ -1628,7 +1628,7 @@ class Youtube(Realm):
                         matched_ports.append((port, port_data))
 
             for port_name, port_data in matched_ports:
-                if port_data.get("parent dev") == 'wiphy0':
+                if port_data.get("parent dev") == 'wiphy0' and not port_data.get('down') and port_data.get('ip') != '0.0.0.0':
                     self.mac_list.append(port_data.get("mac"))
                     self.rssi_list.append(port_data.get("signal"))
                     self.link_rate_list.append(port_data.get("rx-rate"))
