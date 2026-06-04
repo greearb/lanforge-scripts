@@ -1386,10 +1386,10 @@ class SpeedTest(Realm):
             _results_dir_name=result_dir_name,
             _path=self.result_dir if self.result_dir is not None else "/home/lanforge/html-reports"
         )
-        report_path = report.get_path()
+        # report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
-        os.makedirs(report_path, exist_ok=True)
-        os.makedirs(report_path_date_time, exist_ok=True)
+        # os.makedirs(report_path, exist_ok=True)
+        # os.makedirs(report_path_date_time, exist_ok=True)
 
         all_ips = set()
         for iter_data in self.iteration_dict.values():
@@ -1921,7 +1921,7 @@ def main():
     optional.add_argument(
         '--result_dir',
         type=str,
-        default='results',
+        default='',
         help='Directory to store test results')
 
     optional.add_argument(
