@@ -1535,10 +1535,10 @@ class SpeedTest(Realm):
             # store clean iteration data
             per_iter[iter_idx] = {
                 "hostnames": host_list,
-                "download": dls,
-                "upload": uls,
-                "download_lat": dlat,
-                "upload_lat": ulat,
+                "download": [round(x, 2) for x in dls],
+                "upload": [round(x, 2) for x in uls],
+                "download_lat": [round(x, 2) for x in dlat],
+                "upload_lat": [round(x, 2) for x in ulat],
                 "meta": meta
             }
             print('DEBUG', per_iter)
@@ -1566,10 +1566,10 @@ class SpeedTest(Realm):
 
                 # aggregate averages per iteration
                 rotation_summary[rotation]["coords"].append(coord)
-                rotation_summary[rotation]["download"].append(sum(dls) / len(dls))
-                rotation_summary[rotation]["upload"].append(sum(uls) / len(uls))
-                rotation_summary[rotation]["download_lat"].append(sum(dlat) / len(dlat))
-                rotation_summary[rotation]["upload_lat"].append(sum(ulat) / len(ulat))
+                rotation_summary[rotation]["download"].append(round(sum(dls) / len(dls), 2))
+                rotation_summary[rotation]["upload"].append(round(sum(uls) / len(uls), 2))
+                rotation_summary[rotation]["download_lat"].append(round(sum(dlat) / len(dlat), 2))
+                rotation_summary[rotation]["upload_lat"].append(round(sum(ulat) / len(ulat), 2))
 
         if self.robot_test:
             # TODO NEED to add heading of rotation
@@ -1702,10 +1702,10 @@ class SpeedTest(Realm):
                     if ip in ip_to_idx:
                         j = ip_to_idx[ip]
                         hostnames.append(host or ip)
-                        dls.append(iter_block['download_speed'][j])
-                        uls.append(iter_block['upload_speed'][j])
-                        dlat.append(iter_block['download_lat'][j])
-                        ulat.append(iter_block['upload_lat'][j])
+                        dls.append(round(iter_block['download_speed'][j], 2))
+                        uls.append(round(iter_block['upload_speed'][j], 2))
+                        dlat.append(round(iter_block['download_lat'][j], 2))
+                        ulat.append(round(iter_block['upload_lat'][j], 2))
                     else:
                         host_label = host or ip or "(unknown)"
                         hostnames.append(host_label)
