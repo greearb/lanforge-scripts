@@ -1741,9 +1741,13 @@ class SpeedTest(Realm):
                         _xticks_rotation=30,
                         _enable_csv=True
                     )
-                    report.set_graph_image(graph.build_bar_graph())
-                    report.move_graph_image()
-                    report.build_graph()
+                    png = graph.build_bar_graph()
+                    if png:
+                        report.set_graph_image(png)
+                        report.move_graph_image()
+                        report.build_graph()
+                        report.set_csv_filename(png)
+                        report.move_csv_file()
 
                     report.set_table_title('Per-Client Latency (Download & Upload)')
                     report.build_table_title()
@@ -1763,9 +1767,13 @@ class SpeedTest(Realm):
                         _xticks_rotation=30,
                         _enable_csv=True
                     )
-                    report.set_graph_image(graph2.build_bar_graph())
-                    report.move_graph_image()
-                    report.build_graph()
+                    png2 = graph2.build_bar_graph()
+                    if png2:
+                        report.set_graph_image(png2)
+                        report.move_graph_image()
+                        report.build_graph()
+                        report.set_csv_filename(png2)
+                        report.move_csv_file()
 
                 test_input_info = {
                     # "IP": [dev["ip"] for dev in roster],  # Uncomment for IP column
