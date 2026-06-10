@@ -54,13 +54,14 @@ my %MONTHS = (
     "Nov" => 10,
     "Dec" => 11,
 );
-
+my $linectr = 0;
 while (my $line=<STDIN>) {
     chomp $line;
     # print "line[$line]\n";
     my $lc_pos = index($line, '[{');
     # print "lc at $lc_pos\n";
     next if ($lc_pos < 0);
+    $linectr += 1;
     # more informative not to have the current date but the date of the record
     # print `date`;
     my ($date_str) = $line =~ /^(\w+ \d+ \d+:\d+:\d+) /;
@@ -112,6 +113,10 @@ while (my $line=<STDIN>) {
         }
     }
 }
+if ($linectr < 1) {
+    print "No lines parsed. Please export a longer time period. Bye.\n";
+    exit(1);
+}
 # determine average of the values in the array
 my $average_kbytes = 0;
 my $t_sum = 0;
@@ -127,7 +132,11 @@ for my $epoch (sort keys %mem_histo) {
     $min_kbytes = $mem_histo{$epoch} if ($mem_histo{$epoch} < $min_kbytes);
     $max_kbytes = $mem_histo{$epoch} if ($max_kbytes < $mem_histo{$epoch});
 }
-$average_kbytes = int($t_sum / (keys(%mem_histo)));
+my @histokeys = keys(%mem_histo);
+
+if (@histokeys > 0) {
+    $average_kbytes = int($t_sum / (keys(%mem_histo)));
+}
 my $relative_zero = $average_kbytes - $min_kbytes;
 
 print "ave_kbytes:$average_kbytes, $min_kbytes, $max_kbytes, z:$relative_zero\n";
