@@ -33,7 +33,7 @@ pip_packages: list = [
     'websocket-client',
     'xlsxwriter',
     'pytesseract',
-    'opencv-python',
+    # 'opencv-python',
     'flask',
     'pytz',
     'python-dotenv',
