@@ -199,11 +199,7 @@ class ZoomAutomator:
                 if stop_signal_from_server:
                     self.stop_signal = True
                     self.logger.info(
-                        "Stop signal received from the server. Exiting the loop."
-                    )
-                else:
-                    self.logger.info(
-                        "No stop signal received from the server. Continuing."
+                        "Stop signal received from the server. Exiting the Test."
                     )
             return self.stop_signal
         except Exception as e:
@@ -256,17 +252,36 @@ class ZoomAutomator:
 
             # Enter name if field is present
             name_input = d(className="android.widget.EditText")
-            if name_input.exists:
+            if name_input.wait(timeout=10):
                 self.logger.info(
                     f"[{serial}] Entering participant name: {participant_name}"
                 )
                 name_input.set_text(participant_name)
                 time.sleep(1)
-                d(text="OK").click()
-                self.logger.info(f"[{serial}] Clicked 'Join' on preview screen.")
+                ok_btn = d(text="OK")
+                if ok_btn.wait(timeout=10):
+                    ok_btn.click()
+                    self.logger.info(f"[{serial}] Clicked 'OK' on preview screen.")
+                else:
+                    raise RuntimeError(f"[{serial}] 'OK' button not found within 10 seconds on preview screen.")
+            else:
+                self.logger.error(
+                    f"[{serial}] Name input screen not found "
+                    f"(className='android.widget.EditText'). "
+                    f"Aborting automation."
+                )
+                raise RuntimeError(
+                    f"[{serial}] Could not find name input screen. "
+                    f"Zoom may not have launched correctly or the UI flow changed."
+                )
+
             # Tap join on preview
-            d(text="Join").click()
-            self.logger.info(f"[{serial}] Clicked 'Join' on preview screen.")
+            join_btn = d(text="Join")
+            if join_btn.wait(timeout=10):
+                join_btn.click()
+                self.logger.info(f"[{serial}] Clicked 'Join' on preview screen.")
+            else:
+                raise RuntimeError(f"[{serial}] 'Join' button not found within 10 seconds on preview screen.")
 
         else:
             # 4. Old flow: check for name input screen
@@ -278,14 +293,20 @@ class ZoomAutomator:
                 name_input.set_text(participant_name)
                 time.sleep(1)
                 ok_btn = d(text="OK", className="android.widget.Button")
-                if ok_btn.exists:
+                if ok_btn.wait(timeout=10):
                     ok_btn.click()
                 else:
                     d(resourceId="us.zoom.videomeetings:id/button1").click()
                 self.logger.info(f"[{serial}] Clicked 'Ok Button'")
             else:
-                self.logger.warning(
-                    f"[{serial}] Name input screen not found. Proceeding..."
+                self.logger.error(
+                    f"[{serial}] Name input screen not found "
+                    f"(resourceId='us.zoom.videomeetings:id/edtScreenName'). "
+                    f"Aborting automation."
+                )
+                raise RuntimeError(
+                    f"[{serial}] Could not find name input screen. "
+                    f"Zoom may not have launched correctly or the UI flow changed."
                 )
 
         # 5. Wait to join the meeting
@@ -349,7 +370,7 @@ class ZoomAutomator:
                 break
             time.sleep(2)
 
-        # 7. Stay in the meeting
+        # 7. Leave Meeting
         try:
             self.reveal_zoom_controls(d, (width // 2, height // 2))
 
@@ -497,7 +518,7 @@ class ZoomAutomator:
             self.logger.info(f"[{serial}] Both audio and video are enabled.")
         else:
             self.logger.warning(
-                f"[{serial}]Could not fully enable audio/video after {max_retries} retries."
+                f"[{serial}] Could not fully enable audio/video after {max_retries} retries."
             )
 
     def upload_ping_log(self):
@@ -536,7 +557,7 @@ def main():
     parser.add_argument(
         "--participant_name", help="Name to use when joining the meeting"
     )
-    parser.add_argument("--server_host", default="0.0.0.0", help="flask server host")
+    parser.add_argument("--server_host", default="127.0.0.1", help="flask server host")
     parser.add_argument(
         "--server_port", type=int, default=5000, help="flask server port"
     )
