@@ -1001,7 +1001,7 @@ class RealBrowserTest(Realm):
                 return False  # Handle case where endpoint data is not available
             endp_status = generic_endpoint["endpoint"].get("status", "")
             # If the endpoint status is not 'Stopped' or 'WAITING', return False
-            if endp_status not in ["Stopped", "WAITING"]:
+            if endp_status not in ["Stopped", "WAITING", "FTM_WAIT", "NO-CX"]:
                 return False
         # If all endpoints are in 'Stopped' or 'WAITING', return True
         return True
