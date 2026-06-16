@@ -113,6 +113,7 @@ import argparse
 import time
 import sys
 import os
+import subprocess
 import pandas as pd
 import importlib
 import logging
@@ -209,9 +210,10 @@ class Youtube(Realm):
                  do_bandsteering=False,
                  current_cord="",
                  current_angle="NA",
-                 rotations_enabled=False
-
-
+                 rotations_enabled=False,
+                 gads_hub=None,
+                 candela_bundle_id='com.candela.wecan.interop-ios',
+                 candela_timeout=20,
                  ):
         """
         Initialize the YouTube streaming test parameters.
@@ -240,6 +242,8 @@ class Youtube(Realm):
         self.sta_list = sta_list
         self.real_sta_list = []
         self.real_sta_data_dict = {}
+        self.real_sta_os_types = []
+        self.real_sta_hostname = []
         self.linux = 0
         self.windows = 0
         self.mac = 0
@@ -287,6 +291,17 @@ class Youtube(Realm):
         self.lanforge_port_list = set()
         self.lanforge_os_type = list()
         self.android = 0
+        self.ios = 0
+        self.ios_udid_map = {}
+        self.ios_resource_udid_map = {}
+        self.ios_udid_list = []
+        self.ios_hostname_list = []
+        self.ios_lanforge_port_list = []
+        self.ios_os_type = []
+        self.ios_processes = []
+        self.gads_hub = gads_hub
+        self.candela_bundle_id = candela_bundle_id
+        self.candela_timeout = candela_timeout
         self.wifi_interface_list = []
         self.devices_list = []
         self.max_buffer = {}
@@ -399,26 +414,52 @@ class Youtube(Realm):
         """
         self.get_device_data()
         self.get_android_device_data()
+        self.get_ios_device_data()
         self.process_device_data()
 
-        if self.generic_endps_profile.create(ports=self.real_sta_list, sleep_time=.5, real_client_os_types=self.real_sta_os_types,):
-            logging.info('Real client generic endpoint creation completed.')
-        else:
-            logging.error('Real client generic endpoint creation failed.')
-            exit(0)
+        # Step 1: WiFi-station endpoints (Windows / Linux / macOS / Android)
+        # iOS devices are intentionally excluded here: they connect via GADS/Appium,
+        # not through LANforge's WiFi stack, so they exist in real_sta_list as
+        # "shelf.resource" (2-part) which causes an IndexError in gen_cxprofile.create()
+        # that requires "shelf.resource.port" (3-part) format.  Their test commands are
+        # set on the eth0 endpoints created in Step 2 below.
+        wifi_sta_list = [
+            sta for sta, ost in zip(self.real_sta_list, self.real_sta_os_types)
+            if ost != 'ios'
+        ]
+        wifi_sta_os_types = [ost for ost in self.real_sta_os_types if ost != 'ios']
 
+        if wifi_sta_list:
+            if self.generic_endps_profile.create(ports=wifi_sta_list, sleep_time=.5, real_client_os_types=wifi_sta_os_types,):
+                logging.info('Real client generic endpoint creation completed.')
+            else:
+                logging.error('Real client generic endpoint creation failed.')
+                exit(0)
+
+        # wifi_endp_idx tracks position in created_endp for WiFi-station endpoints,
+        # independently of i (which spans all devices including iOS).
+        wifi_endp_idx = 0
         for i in range(0, len(self.real_sta_os_types)):
+            if self.real_sta_os_types[i] == 'ios':
+                continue  # no WiFi-station endpoint for iOS
             if self.real_sta_os_types[i] == 'windows':
                 cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
+                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[wifi_endp_idx], cmd)
             elif self.real_sta_os_types[i] == 'linux':
                 cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.wifi_interface_list[i], self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-
+                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[wifi_endp_idx], cmd)
             elif self.real_sta_os_types[i] == 'macos':
                 cmd = "sudo bash ctyt.bash --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
-                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
+                self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[wifi_endp_idx], cmd)
+            # 'android' WiFi-station endpoints intentionally get no command;
+            # their actual test command is set on the eth0 endpoint in Step 3.
+            wifi_endp_idx += 1
 
+        # Step 2: Android eth0 endpoints
+        # Note: iOS devices are NOT given LANforge endpoints because they connect via
+        # GADS externally and have no valid LANforge-managed port (their resource ports
+        # are phantom).  iOS automation is launched as a direct subprocess by
+        # start_ios_automations(), called from main() alongside start_generic().
         if self.generic_endps_profile.create(ports=self.lanforge_port_list, sleep_time=.5, real_client_os_types=self.lanforge_os_type,):
             logging.info('Real client generic endpoint creation completed.')
         else:
@@ -518,6 +559,7 @@ class Youtube(Realm):
             interfaces = interface_data["interfaces"]
             final_device_list = []  # Initialize the list
 
+            found_resources = set()
             for device in real_sta_list:
                 for interface_dict in interfaces:
                     for key, value in interface_dict.items():
@@ -531,7 +573,32 @@ class Youtube(Realm):
                             and value["ip"] != "0.0.0.0"
                         ):
                             final_device_list.append(key)
+                            found_resources.add(device)
                             break
+
+            # iOS fallback: devices that had no valid WiFi port in LANforge
+            # (iOS connects via GADS/Appium, not through LANforge's WiFi stack,
+            # so all their ports appear phantom).  Add them as shelf.resource so
+            # filter_ios_devices() can still detect and record their UDIDs.
+            for device in real_sta_list:
+                device_resource = '.'.join(str(device).split('.')[:2])
+                if device_resource in found_resources:
+                    continue
+                parts = str(device).split('.')
+                if len(parts) < 2:
+                    continue
+                shelf, resource = parts[0], parts[1]
+                resp = self.json_get(f'/resource/{shelf}/{resource}')
+                if not resp or 'resource' not in resp:
+                    continue
+                res_data = resp['resource']
+                hw_version = res_data.get('hw version', '')
+                app_id = res_data.get('app-id', '')
+                kernel = res_data.get('kernel', '')
+                if 'Apple' in hw_version and app_id and (app_id != '0' or kernel == ''):
+                    entry = f"{shelf}.{resource}"
+                    final_device_list.append(entry)
+                    logger.info("iOS device %s added to device list (UDID: %s)", device, app_id)
 
             self.real_sta_list = final_device_list
 
@@ -552,9 +619,26 @@ class Youtube(Realm):
 
         for sta_name in self.real_sta_list:
             if sta_name not in real_devices.devices_data:
+                # iOS devices are added as "shelf.resource" (no port suffix) and
+                # won't appear in devices_data which is keyed by full port names.
+                # Build a minimal entry from the resource API instead of dropping them.
+                parts = str(sta_name).split('.')
+                if len(parts) >= 2:
+                    shelf, resource = parts[0], parts[1]
+                    resp = self.json_get(f'/resource/{shelf}/{resource}')
+                    if resp and 'resource' in resp:
+                        res_data = resp['resource']
+                        hw_version = res_data.get('hw version', '')
+                        app_id = res_data.get('app-id', '')
+                        kernel = res_data.get('kernel', '')
+                        if 'Apple' in hw_version and app_id and (app_id != '0' or kernel == ''):
+                            self.real_sta_data_dict[sta_name] = {
+                                'ostype': 'iOS',
+                                'hostname': res_data.get('hostname', 'NA'),
+                            }
+                            continue
                 logger.error(f"Real station '{sta_name}' not in devices data, ignoring it from testing")
                 self.real_sta_list.remove(sta_name)
-
                 continue
 
             self.real_sta_data_dict[sta_name] = real_devices.devices_data[sta_name]
@@ -578,8 +662,16 @@ class Youtube(Realm):
 
         serial_idx = 0  # separate counter just for Android devices
 
-        for _, sta_info in self.real_sta_data_dict.items():
+        for sta_name, sta_info in self.real_sta_data_dict.items():
             os_type = sta_info.get('ostype', '')
+
+            # Normalize iOS: LANforge may report ostype as 'Apple' or similar.
+            # Use ios_udid_map (populated by filter_ios_devices) as the
+            # authoritative iOS classifier.
+            base_device = '.'.join(str(sta_name).split('.')[:2])
+            if base_device in self.ios_udid_map:
+                os_type = 'ios'
+
             self.real_sta_os_types.append(os_type)
 
             if os_type.lower() == "android":
@@ -588,6 +680,13 @@ class Youtube(Realm):
                     serial_idx += 1  # advance only for Androids
                 else:
                     self.real_sta_hostname.append("NA")
+            elif os_type.lower() == "ios":
+                self.real_sta_hostname.append(
+                    self.ios_resource_udid_map.get(
+                        base_device,
+                        self.ios_udid_map.get(base_device, sta_info.get('hostname', 'NA'))
+                    )
+                )
             else:
                 self.real_sta_hostname.append(sta_info.get('hostname', 'NA'))
 
@@ -609,6 +708,8 @@ class Youtube(Realm):
                 self.mac = self.mac + 1
             elif self.real_sta_os_types[i] == 'android':
                 self.android = self.android + 1
+            elif self.real_sta_os_types[i] == 'ios':
+                self.ios = self.ios + 1
 
     def update_webui(self):
         """
@@ -627,11 +728,54 @@ class Youtube(Realm):
             obj = {
                 "configured_devices": self.real_sta_hostname,
                 "configuration_status": "configured",
-                "no_of_devices": f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac})',
+                "no_of_devices": f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android}),iOS({self.ios})',
                 "device_list": self.hostname_os_combination
 
             }
             self.updating_webui_runningjson(obj)
+
+    def start_ios_automations(self):
+        """
+        Launch youtube_ios_test.py as a subprocess for each detected iOS device.
+
+        iOS devices connect via GADS/Appium and have no valid LANforge-managed
+        port, so they cannot be driven through generic endpoints.  Instead each
+        device gets its own subprocess that:
+          1. Connects to the GADS hub with the device UDID
+          2. Runs the Appium YouTube automation
+          3. POSTs parsed Stats-for-Nerds data to /youtube_stats (Flask)
+
+        Subprocesses are stored in self.ios_processes so that shutdown() can
+        terminate them gracefully.
+        """
+        if not self.ios_udid_list:
+            return
+
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        ios_script = os.path.join(script_dir, 'youtube_ios_test.py')
+
+        for udid, hostname in zip(self.ios_udid_list, self.ios_hostname_list):
+            cmd = [
+                sys.executable, ios_script,
+                '--udid', udid,
+                '--url', self.url,
+                '--duration', str(self.duration),
+                '--host', self.host,
+                '--device_name', hostname,
+                '--res', self.resolution or 'Auto',
+            ]
+            if self.gads_hub:
+                cmd += ['--gads_hub', self.gads_hub]
+
+            cmd += ['--candela_bundle_id', self.candela_bundle_id,
+                    '--candela_timeout', str(self.candela_timeout)]
+
+            p = subprocess.Popen(cmd)
+            self.ios_processes.append(p)
+            logging.info(
+                "Started iOS automation for report device %s (UDID: %s), PID: %d",
+                hostname, udid, p.pid,
+            )
 
     def start_generic(self):
         """
@@ -739,6 +883,11 @@ class Youtube(Realm):
                         continue
                     device_name = key
                     stats = value
+                    if isinstance(stats, dict) and stats.get("stop") is True and len(stats) == 1:
+                        if device_name not in self.stats_api_response:
+                            self.stats_api_response[device_name] = {}
+                        self.stats_api_response[device_name]["stop"] = True
+                        continue
                     buffer_val = stats.get("BufferHealth")
                     if buffer_val not in [None, "", "NA"]:
                         try:
@@ -883,6 +1032,11 @@ class Youtube(Realm):
         self.stop_signal = True
         time.sleep(10)
         self.generic_endps_profile.cleanup()
+        for p in self.ios_processes:
+            try:
+                p.terminate()
+            except Exception:
+                pass
         logging.info("Application Closed sucessfully")
 
         if self.do_robo and not self.do_bandsteering:
@@ -1146,7 +1300,7 @@ class Youtube(Realm):
                 'Duration (in Minutes)': self.duration,
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
-                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
+                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android}),iOS({self.ios})',
                 "Video URL": self.url,
                 "SSID": self.ssid,
                 "Security": self.security,
@@ -1164,7 +1318,7 @@ class Youtube(Realm):
                 'Resolution': self.resolution,
                 "Configuration": gp_map,
                 'Configured Devices': self.hostname_os_combination,
-                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
+                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android}),iOS({self.ios})',
                 "Video URL": self.url,
 
             }
@@ -1175,7 +1329,7 @@ class Youtube(Realm):
                 'Duration (in Minutes)': self.duration,
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
-                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
+                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android}),iOS({self.ios})',
                 "Video URL": self.url,
 
             }
@@ -1306,9 +1460,18 @@ class Youtube(Realm):
             self.report.build_graph_title()
 
             try:
-                data['TimeStamp'] = pd.to_datetime(data['TimeStamp'], format="%H:%M:%S").dt.time
+                data['TimeStamp'] = pd.to_datetime(data['TimeStamp'], format="%H:%M:%S", errors="coerce").dt.time
             except Exception as e:
                 logging.error(f"Error in timestamp conversion for {file_name}: {e}")
+                continue
+
+            invalid_timestamp_rows = data['TimeStamp'].isna().sum()
+            if invalid_timestamp_rows:
+                logging.warning(f"Skipping {invalid_timestamp_rows} rows with invalid timestamps in {file_name}")
+                data = data.dropna(subset=['TimeStamp'])
+
+            if data.empty:
+                logging.warning(f"Skipping buffer health graph for {file_name}: no valid timestamp rows")
                 continue
 
             data = data.drop_duplicates(subset='TimeStamp', keep='first')
@@ -1417,31 +1580,31 @@ class Youtube(Realm):
 
     def filter_ios_devices(self, device_list):
         """
-        Filters out iOS devices from the given device list based on hardware and software identifiers.
+        Identifies iOS devices in the given device list and records their UDIDs.
 
-        This method accepts a list or comma-separated string of device identifiers and removes
-        devices identified as iOS (Apple) based on their hardware version, app ID, and kernel info
-        fetched via the `/resource/{shelf}/{resource}` API endpoint.
-
-        Supported input formats for each device:
-        - "shelf.resource"
-        - "shelf.resource.port"
-        - "resource" (assumes shelf = 1)
+        Formerly excluded iOS devices; now keeps them and populates
+        ``self.ios_udid_map`` so that ``get_ios_device_data()`` can later
+        build the Appium/GADS automation endpoints for each iOS device.
 
         iOS devices are identified if:
         - 'Apple' is found in the hardware version, and
-        - `app-id` is not empty and is either non-zero or the kernel is empty
+        - ``app-id`` is not empty and is either non-zero or the kernel is empty
+
+        The ``app-id`` field in the LANforge resource response carries the
+        device UDID, stored as ``ios_udid_map["{shelf}.{resource}"] = udid``.
 
         Args:
-            device_list (Union[list[str], str]): A list or comma-separated string of devices to be filtered.
+            device_list (Union[list[str], str]): A list or comma-separated
+                string of device identifiers ("shelf.resource[.port]").
 
         Returns:
-            Union[list[int], str]: A list of valid (non-iOS) device IDs as integers,
-                                or a comma-separated string if the input was a string.
+            Union[list[str], str]: The same device list with all devices kept
+                (no devices removed), or a comma-separated string if the input
+                was a string.
 
         Logs:
             - Warnings for invalid formats or missing device data.
-            - Info when an iOS device is skipped.
+            - Info when an iOS device is found and its UDID is recorded.
             - Exceptions if errors occur during processing.
 
         """
@@ -1475,9 +1638,13 @@ class Youtube(Realm):
                 kernel = device_data.get('kernel', '')
 
                 if 'Apple' in hw_version and app_id != '' and (app_id != '0' or kernel == ''):
-                    logger.info("%s is an iOS device. Currently, we do not support iOS devices.", device)
-                else:
-                    filtered_list.append(device)
+                    # iOS device: record UDID (stored in app-id) and keep the device
+                    ios_key = f"{shelf}.{resource}"
+                    self.ios_udid_map[ios_key] = app_id
+                    logger.info(
+                        "%s is an iOS device (UDID: %s). Including in test.", device, app_id
+                    )
+                filtered_list.append(device)
 
             except Exception as e:
                 logger.exception(f"Error processing device {device}: {e}")
@@ -1544,6 +1711,75 @@ class Youtube(Realm):
         self.lanforge_port_list = list(self.lanforge_port_list)
         self.lanforge_os_type = ["Linux"] * len(self.lanforge_port_list)
         self.serial_list_str = ','.join(self.serial_list)
+
+    def get_ios_device_data(self):
+        """
+        Build iOS device data structures from real_sta_list and ios_udid_map.
+
+        ios_udid_map (keyed by "shelf.resource") is populated by
+        filter_ios_devices() and is used solely to identify which resources
+        are iOS devices.  The UDID passed to GADS/Appium comes from
+        configobj.get_all_devices() → device["serial"], which is the value
+        already displayed in the device-selection list (e.g. 00008110-...).
+        The LANforge app-id field is NOT the Apple device UDID.
+
+        Returns:
+            None
+        """
+        self.ios_udid_list = []
+        self.ios_hostname_list = []
+        self.ios_lanforge_port_list = []
+        self.ios_resource_udid_map = {}
+
+        # Build shelf.resource → real Apple UDID mapping from DeviceConfig,
+        # which uses the same "serial" field shown in the device-selection list.
+        resource_to_udid: dict = {}
+        if hasattr(self, 'configobj'):
+            try:
+                for device in self.configobj.get_all_devices():
+                    if device.get("type") != 'laptop':
+                        key = f"{device['shelf']}.{device['resource']}"
+                        serial = device.get('serial', '')
+                        if serial:
+                            resource_to_udid[key] = serial
+            except Exception as e:
+                logging.warning("Could not fetch device serials from DeviceConfig: %s", e)
+
+        seen_resources = set()
+
+        for sta in self.real_sta_list:
+            parts = str(sta).split('.')
+            if len(parts) < 2:
+                continue
+            shelf, resource = parts[0], parts[1]
+            base = f"{shelf}.{resource}"
+
+            if base not in self.ios_udid_map:
+                continue
+
+            # Each physical iOS device corresponds to exactly one resource.
+            # Skip if we already processed this resource (e.g. multiple ports).
+            if base in seen_resources:
+                continue
+            seen_resources.add(base)
+
+            # Prefer the serial from DeviceConfig (Apple UDID format) over
+            # app-id (a numeric LANforge internal identifier, not the UDID).
+            udid = resource_to_udid.get(base) or self.ios_udid_map[base]
+            self.ios_resource_udid_map[base] = udid
+
+            resp = self.json_get(f'/resource/{shelf}/{resource}')
+            hostname = 'NA'
+            if resp and 'resource' in resp:
+                hostname = resp['resource'].get('hostname', 'NA')
+
+            logging.info("iOS device %s → UDID: %s, hostname: %s", base, udid, hostname)
+            self.ios_udid_list.append(udid)
+            self.ios_hostname_list.append(udid)
+            self.ios_lanforge_port_list.append(f"{shelf}.{resource}.eth0")
+
+        self.ios_os_type = ['Linux'] * len(self.ios_lanforge_port_list)
+        logging.info("iOS devices found: %d", len(self.ios_udid_list))
 
     def get_device_data(self):
         """
@@ -1627,6 +1863,7 @@ class Youtube(Realm):
                     if '.'.join(port.split('.')[:2]) == expected_eid:
                         matched_ports.append((port, port_data))
 
+            wifi_found = False
             for port_name, port_data in matched_ports:
                 if port_data.get("parent dev") == 'wiphy0' and not port_data.get('down') and port_data.get('ip') != '0.0.0.0':
                     self.mac_list.append(port_data.get("mac"))
@@ -1634,6 +1871,16 @@ class Youtube(Realm):
                     self.link_rate_list.append(port_data.get("rx-rate"))
                     self.ssid_list.append(port_data.get("ssid"))
                     self.wifi_interface_list.append(port_name.split('.')[2])
+                    wifi_found = True
+
+            # iOS devices have no LANforge-managed WiFi port (they connect via
+            # GADS/Appium), so pad the parallel lists to keep lengths in sync.
+            if not wifi_found:
+                self.mac_list.append("NA")
+                self.rssi_list.append("NA")
+                self.link_rate_list.append("NA")
+                self.ssid_list.append("NA")
+                self.wifi_interface_list.append("NA")
 
     def perform_robo_test(self):
         if self.do_webUI:
@@ -1814,7 +2061,7 @@ class Youtube(Realm):
                 'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
-                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
+                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android}),iOS({self.ios})',
                 "Video URL": self.url,
                 "SSID": self.ssid,
                 "Security": self.security,
@@ -1831,7 +2078,7 @@ class Youtube(Realm):
                 'Resolution': self.resolution,
                 "Configuration": gp_map,
                 'Configured Devices': self.hostname_os_combination,
-                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
+                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android}),iOS({self.ios})',
                 "Video URL": self.url,
 
             }
@@ -1841,7 +2088,7 @@ class Youtube(Realm):
                 'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
-                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
+                'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android}),iOS({self.ios})',
                 "Video URL": self.url,
 
             }
@@ -1903,9 +2150,18 @@ class Youtube(Realm):
                         continue
 
         try:
-            combined_data['TimeStamp'] = pd.to_datetime(combined_data['TimeStamp'], format="%H:%M:%S").dt.time
+            combined_data['TimeStamp'] = pd.to_datetime(combined_data['TimeStamp'], format="%H:%M:%S", errors="coerce").dt.time
         except Exception as e:
             logging.error(f"Error converting timestamps for hostname {hostname} while creating buffer health graph: {e}")
+            return
+
+        invalid_timestamp_rows = combined_data['TimeStamp'].isna().sum()
+        if invalid_timestamp_rows:
+            logging.warning(f"Skipping {invalid_timestamp_rows} rows with invalid timestamps for hostname {hostname}")
+            combined_data = combined_data.dropna(subset=['TimeStamp'])
+
+        if combined_data.empty:
+            logging.warning(f"Skipping buffer health graph for hostname {hostname}: no valid timestamp rows")
             return
 
         combined_data = combined_data.drop_duplicates(subset='TimeStamp', keep='first')
@@ -2118,6 +2374,7 @@ class Youtube(Realm):
 
 
 def main():
+    iot_summary = None  # initialise before try so finally block can always reference it
     try:
         help_summary = '''\
         Youtube streaming automation
@@ -2297,11 +2554,27 @@ NOTES:
         robo.add_argument('--bssids', type=str, help='Comma-separated list of BSSIDs for bandsteering test')
         robo.add_argument('--cycles', type=int, default=1, help='Number of cycles to perform bandsteering')
 
+        optional.add_argument(
+            '--gads_hub', type=str, default=None,
+            help='GADS hub URL for iOS Appium automation, e.g. http://192.168.1.100:10000/grid '
+        )
+
+        optional.add_argument(
+            '--candela_bundle_id', type=str, default='com.candela.wecan.interop-ios',
+            help='Candela interop app bundle ID (default: com.candela.wecan.interop-ios)'
+        )
+        optional.add_argument(
+            '--candela_timeout', type=int, default=20,
+            help='Element wait timeout in seconds for the Candela interop flow (default: 20)'
+        )
+
         args = parser.parse_args()
 
         if args.help_summary:
             logging.info(help_summary)
             exit(0)
+        if not args.gads_hub:
+            args.gads_hub = f"http://{args.mgr}:10000/grid"
 
         # set the logger level to debug
         logger_config = lf_logger_config.lf_logger_config()
@@ -2420,7 +2693,10 @@ NOTES:
                 cycles=args.cycles,
                 do_bandsteering=args.do_bandsteering,
                 bssids=bssids,
-                rotations_enabled=rotations_enabled)
+                rotations_enabled=rotations_enabled,
+                gads_hub=args.gads_hub,
+                candela_bundle_id=args.candela_bundle_id,
+                candela_timeout=args.candela_timeout)
             youtube.start_flask_server()
             args.upstream_port = youtube.change_port_to_ip(args.upstream_port)
 
@@ -2562,6 +2838,8 @@ NOTES:
             time.sleep(10)
 
             youtube.start_time = datetime.now()
+            # iOS automation runs as direct subprocesses (no LANforge port needed)
+            youtube.start_ios_automations()
             if args.do_robo:
                 if args.do_bandsteering:
                     youtube.perform_robo_bandsteering_test()
@@ -2601,6 +2879,14 @@ NOTES:
             if args.do_webUI:
                 youtube.stop_webui_test()
             youtube.stop()
+            for p in youtube.ios_processes:
+                try:
+                    p.wait(timeout=180)
+                except subprocess.TimeoutExpired:
+                    logging.warning("iOS subprocess timed out, terminating")
+                    p.terminate()
+                except Exception:
+                    pass
             if args.do_robo and not args.do_bandsteering:
                 youtube.create_robo_report()
             elif args.do_webUI:

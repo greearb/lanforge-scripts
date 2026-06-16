@@ -39,6 +39,8 @@ pip_packages: list = [
     'python-dotenv',
     'pure-python-adb',
     'uiautomator2',
+    'Appium-Python-Client',
+    'selenium',
 ]
 
 
