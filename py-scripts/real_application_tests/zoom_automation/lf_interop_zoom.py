@@ -719,7 +719,7 @@ class ZoomAutomation(Realm):
 
                 endp_status = generic_endpoint["endpoint"].get("status", "")
 
-                if endp_status not in ["Stopped", "WAITING", "NO-CX"]:
+                if endp_status not in ["Stopped", "WAITING", "NO-CX", "FTM_WAIT"]:
                     return False
 
             return True
