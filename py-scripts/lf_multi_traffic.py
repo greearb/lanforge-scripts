@@ -11338,358 +11338,86 @@ class MultiTraffic(Realm):
                                             file_path, mode="r", encoding="utf-8", errors="ignore"
                                         ) as file:
                                             csv_reader = csv.DictReader(file)
+                                            fieldnames = csv_reader.fieldnames or []
+                                            is_api_format = "audio_input_jitter_avg" in fieldnames
                                             for row in csv_reader:
+                                                if is_api_format:
+                                                    ai_jit = float(row["audio_input_jitter_avg"] or 0)
+                                                    ao_jit = float(row["audio_output_jitter_avg"] or 0)
+                                                    ai_lat = float(row["audio_input_latency_avg"] or 0)
+                                                    ao_lat = float(row["audio_output_latency_avg"] or 0)
+                                                    ai_loss = float(row["audio_input_avg_loss_avg"] or 0)
+                                                    ao_loss = float(row["audio_output_avg_loss_avg"] or 0)
+                                                    vi_jit = float(row["video_input_jitter_avg"] or 0)
+                                                    vo_jit = float(row["video_output_jitter_avg"] or 0)
+                                                    vi_lat = float(row["video_input_latency_avg"] or 0)
+                                                    vo_lat = float(row["video_output_latency_avg"] or 0)
+                                                    vi_loss = float(row["video_input_avg_loss_avg"] or 0)
+                                                    vo_loss = float(row["video_output_avg_loss_avg"] or 0)
+                                                else:
+                                                    ai_jit = float(row["Sent Audio Jitter (ms)"])
+                                                    ao_jit = float(row["Receive Audio Jitter (ms)"])
+                                                    ai_lat = float(row["Sent Audio Latency (ms)"])
+                                                    ao_lat = float(row["Receive Audio Latency (ms)"])
+                                                    ai_loss = float((row["Sent Audio Packet loss (%)"]).split(" ")[0].replace("%", ""))
+                                                    ao_loss = float((row["Receive Audio Packet loss (%)"]).split(" ")[0].replace("%", ""))
+                                                    vi_jit = float(row["Sent Video Jitter (ms)"])
+                                                    vo_jit = float(row["Receive Video Jitter (ms)"])
+                                                    vi_lat = float(row["Sent Video Latency (ms)"])
+                                                    vo_lat = float(row["Receive Video Latency (ms)"])
+                                                    vi_loss = float((row["Sent Video Packet loss (%)"]).split(" ")[0].replace("%", ""))
+                                                    vo_loss = float((row["Receive Video Packet loss (%)"]).split(" ")[0].replace("%", ""))
 
-                                                per_client_data["audio_jitter_s"].append(
-                                                    float(row["Sent Audio Jitter (ms)"])
-                                                )
-                                                per_client_data["audio_jitter_r"].append(
-                                                    float(row["Receive Audio Jitter (ms)"])
-                                                )
-                                                per_client_data["audio_latency_s"].append(
-                                                    float(row["Sent Audio Latency (ms)"])
-                                                )
-                                                per_client_data["audio_latency_r"].append(
-                                                    float(row["Receive Audio Latency (ms)"])
-                                                )
-                                                per_client_data["audio_pktloss_s"].append(
-                                                    float(
-                                                        (row["Sent Audio Packet loss (%)"])
-                                                        .split(" ")[0]
-                                                        .replace("%", "")
-                                                    )
-                                                )
-                                                per_client_data["audio_pktloss_r"].append(
-                                                    float(
-                                                        (row["Receive Audio Packet loss (%)"])
-                                                        .split(" ")[0]
-                                                        .replace("%", "")
-                                                    )
-                                                )
-                                                per_client_data["video_jitter_s"].append(
-                                                    float(row["Sent Video Jitter (ms)"])
-                                                )
-                                                per_client_data["video_jitter_r"].append(
-                                                    float(row["Receive Video Jitter (ms)"])
-                                                )
-                                                per_client_data["video_latency_s"].append(
-                                                    float(row["Sent Video Latency (ms)"])
-                                                )
-                                                per_client_data["video_latency_r"].append(
-                                                    float(row["Receive Video Latency (ms)"])
-                                                )
-                                                per_client_data["video_pktloss_s"].append(
-                                                    float(
-                                                        (row["Sent Video Packet loss (%)"])
-                                                        .split(" ")[0]
-                                                        .replace("%", "")
-                                                    )
-                                                )
-                                                per_client_data["video_pktloss_r"].append(
-                                                    float(
-                                                        (row["Receive Video Packet loss (%)"])
-                                                        .split(" ")[0]
-                                                        .replace("%", "")
-                                                    )
-                                                )
+                                                per_client_data["audio_jitter_s"].append(ai_jit)
+                                                per_client_data["audio_jitter_r"].append(ao_jit)
+                                                per_client_data["audio_latency_s"].append(ai_lat)
+                                                per_client_data["audio_latency_r"].append(ao_lat)
+                                                per_client_data["audio_pktloss_s"].append(ai_loss)
+                                                per_client_data["audio_pktloss_r"].append(ao_loss)
+                                                per_client_data["video_jitter_s"].append(vi_jit)
+                                                per_client_data["video_jitter_r"].append(vo_jit)
+                                                per_client_data["video_latency_s"].append(vi_lat)
+                                                per_client_data["video_latency_r"].append(vo_lat)
+                                                per_client_data["video_pktloss_s"].append(vi_loss)
+                                                per_client_data["video_pktloss_r"].append(vo_loss)
 
-                                                temp_max_audio_jitter_s = max(
-                                                    temp_max_audio_jitter_s,
-                                                    float(row["Sent Audio Jitter (ms)"]),
-                                                )
-                                                temp_max_audio_jitter_r = max(
-                                                    temp_max_audio_jitter_r,
-                                                    float(row["Receive Audio Jitter (ms)"]),
-                                                )
-                                                temp_max_audio_latency_s = max(
-                                                    temp_max_audio_latency_s,
-                                                    float(row["Sent Audio Latency (ms)"]),
-                                                )
-                                                temp_max_audio_latency_r = max(
-                                                    temp_max_audio_latency_r,
-                                                    float(row["Receive Audio Latency (ms)"]),
-                                                )
-                                                temp_max_audio_pktloss_s = max(
-                                                    temp_max_audio_pktloss_s,
-                                                    float(
-                                                        (row["Sent Audio Packet loss (%)"])
-                                                        .split(" ")[0]
-                                                        .replace("%", "")
-                                                    ),
-                                                )
-                                                temp_max_audio_pktloss_r = max(
-                                                    temp_max_audio_pktloss_r,
-                                                    float(
-                                                        (row["Receive Audio Packet loss (%)"])
-                                                        .split(" ")[0]
-                                                        .replace("%", "")
-                                                    ),
-                                                )
+                                                temp_max_audio_jitter_s = max(temp_max_audio_jitter_s, ai_jit)
+                                                temp_max_audio_jitter_r = max(temp_max_audio_jitter_r, ao_jit)
+                                                temp_max_audio_latency_s = max(temp_max_audio_latency_s, ai_lat)
+                                                temp_max_audio_latency_r = max(temp_max_audio_latency_r, ao_lat)
+                                                temp_max_audio_pktloss_s = max(temp_max_audio_pktloss_s, ai_loss)
+                                                temp_max_audio_pktloss_r = max(temp_max_audio_pktloss_r, ao_loss)
+                                                temp_max_video_jitter_s = max(temp_max_video_jitter_s, vi_jit)
+                                                temp_max_video_jitter_r = max(temp_max_video_jitter_r, vo_jit)
+                                                temp_max_video_latency_s = max(temp_max_video_latency_s, vi_lat)
+                                                temp_max_video_latency_r = max(temp_max_video_latency_r, vo_lat)
+                                                temp_max_video_pktloss_s = max(temp_max_video_pktloss_s, vi_loss)
+                                                temp_max_video_pktloss_r = max(temp_max_video_pktloss_r, vo_loss)
 
-                                                temp_max_video_jitter_s = max(
-                                                    temp_max_video_jitter_s,
-                                                    float(row["Sent Video Jitter (ms)"]),
-                                                )
-                                                temp_max_video_jitter_r = max(
-                                                    temp_max_video_jitter_r,
-                                                    float(row["Receive Video Jitter (ms)"]),
-                                                )
-                                                temp_max_video_latency_s = max(
-                                                    temp_max_video_latency_s,
-                                                    float(row["Sent Video Latency (ms)"]),
-                                                )
-                                                temp_max_video_latency_r = max(
-                                                    temp_max_video_latency_r,
-                                                    float(row["Receive Video Latency (ms)"]),
-                                                )
-                                                temp_max_video_pktloss_s = max(
-                                                    temp_max_video_pktloss_s,
-                                                    float(
-                                                        (row["Sent Video Packet loss (%)"])
-                                                        .split(" ")[0]
-                                                        .replace("%", "")
-                                                    ),
-                                                )
-                                                temp_max_video_pktloss_r = max(
-                                                    temp_max_video_pktloss_r,
-                                                    float(
-                                                        (row["Receive Video Packet loss (%)"])
-                                                        .split(" ")[0]
-                                                        .replace("%", "")
-                                                    ),
-                                                )
-
-                                                temp_min_audio_jitter_s = (
-                                                    min(
-                                                        temp_min_audio_jitter_s,
-                                                        float(row["Sent Audio Jitter (ms)"]),
-                                                    )
-                                                    if temp_min_audio_jitter_s > 0
-                                                    and float(row["Sent Audio Jitter (ms)"]) > 0
-                                                    else (
-                                                        float(row["Sent Audio Jitter (ms)"])
-                                                        if float(row["Sent Audio Jitter (ms)"]) > 0
-                                                        else temp_min_audio_jitter_s
-                                                    )
-                                                )
-                                                temp_min_audio_jitter_r = (
-                                                    min(
-                                                        temp_min_audio_jitter_r,
-                                                        float(row["Receive Audio Jitter (ms)"]),
-                                                    )
-                                                    if temp_min_audio_jitter_r > 0
-                                                    and float(row["Receive Audio Jitter (ms)"]) > 0
-                                                    else (
-                                                        float(row["Receive Audio Jitter (ms)"])
-                                                        if float(row["Receive Audio Jitter (ms)"]) > 0
-                                                        else temp_min_audio_jitter_r
-                                                    )
-                                                )
-                                                temp_min_audio_latency_s = (
-                                                    min(
-                                                        temp_min_audio_latency_s,
-                                                        float(row["Sent Audio Latency (ms)"]),
-                                                    )
-                                                    if temp_min_audio_latency_s > 0
-                                                    and float(row["Sent Audio Latency (ms)"]) > 0
-                                                    else (
-                                                        float(row["Sent Audio Latency (ms)"])
-                                                        if float(row["Sent Audio Latency (ms)"]) > 0
-                                                        else temp_min_audio_jitter_s
-                                                    )
-                                                )
-                                                temp_min_audio_latency_r = (
-                                                    min(
-                                                        temp_min_audio_latency_r,
-                                                        float(row["Receive Audio Latency (ms)"]),
-                                                    )
-                                                    if temp_min_audio_latency_r > 0
-                                                    and float(row["Receive Audio Latency (ms)"]) > 0
-                                                    else (
-                                                        float(row["Receive Audio Latency (ms)"])
-                                                        if float(row["Receive Audio Latency (ms)"]) > 0
-                                                        else temp_min_audio_jitter_r
-                                                    )
-                                                )
-
-                                                temp_min_audio_pktloss_s = (
-                                                    min(
-                                                        temp_min_audio_pktloss_s,
-                                                        float(
-                                                            (row["Sent Audio Packet loss (%)"])
-                                                            .split(" ")[0]
-                                                            .replace("%", "")
-                                                        ),
-                                                    )
-                                                    if temp_min_audio_pktloss_s > 0
-                                                    and float(
-                                                        (row["Sent Audio Packet loss (%)"])
-                                                        .split(" ")[0]
-                                                        .replace("%", "")
-                                                    )
-                                                    > 0
-                                                    else (
-                                                        float(
-                                                            (row["Sent Audio Packet loss (%)"])
-                                                            .split(" ")[0]
-                                                            .replace("%", "")
-                                                        )
-                                                        if float(
-                                                            (row["Sent Audio Packet loss (%)"])
-                                                            .split(" ")[0]
-                                                            .replace("%", "")
-                                                        )
-                                                        > 0
-                                                        else temp_min_audio_pktloss_s
-                                                    )
-                                                )
-                                                temp_min_audio_pktloss_r = (
-                                                    min(
-                                                        temp_min_audio_pktloss_r,
-                                                        float(
-                                                            (row["Sent Audio Packet loss (%)"])
-                                                            .split(" ")[0]
-                                                            .replace("%", "")
-                                                        ),
-                                                    )
-                                                    if temp_min_audio_pktloss_r > 0
-                                                    and float(
-                                                        (row["Sent Audio Packet loss (%)"])
-                                                        .split(" ")[0]
-                                                        .replace("%", "")
-                                                    )
-                                                    > 0
-                                                    else (
-                                                        float(
-                                                            (row["Sent Audio Packet loss (%)"])
-                                                            .split(" ")[0]
-                                                            .replace("%", "")
-                                                        )
-                                                        if float(
-                                                            (row["Sent Audio Packet loss (%)"])
-                                                            .split(" ")[0]
-                                                            .replace("%", "")
-                                                        )
-                                                        > 0
-                                                        else temp_min_audio_pktloss_r
-                                                    )
-                                                )
-
-                                                temp_min_video_jitter_s = (
-                                                    min(
-                                                        temp_min_video_jitter_s,
-                                                        float(row["Sent Video Jitter (ms)"]),
-                                                    )
-                                                    if temp_min_video_jitter_s > 0
-                                                    and float(row["Sent Video Jitter (ms)"]) > 0
-                                                    else (
-                                                        float(row["Sent Video Jitter (ms)"])
-                                                        if float(row["Sent Video Jitter (ms)"]) > 0
-                                                        else temp_min_video_jitter_s
-                                                    )
-                                                )
-                                                temp_min_video_jitter_r = (
-                                                    min(
-                                                        temp_min_video_jitter_r,
-                                                        float(row["Receive Video Jitter (ms)"]),
-                                                    )
-                                                    if temp_min_video_jitter_r > 0
-                                                    and float(row["Receive Video Jitter (ms)"]) > 0
-                                                    else (
-                                                        float(row["Receive Video Jitter (ms)"])
-                                                        if float(row["Receive Video Jitter (ms)"]) > 0
-                                                        else temp_min_video_jitter_r
-                                                    )
-                                                )
-                                                temp_min_video_latency_s = (
-                                                    min(
-                                                        temp_min_video_latency_s,
-                                                        float(row["Sent Video Latency (ms)"]),
-                                                    )
-                                                    if temp_min_video_latency_s > 0
-                                                    and float(row["Sent Video Latency (ms)"]) > 0
-                                                    else (
-                                                        float(row["Sent Video Latency (ms)"])
-                                                        if float(row["Sent Video Latency (ms)"]) > 0
-                                                        else temp_min_video_latency_s
-                                                    )
-                                                )
-                                                temp_min_video_latency_r = (
-                                                    min(
-                                                        temp_min_video_latency_r,
-                                                        float(row["Receive Video Latency (ms)"]),
-                                                    )
-                                                    if temp_min_video_latency_r > 0
-                                                    and float(row["Receive Video Latency (ms)"]) > 0
-                                                    else (
-                                                        float(row["Receive Video Latency (ms)"])
-                                                        if float(row["Receive Video Latency (ms)"]) > 0
-                                                        else temp_min_video_latency_r
-                                                    )
-                                                )
-
-                                                temp_min_video_pktloss_s = (
-                                                    min(
-                                                        temp_min_video_pktloss_s,
-                                                        float(
-                                                            (row["Sent Video Packet loss (%)"])
-                                                            .split(" ")[0]
-                                                            .replace("%", "")
-                                                        ),
-                                                    )
-                                                    if temp_min_video_pktloss_s > 0
-                                                    and float(
-                                                        (row["Sent Video Packet loss (%)"])
-                                                        .split(" ")[0]
-                                                        .replace("%", "")
-                                                    )
-                                                    > 0
-                                                    else (
-                                                        float(
-                                                            (row["Sent Video Packet loss (%)"])
-                                                            .split(" ")[0]
-                                                            .replace("%", "")
-                                                        )
-                                                        if float(
-                                                            (row["Sent Video Packet loss (%)"])
-                                                            .split(" ")[0]
-                                                            .replace("%", "")
-                                                        )
-                                                        > 0
-                                                        else temp_min_video_pktloss_s
-                                                    )
-                                                )
-                                                temp_min_video_pktloss_r = (
-                                                    min(
-                                                        temp_min_video_pktloss_r,
-                                                        float(
-                                                            (row["Sent Video Packet loss (%)"])
-                                                            .split(" ")[0]
-                                                            .replace("%", "")
-                                                        ),
-                                                    )
-                                                    if temp_min_video_pktloss_r > 0
-                                                    and float(
-                                                        (row["Sent Video Packet loss (%)"])
-                                                        .split(" ")[0]
-                                                        .replace("%", "")
-                                                    )
-                                                    > 0
-                                                    else (
-                                                        float(
-                                                            (row["Sent Video Packet loss (%)"])
-                                                            .split(" ")[0]
-                                                            .replace("%", "")
-                                                        )
-                                                        if float(
-                                                            (row["Sent Video Packet loss (%)"])
-                                                            .split(" ")[0]
-                                                            .replace("%", "")
-                                                        )
-                                                        > 0
-                                                        else temp_min_video_pktloss_r
-                                                    )
-                                                )
+                                                if ai_jit > 0:
+                                                    temp_min_audio_jitter_s = ai_jit if temp_min_audio_jitter_s == 0 else min(temp_min_audio_jitter_s, ai_jit)
+                                                if ao_jit > 0:
+                                                    temp_min_audio_jitter_r = ao_jit if temp_min_audio_jitter_r == 0 else min(temp_min_audio_jitter_r, ao_jit)
+                                                if ai_lat > 0:
+                                                    temp_min_audio_latency_s = ai_lat if temp_min_audio_latency_s == 0 else min(temp_min_audio_latency_s, ai_lat)
+                                                if ao_lat > 0:
+                                                    temp_min_audio_latency_r = ao_lat if temp_min_audio_latency_r == 0 else min(temp_min_audio_latency_r, ao_lat)
+                                                if ai_loss > 0:
+                                                    temp_min_audio_pktloss_s = ai_loss if temp_min_audio_pktloss_s == 0 else min(temp_min_audio_pktloss_s, ai_loss)
+                                                if ao_loss > 0:
+                                                    temp_min_audio_pktloss_r = ao_loss if temp_min_audio_pktloss_r == 0 else min(temp_min_audio_pktloss_r, ao_loss)
+                                                if vi_jit > 0:
+                                                    temp_min_video_jitter_s = vi_jit if temp_min_video_jitter_s == 0 else min(temp_min_video_jitter_s, vi_jit)
+                                                if vo_jit > 0:
+                                                    temp_min_video_jitter_r = vo_jit if temp_min_video_jitter_r == 0 else min(temp_min_video_jitter_r, vo_jit)
+                                                if vi_lat > 0:
+                                                    temp_min_video_latency_s = vi_lat if temp_min_video_latency_s == 0 else min(temp_min_video_latency_s, vi_lat)
+                                                if vo_lat > 0:
+                                                    temp_min_video_latency_r = vo_lat if temp_min_video_latency_r == 0 else min(temp_min_video_latency_r, vo_lat)
+                                                if vi_loss > 0:
+                                                    temp_min_video_pktloss_s = vi_loss if temp_min_video_pktloss_s == 0 else min(temp_min_video_pktloss_s, vi_loss)
+                                                if vo_loss > 0:
+                                                    temp_min_video_pktloss_r = vo_loss if temp_min_video_pktloss_r == 0 else min(temp_min_video_pktloss_r, vo_loss)
 
                                     elif self.do_bandsteering:
                                         if not self.dowebgui:
@@ -11798,7 +11526,7 @@ class MultiTraffic(Realm):
                                                     temp_min_video_pktloss_r = vo_loss if temp_min_video_pktloss_r == 0 else min(temp_min_video_pktloss_r, vo_loss)
 
                                 except Exception as e:
-                                    logging.error(f"Error in reading data in client {self.zoom_obj_dict[ce][obj_name]['obj'].device_names[i]}", e)
+                                    logging.error(f"Error in reading data in client {self.zoom_obj_dict[ce][obj_name]['obj'].device_names[i]}: {e}")
                                     no_csv_client.append(curr_zoom_obj.device_names[i])
                                     rejected_clients.append(curr_zoom_obj.device_names[i])
                                 if curr_zoom_obj.device_names[i] not in no_csv_client:
