@@ -128,7 +128,7 @@ from threading import Thread
 import traceback
 import threading
 from collections import Counter
-
+import re
 logger = logging.getLogger(__name__)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
@@ -209,9 +209,8 @@ class Youtube(Realm):
                  do_bandsteering=False,
                  current_cord="",
                  current_angle="NA",
-                 rotations_enabled=False
-
-
+                 rotations_enabled=False,
+                 scoring=False
                  ):
         """
         Initialize the YouTube streaming test parameters.
@@ -237,6 +236,7 @@ class Youtube(Realm):
         self.lfclient_host = host
         self.lfclient_port = port
         self.debug = debug
+        self.scoring = scoring
         self.sta_list = sta_list
         self.real_sta_list = []
         self.real_sta_data_dict = {}
@@ -296,7 +296,7 @@ class Youtube(Realm):
             "Instance Name", "TimeStamp", "Viewport", "DroppedFrames",
             "TotalFrames", "CurrentRes", "OptimalRes", "BufferHealth",
             "VideoCodec", "AudioCodec", "ConnectionSpeedKbps",
-            "NetworkActivityKB", "LiveLatency(sec)"
+            "NetworkActivityKB", "LiveLatency(sec)", "bandwidth (kbps)"
         ]
         if do_robo and not do_bandsteering:
             self.csv_headers.append("Angle")
@@ -560,6 +560,217 @@ class Youtube(Realm):
             self.real_sta_data_dict[sta_name] = real_devices.devices_data[sta_name]
 
         return self.real_sta_list
+
+    def calculate_device_score(self, df, os_type="laptop"):
+        """
+        Calculate device score based on YouTube streaming metrics.
+
+        Metrics:
+        - Connection Speed
+        - Buffer Health
+        - Dropped Frames
+        - Resolution Stability
+        - Network Activity (Laptop only)
+        - Protocol
+        - Bandwidth
+        """
+        # 1. CONFIGURABLE SPEED TABLE
+        speed_db = {
+            "2160p": 20,
+            "1440p": 12,
+            "1080p": 8,
+            "720p": 5,
+            "480p": 3,
+            "240p": 1
+        }
+
+        # 2. AVERAGES
+        if os_type.lower() == "android":
+            if "bandwidth (kbps)" in df:
+                speed_series = pd.to_numeric(
+                    df["bandwidth (kbps)"],
+                    errors="coerce"
+                )
+                avg_speed = speed_series.mean()
+            else:
+                avg_speed = 0
+        else:
+            if "ConnectionSpeedKbps" in df:
+                speed_series = pd.to_numeric(
+                    df["ConnectionSpeedKbps"],
+                    errors="coerce"
+                ) / 1000
+                avg_speed = speed_series.mean()
+            else:
+                avg_speed = 0
+
+        if pd.isna(avg_speed):
+            avg_speed = 0
+        avg_buffer = df["BufferHealth"].mean() if "BufferHealth" in df else 0
+        resolution = self.resolution
+        recommended_speed = speed_db.get(resolution, 5)
+
+        # 3. CONNECTION SPEED SCORE
+        if avg_speed >= recommended_speed:
+            speed_score = 5
+        else:
+            speed_score = (avg_speed / recommended_speed) * 5
+
+        # 4. BUFFER HEALTH SCORE
+        if avg_buffer >= 10:
+            buffer_score = 5
+        else:
+            buffer_score = (avg_buffer / 10) * 5
+
+        # 5. DROPPED FRAME LOGIC (RESET SAFE)
+        dropped_series = pd.to_numeric(df["DroppedFrames"], errors="coerce").fillna(0).astype(int)
+        total_series = pd.to_numeric(df["TotalFrames"], errors="coerce").fillna(0).astype(int)
+
+        def segment_sum(series):
+            total = 0
+            last_val = series.iloc[0]
+            max_val = last_val
+
+            for val in series:
+                if val < last_val:
+                    total += max_val
+                    max_val = val
+                else:
+                    max_val = max(max_val, val)
+                last_val = val
+
+            total += max_val
+            return total
+
+        total_dropped = segment_sum(dropped_series)
+        total_frames = segment_sum(total_series)
+
+        drop_percent = (total_dropped / total_frames) * 100 if total_frames > 0 else 0
+
+        if drop_percent >= 10:
+            drop_score = 0
+        else:
+            drop_score = ((10 - drop_percent) / 10) * 5
+        # 6. RESOLUTION STABILITY
+        if os_type.lower() == "android":
+
+            resolution_map = {
+                "2160p": "2160",
+                "1440p": "1440",
+                "1080p": "1080",
+                "720p": "720",
+                "480p": "480",
+                "240p": "240"
+            }
+
+            target_res = resolution_map.get(self.resolution, "720")
+
+            matches = 0
+
+            for val in df["CurrentRes"]:
+                if isinstance(val, str):
+                    match = re.search(r'(\d{3,4})x(\d{3,4})', val)
+                    if match:
+                        current_res = match.group(2)
+                        if current_res == target_res:
+                            matches += 1
+
+            stability_percent = (matches / len(df)) * 100 if len(df) > 0 else 0
+
+        else:
+            # existing logic for laptops
+            if "CurrentRes" in df and "OptimalRes" in df:
+                matches = (df["CurrentRes"] == df["OptimalRes"]).sum()
+                stability_percent = (matches / len(df)) * 100
+            else:
+                stability_percent = 0
+
+        resolution_score = (stability_percent / 100) * 5
+
+        # 7. NETWORK ACTIVITY (Laptop Only)
+        if os_type.lower() != "android" and "NetworkActivityKB" in df:
+            net_series = df["NetworkActivityKB"]
+            net_series = net_series[net_series > 0]
+
+            if len(net_series) > 0:
+                avg_net = net_series.mean()
+                deviation = abs(net_series - avg_net)
+                avg_dev = deviation.mean()
+                fluctuation = (avg_dev / avg_net) * 100
+            else:
+                fluctuation = 0
+
+            if fluctuation <= 10:
+                network_score = 5
+            elif fluctuation <= 20:
+                network_score = 4
+            elif fluctuation <= 30:
+                network_score = 3
+            elif fluctuation <= 40:
+                network_score = 2
+            elif fluctuation <= 50:
+                network_score = 1
+            else:
+                network_score = 0
+        else:
+            network_score = None
+
+        # 8. PROTOCOL
+        protocol_score = 5
+
+        # 9. WEIGHT HANDLING
+        laptop_weights = {
+            "speed": 30,
+            "buffer": 20,
+            "drop": 20,
+            "resolution": 15,
+            "network": 10,
+            "protocol": 5
+        }
+
+        if os_type.lower() == "android":
+            multiplier = 100 / 90
+            weights = {
+                "speed": 30 * multiplier,
+                "buffer": 20 * multiplier,
+                "drop": 20 * multiplier,
+                "resolution": 15 * multiplier,
+                "protocol": 5 * multiplier
+            }
+        else:
+            weights = laptop_weights
+
+        # 10. FINAL WEIGHTED SCORE
+        weighted_total = (
+            speed_score * weights["speed"] +
+            buffer_score * weights["buffer"] +
+            drop_score * weights["drop"] +
+            resolution_score * weights["resolution"] +
+            protocol_score * weights["protocol"]
+        )
+
+        if os_type.lower() != "android":
+            weighted_total += network_score * weights["network"]
+
+        overall_score = weighted_total / 5
+
+        return {
+            "avg_speed": round(avg_speed, 2),
+            "avg_buffer": round(avg_buffer, 2),
+            "drop_percent": round(drop_percent, 2),
+            "stability_percent": round(stability_percent, 2),
+            "fluctuation": round(fluctuation if os_type.lower() != "android" else 0, 2),
+
+            "speed_score": round(speed_score, 2),
+            "buffer_score": round(buffer_score, 2),
+            "drop_score": round(drop_score, 2),
+            "resolution_score": round(resolution_score, 2),
+            "network_score": network_score,
+            "protocol_score": protocol_score,
+
+            "weights": weights,
+            "overall_score": round(overall_score, 2)
+        }
 
     def process_device_data(self):
         """
@@ -1301,7 +1512,106 @@ class Youtube(Realm):
 
         for file_name in csv_files:
             data = pd.read_csv(file_name)
+            if self.scoring and file_name.endswith("_youtube_stats_report.csv"):
+                device_name = None
+                if "Instance Name" in data.columns and not data.empty:
+                    instance_names = data["Instance Name"].dropna().astype(str)
+                    if not instance_names.empty:
+                        device_name = instance_names.iloc[0]
+                if device_name not in self.real_sta_hostname:
+                    device_name = file_name.split('_youtube_stats_report.csv')[0]
 
+                if device_name in self.real_sta_hostname:
+                    os_type = self.real_sta_os_types[
+                        self.real_sta_hostname.index(device_name)
+                    ]
+
+                    score_data = self.calculate_device_score(
+                        data,
+                        os_type=os_type
+                    )
+
+                    weights = score_data["weights"]
+
+                    rows = [
+                        [
+                            "Average Connection Speed",
+                            score_data["avg_speed"],
+                            score_data["speed_score"],
+                            round(weights["speed"], 2),
+                            round(score_data["speed_score"] * weights["speed"], 2),
+                        ],
+                        [
+                            "Average Buffer Health",
+                            score_data["avg_buffer"],
+                            score_data["buffer_score"],
+                            round(weights["buffer"], 2),
+                            round(score_data["buffer_score"] * weights["buffer"], 2),
+                        ],
+                        [
+                            "Dropped Frame %",
+                            score_data["drop_percent"],
+                            score_data["drop_score"],
+                            round(weights["drop"], 2),
+                            round(score_data["drop_score"] * weights["drop"], 2),
+                        ],
+                        [
+                            "Resolution Stability %",
+                            score_data["stability_percent"],
+                            score_data["resolution_score"],
+                            round(weights["resolution"], 2),
+                            round(score_data["resolution_score"] * weights["resolution"], 2),
+                        ],
+                        [
+                            "Protocol",
+                            5,
+                            score_data["protocol_score"],
+                            round(weights["protocol"], 2),
+                            round(score_data["protocol_score"] * weights["protocol"], 2),
+                        ],
+                    ]
+
+                    if score_data["network_score"] is not None:
+                        rows.append(
+                            [
+                                "Network Activity (Fluctuation %)",
+                                score_data["fluctuation"],
+                                score_data["network_score"],
+                                round(weights["network"], 2),
+                                round(
+                                    score_data["network_score"] * weights["network"],
+                                    2
+                                ),
+                            ]
+                        )
+
+                    score_df = pd.DataFrame(
+                        rows,
+                        columns=[
+                            "Metric",
+                            "Achieved Value",
+                            "Calculated Score",
+                            "Weightage",
+                            "Weighted Score",
+                        ],
+                    )
+
+                    score_df.loc[len(score_df)] = [
+                        "Overall Weighted Score",
+                        "",
+                        "",
+                        "",
+                        score_data["overall_score"],
+                    ]
+
+                    score_df.to_csv(
+                        f"{file_name.split('.')[0]}_score.csv",
+                        index=False
+                    )
+                else:
+                    logging.warning(
+                        f"Skipping scoring for {file_name}: device not found in configured hostnames"
+                    )
             self.report.set_graph_title('Buffer Health vs Time Graph for {}'.format(file_name.split('_')[0]))
             self.report.build_graph_title()
 
@@ -2270,6 +2580,7 @@ NOTES:
         parser.add_argument("--expected_passfail_value", help="Specify the expected urlcount value for pass/fail")
         parser.add_argument("--device_csv_name", type=str, help="Specify the device csv name for pass/fail", default=None)
         parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
+        parser.add_argument('--scoring', action='store_true', help='Generate per-device YouTube scoring CSV files')
         parser.add_argument("--wait_time", type=int, help="Specify the time for configuration", default=60)
         # IOT ARGS
         parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
@@ -2420,7 +2731,8 @@ NOTES:
                 cycles=args.cycles,
                 do_bandsteering=args.do_bandsteering,
                 bssids=bssids,
-                rotations_enabled=rotations_enabled)
+                rotations_enabled=rotations_enabled,
+                scoring=args.scoring)
             youtube.start_flask_server()
             args.upstream_port = youtube.change_port_to_ip(args.upstream_port)
 
