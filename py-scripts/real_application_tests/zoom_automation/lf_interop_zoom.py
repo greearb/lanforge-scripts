@@ -1981,6 +1981,8 @@ class ZoomAutomation(Realm):
                            _results_dir_name="zoom_call_report",
                            _path=self.path)
         report_path_date_time = report.get_path_date_time()
+        self.report = report
+        self.report_path_date_time = report_path_date_time
 
         report.set_title("Zoom Call Automated Report")
         report.build_banner()
