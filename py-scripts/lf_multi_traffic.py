@@ -328,6 +328,7 @@ import threading  # noqa: E402
 import time      # noqa: E402
 import traceback  # noqa: E402
 import copy     # noqa: E402
+import shutil   # noqa: E402
 from multiprocessing import Event, Lock, Manager, Value  # noqa: E402
 from types import SimpleNamespace  # noqa: E402
 
@@ -11560,6 +11561,19 @@ class MultiTraffic(Realm):
                                     min_video_pktloss_r.append(temp_min_video_pktloss_r)
 
                                     final_dataset.append(per_client_data.copy())
+
+                            try:
+                                src_dir = curr_zoom_obj.report.path_date_time
+                                dst_dir = self.overall_report.path_date_time
+                                for csv_file in os.listdir(src_dir):
+                                    if csv_file.endswith('.csv'):
+                                        shutil.copy2(
+                                            os.path.join(src_dir, csv_file),
+                                            os.path.join(dst_dir, csv_file)
+                                        )
+                                        logging.info(f"Copied zoom CSV {csv_file} to overall report directory")
+                            except Exception as e:
+                                logging.error(f"Error copying zoom CSVs to overall report directory: {e}")
 
                             self.overall_report.set_table_title("Test Devices:")
                             self.overall_report.build_table_title()
