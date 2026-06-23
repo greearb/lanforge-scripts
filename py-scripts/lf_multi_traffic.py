@@ -5762,7 +5762,6 @@ class MultiTraffic(Realm):
                 self.zoom_test_obj.stop_signal = True
                 logger.info("Waiting for Browser Cleanup in Laptops")
                 time.sleep(10)
-                self.zoom_test_obj.app = None
                 if self.dowebgui:
                     self.zoom_test_obj.stop_webui()
 
@@ -5770,6 +5769,8 @@ class MultiTraffic(Realm):
                     self.zoom_test_obj.generate_report_from_data()
                 elif api_stats_collection:
                     self.zoom_test_obj.generate_report_from_api()
+                self.zoom_test_obj.app = None
+                time.sleep(5)
                 # self.zoom_test_obj.redis_client = None
                 if self.dowebgui:
                     self.webgui_test_done("zoom")
