@@ -488,10 +488,9 @@ clean_ath10_files() {
     local files
     local f
     mapfile -t files < <(
-      ls /home/lanforge/ath10*                2>/dev/null ||:
-      ls /home/lanforge/be200_fw_kern_logs-*  2>/dev/null ||:
-      ls /home/lanforge/be200_fw_crash_dump-* 2>/dev/null ||:
-      ls -t /var/crash/*/vmcore-dmesg.txt     2>/dev/null | tail -n 10 ||:
+      ls /home/lanforge/ath10*                  2>/dev/null ||:
+      ls /home/lanforge/be200_fw_kern_logs-*    2>/dev/null ||:
+      ls /home/lanforge/be200_fw_crash_dump-*   2>/dev/null ||:
     )
     for f in "${files[@]}"; do
       echo "removing $f "
