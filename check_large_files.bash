@@ -955,11 +955,17 @@ survey_core_files() {
     2>/dev/null
 
     if (( "${#core_files[@]}" > 0 )); then
-        mapfile -t -O "${#core_files[@]}" core_files < <(find \
-          /var/crash -type f -name "vmcore-incomplete" 2>/dev/null)
+        mapfile -t -O "${#core_files[@]}" core_files < <(
+          ls -t /var/crash/*/kexec-dmesg.log        2>/dev/null | tail -n 10 ||:
+          ls -t /var/crash/*/vmcore-dmesg.txt       2>/dev/null | tail -n 10 ||:
+          find /var/crash -type f ! -name '*dmesg*' 2>/dev/null ||:
+        )
     else
-        mapfile -t core_files < <(find \
-          /var/crash -type f -name "vmcore-incomplete" 2>/dev/null)
+        mapfile -t core_files < <(
+          ls -t /var/crash/*/kexec-dmesg.log        2>/dev/null | tail -n 10 ||:
+          ls -t /var/crash/*/vmcore-dmesg.txt       2>/dev/null | tail -n 10 ||:
+          find /var/crash -type f ! -name '*dmesg*' 2>/dev/null ||:
+        )
     fi
 
     if [[ $verbose = 1 ]] && (( ${#core_files[@]} > 0 )); then
