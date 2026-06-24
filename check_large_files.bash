@@ -1013,10 +1013,9 @@ ath10_files=()
 survey_ath10_files() {
     debug "Surveying crash files..."
     mapfile -t ath10_files < <(
-      ls /home/lanforge/ath10*                2>/dev/null ||:
-      ls /home/lanforge/be200_fw_kern_logs-*  2>/dev/null ||:
-      ls /home/lanforge/be200_fw_crash_dump-* 2>/dev/null ||:
-      ls -t /var/crash/*/vmcore-dmesg.txt     2>/dev/null | tail -n 10 ||:
+      ls /home/lanforge/ath10*                  2>/dev/null ||:
+      ls /home/lanforge/be200_fw_kern_logs-*    2>/dev/null ||:
+      ls /home/lanforge/be200_fw_crash_dump-*   2>/dev/null ||:
     )
     for f in "${ath10_files[@]}"; do
       debug "$f"
