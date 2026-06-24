@@ -425,8 +425,7 @@ clean_core_files() {
         debug "No core files ?"
         return 0
     fi
-
-   local counter=0
+    local counter=0
     if [ ! -f "$lf_core_log" ]; then
         touch "$lf_core_log"
     fi
@@ -541,8 +540,8 @@ clean_var_log() {
                 truncate -s0 "$file" ;;
             /var/log/xrdp-sesman.log)
                 truncate -s0 "$file" ;;
-            *)
-                rm -f $vee "$file";;
+        *)
+            rm -f $vee "$file";;
         esac
         echo -n "."
         sleep 0.05
@@ -1013,7 +1012,7 @@ survey_lf_downloads() {
 # Find ath10k crash residue
 ath10_files=()
 survey_ath10_files() {
-    debug "Surveying ath10 crash files"
+    debug "Surveying crash files..."
     mapfile -t ath10_files < <(
       ls /home/lanforge/ath10*                2>/dev/null ||:
       ls /home/lanforge/be200_fw_kern_logs-*  2>/dev/null ||:
