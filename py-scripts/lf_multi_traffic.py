@@ -279,6 +279,9 @@
 
     base_class_obj.start_scenario()
 
+    EXAMPLE-6: Command Line Interface to configure devices by specifying device list, ssid , passwd, security.
+
+    python3 lf_multi_traffic.py --config --device_list 1.10,1.11 --ssid MyNetwork --security wpa2 --passwd MyPassword
 
     NOTES:
     1. Duration format: s (seconds), m (minutes), h (hours)
@@ -12380,6 +12383,180 @@ class MultiTraffic(Realm):
         logging.info(f"Generated HTML report file: {html_file}")
         self.overall_report.write_pdf()
 
+    def configure_devices(self, device_list=None, ssid=None, passwd='[BLANK]', security='open',
+                          file_name='', wait_time=60, app_flags=None, upstream_port=None,
+                          eap_method='DEFAULT', eap_identity='', ieee8021x=False,
+                          ieee80211u=False, ieee80211w=1, enable_pkc=False,
+                          bss_transition=False, power_save=False, disable_ofdma=False,
+                          roam_ft_ds=False, key_management='DEFAULT', pairwise='NA',
+                          private_key='NA', ca_cert='NA', client_cert='NA',
+                          pk_passwd='NA', pac_file='NA'):
+        """
+        Configure WiFi on a list of real devices via DeviceConfig.
+
+        Args:
+            device_list (str | list): Comma-separated string or list of device identifiers
+                (serial numbers or shelf.resource EIDs). Pass 'all' to target all devices.
+            ssid (str): WiFi SSID to connect to. Required.
+            passwd (str): WiFi passphrase. Use '[BLANK]' for open networks.
+            security (str): Security type — open | wep | wpa | wpa2 | wpa3.
+            file_name (str): DeviceConfig group file name.
+            wait_time (int): Max seconds to wait for device configuration.
+            app_flags: App flags forwarded to DeviceConfig.
+            upstream_port (str): Port whose IP is used as the server_ip in config_dict.
+            eap_method (str): EAP authentication method.
+            eap_identity (str): EAP identity string.
+            ieee8021x (bool): Enable 802.1X enterprise authentication.
+            ieee80211u (bool): Enable 802.11u / Hotspot 2.0.
+            ieee80211w (int): Management Frame Protection level.
+            enable_pkc (bool): Enable PKC (Proactive Key Caching).
+            bss_transition (bool): Enable BSS Transition Management.
+            power_save (bool): Enable power-save mode.
+            disable_ofdma (bool): Disable OFDMA.
+            roam_ft_ds (bool): Enable FT-DS roaming.
+            key_management (str): Key management method (e.g. WPA-PSK, WPA-EAP).
+            pairwise (str): Pairwise cipher suite.
+            private_key (str): Path to EAP private key file.
+            ca_cert (str): Path to CA certificate file.
+            client_cert (str): Path to client certificate file.
+            pk_passwd (str): Password for the private key.
+            pac_file (str): Path to PAC file.
+
+        Returns:
+            list: EIDs of devices that were successfully configured.
+        """
+        if ssid is None:
+            logger.error('configure_devices: ssid is required')
+            return []
+
+        if passwd == '[BLANK]' and security.lower() != 'open':
+            logger.error('configure_devices: passwd is [BLANK] but security is not open')
+            return []
+        if passwd != '[BLANK]' and security.lower() == 'open':
+            logger.error('configure_devices: passwd provided but security is open')
+            return []
+
+        obj = DeviceConfig.DeviceConfig(lanforge_ip=self.lanforge_ip, file_name=file_name,
+                                        wait_time=wait_time, app_flags=app_flags)
+
+        upstream_port_ip = None
+        if upstream_port:
+            upstream_port_ip = obj.change_port_to_ip(upstream_port)
+
+        config_dict = {
+            'ssid': ssid,
+            'passwd': passwd,
+            'enc': security,
+            'eap_method': eap_method,
+            'eap_identity': eap_identity,
+            'ieee80211': ieee8021x,
+            'ieee80211u': ieee80211u,
+            'ieee80211w': ieee80211w,
+            'enable_pkc': enable_pkc,
+            'bss_transition': bss_transition,
+            'power_save': power_save,
+            'disable_ofdma': disable_ofdma,
+            'roam_ft_ds': roam_ft_ds,
+            'key_management': key_management,
+            'pairwise': pairwise,
+            'private_key': private_key,
+            'ca_cert': ca_cert,
+            'client_cert': client_cert,
+            'pk_passwd': pk_passwd,
+            'pac_file': pac_file,
+            'server_ip': upstream_port_ip,
+        }
+
+        all_devices = obj.get_all_devices()
+        display_list = []
+        all_device_ids = []
+        res_to_name = {}
+        name_to_res = {}
+
+        for device in all_devices:
+            if device["type"] == 'laptop':
+                display_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+                all_device_ids.append(device["shelf"] + '.' + device["resource"])
+                name_to_res[device["hostname"]] = device["shelf"] + '.' + device["resource"]
+                res_to_name[device["shelf"] + '.' + device["resource"]] = device["hostname"]
+            else:
+                display_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
+                all_device_ids.append(device["serial"])
+                name_to_res[device["serial"]] = device["eid"]
+                res_to_name[device["eid"]] = device["serial"]
+
+        logger.info("Available devices: %s", display_list)
+
+        if device_list is None:
+            raw = input("Enter devices to configure (comma-separated) or 'all': ")
+            if raw.strip().lower() == 'all':
+                dev_list = all_device_ids.copy()
+            else:
+                dev_list = [d.strip() for d in raw.split(',')]
+        else:
+            if isinstance(device_list, str):
+                device_list = [d.strip() for d in device_list.split(',')]
+            if any(d.lower() == 'all' for d in device_list):
+                dev_list = all_device_ids.copy()
+            else:
+                dev_list = list(device_list)
+
+        if not dev_list:
+            logger.error('configure_devices: no devices specified')
+            return []
+
+        filtered_dev_list = obj.filter_device_list(dev_list, name_to_res, res_to_name)
+        if not filtered_dev_list:
+            logger.error('configure_devices: no valid devices found after filtering')
+            return []
+
+        logger.info("Devices selected for configuration: %s", dev_list)
+        time.sleep(3)
+        logger.info("Filtered device list: %s", filtered_dev_list)
+
+        configured_eids = asyncio.run(obj.connectivity(device_list=filtered_dev_list, wifi_config=config_dict))
+
+        all_devices = obj.get_all_devices()
+        res_to_name.clear()
+        name_to_res.clear()
+        for device in all_devices:
+            if device["type"] == 'laptop':
+                name_to_res[device["hostname"]] = device["shelf"] + '.' + device["resource"]
+                res_to_name[device["shelf"] + '.' + device["resource"]] = device["hostname"]
+            else:
+                name_to_res[device["serial"]] = device["eid"]
+                res_to_name[device["eid"]] = device["serial"]
+
+        config_set = set(configured_eids)
+        for alias in list(configured_eids):
+            config_set.add(res_to_name.get(alias, alias))
+
+        success_logs = []
+        failed_logs = []
+        for dev in filtered_dev_list:
+            if len(dev.split('.')) == 2:
+                dev_str = f"{dev} / {res_to_name.get(dev, 'NA')}"
+            else:
+                dev_str = f"{name_to_res.get(dev, 'NA')} / {dev}"
+
+            if (dev in config_set
+                    or res_to_name.get(dev) in config_set
+                    or name_to_res.get(dev) in config_set):
+                success_logs.append(f"{dev_str} -> Successfully Configured")
+            else:
+                failed_logs.append(f"{dev_str} -> Configuration Failed")
+
+        logger.info("Configuration Results:")
+        for log in success_logs:
+            logger.info(log)
+        for log in failed_logs:
+            logger.error(log)
+
+        logger.info("Devices set for configuration: %s", filtered_dev_list)
+        logger.info("Devices configured: %s", configured_eids)
+
+        return configured_eids
+
 
 def validate_individual_args(args, test_name):
     '''
@@ -12891,6 +13068,31 @@ def parse_args(return_parser=False):
     parser.add_argument('--no_cleanup', help='Do not cleanup before exit', action='store_true')
     parser.add_argument('--help_summary', action="store_true", help='Show summary of what this script does')
     parser.add_argument('--run_specific_scenario', action='store_true', help='Specify the scenario to run just by giving CLI as function call')
+    # Global device configuration (applied before any test runs)
+    parser.add_argument('--config', action='store_true', help='Configure devices before running tests')
+    parser.add_argument('--ssid', help='WiFi SSID for global device configuration')
+    parser.add_argument('--passwd', '--password', '--key', default='[BLANK]', help='WiFi passphrase/password/key')
+    parser.add_argument('--security', default='open', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
+    parser.add_argument('--file_name', type=str, default='', help='DeviceConfig group file name')
+    parser.add_argument('--wait_time', type=int, default=60, help='Max seconds to wait for device configuration')
+    parser.add_argument('--app_flags', default=None, help='App flags forwarded to DeviceConfig')
+    parser.add_argument('--eap_method', type=str, default='DEFAULT', help='EAP method for authentication')
+    parser.add_argument('--eap_identity', type=str, default='', help='EAP identity for authentication')
+    parser.add_argument('--ieee8021x', action='store_true', help='Enable 802.1X enterprise authentication')
+    parser.add_argument('--ieee80211u', action='store_true', help='Enable IEEE 802.11u (Hotspot 2.0) support')
+    parser.add_argument('--ieee80211w', type=int, default=1, help='IEEE 802.11w Management Frame Protection level')
+    parser.add_argument('--enable_pkc', action='store_true', help='Enable PKC (Proactive Key Caching)')
+    parser.add_argument('--bss_transition', action='store_true', help='Enable BSS Transition Management')
+    parser.add_argument('--power_save', action='store_true', help='Enable power-save mode')
+    parser.add_argument('--disable_ofdma', action='store_true', help='Disable OFDMA')
+    parser.add_argument('--roam_ft_ds', action='store_true', help='Enable FT-DS roaming')
+    parser.add_argument('--key_management', type=str, default='DEFAULT', help='Key management method (e.g. WPA-PSK, WPA-EAP)')
+    parser.add_argument('--pairwise', type=str, default='NA', help='Pairwise cipher suite')
+    parser.add_argument('--private_key', type=str, default='NA', help='EAP private key certificate file')
+    parser.add_argument('--ca_cert', type=str, default='NA', help='CA certificate file name')
+    parser.add_argument('--client_cert', type=str, default='NA', help='Client certificate file name')
+    parser.add_argument('--pk_passwd', type=str, default='NA', help='Password for the private key')
+    parser.add_argument('--pac_file', type=str, default='NA', help='PAC file name')
     # PING ARGS
     # without config
     parser.add_argument('--ping_test',
@@ -13594,6 +13796,36 @@ or a combination of both, with configurable execution priority.
         cycles=args.cycles,
         duration_to_skip=args.duration_to_skip,
         test_map=test_map)
+    if args.config:
+        multi_traffic_obj.configure_devices(
+            device_list=args.device_list or None,
+            ssid=args.ssid,
+            passwd=args.passwd,
+            security=args.security,
+            file_name=args.file_name,
+            wait_time=args.wait_time,
+            app_flags=args.app_flags,
+            upstream_port=args.upstream_port,
+            eap_method=args.eap_method,
+            eap_identity=args.eap_identity,
+            ieee8021x=args.ieee8021x,
+            ieee80211u=args.ieee80211u,
+            ieee80211w=args.ieee80211w,
+            enable_pkc=args.enable_pkc,
+            bss_transition=args.bss_transition,
+            power_save=args.power_save,
+            disable_ofdma=args.disable_ofdma,
+            roam_ft_ds=args.roam_ft_ds,
+            key_management=args.key_management,
+            pairwise=args.pairwise,
+            private_key=args.private_key,
+            ca_cert=args.ca_cert,
+            client_cert=args.client_cert,
+            pk_passwd=args.pk_passwd,
+            pac_file=args.pac_file,
+        )
+        if not args.series_tests and not args.parallel_tests:
+            exit(0)
     # Map available test flags to their respective execution methods
     tests_to_run_series, tests_to_run_parallel, duration_dict = validate_arguments(args, test_map, args_dict)
     multi_traffic_obj.duration_dict = duration_dict.copy()
