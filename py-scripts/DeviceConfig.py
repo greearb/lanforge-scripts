@@ -140,6 +140,36 @@ class ADB_DEVICES(Realm):
         # Use asyncio.gather to await the completion of all tasks
         await asyncio.gather(*tasks)
 
+    # start app
+    async def start_app(self, port_list=None):
+        port_list = [] if port_list is None else port_list
+        if not port_list:
+            logger.info('Device list is empty')
+            return
+
+        data_list = []
+
+        for port_data in port_list:
+            if port_data.get("os", "").lower() == 'ios':
+                data = {
+                    'shelf': 1,
+                    'resource': int(port_data["shelf"]),
+                    'adb_id': port_data["serial"],
+                    'keystrokes': '__start'
+                }
+            else:
+                data = {
+                    'shelf': 1,
+                    'resource': port_data["shelf"],
+                    'adb_id': port_data["serial"],
+                    'adb_cmd': 'shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity --es auto_start 1 --es username {}'.format(port_data.get("user-name", ""))
+                }
+            data_list.append(data)
+
+        loop = asyncio.get_event_loop()
+        tasks = [loop.run_in_executor(None, self.json_post, self.adb_post_url, data) for data in data_list]
+        await asyncio.gather(*tasks)
+
     # toggle wifi
     def set_wifi_state(self, port_list=None, state='enable'):
         port_list = [] if port_list is None else port_list
@@ -453,6 +483,8 @@ class LAPTOPS(Realm):
             enc = 1024
         elif (encryption == "wpa3_personal" or encryption == 'psk3' or encryption == 'wpa3'):
             enc = 1099511627776
+        elif encryption == "wpa2|wpa3" or encryption == "psk2|psk3":
+            enc = 1099511628800
         elif (encryption == "wpa_enterprise"):
             enc = 33554448
         elif (encryption == "wpa2_enterprise"):
