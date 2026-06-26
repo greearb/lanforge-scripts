@@ -32,12 +32,10 @@
         mcast_test
         vs_test
         thput_test
-
-    Real Application Tests (Only Series Supported):
-        yt_test        (YouTube)
-        rb_test        (Real Browser)
-        teams_test     (Microsoft Teams)
-        zoom_test      (Zoom Call)
+        yt_test        (YouTube)       -- only when device list is distinct from all other parallel real-app tests
+        rb_test        (Real Browser)  -- only when device list is distinct from all other parallel real-app tests
+        teams_test     (Microsoft Teams) -- only when device list is distinct from all other parallel real-app tests
+        zoom_test      (Zoom Call)     -- only when device list (including --zoom_host) is distinct from all other parallel real-app tests
 
 
     EXECUTION RULES:
@@ -50,7 +48,9 @@
     2. PARALLEL TESTS:
     - Runs tests simultaneously
     - Duplicate tests are NOT allowed
-    - Real application tests are NOT supported
+    - Real application tests (rb_test, yt_test, teams_test, zoom_test) are supported in parallel
+      ONLY when each test targets a completely distinct set of devices (no device shared across tests).
+      For zoom_test, --zoom_host is also treated as part of its device set for this check.
 
     3. HYBRID MODE:
     - Both --series_tests and --parallel_tests can be used
@@ -138,11 +138,13 @@
 
     EXAMPLE-2:
     Command Line Interface to run all parallel tests with full arguments
+    (Real-app tests are allowed in parallel only when each has a distinct, non-overlapping device list.
+    For zoom_test, --zoom_host is included in its device set and must also be unique.)
 
     python3 lf_multi_traffic.py \
     --mgr 192.168.207.78 \
     --upstream_port eth1 \
-    --parallel_tests ping_test,qos_test,ftp_test,http_test,mcast_test,vs_test,thput_test \
+    --parallel_tests ping_test,qos_test,ftp_test,http_test,mcast_test,vs_test,thput_test,rb_test,yt_test,zoom_test,teams_test \
     \
     --ping_target www.google.com \
     --ping_interval 5 \
@@ -180,7 +182,31 @@
     --thput_test_duration 1m \
     --thput_traffic_type lf_udp \
     --thput_device_list 1.10,1.11,1.20 \
-    --thput_upload 10000000
+    --thput_upload 10000000 \
+    \
+    --rb_duration 1m \
+    --rb_device_list 1.21,1.22 \
+    --rb_webgui_incremental no_increment \
+    --rb_count 10 \
+    \
+    --yt_url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" \
+    --yt_duration 1m \
+    --yt_res 144p \
+    --yt_device_list 1.23,1.24 \
+    \
+    --zoom_signin_email candelatech2@gmail.com \
+    --zoom_signin_passwd 'CANDELAtech1@530048' \
+    --zoom_duration 2 \
+    --zoom_host 1.25 \
+    --zoom_participants 2 \
+    --zoom_device_list 1.25,1.26 \
+    --zoom_audio \
+    --zoom_video \
+    \
+    --teams_duration 2m \
+    --teams_device_list 1.27,1.28 \
+    --teams_audio \
+    --teams_video
 
     EXAMPLE-3:
     Command Line Interface to run all series tests and parallel with full arguments
@@ -277,18 +303,92 @@
         ping_device_list="1.4,1.11,1.12",
     )
 
+    base_class_obj.start_app(device_list="1.4,1.11,1.12")
     base_class_obj.start_scenario()
 
     EXAMPLE-6: Command Line Interface to configure devices by specifying device list, ssid , passwd, security.
 
     python3 lf_multi_traffic.py --config --device_list 1.10,1.11 --ssid MyNetwork --security wpa2 --passwd MyPassword
 
+    EXAMPLE-7:
+    Command Line Interface to run only real application tests in parallel
+    (Each real-app test must target a completely distinct set of devices.
+    For zoom_test, --zoom_host is included in its device set and must also be unique.)
+
+    python3 lf_multi_traffic.py \
+    --mgr 192.168.245.117 \
+    --upstream_port eth3 \
+    --parallel_tests zoom_test,rb_test,yt_test,teams_test \
+    \
+    --rb_duration 1m \
+    --rb_device_list 1.21,1.14,1.10,1.16 \
+    --rb_webgui_incremental no_increment \
+    --rb_count 10 \
+    \
+    --yt_url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" \
+    --yt_duration 1m \
+    --yt_res 144p \
+    --yt_device_list 1.20,1.18,1.26 \
+    \
+    --zoom_signin_email candelatech2@gmail.com \
+    --zoom_signin_passwd 'CANDELAtech1@530048' \
+    --zoom_duration 2 \
+    --zoom_host 1.34 \
+    --zoom_participants 3 \
+    --zoom_device_list 1.34,1.36,1.40 \
+    --zoom_audio \
+    --zoom_video \
+    \
+    --api_stats_collection \
+    --teams_duration 1m \
+    --teams_device_list 1.41,1.22,1.23 \
+    --teams_audio \
+    --teams_video
+
+    EXAMPLE-8:
+    Start the WeCAN app on devices before running tests using --start_app
+
+    Standalone (start app only, no tests):
+    python3 lf_multi_traffic.py \
+    --mgr 192.168.207.78 \
+    --start_app \
+    --device_list 1.10,1.11,1.12
+
+    Combined with tests (start app then run tests):
+    python3 lf_multi_traffic.py \
+    --mgr 192.168.207.78 \
+    --upstream_port eth1 \
+    --start_app \
+    --device_list 1.10,1.11,1.12 \
+    --parallel_tests ping_test \
+    --ping_target www.google.com \
+    --ping_duration 1m \
+    --ping_device_list 1.10,1.11,1.12
+
+    Via initialize_multitraffic_obj:
+    from lf_multi_traffic import initialize_multitraffic_obj
+
+    base_class_obj = initialize_multitraffic_obj(
+        mgr="192.168.207.78",
+        upstream_port="eth1",
+        parallel_tests="ping_test",
+        ping_target="www.google.com",
+        ping_duration="1m",
+        ping_device_list="1.10,1.11,1.12",
+    )
+    base_class_obj.start_app(device_list="1.10,1.11,1.12")
+    base_class_obj.start_scenario()
+
     NOTES:
     1. Duration format: s (seconds), m (minutes), h (hours)
-    2. Parallel execution improves performance but is limited to network tests
-    3. Real application tests must always be executed in series
+    2. Parallel execution improves performance for all supported tests
+    3. Real application tests (rb_test, yt_test, teams_test, zoom_test) can run in parallel
+       only when each uses a completely distinct device list. Sharing any device across
+       parallel real-app tests is an error. For zoom_test, --zoom_host counts as a device.
     4. Avoid duplicates in parallel_tests
     5. Use --order_priority to control execution flow
+    6. --start_app launches the WeCAN app on ADB devices before tests begin;
+       use --device_list to target specific devices or omit for interactive prompt
 
     STATUS : Functional
 
@@ -12839,12 +12939,10 @@ def parse_args(return_parser=False):
         mcast_test
         vs_test
         thput_test
-
-    Real Application Tests (Only Series Supported):
-        yt_test        (YouTube)
-        rb_test        (Real Browser)
-        teams_test     (Microsoft Teams)
-        zoom_test      (Zoom Call)
+        yt_test        (YouTube)       -- only when device list is distinct from all other parallel real-app tests
+        rb_test        (Real Browser)  -- only when device list is distinct from all other parallel real-app tests
+        teams_test     (Microsoft Teams) -- only when device list is distinct from all other parallel real-app tests
+        zoom_test      (Zoom Call)     -- only when device list (including --zoom_host) is distinct from all other parallel real-app tests
 
 
     EXECUTION RULES:
@@ -12857,7 +12955,9 @@ def parse_args(return_parser=False):
     2. PARALLEL TESTS:
     - Runs tests simultaneously
     - Duplicate tests are NOT allowed
-    - Real application tests are NOT supported
+    - Real application tests (rb_test, yt_test, teams_test, zoom_test) are supported in parallel
+      ONLY when each test targets a completely distinct set of devices (no device shared across tests).
+      For zoom_test, --zoom_host is also treated as part of its device set for this check.
 
     3. HYBRID MODE:
     - Both --series_tests and --parallel_tests can be used
@@ -12928,8 +13028,8 @@ def parse_args(return_parser=False):
     --yt_res 144p \
     --yt_device_list 1.15,1.4 \
     \
-    --zoom_signin_email candelatech2@gmail.com \
-    --zoom_signin_passwd 'CANDELAtech1@530048' \
+    --zoom_signin_email temp@gmail.com \
+    --zoom_signin_passwd 'yourpassword' \
     --zoom_duration 2 \
     --zoom_host 1.15 \
     --zoom_participants 2 \
@@ -12944,11 +13044,13 @@ def parse_args(return_parser=False):
 
     EXAMPLE-2:
     Command Line Interface to run all parallel tests with full arguments
+    (Real-app tests are allowed in parallel only when each has a distinct, non-overlapping device list.
+    For zoom_test, --zoom_host is included in its device set and must also be unique.)
 
     python3 lf_multi_traffic.py \
     --mgr 192.168.207.78 \
     --upstream_port eth1 \
-    --parallel_tests ping_test,qos_test,ftp_test,http_test,mcast_test,vs_test,thput_test \
+    --parallel_tests ping_test,qos_test,ftp_test,http_test,mcast_test,vs_test,thput_test,rb_test,yt_test,zoom_test,teams_test \
     \
     --ping_target www.google.com \
     --ping_interval 5 \
@@ -12986,7 +13088,31 @@ def parse_args(return_parser=False):
     --thput_test_duration 1m \
     --thput_traffic_type lf_udp \
     --thput_device_list 1.10,1.11,1.20 \
-    --thput_upload 10000000
+    --thput_upload 10000000 \
+    \
+    --rb_duration 1m \
+    --rb_device_list 1.21,1.22 \
+    --rb_webgui_incremental no_increment \
+    --rb_count 10 \
+    \
+    --yt_url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" \
+    --yt_duration 1m \
+    --yt_res 144p \
+    --yt_device_list 1.23,1.24 \
+    \
+    --zoom_signin_email temp@gmail.com \
+    --zoom_signin_passwd 'yourpassword' \
+    --zoom_duration 2 \
+    --zoom_host 1.25 \
+    --zoom_participants 2 \
+    --zoom_device_list 1.25,1.26 \
+    --zoom_audio \
+    --zoom_video \
+    \
+    --teams_duration 2m \
+    --teams_device_list 1.27,1.28 \
+    --teams_audio \
+    --teams_video
 
     EXAMPLE-3:
     Command Line Interface to run all series tests and parallel with full arguments
@@ -13083,16 +13209,92 @@ def parse_args(return_parser=False):
         ping_device_list="1.4,1.11,1.12",
     )
 
+    base_class_obj.start_app(device_list="1.4,1.11,1.12")
     base_class_obj.start_scenario()
 
+    EXAMPLE-6: Command Line Interface to configure devices by specifying device list, ssid, passwd, security.
 
+    python3 lf_multi_traffic.py --config --device_list 1.10,1.11 --ssid MyNetwork --security wpa2 --passwd MyPassword
+
+    EXAMPLE-7:
+    Command Line Interface to run only real application tests in parallel
+    (Each real-app test must target a completely distinct set of devices.
+    For zoom_test, --zoom_host is included in its device set and must also be unique.)
+
+    python3 lf_multi_traffic.py \
+    --mgr 192.168.245.117 \
+    --upstream_port eth3 \
+    --parallel_tests zoom_test,rb_test,yt_test,teams_test \
+    \
+    --rb_duration 1m \
+    --rb_device_list 1.21,1.14,1.10,1.16 \
+    --rb_webgui_incremental no_increment \
+    --rb_count 10 \
+    \
+    --yt_url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" \
+    --yt_duration 1m \
+    --yt_res 144p \
+    --yt_device_list 1.20,1.18,1.26 \
+    \
+    --zoom_signin_email temp@gmail.com \
+    --zoom_signin_passwd 'yourpassword' \
+    --zoom_duration 2 \
+    --zoom_host 1.34 \
+    --zoom_participants 3 \
+    --zoom_device_list 1.34,1.36,1.40 \
+    --zoom_audio \
+    --zoom_video \
+    \
+    --api_stats_collection \
+    --teams_duration 1m \
+    --teams_device_list 1.41,1.22,1.23 \
+    --teams_audio \
+    --teams_video
+
+    EXAMPLE-8:
+    Start the WeCAN app on devices before running tests using --start_app
+
+    Standalone (start app only, no tests):
+    python3 lf_multi_traffic.py \
+    --mgr 192.168.207.78 \
+    --start_app \
+    --device_list 1.10,1.11,1.12
+
+    Combined with tests (start app then run tests):
+    python3 lf_multi_traffic.py \
+    --mgr 192.168.207.78 \
+    --upstream_port eth1 \
+    --start_app \
+    --device_list 1.10,1.11,1.12 \
+    --parallel_tests ping_test \
+    --ping_target www.google.com \
+    --ping_duration 1m \
+    --ping_device_list 1.10,1.11,1.12
+
+    Via initialize_multitraffic_obj:
+    from lf_multi_traffic import initialize_multitraffic_obj
+
+    base_class_obj = initialize_multitraffic_obj(
+        mgr="192.168.207.78",
+        upstream_port="eth1",
+        parallel_tests="ping_test",
+        ping_target="www.google.com",
+        ping_duration="1m",
+        ping_device_list="1.10,1.11,1.12",
+    )
+    base_class_obj.start_app(device_list="1.10,1.11,1.12")
+    base_class_obj.start_scenario()
 
     NOTES:
     1. Duration format: s (seconds), m (minutes), h (hours)
-    2. Parallel execution improves performance but is limited to network tests
-    3. Real application tests must always be executed in series
+    2. Parallel execution improves performance for all supported tests
+    3. Real application tests (rb_test, yt_test, teams_test, zoom_test) can run in parallel
+       only when each uses a completely distinct device list. Sharing any device across
+       parallel real-app tests is an error. For zoom_test, --zoom_host counts as a device.
     4. Avoid duplicates in parallel_tests
     5. Use --order_priority to control execution flow
+    6. --start_app launches the WeCAN app on ADB devices before tests begin;
+       use --device_list to target specific devices or omit for interactive prompt
 
     STATUS : Functional
 
@@ -13123,8 +13325,15 @@ def parse_args(return_parser=False):
                         action="store_true",
                         help='to run in parallel')
     parser.add_argument("--tests", type=str, help="Comma-separated ordered list of tests to run (e.g., ping_test,http_test,ping_test)")
-    parser.add_argument('--series_tests', help='Comma-separated list of tests to run in series')
-    parser.add_argument('--parallel_tests', help='Comma-separated list of tests to run in parallel')
+    parser.add_argument('--series_tests', help='Comma-separated list of tests to run in series. '
+                        'Supported: ping_test, qos_test, ftp_test, http_test, mcast_test, vs_test, thput_test, rb_test, yt_test, teams_test, zoom_test. '
+                        'Duplicate tests are allowed in series.')
+    parser.add_argument('--parallel_tests', help='Comma-separated list of tests to run in parallel. '
+                        'Supported: ping_test, qos_test, ftp_test, http_test, mcast_test, vs_test, thput_test, rb_test, yt_test, teams_test, zoom_test. '
+                        'Duplicate tests are NOT allowed. '
+                        'Real-app tests (rb_test, yt_test, teams_test, zoom_test) can run in parallel only when each uses a completely distinct, '
+                        'non-overlapping device list. For zoom_test, --zoom_host is also counted as part of its device set. '
+                        'Example (real-app only): --parallel_tests zoom_test,rb_test,yt_test,teams_test')
     parser.add_argument('--order_priority', choices=['series', 'parallel'], default='series',
                         help='Which tests to run first: series or parallel')
     parser.add_argument('--test_name', help='Name of the Test')
@@ -13158,7 +13367,12 @@ def parse_args(return_parser=False):
     parser.add_argument('--client_cert', type=str, default='NA', help='Client certificate file name')
     parser.add_argument('--pk_passwd', type=str, default='NA', help='Password for the private key')
     parser.add_argument('--pac_file', type=str, default='NA', help='PAC file name')
-    parser.add_argument('--start_app', action='store_true', help='Start the WeCAN app on devices before running tests')
+    parser.add_argument('--start_app', action='store_true',
+                        help='Start the WeCAN app on ADB devices before running tests. '
+                             'Use --device_list to specify target devices (comma-separated eids or "all"); '
+                             'omit --device_list for an interactive prompt. '
+                             'Can be used standalone (no --series_tests/--parallel_tests) to only launch the app, '
+                             'or combined with tests to launch the app first then run tests.')
     # PING ARGS
     # without config
     parser.add_argument('--ping_test',
@@ -13764,9 +13978,34 @@ def validate_arguments(args, test_map, args_dict):
             if test not in test_map:
                 logger.error(f"{test} is not available in test suite")
                 flag = 0
-        if any(test in tests_to_run_parallel for test in ("rb_test", "teams_test", "yt_test", "zoom_test")):
-            logger.error("Real application tests are not supported in parallel execution.")
-            exit(0)
+        # Real-app tests are allowed in parallel only when every test targets a distinct set of devices.
+        # zoom_host is included in zoom_test's device set because it participates in the session.
+        real_app_parallel = [t for t in tests_to_run_parallel if t in ("rb_test", "teams_test", "yt_test", "zoom_test")]
+        if real_app_parallel:
+            def _real_app_device_set(test_name):
+                raw_map = {
+                    "rb_test": getattr(args, "rb_device_list", None) or "",
+                    "yt_test": getattr(args, "yt_device_list", None) or "",
+                    "zoom_test": getattr(args, "zoom_device_list", None) or "",
+                    "teams_test": getattr(args, "teams_device_list", None) or "",
+                }
+                devices = set(d.strip() for d in raw_map[test_name].split(',') if d.strip())
+                if test_name == "zoom_test" and getattr(args, "zoom_host", None):
+                    devices.add(args.zoom_host.strip())
+                return devices
+
+            for i in range(len(real_app_parallel)):
+                for j in range(i + 1, len(real_app_parallel)):
+                    t1, t2 = real_app_parallel[i], real_app_parallel[j]
+                    overlap = _real_app_device_set(t1) & _real_app_device_set(t2)
+                    if overlap:
+                        logger.error(
+                            f"Parallel real-app tests '{t1}' and '{t2}' share device(s): "
+                            f"{', '.join(sorted(overlap))}. "
+                            "Each parallel real-app test must use a completely distinct device list "
+                            "(including --zoom_host for zoom_test)."
+                        )
+                        exit(1)
 
     # Abort execution if invalid tests were requested
     if not flag:
