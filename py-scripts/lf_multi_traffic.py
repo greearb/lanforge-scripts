@@ -12557,6 +12557,71 @@ class MultiTraffic(Realm):
 
         return configured_eids
 
+    def start_app(self, device_list=None, file_name='', wait_time=60, app_flags=None):
+        obj = DeviceConfig.DeviceConfig(lanforge_ip=self.lanforge_ip, file_name=file_name,
+                                        wait_time=wait_time, app_flags=app_flags)
+
+        all_devices = obj.get_all_devices()
+        display_list = []
+        all_device_ids = []
+        res_to_name = {}
+        name_to_res = {}
+
+        for device in all_devices:
+            if device["type"] == 'laptop':
+                display_list.append(device["shelf"] + '.' + device["resource"] + " " + device["hostname"])
+                all_device_ids.append(device["shelf"] + '.' + device["resource"])
+                name_to_res[device["hostname"]] = device["shelf"] + '.' + device["resource"]
+                res_to_name[device["shelf"] + '.' + device["resource"]] = device["hostname"]
+            else:
+                display_list.append(device["shelf"] + '.' + device["resource"] + " " + device["serial"])
+                all_device_ids.append(device["serial"])
+                name_to_res[device["serial"]] = device["eid"]
+                res_to_name[device["eid"]] = device["serial"]
+
+        logger.info("Available devices: %s", display_list)
+
+        if device_list is None:
+            raw = input("Enter devices to start app (comma-separated) or 'all': ")
+            if raw.strip().lower() == 'all':
+                dev_list = all_device_ids.copy()
+            else:
+                dev_list = [d.strip() for d in raw.split(',')]
+        else:
+            if isinstance(device_list, str):
+                device_list = [d.strip() for d in device_list.split(',')]
+            if any(d.lower() == 'all' for d in device_list):
+                dev_list = all_device_ids.copy()
+            else:
+                dev_list = list(device_list)
+
+        if not dev_list:
+            logger.error('start_app: no devices specified')
+            return []
+
+        filtered_dev_list = obj.filter_device_list(dev_list, name_to_res, res_to_name)
+        if not filtered_dev_list:
+            logger.error('start_app: no valid devices found after filtering')
+            return []
+
+        logger.info("Devices selected for start_app: %s", filtered_dev_list)
+
+        adb_port_list = []
+        for device in all_devices:
+            if device["type"] != 'adb':
+                continue
+            if device["serial"] in filtered_dev_list or device["eid"] in filtered_dev_list:
+                adb_port_list.append(device)
+
+        if not adb_port_list:
+            logger.error('start_app: no ADB devices found in filtered list')
+            return []
+
+        asyncio.run(obj.adb_obj.start_app(port_list=adb_port_list))
+
+        logger.info("start_app triggered on devices: %s", [d["serial"] for d in adb_port_list])
+        return [d["serial"] for d in adb_port_list]
+
 
 def validate_individual_args(args, test_name):
     '''
@@ -13093,6 +13158,7 @@ def parse_args(return_parser=False):
     parser.add_argument('--client_cert', type=str, default='NA', help='Client certificate file name')
     parser.add_argument('--pk_passwd', type=str, default='NA', help='Password for the private key')
     parser.add_argument('--pac_file', type=str, default='NA', help='PAC file name')
+    parser.add_argument('--start_app', action='store_true', help='Start the WeCAN app on devices before running tests')
     # PING ARGS
     # without config
     parser.add_argument('--ping_test',
@@ -13823,6 +13889,15 @@ or a combination of both, with configurable execution priority.
             client_cert=args.client_cert,
             pk_passwd=args.pk_passwd,
             pac_file=args.pac_file,
+        )
+        if not args.series_tests and not args.parallel_tests:
+            exit(0)
+    if args.start_app:
+        multi_traffic_obj.start_app(
+            device_list=args.device_list or None,
+            file_name=args.file_name,
+            wait_time=args.wait_time,
+            app_flags=args.app_flags,
         )
         if not args.series_tests and not args.parallel_tests:
             exit(0)
