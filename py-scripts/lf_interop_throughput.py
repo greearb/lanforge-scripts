@@ -1277,7 +1277,7 @@ class Throughput(Realm):
                     throughput[i][4] = 'Run' if value['run'] else 'Stopped'
             # To add average RTT
             for j in l3_cx_data:
-                if (j == "handler" or j == "uri"):
+                if not isinstance(l3_cx_data[j], dict):
                     continue
                 if cx == l3_cx_data[j]['name']:
                     throughput[i][5] = l3_cx_data[j]['avg rtt']
@@ -1320,7 +1320,7 @@ class Throughput(Realm):
             index += 1
             current_time = datetime.now()
             signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
-            signal_list = [int(i) if i != "" else 0 for i in signal_list]
+            signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
             throughput[index] = self.get_layer3_endp_data()
             # Check if next sleep would overshoot the end_time
             is_last_iteration = ((current_time + timedelta(seconds=1 if self.dowebgui else self.report_timer)) >= end_time)
@@ -1552,7 +1552,7 @@ class Throughput(Realm):
         drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
         drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
         signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
-        signal_list = [int(i) if i != "" else 0 for i in signal_list]
+        signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
 
         # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe after test stopped
         for i in range(len(download_throughput)):
@@ -1704,7 +1704,7 @@ class Throughput(Realm):
                 index += 1
                 current_time = datetime.now()
                 signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
-                signal_list = [int(i) if i != "" else 0 for i in signal_list]
+                signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
                 throughput[index] = self.get_layer3_endp_data()
                 # Check if next sleep would overshoot the end_time
                 is_last_iteration = ((current_time + timedelta(seconds=1 if self.dowebgui else self.report_timer)) >= end_time)
@@ -1992,7 +1992,7 @@ class Throughput(Realm):
         drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
         drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
         signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
-        signal_list = [int(i) if i != "" else 0 for i in signal_list]
+        signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
 
         # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe after test stopped
         for i in range(len(download_throughput)):
