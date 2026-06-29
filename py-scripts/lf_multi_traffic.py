@@ -12905,6 +12905,7 @@ def parse_args(return_parser=False):
     parser = argparse.ArgumentParser(
         prog="lf_multi_traffic.py",
         formatter_class=argparse.RawTextHelpFormatter,
+        add_help=False,
         description='''
 
     NAME: lf_multi_traffic.py
@@ -13312,8 +13313,14 @@ def parse_args(return_parser=False):
     Free to distribute and modify. LANforge systems must be licensed.
 
     INCLUDE_IN_README: False
+
+    USAGE:
+    Use --args_help to view all available argument descriptions:
+    python3 lf_multi_traffic.py --args_help
     ''',
     )
+    parser.add_argument('-h', '--help', action='store_true', default=False, help=argparse.SUPPRESS)
+    parser.add_argument('--args_help', action='store_true', default=False, help='Show all argument descriptions and exit')
     # Always Common
     parser.add_argument('--mgr', '--lfmgr', default='localhost', help='hostname for where LANforge GUI is running')
     parser.add_argument('--mgr_port', '--port', default=8080, help='port LANforge GUI HTTP service is running on')
@@ -13918,6 +13925,12 @@ def parse_args(return_parser=False):
     if return_parser:
         return parser
     args = parser.parse_args()
+    if args.help:
+        print(parser.description)
+        sys.exit(0)
+    if args.args_help:
+        parser.print_help()
+        sys.exit(0)
     return args
 
 
