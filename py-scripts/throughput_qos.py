@@ -1431,51 +1431,54 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 
     # 2.4 GHz configuration
     parser.add_argument('--radio_2g',
-                        help="Radio used for 2.4GHz station creation",
+                        help="Radio used for 2.4 GHz station creation",
                         default="wiphy0")
     parser.add_argument('--num_stations_2g',
-                        help="Number of 2GHz band stations",
+                        help="Number of 2.4 GHz band stations",
                         type=int,
                         default=0,
                         required=False)
     parser.add_argument('--ssid_2g',
-                        help="SSID for 2.4GHz band")
+                        help="SSID for 2.4 GHz band")
     parser.add_argument('--security_2g',
-                        help="Security type for 2.4GHz band")
-    parser.add_argument('--passwd_2g',
-                        help="Password for 2.4GHz band")
+                        help="Security type for 2.4 GHz band")
+    parser.add_argument('--passwd_2g', '--password_2g',
+                        dest='password_2g',
+                        help="Password for 2.4 GHz band")
 
     # 5 GHz configuration
     parser.add_argument('--radio_5g',
-                        help="Radio used for 5GHz station creation",
+                        help="Radio used for 5 GHz station creation",
                         default="wiphy1")
     parser.add_argument('--num_stations_5g',
-                        help="Number of 5GHz band stations",
+                        help="Number of 5 GHz band stations",
                         type=int,
                         default=0,
                         required=False)
     parser.add_argument('--ssid_5g',
-                        help="SSID for 5GHz band")
+                        help="SSID for 5 GHz band")
     parser.add_argument('--security_5g',
-                        help="Security type for 5GHz band")
-    parser.add_argument('--passwd_5g',
-                        help="Password for 5GHz band")
+                        help="Security type for 5 GHz band")
+    parser.add_argument('--passwd_5g', '--password_5g',
+                        dest='password_5g',
+                        help="Password for 5 GHz band")
 
     # 6 GHz configuration
     parser.add_argument('--radio_6g',
-                        help="Radio used for 6GHz station creation",
+                        help="Radio used for 6 GHz station creation",
                         default="wiphy2")
     parser.add_argument('--num_stations_6g',
-                        help="Number of 6GHz band stations",
+                        help="Number of 6 GHz band stations",
                         type=int,
                         default=0,
                         required=False)
     parser.add_argument('--ssid_6g',
-                        help="SSID for 6GHz band")
+                        help="SSID for 6 GHz band")
     parser.add_argument('--security_6g',
-                        help="Security type for 6GHz band")
-    parser.add_argument('--passwd_6g',
-                        help="Password for 6GHz band")
+                        help="Security type for 6 GHz band")
+    parser.add_argument('--passwd_6g', '--password_6g',
+                        dest='password_6g',
+                        help="Password for 6 GHz band")
 
     # Station cration configuration
     # Other create station options present in per-band sections
@@ -1645,13 +1648,13 @@ def main():
                                            password=args.passwd,
                                            security=args.security,
                                            ssid_2g=args.ssid_2g,
-                                           password_2g=args.passwd_2g,
+                                           password_2g=args.password_2g,
                                            security_2g=args.security_2g,
                                            ssid_5g=args.ssid_5g,
-                                           password_5g=args.passwd_5g,
+                                           password_5g=args.password_5g,
                                            security_5g=args.security_5g,
                                            ssid_6g=args.ssid_6g,
-                                           password_6g=args.passwd_6g,
+                                           password_6g=args.password_6g,
                                            security_6g=args.security_6g,
                                            radio_2g=args.radio_2g,
                                            radio_5g=args.radio_5g,
