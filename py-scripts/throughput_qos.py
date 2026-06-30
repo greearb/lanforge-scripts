@@ -1401,31 +1401,79 @@ VERIFIED_ON:
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             Copyright (C) 2020-2026 Candela Technologies Inc
 ''')
-    parser.add_argument('--mode', help='Force specific station mode', default="0")
-    parser.add_argument('--traffic_type', help='Type of generated traffic [lf_udp, lf_tcp]', required=False, choices=["lf_udp", "lf_tcp"])
-    parser.add_argument('--download', help='Configured download traffic rate (station receive)', default="0")
-    parser.add_argument('--upload', help='Configured upload traffic rate (station transmit)', default="0")
-    parser.add_argument('--test_duration', help='Duration of test', default="2m")
-    parser.add_argument('--create_sta', help='Create stations for use in test', action='store_true')
-    parser.add_argument('--sta_names', help='Set specific station names', default="sta0000")
-    parser.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
-    parser.add_argument('--bands', help='Comma-separated list of bands used for test', default="2.4G, 5G, 6G, DUALBAND, TRIBAND", required=False)
-    parser.add_argument('--tos', help='Comma-separated list of TOS values. For example, "BK,BE,VI,VO", or "BK,VO", or "VI"')
-    parser.add_argument('--ssid_2g', help="SSID for 2.4GHz band")
-    parser.add_argument('--security_2g', help="Security type for 2.4GHz band")
-    parser.add_argument('--passwd_2g', help="Password for 2.4GHz band")
-    parser.add_argument('--ssid_6g', help="SSID for 6GHz band")
-    parser.add_argument('--security_6g', help="Security type for 6GHz band")
-    parser.add_argument('--passwd_6g', help="Password for 6GHz band")
-    parser.add_argument('--ssid_5g', help="SSID for 5GHz band")
-    parser.add_argument('--security_5g', help="Security type for 5GHz band")
-    parser.add_argument('--passwd_5g', help="Password for 5GHz band")
-    parser.add_argument('--num_stations_2g', help="Number of 2GHz band stations", type=int, default=0, required=False)
-    parser.add_argument('--num_stations_5g', help="Number of 5GHz band stations", type=int, default=0, required=False)
-    parser.add_argument('--num_stations_6g', help="Number of 6GHz band stations", type=int, default=0, required=False)
-    parser.add_argument('--radio_2g', help="Radio used for 2.4GHz station creation", default="wiphy0")
-    parser.add_argument('--radio_5g', help="Radio used for 5GHz station creation", default="wiphy1")
-    parser.add_argument('--radio_6g', help="Radio used for 6GHz station creation", default="wiphy2")
+    parser.add_argument('--mode',
+                        help='Force specific station mode',
+                        default="0")
+    parser.add_argument('--traffic_type',
+                        help='Type of generated traffic [lf_udp, lf_tcp]',
+                        required=False,
+                        choices=["lf_udp", "lf_tcp"])
+    parser.add_argument('--download',
+                        help='Configured download traffic rate (station receive)',
+                        default="0")
+    parser.add_argument('--upload',
+                        help='Configured upload traffic rate (station transmit)',
+                        default="0")
+    parser.add_argument('--test_duration',
+                        help='Duration of test',
+                        default="2m")
+    parser.add_argument('--create_sta',
+                        help='Create stations for use in test',
+                        action='store_true')
+    parser.add_argument('--sta_names',
+                        help='Set specific station names',
+                        default="sta0000")
+    parser.add_argument('--ap_name',
+                        help="AP Model Name",
+                        default="Test-AP")
+    parser.add_argument('--bands',
+                        help='Comma-separated list of bands used for test',
+                        default="2.4G, 5G, 6G, DUALBAND, TRIBAND",
+                        required=False)
+    parser.add_argument('--tos',
+                        help='Comma-separated list of TOS values. For example, "BK,BE,VI,VO", or "BK,VO", or "VI"')
+    parser.add_argument('--ssid_2g',
+                        help="SSID for 2.4GHz band")
+    parser.add_argument('--security_2g',
+                        help="Security type for 2.4GHz band")
+    parser.add_argument('--passwd_2g',
+                        help="Password for 2.4GHz band")
+    parser.add_argument('--ssid_6g',
+                        help="SSID for 6GHz band")
+    parser.add_argument('--security_6g',
+                        help="Security type for 6GHz band")
+    parser.add_argument('--passwd_6g',
+                        help="Password for 6GHz band")
+    parser.add_argument('--ssid_5g',
+                        help="SSID for 5GHz band")
+    parser.add_argument('--security_5g',
+                        help="Security type for 5GHz band")
+    parser.add_argument('--passwd_5g',
+                        help="Password for 5GHz band")
+    parser.add_argument('--num_stations_2g',
+                        help="Number of 2GHz band stations",
+                        type=int,
+                        default=0,
+                        required=False)
+    parser.add_argument('--num_stations_5g',
+                        help="Number of 5GHz band stations",
+                        type=int,
+                        default=0,
+                        required=False)
+    parser.add_argument('--num_stations_6g',
+                        help="Number of 6GHz band stations",
+                        type=int,
+                        default=0,
+                        required=False)
+    parser.add_argument('--radio_2g',
+                        help="Radio used for 2.4GHz station creation",
+                        default="wiphy0")
+    parser.add_argument('--radio_5g',
+                        help="Radio used for 5GHz station creation",
+                        default="wiphy1")
+    parser.add_argument('--radio_6g',
+                        help="Radio used for 6GHz station creation",
+                        default="wiphy2")
     parser.add_argument('--initial_band_pref',
                         help="If specified, set a band preference for stations created for specific band",
                         required=False, action='store_true', default=False)
