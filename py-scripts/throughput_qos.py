@@ -413,7 +413,7 @@ class ThroughputQOS(Realm):
         # Determine traffic flow direction
         direction = ''
         if int(self.cx_profile.side_b_min_bps) != 0 and int(self.cx_profile.side_a_min_bps) != 0:
-            self.direction = "Bi-direction"
+            self.direction = "Bi-directional"
             direction = 'Bi-di'
         elif int(self.cx_profile.side_b_min_bps) != 0:
             self.direction = "Download"
@@ -1409,7 +1409,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             Copyright (C) 2020-2026 Candela Technologies Inc
 ''')
     # General test configuration
-    parser.add_argument('--test_duration',
+    parser.add_argument('--duration', '--test_duration',
+                        dest='test_duration',
                         help='Duration of test',
                         default="2m")
     parser.add_argument('--bands',
