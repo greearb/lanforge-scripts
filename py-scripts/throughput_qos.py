@@ -1506,10 +1506,51 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 
 def validate_args(args):
     """Ensure arguments specified for program are valid."""
-    if args.num_stations_2g == 0 and args.num_stations_5g == 0 and args.num_stations_6g == 0:
-        logger.error("Must specify one or more number stations for the test (e.g. '--num_stations_2g 1')")
-        exit(1)
+    # Validate configuration required per-band
+    bands = [arg.lower() for arg in args.bands.split(",")]
+    if "2.4g" in bands or "dualband" in bands or "triband" in bands:
+        if args.num_stations_2g == 0:
+            logger.error("Missing number of 2.4 GHz stations (see '--num_stations_2g')")
+            exit(1)
+        if not args.ssid_2g:
+            logger.error("Missing 2.4 GHz SSID (see '--ssid_2g')")
+            exit(1)
+        if not args.security_2g:
+            logger.error("Missing 2.4 GHz security (see '--security_2g')")
+            exit(1)
+        if not args.password_2g:
+            logger.error("Missing 2.4 GHz password (see '--password_2g')")
+            exit(1)
 
+    if "5g" in bands or "dualband" in bands or "triband" in bands:
+        if args.num_stations_5g == 0:
+            logger.error("Missing number of 5 GHz stations (see '--num_stations_5g')")
+            exit(1)
+        if not args.ssid_5g:
+            logger.error("Missing 5 GHz SSID (see '--ssid_5g')")
+            exit(1)
+        if not args.security_5g:
+            logger.error("Missing 5 GHz security (see '--security_5g')")
+            exit(1)
+        if not args.password_5g:
+            logger.error("Missing 5 GHz password (see '--password_5g')")
+            exit(1)
+
+    if "6g" in bands or "triband" in bands:
+        if args.num_stations_6g == 0:
+            logger.error("Missing number of 6 GHz stations (see '--num_stations_6g')")
+            exit(1)
+        if not args.ssid_6g:
+            logger.error("Missing 6 GHz SSID (see '--ssid_6g')")
+            exit(1)
+        if not args.security_6g:
+            logger.error("Missing 6 GHz security (see '--security_6g')")
+            exit(1)
+        if not args.password_6g:
+            logger.error("Missing 6 GHz password (see '--password_6g')")
+            exit(1)
+
+    # Validate traffic configuration
     if not args.traffic_type:
         logger.error("No traffic type specified")
         exit(1)
