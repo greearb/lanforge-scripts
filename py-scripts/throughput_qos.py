@@ -98,6 +98,8 @@ logging.basicConfig(
 logger.setLevel(level=logging.INFO)
 
 class ThroughputQOS(Realm):
+    SUPPORTED_TRAFFIC_TYPES = ["udp", "tcp", "UDP", "TCP", "lf_udp", "lf_tcp"]
+
     def __init__(self,
                  tos,
                  ssid=None,
@@ -183,7 +185,6 @@ class ThroughputQOS(Realm):
         self.mode = mode
         self.ap_name = ap_name
         self.direction = direction
-        self.traffic_type = traffic_type
         self.tos = tos.split(",")
         self.bands = bands.split(",")
         self.test_case = test_case
@@ -210,6 +211,12 @@ class ThroughputQOS(Realm):
         self.cx_profile.side_a_max_bps = side_a_max_rate
         self.cx_profile.side_b_min_bps = side_b_min_rate
         self.cx_profile.side_b_max_bps = side_b_max_rate
+
+        # Permit user to specify "udp", "tcp", "UDP", or "TCP" as traffic type
+        if "lf_" in traffic_type:
+            self.traffic_type = traffic_type
+        else:
+            self.traffic_type = "lf_" + traffic_type.lower()
 
     def start(self, print_pass=False, print_fail=False):
         if len(self.cx_profile.created_cx) > 0:
@@ -1417,9 +1424,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 
     # Traffic configuration
     parser.add_argument('--traffic_type',
-                        help='Type of generated traffic [lf_udp, lf_tcp]',
-                        required=False,
-                        choices=["lf_udp", "lf_tcp"])
+                        help='Type of generated traffic (UDP or TCP)',
+                        required=False)
     parser.add_argument('--tos',
                         help='Comma-separated list of TOS values. For example, "BK,BE,VI,VO", or "BK,VO", or "VI"')
     parser.add_argument('--download',
@@ -1507,6 +1513,10 @@ def validate_args(args):
     if not args.traffic_type:
         logger.error("No traffic type specified")
         exit(1)
+    elif not args.traffic_type in ThroughputQOS.SUPPORTED_TRAFFIC_TYPES:
+        logger.error(f"Unexpected traffic type: {args.traffic_type}")
+        exit(1)
+
 
     # This checks defaults as configured in the argument parser
     # These arguments are parsed as comma-separated strings
