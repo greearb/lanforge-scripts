@@ -2,62 +2,181 @@
 """
 NAME:       throughput_qos.py
 
-PURPOSE:    Configure WiFi throughput tests with varying ToS, rate, direction and more.
+PURPOSE:    Create and run WiFi throughput tests with configurable ToS, rate, direction, and more.
             Includes support for creating basic stations (open and personal authentication).
 
-NOTES:      Desired TOS must be specified with abbreviated name in all capital letters,
-            for example '--tos "BK,VI,BE,VO"'
+NOTES:      Desired TOS value(s) must be specified with abbreviated name in all capital letters ('--tos').
 
             Stations will not be created unless the '--create_sta' argument is specified.
+            
+            The same test can be run multiple times with varying throughput by specifying multiple
+            rates (comma-separated, number of both upload and download rates must match).
 
-            For running the test in dual-band and tri-band configurations, --bands dualband,
-            the number of stations used on each band will be split across the number of utilized bands.
-            For example, if '--num_stations 64' is specified, then 32 2.4GHz and 32 5GHz stations will be used.
+            When not specified, the following are some basic configuration defaults:
+              - Traffic type ('--traffic_type'): UDP
+              - Upstream ('--upstream'):         1.1.eth1
+              - Radio for station creation
+                  + 2.4 GHz ('--radio_2g'):      1.1.wiphy0
+                  + 5 GHz   ('--radio_5g'):      1.1.wiphy1
+                  + 6 GHz   ('--radio_6g'):      1.1.wiphy2
 
-EXAMPLES:   # Run download scenario with Voice TOS in 2.4GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_2g wiphy0
-                --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 0 --traffic_type lf_udp --tos "VO" --create_sta
+EXAMPLES:   # Band:          2.4 GHz
+            # Clients:       1
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        UDP
+            #   TOS:         Best Effort (BE)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total flows: 1 (one per-client, one client total)
+            ./throughput_qos.py \
+                --create_sta      \
+                --bands           2G \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --traffic_type    lf_udp \
+                --tos             BE \
+                --download        1000000
 
-            # Run download scenario with Voice and Video TOS in 5GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1
-                --ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
+            # Band:          5 GHz
+            # Clients:       1
+            # Security:      None (Open)
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Background (BK)
+            #   Direction:   Upload
+            #   Rate:        1 Mbps (per-flow)
+            #   Total flows: 1 (one per-client, one total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           5G \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     open \
+                --password_5g     [BLANK] \
+                --traffic_type    lf_tcp \
+                --tos             BK \
+                --upload          1000000
 
-            # Run download scenario with Voice and Video TOS in 6GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
-                --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
+            # Band:          6 GHz
+            # Clients:       1
+            # Security:      WPA3-Personal
+            # Traffic:
+            #   Type:        UDP
+            #   TOS:         Video (VI), Best Effort (BE)
+            #   Direction:   Download
+            #   Rate:        5 Mbps (per-flow)
+            #   Total flows: 2 (two per client, one client total)
+            #
+            # NOTE: 6 GHz requires at least WPA3 or OWE
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           6G \
+                --num_stations_6g 1 \
+                --ssid_6g         <ssid> \
+                --security_6g     wpa3 \
+                --password_6g     <password> \
+                --traffic_type    lf_udp \
+                --tos             VI,BE \
+                --download        5000000
 
-            # Run upload scenario with Background, Best Effort, Video, and Voice TOS in 2.4GHz and 5GHz bands
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
-                --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123
-                --security_5g wpa2 --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-                --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+            # Band:          5 GHz
+            # Clients:       2
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Voice (VO)
+            #   Direction:   Download
+            #   Rate:        5 Mbps (per-flow)
+            #   Total Flows: 2 (one per-client, two clients total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           5G \
+                --num_stations_5g 2 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa2 \
+                --password_5g     <password> \
+                --traffic_type    lf_tcp \
+                --tos             VO \
+                --download        5000000
 
-            # Run upload scenario with Background, Best Effort, Video and Voice TOS in 2.4GHz and 5GHz bands with 'Open' security
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
-                --ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK]
-                --security_5g open --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-                --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+            # Band:          2.4 GHz, 5 GHz (dual-band concurrent)
+            # Clients:       2 (1 per-band)
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Voice (VI)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total Flows: 2 (one per-client, two clients total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           dualband \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa2 \
+                --password_5g     <password> \
+                --traffic_type    lf_tcp \
+                --download        1000000 \
+                --tos             BK
 
-            # Run bi-directional scenario with Video and Voice TOS in 6GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
-                --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 10000000 --traffic_type lf_udp --tos "VO,VI" --create_sta
+            # Band:          2.4 GHz, 5 GHz (dual-band, each run separate)
+            # Clients:       1
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Voice (VI)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total Flows: 1 (one per-client, one client total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           dualband \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa2 \
+                --password_5g     <password> \
+                --traffic_type    lf_tcp \
+                --download        1000000 \
+                --tos             BK
 
-SCRIPT_CLASSIFICATION:
-            Test
-
-SCRIPT_CATEGORIES:
-            Performance,  Functional, Report Generation
-
-STATUS:     Beta Release
-
-VERIFIED_ON:
-            Working date:   03/08/2023
-            Build version:  5.4.6
-            kernel version: 6.2.16+
+            # Band:          2.4 GHz, 5 GHz, 6 GHz (tri-band concurrent)
+            # Clients:       9 (3 per-band)
+            # Security:      WPA3-Personal
+            # Traffic:
+            #   Type:        UDP
+            #   TOS:         Voice (VO), Background (BK)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total flows: 18 (2 per-client, 9 clients total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           triband \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa3 \
+                --password_5g     <password> \
+                --num_stations_6g 1 \
+                --ssid_6g         <ssid> \
+                --security_6g     wpa3 \
+                --password_6g     <password> \
+                --traffic_type    lf_udp \
+                --download        1000000 \
+                --tos             VO,BK
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             Copyright (C) 2020-2026 Candela Technologies Inc
@@ -1340,70 +1459,187 @@ class ThroughputQOS(Realm):
 def parse_args():
     """Parse CLI arguments."""
     parser = Realm.create_basic_argparse(
-        prog='throughput_QOS.py',
+        prog='throughput_qos.py',
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''\
-            Create stations and endpoints and runs L3 traffic with various IP type of service(BK |  BE | Video | Voice)
-            ''',
+        epilog="WiFi throughput test script with configurable ToS, rate, direction, and more.",
         description='''\
 NAME:       throughput_qos.py
 
-PURPOSE:    Configure WiFi throughput tests with varying ToS, rate, direction and more.
+PURPOSE:    Create and run WiFi throughput tests with configurable ToS, rate, direction, and more.
             Includes support for creating basic stations (open and personal authentication).
 
-NOTES:      Desired TOS must be specified with abbreviated name in all capital letters,
-            for example '--tos "BK,VI,BE,VO"'
+NOTES:      Desired TOS value(s) must be specified with abbreviated name in all capital letters ('--tos').
 
             Stations will not be created unless the '--create_sta' argument is specified.
+            
+            The same test can be run multiple times with varying throughput by specifying multiple
+            rates (comma-separated, number of both upload and download rates must match).
 
-            For running the test in dual-band and tri-band configurations, --bands dualband,
-            the number of stations used on each band will be split across the number of utilized bands.
-            For example, if '--num_stations 64' is specified, then 32 2.4GHz and 32 5GHz stations will be used.
+            When not specified, the following are some basic configuration defaults:
+              - Traffic type ('--traffic_type'): UDP
+              - Upstream ('--upstream'):         1.1.eth1
+              - Radio for station creation
+                  + 2.4 GHz ('--radio_2g'):      1.1.wiphy0
+                  + 5 GHz   ('--radio_5g'):      1.1.wiphy1
+                  + 6 GHz   ('--radio_6g'):      1.1.wiphy2
 
-EXAMPLES:   # Run download scenario with Voice TOS in 2.4GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_2g wiphy0
-                --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 0 --traffic_type lf_udp --tos "VO" --create_sta
+EXAMPLES:   # Band:          2.4 GHz
+            # Clients:       1
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        UDP
+            #   TOS:         Best Effort (BE)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total flows: 1 (one per-client, one client total)
+            ./throughput_qos.py \
+                --create_sta      \
+                --bands           2G \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --traffic_type    lf_udp \
+                --tos             BE \
+                --download        1000000
 
-            # Run download scenario with Voice and Video TOS in 5GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1
-                --ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
+            # Band:          5 GHz
+            # Clients:       1
+            # Security:      None (Open)
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Background (BK)
+            #   Direction:   Upload
+            #   Rate:        1 Mbps (per-flow)
+            #   Total flows: 1 (one per-client, one total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           5G \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     open \
+                --password_5g     [BLANK] \
+                --traffic_type    lf_tcp \
+                --tos             BK \
+                --upload          1000000
 
-            # Run download scenario with Voice and Video TOS in 6GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
-                --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
+            # Band:          6 GHz
+            # Clients:       1
+            # Security:      WPA3-Personal
+            # Traffic:
+            #   Type:        UDP
+            #   TOS:         Video (VI), Best Effort (BE)
+            #   Direction:   Download
+            #   Rate:        5 Mbps (per-flow)
+            #   Total flows: 2 (two per client, one client total)
+            #
+            # NOTE: 6 GHz requires at least WPA3 or OWE
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           6G \
+                --num_stations_6g 1 \
+                --ssid_6g         <ssid> \
+                --security_6g     wpa3 \
+                --password_6g     <password> \
+                --traffic_type    lf_udp \
+                --tos             VI,BE \
+                --download        5000000
 
-            # Run upload scenario with Background, Best Effort, Video, and Voice TOS in 2.4GHz and 5GHz bands
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
-                --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123
-                --security_5g wpa2 --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-                --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+            # Band:          5 GHz
+            # Clients:       2
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Voice (VO)
+            #   Direction:   Download
+            #   Rate:        5 Mbps (per-flow)
+            #   Total Flows: 2 (one per-client, two clients total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           5G \
+                --num_stations_5g 2 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa2 \
+                --password_5g     <password> \
+                --traffic_type    lf_tcp \
+                --tos             VO \
+                --download        5000000
 
-            # Run upload scenario with Background, Best Effort, Video and Voice TOS in 2.4GHz and 5GHz bands with 'Open' security
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
-                --ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK]
-                --security_5g open --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-                --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+            # Band:          2.4 GHz, 5 GHz (dual-band concurrent)
+            # Clients:       2 (1 per-band)
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Voice (VI)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total Flows: 2 (one per-client, two clients total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           dualband \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa2 \
+                --password_5g     <password> \
+                --traffic_type    lf_tcp \
+                --download        1000000 \
+                --tos             BK
 
-            # Run bi-directional scenario with Video and Voice TOS in 6GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
-                --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 10000000 --traffic_type lf_udp --tos "VO,VI" --create_sta
+            # Band:          2.4 GHz, 5 GHz (dual-band, each run separate)
+            # Clients:       1
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Voice (VI)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total Flows: 1 (one per-client, one client total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           dualband \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa2 \
+                --password_5g     <password> \
+                --traffic_type    lf_tcp \
+                --download        1000000 \
+                --tos             BK
 
-SCRIPT_CLASSIFICATION:
-            Test
-
-SCRIPT_CATEGORIES:
-            Performance,  Functional, Report Generation
-
-STATUS:     Beta Release
-
-VERIFIED_ON:
-            Working date:   03/08/2023
-            Build version:  5.4.6
-            kernel version: 6.2.16+
+            # Band:          2.4 GHz, 5 GHz, 6 GHz (tri-band concurrent)
+            # Clients:       9 (3 per-band)
+            # Security:      WPA3-Personal
+            # Traffic:
+            #   Type:        UDP
+            #   TOS:         Voice (VO), Background (BK)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total flows: 18 (2 per-client, 9 clients total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           triband \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa3 \
+                --password_5g     <password> \
+                --num_stations_6g 1 \
+                --ssid_6g         <ssid> \
+                --security_6g     wpa3 \
+                --password_6g     <password> \
+                --traffic_type    lf_udp \
+                --download        1000000 \
+                --tos             VO,BK
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             Copyright (C) 2020-2026 Candela Technologies Inc
