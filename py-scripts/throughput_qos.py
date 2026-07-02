@@ -2,62 +2,181 @@
 """
 NAME:       throughput_qos.py
 
-PURPOSE:    Configure WiFi throughput tests with varying ToS, rate, direction and more.
+PURPOSE:    Create and run WiFi throughput tests with configurable ToS, rate, direction, and more.
             Includes support for creating basic stations (open and personal authentication).
 
-NOTES:      Desired TOS must be specified with abbreviated name in all capital letters,
-            for example '--tos "BK,VI,BE,VO"'
+NOTES:      Desired TOS value(s) must be specified with abbreviated name in all capital letters ('--tos').
 
             Stations will not be created unless the '--create_sta' argument is specified.
+            
+            The same test can be run multiple times with varying throughput by specifying multiple
+            rates (comma-separated, number of both upload and download rates must match).
 
-            For running the test in dual-band and tri-band configurations, --bands dualband,
-            the number of stations used on each band will be split across the number of utilized bands.
-            For example, if '--num_stations 64' is specified, then 32 2.4GHz and 32 5GHz stations will be used.
+            When not specified, the following are some basic configuration defaults:
+              - Traffic type ('--traffic_type'): UDP
+              - Upstream ('--upstream'):         1.1.eth1
+              - Radio for station creation
+                  + 2.4 GHz ('--radio_2g'):      1.1.wiphy0
+                  + 5 GHz   ('--radio_5g'):      1.1.wiphy1
+                  + 6 GHz   ('--radio_6g'):      1.1.wiphy2
 
-EXAMPLES:   # Run download scenario with Voice TOS in 2.4GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_2g wiphy0
-                --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 0 --traffic_type lf_udp --tos "VO" --create_sta
+EXAMPLES:   # Band:          2.4 GHz
+            # Clients:       1
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        UDP
+            #   TOS:         Best Effort (BE)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total flows: 1 (one per-client, one client total)
+            ./throughput_qos.py \
+                --create_sta      \
+                --bands           2G \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --traffic_type    lf_udp \
+                --tos             BE \
+                --download        1000000
 
-            # Run download scenario with Voice and Video TOS in 5GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1
-                --ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
+            # Band:          5 GHz
+            # Clients:       1
+            # Security:      None (Open)
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Background (BK)
+            #   Direction:   Upload
+            #   Rate:        1 Mbps (per-flow)
+            #   Total flows: 1 (one per-client, one total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           5G \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     open \
+                --password_5g     [BLANK] \
+                --traffic_type    lf_tcp \
+                --tos             BK \
+                --upload          1000000
 
-            # Run download scenario with Voice and Video TOS in 6GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
-                --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
+            # Band:          6 GHz
+            # Clients:       1
+            # Security:      WPA3-Personal
+            # Traffic:
+            #   Type:        UDP
+            #   TOS:         Video (VI), Best Effort (BE)
+            #   Direction:   Download
+            #   Rate:        5 Mbps (per-flow)
+            #   Total flows: 2 (two per client, one client total)
+            #
+            # NOTE: 6 GHz requires at least WPA3 or OWE
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           6G \
+                --num_stations_6g 1 \
+                --ssid_6g         <ssid> \
+                --security_6g     wpa3 \
+                --password_6g     <password> \
+                --traffic_type    lf_udp \
+                --tos             VI,BE \
+                --download        5000000
 
-            # Run upload scenario with Background, Best Effort, Video, and Voice TOS in 2.4GHz and 5GHz bands
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
-                --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123
-                --security_5g wpa2 --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-                --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+            # Band:          5 GHz
+            # Clients:       2
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Voice (VO)
+            #   Direction:   Download
+            #   Rate:        5 Mbps (per-flow)
+            #   Total Flows: 2 (one per-client, two clients total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           5G \
+                --num_stations_5g 2 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa2 \
+                --password_5g     <password> \
+                --traffic_type    lf_tcp \
+                --tos             VO \
+                --download        5000000
 
-            # Run upload scenario with Background, Best Effort, Video and Voice TOS in 2.4GHz and 5GHz bands with 'Open' security
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
-                --ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK]
-                --security_5g open --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-                --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+            # Band:          2.4 GHz, 5 GHz (dual-band concurrent)
+            # Clients:       2 (1 per-band)
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Voice (VI)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total Flows: 2 (one per-client, two clients total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           dualband \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa2 \
+                --password_5g     <password> \
+                --traffic_type    lf_tcp \
+                --download        1000000 \
+                --tos             BK
 
-            # Run bi-directional scenario with Video and Voice TOS in 6GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
-                --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 10000000 --traffic_type lf_udp --tos "VO,VI" --create_sta
+            # Band:          2.4 GHz, 5 GHz (dual-band, each run separate)
+            # Clients:       1
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Voice (VI)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total Flows: 1 (one per-client, one client total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           dualband \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa2 \
+                --password_5g     <password> \
+                --traffic_type    lf_tcp \
+                --download        1000000 \
+                --tos             BK
 
-SCRIPT_CLASSIFICATION:
-            Test
-
-SCRIPT_CATEGORIES:
-            Performance,  Functional, Report Generation
-
-STATUS:     Beta Release
-
-VERIFIED_ON:
-            Working date:   03/08/2023
-            Build version:  5.4.6
-            kernel version: 6.2.16+
+            # Band:          2.4 GHz, 5 GHz, 6 GHz (tri-band concurrent)
+            # Clients:       9 (3 per-band)
+            # Security:      WPA3-Personal
+            # Traffic:
+            #   Type:        UDP
+            #   TOS:         Voice (VO), Background (BK)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total flows: 18 (2 per-client, 9 clients total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           triband \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa3 \
+                --password_5g     <password> \
+                --num_stations_6g 1 \
+                --ssid_6g         <ssid> \
+                --security_6g     wpa3 \
+                --password_6g     <password> \
+                --traffic_type    lf_udp \
+                --download        1000000 \
+                --tos             VO,BK
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             Copyright (C) 2020-2026 Candela Technologies Inc
@@ -67,6 +186,7 @@ from datetime import datetime, timedelta
 import argparse
 import time
 import sys
+import logging
 import os
 import pandas as pd
 import importlib
@@ -87,8 +207,18 @@ from LANforge import LFUtils
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
+# TODO: Adjust format
+logger = logging.getLogger("throughput_qos.py")
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(asctime)s (%(name)s) %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger.setLevel(level=logging.INFO)
 
 class ThroughputQOS(Realm):
+    SUPPORTED_TRAFFIC_TYPES = ["udp", "tcp", "UDP", "TCP", "lf_udp", "lf_tcp"]
+
     def __init__(self,
                  tos,
                  ssid=None,
@@ -174,7 +304,6 @@ class ThroughputQOS(Realm):
         self.mode = mode
         self.ap_name = ap_name
         self.direction = direction
-        self.traffic_type = traffic_type
         self.tos = tos.split(",")
         self.bands = bands.split(",")
         self.test_case = test_case
@@ -202,6 +331,12 @@ class ThroughputQOS(Realm):
         self.cx_profile.side_b_min_bps = side_b_min_rate
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
+        # Permit user to specify "udp", "tcp", "UDP", or "TCP" as traffic type
+        if "lf_" in traffic_type:
+            self.traffic_type = traffic_type
+        else:
+            self.traffic_type = "lf_" + traffic_type.lower()
+
     def start(self, print_pass=False, print_fail=False):
         if len(self.cx_profile.created_cx) > 0:
             for cx in self.cx_profile.created_cx.keys():
@@ -219,8 +354,13 @@ class ThroughputQOS(Realm):
         self.station_profile.admin_down()
 
     def pre_cleanup(self):
+        logger.info("Performing pre-test cleanup")
+
+        # Traffic flows
         self.cx_profile.cleanup_prefix()
         self.cx_profile.cleanup()
+
+        # Stations with same name
         if self.create_sta:
             for sta in self.sta_list:
                 self.rm_port(sta, check_exists=True)
@@ -233,8 +373,12 @@ class ThroughputQOS(Realm):
                                                debug=self.debug)
 
     def build(self):
+        logger.info("Building test environment")
+
         for key in self.bands:
             if self.create_sta:
+                logger.info("Creating test station(s)")
+
                 band_pref = 0
                 if key == "2.4G" or key == "2.4g":
                     self.station_profile.mode = 13
@@ -243,13 +387,12 @@ class ThroughputQOS(Realm):
                     else:
                         self.station_profile.use_security(self.security, self.ssid, self.password)
                     self.station_profile.set_number_template(self.number_template)
-                    print("Creating stations")
                     self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
                     self.station_profile.set_command_param("set_port", "report_timer", 1500)
                     self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
                     if self.initial_band_pref:
                         band_pref = 2
-                        print("Set initial band preference to 2.4GHz")
+                        logger.info("Set initial band preference to 2.4 GHz")
                     self.station_profile.set_wifi_extra2(initial_band_pref=band_pref)
                     self.station_profile.create(radio=self.radio_2g, sta_names_=self.sta_list, debug=self.debug)
                 if key == "5G" or key == "5g":
@@ -259,13 +402,12 @@ class ThroughputQOS(Realm):
                     else:
                         self.station_profile.use_security(self.security, self.ssid, self.password)
                     self.station_profile.set_number_template(self.number_template)
-                    print("Creating stations")
                     self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
                     self.station_profile.set_command_param("set_port", "report_timer", 1500)
                     self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
                     if self.initial_band_pref:
                         band_pref = 5
-                        print("Set initial band preference to 5GHz")
+                        logger.info("Set initial band preference to 5 GHz")
                     self.station_profile.set_wifi_extra2(initial_band_pref=band_pref)
                     self.station_profile.create(radio=self.radio_5g, sta_names_=self.sta_list, debug=self.debug)
                 if key == "6G" or key == "6g":
@@ -275,13 +417,12 @@ class ThroughputQOS(Realm):
                     else:
                         self.station_profile.use_security(self.security, self.ssid, self.password)
                     self.station_profile.set_number_template(self.number_template)
-                    print("Creating stations")
                     self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
                     self.station_profile.set_command_param("set_port", "report_timer", 1500)
                     self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
                     if self.initial_band_pref:
                         band_pref = 6
-                        print("Set initial band preference to 6GHz")
+                        logger.info("Set initial band preference to 6 GHz")
                     self.station_profile.set_wifi_extra2(initial_band_pref=band_pref)
                     self.station_profile.create(radio=self.radio_6g, sta_names_=self.sta_list, debug=self.debug)
                 if key == "DUALBAND" or key == "dualband":
@@ -292,13 +433,12 @@ class ThroughputQOS(Realm):
                         self.station_profile.use_security(self.security, self.ssid, self.password)
                     self.station_profile.mode = 13
                     self.station_profile.set_number_template(self.number_template)
-                    print("Creating stations")
                     self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
                     self.station_profile.set_command_param("set_port", "report_timer", 1500)
                     self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
                     if self.initial_band_pref:
                         band_pref = 2
-                        print("Set initial band preference to 2.4GHz")
+                        logger.info("Set initial band preference to 2.4 GHz")
                     self.station_profile.set_wifi_extra2(initial_band_pref=band_pref)
                     self.station_profile.create(radio=self.radio_2g, sta_names_=self.sta_list[:split],
                                                 debug=self.debug)
@@ -313,7 +453,7 @@ class ThroughputQOS(Realm):
                     self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
                     if self.initial_band_pref:
                         band_pref = 5
-                        print("Set initial band preference to 5GHz")
+                        logger.info("Set initial band preference to 5 GHz")
                     self.station_profile.set_wifi_extra2(initial_band_pref=band_pref)
                     self.station_profile.create(radio=self.radio_5g, sta_names_=self.sta_list[split:],
                                                 debug=self.debug)
@@ -327,13 +467,12 @@ class ThroughputQOS(Realm):
                         self.station_profile.use_security(self.security, self.ssid, self.password)
                     self.station_profile.mode = 13
                     self.station_profile.set_number_template(self.number_template)
-                    print("Creating stations for 2.4GHz")
                     self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
                     self.station_profile.set_command_param("set_port", "report_timer", 1500)
                     self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
                     if self.initial_band_pref:
                         band_pref = 2
-                        print("Set initial band preference to 2.4GHz")
+                        logger.info("Set initial band preference to 2.4 GHz")
                     self.station_profile.set_wifi_extra2(initial_band_pref=band_pref)
                     self.station_profile.create(radio=self.radio_2g, sta_names_=self.sta_list[:split_1], debug=self.debug)
 
@@ -344,13 +483,12 @@ class ThroughputQOS(Realm):
                         self.station_profile.use_security(self.security, self.ssid, self.password)
                     self.station_profile.mode = 14
                     self.station_profile.set_number_template(self.number_template)
-                    print("Creating stations for 5GHz")
                     self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
                     self.station_profile.set_command_param("set_port", "report_timer", 1500)
                     self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
                     if self.initial_band_pref:
                         band_pref = 5
-                        print("Set initial band preference to 5GHz")
+                        logger.info("Set initial band preference to 5 GHz")
                     self.station_profile.set_wifi_extra2(initial_band_pref=band_pref)
                     self.station_profile.create(radio=self.radio_5g, sta_names_=self.sta_list[split_1:split_2], debug=self.debug)
 
@@ -361,13 +499,12 @@ class ThroughputQOS(Realm):
                         self.station_profile.use_security(self.security, self.ssid, self.password)
                     self.station_profile.mode = 15
                     self.station_profile.set_number_template(self.number_template)
-                    print("Creating stations for 6GHz")
                     self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
                     self.station_profile.set_command_param("set_port", "report_timer", 1500)
                     self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
                     if self.initial_band_pref:
                         band_pref = 6
-                        print("Set initial band preference to 6GHz")
+                        logger.info("Set initial band preference to 6 GHz")
                     self.station_profile.set_wifi_extra2(initial_band_pref=band_pref)
                     self.station_profile.create(radio=self.radio_6g, sta_names_=self.sta_list[split_2:], debug=self.debug)
 
@@ -382,7 +519,6 @@ class ThroughputQOS(Realm):
                     self.exit_fail()
                 self._pass("PASS: Station build finished")
             self.create_cx()
-            print("cx build finished")
         response_port = self.json_get("/port/all")
         for interface in response_port['interfaces']:
             for port, port_data in interface.items():
@@ -391,9 +527,12 @@ class ThroughputQOS(Realm):
                     self.channel_list.append(port_data['channel'])
 
     def create_cx(self):
+        logger.info("Building traffic pair(s)")
+
+        # Determine traffic flow direction
         direction = ''
         if int(self.cx_profile.side_b_min_bps) != 0 and int(self.cx_profile.side_a_min_bps) != 0:
-            self.direction = "Bi-direction"
+            self.direction = "Bi-directional"
             direction = 'Bi-di'
         elif int(self.cx_profile.side_b_min_bps) != 0:
             self.direction = "Download"
@@ -402,38 +541,43 @@ class ThroughputQOS(Realm):
             if int(self.cx_profile.side_a_min_bps) != 0:
                 self.direction = "Upload"
                 direction = 'UL'
-        print("direction", self.direction)
+        logger.info(f"Traffic flow direction: {self.direction}")
+
         traffic_type = (self.traffic_type.strip("lf_")).upper()
         traffic_direction_list, cx_list, traffic_type_list = [], [], []
         for _ in range(len(self.sta_list)):
             traffic_direction_list.append(direction)
             traffic_type_list.append(traffic_type)
-        print("tos: {}".format(self.tos))
+
         for ip_tos in self.tos:
             for i in self.sta_list:
                 for j in traffic_direction_list:
                     for k in traffic_type_list:
                         cxs = "%s_%s_%s_%s" % (i, k, j, ip_tos)
                         cx_names = cxs.replace(" ", "")
-                        # print(cx_names)
                 cx_list.append(cx_names)
-        print('cx_list', cx_list)
+
+        # Build traffic pair
         count = 0
-        print("tos: {}".format(self.tos))
         for ip_tos in range(len(self.tos)):
             for sta in range(len(self.sta_list)):
-                print("## ip_tos: {}".format(self.tos[ip_tos]))
-                print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (
-                    self.traffic_type, self.tos[ip_tos], self.cx_profile.get_cx_count()))
-                self.cx_profile.create(endp_type=self.traffic_type, side_a=[self.sta_list[sta]],
+                cx_name = "%s-%i" % (cx_list[count], len(self.cx_profile.created_cx))
+                self.cx_profile.create(endp_type=self.traffic_type,
+                                       side_a=[self.sta_list[sta]],
                                        side_b=self.upstream,
-                                       sleep_time=0, tos=self.tos[ip_tos], cx_name="%s-%i" % (cx_list[count], len(self.cx_profile.created_cx)))
+                                       sleep_time=0,
+                                       tos=self.tos[ip_tos],
+                                       cx_name=cx_name)
                 count += 1
-        print("cross connections with TOS type created.")
+                logger.debug(f"Built traffic flow pair with name {cx_name}")
+
+        logger.info(f"Created {count} traffic flow(s)")
 
     def monitor(self):
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download = {}, [], [], [], [], {}, {}
         drop_a, drop_a_per, drop_b, drop_b_per = [], [], [], []
+
+        # TODO: Can we remove this? Direction set in build() logic
         if int(self.cx_profile.side_b_min_bps) != 0 and int(self.cx_profile.side_a_min_bps) != 0:
             self.direction = "Bi-direction"
         elif int(self.cx_profile.side_b_min_bps) != 0:
@@ -441,17 +585,19 @@ class ThroughputQOS(Realm):
         else:
             if int(self.cx_profile.side_a_min_bps) != 0:
                 self.direction = "Upload"
-        print("direction", self.direction)
+
         if self.test_duration is None or int(self.test_duration) <= 1:
             raise ValueError("Monitor test duration should be > 1 second")
         if self.cx_profile.created_cx is None:
             raise ValueError("Monitor needs a list of Layer 3 connections")
-        # monitor columns
+
         start_time = datetime.now()
-        test_start_time = datetime.now().strftime("%b %d %H:%M:%S")
-        print("Test started at: ", test_start_time)
-        print("Monitoring cx and endpoints")
+        test_start_time = datetime.now().strftime("%H:%M:%S %b %d")
         end_time = start_time + timedelta(seconds=int(self.test_duration))
+        logger.info(f"Started test at {test_start_time}, monitoring traffic")
+
+        # TODO: This could use some work...
+        # TODO: Log basic status info per iteration
         index = -1
         connections_upload = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
         connections_download = dict.fromkeys(list(self.cx_profile.created_cx.keys()), float(0))
@@ -462,7 +608,7 @@ class ThroughputQOS(Realm):
             throughput[index] = list(
                 map(lambda i: [x for x in i.values()], response))
             time.sleep(1)
-        print("throughput", throughput)
+
         # # rx_rate list is calculated
         for _, key in enumerate(throughput):
             for i in range(len(throughput[key])):
@@ -481,6 +627,7 @@ class ThroughputQOS(Realm):
             connections_download.update({keys[i]: float(f"{(download_throughput[i]):.2f}")})
         for i in range(len(upload_throughput)):
             connections_upload.update({keys[i]: float(f"{(upload_throughput[i]):.2f}")})
+
         return connections_download, connections_upload, drop_a_per, drop_b_per
 
     def evaluate_qos(self, connections_download, connections_upload, drop_a_per, drop_b_per):
@@ -703,21 +850,23 @@ class ThroughputQOS(Realm):
                 tos_upload.update({'tx_b': tx_b_upload})
                 tos_upload.update({'rx_a': rx_a_upload})
         else:
-            print("no RX values available to evaluate QOS")
+            logger.warning("No RX values available to evaluate QoS")
+
         key_upload = case_upload + " " + "Mbps"
         key_download = case_download + " " + "Mbps"
         return {key_download: tos_download}, {key_upload: tos_upload}, {"drop_per": tos_drop_dict}
 
     def set_report_data(self, data):
-        print("data", data)
         rate_down = str(str(int(self.cx_profile.side_b_min_bps) / 1000000) + ' ' + 'Mbps')
         rate_up = str(str(int(self.cx_profile.side_a_min_bps) / 1000000) + ' ' + 'Mbps')
         res = {}
+
         if data is not None:
             res.update(data)
         else:
-            print("No Data found to generate report!")
+            logger.error("Missing report data!")
             exit(1)
+
         if self.test_case is not None:
             table_df = {}
             num_stations = []
@@ -743,7 +892,6 @@ class ThroughputQOS(Realm):
                     mode.append("bgn-AX + an-AX + AX-BE")
                 for _ in res[case]['test_results'][0][1]:
                     if int(self.cx_profile.side_a_min_bps) != 0:
-                        print(res[case]['test_results'][0][1])
                         upload_throughput.append(
                             "BK : {}, BE : {}, VI: {}, VO: {}".format(res[case]['test_results'][0][1][rate_up]["bkQOS"],
                                                                       res[case]['test_results'][0][1][rate_up]["beQOS"],
@@ -772,7 +920,6 @@ class ThroughputQOS(Realm):
                         res_copy.update({"graph_df": graph_df})
                 for _ in res[case]['test_results'][0][0]:
                     if int(self.cx_profile.side_b_min_bps) != 0:
-                        print(res[case]['test_results'][0][0])
                         download_throughput.append(
                             "BK : {}, BE : {}, VI: {}, VO: {}".format(res[case]['test_results'][0][0][rate_down]["bkQOS"],
                                                                       res[case]['test_results'][0][0][rate_down]["beQOS"],
@@ -799,7 +946,6 @@ class ThroughputQOS(Realm):
                         res_copy = copy.copy(res)
                         res_copy.update({"throughput_table_df": table_df})
                         res_copy.update({"graph_df": graph_df})
-                        print("table_df", table_df)
         return res_copy
 
     def generate_graph_data_set(self, data):
@@ -814,22 +960,18 @@ class ThroughputQOS(Realm):
             if self.direction == "Download":
                 load = rate_down
         res = self.set_report_data(data)
-        print("res", res)
         if self.direction == "Bi-direction":
             load = 'Upload' + ':' + rate_up + ',' + 'Download' + ':' + rate_down
             for key in res["graph_df"]:
                 for j in range(len(res['graph_df'][key])):
                     overall_list.append(res['graph_df'][key][j])
-            print(overall_list)
             overall_throughput[0].append(round(sum(overall_list[0] + overall_list[4]), 2))
             overall_throughput[1].append(round(sum(overall_list[1] + overall_list[5]), 2))
             overall_throughput[2].append(round(sum(overall_list[2] + overall_list[6]), 2))
             overall_throughput[3].append(round(sum(overall_list[3] + overall_list[7]), 2))
-            print("overall thr", overall_throughput)
             data_set = overall_throughput
         else:
             data_set = list(res["graph_df"].values())[0]
-        print("data set", data_set)
         return data_set, load, res
 
     # to get the ssid from the station name
@@ -856,8 +998,8 @@ class ThroughputQOS(Realm):
                            _results_dir_name=result_dir_name)
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
-        print("path: {}".format(report_path))
-        print("path_date_time: {}".format(report_path_date_time))
+        # TODO: Print report path
+
         report.set_title("Throughput QOS")
         report.build_banner()
         # objective title and description
@@ -899,7 +1041,6 @@ class ThroughputQOS(Realm):
                      "intended loads per station – {}".format(
                          "".join(str(key))))
         report.build_objective()
-        print("data set", res["graph_df"][key][0])
         graph = lf_bar_graph(_data_set=data_set,
                              _xaxis_name="Load per Type of Service",
                              _yaxis_name="Throughput (Mbps)",
@@ -922,8 +1063,6 @@ class ThroughputQOS(Realm):
                              _color_name=['orange', 'lightcoral', 'steelblue', 'lightgrey'])
         graph_png = graph.build_bar_graph()
 
-        print("graph name {}".format(graph_png))
-
         report.set_graph_image(graph_png)
         # need to move the graph image to the results directory
         report.move_graph_image()
@@ -938,7 +1077,6 @@ class ThroughputQOS(Realm):
         report.write_pdf()
 
     def generate_individual_graph(self, res, report):
-        print("res", res)
         load = ""
         upload_list, download_list, individual_upload_list, individual_download_list = [], [], [], []
         individual_set, colors, labels = [], [], []
@@ -949,7 +1087,6 @@ class ThroughputQOS(Realm):
         rate_down = str(str(int(self.cx_profile.side_b_min_bps) / 1000000) + ' ' + 'Mbps')
         rate_up = str(str(int(self.cx_profile.side_a_min_bps) / 1000000) + ' ' + 'Mbps')
         for case in self.test_case:
-            print("case", case)
             if self.direction == 'Upload':
                 load = rate_up
                 data_set = res[case]['test_results'][0][1]
@@ -961,7 +1098,7 @@ class ThroughputQOS(Realm):
                     data_set = res[case]['test_results'][0][0]
                     for _ in range(len(self.sta_list)):
                         individual_upload_list.append('0')
-            print("data set", data_set)
+
             tos_type = ['Background', 'Besteffort', 'Video', 'Voice']
             load_list = []
             traffic_type_list = []
@@ -981,7 +1118,6 @@ class ThroughputQOS(Realm):
                 vo_tos_list.append(tos_type[3])
                 load_list.append(load)
                 traffic_direction_list.append(self.direction)
-            print(traffic_type_list, traffic_direction_list, bk_tos_list, be_tos_list, vi_tos_list, vo_tos_list)
             if self.direction == "Bi-direction":
                 load = 'Upload' + ':' + rate_up + ',' + 'Download' + ':' + rate_down
                 for key in res[case]['test_results'][0][0]:
@@ -1001,8 +1137,6 @@ class ThroughputQOS(Realm):
                     res.pop("throughput_table_df")
                 if "graph_df" in res:
                     res.pop("graph_df")
-                    print("res", res)
-                    print("load", load)
                 for key in res:
                     if "BK" in self.tos:
                         if self.direction == "Bi-direction":
@@ -1050,7 +1184,6 @@ class ThroughputQOS(Realm):
                                                         _color_edge=['black'],
                                                         _color=colors)
                         graph_png = graph.build_bar_graph_horizontal()
-                        print("graph name {}".format(graph_png))
                         report.set_graph_image(graph_png)
                         # need to move the graph image to the results
                         report.move_graph_image()
@@ -1129,7 +1262,6 @@ class ThroughputQOS(Realm):
                                                         _color_edge=['black'],
                                                         _color=colors)
                         graph_png = graph.build_bar_graph_horizontal()
-                        print("graph name {}".format(graph_png))
                         report.set_graph_image(graph_png)
                         # need to move the graph image to the results
                         report.move_graph_image()
@@ -1208,7 +1340,6 @@ class ThroughputQOS(Realm):
                                                         _color_edge=['black'],
                                                         _color=colors)
                         graph_png = graph.build_bar_graph_horizontal()
-                        print("graph name {}".format(graph_png))
                         report.set_graph_image(graph_png)
                         # need to move the graph image to the results
                         report.move_graph_image()
@@ -1287,7 +1418,6 @@ class ThroughputQOS(Realm):
                                                         _color_edge=['black'],
                                                         _color=colors)
                         graph_png = graph.build_bar_graph_horizontal()
-                        print("graph name {}".format(graph_png))
                         report.set_graph_image(graph_png)
                         # need to move the graph image to the results
                         report.move_graph_image()
@@ -1323,105 +1453,287 @@ class ThroughputQOS(Realm):
                         report.build_table()
 
             else:
-                print("No individual graph to generate.")
+                logger.info("No individual graph to generate.")
 
 
 def parse_args():
     """Parse CLI arguments."""
     parser = Realm.create_basic_argparse(
-        prog='throughput_QOS.py',
+        prog='throughput_qos.py',
         formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''\
-            Create stations and endpoints and runs L3 traffic with various IP type of service(BK |  BE | Video | Voice)
-            ''',
+        epilog="WiFi throughput test script with configurable ToS, rate, direction, and more.",
         description='''\
 NAME:       throughput_qos.py
 
-PURPOSE:    Configure WiFi throughput tests with varying ToS, rate, direction and more.
+PURPOSE:    Create and run WiFi throughput tests with configurable ToS, rate, direction, and more.
             Includes support for creating basic stations (open and personal authentication).
 
-NOTES:      Desired TOS must be specified with abbreviated name in all capital letters,
-            for example '--tos "BK,VI,BE,VO"'
+NOTES:      Desired TOS value(s) must be specified with abbreviated name in all capital letters ('--tos').
 
             Stations will not be created unless the '--create_sta' argument is specified.
+            
+            The same test can be run multiple times with varying throughput by specifying multiple
+            rates (comma-separated, number of both upload and download rates must match).
 
-            For running the test in dual-band and tri-band configurations, --bands dualband,
-            the number of stations used on each band will be split across the number of utilized bands.
-            For example, if '--num_stations 64' is specified, then 32 2.4GHz and 32 5GHz stations will be used.
+            When not specified, the following are some basic configuration defaults:
+              - Traffic type ('--traffic_type'): UDP
+              - Upstream ('--upstream'):         1.1.eth1
+              - Radio for station creation
+                  + 2.4 GHz ('--radio_2g'):      1.1.wiphy0
+                  + 5 GHz   ('--radio_5g'):      1.1.wiphy1
+                  + 6 GHz   ('--radio_6g'):      1.1.wiphy2
 
-EXAMPLES:   # Run download scenario with Voice TOS in 2.4GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_2g wiphy0
-                --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --bands 2.4g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 0 --traffic_type lf_udp --tos "VO" --create_sta
+EXAMPLES:   # Band:          2.4 GHz
+            # Clients:       1
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        UDP
+            #   TOS:         Best Effort (BE)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total flows: 1 (one per-client, one client total)
+            ./throughput_qos.py \
+                --create_sta      \
+                --bands           2G \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --traffic_type    lf_udp \
+                --tos             BE \
+                --download        1000000
 
-            # Run download scenario with Voice and Video TOS in 5GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_5g wiphy1
-                --ssid_5g Cisco --passwd_5g cisco@123 --security_5g wpa2 --bands 5g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
+            # Band:          5 GHz
+            # Clients:       1
+            # Security:      None (Open)
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Background (BK)
+            #   Direction:   Upload
+            #   Rate:        1 Mbps (per-flow)
+            #   Total flows: 1 (one per-client, one total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           5G \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     open \
+                --password_5g     [BLANK] \
+                --traffic_type    lf_tcp \
+                --tos             BK \
+                --upload          1000000
 
-            # Run download scenario with Voice and Video TOS in 6GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
-                --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 0 --traffic_type lf_tcp --tos "VO,VI" --create_sta
+            # Band:          6 GHz
+            # Clients:       1
+            # Security:      WPA3-Personal
+            # Traffic:
+            #   Type:        UDP
+            #   TOS:         Video (VI), Best Effort (BE)
+            #   Direction:   Download
+            #   Rate:        5 Mbps (per-flow)
+            #   Total flows: 2 (two per client, one client total)
+            #
+            # NOTE: 6 GHz requires at least WPA3 or OWE
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           6G \
+                --num_stations_6g 1 \
+                --ssid_6g         <ssid> \
+                --security_6g     wpa3 \
+                --password_6g     <password> \
+                --traffic_type    lf_udp \
+                --tos             VI,BE \
+                --download        5000000
 
-            # Run upload scenario with Background, Best Effort, Video, and Voice TOS in 2.4GHz and 5GHz bands
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
-                --ssid_2g Cisco --passwd_2g cisco@123 --security_2g wpa2 --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g cisco@123
-                --security_5g wpa2 --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-                --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+            # Band:          5 GHz
+            # Clients:       2
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Voice (VO)
+            #   Direction:   Download
+            #   Rate:        5 Mbps (per-flow)
+            #   Total Flows: 2 (one per-client, two clients total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           5G \
+                --num_stations_5g 2 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa2 \
+                --password_5g     <password> \
+                --traffic_type    lf_tcp \
+                --tos             VO \
+                --download        5000000
 
-            # Run upload scenario with Background, Best Effort, Video and Voice TOS in 2.4GHz and 5GHz bands with 'Open' security
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 64 --radio_2g wiphy0
-                --ssid_2g Cisco --passwd_2g [BLANK] --security_2g open --radio_5g wiphy1 --ssid_5g Cisco --passwd_5g [BLANK]
-                --security_5g open --bands dualband --upstream eth1 --test_duration 1m --download 0 --upload 1000000
-                --traffic_type lf_udp --tos "BK,BE,VI,VO" --create_sta
+            # Band:          2.4 GHz, 5 GHz (dual-band concurrent)
+            # Clients:       2 (1 per-band)
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Voice (VI)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total Flows: 2 (one per-client, two clients total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           dualband \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa2 \
+                --password_5g     <password> \
+                --traffic_type    lf_tcp \
+                --download        1000000 \
+                --tos             BK
 
-            # Run bi-directional scenario with Video and Voice TOS in 6GHz band
-            ./throughput_qos.py --ap_name Cisco --mgr 192.168.209.223 --mgr_port 8080 --num_stations 32 --radio_6g wiphy1
-                --ssid_6g Cisco --passwd_6g cisco@123 --security_6g wpa2 --bands 6g --upstream eth1 --test_duration 1m
-                --download 1000000 --upload 10000000 --traffic_type lf_udp --tos "VO,VI" --create_sta
+            # Band:          2.4 GHz, 5 GHz (dual-band, each run separate)
+            # Clients:       1
+            # Security:      WPA2-Personal
+            # Traffic:
+            #   Type:        TCP
+            #   TOS:         Voice (VI)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total Flows: 1 (one per-client, one client total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           dualband \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa2 \
+                --password_5g     <password> \
+                --traffic_type    lf_tcp \
+                --download        1000000 \
+                --tos             BK
 
-SCRIPT_CLASSIFICATION:
-            Test
-
-SCRIPT_CATEGORIES:
-            Performance,  Functional, Report Generation
-
-STATUS:     Beta Release
-
-VERIFIED_ON:
-            Working date:   03/08/2023
-            Build version:  5.4.6
-            kernel version: 6.2.16+
+            # Band:          2.4 GHz, 5 GHz, 6 GHz (tri-band concurrent)
+            # Clients:       9 (3 per-band)
+            # Security:      WPA3-Personal
+            # Traffic:
+            #   Type:        UDP
+            #   TOS:         Voice (VO), Background (BK)
+            #   Direction:   Download
+            #   Rate:        1 Mbps (per-flow)
+            #   Total flows: 18 (2 per-client, 9 clients total)
+            ./throughput_qos.py   \
+                --create_sta      \
+                --bands           triband \
+                --num_stations_2g 1 \
+                --ssid_2g         <ssid> \
+                --security_2g     wpa2 \
+                --password_2g     <password> \
+                --num_stations_5g 1 \
+                --ssid_5g         <ssid> \
+                --security_5g     wpa3 \
+                --password_5g     <password> \
+                --num_stations_6g 1 \
+                --ssid_6g         <ssid> \
+                --security_6g     wpa3 \
+                --password_6g     <password> \
+                --traffic_type    lf_udp \
+                --download        1000000 \
+                --tos             VO,BK
 
 LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             Copyright (C) 2020-2026 Candela Technologies Inc
 ''')
-    parser.add_argument('--mode', help='Force specific station mode', default="0")
-    parser.add_argument('--traffic_type', help='Type of generated traffic [lf_udp, lf_tcp]', required=False, choices=["lf_udp", "lf_tcp"])
-    parser.add_argument('--download', help='Configured download traffic rate (station receive)', default="0")
-    parser.add_argument('--upload', help='Configured upload traffic rate (station transmit)', default="0")
-    parser.add_argument('--test_duration', help='Duration of test', default="2m")
-    parser.add_argument('--create_sta', help='Create stations for use in test', action='store_true')
-    parser.add_argument('--sta_names', help='Set specific station names', default="sta0000")
-    parser.add_argument('--ap_name', help="AP Model Name", default="Test-AP")
-    parser.add_argument('--bands', help='Comma-separated list of bands used for test', default="2.4G, 5G, 6G, DUALBAND, TRIBAND", required=False)
-    parser.add_argument('--tos', help='Comma-separated list of TOS values. For example, "BK,BE,VI,VO", or "BK,VO", or "VI"')
-    parser.add_argument('--ssid_2g', help="SSID for 2.4GHz band")
-    parser.add_argument('--security_2g', help="Security type for 2.4GHz band")
-    parser.add_argument('--passwd_2g', help="Password for 2.4GHz band")
-    parser.add_argument('--ssid_6g', help="SSID for 6GHz band")
-    parser.add_argument('--security_6g', help="Security type for 6GHz band")
-    parser.add_argument('--passwd_6g', help="Password for 6GHz band")
-    parser.add_argument('--ssid_5g', help="SSID for 5GHz band")
-    parser.add_argument('--security_5g', help="Security type for 5GHz band")
-    parser.add_argument('--passwd_5g', help="Password for 5GHz band")
-    parser.add_argument('--num_stations_2g', help="Number of 2GHz band stations", type=int, default=0, required=False)
-    parser.add_argument('--num_stations_5g', help="Number of 5GHz band stations", type=int, default=0, required=False)
-    parser.add_argument('--num_stations_6g', help="Number of 6GHz band stations", type=int, default=0, required=False)
-    parser.add_argument('--radio_2g', help="Radio used for 2.4GHz station creation", default="wiphy0")
-    parser.add_argument('--radio_5g', help="Radio used for 5GHz station creation", default="wiphy1")
-    parser.add_argument('--radio_6g', help="Radio used for 6GHz station creation", default="wiphy2")
+    # General test configuration
+    parser.add_argument('--duration', '--test_duration',
+                        dest='test_duration',
+                        help='Duration of test',
+                        default="2m")
+    parser.add_argument('--bands',
+                        help='Comma-separated list of bands used for test',
+                        default="2.4G, 5G, 6G, DUALBAND, TRIBAND",
+                        required=False)
+
+    # Reporting configuration
+    parser.add_argument('--ap_name',
+                        help="AP Model Name",
+                        default="Test-AP")
+
+    # Traffic configuration
+    parser.add_argument('--traffic_type',
+                        help='Type of generated traffic (UDP or TCP)',
+                        required=False)
+    parser.add_argument('--tos',
+                        help='Comma-separated list of TOS values. For example, "BK,BE,VI,VO", or "BK,VO", or "VI"')
+    parser.add_argument('--download',
+                        help='Configured download traffic rate (station receive)',
+                        default="0")
+    parser.add_argument('--upload',
+                        help='Configured upload traffic rate (station transmit)',
+                        default="0")
+
+    # 2.4 GHz configuration
+    parser.add_argument('--radio_2g',
+                        help="Radio used for 2.4 GHz station creation",
+                        default="wiphy0")
+    parser.add_argument('--num_stations_2g',
+                        help="Number of 2.4 GHz band stations",
+                        type=int,
+                        default=0,
+                        required=False)
+    parser.add_argument('--ssid_2g',
+                        help="SSID for 2.4 GHz band")
+    parser.add_argument('--security_2g',
+                        help="Security type for 2.4 GHz band")
+    parser.add_argument('--passwd_2g', '--password_2g',
+                        dest='password_2g',
+                        help="Password for 2.4 GHz band")
+
+    # 5 GHz configuration
+    parser.add_argument('--radio_5g',
+                        help="Radio used for 5 GHz station creation",
+                        default="wiphy1")
+    parser.add_argument('--num_stations_5g',
+                        help="Number of 5 GHz band stations",
+                        type=int,
+                        default=0,
+                        required=False)
+    parser.add_argument('--ssid_5g',
+                        help="SSID for 5 GHz band")
+    parser.add_argument('--security_5g',
+                        help="Security type for 5 GHz band")
+    parser.add_argument('--passwd_5g', '--password_5g',
+                        dest='password_5g',
+                        help="Password for 5 GHz band")
+
+    # 6 GHz configuration
+    parser.add_argument('--radio_6g',
+                        help="Radio used for 6 GHz station creation",
+                        default="wiphy2")
+    parser.add_argument('--num_stations_6g',
+                        help="Number of 6 GHz band stations",
+                        type=int,
+                        default=0,
+                        required=False)
+    parser.add_argument('--ssid_6g',
+                        help="SSID for 6 GHz band")
+    parser.add_argument('--security_6g',
+                        help="Security type for 6 GHz band")
+    parser.add_argument('--passwd_6g', '--password_6g',
+                        dest='password_6g',
+                        help="Password for 6 GHz band")
+
+    # Station cration configuration
+    # Other create station options present in per-band sections
+    parser.add_argument('--create_sta',
+                        help='Create stations for use in test',
+                        action='store_true')
+    parser.add_argument('--mode',
+                        help='Force specific station mode',
+                        default="0")
+    parser.add_argument('--sta_names',
+                        help='Set specific station names',
+                        default="sta0000")
     parser.add_argument('--initial_band_pref',
                         help="If specified, set a band preference for stations created for specific band",
                         required=False, action='store_true', default=False)
@@ -1431,18 +1743,63 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 
 def validate_args(args):
     """Ensure arguments specified for program are valid."""
-    if args.num_stations_2g == 0 and args.num_stations_5g == 0 and args.num_stations_6g == 0:
-        print("Must specify one or more number stations for the test (e.g. '--num_stations_2g 1')")
+    # Validate configuration required per-band
+    bands = [arg.lower() for arg in args.bands.split(",")]
+    if "2.4g" in bands or "dualband" in bands or "triband" in bands:
+        if args.num_stations_2g == 0:
+            logger.error("Missing number of 2.4 GHz stations (see '--num_stations_2g')")
+            exit(1)
+        if not args.ssid_2g:
+            logger.error("Missing 2.4 GHz SSID (see '--ssid_2g')")
+            exit(1)
+        if not args.security_2g:
+            logger.error("Missing 2.4 GHz security (see '--security_2g')")
+            exit(1)
+        if not args.password_2g:
+            logger.error("Missing 2.4 GHz password (see '--password_2g')")
+            exit(1)
+
+    if "5g" in bands or "dualband" in bands or "triband" in bands:
+        if args.num_stations_5g == 0:
+            logger.error("Missing number of 5 GHz stations (see '--num_stations_5g')")
+            exit(1)
+        if not args.ssid_5g:
+            logger.error("Missing 5 GHz SSID (see '--ssid_5g')")
+            exit(1)
+        if not args.security_5g:
+            logger.error("Missing 5 GHz security (see '--security_5g')")
+            exit(1)
+        if not args.password_5g:
+            logger.error("Missing 5 GHz password (see '--password_5g')")
+            exit(1)
+
+    if "6g" in bands or "triband" in bands:
+        if args.num_stations_6g == 0:
+            logger.error("Missing number of 6 GHz stations (see '--num_stations_6g')")
+            exit(1)
+        if not args.ssid_6g:
+            logger.error("Missing 6 GHz SSID (see '--ssid_6g')")
+            exit(1)
+        if not args.security_6g:
+            logger.error("Missing 6 GHz security (see '--security_6g')")
+            exit(1)
+        if not args.password_6g:
+            logger.error("Missing 6 GHz password (see '--password_6g')")
+            exit(1)
+
+    # Validate traffic configuration
+    if not args.traffic_type:
+        logger.error("No traffic type specified")
+        exit(1)
+    elif not args.traffic_type in ThroughputQOS.SUPPORTED_TRAFFIC_TYPES:
+        logger.error(f"Unexpected traffic type: {args.traffic_type}")
         exit(1)
 
-    if not args.traffic_type:
-        print("No traffic type specified")
-        exit(1)
 
     # This checks defaults as configured in the argument parser
     # These arguments are parsed as comma-separated strings
     if args.upload == "0" and args.download == "0":
-        print("Neither upload or download rate specified")
+        logger.error("Neither upload or download rate specified, one or both are required")
         exit(1)
 
 
@@ -1463,9 +1820,6 @@ def main():
     # This must come after help summary check
     validate_args(args)
 
-    print("--------------------------------------------")
-    print(args)
-    print("--------------------------------------------")
     args.test_case = args.bands.split(',')
     test_results = {'test_results': []}
     loads = {}
@@ -1485,11 +1839,11 @@ def main():
             loads = {'upload': str(args.upload).split(","), 'download': []}
             for _ in range(len(args.upload)):
                 loads['download'].append(0)
-    print(loads)
 
     if args.bands is not None:
         bands = args.bands.split(',')
 
+    # TODO: Move to helper
     if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
         args.test_duration = int(args.test_duration[0:-1])
     elif args.test_duration.endswith('m') or args.test_duration.endswith('M'):
@@ -1499,9 +1853,7 @@ def main():
     elif args.test_duration.endswith(''):
         args.test_duration = int(args.test_duration)
 
-    test_start_time = datetime.now().strftime("%b %d %H:%M:%S")
-    print("Test started at: ", test_start_time)
-
+    # TODO: Move to helper
     for i in range(len(bands)):
         if bands[i] == "2.4G" or bands[i] == "2.4g":
             args.bands = bands[i]
@@ -1561,15 +1913,13 @@ def main():
                                                            end_id_=int(args.num_stations_2g) + int(args.num_stations_5g) + int(args.num_stations_6g) - 1,
                                                            padding_number_=10000,
                                                            radio=args.radio_6g))
-
-                print(station_list)
-
             else:
                 station_list = args.sta_names.split(",")
         else:
-            print("Band " + bands[i] + " Not Exist")
+            logging.error(f"Unknown band: {bands[i]}")
             exit(1)
-        # ---------------------------------------#
+
+        # Iterate through test cases to run, generating single report per-test case
         for index in range(len(loads["download"])):
             throughput_qos = ThroughputQOS(host=args.mgr,
                                            port=args.mgr_port,
@@ -1586,13 +1936,13 @@ def main():
                                            password=args.passwd,
                                            security=args.security,
                                            ssid_2g=args.ssid_2g,
-                                           password_2g=args.passwd_2g,
+                                           password_2g=args.password_2g,
                                            security_2g=args.security_2g,
                                            ssid_5g=args.ssid_5g,
-                                           password_5g=args.passwd_5g,
+                                           password_5g=args.password_5g,
                                            security_5g=args.security_5g,
                                            ssid_6g=args.ssid_6g,
-                                           password_6g=args.passwd_6g,
+                                           password_6g=args.password_6g,
                                            security_6g=args.security_6g,
                                            radio_2g=args.radio_2g,
                                            radio_5g=args.radio_5g,
@@ -1612,35 +1962,30 @@ def main():
             throughput_qos.pre_cleanup()
             throughput_qos.build()
 
-            # if args.create_sta:
-            #     if not throughput_qos.passes():
-            #         print(throughput_qos.get_fail_message())
-            #         throughput_qos.exit_fail()
-
+            # Run test
             throughput_qos.start(False, False)
             time.sleep(10)
             connections_download, connections_upload, drop_a_per, drop_b_per = throughput_qos.monitor()
-            print("connections download", connections_download)
-            print("connections upload", connections_upload)
             throughput_qos.stop()
             time.sleep(5)
+
+            # Prepare for and generate test report
             test_results['test_results'].append(throughput_qos.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
             data.update({bands[i]: test_results})
             input_setup_info = {
                 "contact": "support@candelatech.com"
             }
             throughput_qos.generate_report(data=data, input_setup_info=input_setup_info)
+
+            # TODO: Why only when 'create_sta' is true?
             if args.create_sta:
                 if not throughput_qos.passes():
-                    print(throughput_qos.get_fail_message())
+                    logger.error(throughput_qos.get_fail_message())
                     throughput_qos.exit_fail()
-                # LFUtils.wait_until_ports_admin_up(port_list=station_list)
-                if throughput_qos.passes():
+                else:
                     throughput_qos.success()
-                throughput_qos.cleanup()
 
-    test_end_time = datetime.now().strftime("%b %d %H:%M:%S")
-    print("Test ended at: ", test_end_time)
+                throughput_qos.cleanup()
 
 
 if __name__ == "__main__":
