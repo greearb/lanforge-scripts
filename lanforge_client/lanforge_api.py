@@ -3,7 +3,7 @@
 """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
     LANforge-GUI Source Code
-    Copyright (C) 1999-2021  Candela Technologies Inc
+    Copyright (C) 1999-2026  Candela Technologies Inc
     http:www.candelatech.com
 
     This program is free software; you can redistribute it and/or
@@ -1544,6 +1544,7 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(AdbGuiFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
+        DO_MIPMAPS_SCRCPY = 0x8            # Enable scrcpy mipmap generation.
         NO_AUDIO_SCRCPY = 0x2              # Disable scrcpy audio forwarding
         OMX_H264_ENCODER_SCRCPY = 0x4      # Use non-default OMX.google.h264.encoder scrcpy video encoder
         USE_SCRCPY = 0x1                   # Use scrcpy instead of MonkeyRemote
@@ -1562,8 +1563,10 @@ class LFJsonCommand(JsonCommand):
                      display: str = None,                      # The DISPLAY option, for example: 192.168.1.5:0.0. Will
                      # guess if left blank.
                      flags: str = None,                        # See flags defined above.
+                     fps: str = None,                          # Limit the FPS of the video. (scrcpy only). 20 is default, 0
+                     # is unlocked.
                      max_size: str = None,                     # Limit both the width and height of the video to value.
-                     # (scrcpy only). 0 is default.
+                     # (scrcpy only). 0 (Unlocked )is default.
                      resource: int = None,                     # Resource number. [W]
                      screen_size_prcnt: str = None,            # 0.1 to 1.0, screen size percentage for the Android display.
                      shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
@@ -1585,6 +1588,8 @@ class LFJsonCommand(JsonCommand):
             data["display"] = display
         if flags is not None:
             data["flags"] = flags
+        if fps is not None:
+            data["fps"] = fps
         if max_size is not None:
             data["max_size"] = max_size
         if resource is not None:
@@ -1616,6 +1621,7 @@ class LFJsonCommand(JsonCommand):
         self.post_adb_gui(adb_id=param_map.get("adb_id"),
                           display=param_map.get("display"),
                           flags=param_map.get("flags"),
+                          fps=param_map.get("fps"),
                           max_size=param_map.get("max_size"),
                           resource=param_map.get("resource"),
                           screen_size_prcnt=param_map.get("screen_size_prcnt"),
@@ -1770,6 +1776,8 @@ class LFJsonCommand(JsonCommand):
 
         AUTO_CONNECT_WIFI = 0x80           # Attempt to reconfigure Interop device in case it connects to wrong
         # +ssid
+        NO_APP_EN_WIFI = 0x800             # Request App to not enable wifi.
+        NO_APP_WIFI_ABLTY = 0x4000         # Request App to not attempt connection to any wifi networks.
         NO_AUDIO_SCRCPY = 0x2              # Disable scrcpy audio forwarding
         OMX_H264_ENCODER_SCRCPY = 0x4      # Use non-default OMX.google.h264.encoder scrcpy video encoder
         USE_SCRCPY = 0x1                   # Use scrcpy instead of MonkeyRemote
@@ -1790,7 +1798,8 @@ class LFJsonCommand(JsonCommand):
                      adb_product: str = None,                  # Android device product ID
                      app_identifier: str = None,               # Identifier that App and adb can both query (mac of wlan0)
                      auth: str = None,                         # WiFi Authentication to be used.
-                     bt_ctrl_dev: str = None,                  # Filepath of device's assigned BT adapter
+                     bssid: str = None,                        # WiFi BSSID to which this device should connect.
+                     bt_ctrl_dev: str = None,                  # MAC address or USB path of device's assigned BT adapter
                      bt_mac: str = None,                       # Device's BT MAC address
                      device_type: str = None,                  # Interop device type
                      eap_method: str = None,                   # WiFi EAP method: EAP-TTLS, EAP-PEAP
@@ -1798,6 +1807,9 @@ class LFJsonCommand(JsonCommand):
                      flags: str = None,                        # See above
                      flags_mask: str = None,                   # Which bits in the flags value to apply.
                      lf_username: str = None,                  # LANforge Interop app user-name
+                     mgr_ip: str = None,                       # IP Address of the LANforge Manager to which this Interop
+                     # device should attempt to connect. Use 0.0.0.0 for Auto
+                     # Discovery.
                      password: str = None,                     # WiFi password.
                      realm: str = None,                        # Realm this Interop device should use. Default is server's
                      # realm.
@@ -1808,6 +1820,7 @@ class LFJsonCommand(JsonCommand):
                      sdk_version: str = None,                  # Android sdk version (example: 19)
                      shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
                      ssid: str = None,                         # WiFi SSID to which this device should connect
+                     unused_int: str = None,                   # Deprecated.
                      response_json_list: list = None,
                      debug: bool = False,
                      errors_warnings: list = None,
@@ -1832,6 +1845,8 @@ class LFJsonCommand(JsonCommand):
             data["app_identifier"] = app_identifier
         if auth is not None:
             data["auth"] = auth
+        if bssid is not None:
+            data["bssid"] = bssid
         if bt_ctrl_dev is not None:
             data["bt_ctrl_dev"] = bt_ctrl_dev
         if bt_mac is not None:
@@ -1848,6 +1863,8 @@ class LFJsonCommand(JsonCommand):
             data["flags_mask"] = flags_mask
         if lf_username is not None:
             data["lf_username"] = lf_username
+        if mgr_ip is not None:
+            data["mgr_ip"] = mgr_ip
         if password is not None:
             data["password"] = password
         if realm is not None:
@@ -1864,6 +1881,8 @@ class LFJsonCommand(JsonCommand):
             data["shelf"] = shelf
         if ssid is not None:
             data["ssid"] = ssid
+        if unused_int is not None:
+            data["unused_int"] = unused_int
         if len(data) < 1:
             raise ValueError(__name__ + ": no parameters to submit")
         response = self.json_post(url="/cli-json/add_adb",
@@ -1890,6 +1909,7 @@ class LFJsonCommand(JsonCommand):
                           adb_product=param_map.get("adb_product"),
                           app_identifier=param_map.get("app_identifier"),
                           auth=param_map.get("auth"),
+                          bssid=param_map.get("bssid"),
                           bt_ctrl_dev=param_map.get("bt_ctrl_dev"),
                           bt_mac=param_map.get("bt_mac"),
                           device_type=param_map.get("device_type"),
@@ -1898,6 +1918,7 @@ class LFJsonCommand(JsonCommand):
                           flags=param_map.get("flags"),
                           flags_mask=param_map.get("flags_mask"),
                           lf_username=param_map.get("lf_username"),
+                          mgr_ip=param_map.get("mgr_ip"),
                           password=param_map.get("password"),
                           realm=param_map.get("realm"),
                           resource=param_map.get("resource"),
@@ -1906,6 +1927,7 @@ class LFJsonCommand(JsonCommand):
                           sdk_version=param_map.get("sdk_version"),
                           shelf=param_map.get("shelf"),
                           ssid=param_map.get("ssid"),
+                          unused_int=param_map.get("unused_int"),
                           )
         """
 
@@ -2439,10 +2461,21 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_cell_emulator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_cell_emulator(self, 
+                               apn: str = None,                          # APN
                                cur_profile: str = None,                  # Profile that should be running
                                device_type: str = None,                  # Device type
                                ipaddr: str = None,                       # IPv4 address for the Cell Emulator
+                               ipv4_first: str = None,                   # First Available ipv4 address
+                               ipv4_last: str = None,                    # Last Available ipv4 address
+                               ipv6_first: str = None,                   # First available ipv6 address
+                               ipv6_last: str = None,                    # Last available ipv6 address
+                               lte_num: str = None,                      # Number of LTE cells (at least 1 if lte or nsa)
                                model: str = None,                        # Product Model
+                               nr_num: str = None,                       # Number of NR cells (at least 1 if sa or nsa)
+                               pdn_type_ipv4: str = None,                # ipv4 PDN type
+                               pdn_type_ipv6: str = None,                # ipv6 PDN type
+                               plmn: str = None,                         # PLMN
+                               rat: str = None,                          # RAT type (sa, nsa, etc)
                                resource: int = None,                     # Resource number. [W]
                                serno: str = None,                        # Serial number.
                                shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
@@ -2458,14 +2491,36 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if apn is not None:
+            data["apn"] = apn
         if cur_profile is not None:
             data["cur_profile"] = cur_profile
         if device_type is not None:
             data["device_type"] = device_type
         if ipaddr is not None:
             data["ipaddr"] = ipaddr
+        if ipv4_first is not None:
+            data["ipv4_first"] = ipv4_first
+        if ipv4_last is not None:
+            data["ipv4_last"] = ipv4_last
+        if ipv6_first is not None:
+            data["ipv6_first"] = ipv6_first
+        if ipv6_last is not None:
+            data["ipv6_last"] = ipv6_last
+        if lte_num is not None:
+            data["lte_num"] = lte_num
         if model is not None:
             data["model"] = model
+        if nr_num is not None:
+            data["nr_num"] = nr_num
+        if pdn_type_ipv4 is not None:
+            data["pdn_type_ipv4"] = pdn_type_ipv4
+        if pdn_type_ipv6 is not None:
+            data["pdn_type_ipv6"] = pdn_type_ipv6
+        if plmn is not None:
+            data["plmn"] = plmn
+        if rat is not None:
+            data["rat"] = rat
         if resource is not None:
             data["resource"] = resource
         if serno is not None:
@@ -2492,10 +2547,21 @@ class LFJsonCommand(JsonCommand):
         """
         TODO: check for default argument values
         TODO: fix comma counting
-        self.post_add_cell_emulator(cur_profile=param_map.get("cur_profile"),
+        self.post_add_cell_emulator(apn=param_map.get("apn"),
+                                    cur_profile=param_map.get("cur_profile"),
                                     device_type=param_map.get("device_type"),
                                     ipaddr=param_map.get("ipaddr"),
+                                    ipv4_first=param_map.get("ipv4_first"),
+                                    ipv4_last=param_map.get("ipv4_last"),
+                                    ipv6_first=param_map.get("ipv6_first"),
+                                    ipv6_last=param_map.get("ipv6_last"),
+                                    lte_num=param_map.get("lte_num"),
                                     model=param_map.get("model"),
+                                    nr_num=param_map.get("nr_num"),
+                                    pdn_type_ipv4=param_map.get("pdn_type_ipv4"),
+                                    pdn_type_ipv6=param_map.get("pdn_type_ipv6"),
+                                    plmn=param_map.get("plmn"),
+                                    rat=param_map.get("rat"),
                                     resource=param_map.get("resource"),
                                     serno=param_map.get("serno"),
                                     shelf=param_map.get("shelf"),
@@ -4027,6 +4093,7 @@ class LFJsonCommand(JsonCommand):
                          block_size: str = None,                   # TFTP Block size, in bytes.
                          dns_cache_timeout: str = None,            # In seconds, how long to cache DNS lookups. 0 means no
                          # caching at all.
+                         flavor: str = None,                       # Type of the application to run. See above.
                          http_auth_type: str = None,               # Bit-field for allowable http-authenticate methods.
                          ip_addr: str = None,                      # Local IP address, for binding to specific secondary IP.
                          max_speed: str = None,                    # In bits-per-second, can rate limit upload or download
@@ -4070,6 +4137,8 @@ class LFJsonCommand(JsonCommand):
             data["block_size"] = block_size
         if dns_cache_timeout is not None:
             data["dns_cache_timeout"] = dns_cache_timeout
+        if flavor is not None:
+            data["flavor"] = flavor
         if http_auth_type is not None:
             data["http_auth_type"] = http_auth_type
         if ip_addr is not None:
@@ -4131,6 +4200,7 @@ class LFJsonCommand(JsonCommand):
         self.post_add_l4_endp(alias=param_map.get("alias"),
                               block_size=param_map.get("block_size"),
                               dns_cache_timeout=param_map.get("dns_cache_timeout"),
+                              flavor=param_map.get("flavor"),
                               http_auth_type=param_map.get("http_auth_type"),
                               ip_addr=param_map.get("ip_addr"),
                               max_speed=param_map.get("max_speed"),
@@ -4566,10 +4636,13 @@ class LFJsonCommand(JsonCommand):
         BSS_TRANS = 0x400                   # Enable BSS Transition logic
         DHCP_SERVER = 0x1                   # This should provide DHCP server.
         DISABLE_MLO = 0x8000                # Sta created w/out MLO enabled.
+        DISABLE_OBSS_SCAN = 0x80000         # Disable OBSS scanning
         EAP_PEAP = 0x200                    # Enable EAP-PEAP
         EAP_TTLS = 0x80                     # Use 802.1x EAP-TTLS
         ENABLE_POWERSAVE = 0x1000           # Enable power-save when creating stations.
+        IS_MAC_VLAN = 0x20000               # Whether VLAN is MAC-VLAN.
         NAT = 0x100                         # Enable NAT if this object is in a virtual router
+        NO_BIND = 0x40000                   # Do not bind to BSSID of AP. Good for MLO stations.
         OWE = 0x10000                       # Use OWE encryption.
         RRM_IGNORE_BEACON_REQ = 0x2000      # Request station ignore RRM beacon measurement request.
         SKIP_DHCP_ROAM = 0x10               # Ask station to not re-do DHCP on roam.
@@ -4938,6 +5011,9 @@ class LFJsonCommand(JsonCommand):
         disable_fast_reauth = 0x200000000              # Disable fast_reauth option for virtual stations.
         disable_gdaf = 0x1000000                       # AP: Disable DGAF (used by HotSpot 2.0).
         disable_ht80 = 0x8000000                       # Disable HT80 (for AC chipset NICs only)
+        disable_link_2g = 0x80000000000000             # Disable MLO 2GHz link
+        disable_link_5g = 0x100000000000000            # Disable MLO 5GHz link
+        disable_link_6g = 0x200000000000000            # Disable MLO 6GHz link
         disable_roam = 0x80000000                      # Disable automatic station roaming based on scan results.
         disable_sgi = 0x4000                           # Disable SGI (Short Guard Interval).
         ft_roam_over_ds = 0x800000000000               # Roam over DS when AP supports it.
@@ -10537,9 +10613,30 @@ class LFJsonCommand(JsonCommand):
         P_OUT = "P-OUT"    # Only call the portal logout (do not reset drivers/supplicant/dhcp)
         YES = "YES"        # (include logout) Call portal-bot.pl ... <b>--logout</b> before going down.
 
+    class ResetPortResetFlags(IntFlag):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            This class is stateless. It can do binary flag math, returning the integer value.
+            Example Usage: 
+                int:flag_val = 0
+                flag_val = LFPost.set_flags(ResetPortResetFlags, 0, flag_names=['bridge', 'dhcp'])
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+        PCI_RESET = 0x1      # Remove from and rescan the pci bus. This is disruptive but may work around
+        # +hardware hangs.
+
+        # use to get in value of flag
+        @classmethod
+        def valueof(cls, name=None):
+            if name is None:
+                return name
+            if name not in cls.__members__:
+                raise ValueError("ResetPortResetFlags has no member:[%s]" % name)
+            return (cls[member].value for member in cls.__members__ if member == name)
+
     def post_reset_port(self, 
                         port: str = None,                         # Port number to reset, or ALL. [W]
                         pre_ifdown: str = None,                   # See above. Leave blank or use NA if unsure.
+                        reset_flags: str = None,                  # See above. Leave blank or use NA if unsure.
                         reset_ospf: str = None,                   # If set to 'NO' or 'NA', then OSPF will not be updated.
                         # Otherwise, it will be updated.
                         resource: int = None,                     # Resource number, or ALL. [W]
@@ -10560,6 +10657,8 @@ class LFJsonCommand(JsonCommand):
             data["port"] = port
         if pre_ifdown is not None:
             data["pre_ifdown"] = pre_ifdown
+        if reset_flags is not None:
+            data["reset_flags"] = reset_flags
         if reset_ospf is not None:
             data["reset_ospf"] = reset_ospf
         if resource is not None:
@@ -10588,6 +10687,7 @@ class LFJsonCommand(JsonCommand):
         TODO: fix comma counting
         self.post_reset_port(port=param_map.get("port"),
                              pre_ifdown=param_map.get("pre_ifdown"),
+                             reset_flags=param_map.get("reset_flags"),
                              reset_ospf=param_map.get("reset_ospf"),
                              resource=param_map.get("resource"),
                              shelf=param_map.get("shelf"),
@@ -12656,7 +12756,9 @@ class LFJsonCommand(JsonCommand):
                          # or leave blank if unsure.
                          humidity: str = None,                     # Humidity, as a percent.
                          position: str = None,                     # Absolute position in degrees.
-                         speed_rpm: str = None,                    # Speed in rpm (floating point number is accepted
+                         speed_rpm: str = None,                    # Speed in rpm (floating point number is accepted). The
+                         # requested value may be adjusted to the nearest speed
+                         # supported by the turntable.
                          temperature: str = None,                  # Temperature, in celcius.
                          tilt: str = None,                         # Absolute tilt in degrees.
                          turntable: str = None,                    # Turn-table address, for instance: 192.168.1.22:3001
@@ -19418,7 +19520,7 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         DUMPCAP = 0x2                 # Use command-line dumpcap, more efficient than tshark
-        MATE_KILL_DUMPCAP = 0x10      # Kill last dumpcap
+        MATE_KILL_DUMPCAP = 0x10      # Stop all packet captures on this monitor port.
         MATE_TERMINAL = 0x4           # Launch tshark/dumpcap in mate-terminal
         MATE_XTERM = 0x8              # Launch tshark/dumpcap in xterm
         TSHARK = 0x1                  # Use command-line tshark instead of wireshark
@@ -20271,46 +20373,60 @@ class LFJsonQuery(JsonQuery):
         /adb/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        a-wifi, api, app-id, bt+ctrl, bt+mac, device, device-type, eap-method, eap-user, 
-        encryption, model, name, password, phantom, product, release, resource-id, 
-        ssid, timed-out, unauth, user-name, wifi+mac
-    Example URL: /adb?fields=a-wifi,api
+        api, app-id, auth-rpt, bssid, bt+ctrl, bt+ctrl+cx+status, bt+mac, bt+peer, 
+        bt+peer+mac, device, eap-method, eap-user, en-wifi, encryption, entity+id, 
+        freq, model, name, password, phantom, product, release, resource-id, rssi, 
+        ssid, ssid-rpt, timed-out, type, unauth, user-name, wifi+mac, wifi-m
+    Example URL: /adb?fields=api,app-id
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_adb(eid_list=['1.234', '1.344'],
-                                   requested_col_names=['wifi mac'], 
+                                   requested_col_names=['entity id'], 
                                    debug=True)
 
     The record returned will have these members: 
     {
-        'a-wifi':      # Android phones may roam to other saved WiFi profiles if the preferred
-                       # WiFi connection disconnects.If you enable this option, the LANforge
-                       # system will attempt to detect this and force it back to the preferred
-                       # WiFi SSID.
-        'api':         # SDK API Version
-        'app-id':      # Interop app identifier.
-        'bt ctrl':     # LANforge bluetooth control device.
-        'bt mac':      # Bluetooth MAC address
-        'device':      # Interop device identifier.
-        'device-type': # Interop device type
-        'eap-method':  # WiFi EAP Method for Enterprise Authentication.
-        'eap-user':    # WiFi EAP User for Enterprise Authentication.
-        'encryption':  # WiFi authentication type for the WiFi connection.
-        'model':       # Interop device model identifier.
-        'name':        # Interop device serial number and LANforge Resource location.
-        'password':    # WiFi password.
-        'phantom':     # LANforge is unable to communicate with this device. Maybe it is
-                       # unplugged?
-        'product':     # Interop device product identifier.
-        'release':     # SDK Release
-        'resource-id': # Identifier for the Resource this Interop device is associated.
-        'ssid':        # WiFi SSID to which this device should connect.
-        'timed-out':   # The device has timed out too many times while running commands. It may
-                       # need to be reconnected.
-        'unauth':      # The device is un-authorized. Enable debugging on device to use it.
-                       # (Android only)
-        'user-name':   # LANforge Interop app username for this Interop device.
-        'wifi mac':    # Wifi MAC address
+        'api':               # SDK API Version
+        'app-id':            # Interop app identifier.
+        'auth-rpt':          # Authentication type reported by the Interop device.
+        'bssid':             # BSSID to which the device is connected.
+        'bt ctrl':           # LANforge bluetooth control device.
+        'bt ctrl cx status': # Status of the Bluetooth controller <-> iOS device connection.
+        'bt mac':            # Bluetooth MAC address
+        'bt peer':           # Entry is a Bluetooth Peer to real adb device
+        'bt peer mac':       # MAC of the USB Bluetooth controller.
+        'device':            # Interop device identifier.
+        'eap-method':        # WiFi EAP Method for Enterprise Authentication.
+        'eap-user':          # WiFi EAP User for Enterprise Authentication.
+        'en-wifi':           # Android and IOS apps will attempt to enable WiFi.Un-select this to have
+                             # the Apps not automatically enable WiFi.
+        'encryption':        # WiFi authentication type for the WiFi connection.Network changes will
+                             # only take effect if the 'App Enable WiFi' option is checked.
+        'entity id':         # Entity Identifier (shelf.resource.port.endpoint.endp-type).
+        'freq':              # Frequency reported by the Interop device.
+        'model':             # Interop device model identifier.
+        'name':              # Interop device serial number and LANforge Resource location.
+        'password':          # WiFi password.Network changes will only take effect if the 'App Enable
+                             # WiFi' option is checked.
+        'phantom':           # LANforge is unable to communicate with this device. Maybe it is
+                             # unplugged?
+        'product':           # Interop device product identifier.
+        'release':           # SDK Release
+        'resource-id':       # Identifier for the Resource this Interop device is associated.
+        'rssi':              # RSSI reported by the Interop device.
+        'ssid':              # WiFi SSID to which this device should connect.Network changes will only
+                             # take effect if the 'App Enable WiFi' option is checked.
+        'ssid-rpt':          # SSID to which the device is connected.
+        'timed-out':         # The device has timed out too many times while running commands. It may
+                             # need to be reconnected.
+        'type':              # Interop device type
+        'unauth':            # The device is un-authorized. Enable debugging on device to use it.
+                             # (Android only)
+        'user-name':         # LANforge Interop app username for this Interop device.This field must
+                             # not be empty when using WebGUI.
+        'wifi mac':          # Wifi MAC address
+        'wifi-m':            # How this ADB device should attempt to connect to WiFi.Both is the most
+                             # robust option for all Android versions.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -21718,7 +21834,9 @@ class LFJsonQuery(JsonQuery):
         'image file':      # Image file name. Relative paths assume directory /home/lanforge. Fully
                            # qualified pathnames begin with a slash (eg
                            # /usr/lib/share/icons/icon.png).File format should be PNG, JPG or BMP.
-        'lan':             # IP/Mask for LAN port (192.168.2.1/24).
+        'lan':             # IP/Mask for LAN port (192.168.2.1/24).You may also set a port
+                           # (192.168.2.1/24:48080).This will be respected in some test
+                           # configurations (iperf).
         'mgt ip':          # DUT Management IP address.
         'model number':    # DUT model number or product name
         'notes':           # Notes
@@ -21877,8 +21995,9 @@ class LFJsonQuery(JsonQuery):
                                 # frame.In all cases, the packets on the wire will not exceed theport's
                                 # MTU + Ethernet-Header-Size (typically 1514 for Ethernet)Note that large
                                 # minimum write sizes put memory pressure on theLANforge system and can
-                                # degrade performance.For TCP, setting MSS is a better way to force the
-                                # on-the-wire packet size.
+                                # degrade performance.If Max PDU Size &gt Min PDU Size, then random sizes
+                                # between min and max will be used.For TCP, setting MSS is a better way to
+                                # force the on-the-wire packet size.
         'max rate':             # Maximum desired transmit rate, in bits per second (bps).
         'mcast rx':             # Indicates if endpoint is configured as a multicast receiver.
         'min pdu':              # The minimum write size for generated traffic.For UDP, this is the UDP
@@ -21887,8 +22006,9 @@ class LFJsonQuery(JsonQuery):
                                 # frame.In all cases, the packets on the wire will not exceed theport's
                                 # MTU + Ethernet-Header-Size (typically 1514 for Ethernet)Note that large
                                 # minimum write sizes put memory pressure on theLANforge system and can
-                                # degrade performance.For TCP, setting MSS is a better way to force the
-                                # on-the-wire packet size.
+                                # degrade performance.If Max PDU Size &gt Min PDU Size, then random sizes
+                                # between min and max will be used.For TCP, setting MSS is a better way to
+                                # force the on-the-wire packet size.
         'min rate':             # Minimum desired transmit rate, in bits per second (bps).
         'mng':                  # Is the Endpoint managed or not?
         'name':                 # Endpoint's Name.
@@ -22699,9 +22819,9 @@ class LFJsonQuery(JsonQuery):
         active, activity, avg+chain+rssi, bandwidth, beacon+signal, chain+rssi, channel, 
         disabled+reason, dormant, dup+pkts, eid, entity+id, esr+active, last+exit, 
         noise, nss, our+address, parent+dev, peer+address, retry+failed, rx+bytes, 
-        rx+drop, rx+pkts, rx+rate, rx+rate+%281m%29, rx+signal, rx-rate, time-stamp, 
-        tx+bytes, tx+pkts, tx+rate, tx+rate+%281%C2%A0min%29, tx-rate, wifi+retries, 
-              # hidden columns:
+        rx+drop, rx+pkts, rx+rate, rx+rate+%281m%29, rx+rate+%28last%29, rx+signal, rx-rate, 
+        time-stamp, tx+bytes, tx+pkts, tx+rate, tx+rate+%281%C2%A0min%29, tx+rate+%28last%29, 
+        tx-rate, wifi+retries        # hidden columns:
         resource
     Example URL: /mlo?fields=active,activity
 
@@ -22740,6 +22860,7 @@ class LFJsonQuery(JsonQuery):
         'rx pkts':              # Number of packets received by this MLO Link.
         'rx rate':              # Average bits per second received since last stats clear.
         'rx rate (1m)':         # Average bits per second received over the last 60 seconds.
+        'rx rate (last)':       # Average bits per second received over the report interval.
         'rx signal':            # Wireless signal strength (RSSI).
         'rx-rate':              # Reported network device RX link speed.
         'time-stamp':           # Time at which this event was created.This uses the clock on the source
@@ -22748,6 +22869,7 @@ class LFJsonQuery(JsonQuery):
         'tx pkts':              # Number of bytes transmitted by this MLO Link.
         'tx rate':              # Average bits per second transmitted since last stats clear.
         'tx rate (1&nbsp;min)': # Average bits per second transmitted over the last 60 seconds.
+        'tx rate (last)':       # Average bits per second transmitted over the report interval.
         'tx-rate':              # Reported network device TX link speed.
         'wifi retries':         # Number of Wireless packets that the MLO Link wifi radio retried.One
                                 # packet may be tried multiple times and each try would be counted in this
@@ -22902,7 +23024,7 @@ class LFJsonQuery(JsonQuery):
         tx+bytes, tx+crr, tx+errors, tx+fifo, tx+hb, tx+pkts, tx+wind, tx-failed+%25, 
         tx-rate, wifi+retries        # hidden columns:
         antenna_count, beacon_rx_signal, port_cur_flags_h, port_cur_flags_l, port_supported_flags_h, 
-        port_supported_flags_l, resource, rx_multicast, tx_dropped
+        port_supported_flags_l, resource, rx_multicast, tx_dropped, wifi_cfg
     Example URL: /port?fields=4way+time+%28us%29,activity
 
     Example py-json call (it knows the URL):
@@ -24379,8 +24501,8 @@ class LFJsonQuery(JsonQuery):
         delay, destination+addr, device+type, dropped, dup+pkts, eid, elapsed, entity+id, 
         jb+cur, jb+over, jb+silence, jb+under, jitter, mng, mobile+bt+mac, mos-lqo, 
         mos-lqo%23, name, ooo+pkts, phone+%23, pingpong, reg+state, rst, rtp+rtt, run, 
-        rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, state, tx+bytes, tx+file, 
-        tx+pkts, vad+pkts
+        rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, state, time-stamp, tx+bytes, 
+        tx+file, tx+pkts, vad+pkts
     Example URL: /voip-endp?fields=attenuation,audio+band
 
     Example py-json call (it knows the URL):
@@ -24435,7 +24557,7 @@ class LFJsonQuery(JsonQuery):
         'name':             # Endpoint's Name.
         'ooo pkts':         # Total out-of-order packets, as identified by RTP sequence numbers (pre
                             # jitter buffer).
-        'phone #':          # Source Address (MAC, ip/port, VoIP source).
+        'phone #':          # Endpoint Phone Number.
         'pingpong':         # Number of PingPongs of audio play and record over Continuous call.
         'reg state':        # Current State of the Endpoint.
         'rst':              # How many times has the endpoint been restarted due to abnormal
@@ -24448,6 +24570,8 @@ class LFJsonQuery(JsonQuery):
         'snr deg':          # Signal to noise ratio of the degraded audio file. Unit: dB
         'snr ref':          # Signal to noise ratio of the reference audio file. Unit: dB
         'state':            # Phone registration state
+        'time-stamp':       # Time at which this event was created.This uses the clock on the source
+                            # machine.
         'tx bytes':         # Total transmitted bytes count.
         'tx file':          # Complete path to .wav file that will be transmitted
         'tx pkts':          # Total transmitted packet count.
@@ -25197,8 +25321,8 @@ class LFJsonQuery(JsonQuery):
         buffer, corrupt+1, corrupt+2, corrupt+3, corrupt+4, corrupt+5, corrupt+6, 
         delay, dropfreq+%25, dropped, dup+pkts, dupfreq+%25, eid, elapsed, extrabuf, 
         failed-late, jitfreq+%25, max+rate, maxjitter, maxlate, name, ooo+pkts, qdisc, 
-        reordfrq+%25, run, rx+bytes, rx+pkts, script, serdelay, tx+bytes, tx+drop+%25, 
-        tx+pkts, tx+rate, tx-failed, wps
+        reordfrq+%25, run, rx+bytes, rx+pkts, rx+rate+%283s%29, script, serdelay, tx+bytes, 
+        tx+drop+%25, tx+pkts, tx+rate, tx+rate+%283s%29, tx-failed, wps
     Example URL: /wl-endp?fields=buffer,corrupt+1
 
     Example py-json call (it knows the URL):
@@ -25208,60 +25332,65 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        'buffer':      # Maximum size of receive buffer, in bytes.This is the sum of the amount
-                       # needed for the transit buffers (delay * bandwidth)plus the WanLink
-                       # "Backlog Buffer:" queue size which handles bursts.
-        'corrupt 1':   # Counters for how many times this corruption has been applied.
-        'corrupt 2':   # Counters for how many times this corruption has been applied.
-        'corrupt 3':   # Counters for how many times this corruption has been applied.
-        'corrupt 4':   # Counters for how many times this corruption has been applied.
-        'corrupt 5':   # Counters for how many times this corruption has been applied.
-        'corrupt 6':   # Counters for how many times this corruption has been applied.
-        'delay':       # Base induced latency on received packets, in microseconds.
-        'dropfreq %':  # Frequency out of 1,000,000 to drop a received packet.Select a preset
-                       # value or enter your own.
-        'dropped':     # Total dropped packets on receive.This does not include the tx-failed
-                       # counters.
-        'dup pkts':    # Total duplicate packets generated.
-        'dupfreq %':   # Frequency out of 1,000,000 to duplicate a received packet.Select a
-                       # preset value or enter your own.
-        'eid':         # Entity ID
-        'elapsed':     # Amount of time (seconds) this endpoint has been running (or ran.)
-        'extrabuf':    # Size of "Backlog Buffer:" setting in WanLink configuration in bytes.
-        'failed-late': # Total amount of received packets that could not be transmitted out the
-                       # peer becausethe emulator was overloaded and could not transmit within
-                       # the specified 'lateness'
-        'jitfreq %':   # Frequency out of 1,000,000 that packets should have jitter applied to
-                       # them.Select a preset value or enter your own.
-        'max rate':    # Max transmit rate (bps) for this Endpoint.
-        'maxjitter':   # Maximum additional delay, in microseconds.  See Jitter-Frequency as
-                       # well.
-        'maxlate':     # The maximum lateness in milliseconds allowed before packets will be
-                       # dropped on transmit.If lateness is configured to be automatic, this
-                       # variable will change based onconfigured bandwidth and backlog buffer,
-                       # but will not go below 10ms.
-        'name':        # Endpoint's Name.
-        'ooo pkts':    # Total out of order packets generated.
-        'qdisc':       # Queueing discipline (FIFO, WRR, etc).
-        'reordfrq %':  # Frequency out of 1,000,000 to re-order a received packet.Select a preset
-                       # value or enter your own.
-        'run':         # Is the Endpoint is Running or not.
-        'rx bytes':    # Total received bytes count.
-        'rx pkts':     # Total received packet count.
-        'script':      # Endpoint script state.
-        'serdelay':    # Additional serialization delay for a 1514 byte packet at the configured
-                       # speed (microseconds).
-        'tx bytes':    # Total transmitted bytes count.
-        'tx drop %':   # Packet drop percentage over the last 1 minute.
-        'tx pkts':     # Packets received on the peer interface and transmitted out this
-                       # endpoint's interface.
-        'tx rate':     # The average speed over the last 30 seconds at which we are
-                       # transmittingout the peer interface.This can be thought of as the actual
-                       # transfer rate for packets entering the interfaceassociated with this
-                       # Endpoint.
-        'tx-failed':   # Total amount of received packets that could not be transmitted out the
-                       # peer.This includes any tx-failed-late packets.
-        'wps':         # Enable/Disable showing of WanPaths for individual endpoints.
+        'buffer':       # Maximum size of receive buffer, in bytes.This is the sum of the amount
+                        # needed for the transit buffers (delay * bandwidth)plus the WanLink
+                        # "Backlog Buffer:" queue size which handles bursts.
+        'corrupt 1':    # Counters for how many times this corruption has been applied.
+        'corrupt 2':    # Counters for how many times this corruption has been applied.
+        'corrupt 3':    # Counters for how many times this corruption has been applied.
+        'corrupt 4':    # Counters for how many times this corruption has been applied.
+        'corrupt 5':    # Counters for how many times this corruption has been applied.
+        'corrupt 6':    # Counters for how many times this corruption has been applied.
+        'delay':        # Base induced latency on received packets, in microseconds.
+        'dropfreq %':   # Frequency out of 1,000,000 to drop a received packet.Select a preset
+                        # value or enter your own.
+        'dropped':      # Total dropped packets on receive.This does not include the tx-failed
+                        # counters.
+        'dup pkts':     # Total duplicate packets generated.
+        'dupfreq %':    # Frequency out of 1,000,000 to duplicate a received packet.Select a
+                        # preset value or enter your own.
+        'eid':          # Entity ID
+        'elapsed':      # Amount of time (seconds) this endpoint has been running (or ran.)
+        'extrabuf':     # Size of "Backlog Buffer:" setting in WanLink configuration in bytes.
+        'failed-late':  # Total amount of received packets that could not be transmitted out the
+                        # peer becausethe emulator was overloaded and could not transmit within
+                        # the specified 'lateness'
+        'jitfreq %':    # Frequency out of 1,000,000 that packets should have jitter applied to
+                        # them.Select a preset value or enter your own.
+        'max rate':     # Max transmit rate (bps) for this Endpoint.
+        'maxjitter':    # Maximum additional delay, in microseconds.  See Jitter-Frequency as
+                        # well.
+        'maxlate':      # The maximum lateness in milliseconds allowed before packets will be
+                        # dropped on transmit.If lateness is configured to be automatic, this
+                        # variable will change based onconfigured bandwidth and backlog buffer,
+                        # but will not go below 10ms.
+        'name':         # Endpoint's Name.
+        'ooo pkts':     # Total out of order packets generated.
+        'qdisc':        # Queueing discipline (FIFO, WRR, etc).
+        'reordfrq %':   # Frequency out of 1,000,000 to re-order a received packet.Select a preset
+                        # value or enter your own.
+        'run':          # Is the Endpoint is Running or not.
+        'rx bytes':     # Total received bytes count.
+        'rx pkts':      # Total received packet count.
+        'rx rate (3s)': # The average speed at which we are receiving over the last 3 seconds.
+        'script':       # Endpoint script state.
+        'serdelay':     # Additional serialization delay for a 1514 byte packet at the configured
+                        # speed (microseconds).
+        'tx bytes':     # Total transmitted bytes count.
+        'tx drop %':    # Packet drop percentage over the last 1 minute.
+        'tx pkts':      # Packets received on the peer interface and transmitted out this
+                        # endpoint's interface.
+        'tx rate':      # The average speed over the last 30 seconds at which we are
+                        # transmittingout the peer interface.This can be thought of as the actual
+                        # transfer rate for packets entering the interfaceassociated with this
+                        # Endpoint.
+        'tx rate (3s)': # The average speed over the last 3 seconds at which we are
+                        # transmittingout the peer interface.This can be thought of as the actual
+                        # transfer rate for packets entering the interfaceassociated with this
+                        # Endpoint.
+        'tx-failed':    # Total amount of received packets that could not be transmitted out the
+                        # peer.This includes any tx-failed-late packets.
+        'wps':          # Enable/Disable showing of WanPaths for individual endpoints.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
