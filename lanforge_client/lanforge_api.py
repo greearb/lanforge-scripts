@@ -3,7 +3,7 @@
 """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 
     LANforge-GUI Source Code
-    Copyright (C) 1999-2021  Candela Technologies Inc
+    Copyright (C) 1999-2026  Candela Technologies Inc
     http:www.candelatech.com
 
     This program is free software; you can redistribute it and/or
@@ -10610,9 +10610,30 @@ class LFJsonCommand(JsonCommand):
         P_OUT = "P-OUT"    # Only call the portal logout (do not reset drivers/supplicant/dhcp)
         YES = "YES"        # (include logout) Call portal-bot.pl ... <b>--logout</b> before going down.
 
+    class ResetPortResetFlags(IntFlag):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            This class is stateless. It can do binary flag math, returning the integer value.
+            Example Usage: 
+                int:flag_val = 0
+                flag_val = LFPost.set_flags(ResetPortResetFlags, 0, flag_names=['bridge', 'dhcp'])
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+        PCI_RESET = 0x1      # Remove from and rescan the pci bus. This is disruptive but may work around
+        # +hardware hangs.
+
+        # use to get in value of flag
+        @classmethod
+        def valueof(cls, name=None):
+            if name is None:
+                return name
+            if name not in cls.__members__:
+                raise ValueError("ResetPortResetFlags has no member:[%s]" % name)
+            return (cls[member].value for member in cls.__members__ if member == name)
+
     def post_reset_port(self, 
                         port: str = None,                         # Port number to reset, or ALL. [W]
                         pre_ifdown: str = None,                   # See above. Leave blank or use NA if unsure.
+                        reset_flags: str = None,                  # See above. Leave blank or use NA if unsure.
                         reset_ospf: str = None,                   # If set to 'NO' or 'NA', then OSPF will not be updated.
                         # Otherwise, it will be updated.
                         resource: int = None,                     # Resource number, or ALL. [W]
@@ -10633,6 +10654,8 @@ class LFJsonCommand(JsonCommand):
             data["port"] = port
         if pre_ifdown is not None:
             data["pre_ifdown"] = pre_ifdown
+        if reset_flags is not None:
+            data["reset_flags"] = reset_flags
         if reset_ospf is not None:
             data["reset_ospf"] = reset_ospf
         if resource is not None:
@@ -10661,6 +10684,7 @@ class LFJsonCommand(JsonCommand):
         TODO: fix comma counting
         self.post_reset_port(port=param_map.get("port"),
                              pre_ifdown=param_map.get("pre_ifdown"),
+                             reset_flags=param_map.get("reset_flags"),
                              reset_ospf=param_map.get("reset_ospf"),
                              resource=param_map.get("resource"),
                              shelf=param_map.get("shelf"),
@@ -12729,7 +12753,9 @@ class LFJsonCommand(JsonCommand):
                          # or leave blank if unsure.
                          humidity: str = None,                     # Humidity, as a percent.
                          position: str = None,                     # Absolute position in degrees.
-                         speed_rpm: str = None,                    # Speed in rpm (floating point number is accepted
+                         speed_rpm: str = None,                    # Speed in rpm (floating point number is accepted). The
+                         # requested value may be adjusted to the nearest speed
+                         # supported by the turntable.
                          temperature: str = None,                  # Temperature, in celcius.
                          tilt: str = None,                         # Absolute tilt in degrees.
                          turntable: str = None,                    # Turn-table address, for instance: 192.168.1.22:3001
@@ -19491,7 +19517,7 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         DUMPCAP = 0x2                 # Use command-line dumpcap, more efficient than tshark
-        MATE_KILL_DUMPCAP = 0x10      # Kill last dumpcap
+        MATE_KILL_DUMPCAP = 0x10      # Stop all packet captures on this monitor port.
         MATE_TERMINAL = 0x4           # Launch tshark/dumpcap in mate-terminal
         MATE_XTERM = 0x8              # Launch tshark/dumpcap in xterm
         TSHARK = 0x1                  # Use command-line tshark instead of wireshark
@@ -21805,7 +21831,9 @@ class LFJsonQuery(JsonQuery):
         'image file':      # Image file name. Relative paths assume directory /home/lanforge. Fully
                            # qualified pathnames begin with a slash (eg
                            # /usr/lib/share/icons/icon.png).File format should be PNG, JPG or BMP.
-        'lan':             # IP/Mask for LAN port (192.168.2.1/24).
+        'lan':             # IP/Mask for LAN port (192.168.2.1/24).You may also set a port
+                           # (192.168.2.1/24:48080).This will be respected in some test
+                           # configurations (iperf).
         'mgt ip':          # DUT Management IP address.
         'model number':    # DUT model number or product name
         'notes':           # Notes
@@ -22993,7 +23021,7 @@ class LFJsonQuery(JsonQuery):
         tx+bytes, tx+crr, tx+errors, tx+fifo, tx+hb, tx+pkts, tx+wind, tx-failed+%25, 
         tx-rate, wifi+retries        # hidden columns:
         antenna_count, beacon_rx_signal, port_cur_flags_h, port_cur_flags_l, port_supported_flags_h, 
-        port_supported_flags_l, resource, rx_multicast, tx_dropped
+        port_supported_flags_l, resource, rx_multicast, tx_dropped, wifi_cfg
     Example URL: /port?fields=4way+time+%28us%29,activity
 
     Example py-json call (it knows the URL):
@@ -24470,8 +24498,8 @@ class LFJsonQuery(JsonQuery):
         delay, destination+addr, device+type, dropped, dup+pkts, eid, elapsed, entity+id, 
         jb+cur, jb+over, jb+silence, jb+under, jitter, mng, mobile+bt+mac, mos-lqo, 
         mos-lqo%23, name, ooo+pkts, phone+%23, pingpong, reg+state, rst, rtp+rtt, run, 
-        rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, state, tx+bytes, tx+file, 
-        tx+pkts, vad+pkts
+        rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, state, time-stamp, tx+bytes, 
+        tx+file, tx+pkts, vad+pkts
     Example URL: /voip-endp?fields=attenuation,audio+band
 
     Example py-json call (it knows the URL):
@@ -24526,7 +24554,7 @@ class LFJsonQuery(JsonQuery):
         'name':             # Endpoint's Name.
         'ooo pkts':         # Total out-of-order packets, as identified by RTP sequence numbers (pre
                             # jitter buffer).
-        'phone #':          # Source Address (MAC, ip/port, VoIP source).
+        'phone #':          # Endpoint Phone Number.
         'pingpong':         # Number of PingPongs of audio play and record over Continuous call.
         'reg state':        # Current State of the Endpoint.
         'rst':              # How many times has the endpoint been restarted due to abnormal
@@ -24539,6 +24567,8 @@ class LFJsonQuery(JsonQuery):
         'snr deg':          # Signal to noise ratio of the degraded audio file. Unit: dB
         'snr ref':          # Signal to noise ratio of the reference audio file. Unit: dB
         'state':            # Phone registration state
+        'time-stamp':       # Time at which this event was created.This uses the clock on the source
+                            # machine.
         'tx bytes':         # Total transmitted bytes count.
         'tx file':          # Complete path to .wav file that will be transmitted
         'tx pkts':          # Total transmitted packet count.
