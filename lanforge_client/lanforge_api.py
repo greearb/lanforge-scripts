@@ -5011,6 +5011,9 @@ class LFJsonCommand(JsonCommand):
         disable_fast_reauth = 0x200000000              # Disable fast_reauth option for virtual stations.
         disable_gdaf = 0x1000000                       # AP: Disable DGAF (used by HotSpot 2.0).
         disable_ht80 = 0x8000000                       # Disable HT80 (for AC chipset NICs only)
+        disable_link_2g = 0x80000000000000             # Disable MLO 2GHz link
+        disable_link_5g = 0x100000000000000            # Disable MLO 5GHz link
+        disable_link_6g = 0x200000000000000            # Disable MLO 6GHz link
         disable_roam = 0x80000000                      # Disable automatic station roaming based on scan results.
         disable_sgi = 0x4000                           # Disable SGI (Short Guard Interval).
         ft_roam_over_ds = 0x800000000000               # Roam over DS when AP supports it.
