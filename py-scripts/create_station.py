@@ -1076,7 +1076,7 @@ def main():
     create_station = CreateStation(**vars(args),
                                    sta_list=station_list,
                                    up=(not args.create_admin_down),
-                                   password=args.passwd,
+                                   password=args.paswd,
                                    set_txo_data=None)
 
     if not args.no_pre_cleanup:

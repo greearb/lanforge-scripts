@@ -708,10 +708,11 @@ class LFCliBase:
             parser = argparse.ArgumentParser()
         optional = parser.add_argument_group('arguments with PRE-DEFINED DEFAULTS, arguments & defaults defined by create_bare_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
         required = parser.add_argument_group('arguments with NO PRE-DEFINED DEFAULTS, arguments & defaults defined by create_bare_argparse found in  /lanforge-scripts/py-json/LANforge/lfcli_base.py')
-        optional.add_argument('--mgr',
+        optional.add_argument('--mgr', "--m", "lanforge_ip", dest="mgr",
                               default='localhost',
                               help='hostname for where LANforge GUI is running')
-        optional.add_argument('--mgr_port',
+        optional.add_argument('--mgr_port', '--port', '--o', '--lanforge_port',
+                              dest='port',
                               default=8080,
                               help='port LANforge GUI HTTP service is running on')
         optional.add_argument('--debug',
@@ -757,14 +758,22 @@ class LFCliBase:
         # Optional Args
         optional.add_argument('--mgr',
                               '--lfmgr',
+                              '--m',
+                              '--lanforge_ip',
+                                dest='mgr',
                               default='localhost',
                               help='Hostname or IP address of the LANforge GUI machine (localhost is default)')
         optional.add_argument('--mgr_port',
                               '--port',
+                              '--o',
+                              '--lanforge_port',
+                              dest='port',
                               default=8080,
                               help='IP Port the LANforge GUI is listening on (8080 is default)')
         optional.add_argument('-u',
                               '--upstream_port',
+                              '--upstream',
+                              dest='upstream',
                               default='1.eth1',
                               help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1')
         optional.add_argument('--num_stations',
@@ -774,14 +783,15 @@ class LFCliBase:
         optional.add_argument('--test_id',
                               default="webconsole",
                               help='Test ID (intended to use for ws events)')
-        optional.add_argument('-d',
-                              '--debug',
+        optional.add_argument('--debug',
                               action="store_true",
                               help='Enable debugging')
         optional.add_argument('--log_level',
+                              dest="log_level",
                               default=None,
                               help='Set logging level: debug | info | warning | error | critical')
         optional.add_argument('--lf_logger_config_json',
+                              dest="lf_logger_config_json",
                               help="--lf_logger_config_json <json file> , json configuration of logger")
         optional.add_argument('--proxy',
                               nargs='?',
@@ -816,17 +826,19 @@ class LFCliBase:
                     optional.add_argument(argument['name'], help=argument['help'])
 
         # Required Args
-        required.add_argument('--radio',
-                              help='radio EID, e.g: 1.wiphy2')
+        required.add_argument('--radio', default='wiphy0',
+                              help='create stations in lanforge at this radio (by default: wiphy0)')
         # Silently support capitalized security types
         required.add_argument('--security',
                               default="open",
                               help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
         required.add_argument('--ssid',
                               help='WiFi SSID for script objects to associate to')
-        required.add_argument('--passwd',
+        required.add_argument('--paswd',
+                              '--passwd',
                               '--password',
                               '--key',
+                              dest='paswd',
                               default="[BLANK]",
                               help='WiFi passphrase/password/key')
         # please override this password argument using set_defaults(passwd='NA')

@@ -22,7 +22,7 @@ NOTES:      To best understand the Dataplane test, please review manual configur
 EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated theoretical rate for one minute
             ./lf_dataplane_test.py \
                 --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
+                --stations           1.1.wlan0 \
                 --duration          1m \
                 --traffic_type      UDP \
                 --traffic_direction DUT-TX \
@@ -31,7 +31,7 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
             # Run DUT receive test. Configure TCP traffic at 1 Gbps
             ./lf_dataplane_test.py \
                 --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
+                --stations           1.1.wlan0 \
                 --traffic_type      TCP \
                 --traffic_direction DUT-RX \
                 --rate              1Gbps
@@ -39,7 +39,7 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
             # Run DUT transmit and receive test with multiple 250Mbps traffic configurations
             ./lf_dataplane_test.py \
                 --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
+                --stations           1.1.wlan0 \
                 --traffic_type      UDP,TCP \
                 --traffic_direction DUT-TX,DUT-RX \
                 --rate              250Mbps
@@ -48,7 +48,7 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
             # Note that radio must support specified parameters. Recommended to first configure manually
             ./lf_dataplane_test.py \
                 --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
+                --stations          1.1.wlan0 \
                 --traffic_type      UDP \
                 --rate              100Mbps \
                 --nss               1,2,3,4 \
@@ -58,7 +58,7 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
             # The values specified are *parsed as dB*
             ./lf_dataplane_test.py \
                 --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
+                --stations          1.1.wlan0 \
                 --rate              100Mbps \
                 --attenuator1       "1.1.3273" \
                 --atten1_min        10 \
@@ -70,7 +70,7 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
             # Ensure attenuation values are separated by two periods, otherwise test will not parse properly
             ./lf_dataplane_test.py \
                 --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
+                --stations          1.1.wlan0 \
                 --rate              100Mbps \
                 --attenuator1       "1.1.3273" \
                 --attenuations1     "0..+100..955" \
@@ -82,7 +82,7 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
 
             {
                 "upstream": "1.1.eth1",
-                "station": "1.1.wlan0",
+                "stations": "1.1.wlan0",
                 "rate": "1Gbps"
             }
 
@@ -240,7 +240,7 @@ class DataplaneTest(cv_test):
         self.test_name = "Dataplane"
 
         self.upstream = upstream
-        self.station = station
+        self.stations = station
         self.dut = dut
         self.opposite_speed = opposite_speed
         self.speed = speed
@@ -370,8 +370,8 @@ class DataplaneTest(cv_test):
         # General test configuration
         if self.upstream != "":
             cfg_options.append("upstream_port: " + self.upstream)
-        if self.station != "":
-            cfg_options.append("traffic_port: " + self.station)
+        if self.stations != "":
+            cfg_options.append("traffic_port: " + self.stations)
         if self.duration != "":
             cfg_options.append("duration: " + self.duration)
 
@@ -470,7 +470,7 @@ NOTES:      To best understand the Dataplane test, please review manual configur
 EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated theoretical rate for one minute
             ./lf_dataplane_test.py \
                 --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
+                --stations          1.1.wlan0 \
                 --duration          1m \
                 --traffic_type      UDP \
                 --traffic_direction DUT-TX \
@@ -479,7 +479,7 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
             # Run DUT receive test. Configure TCP traffic at 1 Gbps
             ./lf_dataplane_test.py \
                 --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
+                --stations          1.1.wlan0 \
                 --traffic_type      TCP \
                 --traffic_direction DUT-RX \
                 --rate              1Gbps
@@ -487,7 +487,7 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
             # Run DUT transmit and receive test with multiple 250Mbps traffic configurations
             ./lf_dataplane_test.py \
                 --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
+                --stations          1.1.wlan0 \
                 --traffic_type      UDP,TCP \
                 --traffic_direction DUT-TX,DUT-RX \
                 --rate              250Mbps
@@ -496,7 +496,7 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
             # Note that radio must support specified parameters. Recommended to first configure manually
             ./lf_dataplane_test.py \
                 --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
+                --stations          1.1.wlan0 \
                 --traffic_type      UDP \
                 --rate              100Mbps \
                 --nss               1,2,3,4 \
@@ -506,7 +506,7 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
             # Ensure attenuation values are separated by two periods, otherwise test will not parse properly
             ./lf_dataplane_test.py \
                 --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
+                --stations          1.1.wlan0 \
                 --rate              100Mbps \
                 --attenuator1       "1.1.3273" \
                 --attenuations1     "0..+100..955" \
@@ -518,7 +518,7 @@ EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated the
 
             {
                 "upstream": "1.1.eth1",
-                "station": "1.1.wlan0",
+                "stations": "1.1.wlan0",
                 "rate": "1Gbps"
             }
 
@@ -544,12 +544,13 @@ INCLUDE_IN_README:
                         help="Path to JSON configuration file for test. When specified, JSON takes precedence over command line args.",
                         default="")
 
-    parser.add_argument("-u", "--upstream",
+    parser.add_argument("-u", "--upstream", "--upstream_port",
                         dest="upstream",
                         type=str,
                         default="",
                         help="Upstream port used in test. Example: '1.1.eth2'")
-    parser.add_argument("--station",
+    parser.add_argument("--s", "--station", "--stations",
+                        dest="stations",
                         type=str,
                         default="",
                         help="Station used in test. Example: '1.1.sta01500'")
@@ -597,7 +598,8 @@ INCLUDE_IN_README:
                         type=str,
                         help="Direction(s) of generated traffic, relative to DUT. Bi-directional traffic may be "
                              "achieved by setting the opposite.")
-    parser.add_argument("--type",
+    parser.add_argument("--protocol",
+                        "--type",
                         "--types",
                         "--traffic_type",
                         "--traffic_types",
@@ -610,17 +612,15 @@ INCLUDE_IN_README:
                         "--download_speed",
                         "--download_rate",
                         dest="speed",
-                        default="",
-                        help="Requested traffic rate used in test for selected traffic direction(s). "
-                             "Percentage of theoretical is also supported. Default: 85%%.")
+                        default="1Gbps",
+                        help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps")
     parser.add_argument("--opposite_speed",
                         "--opposite_rate",
                         "--upload_speed",
                         "--upload_rate",
                         dest="opposite_speed",
-                        default="",
-                        help="Requested opposite traffic rate used in test for selected traffic direction(s). "
-                             "Percentage of theoretical is also supported. Default: 0")
+                        default="10Mbps",
+                        help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps")
 
     parser.add_argument("--duration",
                         default="",
@@ -706,7 +706,7 @@ INCLUDE_IN_README:
                             must also have --pull_report also set to pull reports""")
     # Logging configuration
     parser.add_argument("--lf_logger_config_json",
-                        help="Path to logger JSON configuration")
+                        help="--lf_logger_config_json <json file> : Path to logger JSON configuration of logger")
     parser.add_argument('--logger_no_file',
                         default=None,
                         action="store_true",
@@ -842,7 +842,7 @@ def apply_json_configuration(args):
     if "duration" in json_data:
         args.duration = json_data["duration"]
     if "station" in json_data:
-        args.station = json_data["station"]
+        args.stations = json_data["station"]
 
     # Traffic configuration
     for key in ["speed", "rate", "download_speed", "download_rate"]:
