@@ -63,6 +63,9 @@ NOTES:
 import os
 import csv
 import time
+import signal
+import platform
+import subprocess
 import requests
 import threading
 import argparse
@@ -674,7 +677,45 @@ class TeamsAutomation(Realm):
 
         return lf_stats_map
 
+    def stop_previous_flask_server(self):
+        """
+        Forcefully kills any process currently listening on port 5005 (Linux/Darwin only).
+        """
+        port = 5005
+        logger.info(
+            f"Checking for processes using port {port} to forcefully kill them..."
+        )
+
+        current_os = platform.system()
+
+        try:
+            if current_os in ["Linux", "Darwin"]:
+                # Find PID on Linux/Mac using lsof
+                command = f"lsof -t -i:{port}"
+                try:
+                    output = subprocess.check_output(command, shell=True, text=True)
+                    pids = output.strip().split("\n")
+                    for pid in pids:
+                        if pid.strip():
+                            logger.info(
+                                f"Killing process {pid} on port {port} ({current_os})..."
+                            )
+                            os.kill(int(pid.strip()), signal.SIGKILL)
+                except subprocess.CalledProcessError:
+                    logger.info(f"No process found using port {port} on {current_os}.")
+                    logger.info(f"Port {port} is clear, ready to start Flask server.")
+                    pass
+            else:
+                logger.warning(
+                    f"Unsupported OS: {current_os}. Expected Linux or Darwin. Cannot automatically clear port {port}."
+                )
+
+        except Exception as e:
+            logger.warning(f"Error while trying to clear port {port}: {e}")
+
     def handle_flask_server(self):
+        self.stop_previous_flask_server()
+        time.sleep(5)  # Ensure the port is released before starting the server
         flask_thread = threading.Thread(target=self.start_flask_server)
         flask_thread.daemon = True
         flask_thread.start()
@@ -1143,10 +1184,10 @@ class TeamsAutomation(Realm):
             df = pd.read_csv(csv_file)
             df.columns = df.columns.str.strip()
 
-            logger.info(
+            logger.debug(
                 f"checking metrics {metrics} in dataframe columns {df.columns.tolist()}"
             )
-            logger.info(f"checking metrics dict {metrics}")
+            logger.debug(f"checking metrics dict {metrics}")
 
             for column, title in metrics:
                 image_name = title.replace(" ", "_")
