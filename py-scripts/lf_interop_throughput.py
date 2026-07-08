@@ -1008,8 +1008,18 @@ class Throughput(Realm):
         # Check if incremental_capacity is provided and ensure selected devices are sufficient
         if (len(self.incremental_capacity) > 0 and int(self.incremental_capacity.split(',')[-1]) > len(self.mac_id_list)):
             if not self.config and not self.interopability_config:
-                logger.error("Devices selected is less than given incremental capacity")
-                return False, self.real_client_list
+                if len(self.mac_id_list) == 0:
+                    logger.error("Devices selected is less than given incremental capacity")
+                    return False, self.real_client_list
+                configured_devices = len(self.mac_id_list)
+                given_capacity = list(map(int, self.incremental_capacity.split(",")))
+                adjusted_capacity = [cap for cap in given_capacity if cap <= configured_devices]
+                if configured_devices not in adjusted_capacity:
+                    adjusted_capacity.append(configured_devices)
+                logger.warning("Devices selected ({}) is less than given incremental capacity, running test with available devices instead: {}".format(
+                    configured_devices, ",".join(map(str, adjusted_capacity))))
+                self.incremental_capacity = ",".join(map(str, adjusted_capacity))
+                return True, self.real_client_list
             elif (self.config and not self.do_interopability):
                 configured_devices = len(self.mac_id_list)
                 given_capacity = list(map(int, self.incremental_capacity.split(",")))
