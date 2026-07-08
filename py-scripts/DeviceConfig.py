@@ -926,7 +926,14 @@ class LAPTOPS(Realm):
         # shelf=1
         # resource=503
         url = '/ports/{}/{}/?fields=parent dev,phantom,down,alias'.format(shelf, resource)
-        station_response = self.json_get(url)
+        try:
+            station_response = self.json_get(url)
+            if not station_response:
+                logger.error(f"Failed to fetch station details for shelf {shelf} and resource {resource}. Response received: {station_response}")
+                return {"station_name": None, "sta_down": None, "radio_up": False}
+        except Exception:
+            logger.exception(f"Exception while fetching station details for shelf={shelf}, resource={resource}")
+            return {"station_name": None, "sta_down": None, "radio_up": False}
         wiphy_non_phantom_found = False
         if ('interfaces' in station_response.keys()):
             stations = station_response['interfaces']
