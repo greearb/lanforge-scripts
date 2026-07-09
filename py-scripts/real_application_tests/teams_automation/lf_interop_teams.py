@@ -1106,6 +1106,7 @@ class TeamsAutomation(Realm):
             logging.error(f"Error in generate_report function: {e}", exc_info=True)
         finally:
             self.move_csv_files()
+            self.move_log_folder()
 
     def add_live_view_images_to_report(self):
         """
@@ -1625,6 +1626,14 @@ class TeamsAutomation(Realm):
                 dest = os.path.join(self.report_path_date_time, file)
                 shutil.move(src, dest)
 
+    def move_log_folder(self):
+        log_dir = os.path.join(self.path, "teams_laptop_client_logs")
+        if os.path.isdir(log_dir):
+            dest = os.path.join(self.report_path_date_time, "teams_laptop_client_logs")
+            if os.path.isdir(dest):
+                shutil.rmtree(dest)
+            shutil.move(log_dir, dest)
+
     def shutdown(self):
         """
         Gracefully shut down the application.
@@ -1924,6 +1933,30 @@ class TeamsAutomation(Realm):
                         }
 
                 return jsonify(result), 200
+
+        @self.app.route("/upload_log", methods=["POST"])
+        def upload_log():
+            try:
+                data = request.json
+                hostname = data.get("hostname")
+                log_content = data.get("log")
+
+                if not hostname or log_content is None:
+                    return jsonify({"status": "error", "message": "Missing hostname or log"}), 400
+
+                log_dir = os.path.join(self.path, "teams_laptop_client_logs")
+                os.makedirs(log_dir, exist_ok=True)
+
+                hostname = hostname.strip()
+                save_path = os.path.join(log_dir, f"{hostname}.log")
+                with open(save_path, "w", errors="replace") as f:
+                    f.write(log_content)
+
+                logging.info(f"Log file uploaded from {hostname}")
+                return jsonify({"status": "success", "message": "Log file uploaded"}), 200
+            except Exception as e:
+                logging.error(f"Error uploading log file: {e}")
+                return jsonify({"status": "error", "message": str(e)}), 500
 
         try:
             self.app.run(host='0.0.0.0', port=5005, debug=True, threaded=True, use_reloader=False)
