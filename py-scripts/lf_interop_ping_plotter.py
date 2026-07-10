@@ -615,113 +615,118 @@ class Ping(Realm):
 
         # Plot line graphs for each device
         for device_name, device_data in json_data.items():
-            rtts = []
-            # dropped_seqs = []
-            sequence_numbers = []
-            if 'rtts' in device_data.keys():
-                for seq in sorted(list(device_data['rtts'].keys())):
-                    if device_data['rtts'][seq] == 0.11:
-                        continue
-                    rtts.append(device_data['rtts'][seq])
-                    sequence_numbers.append(seq)
-            fig, ax = plt.subplots(figsize=(15, len(device_names) * .5 + 10))
-            # plt.plot(sequence_numbers, rtts, label=device_name, color="Slateblue", alpha=0.6)
+            try:
+                rtts = []
+                # dropped_seqs = []
+                sequence_numbers = []
+                if 'rtts' in device_data.keys():
+                    for seq in sorted(list(device_data['rtts'].keys())):
+                        if device_data['rtts'][seq] == 0.11:
+                            continue
+                        rtts.append(device_data['rtts'][seq])
+                        sequence_numbers.append(seq)
+                fig, ax = plt.subplots(figsize=(15, len(device_names) * .5 + 10))
+                # plt.plot(sequence_numbers, rtts, label=device_name, color="Slateblue", alpha=0.6)
 
-            # for area chart
-            ax.fill_between(sequence_numbers, rtts, color="skyblue", alpha=1)
-            ax.set_xlabel('Time', fontweight='bold', fontsize=15)
-            ax.set_ylabel('RTT (ms)', fontweight='bold', fontsize=15)
+                # for area chart
+                ax.fill_between(sequence_numbers, rtts, color="skyblue", alpha=1)
+                ax.set_xlabel('Time', fontweight='bold', fontsize=15)
+                ax.set_ylabel('RTT (ms)', fontweight='bold', fontsize=15)
 
-            # Customize the plot
-            # plt.xlabel('Time')
-            # plt.ylabel('RTT (ms)')
-            # plt.title('RTT vs Time for {}'.format(device_name))
-            # plt.legend(loc='upper right')
-            # plt.grid(True)
-            # building timestamps
-            start_time = self.start_time
-            interval = timedelta(seconds=int(self.interval))
+                # Customize the plot
+                # plt.xlabel('Time')
+                # plt.ylabel('RTT (ms)')
+                # plt.title('RTT vs Time for {}'.format(device_name))
+                # plt.legend(loc='upper right')
+                # plt.grid(True)
+                # building timestamps
+                start_time = self.start_time
+                interval = timedelta(seconds=int(self.interval))
 
-            timestamps = []
-            for seq_num in sequence_numbers:
-                timestamp = ((int(seq_num) - 1) * interval + start_time).strftime("%d/%m/%Y %H:%M:%S")
-                timestamps.append(timestamp)
+                timestamps = []
+                for seq_num in sequence_numbers:
+                    timestamp = ((int(seq_num) - 1) * interval + start_time).strftime("%d/%m/%Y %H:%M:%S")
+                    timestamps.append(timestamp)
 
-            # generating csv
-            with open('{}/{}.csv'.format(report_obj.path_date_time, device_name), 'w', newline='') as file:
-                writer = csv.writer(file)
+                # generating csv
+                with open('{}/{}.csv'.format(report_obj.path_date_time, device_name), 'w', newline='') as file:
+                    writer = csv.writer(file)
 
-                writer.writerow(['Time', 'RTT (ms)', 'Sent', 'Received', 'Dropped'])
-                for index in range(len(self.result_json[device_name]['ping_stats']['sent']), len(timestamps)):
-                    self.result_json[device_name]['ping_stats']['sent'].append(str(int(self.result_json[device_name]['ping_stats']['sent'][-1]) + 1))
-                    if rtts[index] == 0:
-                        self.result_json[device_name]['ping_stats']['dropped'].append(str(int(self.result_json[device_name]['ping_stats']['dropped'][-1]) + 1))
-                        self.result_json[device_name]['ping_stats']['received'].append(str(int(self.result_json[device_name]['ping_stats']['received'][-1])))
-                    else:
-                        self.result_json[device_name]['ping_stats']['received'].append(str(int(self.result_json[device_name]['ping_stats']['received'][-1]) + 1))
-                        self.result_json[device_name]['ping_stats']['dropped'].append(str(int(self.result_json[device_name]['ping_stats']['dropped'][-1])))
-                for row in range(len(timestamps)):
-                    writer.writerow([timestamps[row], rtts[row], self.result_json[device_name]['ping_stats']['sent'][row], self.result_json[device_name]
-                                    ['ping_stats']['received'][row], self.result_json[device_name]['ping_stats']['dropped'][row]])
-                # writer.writerows([timestamps, rtts])
-            sequence_numbers.sort()
-            timestamps.sort()
+                    writer.writerow(['Time', 'RTT (ms)', 'Sent', 'Received', 'Dropped'])
+                    for index in range(len(self.result_json[device_name]['ping_stats']['sent']), len(timestamps)):
+                        self.result_json[device_name]['ping_stats']['sent'].append(str(int(self.result_json[device_name]['ping_stats']['sent'][-1]) + 1))
+                        if rtts[index] == 0:
+                            self.result_json[device_name]['ping_stats']['dropped'].append(str(int(self.result_json[device_name]['ping_stats']['dropped'][-1]) + 1))
+                            self.result_json[device_name]['ping_stats']['received'].append(str(int(self.result_json[device_name]['ping_stats']['received'][-1])))
+                        else:
+                            self.result_json[device_name]['ping_stats']['received'].append(str(int(self.result_json[device_name]['ping_stats']['received'][-1]) + 1))
+                            self.result_json[device_name]['ping_stats']['dropped'].append(str(int(self.result_json[device_name]['ping_stats']['dropped'][-1])))
+                    for row in range(len(timestamps)):
+                        writer.writerow([timestamps[row], rtts[row], self.result_json[device_name]['ping_stats']['sent'][row], self.result_json[device_name]
+                                        ['ping_stats']['received'][row], self.result_json[device_name]['ping_stats']['dropped'][row]])
+                    # writer.writerows([timestamps, rtts])
+                sequence_numbers.sort()
+                timestamps.sort()
 
-            # settings labels for x-axis
-            if len(sequence_numbers) > 30:
-                temp_sequence_numbers = sequence_numbers[:len(sequence_numbers):max(round(len(timestamps) / 30), len(timestamps) // 30)]
-                temp_timestamps = timestamps[:len(timestamps):max(round(len(timestamps) / 30), len(timestamps) // 30)]
+                # settings labels for x-axis
+                if len(sequence_numbers) > 30:
+                    temp_sequence_numbers = sequence_numbers[:len(sequence_numbers):max(round(len(timestamps) / 30), len(timestamps) // 30)]
+                    temp_timestamps = timestamps[:len(timestamps):max(round(len(timestamps) / 30), len(timestamps) // 30)]
 
-                if len(temp_sequence_numbers) != len(temp_timestamps):
-                    temp_sequence_numbers.pop(0)
-                # plt.xticks(temp_sequence_numbers, temp_timestamps, rotation=45)
-                ax.set_xticks(temp_sequence_numbers)
-                ax.set_xticklabels(temp_timestamps, rotation=45, ha='right')
-            else:
-                # plt.xticks(sequence_numbers, timestamps, rotation=45)
-                ax.set_xticks(sequence_numbers)
-                ax.set_xticklabels(timestamps, rotation=45, ha='right')
+                    if len(temp_sequence_numbers) != len(temp_timestamps):
+                        temp_sequence_numbers.pop(0)
+                    # plt.xticks(temp_sequence_numbers, temp_timestamps, rotation=45)
+                    ax.set_xticks(temp_sequence_numbers)
+                    ax.set_xticklabels(temp_timestamps, rotation=45, ha='right')
+                else:
+                    # plt.xticks(sequence_numbers, timestamps, rotation=45)
+                    ax.set_xticks(sequence_numbers)
+                    ax.set_xticklabels(timestamps, rotation=45, ha='right')
 
-            # ax.set_xticks(sequence_numbers)
-            # ax.set_xticklabels(timestamps, rotation=45, ha='right')
+                # ax.set_xticks(sequence_numbers)
+                # ax.set_xticklabels(timestamps, rotation=45, ha='right')
 
-            # ax.xaxis.set_major_locator(plt.MaxNLocator(30))
-            # print(sequence_numbers)
-            # print(rtts)
-            # plt.xlim(0, max(rtts))
-            # plt.xlim(0, max(list(map(int, sequence_numbers))))
-            if len(sequence_numbers) != 0:
-                plt.xlim(0, max(sequence_numbers))
+                # ax.xaxis.set_major_locator(plt.MaxNLocator(30))
+                # print(sequence_numbers)
+                # print(rtts)
+                # plt.xlim(0, max(rtts))
+                # plt.xlim(0, max(list(map(int, sequence_numbers))))
+                if len(sequence_numbers) != 0:
+                    plt.xlim(0, max(sequence_numbers))
 
-            # Show the plot
-            # plt.show()
+                # Show the plot
+                # plt.show()
 
-            # set origin on x-axis
-            if rtts != []:
-                plt.ylim(0, max(rtts))
-            # Generate filename dynamically based on provided coordinate and angle
-            filename = "{}.png".format(device_name)
-            if angle:
-                filename = "{}_{}_{}.png".format(device_name, coordinate, angle)
-            elif coordinate:
-                filename = "{}_{}.png".format(device_name, coordinate)
-            plt.savefig(filename, dpi=96)
-            graph_name = filename
-            plt.close()
-            logger.debug("{}.png".format(device_name))
+                # set origin on x-axis
+                if rtts != []:
+                    plt.ylim(0, max(rtts) if max(rtts) > 0 else 1)
+                # Generate filename dynamically based on provided coordinate and angle
+                filename = "{}.png".format(device_name)
+                if angle:
+                    filename = "{}_{}_{}.png".format(device_name, coordinate, angle)
+                elif coordinate:
+                    filename = "{}_{}.png".format(device_name, coordinate)
+                plt.savefig(filename, dpi=96)
+                graph_name = filename
+                plt.close()
+                logger.debug("{}.png".format(device_name))
 
-            # generating individual table titles and line graphs
-            report_obj.set_table_title(device_name)
-            report_obj.build_table_title()
+                # generating individual table titles and line graphs
+                report_obj.set_table_title(device_name)
+                report_obj.build_table_title()
 
-            report_obj.set_graph_image(graph_name)
+                report_obj.set_graph_image(graph_name)
 
-            # need to move the graph image to the results directory
-            report_obj.move_graph_image()
+                # need to move the graph image to the results directory
+                report_obj.move_graph_image()
 
-            # report.set_csv_filename(uptime_graph)
-            # report.move_csv_file()
-            report_obj.build_graph()
+                # report.set_csv_filename(uptime_graph)
+                # report.move_csv_file()
+                report_obj.build_graph()
+            except Exception as e:
+                plt.close()
+                logger.error("Failed to build area graph/report for device {}: {}".format(device_name, e))
+                continue
 
     def check_stop_status(self):
         """
