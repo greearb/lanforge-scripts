@@ -1658,7 +1658,7 @@ class Ping(Realm):
                                 if device_id == station.split('.')[0] + '.' + station.split('.')[1]:
                                     self.sta_list.remove(station)
                                     self.real_sta_list.remove(station)
-                                logger.info(result_data)
+                                logger.info([list(d.keys())[0] for d in result_data])
                                 logger.info("Excluding {} from report as there is no valid generic endpoint creation during the test(UNKNOWN CX)".format(device_id))
                                 continue
                             if station in ping_endp:
@@ -3486,7 +3486,7 @@ connectivity problems.
                             if device_id == station.split('.')[0] + '.' + station.split('.')[1]:
                                 ping.sta_list.remove(station)
                                 ping.real_sta_list.remove(station)
-                            logger.info(result_data)
+                            logger.info([list(d.keys())[0] for d in result_data])
                             logger.info("Excluding {} from report as there is no valid generic endpoint creation during the test(UNKNOWN CX)".format(device_id))
                             continue
                         if station in ping_endp:
@@ -3608,22 +3608,26 @@ connectivity problems.
     logging.info('Stopping the test')
     ping.stop_generic()
 
-    logging.info(ping.result_json)
+    # logging.info(ping.result_json)
 
     if ping.do_webUI:
         ping.copy_reports_to_home_dir()
         ping.set_webUI_stop()
 
-    if args.local_lf_report_dir == "":
-        if args.group_name:
-            ping.generate_report(config_devices=config_devices, group_device_map=group_device_map)
+    try:
+        if args.local_lf_report_dir == "":
+            if args.group_name:
+                ping.generate_report(config_devices=config_devices, group_device_map=group_device_map)
+            else:
+                ping.generate_report()
         else:
-            ping.generate_report()
-    else:
-        if args.group_name:
-            ping.generate_report(config_devices=config_devices, group_device_map=group_device_map, report_path=args.local_lf_report_dir)
-        else:
-            ping.generate_report(report_path=args.local_lf_report_dir)
+            if args.group_name:
+                ping.generate_report(config_devices=config_devices, group_device_map=group_device_map, report_path=args.local_lf_report_dir)
+            else:
+                ping.generate_report(report_path=args.local_lf_report_dir)
+    except Exception as e:
+        logging.error('Error in generate_report: {}'.format(e))
+        logging.error(ping.result_json)
 
     # print('----',rtts)
     # station post cleanup
