@@ -154,7 +154,8 @@ class HttpDownload(Realm):
                  device_list=None, get_url_from_file=None, file_path=None, device_csv_name='', expected_passfail_value=None, file_name=None, group_name=None, profile_name=None, eap_method=None,
                  eap_identity=None, ieee80211=None, ieee80211u=None, ieee80211w=None, enable_pkc=None, bss_transition=None, power_save=None, disable_ofdma=None, roam_ft_ds=None, key_management=None,
                  pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60, get_live_view=False, total_floors=0, robot_test=False,
-                 robot_ip=None, coordinate=None, rotation=None, duration=None, do_bandsteering=False, cycles=None, bssids=None, duration_to_skip=None):
+                 robot_ip=None, coordinate=None, rotation=None, duration=None, do_bandsteering=False, cycles=None, bssids=None, duration_to_skip=None,
+                 _save_api=False, _api_log_file_name=None):
         # super().__init__(lfclient_host=lfclient_host,
         #                  lfclient_port=lfclient_port)
         self.ssid_list = []
@@ -190,7 +191,8 @@ class HttpDownload(Realm):
         self.ap_name = ap_name
         self.windows_ports = []
         self.windows_eids = []
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port,
+                                       _save_api=_save_api, _api_log_file_name=_api_log_file_name)
         self.station_profile = self.local_realm.new_station_profile()
         self.http_profile = self.local_realm.new_http_profile()
         self.http_profile.requests_per_ten = self.target_per_ten
@@ -1515,6 +1517,12 @@ class HttpDownload(Realm):
 
         # To store http_datavalues.csv in report folder
         report_path_date_time = report.get_path_date_time()
+        # Copy the api log file (json_get/post/put/delete calls) into the report folder, if enabled
+        if getattr(self.local_realm, 'save_api', False):
+            try:
+                shutil.copy(self.local_realm.api_log_filename, report_path_date_time)
+            except Exception:
+                logging.info("failed to copy api log file %s to report dir" % self.local_realm.api_log_filename)
         # It ensures no blocker for virtual clients
         if self.client_type == 'Real':
             shutil.move('http_datavalues.csv', report_path_date_time)
@@ -2696,6 +2704,10 @@ def main():
     optional.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
     optional.add_argument("--test_id", default="lf_webpage", help="test-id for kpi.csv,  script or test name")
     optional.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
+    optional.add_argument('--save_api', help="save json_get/json_post/json_put/json_delete calls to a lightweight log file",
+                          action="store_true", default=False)
+    optional.add_argument('--api_log_file_name', help="path to the api log file used when --save_api is set (default: ~/lf_api_calls.log)",
+                          default=None)
     # ARGS for webGUI
     required.add_argument('--dowebgui', help="If true will execute script for webgui", default=False)  # FOR WEBGUI
     optional.add_argument('--result_dir',
@@ -2882,6 +2894,7 @@ times the file is downloaded.
             ssid = [args.twog_ssid, args.fiveg_ssid]
             passwd = [args.twog_passwd, args.fiveg_passwd]
         http = HttpDownload(lfclient_host=args.mgr, lfclient_port=args.mgr_port,
+                            _save_api=args.save_api, _api_log_file_name=args.api_log_file_name,
                             upstream=args.upstream_port, num_sta=args.num_stations,
                             security=security, ap_name=args.ap_name,
                             ssid=ssid, password=passwd,

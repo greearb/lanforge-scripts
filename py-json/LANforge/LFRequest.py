@@ -41,6 +41,7 @@ class LFRequest:
         self.debug = debug_
         self.die_on_error = die_on_error_
         self.error_list = []
+        self.last_response_code = None
 
         # please see this discussion on ProxyHandlers:
         # https://docs.python.org/3/library/urllib.request.html#urllib.request.ProxyHandler
@@ -185,6 +186,7 @@ class LFRequest:
 
         try:
             resp = urllib.request.urlopen(myrequest)
+            self.last_response_code = getattr(resp, 'status', None)
             resp_data = resp.read().decode('utf-8')
             if debug or die_on_error_:
                 self.logger.debug("----- LFRequest::json_post:128 debug: --------------------------------------------")
@@ -208,6 +210,7 @@ class LFRequest:
             return responses[0]
 
         except urllib.error.HTTPError as error:
+            self.last_response_code = error.code
             print_diagnostics(url_=self.requested_url,
                               request_=myrequest,
                               responses_=responses,
@@ -254,6 +257,7 @@ class LFRequest:
             return myresponses[0]
 
         except urllib.error.HTTPError as error:
+            self.last_response_code = error.code
             print_diagnostics(url_=self.requested_url,
                               request_=myrequest,
                               responses_=myresponses,
@@ -279,6 +283,10 @@ class LFRequest:
     def get_as_json(self, method_='GET'):
         responses = list()
         responses.append(self.get(method_=method_))
+        # get() already stashes last_response_code from error.code on HTTPError;
+        # only overwrite it here when we actually have a response to read a status from
+        if responses[0] is not None:
+            self.last_response_code = getattr(responses[0], 'status', None)
         if len(responses) < 1:
             if self.debug and self.has_errors():
                 self.print_errors()
