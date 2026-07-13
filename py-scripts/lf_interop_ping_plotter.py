@@ -253,14 +253,21 @@ class Ping(Realm):
             # checking if target is eth1 or 1.1.eth1
             target_port_list = self.name_to_eid(self.target)
             shelf, resource, port, _ = target_port_list
+            endp = '/port/{}/{}/{}?fields=ip'.format(shelf, resource, port)
+            logger.debug(f"GET {endp}")
+            result = self.json_get(endp)
+            if result is None:
+                logger.error(f"GET {endp} returned no response while resolving ping target '{self.target}'. Aborting the test.")
+                exit(1)
             try:
-                target_port_ip = self.json_get('/port/{}/{}/{}?fields=ip'.format(shelf, resource, port))['interface']['ip']
-                self.target = target_port_ip
+                self.target = result['interface']['ip']
             except Exception:
-                logging.warning('The target is not an ethernet port. Proceeding with the given target {}.'.format(self.target))
-            logging.info(self.target)
+                logger.error(f"GET {endp} response does not contain 'interface'/'ip', or the data is not in the expected format. Aborting the test.")
+                logger.error(json.dumps(result, indent=2))
+                exit(1)
+            logger.info(f"Ping target resolved to: {self.target}")
         else:
-            logging.info(self.target)
+            logger.info(f"Ping target: {self.target}")
         return self.target
 
     def api_get(self, endp: str):
@@ -276,7 +283,15 @@ class Ping(Realm):
         """
         if endp[0] != '/':
             endp = '/' + endp
-        response = requests.get(url=self.api_url + endp)
+        url = self.api_url + endp
+        logger.debug(f"GET {url}")
+        try:
+            response = requests.get(url=url)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"GET {url} failed: {e}", exc_info=True)
+            raise
+        if not response.ok:
+            logger.error(f"GET {url} returned HTTP {response.status_code}: {response.text}")
         data = response.json()
         return response, data
 
@@ -400,8 +415,10 @@ class Ping(Realm):
             logger.info("Please re-check the configuration applied")
 
     def check_tab_exists(self):
+        logger.debug("GET /generic")
         response = self.json_get("generic")
         if response is None:
+            logger.error("GET /generic returned no response; Generic tab may not be available on the LANforge manager.")
             return False
         else:
             return True
@@ -440,19 +457,35 @@ class Ping(Realm):
         self.stop_time = datetime.now()
 
     def get_results(self):
-        # logging.info(self.generic_endps_profile.created_endp)
-        results = self.json_get(
-            "/generic/{}".format(','.join(self.generic_endps_profile.created_endp)))
-        overallres = self.json_get("/generic/all")
-        if len(self.generic_endps_profile.created_endp) > 1 and 'endpoints' in results.keys():
+        endp = "/generic/{}".format(','.join(self.generic_endps_profile.created_endp))
+        logger.debug(f"GET {endp}")
+        results = self.json_get(endp)
+
+        if results is None:
+            logger.error(f"GET {endp} returned no response for created endpoints: {self.generic_endps_profile.created_endp}")
+
+        multiple_endpoints_requested = len(self.generic_endps_profile.created_endp) > 1
+
+        if multiple_endpoints_requested and 'endpoints' in results.keys():
             results = results['endpoints']
-        else:
             try:
-                results = results['endpoint']
-            except Exception as e:
-                logger.info(overallres)
-                logger.error(f"Endpoint not found {e}")
-        return (results)
+                returned_names = [list(d.keys())[0] for d in results]
+                missing = [name for name in self.generic_endps_profile.created_endp if name not in returned_names]
+                if missing:
+                    logger.error(f"GET {endp} response is missing results for endpoints: {missing}")
+            except Exception:
+                logger.error(f"GET {endp} 'endpoints' list is not in the expected format.")
+            return results
+
+        try:
+            results = results['endpoint']
+        except Exception:
+            logger.error(f"GET {endp} response does not contain the 'endpoint' or 'endpoints' key, or the data is not in the expected format.")
+            overallres = self.json_get("/generic/all")
+            logger.error("GET /generic/all response:")
+            logger.error(json.dumps(overallres, indent=2))
+
+        return results
 
     def generate_remarks(self, station_ping_data):
         remarks = []
