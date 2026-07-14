@@ -5,6 +5,7 @@ import sys
 import os
 import importlib
 import time
+from logging import exception
 from pprint import pformat
 from random import randint
 import traceback
@@ -504,6 +505,16 @@ class VRProfile(BaseProfile):
 
         return state
 
+    # close netsmith window
+    def close_netsmith(self, resource=0):
+        try:
+            if resource is None or resource < 1:
+                raise ValueError("refresh_netsmith: resource must be > 0")
+
+            self.json_post("/vr/1/%s/0" % resource, {"action": "close"}, debug_=self.debug)
+            logger.info("close_netsmith: Netsmith window closed")
+        except Exception as e:
+            print('Error: vr_profile2() close_netsmith window closing error: ' + str(e))
 
     def refresh_netsmith(self, resource=0, delay=0.03):
         """

@@ -189,29 +189,40 @@ class CreateVR(Realm):
 
         # self.vr_profile.refresh_netsmith(
         #     resource=self.vr_name[1])
-        # test to make sure that vrcx is inside vr we expect
-        self.vr_profile.vrcx_list(resource=self.vr_name[1], do_sync=True)
-        # vr_list = self.vr_profile.router_list(resource=self.vr_name[1], do_refresh=True)
-        router = self.vr_profile.find_cached_router(
-            resource=self.vr_name[1], router_name=self.vr_name[2])
-        logger.info("cached router 120: {router}".format(router=router))
-        router_eid = LFUtils.name_to_eid(router["eid"])
-        logger.info(pformat("router eid 122: {router_eid}".format(router_eid=router_eid)))
-        full_router = self.json_get(
-            "/vr/1/%s/%s/%s" %
-            (router_eid[0],
-             router_eid[1],
-             self.vr_name[2]),
-            debug_=self.debug)
-        logger.info(pformat("full router: {full_router}".format(full_router=full_router)))
-        time.sleep(5)
-        if router is None:
-            self._fail("Unable to find router after vrcx move " + self.vr_name)
-            self.exit_fail()
+
+        try:
+            # test to make sure that vrcx is inside vr we expect
+            self.vr_profile.vrcx_list(resource=self.vr_name[1], do_sync=True)
+            # vr_list = self.vr_profile.router_list(resource=self.vr_name[1], do_refresh=True)
+            router = self.vr_profile.find_cached_router(
+                resource=self.vr_name[1], router_name=self.vr_name[2])
+            logger.info("cached router 120: {router}".format(router=router))
+            router_eid = LFUtils.name_to_eid(router["eid"])
+            logger.info(pformat("router eid 122: {router_eid}".format(router_eid=router_eid)))
+            full_router = self.json_get(
+                "/vr/1/%s/%s/%s" %
+                (router_eid[0],
+                 router_eid[1],
+                 self.vr_name[2]),
+                debug_=self.debug)
+            logger.info(pformat("full router: {full_router}".format(full_router=full_router)))
+            time.sleep(5)
+            if router is None:
+                self._fail("Unable to find router after vrcx move " + self.vr_name)
+                self.exit_fail()
+        except Exception as e:
+            print('Error: Netsmith window starting error: ' + str(e))
 
     def stop(self):
         pass
 
+    def close(self):
+        try:
+            logger.info("create_vr(): Closing Netsmith window in 5 seconds.")
+            time.sleep(5)  # view the final changes for 5sec before closing the window.
+            self.vr_profile.close_netsmith(resource=self.vr_name[1])
+        except Exception as e:
+            print('Error: create_vr() Netsmith window closing error: ' + str(e))
 
 def main():
     help_summary = '''\
@@ -281,7 +292,7 @@ NOTES:
     # create_vr.stop()
     # create_vr.clean()
     print('Created Virtual Router')
-
+    create_vr.close()
 
 if __name__ == "__main__":
     main()
