@@ -845,27 +845,30 @@ class ZoomAutomation(Realm):
         # Step 2: Match user-specified resources with available resources sequentially
         if self.user_resources:
             resources = response.get("resources", [])
+            lf_resources_dict = {}
+            for element in resources:
+                lf_resources_dict.update(element)
+
             for user_resource in self.user_resources:
-                found = False
-                for element in resources:
-                    if user_resource in element:
-                        resource_values = element[user_resource]
-                        eid = resource_values["eid"]
-                        resource_ip = resource_values["ctrl-ip"]
-                        hostname = resource_values["hostname"]
-                        user = resource_values["user"]
+                if user_resource in lf_resources_dict:
+                    resource_values = lf_resources_dict[user_resource]
+                    eid = resource_values["eid"]
+                    resource_ip = resource_values["ctrl-ip"]
+                    hostname = resource_values["hostname"]
+                    user = resource_values["user"]
 
-                        self.device_names.append(hostname)
-                        self.ports_list.append({"eid": eid, "ctrl-ip": resource_ip})
-                        self.user_list.append(user)
-
-                        found = True
-                        break
-
-                if not found:
-                    logger.warning(
-                        f"Resource {user_resource} not found in LANforge response"
+                    self.device_names.append(hostname)
+                    self.ports_list.append({"eid": eid, "ctrl-ip": resource_ip})
+                    self.user_list.append(user)
+                else:
+                    logger.error(
+                        f"Resource {user_resource} not found in LANforge response. Aborting test."
                     )
+                    logger.info(
+                        "LANforge resources fetched from /resource/all:\n%s",
+                        json.dumps(lf_resources_dict, indent=2, default=str),
+                    )
+                    exit(1)
 
     def get_ports_data(self):
         self.gen_ports_list = []
