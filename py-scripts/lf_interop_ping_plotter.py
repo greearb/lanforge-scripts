@@ -289,7 +289,7 @@ class Ping(Realm):
             response = requests.get(url=url)
         except requests.exceptions.RequestException as e:
             logger.error(f"GET {url} failed: {e}", exc_info=True)
-            raise
+            return None, None
         if not response.ok:
             logger.error(f"GET {url} returned HTTP {response.status_code}: {response.text}")
         data = response.json()
@@ -308,6 +308,9 @@ class Ping(Realm):
             elif device.count('.') == 0:
                 shelf, resource = 1, device
             response_code, device_data = self.api_get('/resource/{}/{}'.format(shelf, resource))
+            if device_data is None:
+                logger.error(f"GET /resource/{shelf}/{resource} returned no response for device {device}.")
+                continue
             if 'status' in device_data and device_data['status'] == 'NOT_FOUND':
                 logger.info('Device {} is not found.'.format(device))
                 continue
