@@ -874,7 +874,11 @@ class Ping(Realm):
                 if client.split(' ')[1] != 'Android':
                     res_list.append(client.split(' ')[2])
                 else:
-                    interop_tab_data = self.json_get('/adb/')["devices"]
+                    logger.debug("GET /adb/")
+                    adb_response = self.json_get('/adb/')
+                    if adb_response is None:
+                        logger.error("GET /adb/ returned no response while building the pass/fail device list.")
+                    interop_tab_data = adb_response["devices"]
                     for dev in interop_tab_data:
                         for item in dev.values():
                             # Extract the username from the client string (e.g., 'samsungmob' from "1.15 android samsungmob")
@@ -1018,8 +1022,16 @@ class Ping(Realm):
             for resource in self.real_sta_list:
                 shelf, r_id, _ = resource.split('.')
                 url = 'http://{}:{}/resource/{}/{}?fields=hw version'.format(self.host, self.port, shelf, r_id)
-                hw_version = requests.get(url)
-                hw_version = hw_version.json()
+                logger.debug(f"GET {url}")
+                try:
+                    hw_version_response = requests.get(url)
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"GET {url} failed for resource {shelf}.{r_id}: {e}", exc_info=True)
+                    continue
+                if not hw_version_response.ok:
+                    logger.error(f"GET {url} returned HTTP {hw_version_response.status_code}: {hw_version_response.text}")
+                    continue
+                hw_version = hw_version_response.json()
                 if 'resource' in hw_version.keys():
                     hw_version = hw_version['resource']
                     if 'hw version' in hw_version.keys():
@@ -1034,9 +1046,9 @@ class Ping(Realm):
                         else:
                             self.android += 1
                     else:
-                        logging.warning('Malformed response for hw version query on resource manager.')
+                        logger.warning(f"Malformed response for hw version query on resource {shelf}.{r_id}: {hw_version}")
                 else:
-                    logging.warning('Malformed response for hw version query on resource manager.')
+                    logger.warning(f"Malformed response for hw version query on resource {shelf}.{r_id}: {hw_version}")
         # Test setup information table for devices in device list
         if config_devices == '':
             test_setup_info = {
@@ -1345,7 +1357,11 @@ class Ping(Realm):
         input_test_list = []
         dev_avg = []
         statuslist = []
-        interop_tab_data = self.json_get('/adb/')["devices"]
+        logger.debug("GET /adb/")
+        adb_response = self.json_get('/adb/')
+        if adb_response is None:
+            logger.error("GET /adb/ returned no response while building the device report list.")
+        interop_tab_data = adb_response["devices"]
         for i in range(len(report_names)):
             for j in groupdevlist:
                 # For a string like "1.360 Lin test3":
@@ -2112,8 +2128,16 @@ class Ping(Realm):
             for resource in self.real_sta_list:
                 shelf, r_id, _ = resource.split('.')
                 url = 'http://{}:{}/resource/{}/{}?fields=hw version'.format(self.host, self.port, shelf, r_id)
-                hw_version = requests.get(url)
-                hw_version = hw_version.json()
+                logger.debug(f"GET {url}")
+                try:
+                    hw_version_response = requests.get(url)
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"GET {url} failed for resource {shelf}.{r_id}: {e}", exc_info=True)
+                    continue
+                if not hw_version_response.ok:
+                    logger.error(f"GET {url} returned HTTP {hw_version_response.status_code}: {hw_version_response.text}")
+                    continue
+                hw_version = hw_version_response.json()
                 if 'resource' in hw_version.keys():
                     hw_version = hw_version['resource']
                     if 'hw version' in hw_version.keys():
@@ -2128,9 +2152,9 @@ class Ping(Realm):
                         else:
                             self.android += 1
                     else:
-                        logging.warning('Malformed response for hw version query on resource manager.')
+                        logger.warning(f"Malformed response for hw version query on resource {shelf}.{r_id}: {hw_version}")
                 else:
-                    logging.warning('Malformed response for hw version query on resource manager.')
+                    logger.warning(f"Malformed response for hw version query on resource {shelf}.{r_id}: {hw_version}")
         # Test setup information table for devices in device list
         if config_devices == '':
             test_setup_info = {
