@@ -879,6 +879,9 @@ class ZoomAutomation(Realm):
 
         # Step 3: Retrieve port information
         response_port = self.json_get("/port/all")
+        if response_port is None:
+            logger.error("GET /port/all returned no response from LANforge. Aborting test.")
+            exit(1)
 
         # Step 4: Match ports associated with retrieved resources in the order of ports_list
         for port_entry in self.ports_list:
@@ -924,6 +927,9 @@ class ZoomAutomation(Realm):
 
     def get_interop_data(self):
         interop_data = self.json_get("/adb")
+        if interop_data is None:
+            logger.error("GET /adb returned no response from LANforge. Aborting test.")
+            exit(1)
         interop_mobile_data = interop_data.get("devices", {})
         self.serial_list = []
         self.lanforge_port_list = []
@@ -1248,6 +1254,9 @@ class ZoomAutomation(Realm):
             self.real_sta_list, _, _ = real_device_obj.query_user()
         else:
             interface_data = self.json_get("/port/all")
+            if interface_data is None:
+                logger.error("GET /port/all returned no response from LANforge. Aborting test.")
+                exit(1)
             interfaces = interface_data["interfaces"]
             final_device_list = []  # Initialize the list
 
@@ -1398,16 +1407,27 @@ class ZoomAutomation(Realm):
 
     def get_access_token(self, account_id, client_id, client_secret):
         token_url = f"https://zoom.us/oauth/token?grant_type=account_credentials&account_id={account_id}"
-        response = requests.post(
-            token_url, auth=HTTPBasicAuth(client_id, client_secret)
-        )
+        logger.info(f"Requesting Zoom OAuth access token for account_id={account_id}")
+        try:
+            response = requests.post(
+                token_url, auth=HTTPBasicAuth(client_id, client_secret)
+            )
+        except requests.exceptions.RequestException as e:
+            logger.error(
+                f"Request failed while getting access token for account_id={account_id}: {e}"
+            )
+            return None
+
         if response.status_code == 200:
             access_token = response.json().get("access_token")
+            logger.info("Zoom OAuth access token obtained successfully")
             return access_token
         else:
-            raise Exception(
-                f"Failed to get access token: {response.status_code} {response.text}"
+            logger.error(
+                f"Failed to get access token for account_id={account_id}: "
+                f"{response.status_code} {response.text}"
             )
+            return None
 
     def get_participants_qos(self, meeting_id, access_token, test_type="past"):
         url = f"https://api.zoom.us/v2/metrics/meetings/{meeting_id}/participants/qos"
@@ -1469,6 +1489,11 @@ class ZoomAutomation(Realm):
             token = self.get_access_token(
                 self.account_id, self.client_id, self.client_secret
             )
+            if token is None:
+                logger.warning(
+                    "Unable to obtain Zoom access token; skipping this live data fetch"
+                )
+                return
             self._set_raw_zoom_stats(
                 self.get_participants_qos(self.remote_login_url, token, "live")
             )
@@ -1494,6 +1519,9 @@ class ZoomAutomation(Realm):
         token = self.get_access_token(
             self.account_id, self.client_id, self.client_secret
         )
+        if token is None:
+            logger.error("Unable to obtain Zoom access token. Aborting QoS data fetch.")
+            return
 
         # Zoom QoS data is typically available ~20 seconds after meeting end.
         # We wait 150 seconds to be safe and simplify the logic.
