@@ -13,7 +13,6 @@ import datetime
 import argparse
 import re
 import logging
-import logging.handlers
 import math
 import json
 
@@ -27,26 +26,9 @@ debug_printer = pprint.PrettyPrinter(indent=2)
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 Logg = importlib.import_module("lanforge_client.logg")
+# shared with lanforge_api.py's own request layer, so both code paths log identically
+api_call_logger = importlib.import_module("lanforge_client.api_call_logger")
 logger = logging.getLogger(__name__)
-
-# cache of api-call loggers keyed by absolute log file path, so constructing multiple
-# LFCliBase/Realm instances pointed at the same file reuses one rotating handler
-# instead of stacking duplicate handlers (which would duplicate every log line)
-_api_loggers = {}
-
-
-def _get_api_logger(filename, max_bytes, backup_count):
-    key = os.path.abspath(filename)
-    if key in _api_loggers:
-        return _api_loggers[key]
-    api_logger = logging.getLogger("lfcli_base.api_log.%s" % key)
-    api_logger.setLevel(logging.INFO)
-    api_logger.propagate = False
-    handler = logging.handlers.RotatingFileHandler(filename, maxBytes=max_bytes, backupCount=backup_count)
-    handler.setFormatter(logging.Formatter("%(message)s"))
-    api_logger.addHandler(handler)
-    _api_loggers[key] = api_logger
-    return api_logger
 
 """
 To enable lanforge_api in this code, set the environmental variable LF_USE_AUTOGEN=1:
@@ -100,8 +82,8 @@ class LFCliBase:
         self._api_logger = None
         if self.save_api:
             try:
-                self._api_logger = _get_api_logger(self.api_log_filename, self.api_log_max_bytes,
-                                                   self.api_log_backup_count)
+                self._api_logger = api_call_logger.get_api_logger(self.api_log_filename, self.api_log_max_bytes,
+                                                                   self.api_log_backup_count)
             except Exception as x:
                 logger.debug("LFCliBase: unable to set up api logger for %s: %s" % (self.api_log_filename, x))
         # if (_debug):
@@ -273,10 +255,10 @@ class LFCliBase:
 
     def _log_api_call(self, method, url, data=None, response_code=None, error=None, diagnostics=None):
         """
-        Append a lightweight record of a json_get/json_post/json_put/json_delete call
-        to api_log_filename. Only writes when self.save_api is True.
-        Logs the HTTP response code rather than the response body/object, so the log
-        stays small regardless of how large a given LANforge response is.
+        Record a json_get/json_post/json_put/json_delete call via the shared
+        lanforge_client.api_call_logger, tagged with this instance's session id if one is
+        set. Only writes when self.save_api is True (self._api_logger is None otherwise,
+        which api_call_logger.log_api_call() treats as a no-op).
         :param method: "GET" | "POST" | "PUT" | "DELETE"
         :param url: requested url
         :param data: payload sent (POST/PUT only)
@@ -287,27 +269,9 @@ class LFCliBase:
         """
         if not self.save_api:
             return
-        if error is not None:
-            status = "ERROR"
-        elif response_code is not None:
-            status = "OK" if 200 <= response_code < 300 else "ERROR"
-        else:
-            status = "UNKNOWN"
-        lines = ["%s session=%s %s %s [%s]" %
-                (datetime.datetime.now().isoformat(), self._session_id() or '-', method, url, status)]
-        if data is not None:
-            lines.append("  payload: %s" % json.dumps(data, default=str))
-        if error is not None:
-            lines.append("  error: %s" % error)
-        if response_code is not None:
-            lines.append("  response_code: %s" % response_code)
-        if diagnostics is not None:
-            lines.append("  diagnostics: %s" % diagnostics)
-        try:
-            if self._api_logger is not None:
-                self._api_logger.info("\n".join(lines))
-        except Exception as x:
-            logger.debug("_log_api_call: unable to write %s: %s" % (self.api_log_filename, x))
+        api_call_logger.log_api_call(self._api_logger, method, url, session_id=self._session_id(),
+                                     data=data, response_code=response_code, error=error,
+                                     diagnostics=diagnostics)
 
     def json_post(self, _req_url, _data, debug_=False, suppress_related_commands_=None, response_json_list_=None):
         """
