@@ -23,6 +23,10 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
 debug_printer = PrettyPrinter(indent=2)
 
+# must match lanforge_client.lanforge_api.SESSION_HEADER -- this is the header the LANforge
+# GUI uses to correlate a REST request with a session id in its own logs
+SESSION_HEADER = 'X-LFJson-Session'
+
 
 class LFRequest:
     Default_Base_URL = "http://localhost:8080"
@@ -37,12 +41,19 @@ class LFRequest:
                  uri=None,
                  proxies_=None,
                  debug_=False,
-                 die_on_error_=False):
+                 die_on_error_=False,
+                 session_id_=None):
         self.debug = debug_
         self.die_on_error = die_on_error_
         self.error_list = []
         self.last_response_code = None
         self.last_diagnostics = None
+        self.session_id = session_id_
+        # instance-level copy: default_headers is a class attribute (shared dict), so mutating
+        # it in place here would leak this instance's session id into every other LFRequest
+        self.default_headers = dict(LFRequest.default_headers)
+        if session_id_:
+            self.default_headers[SESSION_HEADER] = session_id_
 
         # please see this discussion on ProxyHandlers:
         # https://docs.python.org/3/library/urllib.request.html#urllib.request.ProxyHandler

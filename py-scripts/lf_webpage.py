@@ -155,7 +155,7 @@ class HttpDownload(Realm):
                  eap_identity=None, ieee80211=None, ieee80211u=None, ieee80211w=None, enable_pkc=None, bss_transition=None, power_save=None, disable_ofdma=None, roam_ft_ds=None, key_management=None,
                  pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60, get_live_view=False, total_floors=0, robot_test=False,
                  robot_ip=None, coordinate=None, rotation=None, duration=None, do_bandsteering=False, cycles=None, bssids=None, duration_to_skip=None,
-                 _save_api=False, _api_log_file_name=None):
+                 _save_api=False, _api_log_file_name=None, _lf_session=None):
         # super().__init__(lfclient_host=lfclient_host,
         #                  lfclient_port=lfclient_port)
         self.ssid_list = []
@@ -192,7 +192,8 @@ class HttpDownload(Realm):
         self.windows_ports = []
         self.windows_eids = []
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port,
-                                       _save_api=_save_api, _api_log_file_name=_api_log_file_name)
+                                       _save_api=_save_api, _api_log_file_name=_api_log_file_name,
+                                       _lf_session=_lf_session)
         self.station_profile = self.local_realm.new_station_profile()
         self.http_profile = self.local_realm.new_http_profile()
         self.http_profile.requests_per_ten = self.target_per_ten
@@ -2893,8 +2894,18 @@ times the file is downloaded.
             security = [args.twog_security, args.fiveg_security]
             ssid = [args.twog_ssid, args.fiveg_ssid]
             passwd = [args.twog_passwd, args.fiveg_passwd]
+        lf_session = None
+        if args.save_api:
+            # mint a LANforge GUI session id so our lightweight api log can be correlated
+            # with the GUI's own request logs (same X-LFJson-Session cookie on both)
+            lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+            lf_session = lanforge_api.LFSession(lfclient_url="http://%s:%s" % (args.mgr, args.mgr_port),
+                                                debug=False,
+                                                require_session=False,
+                                                exit_on_error=False)
         http = HttpDownload(lfclient_host=args.mgr, lfclient_port=args.mgr_port,
                             _save_api=args.save_api, _api_log_file_name=args.api_log_file_name,
+                            _lf_session=lf_session,
                             upstream=args.upstream_port, num_sta=args.num_stations,
                             security=security, ap_name=args.ap_name,
                             ssid=ssid, password=passwd,

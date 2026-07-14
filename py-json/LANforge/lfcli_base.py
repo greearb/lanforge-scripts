@@ -53,7 +53,8 @@ class LFCliBase:
                  _proxy_str=None,
                  _capture_signal_list=None,
                  _save_api=False,
-                 _api_log_file_name=None):
+                 _api_log_file_name=None,
+                 _lf_session=None):
         if _capture_signal_list is None:
             _capture_signal_list = []
         self.fail_pref = "FAILED: "
@@ -61,6 +62,10 @@ class LFCliBase:
         self.lfclient_host = _lfjson_host
         self.lfclient_port = _lfjson_port
         self.debug = _debug
+        # optional lanforge_api.LFSession -- when set, its session id (the same "cookie" the
+        # LANforge GUI logs) is attached to every request we send and to our own log lines,
+        # so the two can be correlated
+        self._lf_session = _lf_session
         # when True, json_get/json_post/json_put/json_delete append a lightweight
         # record of each call (url, payload, response_code/error) to api_log_filename
         self.save_api = _save_api
@@ -231,6 +236,15 @@ class LFCliBase:
 
     # - END LOGGING -
 
+    def _session_id(self):
+        """
+        :return: the lanforge_api session id (the same "cookie" the LANforge GUI logs
+        against each REST request) if an LFSession was provided, else None.
+        """
+        if self._lf_session is not None:
+            return self._lf_session.get_session_id()
+        return None
+
     def _log_api_call(self, method, url, data=None, response_code=None, error=None, diagnostics=None):
         """
         Append a lightweight record of a json_get/json_post/json_put/json_delete call
@@ -255,7 +269,8 @@ class LFCliBase:
             status = "UNKNOWN"
         try:
             with open(self.api_log_filename, 'a') as api_log:
-                api_log.write("%s %s %s [%s]\n" % (datetime.datetime.now().isoformat(), method, url, status))
+                api_log.write("%s session=%s %s %s [%s]\n" %
+                              (datetime.datetime.now().isoformat(), self._session_id() or '-', method, url, status))
                 if data is not None:
                     api_log.write("  payload: %s\n" % json.dumps(data, default=str))
                 if error is not None:
@@ -286,7 +301,8 @@ class LFCliBase:
                                        uri=_req_url,
                                        proxies_=self.proxy,
                                        debug_=debug_,
-                                       die_on_error_=self.exit_on_error)
+                                       die_on_error_=self.exit_on_error,
+                                       session_id_=self._session_id())
             if suppress_related_commands_ is None:
                 if 'suppress_preexec_cli' in _data:
                     del _data['suppress_preexec_cli']
@@ -353,7 +369,8 @@ class LFCliBase:
                                        uri=_req_url,
                                        proxies_=self.proxy,
                                        debug_=debug_,
-                                       die_on_error_=self.exit_on_error)
+                                       die_on_error_=self.exit_on_error,
+                                       session_id_=self._session_id())
             lf_r.addPostData(_data)
             if debug_:
                 logger.debug(debug_printer.pformat(_data))
@@ -395,7 +412,8 @@ class LFCliBase:
                                        uri=_req_url,
                                        proxies_=self.proxy,
                                        debug_=debug_,
-                                       die_on_error_=self.exit_on_error)
+                                       die_on_error_=self.exit_on_error,
+                                       session_id_=self._session_id())
             json_response = lf_r.get_as_json()
             if json_response is None:
                 if debug_:
@@ -436,7 +454,8 @@ class LFCliBase:
                                        uri=_req_url,
                                        proxies_=self.proxy,
                                        debug_=debug_,
-                                       die_on_error_=self.exit_on_error)
+                                       die_on_error_=self.exit_on_error,
+                                       session_id_=self._session_id())
             json_response = lf_r.json_delete(debug=debug_, die_on_error_=False)
             logger.info(json_response)
             # logger.debug(debug_printer.pformat(json_response))
