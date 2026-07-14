@@ -101,6 +101,7 @@ import random
 
 # - - - - deployed import references - - - - -
 from .strutil import nott, iss
+from .api_call_logger import get_api_logger, log_api_call
 
 SESSION_HEADER = 'X-LFJson-Session'
 # LOGGER = Logger('json_api')
@@ -173,6 +174,10 @@ def print_diagnostics(url_: str = None,
                     error_list_.append(xerr)
             LOGGER.error(" = = = = = = = = = = = = = = = =")
 
+    summary = "%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason)
+    if xerrors and err_code != 404:
+        summary += " | " + "; ".join(xerrors)
+
     if error_.__class__ is urllib.error.HTTPError:
         LOGGER.debug("----- HTTPError: ------------------------------------ print_diagnostics:")
         LOGGER.debug("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
@@ -203,7 +208,7 @@ def print_diagnostics(url_: str = None,
             LOGGER.warning("------------------------------------------------------------------------")
         if die_on_error_:
             exit(1)
-        return
+        return summary
 
     if error_.__class__ is urllib.error.URLError:
         LOGGER.error("----- URLError: ---------------------------------------------")
@@ -211,6 +216,7 @@ def print_diagnostics(url_: str = None,
         LOGGER.error("------------------------------------------------------------------------")
     if die_on_error_:
         exit(1)
+    return summary
 
 
 class BaseLFJsonRequest:
@@ -242,6 +248,10 @@ class BaseLFJsonRequest:
         self.session_instance = None
         self.stream_errors: bool = True
         self.stream_warnings: bool = False
+        # set by get()/json_post() so _log_api_call() can report the outcome of the last
+        # attempt even when it ended in a caught HTTPError/URLError
+        self.last_response_code = None
+        self.last_diagnostics = None
 
         if not session_obj:
             logging.getLogger(__name__).warning("BaseLFJsonRequest: no session instance")
@@ -319,6 +329,18 @@ class BaseLFJsonRequest:
 
     def get_errors(self) -> list:
         return self.error_list
+
+    def _log_api_call(self, method, url, data=None, response_code=None, diagnostics=None):
+        """
+        Record one json_get/json_post/json_put/json_delete call via the shared
+        lanforge_client.api_call_logger, tagged with this session's id. No-op unless
+        self.session_instance.save_api is True.
+        """
+        if not getattr(self.session_instance, 'save_api', False):
+            return
+        log_api_call(getattr(self.session_instance, '_api_logger', None), method, url,
+                     session_id=self.session_instance.get_session_id(),
+                     data=data, response_code=response_code, diagnostics=diagnostics)
 
     def get_warnings(self) -> list:
         return self.warnings
@@ -635,6 +657,8 @@ class BaseLFJsonRequest:
                     self.logger.debug("----------------- BAD STATUS --------------------------------")
                     if die_on_error:
                         sys.exit(1)
+                self.last_response_code = response.status
+                self._log_api_call(method_, url, data=post_data, response_code=self.last_response_code)
                 return responses[0]
 
             except urllib.error.HTTPError as herror:
@@ -642,13 +666,16 @@ class BaseLFJsonRequest:
                 # and retrying them is never going to succeed
                 if herror.code in (400, 410, 411, 412, 413, 414, 415, 416, 417, 428, 429, 431, 451):
                     die_on_error = True
-                print_diagnostics(url_=url,
-                                  request_=myrequest,
-                                  responses_=responses,
-                                  error_=herror,
-                                  debug_=debug,
-                                  die_on_error_=die_on_error)
+                self.last_response_code = herror.code
+                self.last_diagnostics = print_diagnostics(url_=url,
+                                                          request_=myrequest,
+                                                          responses_=responses,
+                                                          error_=herror,
+                                                          debug_=debug,
+                                                          die_on_error_=die_on_error)
                 if die_on_error:
+                    self._log_api_call(method_, url, data=post_data, response_code=self.last_response_code,
+                                       diagnostics=self.last_diagnostics)
                     sys.exit(1)
 
             except urllib.error.URLError as uerror:
@@ -660,17 +687,21 @@ class BaseLFJsonRequest:
                     break
                 else:
                     logging.error("Connection refused: "+url)
-                    print_diagnostics(url_=url,
-                                      request_=myrequest,
-                                      responses_=responses,
-                                      error_=uerror,
-                                      debug_=debug,
-                                      die_on_error_=die_on_error)
+                    self.last_diagnostics = print_diagnostics(url_=url,
+                                                              request_=myrequest,
+                                                              responses_=responses,
+                                                              error_=uerror,
+                                                              debug_=debug,
+                                                              die_on_error_=die_on_error)
                 if die_on_error:
+                    self._log_api_call(method_, url, data=post_data, response_code=self.last_response_code,
+                                       diagnostics=self.last_diagnostics)
                     sys.exit(1)
             # ~while
             LOGGER.error("json_post: request will try again in 2 sec")
             time.sleep(2)
+        self._log_api_call(method_, url, data=post_data, response_code=self.last_response_code,
+                           diagnostics=self.last_diagnostics)
         if die_on_error:
             sys.exit(1)
         return None
@@ -800,26 +831,28 @@ class BaseLFJsonRequest:
         myresponses: list = []  # list[HTTPResponse]
         try:
             myresponses.append(request.urlopen(myrequest))
+            self.last_response_code = getattr(myresponses[0], 'status', None)
             return myresponses[0]
 
         except urllib.error.HTTPError as herror:
-            print_diagnostics(url_=requested_url,
-                              request_=myrequest,
-                              responses_=myresponses,
-                              error_=herror,
-                              error_list_=self.error_list,
-                              debug_=debug,
-                              die_on_error_=die_on_error)
+            self.last_response_code = herror.code
+            self.last_diagnostics = print_diagnostics(url_=requested_url,
+                                                      request_=myrequest,
+                                                      responses_=myresponses,
+                                                      error_=herror,
+                                                      error_list_=self.error_list,
+                                                      debug_=debug,
+                                                      die_on_error_=die_on_error)
             if die_on_error:
                 sys.exit(1)
         except urllib.error.URLError as uerror:
-            print_diagnostics(url_=requested_url,
-                              request_=myrequest,
-                              responses_=myresponses,
-                              error_=uerror,
-                              error_list_=self.error_list,
-                              debug_=debug,
-                              die_on_error_=die_on_error)
+            self.last_diagnostics = print_diagnostics(url_=requested_url,
+                                                      request_=myrequest,
+                                                      responses_=myresponses,
+                                                      error_=uerror,
+                                                      error_list_=self.error_list,
+                                                      debug_=debug,
+                                                      die_on_error_=die_on_error)
             if die_on_error:
                 sys.exit(1)
         if die_on_error:
@@ -863,6 +896,8 @@ class BaseLFJsonRequest:
         if responses[0] is None:
             if debug:
                 self.logger.debug(msg="No response from " + url)
+            self._log_api_call(method_, url, response_code=self.last_response_code,
+                               diagnostics=self.last_diagnostics)
             return None
 
         json_data = json.loads(responses[0].read().decode('utf-8'))
@@ -872,6 +907,8 @@ class BaseLFJsonRequest:
             if "warnings" in responses[0]:
                 errors_warnings.extend(json_data["warnings"])
 
+        self._log_api_call(method_, url, response_code=self.last_response_code,
+                           diagnostics=self.last_diagnostics)
         return json_data
 
     def json_get(self,
@@ -1179,10 +1216,26 @@ class BaseSession:
                  retry_sec: float = Default_Retry_Sec,
                  stream_errors: bool = True,
                  stream_warnings: bool = False,
-                 exit_on_error: bool = False):
+                 exit_on_error: bool = False,
+                 save_api: bool = False,
+                 api_log_file_name: str = None,
+                 api_log_max_bytes: int = 10 * 1024 * 1024,
+                 api_log_backup_count: int = 10):
         self.debug_on = debug
         # self.logger = Logg(name='json_api_session')
         self.logger = logging.getLogger(__name__)
+        # when True, json_get/json_post/json_put/json_delete append a lightweight record of
+        # each call (url, payload, response_code/error) to api_log_filename, tagged with this
+        # session's id -- see lanforge_client/api_call_logger.py. The file rotates instead of
+        # growing unbounded, so it's safe to leave enabled indefinitely.
+        self.save_api = save_api
+        self.api_log_filename = api_log_file_name or os.path.join(os.path.expanduser('~'), 'lf_api_calls.log')
+        self._api_logger = None
+        if self.save_api:
+            try:
+                self._api_logger = get_api_logger(self.api_log_filename, api_log_max_bytes, api_log_backup_count)
+            except Exception as x:
+                self.logger.debug("BaseSession: unable to set up api logger for %s: %s" % (self.api_log_filename, x))
 
         if debug:
             self.logger.level = logging.DEBUG
@@ -25531,7 +25584,11 @@ class LFSession(BaseSession):
                  stream_errors: bool = True,
                  stream_warnings: bool = False,
                  require_session: bool = False,
-                 exit_on_error: bool = False):
+                 exit_on_error: bool = False,
+                 save_api: bool = False,
+                 api_log_file_name: str = None,
+                 api_log_max_bytes: int = 10 * 1024 * 1024,
+                 api_log_backup_count: int = 10):
         """
         :param debug: turn on diagnostic information
         :param proxy_map: a dict with addresses of proxies to route requests through.
@@ -25544,6 +25601,13 @@ class LFSession(BaseSession):
         :param require_session: exit(1) if unable to establish a session_id
         :param exit_on_error: on requests failing HTTP requests on besides error 404,
         exit(1). This does not include failing to establish a session_id
+        :param save_api: when True, append a lightweight record of every json_get/json_post/
+        json_put/json_delete call (url, payload, response_code/error) to api_log_file_name,
+        tagged with this session's id
+        :param api_log_file_name: path to the api log file used when save_api is True
+        (default: ~/lf_api_calls.log)
+        :param api_log_max_bytes: rotate the api log once it reaches this size
+        :param api_log_backup_count: number of rotated api log backups to keep
         """
         super().__init__(lfclient_url=lfclient_url,
                          debug=debug,
@@ -25551,7 +25615,11 @@ class LFSession(BaseSession):
                          connection_timeout_sec=connection_timeout_sec,
                          stream_errors=stream_errors,
                          stream_warnings=stream_warnings,
-                         exit_on_error=exit_on_error)
+                         exit_on_error=exit_on_error,
+                         save_api=save_api,
+                         api_log_file_name=api_log_file_name,
+                         api_log_max_bytes=api_log_max_bytes,
+                         api_log_backup_count=api_log_backup_count)
         self.command_instance = LFJsonCommand(session_obj=self, debug=debug, exit_on_error=exit_on_error)
         self.session_connection_check = \
             self.command_instance.start_session(debug=debug,
