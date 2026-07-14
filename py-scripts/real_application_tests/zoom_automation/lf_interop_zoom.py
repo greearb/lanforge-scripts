@@ -2620,8 +2620,14 @@ class ZoomAutomation(Realm):
         if upstream_port.count('.') != 3:
             target_port_list = self.name_to_eid(upstream_port)
             shelf, resource, port, _ = target_port_list
+            response = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')
+            if response is None:
+                logging.error(
+                    f"GET /port/{shelf}/{resource}/{port} returned no response from LANforge. Aborting test."
+                )
+                exit(1)
             try:
-                target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
+                target_port_ip = response['interface']['ip']
                 upstream_port = target_port_ip
             except Exception as e:
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}. Exception: {e}')
