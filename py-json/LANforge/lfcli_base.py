@@ -13,6 +13,7 @@ import datetime
 import argparse
 import re
 import logging
+import logging.handlers
 import math
 import json
 
@@ -27,6 +28,25 @@ LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 Logg = importlib.import_module("lanforge_client.logg")
 logger = logging.getLogger(__name__)
+
+# cache of api-call loggers keyed by absolute log file path, so constructing multiple
+# LFCliBase/Realm instances pointed at the same file reuses one rotating handler
+# instead of stacking duplicate handlers (which would duplicate every log line)
+_api_loggers = {}
+
+
+def _get_api_logger(filename, max_bytes, backup_count):
+    key = os.path.abspath(filename)
+    if key in _api_loggers:
+        return _api_loggers[key]
+    api_logger = logging.getLogger("lfcli_base.api_log.%s" % key)
+    api_logger.setLevel(logging.INFO)
+    api_logger.propagate = False
+    handler = logging.handlers.RotatingFileHandler(filename, maxBytes=max_bytes, backupCount=backup_count)
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    api_logger.addHandler(handler)
+    _api_loggers[key] = api_logger
+    return api_logger
 
 """
 To enable lanforge_api in this code, set the environmental variable LF_USE_AUTOGEN=1:
@@ -54,7 +74,9 @@ class LFCliBase:
                  _capture_signal_list=None,
                  _save_api=False,
                  _api_log_file_name=None,
-                 _lf_session=None):
+                 _lf_session=None,
+                 _api_log_max_bytes=10 * 1024 * 1024,
+                 _api_log_backup_count=10):
         if _capture_signal_list is None:
             _capture_signal_list = []
         self.fail_pref = "FAILED: "
@@ -67,17 +89,21 @@ class LFCliBase:
         # so the two can be correlated
         self._lf_session = _lf_session
         # when True, json_get/json_post/json_put/json_delete append a lightweight
-        # record of each call (url, payload, response_code/error) to api_log_filename
+        # record of each call (url, payload, response_code/error) to api_log_filename.
+        # The file rotates at _api_log_max_bytes, keeping _api_log_backup_count old copies,
+        # so it's safe to leave enabled indefinitely (e.g. for diagnosing customer systems)
+        # instead of growing forever or getting wiped on every run.
         self.save_api = _save_api
         self.api_log_filename = _api_log_file_name or os.path.join(os.path.expanduser('~'), 'lf_api_calls.log')
+        self.api_log_max_bytes = _api_log_max_bytes
+        self.api_log_backup_count = _api_log_backup_count
+        self._api_logger = None
         if self.save_api:
-            # truncate so each run starts with a clean log -- otherwise this file grows
-            # forever across runs and generate_report() would copy the entire history
-            # (including stale pre-fix entries) into every report folder
             try:
-                open(self.api_log_filename, 'w').close()
+                self._api_logger = _get_api_logger(self.api_log_filename, self.api_log_max_bytes,
+                                                   self.api_log_backup_count)
             except Exception as x:
-                logger.debug("LFCliBase: unable to reset %s: %s" % (self.api_log_filename, x))
+                logger.debug("LFCliBase: unable to set up api logger for %s: %s" % (self.api_log_filename, x))
         # if (_debug):
         #     logger.debug("LFCliBase._proxy_str: %s" % _proxy_str)
         self.proxy = {}
@@ -267,18 +293,19 @@ class LFCliBase:
             status = "OK" if 200 <= response_code < 300 else "ERROR"
         else:
             status = "UNKNOWN"
+        lines = ["%s session=%s %s %s [%s]" %
+                (datetime.datetime.now().isoformat(), self._session_id() or '-', method, url, status)]
+        if data is not None:
+            lines.append("  payload: %s" % json.dumps(data, default=str))
+        if error is not None:
+            lines.append("  error: %s" % error)
+        if response_code is not None:
+            lines.append("  response_code: %s" % response_code)
+        if diagnostics is not None:
+            lines.append("  diagnostics: %s" % diagnostics)
         try:
-            with open(self.api_log_filename, 'a') as api_log:
-                api_log.write("%s session=%s %s %s [%s]\n" %
-                              (datetime.datetime.now().isoformat(), self._session_id() or '-', method, url, status))
-                if data is not None:
-                    api_log.write("  payload: %s\n" % json.dumps(data, default=str))
-                if error is not None:
-                    api_log.write("  error: %s\n" % error)
-                if response_code is not None:
-                    api_log.write("  response_code: %s\n" % response_code)
-                if diagnostics is not None:
-                    api_log.write("  diagnostics: %s\n" % diagnostics)
+            if self._api_logger is not None:
+                self._api_logger.info("\n".join(lines))
         except Exception as x:
             logger.debug("_log_api_call: unable to write %s: %s" % (self.api_log_filename, x))
 

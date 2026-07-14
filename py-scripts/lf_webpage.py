@@ -104,6 +104,7 @@ INCLUDE_IN_README: False
 # from lf_interop_qos import ThroughputQOS
 import sys
 import os
+import re
 import importlib
 import time
 import argparse
@@ -145,6 +146,30 @@ iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 if os.path.exists(iot_scripts_path):
     sys.path.insert(0, iot_scripts_path)
     from test_automation import Automation  # noqa: E402
+
+
+_API_LOG_SESSION_LINE_RE = re.compile(r'^\S+\s+session=(\S+)\s')
+
+
+def _copy_api_log_for_session(src_path, dest_dir, session_id):
+    """
+    Copy api log entries into dest_dir (same basename as src_path). The api log is a
+    rotating, never-truncated file shared across runs, so if session_id is known, only the
+    entries tagged with this run's session id are copied -- otherwise (no session was
+    established) the whole file is copied as-is, which may include other runs' entries too.
+    """
+    dest_path = os.path.join(dest_dir, os.path.basename(src_path))
+    if session_id is None:
+        shutil.copy(src_path, dest_path)
+        return
+    with open(src_path) as src, open(dest_path, 'w') as out:
+        keep_block = False
+        for line in src:
+            if line and not line[0].isspace():
+                match = _API_LOG_SESSION_LINE_RE.match(line)
+                keep_block = bool(match) and match.group(1) == session_id
+            if keep_block:
+                out.write(line)
 
 
 class HttpDownload(Realm):
@@ -1518,10 +1543,13 @@ class HttpDownload(Realm):
 
         # To store http_datavalues.csv in report folder
         report_path_date_time = report.get_path_date_time()
-        # Copy the api log file (json_get/post/put/delete calls) into the report folder, if enabled
+        # Copy this run's api log entries (json_get/post/put/delete calls) into the report
+        # folder, if enabled. The source file rotates and isn't truncated per run, so entries
+        # are filtered down to this run's session id -- see _copy_api_log_for_session().
         if getattr(self.local_realm, 'save_api', False):
             try:
-                shutil.copy(self.local_realm.api_log_filename, report_path_date_time)
+                _copy_api_log_for_session(self.local_realm.api_log_filename, report_path_date_time,
+                                          self.local_realm._session_id())
             except Exception:
                 logging.info("failed to copy api log file %s to report dir" % self.local_realm.api_log_filename)
         # It ensures no blocker for virtual clients
