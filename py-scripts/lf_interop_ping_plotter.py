@@ -1950,7 +1950,11 @@ class Ping(Realm):
             self.coordinates_completed.append(coord)
             self.currentcoordinate = coord
 
-            ports_data_dict = self.json_get('/ports/all/')['interfaces']
+            logger.debug("GET /ports/all/")
+            ports_response = self.json_get('/ports/all/')
+            if ports_response is None:
+                logger.error(f"GET /ports/all/ returned no response while updating port data at coordinate {coord}.")
+            ports_data_dict = ports_response['interfaces']
             ports_data = {}
             for ports in ports_data_dict:
                 port, port_data = list(ports.keys())[0], list(ports.values())[0]
@@ -3223,7 +3227,11 @@ connectivity problems.
 
     # start generate endpoint
     ping.start_generic()
-    ports_data_dict = ping.json_get('/ports/all/')['interfaces']
+    logger.debug("GET /ports/all/")
+    ports_response = ping.json_get('/ports/all/')
+    if ports_response is None:
+        logger.error("GET /ports/all/ returned no response while fetching initial port data.")
+    ports_data_dict = ports_response['interfaces']
     ports_data = {}
     for ports in ports_data_dict:
         port, port_data = list(ports.keys())[0], list(ports.values())[0]
@@ -3259,9 +3267,12 @@ connectivity problems.
             logger.info(result_data)
             logger.error(e)
             exit(0)
-        # logging.info(result_data)
         if args.virtual:
-            ports_data_dict = ping.json_get('/ports/all/')['interfaces']
+            logger.debug("GET /ports/all/")
+            ports_response = ping.json_get('/ports/all/')
+            if ports_response is None:
+                logger.error("GET /ports/all/ returned no response while polling virtual station port data.")
+            ports_data_dict = ports_response['interfaces']
             ports_data = {}
             for ports in ports_data_dict:
                 port, port_data = list(ports.keys())[0], list(ports.values())[0]
