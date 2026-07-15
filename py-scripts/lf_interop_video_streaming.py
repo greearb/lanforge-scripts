@@ -120,6 +120,7 @@ import sys
 import os
 import importlib
 import argparse
+import re
 import time
 import pandas as pd
 import logging
@@ -374,6 +375,10 @@ class VideoStreamingTest(Realm):
         self.all_cx_list = []
         self.device_issue_log = []
         self.actual_monitoring_duration_seconds = 0
+        self.missing_cx_logged = set()
+        self.missing_signal_logged = set()
+        self.last_monitor_url = None
+        self.last_monitor_response = None
 
         self.req_total_urls = []
         self.req_urls_per_sec = []
@@ -698,6 +703,12 @@ class VideoStreamingTest(Realm):
         # Cleans the layer 4-7 traffic for created CX end points
         self.http_profile.cleanup()
 
+    def port_label_from_cx_name(self, cx_name):
+        # CX names embed the resource id right before the trailing "_l4" (e.g. "vs_wlan0_http10_l4"
+        # -> resource id 10). Used to report device issues against a recognizable port like "1.10".
+        match = re.search(r'(\d+)_l4$', cx_name)
+        return "1.{}".format(match.group(1)) if match else cx_name
+
     def record_device_issue(self, device, issue):
         self.device_issue_log.append({
             "Time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -723,13 +734,14 @@ class VideoStreamingTest(Realm):
                 3. Iterates through the retrieved data to extract and append the specified metric values ('data_mon') to 'data1' list.
                 4. Returns 'data1', which contains monitoring data for the specified metrics across all created CX endpoints.
             """
-            data = self.local_realm.json_get(
-                "layer4/{}/list?fields={}".format(
-                    ','.join(self.created_cx.keys()),
-                    "name,status,total-urls,urls/s,total-err,video-format-bitrate,"
-                    "bytes-rd,total-wait-time,total-buffers,total-err,rx rate,frame-rate,video-quality"
-                )
+            monitor_url = "layer4/{}/list?fields={}".format(
+                ','.join(self.created_cx.keys()),
+                "name,status,total-urls,urls/s,total-err,video-format-bitrate,"
+                "bytes-rd,total-wait-time,total-buffers,total-err,rx rate,frame-rate,video-quality"
             )
+            data = self.local_realm.json_get(monitor_url)
+            self.last_monitor_url = monitor_url
+            self.last_monitor_response = data
             names = []
             statuses = []
             total_urls = []
@@ -742,36 +754,69 @@ class VideoStreamingTest(Realm):
             rx_rate = []
             frame_rate = []
             video_quality = []
-            if len(self.created_cx.keys()) > 1:
-                data = data['endpoint']
-                for endpoint in data:
-                    for _key, value in endpoint.items():
-                        names.append(value['name'])
-                        statuses.append(value['status'])
-                        total_urls.append(value['total-urls'])
-                        urls_per_sec.append(value['urls/s'])
-                        total_err.append(value['total-err'])
-                        video_format_bitrate.append(value['video-format-bitrate'])
-                        bytes_rd.append(value['bytes-rd'])
-                        total_wait_time.append(value['total-wait-time'])
-                        total_buffer.append(value['total-buffers'])
-                        rx_rate.append(value['rx rate'])
-                        frame_rate.append(value['frame-rate'])
-                        video_quality.append(value['video-quality'])
-            elif len(self.created_cx.keys()) == 1:
-                endpoint = data.get('endpoint', {})
-                names = [endpoint.get('name', '')]
-                statuses = [endpoint.get('status', '')]
-                total_urls = [endpoint.get('total-urls', 0)]
-                urls_per_sec = [endpoint.get('urls/s', 0.0)]
-                total_err = [endpoint.get('total-err', 0)]
-                video_format_bitrate = [endpoint.get('video-format-bitrate', 0)]
-                bytes_rd.append(endpoint.get('bytes-rd', 0))
-                total_wait_time.append(endpoint.get('total-wait-time', 0))
-                total_buffer.append(endpoint.get('total-buffers', 0))
-                rx_rate.append(endpoint.get('rx rate', 0))
-                frame_rate.append(endpoint.get('frame-rate', 0))
-                video_quality.append(endpoint.get('video-quality', 0))
+
+            # Map every CX name to its metrics regardless of the order/completeness of the
+            # LANforge response, so a device that drops out mid-test cannot desync the
+            # per-device arrays used to build report rows.
+            #
+            # LANforge's response shape depends on how many endpoints are actually present,
+            # not on how many CXs we asked for: 'endpoint' comes back as a list of
+            # {cx_name: metrics} dicts when 2+ endpoints respond, but as a single flat metrics
+            # dict (with a 'name' field) when only one does - even if more than one CX was
+            # requested in the URL. Branching on len(self.created_cx.keys()) here would treat
+            # that single flat dict as a list and crash, so branch on the actual response shape.
+            cx_metrics = {}
+            if data:
+                endpoint_data = data.get('endpoint')
+                if isinstance(endpoint_data, list):
+                    for endpoint in endpoint_data:
+                        for key, value in endpoint.items():
+                            cx_metrics[key] = value
+                elif isinstance(endpoint_data, dict) and endpoint_data:
+                    cx_name = endpoint_data.get('name')
+                    if cx_name:
+                        cx_metrics[cx_name] = endpoint_data
+                    elif len(self.created_cx.keys()) == 1:
+                        cx_metrics[list(self.created_cx.keys())[0]] = endpoint_data
+
+            default_cx_metrics = {
+                'name': '', 'status': 'Stopped', 'total-urls': 0, 'urls/s': 0.0, 'total-err': 0,
+                'video-format-bitrate': 0, 'bytes-rd': 0, 'total-wait-time': 0, 'total-buffers': 0,
+                'rx rate': 0, 'frame-rate': 0, 'video-quality': 0
+            }
+
+            for cx_name in self.created_cx.keys():
+                value = cx_metrics.get(cx_name)
+                if value is None:
+                    if cx_name not in self.missing_cx_logged:
+                        logger.warning(
+                            "CX '{}' is missing from the monitoring data, the device may have disconnected "
+                            "or its connection was not created. Continuing the test with the remaining "
+                            "devices.\n"
+                            "URL     : {}\n"
+                            "Response: {}".format(cx_name, monitor_url, data)
+                        )
+                        self.missing_cx_logged.add(cx_name)
+                        self.record_device_issue(self.port_label_from_cx_name(cx_name),
+                                                 "CX '{}' missing from monitoring data".format(cx_name))
+                    value = dict(default_cx_metrics, name=cx_name)
+                else:
+                    if cx_name in self.missing_cx_logged:
+                        logger.info("CX '{}' data is available again.".format(cx_name))
+                        self.missing_cx_logged.discard(cx_name)
+
+                names.append(value.get('name', cx_name))
+                statuses.append(value.get('status', 'Stopped'))
+                total_urls.append(value.get('total-urls', 0))
+                urls_per_sec.append(value.get('urls/s', 0.0))
+                total_err.append(value.get('total-err', 0))
+                video_format_bitrate.append(value.get('video-format-bitrate', 0))
+                bytes_rd.append(value.get('bytes-rd', 0))
+                total_wait_time.append(value.get('total-wait-time', 0))
+                total_buffer.append(value.get('total-buffers', 0))
+                rx_rate.append(value.get('rx rate', 0))
+                frame_rate.append(value.get('frame-rate', 0))
+                video_quality.append(value.get('video-quality', 0))
             self.data['status'] = statuses
             self.data["total_urls"] = total_urls
             self.data["urls_per_sec"] = urls_per_sec
@@ -867,16 +912,17 @@ class VideoStreamingTest(Realm):
                         phone_radio.append('2G/5G')
         return station_name
 
-    def get_signal_data(self):
+    def get_signal_data(self, resource_order=None):
+        # resource_order, when provided, pins the output to one entry per resource id in that
+        # exact order/count, so a device that drops out of the ports table mid-test (e.g. goes
+        # phantom / disconnects) cannot shrink the returned lists and desync them from the other
+        # per-device arrays (device_type, rssi, etc.) built at the start of monitoring.
         resource_ids = list(map(int, self.resource_ids.split(',')))
-        rssi = []
-        tx_rate = []
-        rx_rate = []
-        bssid = []
-        channel = []
+        signal_by_resource = {}
 
+        signal_url = "ports?fields=alias,rx-rate,tx-rate,ssid,signal,ap,channel"
         try:
-            eid_data = self.json_get("ports?fields=alias,rx-rate,tx-rate,ssid,signal,ap,channel")
+            eid_data = self.json_get(signal_url)
         except KeyError:
             logger.error("Error: 'interfaces' key not found in port data")
             exit(1)
@@ -886,23 +932,55 @@ class VideoStreamingTest(Realm):
                 if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
                     resource_hw_data = self.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
                     hw_version = resource_hw_data['resource']['hw version']
-                    if not hw_version.startswith(('Win', 'Linux', 'Apple')) and int(resource_hw_data['resource']['eid'].split('.')[1]) in resource_ids:
+                    resource_id = int(resource_hw_data['resource']['eid'].split('.')[1])
+                    if not hw_version.startswith(('Win', 'Linux', 'Apple')) and resource_id in resource_ids:
 
                         if "dBm" in alias[i]['signal']:
-                            rssi.append(alias[i]['signal'].split(" ")[0])
+                            rssi_value = alias[i]['signal'].split(" ")[0]
                         else:
-                            rssi.append(alias[i]['signal'])
+                            rssi_value = alias[i]['signal']
+                        rssi_value = 0 if str(rssi_value).strip() == "" else int(rssi_value)
 
-                        tx_rate.append(alias[i]['tx-rate'])
-                        rx_rate.append(alias[i]['rx-rate'])
-                        bssid.append(alias[i]['ap'])
                         channel_value = str(alias[i].get('channel', ''))
-                        if channel_value in ('', '0', '-1'):
-                            channel.append('NA')
-                        else:
-                            channel.append(alias[i]['channel'])
+                        channel_value = 'NA' if channel_value in ('', '0', '-1') else alias[i]['channel']
 
-        rssi = [0 if i.strip() == "" else int(i) for i in rssi]
+                        signal_by_resource[resource_id] = {
+                            'rssi': rssi_value,
+                            'tx_rate': alias[i]['tx-rate'],
+                            'bssid': alias[i]['ap'],
+                            'channel': channel_value,
+                        }
+
+        if resource_order is None:
+            resource_order = list(signal_by_resource.keys())
+
+        default_signal = {'rssi': -90, 'tx_rate': 0, 'bssid': 'NA', 'channel': 'NA'}
+        rssi = []
+        tx_rate = []
+        bssid = []
+        channel = []
+        for resource_id in resource_order:
+            value = signal_by_resource.get(resource_id)
+            if value is None:
+                if resource_id not in self.missing_signal_logged:
+                    logger.warning(
+                        "Signal data for device on port 1.{} is unavailable, it may have disconnected. "
+                        "Continuing the test with the remaining devices.\n"
+                        "URL     : {}\n"
+                        "Response: {}".format(resource_id, signal_url, eid_data)
+                    )
+                    self.missing_signal_logged.add(resource_id)
+                    self.record_device_issue("1.{}".format(resource_id), "Signal data unavailable (device may have disconnected)")
+                value = default_signal
+            else:
+                if resource_id in self.missing_signal_logged:
+                    logger.info("Signal data for device on port 1.{} is available again.".format(resource_id))
+                    self.missing_signal_logged.discard(resource_id)
+            rssi.append(value['rssi'])
+            tx_rate.append(value['tx_rate'])
+            bssid.append(value['bssid'])
+            channel.append(value['channel'])
+
         return rssi, tx_rate, bssid, channel
 
     def monitor_for_runtime_csv(self, duration, file_path, individual_df, iteration, actual_start_time, cx_list=None, curr_coordinate=None, curr_rotation=None, monitor_charge_time=None):
@@ -933,6 +1011,7 @@ class VideoStreamingTest(Realm):
             tx_rate = []
             rx_rate = []
             bssid = []
+            resource_order = []
 
             resource_ids = list(map(int, self.resource_ids.split(',')))
             eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,ssid,signal,channel,ap")
@@ -960,6 +1039,7 @@ class VideoStreamingTest(Realm):
                             tx_rate.append(alias[i]['tx-rate'])
                             rx_rate.append(alias[i]['rx-rate'])
                             bssid.append(alias[i]['ap'])
+                            resource_order.append(int(resource_hw_data['resource']['eid'].split('.')[1]))
 
             incremental_capacity_list = self.get_incremental_capacity_list()
             video_rate_dict = {i: [] for i in range(len(device_type))}
@@ -996,7 +1076,7 @@ class VideoStreamingTest(Realm):
                             monitor_charge_time = datetime.now()
 
                 # Get signal data for RSSI and link speed
-                rssi_data, link_speed_data, bssid_data, channel_data = self.get_signal_data()
+                rssi_data, link_speed_data, bssid_data, channel_data = self.get_signal_data(resource_order=resource_order)
 
                 individual_df_data = []
 
