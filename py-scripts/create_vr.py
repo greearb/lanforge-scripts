@@ -224,6 +224,7 @@ class CreateVR(Realm):
         except Exception as e:
             print('Error: create_vr() Netsmith window closing error: ' + str(e))
 
+
 def main():
     help_summary = '''\
     This script is designed to create variable number of Virtual Routers (vr) by setting up the configuration in Netsmith.
@@ -293,6 +294,7 @@ NOTES:
     # create_vr.clean()
     print('Created Virtual Router')
     create_vr.close()
+
 
 if __name__ == "__main__":
     main()
