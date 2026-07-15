@@ -11399,7 +11399,7 @@ class MultiTraffic(Realm):
                             max_video_latency_r, min_video_latency_r = [], []
                             max_video_pktloss_s, min_video_pktloss_s = [], []
                             max_video_pktloss_r, min_video_pktloss_r = [], []
-                            for i in range(0, len(curr_zoom_obj.device_names)):
+                            for i in range(0, len(curr_zoom_obj.real_sta_hostname)):
                                 temp_max_audio_jitter_s, temp_min_audio_jitter_s = 0.0, 0.0
                                 temp_max_audio_jitter_r, temp_min_audio_jitter_r = 0.0, 0.0
                                 temp_max_audio_latency_s, temp_min_audio_latency_s = 0.0, 0.0
@@ -11429,13 +11429,16 @@ class MultiTraffic(Realm):
                                 }
                                 try:
                                     if not self.do_bandsteering:
-                                        if self.dowebgui:
-                                            file_path = os.path.join(curr_zoom_obj.report.path_date_time, f'{curr_zoom_obj.device_names[i]}.csv')
-                                        else:
-                                            file_path = os.path.join(curr_zoom_obj.report.path_date_time, f'{curr_zoom_obj.device_names[i]}.csv')
+                                        # CSV files are written keyed by real_sta_hostname (the Zoom
+                                        # join name / API participant match target), not device_names
+                                        # (the raw LANforge resource hostname). For non-Android clients
+                                        # the two are identical, but Android substitutes the LANforge
+                                        # "user" field for real_sta_hostname, so looking this up by
+                                        # device_names silently dropped Android clients from this report.
+                                        file_path = os.path.join(curr_zoom_obj.report.path_date_time, f'{curr_zoom_obj.real_sta_hostname[i]}.csv')
                                         if not os.path.exists(file_path):
                                             logger.error(
-                                                f'File not found for client {curr_zoom_obj.device_names[i]}: {file_path}'
+                                                f'File not found for client {curr_zoom_obj.real_sta_hostname[i]}: {file_path}'
                                             )
                                             continue
                                         with open(
@@ -11524,16 +11527,10 @@ class MultiTraffic(Realm):
                                                     temp_min_video_pktloss_r = vo_loss if temp_min_video_pktloss_r == 0 else min(temp_min_video_pktloss_r, vo_loss)
 
                                     elif self.do_bandsteering:
-                                        if not self.dowebgui:
-                                            file_path = os.path.join(
-                                                curr_zoom_obj.report.path_date_time,
-                                                f'{curr_zoom_obj.device_names[i]}.csv'
-                                            )
-                                        else:
-                                            file_path = os.path.join(
-                                                curr_zoom_obj.report.path_date_time,
-                                                f'{curr_zoom_obj.device_names[i]}.csv'
-                                            )
+                                        file_path = os.path.join(
+                                            curr_zoom_obj.report.path_date_time,
+                                            f'{curr_zoom_obj.real_sta_hostname[i]}.csv'
+                                        )
                                         with open(file_path, mode='r', encoding='utf-8', errors='ignore') as file:
                                             csv_reader = csv.DictReader(file)
 
@@ -11630,12 +11627,12 @@ class MultiTraffic(Realm):
                                                     temp_min_video_pktloss_r = vo_loss if temp_min_video_pktloss_r == 0 else min(temp_min_video_pktloss_r, vo_loss)
 
                                 except Exception as e:
-                                    logging.error(f"Error in reading data in client {self.zoom_obj_dict[ce][obj_name]['obj'].device_names[i]}: {e}")
-                                    no_csv_client.append(curr_zoom_obj.device_names[i])
-                                    rejected_clients.append(curr_zoom_obj.device_names[i])
-                                if curr_zoom_obj.device_names[i] not in no_csv_client:
-                                    client_array.append(curr_zoom_obj.device_names[i])
-                                    accepted_clients.append(curr_zoom_obj.device_names[i])
+                                    logging.error(f"Error in reading data in client {self.zoom_obj_dict[ce][obj_name]['obj'].real_sta_hostname[i]}: {e}")
+                                    no_csv_client.append(curr_zoom_obj.real_sta_hostname[i])
+                                    rejected_clients.append(curr_zoom_obj.real_sta_hostname[i])
+                                if curr_zoom_obj.real_sta_hostname[i] not in no_csv_client:
+                                    client_array.append(curr_zoom_obj.real_sta_hostname[i])
+                                    accepted_clients.append(curr_zoom_obj.real_sta_hostname[i])
                                     accepted_ostypes.append(curr_zoom_obj.real_sta_os_type[i])
                                     max_audio_jitter_s.append(temp_max_audio_jitter_s)
                                     min_audio_jitter_s.append(temp_min_audio_jitter_s)
