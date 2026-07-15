@@ -372,6 +372,8 @@ class VideoStreamingTest(Realm):
         self.total_urls_dict = {}
         self.data_for_webui = {}
         self.all_cx_list = []
+        self.device_issue_log = []
+        self.actual_monitoring_duration_seconds = 0
 
         self.req_total_urls = []
         self.req_urls_per_sec = []
@@ -696,6 +698,13 @@ class VideoStreamingTest(Realm):
         # Cleans the layer 4-7 traffic for created CX end points
         self.http_profile.cleanup()
 
+    def record_device_issue(self, device, issue):
+        self.device_issue_log.append({
+            "Time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "Device": device,
+            "Issue": issue,
+        })
+
     def my_monitor_runtime(self):
         try:
 
@@ -897,6 +906,7 @@ class VideoStreamingTest(Realm):
         return rssi, tx_rate, bssid, channel
 
     def monitor_for_runtime_csv(self, duration, file_path, individual_df, iteration, actual_start_time, cx_list=None, curr_coordinate=None, curr_rotation=None, monitor_charge_time=None):
+        starttime = None
         try:
             if cx_list is None:
                 cx_list = []
@@ -1186,6 +1196,12 @@ class VideoStreamingTest(Realm):
             logger.error(f"Error in monitor_for_runtime_csv function: {e}", exc_info=True)
             logger.info(f"eid_data {eid_data}")
             return test_stopped_by_user
+        finally:
+            # Accumulate the time actually spent monitoring on every exit path (normal
+            # completion, an early break/return, or an exception) so the report can show how
+            # long monitoring actually ran for, separate from the configured "Duration (min)".
+            if starttime is not None:
+                self.actual_monitoring_duration_seconds += (datetime.now() - starttime).total_seconds()
 
     def get_incremental_capacity_list(self):
         keys = list(self.http_profile.created_cx.keys())
@@ -1682,9 +1698,13 @@ class VideoStreamingTest(Realm):
             self.get_bandsteering_stats(report, realtime_dataset, devices_on_running_state, device_names_on_running)
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
+        if self.device_issue_log:
+            issues_df = pd.DataFrame(self.device_issue_log)
+            issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         report.build_footer()
         report.write_html()
         report.write_pdf()
+        logger.info("Monitoring Duration: {}".format(self.format_monitoring_duration()))
 
     def copy_reports_to_home_dir(self):
         curr_path = self.result_dir
@@ -2014,6 +2034,17 @@ class VideoStreamingTest(Realm):
                 self.test_setup_info_incremental_values = "No Incremental Value provided"
             self.total_duration = test_setup_info_total_duration
 
+    def format_monitoring_duration(self):
+        """
+        Formats the time actually spent monitoring (self.actual_monitoring_duration_seconds,
+        accumulated across every monitor_for_runtime_csv call) as "Xm Ys". This reflects the
+        configured duration when monitoring ran to completion, or less than that when monitoring
+        ended early (e.g. all devices missing, or the test was stopped).
+        """
+        total_seconds = int(self.actual_monitoring_duration_seconds)
+        minutes, seconds = divmod(total_seconds, 60)
+        return "{}m {}s".format(minutes, seconds)
+
     def create_test_setup_info(self, media_source, media_quality):
         if self.resource_ids:
             username = []
@@ -2220,9 +2251,13 @@ class VideoStreamingTest(Realm):
                 self.data = self.vs_data[self.coordinate_list[coordinate]]["self_data"]
                 shutil.move('video_streaming_realtime_data{}.csv'.format(csv_suffix), report_path_date_time)
                 self.generate_individual_coordinate(report, device_type, username, ssid, mac, channel, mode, rssi, tx_rate, created_incremental_values, keys)
+        if self.device_issue_log:
+            issues_df = pd.DataFrame(self.device_issue_log)
+            issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         report.build_footer()
         report.write_html()
         report.write_pdf()
+        logger.info("Monitoring Duration: {}".format(self.format_monitoring_duration()))
 
     def generate_individual_coordinate(self, report, device_type, username, ssid, mac, channel, mode, rssi, tx_rate, created_incremental_values, keys, report_path=""):
         """
