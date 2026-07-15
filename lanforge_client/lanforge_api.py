@@ -5011,9 +5011,9 @@ class LFJsonCommand(JsonCommand):
         disable_fast_reauth = 0x200000000              # Disable fast_reauth option for virtual stations.
         disable_gdaf = 0x1000000                       # AP: Disable DGAF (used by HotSpot 2.0).
         disable_ht80 = 0x8000000                       # Disable HT80 (for AC chipset NICs only)
-        disable_link_2g = 0x80000000000000             # Disable MLO 2GHz link
-        disable_link_5g = 0x100000000000000            # Disable MLO 5GHz link
-        disable_link_6g = 0x200000000000000            # Disable MLO 6GHz link
+        disable_mlo_2g = 0x80000000000000              # Disable MLO 2GHz link
+        disable_mlo_5g = 0x100000000000000             # Disable MLO 5GHz link
+        disable_mlo_6g = 0x200000000000000             # Disable MLO 6GHz link
         disable_roam = 0x80000000                      # Disable automatic station roaming based on scan results.
         disable_sgi = 0x4000                           # Disable SGI (Short Guard Interval).
         ft_roam_over_ds = 0x800000000000               # Roam over DS when AP supports it.
@@ -9416,6 +9416,7 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(LogLevelLevel, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
+        ADB = 0x20000           # ADB xml interactions and similar (131072)
         ALL = 0xffffffff        # Log everything
         CUST1 = 0x10000         # Cust-1, latency info (65536)
         DB = 0x80               # Database related logging (128)
@@ -24501,8 +24502,8 @@ class LFJsonQuery(JsonQuery):
         delay, destination+addr, device+type, dropped, dup+pkts, eid, elapsed, entity+id, 
         jb+cur, jb+over, jb+silence, jb+under, jitter, mng, mobile+bt+mac, mos-lqo, 
         mos-lqo%23, name, ooo+pkts, phone+%23, pingpong, reg+state, rst, rtp+rtt, run, 
-        rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, state, time-stamp, tx+bytes, 
-        tx+file, tx+pkts, vad+pkts
+        rx+bytes, rx+pkts, scoring+bklg, snr+deg, snr+ref, state, tx+bytes, tx+file, 
+        tx+pkts, vad+pkts
     Example URL: /voip-endp?fields=attenuation,audio+band
 
     Example py-json call (it knows the URL):
@@ -24570,8 +24571,6 @@ class LFJsonQuery(JsonQuery):
         'snr deg':          # Signal to noise ratio of the degraded audio file. Unit: dB
         'snr ref':          # Signal to noise ratio of the reference audio file. Unit: dB
         'state':            # Phone registration state
-        'time-stamp':       # Time at which this event was created.This uses the clock on the source
-                            # machine.
         'tx bytes':         # Total transmitted bytes count.
         'tx file':          # Complete path to .wav file that will be transmitted
         'tx pkts':          # Total transmitted packet count.
