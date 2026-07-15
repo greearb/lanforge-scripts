@@ -373,10 +373,11 @@ class VideoStreamingTest(Realm):
         self.total_urls_dict = {}
         self.data_for_webui = {}
         self.all_cx_list = []
-        self.device_issue_log = []
-        self.actual_monitoring_duration_seconds = 0
         self.missing_cx_logged = set()
         self.missing_signal_logged = set()
+        self.device_issue_log = []
+        self.actual_monitoring_duration_seconds = 0
+        self.pre_monitoring_missing_logged = False
         self.last_monitor_url = None
         self.last_monitor_response = None
 
@@ -833,6 +834,35 @@ class VideoStreamingTest(Realm):
             logger.error(f"Error in my_monitor_runtime function: {e}", exc_info=True)
             logger.info(f"Layer 4 cx data {data}")
 
+    def wait_for_any_cx_recovery(self, timeout=40, poll_interval=5):
+        """
+        Polls CX status (via the existing my_monitor_runtime helper) while every created CX is
+        missing, giving devices a chance to reappear before the caller gives up. Also honors a
+        user-initiated stop from the webgui (same running.json check used in the monitor loop)
+        during the wait, so a stop request isn't delayed by the full retry window.
+
+        Returns True as soon as at least one CX responds again or the user stops the test,
+        False if `timeout` seconds elapse with every CX still missing and no stop request.
+        """
+        wait_start = datetime.now()
+        while (datetime.now() - wait_start).total_seconds() < timeout:
+            time.sleep(poll_interval)
+            if self.dowebgui:
+                with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(
+                        self.host, self.test_name), 'r') as file:
+                    data = json.load(file)
+                    if data["status"] != "Running":
+                        logger.info("Test is stopped by the user during the device-recovery wait.")
+                        self.test_stopped = True
+                        return True
+            self.my_monitor_runtime()
+            elapsed = (datetime.now() - wait_start).total_seconds()
+            if len(self.missing_cx_logged) < len(self.created_cx):
+                logger.info("Device(s) responded again after {:.0f}s, resuming.".format(elapsed))
+                return True
+            logger.warning("Still no devices responding after {:.0f}s, retrying...".format(elapsed))
+        return False
+
     def my_monitor(self, data_mon):
         # data in json format
         data = self.local_realm.json_get("layer4/%s/list?fields=%s" %
@@ -1044,12 +1074,43 @@ class VideoStreamingTest(Realm):
             incremental_capacity_list = self.get_incremental_capacity_list()
             video_rate_dict = {i: [] for i in range(len(device_type))}
 
+            # Verify CX endpoints are responding before monitoring starts. A device with no CX
+            # data is left in self.created_cx (my_monitor_runtime already reports it with default
+            # 'Stopped' metrics so the per-device arrays built above stay in sync) but is logged
+            # here so it's clear from the start which devices the test will continue without.
+            if self.created_cx:
+                self.my_monitor_runtime()
+                if len(self.missing_cx_logged) == len(self.created_cx):
+                    logger.warning("No devices are responding before monitoring starts, retrying for "
+                                   "up to 40 seconds before failing the test.")
+                    if not self.wait_for_any_cx_recovery(timeout=40, poll_interval=5):
+                        logger.error("No devices responded within 40 seconds before monitoring could "
+                                     "start, failing the test.")
+                        raise RuntimeError(
+                            "Video streaming test failed: no devices are available to run the test "
+                            "(all CX endpoints missing after 40s retry).")
+                if self.missing_cx_logged and not self.pre_monitoring_missing_logged:
+                    # This pre-check runs on every call to monitor_for_runtime_csv, which in
+                    # bandsteering/robot mode is invoked repeatedly as the monitor_function tick.
+                    # Only print this summary once per test instead of on every tick.
+                    logger.warning("The following device(s) are missing before monitoring starts, "
+                                   "continuing the test with the remaining {} device(s): {}\n"
+                                   "URL     : {}\n"
+                                   "Response: {}".format(
+                                       len(self.created_cx) - len(self.missing_cx_logged),
+                                       sorted(self.port_label_from_cx_name(cx) for cx in self.missing_cx_logged),
+                                       self.last_monitor_url, self.last_monitor_response))
+                    self.pre_monitoring_missing_logged = True
+
             # Loop until the current time is less than the end time
             while current_time < endtime_check or self.background_run:
                 if self.test_stopped:
                     break
                 if self.robot_test:
-                    if self.rotation_enabled:
+                    # monitor_charge_time is None when this function is invoked as the
+                    # bandsteering monitor_function tick (that call site never passes it), so
+                    # skip the rotation charge-pause check rather than crashing on None here.
+                    if self.rotation_enabled and monitor_charge_time is not None:
                         if (datetime.now() - monitor_charge_time).total_seconds() >= 300:
                             pause_start = datetime.now()
                             pause = False
@@ -1101,6 +1162,19 @@ class VideoStreamingTest(Realm):
                 # Get the present time
                 present_time = datetime.now().strftime("%H:%M:%S")
                 self.my_monitor_runtime()
+
+                # If every device has stopped responding, retry for up to 40 seconds before
+                # giving up on this monitor loop. Unlike the pre-monitoring check, this does not
+                # fail the test: the loop just ends gracefully and execution continues with
+                # whatever data was already collected.
+                if self.created_cx and len(self.missing_cx_logged) == len(self.created_cx):
+                    logger.warning("All devices have stopped responding during monitoring, retrying "
+                                   "for up to 40 seconds before ending the monitor loop.")
+                    if not self.wait_for_any_cx_recovery(timeout=40, poll_interval=5):
+                        logger.error("No devices responded within 40 seconds during monitoring, "
+                                     "ending the monitor loop gracefully; the test will continue with "
+                                     "the data collected so far.")
+                        break
 
                 overall_video_rate = []
                 # Iterate through the total wait time data
@@ -1272,6 +1346,10 @@ class VideoStreamingTest(Realm):
                 self.data['remaining_time_webGUI'] = [str(datetime.strptime(self.data['end_time_webGUI'][0], "%Y-%m-%d %H:%M:%S") - datetime.strptime(curr_time, "%Y-%m-%d %H:%M:%S"))]
 
             return test_stopped_by_user
+        except RuntimeError:
+            # Let the "no devices responding before monitoring starts" failure propagate and
+            # fail the test, instead of being swallowed by the generic handler below.
+            raise
         except Exception as e:
             logger.error(f"Error in monitor_for_runtime_csv function: {e}", exc_info=True)
             logger.info(f"eid_data {eid_data}")
