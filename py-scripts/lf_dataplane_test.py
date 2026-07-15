@@ -1,105 +1,285 @@
 #!/usr/bin/env python3
-"""
-NAME:       lf_dataplane_test.py
+# =============================================================================
+# PARAMETER DISCOVERY GUIDE
+# =============================================================================
+#
+# Before running this script, determine the correct LANforge resources available
+# on your system. Do NOT assume interface names such as "1.1.wlan0" or
+# "1.1.eth1", as they may differ depending on your LANforge configuration.
+#
+# -----------------------------------------------------------------------------
+# STEP 1: Verify LANforge Manager
+# -----------------------------------------------------------------------------
+#
+# Ensure the LANforge Manager is running and accessible.
+#
+# Example:
+#
+#     curl http://localhost:8080
+#
+# or
+#
+#     curl http://<LANFORGE_MANAGER_IP>:8080
+#
+# A valid JSON response indicates that the LANforge Manager is running.
+#
+# -----------------------------------------------------------------------------
+# STEP 2: Discover Available Ports
+# -----------------------------------------------------------------------------
+#
+# Retrieve all available LANforge ports:
+#
+#     curl http://localhost:8080/ports/all
+#
+# This command lists every Ethernet interface, WiFi radio, and WiFi station
+# configured on the LANforge system.
+#
+# -----------------------------------------------------------------------------
+# STEP 3: Identify the Upstream Port
+# -----------------------------------------------------------------------------
+#
+# Locate the Ethernet interface that will act as the upstream port.
+#
+# Example:
+#
+#     1.1.eth0
+#     1.1.eth1
+#
+# Use the selected interface with:
+#
+#     --upstream 1.1.eth1
+#
+# -----------------------------------------------------------------------------
+# STEP 4: Identify the WiFi Station
+# -----------------------------------------------------------------------------
+#
+# From the output of /ports/all, locate the interface whose:
+#
+#     port type = WIFI-STA
+#
+# Example:
+#
+#     1.20.wlan0
+#
+# Use the exact interface name:
+#
+#     --station 1.20.wlan0
+#
+# NOTE:
+# Do NOT assume the station will always be "1.1.wlan0".
+# Depending on the LANforge configuration, it may be:
+#
+#     1.20.wlan0
+#     1.36.en0
+#     1.1.sta0001
+#     etc.
+#
+# Always discover the station dynamically before running the test.
+#
+# -----------------------------------------------------------------------------
+# STEP 5: Verify Station Status
+# -----------------------------------------------------------------------------
+#
+# Before running the test, ensure the station:
+#
+#   • Is connected to the DUT/AP
+#   • Has obtained an IP address
+#   • Is in the "Authorized" state
+#
+# Example:
+#
+#     Status : Authorized
+#     IP     : 192.168.x.x
+#
+# If the station is not connected, the Dataplane test cannot proceed.
+#
+# -----------------------------------------------------------------------------
+# STEP 6: Discover Available Attenuators
+# -----------------------------------------------------------------------------
+#
+# List available attenuators:
+#
+#     curl http://localhost:8080/attenuator/all
+#
+# or (depending on LANforge version)
+#
+#     curl http://localhost:8080/attenuators/
+#
+# Example:
+#
+#     1.1.3273
+#     1.1.3281
+#
+# Use them as:
+#
+#     --attenuator1 1.1.3273
+#     --attenuator2 1.1.3281
+#
+# -----------------------------------------------------------------------------
+# STEP 7: Configure Test Parameters
+# -----------------------------------------------------------------------------
+#
+# Traffic Type:
+#
+#     --traffic_type UDP
+#     --traffic_type TCP
+#     --traffic_type UDP,TCP
+#
+# Traffic Direction:
+#
+#     --traffic_direction DUT-TX
+#     --traffic_direction DUT-RX
+#     --traffic_direction DUT-TX,DUT-RX
+#
+# Traffic Rate:
+#
+#     --rate 100Mbps
+#     --rate 1Gbps
+#     --rate 70%
+#
+# Test Duration:
+#
+#     --duration 30s
+#     --duration 1m
+#
+# -----------------------------------------------------------------------------
+# STEP 8: Example
+# -----------------------------------------------------------------------------
+#
+# EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated theoretical rate for one minute
+#             ./lf_dataplane_test.py \
+#                 --upstream          1.1.eth1 \
+#                 --station           1.1.wlan0 \
+#                 --duration          1m \
+#                 --traffic_type      UDP \
+#                 --traffic_direction DUT-TX \
+#                 --rate              70%
 
-PURPOSE:    Run the Dataplane test in LANforge Chamber View with user-specified configuration.
+#             # Run DUT receive test. Configure TCP traffic at 1 Gbps
+#             ./lf_dataplane_test.py \
+#                 --upstream          1.1.eth1 \
+#                 --station           1.1.wlan0 \
+#                 --traffic_type      TCP \
+#                 --traffic_direction DUT-RX \
+#                 --rate              1Gbps
 
-NOTES:      To best understand the Dataplane test, please review manual configuration in the LANfoge GUI first.
+#             # Run DUT transmit and receive test with multiple 250Mbps traffic configurations
+#             ./lf_dataplane_test.py \
+#                 --upstream          1.1.eth1 \
+#                 --station           1.1.wlan0 \
+#                 --traffic_type      UDP,TCP \
+#                 --traffic_direction DUT-TX,DUT-RX \
+#                 --rate              250Mbps
 
-            At a high level, the Dataplane test configures one or more subtests for a full test invocation.
-            Some parameters, such as configured traffic rate are static for each subtest in the full test.
-            However, other options like traffic type and direction, attenuation, etc define the subtests to run.
+#             # Run test with differing WiFi configuration including spatial streams (NSS) and bandwidth.
+#             # Note that radio must support specified parameters. Recommended to first configure manually
+#             ./lf_dataplane_test.py \
+#                 --upstream          1.1.eth1 \
+#                 --station           1.1.wlan0 \
+#                 --traffic_type      UDP \
+#                 --rate              100Mbps \
+#                 --nss               1,2,3,4 \
+#                 --bandwidth         80,160,320
 
-            Examples below generally demonstrate how to configure Dataplane tests with the options available in
-            the script. However, this script also supports Dataplane configuration items which are not present
-            in the script CLI using options like '--raw_line', '--set', and more.
+#             # Run test with differing attenuation using single attenuator using simplified CLI
+#             # The values specified are *parsed as dB*
+#             ./lf_dataplane_test.py \
+#                 --upstream          1.1.eth1 \
+#                 --station           1.1.wlan0 \
+#                 --rate              100Mbps \
+#                 --attenuator1       "1.1.3273" \
+#                 --atten1_min        10 \
+#                 --atten1_step       10 \
+#                 --atten1_max        95
 
-            Additionally, this script supports loading of a pre-configured test config as well as JSON configuration.
-            JSON configuration must match CLI arguments and will override any specified CLI.
+#             # Run test with differing attenuation using multiple attenuators using direct CLI
+#             # This format is the same as configured in GUI and is *parsed as ddB not dB*.
+#             # Ensure attenuation values are separated by two periods, otherwise test will not parse properly
+#             ./lf_dataplane_test.py \
+#                 --upstream          1.1.eth1 \
+#                 --station           1.1.wlan0 \
+#                 --rate              100Mbps \
+#                 --attenuator1       "1.1.3273" \
+#                 --attenuations1     "0..+100..955" \
+#                 --attenuator2       "1.1.3281" \
+#                 --attenuations2     "0..+100..955"
 
-            See the examples below for more information.
+#             # Run using JSON configuration file
+#             ./lf_dataplane_test.py --json test.json
 
-EXAMPLE:    # Run DUT transmit test. Configure UDP traffic at 70% calculated theoretical rate for one minute
-            ./lf_dataplane_test.py \
-                --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
-                --duration          1m \
-                --traffic_type      UDP \
-                --traffic_direction DUT-TX \
-                --rate              70%
+#             {
+#                 "upstream": "1.1.eth1",
+#                 "station": "1.1.wlan0",
+#                 "rate": "1Gbps"
+#             }
+#
+# -----------------------------------------------------------------------------
+# STEP 9: View Reports
+# -----------------------------------------------------------------------------
+#
+# After the test completes, the script prints the report location.
+#
+# Example:
+#
+#     Report Location:
+#     /home/lanforge/html-reports/dataplane-YYYY-MM-DD-HH-MM-SS
+#
+# Open the report directory to view the generated HTML report.
+#
+# -----------------------------------------------------------------------------
+# TROUBLESHOOTING
+# -----------------------------------------------------------------------------
+#
+# Error:
+#
+#     Could not find downstream traffic Port or Adb object
+#
+# Cause:
+#
+#     Incorrect station name.
+#
+# Resolution:
+#
+#     Run:
+#
+#         curl http://localhost:8080/ports/all
+#
+#     Locate the interface whose "port type" is WIFI-STA and use that exact
+#     interface as the value for --station.
+#
+# -----------------------------------------------------------------------------
+#
+# Error:
+#
+#     Station not connected
+#
+# Cause:
+#
+#     The station is not associated with the DUT/AP or has not obtained an IP.
+#
+# Resolution:
+#
+#     Verify that the station is connected and authorized before starting
+#     the Dataplane test.
+#
+# -----------------------------------------------------------------------------
+#
+# Error:
+#
+#     No KPI results present
+#
+# Cause:
+#
+#     The Dataplane test completed, but the wrapper script could not locate
+#     the generated KPI.csv file.
+#
+# Resolution:
+#
+#     Check the report directory printed by the script and verify whether
+#     KPI.csv exists. The HTML report may still be generated successfully.
+#
+# =============================================================================
 
-            # Run DUT receive test. Configure TCP traffic at 1 Gbps
-            ./lf_dataplane_test.py \
-                --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
-                --traffic_type      TCP \
-                --traffic_direction DUT-RX \
-                --rate              1Gbps
-
-            # Run DUT transmit and receive test with multiple 250Mbps traffic configurations
-            ./lf_dataplane_test.py \
-                --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
-                --traffic_type      UDP,TCP \
-                --traffic_direction DUT-TX,DUT-RX \
-                --rate              250Mbps
-
-            # Run test with differing WiFi configuration including spatial streams (NSS) and bandwidth.
-            # Note that radio must support specified parameters. Recommended to first configure manually
-            ./lf_dataplane_test.py \
-                --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
-                --traffic_type      UDP \
-                --rate              100Mbps \
-                --nss               1,2,3,4 \
-                --bandwidth         80,160,320
-
-            # Run test with differing attenuation using single attenuator using simplified CLI
-            # The values specified are *parsed as dB*
-            ./lf_dataplane_test.py \
-                --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
-                --rate              100Mbps \
-                --attenuator1       "1.1.3273" \
-                --atten1_min        10 \
-                --atten1_step       10 \
-                --atten1_max        95
-
-            # Run test with differing attenuation using multiple attenuators using direct CLI
-            # This format is the same as configured in GUI and is *parsed as ddB not dB*.
-            # Ensure attenuation values are separated by two periods, otherwise test will not parse properly
-            ./lf_dataplane_test.py \
-                --upstream          1.1.eth1 \
-                --station           1.1.wlan0 \
-                --rate              100Mbps \
-                --attenuator1       "1.1.3273" \
-                --attenuations1     "0..+100..955" \
-                --attenuator2       "1.1.3281" \
-                --attenuations2     "0..+100..955"
-
-            # Run using JSON configuration file
-            ./lf_dataplane_test.py --json test.json
-
-            {
-                "upstream": "1.1.eth1",
-                "station": "1.1.wlan0",
-                "rate": "1Gbps"
-            }
-
-SCRIPT_CLASSIFICATION:
-            Test
-
-SCRIPT_CATEGORIES:
-            Performance,  Functional,  KPI Generation,  Report Generation
-
-STATUS:     Functional
-
-LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
-            Copyright (C) 2020-2026 Candela Technologies Inc.
-
-INCLUDE_IN_README:
-            False
-"""
 import sys
 import os
 import importlib
