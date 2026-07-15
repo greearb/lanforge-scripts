@@ -170,7 +170,7 @@ if (-f "$fname") {
 
     my $prevname = "";
     my $previp = "";
-
+    my $unknown_counter = 0;
     for my $ln (@lines) {
         next if (!(defined $ln));
         # print "\nLN[$ln]\n" if ($debug);
@@ -361,6 +361,10 @@ if (-f "$fname") {
                 || (exists $used_addresses{$hunks[0]})) {
                 print "already printed $hunks[0]\n" if ($debug);
                 next;
+            }
+            if (!(defined $address_map{$hunks[0]}) || !$address_map{$hunks[0]} || $address_map{$hunks[0]} eq "") {
+                $address_map{$hunks[0]} = "unknown-".$unknown_counter;
+                $unknown_counter += 1;
             }
             my $comment = "";
             if (exists $comment_map{$hunks[0]}) {
