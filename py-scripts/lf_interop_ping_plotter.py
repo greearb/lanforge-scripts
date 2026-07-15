@@ -203,6 +203,11 @@ class Ping(Realm):
         self.windows = 0
         self.mac = 0
         self.result_json = {}
+        self.reported_missing_endpoints = set()
+        self.endpoint_status_history = {}
+        self.endpoint_status_csv_path = os.path.join(os.getcwd(), 'endpoint_status_log.csv')
+        with open(self.endpoint_status_csv_path, 'w', newline='') as f:
+            csv.writer(f).writerow(['timestamp', 'resource_id', 'endpoint_name', 'status'])
         self.generic_endps_profile = self.new_generic_endp_profile()
         self.generic_endps_profile.type = 'lfping'
         self.generic_endps_profile.dest = self.change_target_to_ip()
@@ -459,6 +464,25 @@ class Ping(Realm):
         self.generic_endps_profile.stop_cx()
         self.stop_time = datetime.now()
 
+    def log_endpoint_status_change(self, endpoint_name, endpoint_data):
+        status = endpoint_data.get('status')
+        if self.endpoint_status_history.get(endpoint_name) == status:
+            return
+        self.endpoint_status_history[endpoint_name] = status
+
+        resource_id = ''
+        prefix = f"{self.generic_endps_profile.name_prefix}-"
+        for station in self.sta_list:
+            expected_name = f"{prefix}{station}" if station in self.real_sta_list else f"{prefix}{station.split('.')[-1]}"
+            if endpoint_name == expected_name:
+                resource_id = station.split('.')[1]
+                break
+
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        with open(self.endpoint_status_csv_path, 'a', newline='') as f:
+            csv.writer(f).writerow([timestamp, resource_id, endpoint_name, status])
+        logger.info(f"Endpoint {endpoint_name} (resource {resource_id}) status changed to {status}")
+
     def get_results(self):
         endp = "/generic/{}".format(','.join(self.generic_endps_profile.created_endp))
         logger.debug(f"GET {endp}")
@@ -466,27 +490,38 @@ class Ping(Realm):
 
         if results is None:
             logger.error(f"GET {endp} returned no response for created endpoints: {self.generic_endps_profile.created_endp}")
+            return results
 
         multiple_endpoints_requested = len(self.generic_endps_profile.created_endp) > 1
 
         if multiple_endpoints_requested and 'endpoints' in results.keys():
             results = results['endpoints']
             try:
-                returned_names = [list(d.keys())[0] for d in results]
+                returned_names = []
+                for d in results:
+                    endpoint_name = list(d.keys())[0]
+                    self.log_endpoint_status_change(endpoint_name, d[endpoint_name])
+                    returned_names.append(endpoint_name)
                 missing = [name for name in self.generic_endps_profile.created_endp if name not in returned_names]
-                if missing:
-                    logger.error(f"GET {endp} response is missing results for endpoints: {missing}")
+                newly_missing = [name for name in missing if name not in self.reported_missing_endpoints]
+                if newly_missing:
+                    logger.warning(f"GET {endp} response is missing results for endpoints: {newly_missing}")
+                    logger.warning(json.dumps(results, indent=2))
+                    self.reported_missing_endpoints.update(newly_missing)
             except Exception:
                 logger.error(f"GET {endp} 'endpoints' list is not in the expected format.")
+                return results
             return results
 
         try:
             results = results['endpoint']
+            self.log_endpoint_status_change(results['name'], results)
         except Exception:
             logger.error(f"GET {endp} response does not contain the 'endpoint' or 'endpoints' key, or the data is not in the expected format.")
             overallres = self.json_get("/generic/all")
             logger.error("GET /generic/all response:")
             logger.error(json.dumps(overallres, indent=2))
+            return results
 
         return results
 
@@ -1014,6 +1049,9 @@ class Ping(Realm):
         report_path_date_time = report.get_path_date_time()
         logging.info('path: {}'.format(report_path))
         logging.info('path_date_time: {}'.format(report_path_date_time))
+
+        if os.path.exists(self.endpoint_status_csv_path):
+            shutil.move(self.endpoint_status_csv_path, os.path.join(report_path_date_time, 'endpoint_status_log.csv'))
 
         # setting report title
         report.set_title('Ping Plotter Test Report')
@@ -1557,6 +1595,11 @@ class Ping(Realm):
             t_init = datetime.now()
             try:
                 result_data = self.get_results()
+                if result_data is None:
+                    logger.warning("get_results() returned no data this poll; skipping to the next iteration.")
+                    time.sleep(1)
+                    loop_timer += abs(t_init - datetime.now()).total_seconds()
+                    continue
                 if isinstance(result_data, dict):
                     if 'UNKNOWN' in result_data['name']:
                         raise ValueError("There are no valid generic endpoints to run the test")
@@ -2124,6 +2167,9 @@ class Ping(Realm):
         report_path_date_time = report.get_path_date_time()
         logging.info('path: {}'.format(report_path))
         logging.info('path_date_time: {}'.format(report_path_date_time))
+
+        if os.path.exists(self.endpoint_status_csv_path):
+            shutil.move(self.endpoint_status_csv_path, os.path.join(report_path_date_time, 'endpoint_status_log.csv'))
 
         # setting report title
         report.set_title('Ping Plotter Test Report')
@@ -3258,6 +3304,11 @@ connectivity problems.
         t_init = datetime.now()
         try:
             result_data = ping.get_results()
+            if result_data is None:
+                logger.warning("get_results() returned no data this poll; skipping to the next iteration.")
+                time.sleep(1)
+                loop_timer += abs(t_init - datetime.now()).total_seconds()
+                continue
             if isinstance(result_data, dict):
                 if 'UNKNOWN' in result_data['name']:
                     raise ValueError("There are no valid generic endpoints to run the test")
