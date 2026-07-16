@@ -280,6 +280,8 @@ class FtpTest(LFCliBase):
         self.tracking_map = {}
         self.device_issue_log = []
         self.actual_monitoring_duration_seconds = 0
+        self.missing_cx_logged = set()
+        self.missing_device_logged = set()
         self.uc_min = []
         self.uc_max = []
         self.url_data = []
@@ -1332,8 +1334,16 @@ class FtpTest(LFCliBase):
                         l4_dict['total_err'].append(value['total-err'])
                         cx_found = True
             if not cx_found:
-                logger.info("apending default for http %s", cx)
-                self.failed_cx.append(cx)
+                if cx not in self.missing_cx_logged:
+                    logger.warning(
+                        "CX '{}' is missing from the monitoring data, the device may have "
+                        "disconnected or its connection was not created. Continuing the test "
+                        "with the remaining devices.\n"
+                        "URL     : {}\n"
+                        "Response: {}".format(cx, url_str, l4_data))
+                    self.missing_cx_logged.add(cx)
+                    self.failed_cx.append(cx)
+                    self.record_device_issue(cx, "CX missing from monitoring data")
                 l4_dict['uc_avg_data'].append(0 if not self.tracking_map else self.tracking_map['uc_avg_data'][idx])
                 l4_dict['uc_max_data'].append(0 if not self.tracking_map else self.tracking_map['uc_max_data'][idx])
                 l4_dict['uc_min_data'].append(0 if not self.tracking_map else self.tracking_map['uc_min_data'][idx])
@@ -1341,6 +1351,9 @@ class FtpTest(LFCliBase):
                 l4_dict['rx_rate'].append(0 if not self.tracking_map else self.tracking_map['rx_rate'][idx])
                 l4_dict['bytes_rd'].append(0 if not self.tracking_map else self.tracking_map['bytes_rd'][idx])
                 l4_dict['total_err'].append(0 if not self.tracking_map else self.tracking_map['total_err'][idx])
+            elif cx in self.missing_cx_logged:
+                logger.info("CX '{}' data is available again.".format(cx))
+                self.missing_cx_logged.discard(cx)
             idx += 1
         self.tracking_map = l4_dict.copy()
 
@@ -1386,45 +1399,37 @@ class FtpTest(LFCliBase):
 
         for sta in station_names:
             if sta in interfaces_dict:
-                if "dBm" in interfaces_dict[sta]['signal']:
-                    self.rssi_list.append(interfaces_dict[sta]['signal'].split(" ")[0])
+                if sta in self.missing_device_logged:
+                    logger.info("Signal data for device '{}' is available again.".format(sta))
+                    self.missing_device_logged.discard(sta)
+                data = interfaces_dict[sta]
+                if "dBm" in data['signal']:
+                    self.rssi_list.append(data['signal'].split(" ")[0])
                 else:
-                    self.rssi_list.append(interfaces_dict[sta]['signal'])
-            else:
-                self.rssi_list.append('-')
-        for sta in station_names:
-            if sta in interfaces_dict:
-                self.tx_rate.append(interfaces_dict[sta]['tx-rate'])
-            else:
-                self.tx_rate.append('-')
-        for sta in station_names:
-            if sta in interfaces_dict:
-                self.port_rx_rate.append(interfaces_dict[sta]['rx-rate'])
-            else:
-                self.port_rx_rate.append('-')
-        for sta in station_names:
-            if sta in interfaces_dict:
-                channel_value = str(interfaces_dict[sta].get('channel', ''))
+                    self.rssi_list.append(data['signal'])
+                self.tx_rate.append(data['tx-rate'])
+                self.port_rx_rate.append(data['rx-rate'])
+                channel_value = str(data.get('channel', ''))
                 if channel_value in ('', '0', '-1'):
                     self.channel_list.append('NA')
                 else:
-                    self.channel_list.append(interfaces_dict[sta]['channel'])
+                    self.channel_list.append(data['channel'])
+                self.mode_list.append(data['mode'])
+                self.ssid_list.append(data['ssid'])
+                self.bssid_list.append(data['ap'])
             else:
+                if sta not in self.missing_device_logged:
+                    logger.warning(
+                        "Signal data for device '{}' is unavailable, it may have disconnected. "
+                        "Continuing the test with the remaining devices.".format(sta))
+                    self.missing_device_logged.add(sta)
+                    self.record_device_issue(sta, "Signal data unavailable (device may have disconnected)")
+                self.rssi_list.append('-')
+                self.tx_rate.append('-')
+                self.port_rx_rate.append('-')
                 self.channel_list.append('-')
-        for sta in station_names:
-            if sta in interfaces_dict:
-                self.mode_list.append(interfaces_dict[sta]['mode'])
-            else:
                 self.mode_list.append('-')
-        for sta in station_names:
-            if sta in interfaces_dict:
-                self.ssid_list.append(interfaces_dict[sta]['ssid'])
-            else:
                 self.ssid_list.append('-')
-        for sta in station_names:
-            if sta in interfaces_dict:
-                self.bssid_list.append(interfaces_dict[sta]['ap'])
-            else:
                 self.bssid_list.append('-')
 
     # Updates the status in the running.json file while running a test from the Web UI
