@@ -282,12 +282,15 @@ class FtpTest(LFCliBase):
         self.actual_monitoring_duration_seconds = 0
         self.missing_cx_logged = set()
         self.missing_device_logged = set()
+        self.cx_status_log = {}
+        self.monitoring_start_time = None
         self.uc_min = []
         self.uc_max = []
         self.url_data = []
         self.bytes_rd = []
         self.rx_rate = []
         self.total_err = []
+        self.status_list = []
         self.channel_list = []
         self.mode_list = []
         self.cx_list = []
@@ -1096,6 +1099,29 @@ class FtpTest(LFCliBase):
             "Issue": issue,
         })
 
+    def monitoring_elapsed_seconds(self):
+        if not self.monitoring_start_time:
+            return 0
+        return (datetime.now() - self.monitoring_start_time).total_seconds()
+
+    def track_cx_status(self, cx, status):
+        # Ignore CX status for the first 10s of monitoring: CXs are still settling into "Run"
+        # right after the test starts (e.g. Login/Wait), and treating that startup ramp-up as a
+        # real status change/recovery would be a false positive. Nothing is recorded - not even
+        # a baseline - during this window, so the first status seen once it ends becomes the
+        # reference point rather than being compared against transient startup states.
+        if self.monitoring_elapsed_seconds() < 10:
+            return
+        previous = self.cx_status_log.get(cx)
+        if previous is not None and previous != status:
+            if status.lower() != 'run':
+                logger.warning("CX '{}' status changed: {} -> {}".format(cx, previous, status))
+                self.record_device_issue(cx, "Status changed: {} -> {}".format(previous, status))
+            elif previous.lower() != 'run':
+                logger.info("CX '{}' recovered: {} -> {}".format(cx, previous, status))
+                self.record_device_issue(cx, "Recovered: {} -> {}".format(previous, status))
+        self.cx_status_log[cx] = status
+
     def format_monitoring_duration(self):
         total_seconds = int(self.actual_monitoring_duration_seconds)
         minutes, seconds = divmod(total_seconds, 60)
@@ -1133,7 +1159,7 @@ class FtpTest(LFCliBase):
     # FOR WEB-UI // function usd to fetch runtime values and fill the csv.
 
     def monitor_for_runtime_csv(self):
-        monitoring_start_time = datetime.now()
+        self.monitoring_start_time = datetime.now()
         time_now = datetime.now()
         start_time = time_now.strftime("%d/%m %I:%M:%S %p")
         duration = self.traffic_duration
@@ -1336,7 +1362,7 @@ class FtpTest(LFCliBase):
         except Exception:
             logger.error("All l4 data not found")
 
-        self.actual_monitoring_duration_seconds += (datetime.now() - monitoring_start_time).total_seconds()
+        self.actual_monitoring_duration_seconds += (datetime.now() - self.monitoring_start_time).total_seconds()
         return test_stopped_by_user
 
     def get_layer4_data(self):
@@ -1348,7 +1374,7 @@ class FtpTest(LFCliBase):
             dict: mapping of metric names to lists of values, one per CX.
         """
         try:
-            url_str = 'layer4/{}/list?fields=uc-avg,uc-max,uc-min,total-urls,rx rate (1m),bytes-rd,total-err'.format(','.join(self.cx_list))
+            url_str = 'layer4/{}/list?fields=uc-avg,uc-max,uc-min,total-urls,rx rate (1m),bytes-rd,total-err,status'.format(','.join(self.cx_list))
             l4_data = self.local_realm.json_get(url_str)['endpoint']
         except Exception:
             logger.error("NO  L4 endpoint found")
@@ -1360,7 +1386,8 @@ class FtpTest(LFCliBase):
             'url_times': [],
             'rx_rate': [],
             'bytes_rd': [],
-            'total_err': []
+            'total_err': [],
+            'status': []
         }
         cx_list = self.cx_list
         idx = 0
@@ -1378,6 +1405,8 @@ class FtpTest(LFCliBase):
                         l4_dict['rx_rate'].append(value['rx rate (1m)'])
                         l4_dict['bytes_rd'].append(value['bytes-rd'])
                         l4_dict['total_err'].append(value['total-err'])
+                        l4_dict['status'].append(value['status'])
+                        self.track_cx_status(cx, value['status'])
                         cx_found = True
             if not cx_found:
                 if cx not in self.missing_cx_logged:
@@ -1397,6 +1426,14 @@ class FtpTest(LFCliBase):
                 l4_dict['rx_rate'].append(0 if not self.tracking_map else self.tracking_map['rx_rate'][idx])
                 l4_dict['bytes_rd'].append(0 if not self.tracking_map else self.tracking_map['bytes_rd'][idx])
                 l4_dict['total_err'].append(0 if not self.tracking_map else self.tracking_map['total_err'][idx])
+                l4_dict['status'].append('Stopped')
+                # Don't route through track_cx_status here: the "CX missing" warning/issue
+                # above already records this event, so this just keeps cx_status_log's baseline
+                # in sync (as 'Stopped') without writing a second, redundant issue-log entry.
+                # Still respects the 10s grace period so a CX that's merely slow to come up
+                # doesn't seed a false "Stopped -> Run" recovery the moment it starts.
+                if self.monitoring_elapsed_seconds() >= 10:
+                    self.cx_status_log[cx] = 'Stopped'
             elif cx in self.missing_cx_logged:
                 logger.info("CX '{}' data is available again.".format(cx))
                 self.missing_cx_logged.discard(cx)
@@ -1420,6 +1457,7 @@ class FtpTest(LFCliBase):
         self.rx_rate = l4_data["rx_rate"]
         self.total_err = l4_data["total_err"]
         self.url_data = l4_data["url_times"]
+        self.status_list = l4_data["status"]
         dataset = l4_data["bytes_rd"]
         self.bytes_rd = [float(f"{(i / 1000000): .4f}") for i in dataset]
         urls_downloaded = []
