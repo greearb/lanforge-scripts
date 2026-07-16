@@ -904,24 +904,39 @@ class Ping(Realm):
     def get_pass_fail_list(self):
         # When csv_name is provided, for pass/fail criteria, respective values for each client will be used
         if not self.expected_passfail_val:
-            res_list = []
-            test_input_list = []
-            pass_fail_list = []
-            for client in self.report_names:
-                # Check if the client type (second word in "1.15 android samsungmob") is 'android'
-                if client.split(' ')[1] != 'Android':
-                    res_list.append(client.split(' ')[2])
+            # Resolve /adb/ once (not once per Android client) and only if there's
+            # at least one Android client to resolve.
+            interop_tab_data = None
+            if any(client.split(' ')[1] == 'Android' for client in self.report_names):
+                logger.debug("GET /adb/")
+                adb_response = self.json_get('/adb/')
+                if adb_response is None:
+                    logger.error("GET /adb/ returned no response while building the pass/fail device list.")
                 else:
-                    logger.debug("GET /adb/")
-                    adb_response = self.json_get('/adb/')
-                    if adb_response is None:
-                        logger.error("GET /adb/ returned no response while building the pass/fail device list.")
                     interop_tab_data = adb_response["devices"]
+
+            res_list = []
+            for client in self.report_names:
+                device_name = client.split(' ')[2]
+                # Check if the client type (second word in "1.15 android samsungmob") is 'android'
+                matched_name = None
+                if client.split(' ')[1] == 'Android' and interop_tab_data is not None:
                     for dev in interop_tab_data:
                         for item in dev.values():
                             # Extract the username from the client string (e.g., 'samsungmob' from "1.15 android samsungmob")
-                            if item['user-name'] == client.split(' ')[2]:
-                                res_list.append(item['name'].split('.')[2])
+                            if item['user-name'] == device_name:
+                                matched_name = item['name'].split('.')[2]
+                                break
+                        if matched_name is not None:
+                            break
+                # Always append exactly one entry per client, even when the ADB
+                # lookup can't resolve a match, so res_list stays positionally
+                # aligned with self.report_names/self.packets_sent/etc. — an
+                # unresolved Android client previously left a gap here, which
+                # shifted every pass/fail verdict after it onto the wrong device.
+                res_list.append(matched_name if matched_name is not None else device_name)
+
+            test_input_list = []
             with open(self.csv_name, mode='r') as file:
                 reader = csv.DictReader(file)
                 rows = list(reader)
@@ -933,9 +948,10 @@ class Ping(Realm):
                         found = True
                         break
                 if not found:
-                    logging.info(f"Ping result for device {device} not found in CSV. Using default packet loss = 10%")
+                    logging.warning(f"Ping Packet Loss % for device {device} not found in Threshold CSV. Using default packet loss = 10%")
                     test_input_list.append(10)
-            for i in range(len(test_input_list)):
+            pass_fail_list = []
+            for i in range(len(self.report_names)):
                 if self.packets_sent[i] == 0.0:
                     pass_fail_list.append('FAIL')
                 elif float(test_input_list[i]) >= self.packet_loss_percent[i]:
@@ -954,6 +970,84 @@ class Ping(Realm):
                 else:
                     pass_fail_list.append("FAIL")
         return pass_fail_list, test_input_list
+
+    def build_device_summary(self, device, device_data):
+        """
+        Safely derives the summary fields used in report tables/graphs for one device.
+
+        device_data can be sparse (empty ping_stats, rtts made up entirely of the
+        0.11 "no data" placeholder, missing keys) if the endpoint never reported
+        anything, without the entry itself being absent from self.result_json.
+        Every field below falls back to a safe default (0 / 'NA' / 'Unknown')
+        instead of raising, so every device in self.result_json always
+        contributes exactly one entry to each summary list — keeping them
+        aligned with self.result_json's iteration order, which
+        generate_uptime_graph() relies on for per-device color mapping.
+        """
+        device_data = device_data or {}
+        ping_stats = device_data.get('ping_stats') or {}
+        sent_list = ping_stats.get('sent') or []
+        received_list = ping_stats.get('received') or []
+        dropped_list = ping_stats.get('dropped') or []
+
+        def last_int(values):
+            try:
+                return int(values[-1])
+            except (IndexError, TypeError, ValueError):
+                return 0
+
+        channel_value = str(device_data.get('channel', ''))
+        device_channel = 'NA' if channel_value in ('', '0', '-1') else device_data.get('channel', channel_value)
+
+        try:
+            total_sent = float(device_data.get('sent', 0) or 0)
+        except (TypeError, ValueError):
+            total_sent = 0
+        if total_sent == 0 or not sent_list:
+            packet_loss_percent = 0
+        else:
+            try:
+                last_sent = float(sent_list[-1])
+                packet_loss_percent = (float(dropped_list[-1]) / last_sent * 100) if last_sent != 0 else 0
+            except (IndexError, TypeError, ValueError):
+                packet_loss_percent = 0
+
+        try:
+            t_rtt_values = sorted(v for v in (device_data.get('rtts') or {}).values() if v != 0.11)
+        except TypeError:
+            t_rtt_values = []
+        if t_rtt_values:
+            device_avg = float(sum(t_rtt_values) / len(t_rtt_values))
+            device_min = float(min(t_rtt_values))
+            device_max = float(max(t_rtt_values))
+        else:
+            device_avg = device_min = device_max = 0
+
+        device_name = device_data.get('name', device)
+        device_os = device_data.get('os', 'Unknown')
+        if device_os == 'Virtual':
+            report_name = '{} {}'.format(device, device_os)[0:25]
+        else:
+            report_name = '{} {} {}'.format(device, device_os, device_name)
+
+        return {
+            'packets_sent': last_int(sent_list),
+            'packets_received': last_int(received_list),
+            'packets_dropped': last_int(dropped_list),
+            'device_name': device_name,
+            'device_mode': device_data.get('mode', 'NA'),
+            'device_channel': device_channel,
+            'device_mac': device_data.get('mac', 'NA'),
+            'device_ip': device_data.get('ip', 'NA'),
+            'device_bssid': device_data.get('bssid', 'NA'),
+            'device_ssid': device_data.get('ssid', 'NA'),
+            'packet_loss_percent': packet_loss_percent,
+            'device_avg': device_avg,
+            'device_min': device_min,
+            'device_max': device_max,
+            'report_name': report_name,
+            'remarks': device_data.get('remarks') or [],
+        }
 
     def generate_report(self, result_json=None, result_dir='Ping_Plotter_Test_Report', report_path='', config_devices='', group_device_map=None):
         if group_device_map is None:
@@ -986,56 +1080,30 @@ class Ping(Realm):
             del self.result_json['status']
 
         for device, device_data in self.result_json.items():
-            self.packets_sent.append(int(device_data['ping_stats']['sent'][-1]))
-            self.packets_received.append(int(device_data['ping_stats']['received'][-1]))
-            self.packets_dropped.append(int(device_data['ping_stats']['dropped'][-1]))
-            self.device_names.append(device_data['name'])
-            self.device_modes.append(device_data['mode'])
-            channel_value = str(device_data.get('channel', ''))
-            if channel_value in ('', '0', '-1'):
-                self.device_channels.append('NA')
-            else:
-                self.device_channels.append(device_data['channel'])
-            self.device_mac.append(device_data['mac'])
-            self.device_ips.append(device_data['ip'])
-            self.device_bssid.append(device_data['bssid'])
-            self.device_ssid.append(device_data['ssid'])
-            if float(device_data['sent']) == 0:
-                self.packet_loss_percent.append(0)
-                # self.client_unrechability_percent.append(0)
-            else:
-                if device_data['ping_stats']['sent'] == [] or float(device_data['ping_stats']['sent'][-1]) == 0:
-                    self.packet_loss_percent.append(0)
-                else:
-                    self.packet_loss_percent.append(float(device_data['ping_stats']['dropped'][-1]) / float(device_data['ping_stats']['sent'][-1]) * 100)
-                # self.client_unrechability_percent.append(float(device_data['dropped']) / (float(self.duration) * 60) * 100)
-            t_rtt_values = sorted(list(device_data['rtts'].values()))
-            if t_rtt_values != []:
-                while (0.11 in t_rtt_values):
-                    t_rtt_values.remove(0.11)
-                self.device_avg.append(float(sum(t_rtt_values) / len(t_rtt_values)))
-                self.device_min.append(float(min(t_rtt_values)))
-                self.device_max.append(float(max(t_rtt_values)))
-            else:
-                self.device_avg.append(0)
-                self.device_min.append(0)
-                self.device_max.append(0)
-            # self.device_avg.append(float(sum(t_rtt_values) / len(t_rtt_values)))
-            # self.device_min.append(float(device_data['min_rtt'].replace(',', '')))
-            # self.device_max.append(float(device_data['max_rtt'].replace(',', '')))
-            # self.device_avg.append(float(device_data['avg_rtt'].replace(',', '')))
-            if device_data['os'] == 'Virtual':
-                self.report_names.append('{} {}'.format(device, device_data['os'])[0:25])
-            else:
-                self.report_names.append('{} {} {}'.format(device, device_data['os'], device_data['name']))
-            if device_data['remarks'] != []:
-                self.device_names_with_errors.append(device_data['name'])
+            summary = self.build_device_summary(device, device_data)
+            self.packets_sent.append(summary['packets_sent'])
+            self.packets_received.append(summary['packets_received'])
+            self.packets_dropped.append(summary['packets_dropped'])
+            self.device_names.append(summary['device_name'])
+            self.device_modes.append(summary['device_mode'])
+            self.device_channels.append(summary['device_channel'])
+            self.device_mac.append(summary['device_mac'])
+            self.device_ips.append(summary['device_ip'])
+            self.device_bssid.append(summary['device_bssid'])
+            self.device_ssid.append(summary['device_ssid'])
+            self.packet_loss_percent.append(summary['packet_loss_percent'])
+            self.device_avg.append(summary['device_avg'])
+            self.device_min.append(summary['device_min'])
+            self.device_max.append(summary['device_max'])
+            self.report_names.append(summary['report_name'])
+            if summary['remarks']:
+                self.device_names_with_errors.append(summary['device_name'])
                 self.devices_with_errors.append(device)
-                self.remarks.append(','.join(device_data['remarks']))
-            logging.info('{} {} {}'.format(*self.packets_sent,
+                self.remarks.append(','.join(summary['remarks']))
+            logging.debug('{} {} {}'.format(*self.packets_sent,
                                            *self.packets_received,
                                            *self.packets_dropped))
-            logging.info('{} {} {}'.format(*self.device_min,
+            logging.debug('{} {} {}'.format(*self.device_min,
                                            *self.device_max,
                                            *self.device_avg))
 
@@ -1402,6 +1470,7 @@ class Ping(Realm):
         adb_response = self.json_get('/adb/')
         if adb_response is None:
             logger.error("GET /adb/ returned no response while building the device report list.")
+            return None
         interop_tab_data = adb_response["devices"]
         for i in range(len(report_names)):
             for j in groupdevlist:
@@ -1409,7 +1478,7 @@ class Ping(Realm):
                 # - report_names[i].split(" ")[2] gives 'test3' (device name)
                 # - report_names[i].split(" ")[1] gives 'Lin' (OS type)
                 # This condition filters out Android clients and matches device name with j
-                if j == report_names[i].split(" ")[2] and report_names[i].split(" ")[1] != 'android':
+                if j == report_names[i].split(" ")[2] and report_names[i].split(" ")[1] != 'Android':
                     report_name.append(report_names[i])
                     macids.append(device_mac[i])
                     device_ip.append(device_ips[i])
@@ -2289,53 +2358,26 @@ class Ping(Realm):
                     del self.result_json['status']
 
                 for device, device_data in self.result_json.items():
-                    print("deviceeee", device, "deviceedataaa", device_data)
-                    self.packets_sent.append(int(device_data['ping_stats']['sent'][-1]))
-                    self.packets_received.append(int(device_data['ping_stats']['received'][-1]))
-                    self.packets_dropped.append(int(device_data['ping_stats']['dropped'][-1]))
-                    self.device_names.append(device_data['name'])
-                    self.device_modes.append(device_data['mode'])
-                    channel_value = str(device_data.get('channel', ''))
-                    if channel_value in ('', '0', '-1'):
-                        self.device_channels.append('NA')
-                    else:
-                        self.device_channels.append(device_data['channel'])
-                    self.device_mac.append(device_data['mac'])
-                    self.device_ips.append(device_data['ip'])
-                    self.device_bssid.append(device_data['bssid'])
-                    self.device_ssid.append(device_data['ssid'])
-                    if float(device_data['sent']) == 0:
-                        self.packet_loss_percent.append(0)
-                        # self.client_unrechability_percent.append(0)
-                    else:
-                        if device_data['ping_stats']['sent'] == [] or float(device_data['ping_stats']['sent'][-1]) == 0:
-                            self.packet_loss_percent.append(0)
-                        else:
-                            self.packet_loss_percent.append(float(device_data['ping_stats']['dropped'][-1]) / float(device_data['ping_stats']['sent'][-1]) * 100)
-                        # self.client_unrechability_percent.append(float(device_data['dropped']) / (float(self.duration) * 60) * 100)
-                    t_rtt_values = sorted(list(device_data['rtts'].values()))
-                    if t_rtt_values != []:
-                        while (0.11 in t_rtt_values):
-                            t_rtt_values.remove(0.11)
-                        self.device_avg.append(float(sum(t_rtt_values) / len(t_rtt_values)))
-                        self.device_min.append(float(min(t_rtt_values)))
-                        self.device_max.append(float(max(t_rtt_values)))
-                    else:
-                        self.device_avg.append(0)
-                        self.device_min.append(0)
-                        self.device_max.append(0)
-                    # self.device_avg.append(float(sum(t_rtt_values) / len(t_rtt_values)))
-                    # self.device_min.append(float(device_data['min_rtt'].replace(',', '')))
-                    # self.device_max.append(float(device_data['max_rtt'].replace(',', '')))
-                    # self.device_avg.append(float(device_data['avg_rtt'].replace(',', '')))
-                    if device_data['os'] == 'Virtual':
-                        self.report_names.append('{} {}'.format(device, device_data['os'])[0:25])
-                    else:
-                        self.report_names.append('{} {} {}'.format(device, device_data['os'], device_data['name']))
-                    if device_data['remarks'] != []:
-                        self.device_names_with_errors.append(device_data['name'])
+                    summary = self.build_device_summary(device, device_data)
+                    self.packets_sent.append(summary['packets_sent'])
+                    self.packets_received.append(summary['packets_received'])
+                    self.packets_dropped.append(summary['packets_dropped'])
+                    self.device_names.append(summary['device_name'])
+                    self.device_modes.append(summary['device_mode'])
+                    self.device_channels.append(summary['device_channel'])
+                    self.device_mac.append(summary['device_mac'])
+                    self.device_ips.append(summary['device_ip'])
+                    self.device_bssid.append(summary['device_bssid'])
+                    self.device_ssid.append(summary['device_ssid'])
+                    self.packet_loss_percent.append(summary['packet_loss_percent'])
+                    self.device_avg.append(summary['device_avg'])
+                    self.device_min.append(summary['device_min'])
+                    self.device_max.append(summary['device_max'])
+                    self.report_names.append(summary['report_name'])
+                    if summary['remarks']:
+                        self.device_names_with_errors.append(summary['device_name'])
                         self.devices_with_errors.append(device)
-                        self.remarks.append(','.join(device_data['remarks']))
+                        self.remarks.append(','.join(summary['remarks']))
                     logging.info('{} {} {}'.format(*self.packets_sent,
                                                    *self.packets_received,
                                                    *self.packets_dropped))
