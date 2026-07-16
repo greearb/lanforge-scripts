@@ -561,6 +561,28 @@ class Ping(Realm):
         logger.error(f"No valid generic endpoints recovered after waiting {timeout}s.")
         return False
 
+    def wait_for_ports_response(self, timeout=40, poll_interval=2):
+        """
+        Called when GET /ports/all/ returns no response. Keeps retrying for
+        up to `timeout` seconds in case the failure is transient before
+        giving up.
+
+        Returns:
+            The /ports/all/ response dict if a retry during the wait
+            succeeds, or None if the whole timeout elapsed with nothing
+            valid (caller should stop the test).
+        """
+        logger.warning(f"GET /ports/all/ returned no response. Waiting up to {timeout}s for it to recover before stopping the test.")
+        wait_start = datetime.now()
+        while (datetime.now() - wait_start).total_seconds() < timeout:
+            time.sleep(poll_interval)
+            ports_response = self.json_get('/ports/all/')
+            if ports_response is not None:
+                logger.info("GET /ports/all/ succeeded; resuming the test.")
+                return ports_response
+        logger.error(f"GET /ports/all/ still returned no response after waiting {timeout}s.")
+        return None
+
     def generate_remarks(self, station_ping_data):
         remarks = []
 
@@ -2101,16 +2123,6 @@ class Ping(Realm):
             self.coordinates_completed.append(coord)
             self.currentcoordinate = coord
 
-            logger.debug("GET /ports/all/")
-            ports_response = self.json_get('/ports/all/')
-            if ports_response is None:
-                logger.error(f"GET /ports/all/ returned no response while updating port data at coordinate {coord}.")
-            ports_data_dict = ports_response['interfaces']
-            ports_data = {}
-            for ports in ports_data_dict:
-                port, port_data = list(ports.keys())[0], list(ports.values())[0]
-                ports_data[port] = port_data
-
             logging.info("rotationlist {}".format(self.angle_list))
             for j in range(len(self.angle_list)):
                 duration = initial_duration * 60
@@ -3357,15 +3369,6 @@ connectivity problems.
 
     # start generate endpoint
     ping.start_generic()
-    logger.debug("GET /ports/all/")
-    ports_response = ping.json_get('/ports/all/')
-    if ports_response is None:
-        logger.error("GET /ports/all/ returned no response while fetching initial port data.")
-    ports_data_dict = ports_response['interfaces']
-    ports_data = {}
-    for ports in ports_data_dict:
-        port, port_data = list(ports.keys())[0], list(ports.values())[0]
-        ports_data[port] = port_data
 
     duration = duration * 60
 
@@ -3403,10 +3406,12 @@ connectivity problems.
             logger.debug("GET /ports/all/")
             ports_response = ping.json_get('/ports/all/')
             if ports_response is None:
-                logger.error("GET /ports/all/ returned no response while polling virtual station port data.")
-            ports_data_dict = ports_response['interfaces']
+                ports_response = ping.wait_for_ports_response(timeout=40)
+                if ports_response is None:
+                    logger.error("GET /ports/all/ returned no response while polling virtual station port data. Stopping the test.")
+                    exit(1)
             ports_data = {}
-            for ports in ports_data_dict:
+            for ports in ports_response['interfaces']:
                 port, port_data = list(ports.keys())[0], list(ports.values())[0]
                 ports_data[port] = port_data
             if isinstance(result_data, dict):
