@@ -583,6 +583,28 @@ class Ping(Realm):
         logger.error(f"GET /ports/all/ still returned no response after waiting {timeout}s.")
         return None
 
+    def wait_for_adb_response(self, timeout=40, poll_interval=2):
+        """
+        Called when GET /adb/ returns no response. Keeps retrying for up to
+        `timeout` seconds in case the failure is transient before giving up.
+
+        Returns:
+            The /adb/ response dict if a retry during the wait succeeds, or
+            None if the whole timeout elapsed with nothing valid (caller
+            should fall back to whatever it already does for a missing
+            /adb/ response).
+        """
+        logger.warning(f"GET /adb/ returned no response. Waiting up to {timeout}s for it to recover.")
+        wait_start = datetime.now()
+        while (datetime.now() - wait_start).total_seconds() < timeout:
+            time.sleep(poll_interval)
+            adb_response = self.json_get('/adb/')
+            if adb_response is not None:
+                logger.info("GET /adb/ succeeded.")
+                return adb_response
+        logger.error(f"GET /adb/ still returned no response after waiting {timeout}s.")
+        return None
+
     def generate_remarks(self, station_ping_data):
         remarks = []
 
@@ -970,7 +992,8 @@ class Ping(Realm):
                 adb_response = self.json_get('/adb/')
                 if adb_response is None:
                     logger.error("GET /adb/ returned no response while building the pass/fail device list.")
-                else:
+                    adb_response = self.wait_for_adb_response(timeout=40)
+                if adb_response is not None:
                     interop_tab_data = adb_response["devices"]
 
             res_list = []
@@ -1162,11 +1185,11 @@ class Ping(Realm):
                 self.devices_with_errors.append(device)
                 self.remarks.append(','.join(summary['remarks']))
             logging.debug('{} {} {}'.format(*self.packets_sent,
-                                           *self.packets_received,
-                                           *self.packets_dropped))
+                                            *self.packets_received,
+                                            *self.packets_dropped))
             logging.debug('{} {} {}'.format(*self.device_min,
-                                           *self.device_max,
-                                           *self.device_avg))
+                                            *self.device_max,
+                                            *self.device_avg))
 
         logging.info('Generating Report')
 
@@ -1531,7 +1554,9 @@ class Ping(Realm):
         adb_response = self.json_get('/adb/')
         if adb_response is None:
             logger.error("GET /adb/ returned no response while building the device report list.")
-            return None
+            adb_response = self.wait_for_adb_response(timeout=40)
+            if adb_response is None:
+                return None
         interop_tab_data = adb_response["devices"]
         for i in range(len(report_names)):
             for j in groupdevlist:
