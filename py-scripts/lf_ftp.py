@@ -278,6 +278,8 @@ class FtpTest(LFCliBase):
         self.uc_avg = []
         self.failed_cx = []
         self.tracking_map = {}
+        self.device_issue_log = []
+        self.actual_monitoring_duration_seconds = 0
         self.uc_min = []
         self.uc_max = []
         self.url_data = []
@@ -1085,10 +1087,22 @@ class FtpTest(LFCliBase):
             self.bytes_rd[i] = max(self.max_bytes_rd[i], self.bytes_rd[i])
         return list(dataset)
 
+    def record_device_issue(self, device, issue):
+        self.device_issue_log.append({
+            "Time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "Device": device,
+            "Issue": issue,
+        })
+
+    def format_monitoring_duration(self):
+        total_seconds = int(self.actual_monitoring_duration_seconds)
+        minutes, seconds = divmod(total_seconds, 60)
+        return "{}m {}s".format(minutes, seconds)
+
     # FOR WEB-UI // function usd to fetch runtime values and fill the csv.
 
     def monitor_for_runtime_csv(self):
-
+        monitoring_start_time = datetime.now()
         time_now = datetime.now()
         start_time = time_now.strftime("%d/%m %I:%M:%S %p")
         duration = self.traffic_duration
@@ -1274,6 +1288,7 @@ class FtpTest(LFCliBase):
         except Exception:
             logger.error("All l4 data not found")
 
+        self.actual_monitoring_duration_seconds += (datetime.now() - monitoring_start_time).total_seconds()
         return test_stopped_by_user
 
     def get_layer4_data(self):
@@ -2471,10 +2486,14 @@ class FtpTest(LFCliBase):
                 for coord, robot_info in self.robot_data.items():
                     self.build_graphs_and_table(coord, None, robot_info, client_list)
             # Finalizing the report after robot test graphs and tables
+            if self.device_issue_log:
+                issues_df = pd.DataFrame(self.device_issue_log)
+                issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
             self.report.build_footer()
             html_file = self.report.write_html()
             logger.info(f"Returned file {html_file}")
             self.report.write_pdf()
+            logger.info("Monitoring Duration: {}".format(self.format_monitoring_duration()))
             return
         # self.report.set_obj_html("PASS/FAIL Results",
         #                          "This Table will give Pass/Fail results.")
@@ -2650,11 +2669,15 @@ class FtpTest(LFCliBase):
                 self.report.build_objective()
         if iot_summary:
             self.build_iot_report_section(self.report, iot_summary)
+        if self.device_issue_log:
+            issues_df = pd.DataFrame(self.device_issue_log)
+            issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         self.report.build_footer()
         html_file = self.report.write_html()
         logger.info("returned file {}".format(html_file))
         logger.info(html_file)
         self.report.write_pdf()
+        logger.info("Monitoring Duration: {}".format(self.format_monitoring_duration()))
 
         # The following lines can be used when the kpi results are needed
         # self.kpi_results
