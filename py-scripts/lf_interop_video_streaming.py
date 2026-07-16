@@ -375,11 +375,13 @@ class VideoStreamingTest(Realm):
         self.all_cx_list = []
         self.missing_cx_logged = set()
         self.missing_signal_logged = set()
+        self.cx_not_running_logged = set()
         self.device_issue_log = []
         self.actual_monitoring_duration_seconds = 0
         self.pre_monitoring_missing_logged = False
         self.last_monitor_url = None
         self.last_monitor_response = None
+        self.monitor_start_time = None
 
         self.req_total_urls = []
         self.req_urls_per_sec = []
@@ -806,8 +808,23 @@ class VideoStreamingTest(Realm):
                         logger.info("CX '{}' data is available again.".format(cx_name))
                         self.missing_cx_logged.discard(cx_name)
 
+                status = value.get('status', 'Stopped')
+                # Give devices a 10s grace period after monitoring starts before treating a
+                # non-'Run' status as noteworthy, since it's normal for CXs to still be starting
+                # up right after the monitor loop begins.
+                past_grace_period = (self.monitor_start_time is None or (datetime.now() - self.monitor_start_time).total_seconds() >= 10)
+                if status != 'Run':
+                    if past_grace_period and cx_name not in self.cx_not_running_logged:
+                        logger.warning("CX '{}' status is '{}', not running.".format(cx_name, status))
+                        self.cx_not_running_logged.add(cx_name)
+                        self.record_device_issue(self.port_label_from_cx_name(cx_name),
+                                                 "CX '{}' status is '{}', not running".format(cx_name, status))
+                elif cx_name in self.cx_not_running_logged:
+                    logger.info("CX '{}' status is back to running.".format(cx_name))
+                    self.cx_not_running_logged.discard(cx_name)
+
                 names.append(value.get('name', cx_name))
-                statuses.append(value.get('status', 'Stopped'))
+                statuses.append(status)
                 total_urls.append(value.get('total-urls', 0))
                 urls_per_sec.append(value.get('urls/s', 0.0))
                 total_err.append(value.get('total-err', 0))
@@ -1023,6 +1040,8 @@ class VideoStreamingTest(Realm):
             resource_ids = list(map(int, self.resource_ids.split(',')))
             self.data_for_webui['resources'] = resource_ids
             starttime = datetime.now()
+            if self.monitor_start_time is None:
+                self.monitor_start_time = starttime
             self.data["name"] = self.my_monitor('name')
             current_time = datetime.now()
             endtime = ""
@@ -1673,13 +1692,16 @@ class VideoStreamingTest(Realm):
                 wait_time_data.append(filtered_df[[col for col in filtered_df.columns if "total_wait_time" in col][0]].values.tolist()[-1])
                 rssi_data.append(int(round(sum(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()) /
                                  len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
-                # Extract maximum bytes read for the device
-                max_bytes_rd = max(filtered_df[[col for col in filtered_df.columns if "bytes_rd" in col][0]].values.tolist())
-                max_bytes_rd_list.append(max_bytes_rd)
+                # Extract the last read bytes value for the device. If the CX ended up missing
+                # (still missing at the last poll), this is 0 by design - a device that dropped
+                # out shouldn't report a stale byte count as if it finished the test normally.
+                last_bytes_rd = filtered_df[[col for col in filtered_df.columns if "bytes_rd" in col][0]].values.tolist()[-1]
+                max_bytes_rd_list.append(last_bytes_rd)
 
-                # Calculate and append the average RX rate in Mbps
-                rx_rate_values = filtered_df[[col for col in filtered_df.columns if "rx rate" in col][0]].values.tolist()
-                avg_rx_rate_list.append(round((sum(rx_rate_values) / len(rx_rate_values)) / 1_000_000, 2))  # Convert bps to Mbps
+                # Use the last read RX rate for the device instead of averaging across the whole
+                # run. Same as bytes read, this is 0 if the CX was still missing at the last poll.
+                last_rx_rate = filtered_df[[col for col in filtered_df.columns if "rx rate" in col][0]].values.tolist()[-1]
+                avg_rx_rate_list.append(round(last_rx_rate / 1_000_000, 2))  # Convert bps to Mbps
 
                 if iter != 0:
                     # Calculate the difference in total URLs between the current and previous iterations
@@ -2480,13 +2502,16 @@ class VideoStreamingTest(Realm):
                 wait_time_data.append(filtered_df[[col for col in filtered_df.columns if "total_wait_time" in col][0]].values.tolist()[-1])
                 rssi_data.append(int(round(sum(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()) /
                                  len(filtered_df[[col for col in filtered_df.columns if "RSSI" in col][0]].values.tolist()), 2)) * -1)
-                # Extract maximum bytes read for the device
-                max_bytes_rd = max(filtered_df[[col for col in filtered_df.columns if "bytes_rd" in col][0]].values.tolist())
-                max_bytes_rd_list.append(max_bytes_rd)
+                # Extract the last read bytes value for the device. If the CX ended up missing
+                # (still missing at the last poll), this is 0 by design - a device that dropped
+                # out shouldn't report a stale byte count as if it finished the test normally.
+                last_bytes_rd = filtered_df[[col for col in filtered_df.columns if "bytes_rd" in col][0]].values.tolist()[-1]
+                max_bytes_rd_list.append(last_bytes_rd)
 
-                # Calculate and append the average RX rate in Mbps
-                rx_rate_values = filtered_df[[col for col in filtered_df.columns if "rx rate" in col][0]].values.tolist()
-                avg_rx_rate_list.append(round((sum(rx_rate_values) / len(rx_rate_values)) / 1_000_000, 2))  # Convert bps to Mbps
+                # Use the last read RX rate for the device instead of averaging across the whole
+                # run. Same as bytes read, this is 0 if the CX was still missing at the last poll.
+                last_rx_rate = filtered_df[[col for col in filtered_df.columns if "rx rate" in col][0]].values.tolist()[-1]
+                avg_rx_rate_list.append(round(last_rx_rate / 1_000_000, 2))  # Convert bps to Mbps
 
                 if iter != 0:
                     # Calculate the difference in total URLs between the current and previous iterations
