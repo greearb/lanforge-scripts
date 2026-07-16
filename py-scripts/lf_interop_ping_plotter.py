@@ -525,6 +525,42 @@ class Ping(Realm):
 
         return results
 
+    def has_valid_endpoint_data(self, result_data):
+        """
+        True if result_data (as returned by get_results()) contains at least
+        one endpoint whose name isn't the 'UNKNOWN' placeholder LANforge uses
+        when a generic endpoint couldn't be tied to a real device/CX.
+        """
+        if result_data is None:
+            return False
+        if isinstance(result_data, dict):
+            return 'UNKNOWN' not in result_data.get('name', 'UNKNOWN')
+        keys = [list(d.keys())[0] for d in result_data]
+        return any('UNKNOWN' not in key for key in keys)
+
+    def wait_for_valid_endpoints(self, timeout=40, poll_interval=2):
+        """
+        Called when a poll comes back with no valid (non-UNKNOWN) generic
+        endpoints at all. Keeps retrying get_results() for up to `timeout`
+        seconds in case the loss is transient (e.g. a brief LANforge hiccup)
+        before giving up, instead of stopping the test immediately.
+
+        Returns:
+            True if a retry during the wait found valid endpoint data
+            (caller should resume normal polling), False if the whole
+            timeout elapsed with nothing valid (caller should stop the
+            test and move on to report generation).
+        """
+        logger.warning(f"No valid generic endpoints in the last poll. Waiting up to {timeout}s for them to recover before stopping the test.")
+        wait_start = datetime.now()
+        while (datetime.now() - wait_start).total_seconds() < timeout:
+            time.sleep(poll_interval)
+            if self.has_valid_endpoint_data(self.get_results()):
+                logger.info("Valid endpoint data recovered; resuming the test.")
+                return True
+        logger.error(f"No valid generic endpoints recovered after waiting {timeout}s.")
+        return False
+
     def generate_remarks(self, station_ping_data):
         remarks = []
 
@@ -1054,6 +1090,9 @@ class Ping(Realm):
             group_device_map = {}
         if result_json is not None:
             self.result_json = result_json
+        if not self.result_json:
+            logger.error("No ping data was collected for any device; skipping report generation.")
+            return
         logging.info('Generating Report')
         # graph for the above
         self.packets_sent = []
@@ -1669,18 +1708,15 @@ class Ping(Realm):
                     time.sleep(1)
                     loop_timer += abs(t_init - datetime.now()).total_seconds()
                     continue
-                if isinstance(result_data, dict):
-                    if 'UNKNOWN' in result_data['name']:
-                        raise ValueError("There are no valid generic endpoints to run the test")
-                else:
-                    keys = [list(d.keys())[0] for d in result_data]
-                    keys = [key for key in keys if 'UNKNOWN' not in key]
-                    if len(keys) == 0:
-                        raise ValueError("There are no valid generic endpoints to run the test")
+                if not self.has_valid_endpoint_data(result_data):
+                    raise ValueError("There are no valid generic endpoints to run the test")
             except ValueError as e:
                 logger.info(result_data)
                 logger.error(e)
-                exit(0)
+                if self.wait_for_valid_endpoints(timeout=40):
+                    loop_timer += abs(t_init - datetime.now()).total_seconds()
+                    continue
+                break
             # logging.info(result_data)
             # Robot battery management — check every 300 seconds
             if self.robot is not None and not self.do_bandsteering and monitor_charge_time is not None:
@@ -2226,6 +2262,9 @@ class Ping(Realm):
             group_device_map = {}
         if result_json is not None:
             self.result_json = result_json
+        if not self.coordinate_json:
+            logger.error("No ping data was collected for any coordinate; skipping report generation.")
+            return
         logging.info('Generating Report')
 
         report = lf_report(_output_pdf='interop_ping.pdf',
@@ -3351,18 +3390,15 @@ connectivity problems.
                 time.sleep(1)
                 loop_timer += abs(t_init - datetime.now()).total_seconds()
                 continue
-            if isinstance(result_data, dict):
-                if 'UNKNOWN' in result_data['name']:
-                    raise ValueError("There are no valid generic endpoints to run the test")
-            else:
-                keys = [list(d.keys())[0] for d in result_data]
-                keys = [key for key in keys if 'UNKNOWN' not in key]
-                if len(keys) == 0:
-                    raise ValueError("There are no valid generic endpoints to run the test")
+            if not ping.has_valid_endpoint_data(result_data):
+                raise ValueError("There are no valid generic endpoints to run the test")
         except ValueError as e:
             logger.info(result_data)
             logger.error(e)
-            exit(0)
+            if ping.wait_for_valid_endpoints(timeout=40):
+                loop_timer += abs(t_init - datetime.now()).total_seconds()
+                continue
+            break
         if args.virtual:
             logger.debug("GET /ports/all/")
             ports_response = ping.json_get('/ports/all/')
