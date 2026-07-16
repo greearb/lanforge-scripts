@@ -1101,6 +1101,35 @@ class FtpTest(LFCliBase):
         minutes, seconds = divmod(total_seconds, 60)
         return "{}m {}s".format(minutes, seconds)
 
+    def wait_for_any_cx_recovery(self, timeout=40, poll_interval=5):
+        """
+        Polls device data (via get_device_details) while every created CX is missing, giving
+        devices a chance to reappear before the caller gives up on this monitoring iteration.
+        Also honors a user-initiated stop from the webgui during the wait, so a stop request
+        isn't delayed by the full retry window.
+
+        Returns 'recovered' as soon as at least one CX responds again, 'stopped' if the user
+        stops the test during the wait, or 'timeout' if `timeout` seconds elapse with every CX
+        still missing.
+        """
+        wait_start = datetime.now()
+        while (datetime.now() - wait_start).total_seconds() < timeout:
+            time.sleep(poll_interval)
+            if self.dowebgui == "True":
+                with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(
+                        self.host, self.test_name), 'r') as file:
+                    data = json.load(file)
+                    if data["status"] != "Running":
+                        logger.info("Test is stopped by the user during the device-recovery wait.")
+                        return 'stopped'
+            self.get_device_details()
+            elapsed = (datetime.now() - wait_start).total_seconds()
+            if len(self.missing_cx_logged) < len(self.cx_list):
+                logger.info("Device(s) responded again after {:.0f}s, resuming.".format(elapsed))
+                return 'recovered'
+            logger.warning("Still no devices responding after {:.0f}s, retrying...".format(elapsed))
+        return 'timeout'
+
     # FOR WEB-UI // function usd to fetch runtime values and fill the csv.
 
     def monitor_for_runtime_csv(self):
@@ -1176,6 +1205,23 @@ class FtpTest(LFCliBase):
             # bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
             # Calling function to get devices data to append in ftp_datavalues.csv during runtime
             self.get_device_details()
+
+            # If every CX has stopped responding, retry for up to 40 seconds before giving up
+            # on this monitor loop. This does not fail the test: the loop just ends gracefully
+            # and execution continues with whatever data was already collected.
+            if self.cx_list and len(self.missing_cx_logged) == len(self.cx_list):
+                logger.warning("All devices have stopped responding during monitoring, retrying "
+                               "for up to 40 seconds before ending the monitor loop.")
+                recovery = self.wait_for_any_cx_recovery(timeout=40, poll_interval=5)
+                if recovery == 'stopped':
+                    test_stopped_by_user = True
+                    break
+                elif recovery == 'timeout':
+                    logger.error("No devices responded within 40 seconds during monitoring, "
+                                 "ending the monitor loop gracefully; the test will continue with "
+                                 "the data collected so far.")
+                    break
+
             self.data["client"] = self.cx_list
             self.data["MAC"] = self.mac_id_list
             self.data["Channel"] = self.channel_list
