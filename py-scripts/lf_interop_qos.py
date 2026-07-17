@@ -739,6 +739,35 @@ class ThroughputQOS(Realm):
             self.mac_id_list = list(self.mac_id_list)
             self.num_stations = len(self.real_client_list)
 
+    def wait_for_any_cx_recovery(self, timeout=40, poll_interval=5):
+        """Polls for any CX to reappear (or a user stop) for up to `timeout` seconds.
+
+        Returns True on recovery or stop, False if the timeout elapses with none.
+        """
+        wait_start = datetime.now()
+        cx_list = list(self.cx_profile.created_cx.keys())
+        while (datetime.now() - wait_start).total_seconds() < timeout:
+            time.sleep(poll_interval)
+            if self.dowebgui == "True":
+                with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(
+                        self.ip, self.test_name), 'r') as file:
+                    data = json.load(file)
+                    if data["status"] != "Running":
+                        logger.info("Test is stopped by the user during the device-recovery wait.")
+                        self.test_stopped_by_user = True
+                        return True
+            try:
+                l3_endp_data = list(self.json_get('/endp/list?fields=rx rate (last),rx drop %25,name')['endpoint'])
+                matched_cx = {next(iter(i.items()))[0][0:-2] for i in l3_endp_data}
+            except Exception:
+                matched_cx = set()
+            elapsed = (datetime.now() - wait_start).total_seconds()
+            if any(cx in matched_cx for cx in cx_list):
+                logger.info("Device(s) responded again after {:.0f}s, resuming.".format(elapsed))
+                return True
+            logger.warning("Still no devices responding after {:.0f}s, retrying...".format(elapsed))
+        return False
+
     def monitor(self, curr_coordinate=None, curr_rotation=None, monitor_charge_time=None):
         # TODO: Fix this. This is poor style
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download, avg_upload, avg_download, avg_upload_throughput, avg_download_throughput, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b, dropa_connections, dropb_connections = {  # noqa: E501
@@ -823,7 +852,9 @@ class ThroughputQOS(Realm):
             individual_device_data[cx] = pd.DataFrame(columns=columns)
         while datetime.now() < end_time or getattr(self, "background_run", None):
             if self.robot_test:
-                if self.rotation_enabled:
+                # monitor_charge_time is None on the bandsteering monitor_function tick, so
+                # skip this check instead of crashing on None.
+                if self.rotation_enabled and monitor_charge_time is not None:
                     if (datetime.now() - monitor_charge_time).total_seconds() >= 300:
                         logger.info("Checking battery status (5-minute interval)...")
                         pause_start = datetime.now()
@@ -927,6 +958,17 @@ class ThroughputQOS(Realm):
             except Exception as e:
                 logger.info(overallresponse)
                 logger.error(f"None type response{e}")
+
+            # If every device stopped responding, retry for 40s before ending this monitor loop
+            # gracefully (not a test failure) with whatever data was already collected.
+            if self.cx_profile.created_cx and len(self.missing_cx_logged) == len(self.cx_profile.created_cx):
+                logger.warning("All devices have stopped responding during monitoring, retrying "
+                               "for up to 40 seconds before ending the monitor loop.")
+                if not self.wait_for_any_cx_recovery(timeout=40, poll_interval=5):
+                    logger.error("No devices responded within 40 seconds during monitoring, "
+                                 "ending the monitor loop gracefully; the test will continue with "
+                                 "the data collected so far.")
+                    break
             response1 = t_response
             response_values = list(response1.values())
             for value_index in range(len(response1.values())):
