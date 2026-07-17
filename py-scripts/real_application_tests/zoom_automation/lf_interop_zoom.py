@@ -210,6 +210,7 @@ class ZoomAutomation(Realm):
         self.generic_endps_profile = self.new_generic_endp_profile()
         self.generic_endps_profile.name_prefix = "zoom"
         self.generic_endps_profile.type = "zoom"
+        self.endpoint_last_status = {}
         self.data_store = {}
         self.header = [
             "timestamp",
@@ -726,6 +727,71 @@ class ZoomAutomation(Realm):
         except Exception as e:
             logger.error(f"Error in check_gen_cx function {e}", exc_info=True)
             logger.info(f"generic endpoint data {generic_endpoint}")
+
+    def monitor_endpoint_status_changes(self, wait_time=40, poll_interval=5):
+        """
+        Checks the current status of every generic endpoint and, only the
+        first time an endpoint's status changes, logs a message and appends
+        a row (timestamp, endpoint_name, status) to
+        endpoint_status_changes.csv. Repeated polls of an unchanged status
+        are not logged or written again.
+
+        If every created endpoint is missing from the response, retries
+        every poll_interval seconds for up to wait_time seconds. Aborts the
+        test if still none of the created endpoints have responded once
+        wait_time has elapsed.
+        """
+        csv_file = os.path.join(self.path, "endpoint_status_changes.csv")
+        created_endp = self.generic_endps_profile.created_endp
+
+        start_time = time.time()
+        endpoint_data = {}
+        while True:
+            for gen_endp in created_endp:
+                generic_endpoint = self.json_get(f"/generic/{gen_endp}")
+                if generic_endpoint and "endpoint" in generic_endpoint:
+                    endpoint_data[gen_endp] = generic_endpoint
+
+            if endpoint_data or (time.time() - start_time) >= wait_time:
+                break
+
+            logger.warning(
+                "No data received for any of the created endpoints; retrying..."
+            )
+            time.sleep(poll_interval)
+
+        if not endpoint_data:
+            logger.error(
+                f"No data received for any of the created endpoints after waiting "
+                f"{wait_time} seconds. Aborting test."
+            )
+            exit(1)
+
+        for gen_endp, generic_endpoint in endpoint_data.items():
+            current_status = generic_endpoint["endpoint"].get("status", "")
+            previous_status = self.endpoint_last_status.get(gen_endp)
+
+            if current_status == previous_status:
+                continue
+
+            logger.info(
+                f"Endpoint {gen_endp} status changed to:{current_status}"
+            )
+
+            file_exists = os.path.isfile(csv_file) and os.path.getsize(csv_file) > 0
+            with open(csv_file, mode="a", newline="") as f:
+                writer = csv.writer(f)
+                if not file_exists:
+                    writer.writerow(["timestamp", "endpoint_name", "status"])
+                writer.writerow(
+                    [
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        gen_endp,
+                        current_status,
+                    ]
+                )
+
+            self.endpoint_last_status[gen_endp] = current_status
 
     def wait_for_flask(self, url="http://127.0.0.1:5000/get_latest_stats", timeout=10):
         """Wait until the Flask server is up, but exit if it takes longer than `timeout` seconds."""
@@ -1275,6 +1341,7 @@ class ZoomAutomation(Realm):
                         self.wait_for_host_ready()
                         self.create_participants()
                         self.wait_for_test_start()
+                self.monitor_endpoint_status_changes()
                 logger.info("Monitoring the Test")
                 time.sleep(5)
         if self.do_robo:
@@ -1463,7 +1530,6 @@ class ZoomAutomation(Realm):
 
     def get_access_token(self, account_id, client_id, client_secret):
         token_url = f"https://zoom.us/oauth/token?grant_type=account_credentials&account_id={account_id}"
-        logger.info(f"Requesting Zoom OAuth access token for account_id={account_id}")
         try:
             response = requests.post(
                 token_url, auth=HTTPBasicAuth(client_id, client_secret)
@@ -1476,7 +1542,6 @@ class ZoomAutomation(Realm):
 
         if response.status_code == 200:
             access_token = response.json().get("access_token")
-            logger.info("Zoom OAuth access token obtained successfully")
             return access_token
         else:
             logger.error(
@@ -2653,6 +2718,10 @@ class ZoomAutomation(Realm):
             file_to_move_path = os.path.join(self.path, f'{client}.csv')
             self.move_files(file_to_move_path, report_path_date_time)
 
+        self.move_files(
+            os.path.join(self.path, "endpoint_status_changes.csv"), report_path_date_time
+        )
+
     def change_port_to_ip(self, upstream_port):
         """
         Convert a given port name to its corresponding IP address if it's not already an IP.
@@ -3776,6 +3845,9 @@ class ZoomAutomation(Realm):
             ),
             self.report_path_date_time,
         )
+        self.move_files(
+            os.path.join(self.path, "endpoint_status_changes.csv"), self.report_path_date_time
+        )
 
     def generate_report_from_data(self):
         """
@@ -4039,6 +4111,11 @@ class ZoomAutomation(Realm):
             pattern = os.path.join(os.getcwd(), "zoom_api_responses", "*_qos.json")
             for f in glob.glob(pattern):
                 self.move_files(f, report_path_date_time)
+
+        # 3. Move the endpoint status change log
+        self.move_files(
+            os.path.join(self.path, "endpoint_status_changes.csv"), report_path_date_time
+        )
 
     def stop_webui(self):
         """
