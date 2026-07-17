@@ -829,6 +829,28 @@ class ZoomAutomation(Realm):
             )
         return True, created_cx, created_endp
 
+    def json_get_with_retry(self, url, wait_time=40, poll_interval=5):
+        """
+        Calls self.json_get(url), retrying every poll_interval seconds for up
+        to wait_time seconds if LANforge returns no response. Aborts the test
+        if it still hasn't responded once wait_time has elapsed.
+        """
+        start_time = time.time()
+        response = self.json_get(url)
+        while response is None and (time.time() - start_time) < wait_time:
+            logger.warning(f"GET {url} returned no response from LANforge; retrying...")
+            time.sleep(poll_interval)
+            response = self.json_get(url)
+
+        if response is None:
+            logger.error(
+                f"GET {url} returned no response from LANforge after waiting "
+                f"{wait_time} seconds. Aborting test."
+            )
+            exit(1)
+
+        return response
+
     def get_resource_data(self):
         self.ports_list = []
         self.user_list = []
@@ -840,7 +862,7 @@ class ZoomAutomation(Realm):
         ]
 
         # Step 1: Retrieve information about all resources
-        response = self.json_get("/resource/all")
+        response = self.json_get_with_retry("/resource/all")
 
         # Step 2: Match user-specified resources with available resources sequentially
         if self.user_resources:
@@ -878,10 +900,7 @@ class ZoomAutomation(Realm):
         self.ssid_list = []
 
         # Step 3: Retrieve port information
-        response_port = self.json_get("/port/all")
-        if response_port is None:
-            logger.error("GET /port/all returned no response from LANforge. Aborting test.")
-            exit(1)
+        response_port = self.json_get_with_retry("/port/all")
 
         # Step 4: Match ports associated with retrieved resources in the order of ports_list
         for port_entry in self.ports_list:
@@ -926,10 +945,7 @@ class ZoomAutomation(Realm):
         self.wifi_interface_list = [item.split(".")[2] for item in self.real_sta_list]
 
     def get_interop_data(self):
-        interop_data = self.json_get("/adb")
-        if interop_data is None:
-            logger.error("GET /adb returned no response from LANforge. Aborting test.")
-            exit(1)
+        interop_data = self.json_get_with_retry("/adb")
         interop_mobile_data = interop_data.get("devices", {})
         self.serial_list = []
         self.lanforge_port_list = []
@@ -1251,10 +1267,7 @@ class ZoomAutomation(Realm):
         if real_sta_list is None:
             self.real_sta_list, _, _ = real_device_obj.query_user()
         else:
-            interface_data = self.json_get("/port/all")
-            if interface_data is None:
-                logger.error("GET /port/all returned no response from LANforge. Aborting test.")
-                exit(1)
+            interface_data = self.json_get_with_retry("/port/all")
             interfaces = interface_data["interfaces"]
             final_device_list = []  # Initialize the list
 
@@ -2620,12 +2633,7 @@ class ZoomAutomation(Realm):
         if upstream_port.count('.') != 3:
             target_port_list = self.name_to_eid(upstream_port)
             shelf, resource, port, _ = target_port_list
-            response = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')
-            if response is None:
-                logging.error(
-                    f"GET /port/{shelf}/{resource}/{port} returned no response from LANforge. Aborting test."
-                )
-                exit(1)
+            response = self.json_get_with_retry(f'/port/{shelf}/{resource}/{port}?fields=ip')
             try:
                 target_port_ip = response['interface']['ip']
                 upstream_port = target_port_ip
