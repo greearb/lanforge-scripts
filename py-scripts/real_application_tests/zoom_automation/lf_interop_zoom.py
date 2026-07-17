@@ -866,31 +866,46 @@ class ZoomAutomation(Realm):
 
         # Step 2: Match user-specified resources with available resources sequentially
         if self.user_resources:
-            resources = response.get("resources", [])
-            lf_resources_dict = {}
-            for element in resources:
-                lf_resources_dict.update(element)
+            try:
+                resources = response["resources"]
+                lf_resources_dict = {}
+                for element in resources:
+                    lf_resources_dict.update(element)
 
-            for user_resource in self.user_resources:
-                if user_resource in lf_resources_dict:
-                    resource_values = lf_resources_dict[user_resource]
-                    eid = resource_values["eid"]
-                    resource_ip = resource_values["ctrl-ip"]
-                    hostname = resource_values["hostname"]
-                    user = resource_values["user"]
+                logger.debug(
+                    "LANforge resources fetched from /resource/all:\n%s",
+                    json.dumps(lf_resources_dict, indent=2, default=str),
+                )
 
-                    self.device_names.append(hostname)
-                    self.ports_list.append({"eid": eid, "ctrl-ip": resource_ip})
-                    self.user_list.append(user)
-                else:
-                    logger.error(
-                        f"Resource {user_resource} not found in LANforge response. Aborting test."
-                    )
-                    logger.info(
-                        "LANforge resources fetched from /resource/all:\n%s",
-                        json.dumps(lf_resources_dict, indent=2, default=str),
-                    )
-                    exit(1)
+                for user_resource in self.user_resources:
+                    if user_resource in lf_resources_dict:
+                        resource_values = lf_resources_dict[user_resource]
+                        eid = resource_values["eid"]
+                        resource_ip = resource_values["ctrl-ip"]
+                        hostname = resource_values["hostname"]
+                        user = resource_values["user"]
+
+                        self.device_names.append(hostname)
+                        self.ports_list.append({"eid": eid, "ctrl-ip": resource_ip})
+                        self.user_list.append(user)
+                    else:
+                        logger.error(
+                            f"Resource {user_resource} not found in LANforge response. Aborting test."
+                        )
+                        exit(1)
+            except KeyError as e:
+                logger.error(
+                    f"/resource/all response is not in the expected format, missing key {e}. "
+                    "Data received:\n%s",
+                    json.dumps(response, indent=2, default=str),
+                )
+                exit(1)
+            except Exception as e:
+                logger.error(
+                    f"Unexpected error while parsing /resource/all response: {e}",
+                    exc_info=True,
+                )
+                exit(1)
 
     def get_ports_data(self):
         self.gen_ports_list = []
@@ -903,86 +918,116 @@ class ZoomAutomation(Realm):
         response_port = self.json_get_with_retry("/port/all")
 
         # Step 4: Match ports associated with retrieved resources in the order of ports_list
-        for port_entry in self.ports_list:
-            # Extract the eid and ctrl-ip from the current ports_list entry
-            expected_eid = port_entry["eid"]
+        try:
+            for port_entry in self.ports_list:
+                # Extract the eid and ctrl-ip from the current ports_list entry
+                expected_eid = port_entry["eid"]
 
-            # Iterate over the port interfaces to find a matching port
-            for interface in response_port["interfaces"]:
-                for port, _port_data in interface.items():
-                    # Extract the first two segments of the port identifier to match with expected_eid
-                    result = ".".join(port.split(".")[:2])
+                # Iterate over the port interfaces to find a matching port
+                for interface in response_port["interfaces"]:
+                    for port, _port_data in interface.items():
+                        # Extract the first two segments of the port identifier to match with expected_eid
+                        result = ".".join(port.split(".")[:2])
 
-                    # Check if the result matches the current expected eid from ports_list
-                    if result == expected_eid:
-                        self.gen_ports_list.append(port.split(".")[-1])
-                        break
-                else:
-                    continue
-                break
+                        # Check if the result matches the current expected eid from ports_list
+                        if result == expected_eid:
+                            self.gen_ports_list.append(port.split(".")[-1])
+                            break
+                    else:
+                        continue
+                    break
 
-        for port_entry in self.ports_list:
-            # Extract the eid and ctrl-ip from the current ports_list entry
-            expected_eid = port_entry["eid"]
+            for port_entry in self.ports_list:
+                # Extract the eid and ctrl-ip from the current ports_list entry
+                expected_eid = port_entry["eid"]
 
-            # Iterate over the port interfaces to find a matching port
-            for interface in response_port["interfaces"]:
-                for port, port_data in interface.items():
-                    # Extract the first two segments of the port identifier to match with expected_eid
-                    result = ".".join(port.split(".")[:2])
+                # Iterate over the port interfaces to find a matching port
+                for interface in response_port["interfaces"]:
+                    for port, port_data in interface.items():
+                        # Extract the first two segments of the port identifier to match with expected_eid
+                        result = ".".join(port.split(".")[:2])
 
-                    # Check if the result matches the current expected eid from ports_list
-                    if result == expected_eid and port_data["parent dev"] == "wiphy0":
-                        self.mac_list.append(port_data["mac"])
-                        self.rssi_list.append(port_data["signal"])
-                        self.link_rate_list.append(port_data["rx-rate"])
-                        self.ssid_list.append(port_data["ssid"])
+                        # Check if the result matches the current expected eid from ports_list
+                        if result == expected_eid and port_data["parent dev"] == "wiphy0":
+                            self.mac_list.append(port_data["mac"])
+                            self.rssi_list.append(port_data["signal"])
+                            self.link_rate_list.append(port_data["rx-rate"])
+                            self.ssid_list.append(port_data["ssid"])
 
-                        break
-                else:
-                    continue
-                break
+                            break
+                    else:
+                        continue
+                    break
+        except KeyError as e:
+            logger.error(
+                "/port/all response is not in the expected format, missing key %s. "
+                "Data received:\n%s",
+                e,
+                json.dumps(response_port, indent=2, default=str),
+            )
+            exit(1)
+        except Exception as e:
+            logger.error(
+                f"Unexpected error while parsing /port/all response: {e}",
+                exc_info=True,
+            )
+            exit(1)
         self.wifi_interface_list = [item.split(".")[2] for item in self.real_sta_list]
 
     def get_interop_data(self):
         interop_data = self.json_get_with_retry("/adb")
-        interop_mobile_data = interop_data.get("devices", {})
         self.serial_list = []
         self.lanforge_port_list = []
-        for user in self.user_list:
-            if user == "":
-                self.serial_list.append("")
-                self.lanforge_port_list.append("")
-            else:
-                user_found = False
-                # 1. Handle Single Device (Flat Dictionary)
-                if isinstance(interop_mobile_data, dict):
-                    if interop_mobile_data.get("user-name") == user:
-                        # Extract details from 'name' (e.g., '1.1.3200f8664a91a5e9')
-                        full_name = interop_mobile_data.get("name")
-                        if full_name and full_name.count(".") >= 2:
-                            resource = full_name.split(".")[1]
-                            serial_no = full_name.split(".")[2]
-                            self.serial_list.append(serial_no)
-                            self.lanforge_port_list.append(f"1.{resource}.eth0")
-                            user_found = True
-                else:
-                    for mobile_device in interop_mobile_data:
-                        for serial, device_data in mobile_device.items():
-                            if device_data.get("user-name") == user:
-                                resource = serial.split(".")[1]
-                                serial_no = serial.split(".")[2]
-                                self.serial_list.append(serial_no)
-                                lanforge_port = f"1.{resource}.eth0"
-                                self.lanforge_port_list.append(lanforge_port)
-                                user_found = True
-                                break
-                        if user_found:
-                            break
-
-                if not user_found:
+        try:
+            interop_mobile_data = interop_data["devices"]
+            for user in self.user_list:
+                if user == "":
                     self.serial_list.append("")
                     self.lanforge_port_list.append("")
+                else:
+                    user_found = False
+                    # 1. Handle Single Device (Flat Dictionary)
+                    if isinstance(interop_mobile_data, dict):
+                        if interop_mobile_data["user-name"] == user:
+                            # Extract details from 'name' (e.g., '1.1.3200f8664a91a5e9')
+                            full_name = interop_mobile_data["name"]
+                            if full_name and full_name.count(".") >= 2:
+                                resource = full_name.split(".")[1]
+                                serial_no = full_name.split(".")[2]
+                                self.serial_list.append(serial_no)
+                                self.lanforge_port_list.append(f"1.{resource}.eth0")
+                                user_found = True
+                    else:
+                        for mobile_device in interop_mobile_data:
+                            for serial, device_data in mobile_device.items():
+                                if device_data["user-name"] == user:
+                                    resource = serial.split(".")[1]
+                                    serial_no = serial.split(".")[2]
+                                    self.serial_list.append(serial_no)
+                                    lanforge_port = f"1.{resource}.eth0"
+                                    self.lanforge_port_list.append(lanforge_port)
+                                    user_found = True
+                                    break
+                            if user_found:
+                                break
+
+                    if not user_found:
+                        self.serial_list.append("")
+                        self.lanforge_port_list.append("")
+        except KeyError as e:
+            logger.error(
+                "/adb response is not in the expected format, missing key %s. "
+                "Data received:\n%s",
+                e,
+                json.dumps(interop_data, indent=2, default=str),
+            )
+            exit(1)
+        except Exception as e:
+            logger.error(
+                f"Unexpected error while parsing /adb response: {e}",
+                exc_info=True,
+            )
+            exit(1)
 
         logger.debug(f"Checking serial list {self.serial_list}")
 
