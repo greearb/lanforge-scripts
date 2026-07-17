@@ -319,6 +319,8 @@ class ThroughputQOS(Realm):
         self.qos_data = {}
         self.throughput_data = []
         self.band_steering_df = []
+        self.device_issue_log = []
+        self.actual_monitoring_duration_seconds = 0
         self.do_bandsteering = do_bandsteering
         self.bssids = bssids.split(",") if bssids else []
         # Initializing robot test parameters
@@ -612,6 +614,20 @@ class ThroughputQOS(Realm):
 
     def cleanup(self):
         self.cx_profile.cleanup()
+
+    def record_device_issue(self, device, issue):
+        """Records a timestamped device issue, later written to the clients_issue.csv."""
+        self.device_issue_log.append({
+            "Time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "Device": device,
+            "Issue": issue,
+        })
+
+    def format_monitoring_duration(self):
+        """Formats the actual time spent monitoring as "Xm Ys"."""
+        total_seconds = int(self.actual_monitoring_duration_seconds)
+        minutes, seconds = divmod(total_seconds, 60)
+        return "{}m {}s".format(minutes, seconds)
 
     def build(self):
         self.create_cx()
@@ -1038,6 +1054,8 @@ class ThroughputQOS(Realm):
                         if self.do_bandsteering:
                             df = pd.DataFrame(self.band_steering_df)
                             self.throughput_data.append(throughput.copy())
+                            # accumulate real monitoring time so the report shows actual duration, not just configured
+                            self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
                             return df
                         break
                 # Adjust time_gap based on elapsed time since start (for webui)
@@ -1090,6 +1108,8 @@ class ThroughputQOS(Realm):
             if self.do_bandsteering:
                 df = pd.DataFrame(self.band_steering_df)
                 self.throughput_data.append(throughput.copy())
+                # accumulate real monitoring time so the report shows actual duration, not just configured
+                self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
                 return df
 
         if self.robot_test and self.dowebgui:
@@ -1135,6 +1155,8 @@ class ThroughputQOS(Realm):
         logger.info("connections download {}".format(connections_download))
         logger.info("connections {}".format(connections_upload))
         self.connections_download, self.connections_upload, self.drop_a_per, self.drop_b_per = connections_download, connections_upload, drop_a_per, drop_b_per
+        # accumulate real monitoring time so the report shows actual duration, not just configured
+        self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
         return connections_download, connections_upload, drop_a_per, drop_b_per, connections_download_avg, connections_upload_avg, dropa_connections, dropb_connections
 
     def evaluate_qos(self, connections_download, connections_upload, drop_a_per, drop_b_per):
@@ -1530,9 +1552,14 @@ class ThroughputQOS(Realm):
 
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
+        # recorded device issues in csv 
+        if self.device_issue_log:
+            issues_df = pd.DataFrame(self.device_issue_log)
+            issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         report.build_footer()
         report.write_html()
         report.write_pdf()
+        logger.info("Monitoring Duration: {}".format(self.format_monitoring_duration()))
 
     # Generates a separate table in the report for each group, including its respective devices.
     def generate_dataframe(self, groupdevlist, clients_list, mac, ssid, tos, upload, download, individual_upload,
@@ -2619,9 +2646,14 @@ class ThroughputQOS(Realm):
             "contact": "support@candelatech.com"
         }
         report.test_setup_table(test_setup_data=input_setup_info, value="Information")
+        # any recorded device issues in the report folder
+        if self.device_issue_log:
+            issues_df = pd.DataFrame(self.device_issue_log)
+            issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         report.build_footer()
         report.write_html()
         report.write_pdf()
+        logger.info("Monitoring Duration: {}".format(self.format_monitoring_duration()))
 
     def get_bandsteering_stats(self, report=None, data=None):
         """
