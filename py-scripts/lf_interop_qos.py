@@ -319,6 +319,8 @@ class ThroughputQOS(Realm):
         self.qos_data = {}
         self.throughput_data = []
         self.band_steering_df = []
+        self.missing_cx_logged = set()
+        self.missing_signal_logged = set()
         self.device_issue_log = []
         self.actual_monitoring_duration_seconds = 0
         self.do_bandsteering = do_bandsteering
@@ -615,6 +617,11 @@ class ThroughputQOS(Realm):
     def cleanup(self):
         self.cx_profile.cleanup()
 
+    def port_label_from_cx_name(self, cx_name):
+        """Extracts the leading resource id (e.g. "1.16") from a CX name for device issue reports."""
+        match = re.match(r'^[0-9]+\.[0-9]+', cx_name)
+        return match.group() if match else cx_name
+
     def record_device_issue(self, device, issue):
         """Records a timestamped device issue, later written to the clients_issue.csv."""
         self.device_issue_log.append({
@@ -854,23 +861,40 @@ class ThroughputQOS(Realm):
                 # for dynamic data, taken rx rate (last) from layer3 endp tab
                 l3_endp_data = list(self.json_get('/endp/list?fields=rx rate (last),rx drop %25,name')['endpoint'])
                 port_mgr_data = self.json_get('/ports/all/')['interfaces']
+                matched_ports = set()
                 for value in port_mgr_data:
                     for port, port_data in value.items():
                         if port_data['parent dev'] == "wiphy0" and port in self.input_devices_list:
+                            matched_ports.add(port)
                             rates_data['.'.join(port.split('.')[:2]) + ' rx_rate'].append(port_data['rx-rate'])
                             rates_data['.'.join(port.split('.')[:2]) + ' tx_rate'].append(port_data['tx-rate'])
                             rates_data['.'.join(port.split('.')[:2]) + ' RSSI'].append(port_data['signal'])
                             rates_data['.'.join(port.split('.')[:2]) + ' BSSID'].append(port_data['ap'])
                             rates_data['.'.join(port.split('.')[:2]) + ' Channel'].append(port_data['channel'])
+                # warn once when a device's port drops out, and log once when it reappears
+                for port in self.input_devices_list:
+                    if port not in matched_ports:
+                        if port not in self.missing_signal_logged:
+                            logger.warning(
+                                "Signal data for device on port {} is unavailable, it may have "
+                                "disconnected. Continuing the test with the remaining devices.".format(port)
+                            )
+                            self.missing_signal_logged.add(port)
+                            self.record_device_issue(port, "Signal data unavailable (device may have disconnected)")
+                    elif port in self.missing_signal_logged:
+                        logger.info("Signal data for device on port {} is available again.".format(port))
+                        self.missing_signal_logged.discard(port)
                 cx_list = list(self.cx_profile.created_cx.keys())
                 # t_response data order - [rx rate(last)_A,rx rate(last)_B,rx drop % A,rx drop %B] A or B will considered based upon the name in L3 Endps tab
                 for cx in cx_list:
                     t_response[cx] = [0, 0, 0.0, 0.0]
+                matched_cx = set()
                 for cx in cx_list:
                     for i in l3_endp_data:
                         key, cx_data = next(iter(i.items()))
                         cx_name = key[0:-2]
                         if cx == cx_name:
+                            matched_cx.add(cx_name)
                             traffic_tos = key.split('_')[-1].split('-')[0]
                             endp = key[-1]
 
@@ -885,6 +909,21 @@ class ThroughputQOS(Realm):
                                 self.real_time_data[cx_name][traffic_tos]['rx drop % b'].append(cx_data['rx drop %'])
                                 t_response[cx_name][3] = cx_data['rx drop %']
                                 self.real_time_data[cx_name][traffic_tos]['time'].append(datetime.now().strftime('%H:%M:%S'))
+                # warn once when a CX drops out of this tick's data, and log once when it reappears
+                for cx in cx_list:
+                    if cx not in matched_cx:
+                        if cx not in self.missing_cx_logged:
+                            logger.warning(
+                                "CX '{}' is missing from the monitoring data, the device may have "
+                                "disconnected or its connection was not created. Continuing the test "
+                                "with the remaining devices.".format(cx)
+                            )
+                            self.missing_cx_logged.add(cx)
+                            self.record_device_issue(self.port_label_from_cx_name(cx),
+                                                     "CX '{}' missing from monitoring data".format(cx))
+                    elif cx in self.missing_cx_logged:
+                        logger.info("CX '{}' data is available again.".format(cx))
+                        self.missing_cx_logged.discard(cx)
             except Exception as e:
                 logger.info(overallresponse)
                 logger.error(f"None type response{e}")
