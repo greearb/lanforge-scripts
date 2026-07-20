@@ -511,7 +511,7 @@ class HttpDownload(Realm):
 
     def filter_iOS_devices(self, device_list):
         modified_device_list = device_list
-        if type(device_list) is str:
+        if isinstance(device_list, str):
             modified_device_list = device_list.split(',')
         filtered_list = []
         for device in modified_device_list:
@@ -531,7 +531,7 @@ class HttpDownload(Realm):
                 logger.info("%s is an iOS device. Currently, we do not support iOS devices.", device)
             else:
                 filtered_list.append(device)
-        if type(device_list) is str:
+        if isinstance(device_list, str):
             filtered_list = ','.join(filtered_list)
         self.device_list = filtered_list
         return filtered_list
@@ -603,6 +603,27 @@ class HttpDownload(Realm):
             time.sleep(1)
         print("precleanup done")
 
+    def get_upstream_ip(self):
+        """Gives the upstream ip"""
+        data = self.local_realm.json_get("ports/list?fields=IP")
+        eid = self.local_realm.name_to_eid(self.upstream)
+
+        port_name = f"{eid[0]}.{eid[1]}.{eid[2]}"
+
+        for interface in data.get("interfaces", []):
+            if port_name in interface:
+                ip = interface[port_name].get("ip")
+
+                if not ip:
+                    logger.error("No IP found for upstream port %s", port_name)
+                    return None
+
+                logger.info("Upstream IP: %s", ip)
+                return ip
+
+        logger.error("Unable to locate upstream port %s", port_name)
+        return None
+
     def build(self):
         # enable http on ethernet
         self.port_util.set_http(port_name=self.local_realm.name_to_eid(self.upstream)[2],
@@ -629,16 +650,9 @@ class HttpDownload(Realm):
                 # building layer4
                 self.http_profile.direction = 'dl'
                 self.http_profile.dest = '/dev/null'
-                data = self.local_realm.json_get("ports/list?fields=IP")
-
-                # getting eth ip
-                eid = self.local_realm.name_to_eid(self.upstream)
-                for i in data["interfaces"]:
-                    for j in i:
-                        if "{shelf}.{resource}.{port}".format(shelf=eid[0], resource=eid[1], port=eid[2]) == j:
-                            ip_upstream = i["{shelf}.{resource}.{port}".format(
-                                shelf=eid[0], resource=eid[1], port=eid[2])]['ip']
-
+                ip_upstream = self.get_upstream_ip()
+                if ip_upstream is None:
+                    raise RuntimeError("Failed to determine upstream IP")
                 # create http profile
                 if self.get_url_from_file:  # enabling the GET-URL-FROM-FILE flag if its ture
                     self.http_profile.create(ports=self.station_profile.station_names, sleep_time=.5,
@@ -655,20 +669,18 @@ class HttpDownload(Realm):
         else:
             if self.client_type == "Real":
                 self.http_profile.direction = 'dl'
-                data = self.local_realm.json_get("ports/list?fields=IP")
-
-                # getting eth ip
-                eid = self.local_realm.name_to_eid(self.upstream)
-                for i in data["interfaces"]:
-                    for j in i:
-                        if "{shelf}.{resource}.{port}".format(shelf=eid[0], resource=eid[1], port=eid[2]) == j:
-                            ip_upstream = i["{shelf}.{resource}.{port}".format(
-                                shelf=eid[0], resource=eid[1], port=eid[2])]['ip']
+                ip_upstream = self.get_upstream_ip()
+                if ip_upstream is None:
+                    raise RuntimeError("Failed to determine upstream IP")
 
                 self.http_profile.create(ports=self.port_list, sleep_time=.5,
                                          suppress_related_commands_=None, http=True, interop=True,
                                          user=self.lf_username, passwd=self.lf_password,
                                          http_ip=ip_upstream + "/webpage.html", proxy_auth_type=0x200, timeout=1000, windows_list=self.windows_ports)
+        if not self.http_profile.created_cx:
+            logger.error("No Layer4 CXs created for ports %s", self.station_profile.station_names)
+            raise RuntimeError("CX creation failed")
+        logger.info("Created %d CX(s)", len(self.http_profile.created_cx))
 
         print("Test Build done")
 
@@ -722,9 +734,16 @@ class HttpDownload(Realm):
         cx_list = list(self.http_profile.created_cx.keys())
         try:
             url_str = 'layer4/{}/list?fields=uc-avg,uc-max,uc-min,total-urls,rx rate (1m),bytes-rd,total-err'.format(','.join(cx_list))
-            l4_data = self.local_realm.json_get(url_str)['endpoint']
-        except Exception:
-            logger.error("l4 DATA not found")
+            response = self.local_realm.json_get(url_str)
+            if not response:
+                logger.error("Layer4 response is empty")
+                return {}
+            l4_data = response.get("endpoint")
+            if l4_data is None:
+                logger.error("Layer4 endpoint data missing")
+                return {}
+        except Exception as e:
+            logger.error("l4 DATA not found, {%s}", e)
             exit(1)
         l4_dict = {
             'uc_avg_data': [],
@@ -752,6 +771,7 @@ class HttpDownload(Realm):
                         l4_dict['total_err'].append(value['total-err'])
                         cx_found = True
             if not cx_found:
+                logger.error("Layer4 endpoint missing for CX %s. Using previous values.", cx)
                 self.failed_cx.append(cx)
                 l4_dict['uc_avg_data'].append(0 if not self.tracking_map else self.tracking_map['uc_avg_data'][idx])
                 l4_dict['uc_max_data'].append(0 if not self.tracking_map else self.tracking_map['uc_max_data'][idx])
@@ -923,6 +943,7 @@ class HttpDownload(Realm):
                 self.data["rx rate (1m)"] = rx_rate
                 self.data["total_err"] = total_err
             else:
+                logger.error("Runtime data mismatch: Devices=%d URLs=%d RX=%d Bytes=%d", len(self.devices_list), len(url_times), len(rx_rate), len(bytes_rd))
                 self.data["status"] = ["RUNNING"] * len(self.devices_list)
                 self.data["url_data"] = [0] * len(self.devices_list)
                 self.data["uc_avg"] = [0] * len(self.devices_list)
@@ -1081,15 +1102,10 @@ class HttpDownload(Realm):
             stdin, stdout, stderr = ssh.exec_command(str(cmd1))
             output = stdout.readlines()
             time.sleep(10)
-            cmd2 = "sudo fallocate -l " + self.file_size + " /usr/local/lanforge/nginx/html/webpage.html"
-            stdin, stdout, stderr = ssh.exec_command(str(cmd2))
-            print("File creation done", self.file_size)
-            output = stdout.readlines()
-        else:
-            cmd2 = "sudo fallocate -l " + self.file_size + " /usr/local/lanforge/nginx/html/webpage.html"
-            stdin, stdout, stderr = ssh.exec_command(str(cmd2))
-            print("File creation done", self.file_size)
-            output = stdout.readlines()
+        cmd2 = "sudo fallocate -l " + self.file_size + " /usr/local/lanforge/nginx/html/webpage.html"
+        stdin, stdout, stderr = ssh.exec_command(str(cmd2))
+        print("File creation done", self.file_size)
+        output = stdout.readlines()
         ssh.close()
         time.sleep(1)
         return output
@@ -3323,6 +3339,7 @@ times the file is downloaded.
     # FOR WEBGUI, filling csv at the end to get the last terminal logs
     if args.dowebgui:
         http.copy_reports_to_home_dir()
+    logger.info("successfully ran the http test")
 
 
 if __name__ == '__main__':
