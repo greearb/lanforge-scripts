@@ -1053,12 +1053,14 @@ class ZoomAutomation(Realm):
                 self.generic_endps_profile.created_endp.extend(created_endp)
                 self.generic_endps_profile.created_cx.extend(created_cx)
                 cmd = (
+                    f"su - lanforge -c "
+                    f"\"cd /home/lanforge && "
                     f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/zoom_automation/android_zoom.py "
                     f"--serial {self.serial_list[i]} "
                     f"--meeting_url '{self.meet_link}' "
                     f"--participant_name '{self.real_sta_hostname[i]}' "
                     f"--server_host {self.mgr_ip} "
-                    f"--server_port 5000"
+                    f"--server_port 5000\""
                 )
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
