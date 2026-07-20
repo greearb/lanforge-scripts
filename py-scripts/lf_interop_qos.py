@@ -321,6 +321,9 @@ class ThroughputQOS(Realm):
         self.band_steering_df = []
         self.missing_cx_logged = set()
         self.missing_signal_logged = set()
+        self.cx_endpoint_lookup_failed_logged = set()
+        self.cx_not_running_logged = set()
+        self.monitor_start_time = None
         self.device_issue_log = []
         self.actual_monitoring_duration_seconds = 0
         self.do_bandsteering = do_bandsteering
@@ -782,6 +785,9 @@ class ThroughputQOS(Realm):
             raise ValueError("Monitor needs a list of Layer 3 connections")
         # monitor columns
         start_time = datetime.now()
+        # set once, so repeated monitor() calls (bandsteering ticks) share one grace-period start
+        if self.monitor_start_time is None:
+            self.monitor_start_time = start_time
         test_start_time = datetime.now().strftime("%Y %d %H:%M:%S")
         if not self.do_bandsteering:
             print("Test started at: ", test_start_time)
@@ -955,6 +961,21 @@ class ThroughputQOS(Realm):
                     elif cx in self.missing_cx_logged:
                         logger.info("CX '{}' data is available again.".format(cx))
                         self.missing_cx_logged.discard(cx)
+                # warn once when a CX's state isn't 'Run' (10s grace period after monitor start),
+                # and log once when it's running again
+                past_grace_period = (self.monitor_start_time is None or
+                                      (datetime.now() - self.monitor_start_time).total_seconds() >= 10)
+                for cx in cx_list:
+                    cx_state = overallresponse.get(cx, {}).get('state') if isinstance(overallresponse, dict) else None
+                    if cx_state is not None and cx_state != 'Run':
+                        if past_grace_period and cx not in self.cx_not_running_logged:
+                            logger.warning("CX '{}' status is '{}', not running.".format(cx, cx_state))
+                            self.cx_not_running_logged.add(cx)
+                            self.record_device_issue(self.port_label_from_cx_name(cx),
+                                                     "CX '{}' status is '{}', not running".format(cx, cx_state))
+                    elif cx_state == 'Run' and cx in self.cx_not_running_logged:
+                        logger.info("CX '{}' status is back to running.".format(cx))
+                        self.cx_not_running_logged.discard(cx)
             except Exception as e:
                 logger.info(overallresponse)
                 logger.error(f"None type response{e}")
@@ -1296,9 +1317,16 @@ class ThroughputQOS(Realm):
                                 tos_drop_dict['rx_drop_a'][current_tos].append(float(0))
                                 tx_b_download[current_tos].append(int(0))
                                 rx_a_download[current_tos].append(int(0))
+                        # log "CX Not Found" once per occurrence instead of on every tick
                         except Exception:
-                            logger.info(f'{sta}-A/B : CX Not Found')
-                            logger.info(f"Endpoint data : {endps}")
+                            if sta not in self.cx_endpoint_lookup_failed_logged:
+                                logger.info(f'{sta}-A/B : CX Not Found')
+                                logger.info(f"Endpoint data : {endps}")
+                                self.cx_endpoint_lookup_failed_logged.add(sta)
+                        else:
+                            if sta in self.cx_endpoint_lookup_failed_logged:
+                                logger.info(f'{sta}-A/B : CX data is available again.')
+                                self.cx_endpoint_lookup_failed_logged.discard(sta)
                         counter += 1
                     tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
                     tos_download.update({"beQOS": float(f"{sum(tos_download['BE']):.2f}")})
