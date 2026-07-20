@@ -494,24 +494,28 @@ class TeamsAutomation(Realm):
                 logger.debug(self.generic_endps_profile.created_cx)
                 if self.enable_mobile_stats:
                     cmd = (
+                        f"su - lanforge -c "
+                        f"\"cd /home/lanforge && "
                         f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android.py "
                         f"--devices {self.serial_list[i]} "
                         f"--meet_link '{self.meet_link}' "
                         f"--participant_name '{self.real_sta_hostname[i]}' "
                         f"--upstream_port {self.lanforge_ip} "
                         f"--duration {self.duration} "
-                        "--audio "
-                        "--video "
+                        f"--audio "
+                        f"--video\""
                     )
                 else:
                     cmd = (
+                        f"su - lanforge -c "
+                        f"\"cd /home/lanforge && "
                         f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android_app.py "
                         f"--device {self.serial_list[i]} "
                         f"--meet_link '{self.meet_link}' "
                         f"--participant_name '{self.real_sta_hostname[i]}' "
                         f"--upstream_port {self.lanforge_ip} "
-                        "--audio "
-                        "--video "
+                        f"--audio "
+                        f"--video\""
                     )
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
