@@ -826,7 +826,16 @@ class RealBrowserTest(Realm):
         webui_mac = 0
 
         # Retrieve data from LANforge port Manager tab including alias, MAC address, mode, parent device, RX rate, TX rate, SSID, and signal strength
-        eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,ssid,signal,phantom,down,ip")
+        eid_data = self.json_get_with_retry("ports?fields=alias,mac,mode,Parent Dev,ssid,signal,phantom,down,ip")
+        if eid_data is None:
+            logger.error("GET ports?fields=alias,mac,mode,Parent Dev,ssid,signal,phantom,down,ip returned no response from LANforge. Aborting test.")
+            exit(1)
+        try:
+            interfaces = eid_data["interfaces"]
+        except KeyError as e:
+            logger.error(f"Missing expected key {e} in LANforge /ports response. Aborting test.")
+            logger.info("LANforge /ports response received:\n%s", json.dumps(eid_data, indent=2, default=str))
+            exit(1)
         resource_ids = []
         if self.resource_ids:
 
@@ -835,14 +844,14 @@ class RealBrowserTest(Realm):
         for item in resource_ids:
             item = str(item)
 
-            for alias in eid_data["interfaces"]:
+            for alias in interfaces:
                 for i in alias:
 
                     resource_id = i.split('.')[1]
                     if resource_id == item:
 
                         resource_id_list.append(i.split(".")[1])
-                        resource_hw_data = self.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
+                        resource_hw_data = self.json_get_with_retry("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
                         hw_version = resource_hw_data['resource']['hw version']
                         # Check if the hardware version does not start with ('Win', 'Linux', 'Apple') and the resource ID is in resource_ids
                         if not hw_version.startswith(('Win', 'Linux', 'Apple')) and alias[i]["parent dev"] == 'wiphy0' and not alias[i]["down"] and alias[i]['ip'] != '0.0.0.0':
@@ -898,8 +907,13 @@ class RealBrowserTest(Realm):
             elif os_type == "Android":
                 self.android = self.android + 1
 
-        interop_data = self.json_get('/adb')
-        interop_mobile_data = interop_data.get('devices', {})
+        interop_data = self.json_get_with_retry('/adb')
+        try:
+            interop_mobile_data = interop_data.get('devices', {})
+        except Exception as e:
+            logger.error(f"Error extracting devices from /adb response: {e}. Aborting test.")
+            logger.info("LANforge /adb response received:\n%s", json.dumps(interop_data, indent=2, default=str))
+            exit(1)
 
         for user in user_name:
             if user == '':
@@ -1005,6 +1019,28 @@ class RealBrowserTest(Realm):
                 return False
         # If all endpoints are in 'Stopped' or 'WAITING', return True
         return True
+
+    def json_get_with_retry(self, url, wait_time=40, poll_interval=5):
+        """
+        Calls self.json_get(url), retrying every poll_interval seconds for up
+        to wait_time seconds if LANforge returns no response. Aborts the test
+        if it still hasn't responded once wait_time has elapsed.
+        """
+        start_time = time.time()
+        response = self.json_get(url)
+        while response is None and (time.time() - start_time) < wait_time:
+            logger.warning(f"GET {url} returned no response from LANforge; retrying...")
+            time.sleep(poll_interval)
+            response = self.json_get(url)
+
+        if response is None:
+            logger.error(
+                f"GET {url} returned no response from LANforge after waiting "
+                f"{wait_time} seconds. Aborting test."
+            )
+            exit(1)
+
+        return response
 
     def update_webui_json(self):
         """
@@ -2121,9 +2157,14 @@ class RealBrowserTest(Realm):
         if self.upstream_port.count('.') != 3:
             target_port_list = self.name_to_eid(self.upstream_port)
             shelf, resource, port, _ = target_port_list
+            response = self.json_get_with_retry(f'/port/{shelf}/{resource}/{port}?fields=ip')
             try:
-                target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
+                target_port_ip = response['interface']['ip']
                 self.upstream_port = target_port_ip
+            except KeyError as e:
+                logger.error(f"Missing expected key {e} in LANforge /port/{shelf}/{resource}/{port} response. Aborting test.")
+                logger.info("LANforge response received:\n%s", json.dumps(port_resp, indent=2, default=str))
+                exit(1)
             except Exception:
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {self.upstream_port}.')
             logging.info(f"Upstream port IP {self.upstream_port}")
@@ -2181,7 +2222,7 @@ class RealBrowserTest(Realm):
                     logger.warning("Invalid device format: %s", device)
                     continue
 
-                device_data_resp = self.json_get(f'/resource/{shelf}/{resource}')
+                device_data_resp = self.json_get_with_retry(f'/resource/{shelf}/{resource}')
                 if not device_data_resp or 'resource' not in device_data_resp:
                     logger.warning("Device data not found for %s", device)
                     continue
@@ -2271,7 +2312,13 @@ class RealBrowserTest(Realm):
         test_input_list = []
 
         if not self.expected_passfail_value:
-            interop_tab_data = self.json_get('/adb/')["devices"]
+            response = self.json_get_with_retry('/adb/')
+            try:
+                interop_tab_data = response["devices"]
+            except KeyError as e:
+                logger.error(f"Missing expected key {e} in LANforge /adb/ response. Aborting test.")
+                logger.info("LANforge /adb/ response received:\n%s", json.dumps(interop_resp, indent=2, default=str))
+                exit(1)
             user_to_serial_map = {}
             for dev in interop_tab_data:
                 for item in dev.values():
