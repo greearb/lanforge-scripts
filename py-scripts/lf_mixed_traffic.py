@@ -447,7 +447,7 @@ class Mixed_Traffic(Realm):
                     multiplier = duration_suffixes[self.multicast_test_duration_suffix]
                     self.multicast_test_duration = int(self.multicast_test_duration[:-1]) * multiplier
                 else:
-                    logger.info("Please provide the test duration for at least one single test scenario to run...")
+                    logger.error("Mixed traffic run requires a duration for at least one test scenario")
                 if self.qos_serial_run:
                     self.total_all_test_duration = int(self.ping_test_duration + (self.qos_test_duration * len(
                         self.qos_tos_list)) + self.ftp_test_duration + self.http_test_duration + self.multicast_test_duration)
@@ -514,11 +514,11 @@ class Mixed_Traffic(Realm):
                 shelf, resource = 1, device
             response_code, device_data = self.api_get('/resource/{}/{}'.format(shelf, resource))
             if 'status' in device_data and device_data['status'] == 'NOT_FOUND':
-                logger.info('Device {} is not found.'.format(device))
+                logger.info("Device {} is not found".format(device))
                 continue
             device_data = device_data['resource']
             if 'Apple' in device_data['hw version'] and (device_data['app-id'] != '') and (device_data['app-id'] != '0' or device_data['kernel'] == ''):
-                logger.info('{} is an iOS device. Currently we do not support iOS devices.'.format(device))
+                logger.info("{} is an iOS device and currently we do not support iOS devices".format(device))
             else:
                 filtered_list.append(device)
         for j in rc_list:
@@ -554,7 +554,7 @@ class Mixed_Traffic(Realm):
             self.station_list = station_list
             self.num_staions = num_stations
             self.radio = radio
-        logger.info("Virtual station list for {band} : {station_list}".format(band=band, station_list=station_list))
+        logger.info("List of virtual stations for {band} : {station_list}".format(band=band, station_list=station_list))
         if "2.4G" in band:
             self.station_profile.mode = 13
         elif "5G" in band:
@@ -564,28 +564,28 @@ class Mixed_Traffic(Realm):
         # station build
         self.station_profile.use_security(security, ssid, password)
         self.station_profile.set_number_template("00")
-        logger.info("Creating  Virtual Stations...")
+        logger.info("Creating virtual stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         if self.station_profile.create(radio=radio, sta_names_=station_list, debug=self.debug):
-            self._pass("Stations created.")
+            self._pass("Stations created successfully")
         else:
-            self._fail("Stations not properly created.")
+            self._fail("Stations not properly created")
         self.station_profile.admin_up()
-        logger.info("Waiting until the all station ports are up. Max time out is 300 seconds.")
+        logger.info("Waiting for all station ports to come up (timeout: 300 seconds)")
         if not LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
                                                  port_list=station_list,
                                                  debug_=self.debug):
             self._fail("Unable to bring all stations up")
             return
-        logger.info("Waiting to get IP for all stations...")
+        logger.info("Waiting for all stations to obtain IP addresses")
         if Realm.wait_for_ip(self=self, station_list=station_list, timeout_sec=-1):
             self._pass("All stations got IPs", print_=True)
             self._pass("Station build finished", print_=True)
         else:
             self._fail("Stations failed to get IPs", print_=True)
-            self._fail("FAIL: Station build failed", print_=True)
+            self._fail("Station build failed", print_=True)
             logger.info("Please re-check the configuration applied")
         return station_list
 
@@ -607,7 +607,7 @@ class Mixed_Traffic(Realm):
 
     def selecting_devices_from_available(self):
         selected_serial_list = self.base_interop_profile.query_all_devices_to_configure_wifi()
-        logger.info(f"Selected Serial List: {selected_serial_list}")
+        logger.info("Selected device list: {}".format(selected_serial_list))
         return selected_serial_list
 
     def select_real_devices(self, real_devices, real_sta_list=None, base_interop_obj=None):
@@ -642,14 +642,14 @@ class Mixed_Traffic(Realm):
 
         # Need real stations to run interop test
         if (len(self.real_sta_list) == 0):
-            logger.error('There are no real devices in this testbed. Aborting test')
+            logger.error("There are no real devices in the testbed. Aborting test")
             exit(0)
 
-        logging.info('{}'.format(*self.real_sta_list))
+        logging.info("Real Station List: {}".format(*self.real_sta_list))
 
         for sta_name in self.real_sta_list:
             if sta_name not in real_devices.devices_data:
-                logger.error('Real station not in devices data')
+                logger.error("Real station not in devices data")
                 raise ValueError('Real station not in devices data')
 
             self.real_sta_data_dict[sta_name] = real_devices.devices_data[sta_name]
@@ -747,7 +747,7 @@ class Mixed_Traffic(Realm):
             # creating generic endpoints
             self.ping_test_obj.create_generic_endp()
             logger.info("Generic Cross-Connection List: {}".format(self.ping_test_obj.generic_endps_profile.created_cx))
-            logger.info('Starting Running the Ping Test for {} minutes'.format(ping_test_duration))
+            logger.info("Starting running the Ping Test for {} minutes".format(ping_test_duration))
             # start generate endpoint
             time.sleep(20)
             self.ping_test_obj.start_generic()
@@ -804,11 +804,11 @@ class Mixed_Traffic(Realm):
                                 logging.info('Test is stopped by the user')
                                 break
                     except Exception:
-                        logging.info("execption while reading running json in ping")
+                        logging.info("Exception while reading running json in ping")
                     time.sleep(3)
             else:
                 time.sleep(ping_test_duration * 60)
-            logger.info('Stopping the PING Test...')
+            logger.info("Stopping the Ping Test...")
             self.ping_test_obj.stop_generic()
             # getting result dict
             result_data = self.ping_test_obj.get_results()
@@ -1234,7 +1234,7 @@ class Mixed_Traffic(Realm):
 
                     time1 = datetime.datetime.now()
                     time.sleep(20)
-                    logger.info("FTP Traffic started running at {}".format(time1))
+                    logger.info("FTP traffic started running at {}".format(time1))
                     if self.real:
                         self.ftp_test_obj.monitor_cx()
                     self.ftp_test_obj.start(False, False)
@@ -1246,10 +1246,10 @@ class Mixed_Traffic(Realm):
                         self.ftp_test_obj.my_monitor()
 
                     self.ftp_test_obj.stop()
-                    logger.info("FTP Traffic stopped running")
+                    logger.info("FTP traffic stopped running")
                     self.ftp_test_obj.cx_profile.cleanup()
                     time2 = datetime.datetime.now()
-                    logger.info("FTP Test ended at {}".format(time2))
+                    logger.info("FTP test ended at {}".format(time2))
             if all_bands:
                 band = ''
             else:
@@ -1337,7 +1337,7 @@ class Mixed_Traffic(Realm):
                 self.http_dev = self.http_obj.devices_list
                 self.http_mac = self.http_obj.macid_list
                 if (len(self.http_obj.port_list) == 0):
-                    logger.info("No Device is available to run the test hence aborting the test")
+                    logger.info("No device is available to run the test hence aborting the test")
                     exit(0)
                 self.http_obj.user_query = self.user_query
                 self.http_obj.windows_ports = self.windows_ports
@@ -1357,14 +1357,14 @@ class Mixed_Traffic(Realm):
                 # self.http_obj.station_list = [[self.station_list]]
                 self.cleanup.layer4_endp_clean()
                 self.station_profile.admin_up()
-                logger.info("Waiting until the all station ports are up. Max time out is 300 seconds.")
+                logger.info("Waiting for all station ports to come up (maximum wait: 300 seconds)")
                 if not LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
                                                          port_list=self.station_list,
                                                          debug_=self.debug):
                     self._fail("Unable to bring all stations up")
                     return
-                logger.info("Waiting to get IP for all stations...")
-                logger.info("Admin up all the stations...")
+                logger.info("Waiting to get IP for all stations")
+                logger.info("Admin up all the stations")
                 Realm.wait_for_ip(self=self, station_list=self.station_list, timeout_sec=-1)
 
                 # building layer4   #Todo: Since the lf_webpage script itself only support "download", so need to add upload functionality in future
@@ -1500,7 +1500,7 @@ class Mixed_Traffic(Realm):
 
             self.dataset1 = [round(i / 1000000, 4) for i in self.bytes_rd]
             self.rx_rate = [round(x / 1000000, 4) for x in self.rx_rate]  # converting bps to mbps
-            logger.info("data sets {} {}".format(self.dataset, self.dataset2))
+            logger.debug("Data sets {} {}".format(self.dataset, self.dataset2))
             if self.band == "Both":
                 for i in range(1, len(http_sta_list) * 2 + 1):
                     self.lis.append(i)
@@ -1674,12 +1674,12 @@ class Mixed_Traffic(Realm):
                 if self.user_query[0]:
                     logger.info("No station pre clean up any existing cxs on LANforge")
                 else:
-                    logger.info("clean up any existing cxs on LANforge")
+                    logger.info("Cleaning up any existing cxs on LANforge")
                     self.multicast_test_obj.pre_cleanup()
             # cleaning the existing layer4 endpoints
             self.cleanup.layer3_endp_clean()
 
-            logger.info("create stations or use passed in station_list, build the test")
+            logger.info("Create stations or use passed in station_list, build the test")
             # building the endpoints
             self.multicast_test_obj.build()
             time.sleep(20)
@@ -1709,7 +1709,7 @@ class Mixed_Traffic(Realm):
                 report.write_pdf_with_timestamp(_page_size='A3', _orientation='Landscape')
 
             if not self.multicast_test_obj.passes():
-                logger.warning("Test Ended: There were Failures in multicast test.")
+                logger.warning("Test Ended: There were Failures in multicast test")
                 logger.warning(self.multicast_test_obj.get_fail_message())
             self.cleanup.layer3_endp_clean()
             if self.multicast_test_obj.passes():
@@ -1919,7 +1919,7 @@ class Mixed_Traffic(Realm):
                     _enable_csv=True,
                     _color_name=['lightgrey', 'orange', 'steelblue'])
                 graph_png = graph.build_bar_graph_horizontal()
-                logger.info('Ping Test Graph-1: {}'.format(graph_png))
+                logger.info("Ping Test Graph-1: {}".format(graph_png))
                 self.lf_report_mt.set_graph_image(graph_png)
                 self.lf_report_mt.move_graph_image()
                 self.lf_report_mt.set_csv_filename(graph_png)
@@ -1988,7 +1988,7 @@ class Mixed_Traffic(Realm):
                     _enable_csv=True,
                     _color_name=['lightgrey', 'orange', 'steelblue'])
                 graph_png = graph.build_bar_graph_horizontal()
-                logger.info('Ping Test Graph-2: {}'.format(graph_png))
+                logger.info("Ping Test Graph-2: {}".format(graph_png))
                 self.lf_report_mt.set_graph_image(graph_png)
                 self.lf_report_mt.move_graph_image()
                 self.lf_report_mt.set_csv_filename(graph_png)
@@ -2589,7 +2589,7 @@ async def run_iot(ip: str = '127.0.0.1',
     try:
 
         if delay < 5:
-            logger.error('The minimum delay should be 5 seconds.')
+            logger.error("The minimum delay should be 5 seconds")
             exit(1)
 
         if device_list != '':
@@ -2602,7 +2602,7 @@ async def run_iot(ip: str = '127.0.0.1',
             try:
                 increment = list(map(int, increment.split(',')))
                 if any(i < 1 for i in increment):
-                    logger.error('Increment values must be positive integers')
+                    logger.error("Increment values must be positive integers")
                     exit(1)
             except ValueError:
                 logger.error('Invalid increment format. Please provide comma-separated integers (e.g., "1,3,5")')
@@ -2612,7 +2612,7 @@ async def run_iot(ip: str = '127.0.0.1',
 
         # Ensure test name is unique (avoid overwriting previous results)
         if testname in os.listdir('../../local/interop-webGUI/IoT/scripts/results/'):
-            logger.error('Test with same name already existing. Please give a different testname.')
+            logger.error("Test with same name already existing. Please give a different test name")
             exit(1)
         automation = Automation(ip=ip,
                                 port=port,
@@ -2640,7 +2640,7 @@ async def run_iot(ip: str = '127.0.0.1',
 
     await automation.session.close()
 
-    logger.info('Iot Test Completed.')
+    logger.info("Iot Test Completed")
 
 
 def main():
@@ -3529,8 +3529,8 @@ INCLUDE_IN_README: False
                                     mixed_obj.ping_execution = True
                                     mixed_obj.ping_test(ssid=ssid, password=password, security=security, target=args.target,
                                                         interval=args.ping_interval, all_bands=True)
-                            except Exception:
-                                logger.info("Error while running for webui during ping execution")
+                            except Exception as e:
+                                logger.info("Error while running for webui during ping execution: {}".format(e))
                             try:
                                 overall_status['ping'] = "stopped"
                                 overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
@@ -3561,8 +3561,8 @@ INCLUDE_IN_README: False
                                                        upstream=args.upstream_port, tos=args.tos, traffic_type=args.traffic_type,
                                                        side_a_min=args.side_a_min, side_b_min=args.side_b_min,
                                                        side_a_max=args.side_a_max, side_b_max=args.side_b_min, all_bands=True)
-                            except Exception:
-                                logger.info("Error while running for webui during qos execution")
+                            except Exception as e:
+                                logger.info("Error while running for webui during qos execution: {}".format(e))
                             try:
                                 overall_status['qos'] = "stopped"
                                 overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
@@ -3593,8 +3593,8 @@ INCLUDE_IN_README: False
                                     mixed_obj.ftp_execution = True
                                     mixed_obj.ftp_test(ssid=ssid, password=password, security=security, bands=Bands,
                                                        directions=args.direction, file_sizes=args.ftp_file_sizes, all_bands=True)
-                            except Exception:
-                                logger.info("Error while running for webui during ftp execution")
+                            except Exception as e:
+                                logger.info("Error while running for webui during ftp execution: {}".format(e))
                             try:
                                 overall_status['ftp'] = "stopped"
                                 overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
@@ -3624,8 +3624,8 @@ INCLUDE_IN_README: False
                                     mixed_obj.http_test(ssid=ssid, password=password, security=security,
                                                         http_file_size=args.http_file_size, target_per_ten=args.target_per_ten,
                                                         all_bands=True)
-                            except Exception:
-                                logger.info("Error while running for webui during http execution")
+                            except Exception as e:
+                                logger.info("Error while running for webui during http execution: {}".format(e))
                             try:
                                 overall_status['http'] = "stopped"
                                 overall_status["time"] = datetime.datetime.now().strftime("%Y %d %H:%M:%S")
