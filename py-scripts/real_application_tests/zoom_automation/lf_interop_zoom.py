@@ -79,6 +79,11 @@ import subprocess
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+WINDOWS_ZOOM_DIR = (
+    r"C:\Program Files (x86)\LANforge-Server\local\real_application_test\zoom_automation"
+)
+LINUX_ZOOM_DIR = "/home/lanforge/local/real_application_test/zoom_automation"
+MACOS_ZOOM_DIR = "/Users/lanforge/local/real_application_test/zoom_automation"
 
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -988,21 +993,23 @@ class ZoomAutomation(Realm):
             exit(0)
 
         if self.real_sta_os_type[0] == "windows":
-            cmd = f"py zoom_host.py --ip {self.upstream_port}"
+            cmd = fr'"{WINDOWS_ZOOM_DIR}\zoom.bat" --ip {self.upstream_port} host'
             self.generic_endps_profile.set_cmd(
                 self.generic_endps_profile.created_endp[0], cmd
             )
         elif self.real_sta_os_type[0] == "linux":
-            cmd = "su -l lanforge ctzoom.bash %s %s %s" % (
-                self.wifi_interface_list[0],
-                self.upstream_port,
-                "host",
-            )
+            cmd = (
+    f"su -l lanforge {LINUX_ZOOM_DIR}/ctzoom.bash "
+    f"{self.wifi_interface_list[0]} {self.upstream_port} host"
+)
             self.generic_endps_profile.set_cmd(
                 self.generic_endps_profile.created_endp[0], cmd
             )
         elif self.real_sta_os_type[0] == "macos":
-            cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "host")
+            cmd = (
+    f"sudo bash {MACOS_ZOOM_DIR}/ctzoom.bash "
+    f"{self.upstream_port} host"
+)
             self.generic_endps_profile.set_cmd(
                 self.generic_endps_profile.created_endp[0], cmd
             )
@@ -1072,21 +1079,23 @@ class ZoomAutomation(Realm):
 
         for i in range(1, len(self.real_sta_os_type)):
             if self.real_sta_os_type[i] == "windows":
-                cmd = f"py zoom_client.py --ip {self.upstream_port}"
+                cmd = fr'"{WINDOWS_ZOOM_DIR}\zoom.bat" --ip {self.upstream_port} client'
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
             elif self.real_sta_os_type[i] == "linux":
-                cmd = "su -l lanforge ctzoom.bash %s %s %s" % (
-                    self.wifi_interface_list[i],
-                    self.upstream_port,
-                    "client",
-                )
+                cmd = (
+    f"su -l lanforge {LINUX_ZOOM_DIR}/ctzoom.bash "
+    f"{self.wifi_interface_list[i]} {self.upstream_port} client"
+)
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
             elif self.real_sta_os_type[i] == "macos":
-                cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "client")
+                cmd = (
+    f"sudo bash {MACOS_ZOOM_DIR}/ctzoom.bash "
+    f"{self.upstream_port} client"
+)
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
@@ -1981,8 +1990,6 @@ class ZoomAutomation(Realm):
                            _results_dir_name="zoom_call_report",
                            _path=self.path)
         report_path_date_time = report.get_path_date_time()
-        self.report = report
-        self.report_path_date_time = report_path_date_time
 
         report.set_title("Zoom Call Automated Report")
         report.build_banner()
