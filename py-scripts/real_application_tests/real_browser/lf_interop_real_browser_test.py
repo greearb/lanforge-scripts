@@ -82,6 +82,11 @@ Pre-requisites: Real clients should be connected to the LANforge MGR and Interop
 
 
 """
+WINDOWS_REAL_BROWSER_DIR = (
+    r"C:\Program Files (x86)\LANforge-Server\local\real_application_test\real_browser"
+)
+LINUX_REAL_BROWSER_DIR = "/home/lanforge/local/real_application_test/real_browser"
+MACOS_REAL_BROWSER_DIR = "/Users/lanforge/local/real_application_test/real_browser"
 
 import sys
 import os
@@ -412,13 +417,36 @@ class RealBrowserTest(Realm):
 
         for i in range(0, len(self.laptop_os_types)):
             if self.laptop_os_types[i] == 'windows':
-                cmd = "real_browser.bat --url %s --server %s --duration %s" % (self.url, self.upstream_port, self.duration)
+                cmd = (
+    fr'"{WINDOWS_REAL_BROWSER_DIR}\real_browser.bat" '
+    '--url "%s" --server "%s" --duration %s'
+    % (
+        self.url,
+        self.upstream_port,
+        self.duration,
+    )
+)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.laptop_os_types[i] == 'linux':
-                cmd = "su -l lanforge  ctrb.bash %s %s %s %s" % (self.new_port_list[i], self.url, self.upstream_port, self.duration)
+                cmd = (
+    f"su -l lanforge {LINUX_REAL_BROWSER_DIR}/ctrb.bash "
+    "%s %s %s %s"
+) % (
+    self.new_port_list[i],
+    self.url,
+    self.upstream_port,
+    self.duration,
+)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.laptop_os_types[i] == 'macos':
-                cmd = "sudo bash ctrb.bash --url %s --server %s  --duration %s" % (self.url, self.upstream_port, self.duration)
+                cmd = (
+    f"sudo bash {MACOS_REAL_BROWSER_DIR}/ctrb.bash "
+    "--url %s --server %s --duration %s"
+) % (
+    self.url,
+    self.upstream_port,
+    self.duration,
+)
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
         if len(self.phone_data) != 0:
