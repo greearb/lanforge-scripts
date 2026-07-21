@@ -326,6 +326,7 @@ class ThroughputQOS(Realm):
         self.monitor_start_time = None
         self.device_issue_log = []
         self.actual_monitoring_duration_seconds = 0
+        self.all_devices_stopped = False
         self.do_bandsteering = do_bandsteering
         self.bssids = bssids.split(",") if bssids else []
         # Initializing robot test parameters
@@ -857,6 +858,12 @@ class ThroughputQOS(Realm):
             columns = ['bps rx a', 'bps rx b']
             individual_device_data[cx] = pd.DataFrame(columns=columns)
         while datetime.now() < end_time or getattr(self, "background_run", None):
+            if self.all_devices_stopped:
+                # already gave up on recovery earlier; don't re-run the 40s wait on every
+                # bandsteering tick
+                if self.do_bandsteering:
+                    return pd.DataFrame(self.band_steering_df)
+                break
             if self.robot_test:
                 # monitor_charge_time is None on the bandsteering monitor_function tick, so
                 # skip this check instead of crashing on None.
@@ -989,6 +996,10 @@ class ThroughputQOS(Realm):
                     logger.error("No devices responded within 40 seconds during monitoring, "
                                  "ending the monitor loop gracefully; the test will continue with "
                                  "the data collected so far.")
+                    self.all_devices_stopped = True
+                    if self.do_bandsteering:
+                        self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
+                        return pd.DataFrame(self.band_steering_df)
                     break
             response1 = t_response
             response_values = list(response1.values())
@@ -1214,7 +1225,7 @@ class ThroughputQOS(Realm):
                 self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
                 return df
 
-        if self.robot_test and self.dowebgui:
+        if self.robot_test and self.dowebgui and self.df_for_webui:
             last_entry = self.df_for_webui[-1].copy()
             last_entry["status"] = "Stopped"
             last_entry["timestamp"] = datetime.now().strftime("%d/%m %I:%M:%S %p")
@@ -1230,15 +1241,16 @@ class ThroughputQOS(Realm):
             download[index].append(throughput[index][0])
             drop_a[index].append(throughput[index][2])
             drop_b[index].append(throughput[index][3])
-        # Rounding of the results upto 2 decimals
-        upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
-        download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
-        drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
-        drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
-        avg_upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in avg_upload]
-        avg_download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in avg_download]
-        avg_drop_a_per = [float(round(sum(i) / len(i), 2)) for i in avg_drop_a]
-        avg_drop_b_per = [float(round(sum(i) / len(i), 2)) for i in avg_drop_b]
+        # Rounding of the results upto 2 decimals. A list is empty if the loop ended before any
+        # data was collected (e.g. all devices stopped) - treat that as 0, not divide-by-zero.
+        upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in upload]
+        download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in download]
+        drop_a_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in drop_a]
+        drop_b_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in drop_b]
+        avg_upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in avg_upload]
+        avg_download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in avg_download]
+        avg_drop_a_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in avg_drop_a]
+        avg_drop_b_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in avg_drop_b]
         keys = list(connections_upload.keys())
         keys = list(connections_download.keys())
         # Updated the calculated values to the respective connections in dictionary
@@ -2949,16 +2961,19 @@ class ThroughputQOS(Realm):
             curr_cycle = 1
             logger.info("Current Cycle {}".format(curr_cycle))
             for coordinate in cycle_coords:
-                if self.test_stopped_by_user:
+                if self.test_stopped_by_user or self.all_devices_stopped:
                     break
                 # Before moving to next coordinate, check if battery is sufficient
                 pause_coord, test_stopped_by_user, band_steering_data = self.robot.wait_for_battery(monitor_function=lambda: self.monitor())
-                if test_stopped_by_user:
+                if test_stopped_by_user or self.all_devices_stopped:
                     break
                 matched, abort, band_steering_data = self.robot.move_to_coordinate(
                     coordinate,
                     monitor_function=lambda: self.monitor()
                 )
+                if self.all_devices_stopped:
+                    logger.warning("Band-steering test stopped because no devices recovered within 40 seconds.")
+                    break
                 if matched:
                     logger.info("Reached the coordinate {}".format(coordinate))
                     if coordinate == coord_list[0]:
@@ -2998,15 +3013,16 @@ class ThroughputQOS(Realm):
                     drop_a[ind].append(thpt[ind][2])
                     drop_b[ind].append(thpt[ind][3])
 
-            # Rounding of the results upto 2 decimals
-            upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
-            download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
-            drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
-            drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
-            avg_upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in avg_upload]
-            avg_download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in avg_download]
-            avg_drop_a_per = [float(round(sum(i) / len(i), 2)) for i in avg_drop_a]
-            avg_drop_b_per = [float(round(sum(i) / len(i), 2)) for i in avg_drop_b]
+            # A timeout can stop band steering before a monitoring sample is collected.
+            # Preserve the stopped-test report by representing those empty values as zero.
+            upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in upload]
+            download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in download]
+            drop_a_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in drop_a]
+            drop_b_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in drop_b]
+            avg_upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in avg_upload]
+            avg_download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in avg_download]
+            avg_drop_a_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in avg_drop_a]
+            avg_drop_b_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in avg_drop_b]
             keys = list(connections_download.keys())
             # Updated the calculated values to the respective connections in dictionary
             for i in range(len(download_throughput)):
@@ -3030,7 +3046,7 @@ class ThroughputQOS(Realm):
             input_setup_info = {
                 "contact": "support@candelatech.com"
             }
-            if self.dowebgui == "True":
+            if self.dowebgui == "True" and self.overall:
                 last_entry = self.overall[len(self.overall) - 1]
                 last_entry["status"] = "Stopped"
                 last_entry["timestamp"] = datetime.now().strftime("%d/%m %I:%M:%S %p")
@@ -3052,7 +3068,9 @@ class ThroughputQOS(Realm):
             return
         for coordinate in coord_list:
             if self.robot_ip:
-                if self.test_stopped_by_user:
+                if self.test_stopped_by_user or self.all_devices_stopped:
+                    if self.all_devices_stopped:
+                        logger.warning("Robot test stopped because no devices recovered within 40 seconds.")
                     break
                 # Before moving to next coordinate, check if battery is sufficient
                 pause_coord, test_stopped_by_user = self.robot.wait_for_battery()
@@ -3180,6 +3198,14 @@ class ThroughputQOS(Realm):
                             if coordinate not in self.qos_data:
                                 self.qos_data[coordinate] = {}
                             self.qos_data[coordinate][self.rotation_list[angle]] = params
+                            if self.all_devices_stopped:
+                                logger.warning("Stopping remaining robot-test rotations because no devices recovered within 40 seconds.")
+                                break
+
+                # Do not let the outer coordinate loop move to another coordinate after all
+                # devices stopped responding for 40 seconds during this coordinate's monitoring.
+                if self.all_devices_stopped:
+                    break
 
         self.generate_report_for_robo(coordinate_list=coord_list, angle_list=self.rotation_list, passed_coordinates=passed_coord_list)
 
