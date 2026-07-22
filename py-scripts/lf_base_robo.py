@@ -326,6 +326,30 @@ class RobotClass:
             return matched, abort, all_dataframes
         return matched, abort
 
+    def update_nav_data_for_all_cxs_stopped(self):
+        """
+        Tells the WebUI the robot test has stopped by updating the csv.
+        Used when all devices stop responding, so the test will be stopped.
+        """
+        if not self.nav_data_path:
+            return
+
+        if not os.path.exists(self.nav_data_path):
+            with open(self.nav_data_path, "w") as nav_file:
+                json.dump({}, nav_file)
+
+        try:
+            with open(self.nav_data_path, "r") as nav_file:
+                navdata = json.load(nav_file)
+        except (OSError, ValueError) as error:
+            logging.warning("Unable to read navigation data while stopping the test: %s", error)
+            navdata = {}
+
+        navdata['Test_status'] = "Aborted"
+
+        with open(self.nav_data_path, "w") as nav_file:
+            json.dump(navdata, nav_file, indent=4)
+
     def rotate_angle(self, angle_degree):
         """
         Rotate the robot to a specific angle at the current location.
