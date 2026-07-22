@@ -586,7 +586,7 @@ class Mixed_Traffic(Realm):
         else:
             self._fail("Stations failed to get IPs", print_=True)
             self._fail("Station build failed", print_=True)
-            logger.info("Please re-check the configuration applied")
+            logger.error("Please re-check the configuration applied")
         return station_list
 
     def convert_seconds(self, seconds):
@@ -642,7 +642,7 @@ class Mixed_Traffic(Realm):
 
         # Need real stations to run interop test
         if (len(self.real_sta_list) == 0):
-            logger.error("There are no real devices in the testbed. Aborting test")
+            logger.error("The test cannot proceed because the testbed contains no real devices")
             exit(0)
 
         logging.info("Real Station List: {}".format(*self.real_sta_list))
@@ -808,7 +808,7 @@ class Mixed_Traffic(Realm):
                     time.sleep(3)
             else:
                 time.sleep(ping_test_duration * 60)
-            logger.info("Stopping the Ping Test...")
+            logger.info("Stopping the Ping Test")
             self.ping_test_obj.stop_generic()
             # getting result dict
             result_data = self.ping_test_obj.get_results()
@@ -1672,22 +1672,22 @@ class Mixed_Traffic(Realm):
                                                                     result_dir=self.result_dir)
             if self.real:
                 if self.user_query[0]:
-                    logger.info("No station pre clean up any existing cxs on LANforge")
+                    logger.info("No station pre clean up on any existing cxs on LANforge")
                 else:
                     logger.info("Cleaning up any existing cxs on LANforge")
                     self.multicast_test_obj.pre_cleanup()
             # cleaning the existing layer4 endpoints
             self.cleanup.layer3_endp_clean()
 
-            logger.info("Create stations or use passed in station_list, build the test")
+            logger.info("Create stations or use the provided station list to build the multicast cross connections")
             # building the endpoints
             self.multicast_test_obj.build()
             time.sleep(20)
             if not self.multicast_test_obj.passes():
-                logger.critical("build step failed.")
+                logger.critical("build step failed")
                 logger.critical(self.multicast_test_obj.get_fail_message())
                 exit(1)
-            logger.info("Start the test and run for a duration")
+            logger.info("Start the Multicast test")
             # TODO: Check return value of start()
             self.multicast_test_obj.start(False)
             # csv_results_file = self.multicast_test_obj.get_results_csv()
@@ -1709,11 +1709,11 @@ class Mixed_Traffic(Realm):
                 report.write_pdf_with_timestamp(_page_size='A3', _orientation='Landscape')
 
             if not self.multicast_test_obj.passes():
-                logger.warning("Test Ended: There were Failures in multicast test")
+                logger.warning("Multicast test completed with failures")
                 logger.warning(self.multicast_test_obj.get_fail_message())
             self.cleanup.layer3_endp_clean()
             if self.multicast_test_obj.passes():
-                logger.info("Full test PASSED, All connections increased rx bytes")
+                logger.info("Multicast Test passed. All connections showed an increase in received bytes")
             tos_list = ['VI', 'VO', 'BK', 'BE']
             for tos in tos_list:
                 if (tos != mc_tos):
@@ -1745,7 +1745,7 @@ class Mixed_Traffic(Realm):
                 )
 
     def generate_all_report(self, iot_summary=None):
-        logger.info("To generate the Mixed Traffic report with all tests")
+        logger.info("Generate the Mixed Traffic report with all tests")
         mode = "Parallel" if self.parallel else "Serial"
         title = "Mixed Traffic Test Including IoT Devices" if iot_summary else "Mixed Traffic Test"
         self.lf_report_mt.set_title(f"{title} ({mode})")
@@ -1919,7 +1919,7 @@ class Mixed_Traffic(Realm):
                     _enable_csv=True,
                     _color_name=['lightgrey', 'orange', 'steelblue'])
                 graph_png = graph.build_bar_graph_horizontal()
-                logger.info("Ping Test Graph-1: {}".format(graph_png))
+                logger.debug("Ping Test Graph-1: {}".format(graph_png))
                 self.lf_report_mt.set_graph_image(graph_png)
                 self.lf_report_mt.move_graph_image()
                 self.lf_report_mt.set_csv_filename(graph_png)
@@ -1988,7 +1988,7 @@ class Mixed_Traffic(Realm):
                     _enable_csv=True,
                     _color_name=['lightgrey', 'orange', 'steelblue'])
                 graph_png = graph.build_bar_graph_horizontal()
-                logger.info("Ping Test Graph-2: {}".format(graph_png))
+                logger.debug("Ping Test Graph-2: {}".format(graph_png))
                 self.lf_report_mt.set_graph_image(graph_png)
                 self.lf_report_mt.move_graph_image()
                 self.lf_report_mt.set_csv_filename(graph_png)
@@ -2057,7 +2057,7 @@ class Mixed_Traffic(Realm):
                                                   _enable_csv=True,
                                                   _color_name=['orange', 'lightcoral', 'steelblue', 'lightgrey'])
                     graph_png = graph.build_bar_graph()
-                    logger.info("QOS test name of the overall graph : {}".format(graph_png))
+                    logger.debug("QOS test name of the overall graph : {}".format(graph_png))
                     self.lf_report_mt.set_graph_image(graph_png)
                     self.lf_report_mt.move_graph_image()
                     self.lf_report_mt.set_csv_filename(graph_png)
@@ -2110,7 +2110,7 @@ class Mixed_Traffic(Realm):
                                                          _color=['orange'],
                                                          _label=[self.ftp_test_obj.direction])
                 ftp_graph1 = graph.build_bar_graph_horizontal()
-                logger.info("FTP Graph-1 Name: {}".format(ftp_graph1))
+                logger.debug("FTP Graph-1: {}".format(ftp_graph1))
                 self.lf_report_mt.set_graph_image(ftp_graph1)
                 self.lf_report_mt.move_graph_image()
                 self.lf_report_mt.set_csv_filename(ftp_graph1)
@@ -2140,7 +2140,7 @@ class Mixed_Traffic(Realm):
                                                          _color=['steelblue'],
                                                          _label=[self.ftp_test_obj.direction])
                 ftp_graph2 = graph.build_bar_graph_horizontal()
-                logger.info("FTP Graph-2 Name: {}".format(ftp_graph2))
+                logger.debug("FTP Graph-2: {}".format(ftp_graph2))
                 self.lf_report_mt.set_graph_image(ftp_graph2)
                 self.lf_report_mt.move_graph_image()
                 self.lf_report_mt.set_csv_filename(ftp_graph2)
@@ -2197,7 +2197,7 @@ class Mixed_Traffic(Realm):
                                                "Client names.")
                 self.lf_report_mt.build_objective()
                 http_graph1 = self.http_obj.graph_2(self.dataset2, lis=self.lis, bands=[self.band])
-                logger.info("Http Graph-1 Name: {}".format(http_graph1))
+                logger.debug("Http Graph-1: {}".format(http_graph1))
                 self.lf_report_mt.set_graph_image(http_graph1)
                 self.lf_report_mt.set_csv_filename(http_graph1)
                 self.lf_report_mt.move_csv_file()
@@ -2209,7 +2209,7 @@ class Mixed_Traffic(Realm):
                                                "Client names.")
                 self.lf_report_mt.build_objective()
                 http_graph2 = self.http_obj.generate_graph(dataset=self.dataset, lis=self.lis, bands=[self.band])
-                logger.info("Http Graph-2 Name: {}".format(http_graph2))
+                logger.debug("Http Graph-2: {}".format(http_graph2))
                 self.lf_report_mt.set_graph_image(http_graph2)
                 self.lf_report_mt.set_csv_filename(http_graph2)
                 self.lf_report_mt.move_csv_file()
@@ -2342,7 +2342,7 @@ class Mixed_Traffic(Realm):
                                                                  _legend_loc="best",
                                                                  _legend_box=(1.0, 1.0))
                         graph_png = graph.build_bar_graph_horizontal()
-                        logger.info("Multicast Test Graph Name: {}".format(graph_png))
+                        logger.debug("Multicast Test Graph: {}".format(graph_png))
                         self.lf_report_mt.set_graph_image(graph_png)
                         self.lf_report_mt.move_graph_image()
                         self.lf_report_mt.build_graph()
@@ -2612,7 +2612,7 @@ async def run_iot(ip: str = '127.0.0.1',
 
         # Ensure test name is unique (avoid overwriting previous results)
         if testname in os.listdir('../../local/interop-webGUI/IoT/scripts/results/'):
-            logger.error("Test with same name already existing. Please give a different test name")
+            logger.error("Test with same name already existing. Please use a different test name")
             exit(1)
         automation = Automation(ip=ip,
                                 port=port,
@@ -3201,7 +3201,7 @@ INCLUDE_IN_README: False
                 mixed_obj.ssid = ssid
                 mixed_obj.security = security
 
-                logger.info(f"Selected Tests List: {args.tests}")
+                logger.info(f"List of selected Tests: {args.tests}")
                 if args.tests:
                     if args.parallel:
                         if "1" in args.tests:
@@ -3372,7 +3372,7 @@ INCLUDE_IN_README: False
                                                                     start_id=args.sixg_start_id, all_sta=True)
                 # updating num stations and station list
                 virtual_station_list = sta_list_2g + sta_list_5g + sta_list_6g
-                logger.info("Selected Virtual Station List:", virtual_station_list)
+                logger.info("List of selected virtual stations:", virtual_station_list)
                 mixed_obj.station_list = virtual_station_list
                 mixed_obj.num_staions = args.twog_num_stations + args.fiveg_num_stations + args.sixg_num_stations
             if (args.use_default_config):
@@ -3384,7 +3384,7 @@ INCLUDE_IN_README: False
             mixed_obj.ssid = ssid
             mixed_obj.security = security
             # tests will run with respect to bands
-            logger.info(f"Selected Tests List: {args.tests}")
+            logger.info(f"List of selected tests: {args.tests}")
             if args.tests:
                 if args.parallel:
                     if "1" in args.tests:
