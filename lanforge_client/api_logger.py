@@ -19,6 +19,7 @@ CSV_FIELDS = ['api_timestamp', 'api_method', 'api_url', 'api_status', 'api_respo
               'api_payload', 'api_error', 'api_diagnostics']
 
 _logging_enabled = False
+_logging_paused = False
 _log_filename = None
 
 
@@ -33,8 +34,9 @@ def configure_api_call_logging(enabled: bool, log_filename: Optional[str] = None
     Returns:
         None.
     """
-    global _logging_enabled, _log_filename
+    global _logging_enabled, _log_filename, _logging_paused
     _logging_enabled = bool(enabled)
+    _logging_paused = False
     if not _logging_enabled:
         return
     _log_filename = log_filename or os.path.join(os.path.expanduser('~'), 'lf_api_calls.csv')
@@ -44,6 +46,28 @@ def configure_api_call_logging(enabled: bool, log_filename: Optional[str] = None
             csv.writer(csv_file).writerow(CSV_FIELDS)
     except Exception as x:
         logger.debug("api_logger: unable to reset %s: %s" % (_log_filename, x))
+
+
+def pause() -> None:
+    """
+    Temporarily stop recording API calls until resume() is called.
+
+    Returns:
+        None.
+    """
+    global _logging_paused
+    _logging_paused = True
+
+
+def resume() -> None:
+    """
+    Resume recording API calls after pause().
+
+    Returns:
+        None.
+    """
+    global _logging_paused
+    _logging_paused = False
 
 
 def is_enabled() -> bool:
@@ -70,7 +94,7 @@ def record_api_call(method: str, url: str, data: Optional[Any] = None, response_
                     error: Optional[Exception] = None, diagnostics: Optional[str] = None) -> None:
     """
     Append one CSV row for a json_get/json_post/json_put/json_delete call. No-op unless
-    configure_api_call_logging(enabled=True) was called first.
+    configure_api_call_logging(enabled=True) was called first, or while paused (see pause()/resume()).
 
     Args:
         method: "GET" | "POST" | "PUT" | "DELETE".
@@ -84,7 +108,7 @@ def record_api_call(method: str, url: str, data: Optional[Any] = None, response_
     Returns:
         None.
     """
-    if not _logging_enabled:
+    if not _logging_enabled or _logging_paused:
         return
     if error:
         status = "ERROR"
