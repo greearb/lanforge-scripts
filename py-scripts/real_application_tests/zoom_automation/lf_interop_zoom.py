@@ -253,7 +253,7 @@ class ZoomAutomation(Realm):
         self.bssids = bssids or []
 
         if self.do_bs:
-            self.robo_obj.coordinates_list = self.coordinates_list
+            self.robo_obj.coordinate_list = self.coordinates_list
             self.robo_obj.total_cycles = self.cycles
         self.successful_coords = []
         self.failed_coords = []
@@ -597,7 +597,7 @@ class ZoomAutomation(Realm):
             self.end_time = self.start_time + timedelta(minutes=self.duration)
         return [self.start_time, self.end_time]
 
-    def check_gen_cx(self, stall_timeout=300):
+    def check_gen_cx(self, stall_timeout=600):
         """Return True once every generic endpoint is idle (Stopped/WAITING/NO-CX),
         or once a stuck endpoint has been non-idle for longer than stall_timeout
         seconds — in which case we stop waiting on it instead of hanging forever."""
@@ -1197,7 +1197,9 @@ class ZoomAutomation(Realm):
 
         if self.do_bs:
             time.sleep(60)
-            logger.info(f"Band-Steering Test coordinates to be visited: {self.bs_coord_result}")
+            logger.info(
+                f"Band-Steering Test coordinates to be visited ({len(self.bs_coord_result)} total): {self.bs_coord_result}"
+            )
             for coordinate in self.bs_coord_result:
                 logger.info(f"Moving robot to coordinate: {coordinate}")
                 if not self.to_cord:
@@ -1216,9 +1218,10 @@ class ZoomAutomation(Realm):
                 else:
                     self.failed_coords.append(coordinate)
                 if aborted:
-                    logger.error(f"Failed to reach the {coordinate}")
-                    self.failed_coords.append(coordinate)
-                    sys.exit()
+                    logger.error(
+                        f"Failed to reach coordinate {coordinate} — skipping it and trying the next coordinate."
+                    )
+                    continue
                 time.sleep(10)
 
             logger.info("All coordinates completed — stopping Band-Steering Test")
@@ -3845,6 +3848,9 @@ and downstream traffic"""
         logger.info(f"Saved data to {path}")
 
     def run_robo_test(self):
+        logger.info(
+            f"Robo test coordinates to be visited ({len(self.coordinates_list)} total): {self.coordinates_list}"
+        )
         for coordinate in self.coordinates_list:
             self.robo_obj.wait_for_battery()
             matched, aborted = self.robo_obj.move_to_coordinate(coord=coordinate)
@@ -3854,9 +3860,10 @@ and downstream traffic"""
             else:
                 self.failed_coords.append(coordinate)
             if aborted:
-                logger.error(f"Failed to Reach the coordinate {self.current_cord}")
-                self.failed_coords.append(coordinate)
-                sys.exit()
+                logger.error(
+                    f"Failed to reach coordinate {coordinate} — skipping it and trying the next coordinate."
+                )
+                continue
             if self.rotations_enabled:
                 for angle in self.angles_list:
                     self.robo_obj.wait_for_battery()
@@ -3924,7 +3931,7 @@ and downstream traffic"""
         logger.debug(f"checking real sta list {self.real_sta_list}")
         logger.debug(f"checking real sta os type {self.real_sta_os_type}")
 
-    def wait_for_host_ready(self, timeout=300):
+    def wait_for_host_ready(self, timeout=600):
         """Wait for the host device to confirm login.
 
         Returns:
@@ -3935,24 +3942,25 @@ and downstream traffic"""
         """
         deadline = time.time() + timeout
         while not self.login_completed:
+            host_endp = self.generic_endps_profile.created_endp[0]
             if time.time() >= deadline:
                 logger.error(
-                    f"Timed out after {timeout}s waiting for host device to log in."
+                    f"Timed out after {timeout}s waiting for host device ({host_endp}) to log in."
                 )
                 self.generic_endps_profile.cleanup()
                 return False
             try:
-                generic_endpoint = self.json_get(
-                    f"/generic/{self.generic_endps_profile.created_endp[0]}"
-                )
+                generic_endpoint = self.json_get(f"/generic/{host_endp}")
                 endp_status = generic_endpoint["endpoint"]["status"]
                 if endp_status == "Stopped":
-                    logger.error("Failed to Start the Host Device")
+                    logger.error(f"Failed to start the host device ({host_endp}).")
                     self.generic_endps_profile.cleanup()
                     return False
                 time.sleep(5)
             except Exception as e:
-                logger.error(f"Error while checking login_completed status: {e}")
+                logger.error(
+                    f"Error while checking login_completed status for host device ({host_endp}): {e}"
+                )
                 time.sleep(5)
 
         self.meet_link = f"https://us04web.zoom.us/j/{self.remote_login_url}?pwd={self.remote_login_passwd}"
