@@ -257,6 +257,7 @@ class ZoomAutomation(Realm):
             self.robo_obj.total_cycles = self.cycles
         self.successful_coords = []
         self.failed_coords = []
+        self.host_ever_ready = False
 
     def start_flask_server(self):
         @self.app.route("/login_url", methods=["GET", "POST"])
@@ -288,8 +289,7 @@ class ZoomAutomation(Realm):
                 self.meet_link = data.get("meet_link", "")
                 self.meet_link = self.meet_link.rsplit(".", 1)[0] + ".1"
 
-                print(f"Updating meeting link to: {self.meet_link}")
-                # "checking self.meet_link",self.meet_link)
+                logger.info(f"/meeting_link POST: updating meeting link to {self.meet_link}")
                 return jsonify({"message": "Meeting Link Updated sucessfully"})
 
         @self.app.route("/login_completed", methods=["GET"])
@@ -308,14 +308,14 @@ class ZoomAutomation(Realm):
 
         @self.app.route("/get_participants_joined", methods=["GET"])
         def get_participants_joined():
-            print("participants joined is", self.participants_joined)
+            logger.info(f"/get_participants_joined GET -> participants joined: {self.participants_joined}")
             return jsonify({"participants": self.participants_joined})
 
         @self.app.route("/set_participants_joined", methods=["POST"])
         def set_participants_joined():
             data = request.json
             self.participants_joined = data.get("participants_joined", None)
-            print("participants joined is", self.participants_joined)
+            logger.info(f"/set_participants_joined POST -> participants joined: {self.participants_joined}")
             return jsonify(
                 {
                     "message": f"Updated participants joined status to {self.participants_joined}"
@@ -324,7 +324,7 @@ class ZoomAutomation(Realm):
 
         @self.app.route("/get_participants_req", methods=["GET"])
         def get_participants_req():
-            print("participants req is", self.participants_req)
+            logger.info(f"/get_participants_req GET -> participants required: {self.participants_req}")
             return jsonify({"participants": self.participants_req})
 
         @self.app.route("/test_started", methods=["GET", "POST"])
@@ -540,8 +540,8 @@ class ZoomAutomation(Realm):
                 filename = data.get("filename", "csvdata.csv")
                 self.csv_file_name = f"received_{filename}"
                 rows = data.get("rows", [])
-                print("filename", filename)
-                print("rows", rows)
+                logger.info(f"/upload_csv POST: received filename={filename}")
+                logger.debug(f"/upload_csv POST: received rows={rows}")
                 if not rows:
                     return (
                         jsonify({"status": "error", "message": "No rows received"}),
@@ -549,7 +549,7 @@ class ZoomAutomation(Realm):
                     )
 
                 filepath = f"received_{filename}"
-                print("created is", filepath)
+                logger.info(f"/upload_csv POST: wrote CSV to {filepath}")
                 with open(filepath, "w", newline="") as f:
                     writer = csv.writer(f)
                     if rows:
@@ -597,25 +597,46 @@ class ZoomAutomation(Realm):
             self.end_time = self.start_time + timedelta(minutes=self.duration)
         return [self.start_time, self.end_time]
 
-    def check_gen_cx(self):
-        try:
+    def check_gen_cx(self, stall_timeout=300):
+        """Return True once every generic endpoint is idle (Stopped/WAITING/NO-CX),
+        or once a stuck endpoint has been non-idle for longer than stall_timeout
+        seconds — in which case we stop waiting on it instead of hanging forever."""
+        if not hasattr(self, "_gen_cx_stall_since"):
+            self._gen_cx_stall_since = {}
 
-            for gen_endp in self.generic_endps_profile.created_endp:
+        now = time.time()
+        ready = True
+
+        try:
+            for gen_endp in set(self.generic_endps_profile.created_endp):
                 generic_endpoint = self.json_get(f"/generic/{gen_endp}")
 
                 if not generic_endpoint or "endpoint" not in generic_endpoint:
                     logger.info(f"Error fetching endpoint data for {gen_endp}")
-                    return False
+                    endp_status = None  # unreachable/deleted endpoint
+                else:
+                    endp_status = generic_endpoint["endpoint"].get("status", "")
 
-                endp_status = generic_endpoint["endpoint"].get("status", "")
+                if endp_status in ["Stopped", "WAITING", "NO-CX", "FTM_WAIT"]:
+                    self._gen_cx_stall_since.pop(gen_endp, None)
+                    continue
 
-                if endp_status not in ["Stopped", "WAITING", "NO-CX"]:
-                    return False
+                # Covers BOTH "stuck at a non-idle status" AND "can't be fetched/deleted"
+                stall_start = self._gen_cx_stall_since.setdefault(gen_endp, now)
+                stalled_for = now - stall_start
+                if stalled_for >= stall_timeout:
+                    logger.warning(
+                        f"{gen_endp} unresolved (status={endp_status!r}) for "
+                        f"{stalled_for:.0f}s (limit {stall_timeout}s) — giving up waiting on it."
+                    )
+                    continue
 
-            return True
+                ready = False
+
+            return ready
         except Exception as e:
             logger.error(f"Error in check_gen_cx function {e}", exc_info=True)
-            logger.info(f"generic endpoint data {generic_endpoint}")
+            return False
 
     def wait_for_flask(self, url="http://127.0.0.1:5000/get_latest_stats", timeout=10):
         """Wait until the Flask server is up, but exit if it takes longer than `timeout` seconds."""
@@ -666,7 +687,7 @@ class ZoomAutomation(Realm):
             gen_name_a = "%s-%s" % ("zoom", "_".join(port_name.split(".")))
             endp_tpls.append((shelf, resource, name, gen_name_a))
 
-        print("endp_tpls", endp_tpls)
+        logger.debug(f"create_android: endp_tpls={endp_tpls}")
         for endp_tpl in endp_tpls:
             shelf = endp_tpl[0]
             resource = endp_tpl[1]
@@ -899,7 +920,7 @@ class ZoomAutomation(Realm):
             for port in port_data:
                 interfaces_dict.update(port)
         except Exception as e:
-            print(f"Error fetching port data: {e}")
+            logger.error(f"get_signal_and_channel_data_dict: error fetching port data: {e}")
             return {}
 
         # Loop through your managed stations (e.g., sta001, sta002)
@@ -933,7 +954,7 @@ class ZoomAutomation(Realm):
                     "ap", "-"
                 )  # 'ap' is usually BSSID
 
-        print(lf_stats_map)
+        logger.debug(f"get_signal_and_channel_data_dict: lf_stats_map={lf_stats_map}")
 
         return lf_stats_map
 
@@ -1141,13 +1162,42 @@ class ZoomAutomation(Realm):
 
     def run(self):
         self.create_host()
-        self.wait_for_host_ready()
+        if not self.wait_for_host_ready():
+            if self.do_robo:
+                self.failed_coords.append(self.current_cord)
+                if not self.host_ever_ready:
+                    logger.error(
+                        f"Host device failed to become ready on the very first coordinate ({self.current_cord}) — "
+                        "this points to a host device problem rather than a location issue. "
+                        "Aborting the robo test instead of trying the remaining coordinates."
+                    )
+                    return False
+                logger.error(
+                    f"Host device failed to become ready for coordinate {self.current_cord} — skipping this coordinate and continuing with the next one."
+                )
+                return True
+            else:
+                logger.error("Host device never became ready. Aborting test.")
+                sys.exit(1)
+        self.host_ever_ready = True
         self.create_participants()
-        self.wait_for_test_start()
+        if not self.wait_for_test_start():
+            if self.do_robo:
+                logger.error(
+                    f"Unable to get the start signal from the host device for coordinate {self.current_cord} — "
+                    "skipping this coordinate and continuing with the next one."
+                )
+                self.failed_coords.append(self.current_cord)
+                return True
+            else:
+                logger.error(
+                    "Unable to get the start signal from the host device — aborting test."
+                )
+                sys.exit(1)
 
         if self.do_bs:
             time.sleep(60)
-            print("Band-Steering Test coordinates to be visited:", self.bs_coord_result)
+            logger.info(f"Band-Steering Test coordinates to be visited: {self.bs_coord_result}")
             for coordinate in self.bs_coord_result:
                 logger.info(f"Moving robot to coordinate: {coordinate}")
                 if not self.to_cord:
@@ -1188,9 +1238,20 @@ class ZoomAutomation(Realm):
                         self.stop_signal = False
                         self.participants_joined = 0
                         self.create_host()
-                        self.wait_for_host_ready()
+                        if not self.wait_for_host_ready():
+                            logger.error(
+                                f"Host device failed to restart after battery pause for coordinate {self.current_cord} — skipping this round."
+                            )
+                            self.failed_coords.append(self.current_cord)
+                            return True
                         self.create_participants()
-                        self.wait_for_test_start()
+                        if not self.wait_for_test_start():
+                            logger.error(
+                                f"Unable to get the start signal from the host device after the battery pause "
+                                f"for coordinate {self.current_cord} — skipping this round."
+                            )
+                            self.failed_coords.append(self.current_cord)
+                            return True
 
                 time.sleep(5)
 
@@ -1203,6 +1264,7 @@ class ZoomAutomation(Realm):
         self.generic_endps_profile.cleanup()
         self.start_time = None
         self.end_time = None
+        return True
 
     def select_real_devices(self, real_device_obj, real_sta_list=None):
         final_device_list = []
@@ -1330,7 +1392,7 @@ class ZoomAutomation(Realm):
         self.hostname_to_station_map = dict(
             zip(self.real_sta_hostname, self.real_sta_list)
         )
-        print("checking self.hostname_to_station_map", self.hostname_to_station_map)
+        logger.debug(f"select_real_devices: hostname_to_station_map={self.hostname_to_station_map}")
 
         return self.real_sta_list
 
@@ -2642,8 +2704,7 @@ and downstream traffic"""
             # we will use api response to generate report
 
             device_data = self.summarize_audio_video(self.participants_qos_last)
-            print("========================================================")
-            print("device_data", device_data)
+            logger.debug(f"generate_report: device_data={device_data}")
             self.report.set_table_title("Test Devices:")
             self.report.build_table_title()
             device_details = pd.DataFrame(
@@ -3805,14 +3866,28 @@ and downstream traffic"""
                     else:
                         logger.error(f"Failed to Rotate the Angle {self.current_angle}")
                         sys.exit()
-                    self.run()
+                    if not self.run():
+                        logger.error(
+                            "Stopping robo test early — host device issue detected on the first coordinate."
+                        )
+                        return
                     self.participants_joined = 0
 
             else:
-                self.run()
+                if not self.run():
+                    logger.error(
+                        "Stopping robo test early — host device issue detected on the first coordinate."
+                    )
+                    return
                 self.participants_joined = 0
 
     def create_host(self):
+        # Reset per round so start_cx()/stop_cx()/cleanup() only ever act on
+        # this coordinate's CXs/endpoints, instead of re-processing every
+        # stale entry from every previous coordinate.
+        self.generic_endps_profile.created_cx = []
+        self.generic_endps_profile.created_endp = []
+
         if self.generic_endps_profile.create(
             ports=[self.real_sta_list[0]],
             real_client_os_types=[self.real_sta_os_type[0]],
@@ -3849,8 +3924,23 @@ and downstream traffic"""
         logger.debug(f"checking real sta list {self.real_sta_list}")
         logger.debug(f"checking real sta os type {self.real_sta_os_type}")
 
-    def wait_for_host_ready(self):
+    def wait_for_host_ready(self, timeout=300):
+        """Wait for the host device to confirm login.
+
+        Returns:
+            True once login is confirmed.
+            False if the host device stops before logging in, or if login
+            isn't confirmed within `timeout` seconds (default 5 minutes) —
+            instead of hanging forever or killing the whole process.
+        """
+        deadline = time.time() + timeout
         while not self.login_completed:
+            if time.time() >= deadline:
+                logger.error(
+                    f"Timed out after {timeout}s waiting for host device to log in."
+                )
+                self.generic_endps_profile.cleanup()
+                return False
             try:
                 generic_endpoint = self.json_get(
                     f"/generic/{self.generic_endps_profile.created_endp[0]}"
@@ -3859,22 +3949,22 @@ and downstream traffic"""
                 if endp_status == "Stopped":
                     logger.error("Failed to Start the Host Device")
                     self.generic_endps_profile.cleanup()
-                    sys.exit(1)
+                    return False
                 time.sleep(5)
             except Exception as e:
                 logger.error(f"Error while checking login_completed status: {e}")
                 time.sleep(5)
 
         self.meet_link = f"https://us04web.zoom.us/j/{self.remote_login_url}?pwd={self.remote_login_passwd}"
-        print("checking meet link for android devices", self.meet_link)
+        logger.info(f"Meet link for Android devices: {self.meet_link}")
         self.login_completed = False
+        return True
 
     def create_participants(self):
-        print("=============================")
-        print("Creating Participants with the following details:")
-        print(self.lanforge_port_list)
-        print(self.real_sta_hostname)
-        print(self.serial_list)
+        logger.info(
+            f"Creating participants — ports={self.lanforge_port_list}, "
+            f"hostnames={self.real_sta_hostname}, serials={self.serial_list}"
+        )
         for i in range(1, len(self.real_sta_os_type)):
             if self.real_sta_os_type[i] == "android":
                 status, created_cx, created_endp = self.create_android(
@@ -3884,7 +3974,7 @@ and downstream traffic"""
                 )
                 self.generic_endps_profile.created_endp.extend(created_endp)
                 self.generic_endps_profile.created_cx.extend(created_cx)
-                print(self.generic_endps_profile.created_cx)
+                logger.debug(f"create_participants: created_cx now={self.generic_endps_profile.created_cx}")
                 cmd = (
                     f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/zoom_automation/android_zoom.py "
                     f"--serial {self.serial_list[i]} "
@@ -3931,11 +4021,25 @@ and downstream traffic"""
                 {"test_mgr": "default_tm", "cx_name": cx_name, "cx_state": "RUNNING"},
                 debug_=True,
             )
-            print("sending running state to..", cx_name)
+            logger.info(f"Sending RUNNING state to CX: {cx_name}")
 
-    def wait_for_test_start(self):
-        # Wait for the test to be started
+    def wait_for_test_start(self, timeout=180):
+        """Wait for the test-started signal.
+
+        Returns:
+            True once the test has started.
+            False if it isn't signaled within `timeout` seconds (default 3
+            minutes) — instead of hanging forever.
+        """
+        deadline = time.time() + timeout
         while not self.test_start:
+            if time.time() >= deadline:
+                logger.error(
+                    f"Unable to get the start signal from the host device within {timeout}s. "
+                    "Giving up and cleaning up this round's CXs."
+                )
+                self.generic_endps_profile.cleanup()
+                return False
             logger.info("WAITING FOR THE TEST TO BE STARTED")
             time.sleep(5)
         self.test_start = False
@@ -3947,6 +4051,7 @@ and downstream traffic"""
                 self.current_cord = self.from_cord
         self.set_start_time()
         logger.info("TEST WILL BE STARTING")
+        return True
 
     def generate_report_from_data(self):
         """
@@ -4054,10 +4159,10 @@ and downstream traffic"""
             with open(json_path, "w") as f:
                 json.dump(data, f, indent=4)
 
-            print(f"Updated running_status.json at {json_path}")
+            logger.info(f"Updated running_status.json at {json_path}")
 
         except Exception as e:
-            print(f"Error updating running_status.json: {e}")
+            logger.error(f"Error updating running_status.json: {e}")
 
     def _move_report_files(self, report_path_date_time):
         """
@@ -4114,7 +4219,7 @@ and downstream traffic"""
                 json_pattern = f"*_{coord}_{angle}_qos.json"
                 file_path = os.path.join("zoom_api_responses", json_pattern)
                 found_files = glob.glob(file_path)
-                print("checking found files", found_files)
+                logger.debug(f"generate_report (robo): found_files={found_files}")
 
                 device_data = {}
                 if found_files:
@@ -4123,8 +4228,7 @@ and downstream traffic"""
                             raw_data = json.load(f)
                         # Parse data to get per-device averages
                         device_data = self.summarize_audio_video(raw_data)
-                        print("checking device data in robo report")
-                        print(device_data)
+                        logger.debug(f"generate_report (robo): device_data={device_data}")
                     except Exception as e:
                         logger.error(f"Error reading {found_files[0]}: {e}")
                         self.report.set_text(f"Error loading data for {coord}/{angle}")
@@ -4924,7 +5028,7 @@ def main():
                 if args.env_file:
                     if os.path.exists(args.env_file):
                         load_dotenv(args.env_file)
-                        print(f"Loaded environment variables from {args.env_file}")
+                        logger.info(f"Loaded environment variables from {args.env_file}")
                     else:
                         raise FileNotFoundError(
                             f".env file '{args.env_file}' not found"
