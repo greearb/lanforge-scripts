@@ -263,6 +263,7 @@ class RealBrowserTest(Realm):
         self.generic_endps_profile = self.new_generic_endp_profile()
         self.generic_endps_profile.type = 'real_browser'
         self.generic_endps_profile.name_prefix = "rb"
+        self.endpoint_last_status = {}
         self.file_name = file_name
         self.group_name = group_name
         self.profile_name = profile_name
@@ -1042,6 +1043,68 @@ class RealBrowserTest(Realm):
 
         return response
 
+    def monitor_endpoint_status_changes(self, wait_time=40, poll_interval=5):
+        """
+        Checks the current status of every generic endpoint and, only the
+        first time an endpoint's status changes, logs a message and appends
+        a row (timestamp, endpoint_name, status) to
+        endpoint_status_changes.csv. Repeated polls of an unchanged status
+        are not logged or written again.
+        """
+        csv_file = "endpoint_status_changes.csv"
+        if csv_file not in self.csv_file_names:
+            self.csv_file_names.append(csv_file)
+        created_endp = self.generic_endps_profile.created_endp
+
+        start_time = time.time()
+        endpoint_data = {}
+        while True:
+            for gen_endp in created_endp:
+                generic_endpoint = self.json_get(f"/generic/{gen_endp}")
+                if generic_endpoint and "endpoint" in generic_endpoint:
+                    endpoint_data[gen_endp] = generic_endpoint
+
+            if endpoint_data or (time.time() - start_time) >= wait_time:
+                break
+
+            logger.warning(
+                "No data received for any of the created endpoints; retrying..."
+            )
+            time.sleep(poll_interval)
+
+        if not endpoint_data:
+            logger.error(
+                f"No data received for any of the created endpoints after waiting "
+                f"{wait_time} seconds. Aborting test."
+            )
+            exit(1)
+
+        for gen_endp, generic_endpoint in endpoint_data.items():
+            current_status = generic_endpoint["endpoint"].get("status", "")
+            previous_status = self.endpoint_last_status.get(gen_endp)
+
+            if current_status == previous_status:
+                continue
+
+            logger.info(
+                f"Endpoint {gen_endp} status changed to: {current_status}"
+            )
+
+            file_exists = os.path.isfile(csv_file) and os.path.getsize(csv_file) > 0
+            with open(csv_file, mode="a", newline="") as f:
+                writer = csv.writer(f)
+                if not file_exists:
+                    writer.writerow(["timestamp", "endpoint_name", "status"])
+                writer.writerow(
+                    [
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        gen_endp,
+                        current_status,
+                    ]
+                )
+
+            self.endpoint_last_status[gen_endp] = current_status
+
     def update_webui_json(self):
         """
         Update web GUI status based on available devices.
@@ -1569,6 +1632,7 @@ class RealBrowserTest(Realm):
 
                     # CSV FOR WEBUI GRAPHS
                     self.write_live_webui_csv(rows)
+                    self.monitor_endpoint_status_changes()
 
                     time.sleep(1)
                     return True
@@ -2089,6 +2153,7 @@ class RealBrowserTest(Realm):
                                     }
                                     writer.writerow(row)
                                     last_data.append(row)
+                    self.monitor_endpoint_status_changes()
                     time.sleep(1)
                 except Exception as e:
                     logging.exception(f"Error in get_stats function {e}", exc_info=True)
@@ -2711,6 +2776,8 @@ class RealBrowserTest(Realm):
 
                 if 'real_time_data.csv' not in self.csv_file_names:
                     self.csv_file_names.append('real_time_data.csv')
+                if 'endpoint_status_changes.csv' not in self.csv_file_names:
+                    self.csv_file_names.append('endpoint_status_changes.csv')
 
                 for filename in self.csv_file_names:
                     source_path = os.path.join(source_dir, filename)
@@ -3017,6 +3084,7 @@ class RealBrowserTest(Realm):
                                         }
                                     writer.writerow(row)
                                     last_data.append(row)
+                    self.monitor_endpoint_status_changes()
                     time.sleep(1)
                 except Exception as e:
                     logging.exception(f"Error in get_stats function {e}", exc_info=True)
@@ -3107,6 +3175,8 @@ class RealBrowserTest(Realm):
             if not self.dowebgui:
                 source_dir = "."
                 destination_dir = self.report_path_date_time
+                if 'endpoint_status_changes.csv' not in self.robo_csv_files:
+                    self.robo_csv_files.append('endpoint_status_changes.csv')
                 for filename in self.robo_csv_files:
                     source_path = os.path.join(source_dir, filename)
                     destination_path = os.path.join(destination_dir, filename)
