@@ -9,18 +9,18 @@ Pre-requisites: Real clients should be connected to the LANforge MGR and Interop
 
             Example-1 :
             Command Line Interface to run url in the Browser with specified URL and duration:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --debug --upstream_port 1.1.eth1
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "https://google.com" --duration 10m --debug --upstream_port 1.1.eth1
 
                 CASE-1:
-                If not specified it takes the default url (default url is www.google.com)
+                If not specified it takes the default url (default url is https://google.com)
 
             Example-2:
             Command Line Interface to run url in the Browser with specified Resources:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --debug --upstream_port 1.1.eth1
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "https://google.com" --duration 10m --device_list 1.10,1.12 --debug --upstream_port 1.1.eth1
 
             Example-3:
             Command Line Interface to run url in the Browser with specified urls_per_tennm (specify the number of url you want to test in the given duration):
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --debug --upstream_port 1.1.eth1
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "https://google.com" --duration 10m --device_list 1.10,1.12 --count 10 --debug --upstream_port 1.1.eth1
 
                 CASE-1:
                 If not specified it takes the default count value (default count is 1)
@@ -66,7 +66,7 @@ Pre-requisites: Real clients should be connected to the LANforge MGR and Interop
                 2. Always specify the duration in minutes (for example: --duration 3 indicates a duration of 3 minutes).
                 3. If --device_list are not given after passing the CLI, a list of available devices will be displayed on the terminal.
                 4. Enter the resource numbers separated by commas (,) in the resource argument and also enclose in double quotes (e.g. : 1.10,1.12).
-                5. For --url, you can specify the URL (e.g., www.google.com).
+                5. For --url, you can specify the URL (e.g., https://google.com).
                 6. To run the test by specifying the incremental capacity, enable the --incremental flag.
 
             STATUS: BETA RELEASE
@@ -3469,22 +3469,22 @@ def main():
 
             Pre-requisites: Real devices should be connected to the LANforge MGR and Interop app should be open on the real clients which are connected to Lanforge
 
-            Example: (python3 or ./)lf_interop_real_browser_test.py --mgr 192.168.214.219 --duration 1 --url "www.google.com"
+            Example: (python3 or ./)lf_interop_real_browser_test.py --mgr 192.168.214.219 --duration 1 --url "https://google.com"
 
             Example-1 :
             Command Line Interface to run url in the Browser with specified URL and duration:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --debug --upstream_port 1.1.eth1
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "https://google.com" --duration 10m --debug --upstream_port 1.1.eth1
 
                 CASE-1:
-                If not specified it takes the default url (default url is www.google.com)
+                If not specified it takes the default url (default url is https://google.com)
 
             Example-2:
             Command Line Interface to run url in the Browser with specified Resources:
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --debug --upstream_port 1.1.eth1
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "https://google.com" --duration 10m --device_list 1.10,1.12 --debug --upstream_port 1.1.eth1
 
             Example-3:
             Command Line Interface to run url in the Browser with specified urls_per_tennm (specify the number of url you want to test in the given duration):
-            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "www.google.com" --duration 10m --device_list 1.10,1.12 --count 10 --debug --upstream_port 1.1.eth1
+            python3 lf_interop_real_browser_test.py --mgr 192.168.214.219 --url "https://google.com" --duration 10m --device_list 1.10,1.12 --count 10 --debug --upstream_port 1.1.eth1
 
                 CASE-1:
                 If not specified it takes the default count value (default count is 1)
@@ -3515,7 +3515,7 @@ def main():
                 2. Always specify the duration in minutes (for example: --duration 3 indicates a duration of 3 minutes).
                 3. If --device_list are not given after passing the CLI, a list of available devices will be displayed on the terminal.
                 4. Enter the resource numbers separated by commas (,) in the resource argument and also enclose in double quotes (e.g. : 1.10,1.12).
-                5. For --url, you can specify the URL (e.g., www.google.com).
+                5. For --url, you can specify the URL (e.g., https://google.com).
                 6. To run the test by specifying the incremental capacity, enable the --incremental flag.
 
             STATUS: BETA RELEASE
