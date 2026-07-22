@@ -992,8 +992,7 @@ class ThroughputQOS(Realm):
                         self.missing_cx_logged.discard(cx)
                 # warn once when a CX's state isn't 'Run' (10s grace period after monitor start),
                 # and log once when it's running again
-                past_grace_period = (self.monitor_start_time is None or
-                                      (datetime.now() - self.monitor_start_time).total_seconds() >= 10)
+                past_grace_period = (self.monitor_start_time is None or (datetime.now() - self.monitor_start_time).total_seconds() >= 10)
                 for cx in cx_list:
                     cx_state = overallresponse.get(cx, {}).get('state') if isinstance(overallresponse, dict) else None
                     if cx_state is not None and cx_state != 'Run':
@@ -1019,6 +1018,10 @@ class ThroughputQOS(Realm):
                                  "ending the monitor loop gracefully; the test will continue with "
                                  "the data collected so far.")
                     self.all_devices_stopped = True
+                    # Mark the WebUI as completed instead of leaving it at a later planned
+                    # navigation state.
+                    if self.robot_test:
+                        self.robot.update_nav_data_for_all_cxs_stopped()
                     if self.do_bandsteering:
                         self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
                         return pd.DataFrame(self.band_steering_df)
@@ -1288,8 +1291,6 @@ class ThroughputQOS(Realm):
             dropa_connections.update({keys[i]: avg_drop_a_per[i]})
         for i in range(len(avg_drop_b_per)):
             dropb_connections.update({keys[i]: avg_drop_b_per[i]})
-        # logger.info("connections download {}".format(connections_download))
-        # logger.info("connections {}".format(connections_upload))
         self.connections_download, self.connections_upload, self.drop_a_per, self.drop_b_per = connections_download, connections_upload, drop_a_per, drop_b_per
         # accumulate real monitoring time so the report shows actual duration, not just configured
         self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
@@ -1699,7 +1700,7 @@ class ThroughputQOS(Realm):
 
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
-        # recorded device issues in csv 
+        # recorded device issues in csv
         if self.device_issue_log:
             issues_df = pd.DataFrame(self.device_issue_log)
             issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
@@ -2755,7 +2756,13 @@ class ThroughputQOS(Realm):
             tos_for_report = self.tos
             tos_images, rssi_images = self.get_live_view_images()
             for tos_val in tos_for_report:
-                for image_path in tos_images[tos_val]:
+                # A missing image is expected after the collection timeout.  Do
+                # not prevent the remainder of the report from being created.
+                image_paths = tos_images.get(tos_val, [])
+                if not image_paths:
+                    logger.warning("Skipping live-view image for TOS '%s': no image was collected.", tos_val)
+                    continue
+                for image_path in image_paths:
                     report.set_custom_html('<div style="page-break-before: always;"></div>')
                     report.build_custom()
                     report.set_custom_html(f'<img src="file://{image_path}" style="width: 1200px; height: 800px;"></img>')
@@ -2770,6 +2777,11 @@ class ThroughputQOS(Realm):
         for coordinate in range(len(passed_coordinates)):
             if self.rotation_enabled:
                 for angle in range(len(self.rotation_list)):
+                    # Test may have stopped before ever reaching/monitoring this
+                    # coordinate/angle combination - skip it instead of crashing.
+                    if (self.coordinate_list[coordinate] not in self.qos_data
+                            or self.rotation_list[angle] not in self.qos_data[self.coordinate_list[coordinate]]):
+                        continue
                     report.set_obj_html(_obj_title=f"Coordinate: {self.coordinate_list[coordinate]} | Rotation Angle: {self.rotation_list[angle]}°",
                                         _obj="")
                     report.build_objective()
@@ -2780,6 +2792,10 @@ class ThroughputQOS(Realm):
                     avg_drop_b = self.qos_data[self.coordinate_list[coordinate]][self.rotation_list[angle]]["avg_drop_b"]
                     self.generate_individual_coordinate(report, data, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b, coordinate, angle)
             else:
+                # Test may have stopped before ever reaching/monitoring this coordinate -
+                # skip it instead of crashing.
+                if self.coordinate_list[coordinate] not in self.qos_data:
+                    continue
                 report.set_obj_html(_obj_title=f"Coordinate: {self.coordinate_list[coordinate]}",
                                     _obj="")
                 report.build_objective()
@@ -3063,8 +3079,6 @@ class ThroughputQOS(Realm):
                 dropa_connections.update({keys[i]: avg_drop_a_per[i]})
             for i in range(len(avg_drop_b_per)):
                 dropb_connections.update({keys[i]: avg_drop_b_per[i]})
-            # logger.info("connections download {}".format(connections_download))
-            # logger.info("connections {}".format(connections_upload))
             test_results = {'test_results': []}
             data = {}
             test_results['test_results'].append(self.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
@@ -3125,8 +3139,6 @@ class ThroughputQOS(Realm):
                         time.sleep(10)
                         connections_download, connections_upload, drop_a_per, drop_b_per, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b = self.monitor(
                             curr_coordinate=coordinate)
-                        # logger.info("connections download {}".format(connections_download))
-                        # logger.info("connections upload {}".format(connections_upload))
                         self.stop()
                         time.sleep(5)
                         test_results['test_results'].append(self.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
@@ -3190,8 +3202,6 @@ class ThroughputQOS(Realm):
                             monitor_charge_time = datetime.now()
                             connections_download, connections_upload, drop_a_per, drop_b_per, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b = self.monitor(
                                 curr_coordinate=coordinate, curr_rotation=self.current_angle, monitor_charge_time=monitor_charge_time)
-                            # logger.info("connections download {}".format(connections_download))
-                            # logger.info("connections upload {}".format(connections_upload))
                             self.stop()
                             time.sleep(5)
                             test_results['test_results'].append(self.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
@@ -3908,8 +3918,6 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
         throughput_qos.start(False, False)
         time.sleep(10)
         connections_download, connections_upload, drop_a_per, drop_b_per, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b = throughput_qos.monitor()
-        # logger.info("connections download {}".format(connections_download))
-        # logger.info("connections upload {}".format(connections_upload))
         throughput_qos.stop()
         time.sleep(5)
         test_results['test_results'].append(throughput_qos.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
