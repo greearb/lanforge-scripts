@@ -761,7 +761,11 @@ class ThroughputQOS(Realm):
                         self.test_stopped_by_user = True
                         return True
             try:
-                l3_endp_data = list(self.json_get('/endp/list?fields=rx rate (last),rx drop %25,name')['endpoint'])
+                # 'endpoint' is a single dict (not a list) when there's only one CX; normalize to a list
+                endp_api_url = '/endp/list?fields=rx rate (last),rx drop %25,name'
+                endp_response = self.json_get(endp_api_url)
+                endpoint_data = endp_response['endpoint']
+                l3_endp_data = endpoint_data if isinstance(endpoint_data, list) else [endpoint_data]
                 matched_cx = {next(iter(i.items()))[0][0:-2] for i in l3_endp_data}
             except Exception:
                 matched_cx = set()
@@ -903,7 +907,11 @@ class ThroughputQOS(Realm):
 
             try:
                 # for dynamic data, taken rx rate (last) from layer3 endp tab
-                l3_endp_data = list(self.json_get('/endp/list?fields=rx rate (last),rx drop %25,name')['endpoint'])
+                # 'endpoint' is a single dict (not a list) when there's only one CX; normalize to a list
+                endp_api_url = '/endp/list?fields=rx rate (last),rx drop %25,name'
+                endp_response = self.json_get(endp_api_url)
+                endpoint_data = endp_response['endpoint']
+                l3_endp_data = endpoint_data if isinstance(endpoint_data, list) else [endpoint_data]
                 port_mgr_data = self.json_get('/ports/all/')['interfaces']
                 matched_ports = set()
                 for value in port_mgr_data:
@@ -957,10 +965,16 @@ class ThroughputQOS(Realm):
                 for cx in cx_list:
                     if cx not in matched_cx:
                         if cx not in self.missing_cx_logged:
+                            # log the response's CX names, not the full (possibly large) response
+                            response_keys = [key for endpoint in l3_endp_data
+                                             if isinstance(endpoint, dict)
+                                             for key in endpoint]
                             logger.warning(
                                 "CX '{}' is missing from the monitoring data, the device may have "
                                 "disconnected or its connection was not created. Continuing the test "
-                                "with the remaining devices.".format(cx)
+                                "with the remaining devices.\n"
+                                "URL     : {}\n"
+                                "Response keys: {}".format(cx, endp_api_url, response_keys)
                             )
                             self.missing_cx_logged.add(cx)
                             self.record_device_issue(self.port_label_from_cx_name(cx),
@@ -1266,8 +1280,8 @@ class ThroughputQOS(Realm):
             dropa_connections.update({keys[i]: avg_drop_a_per[i]})
         for i in range(len(avg_drop_b_per)):
             dropb_connections.update({keys[i]: avg_drop_b_per[i]})
-        logger.info("connections download {}".format(connections_download))
-        logger.info("connections {}".format(connections_upload))
+        # logger.info("connections download {}".format(connections_download))
+        # logger.info("connections {}".format(connections_upload))
         self.connections_download, self.connections_upload, self.drop_a_per, self.drop_b_per = connections_download, connections_upload, drop_a_per, drop_b_per
         # accumulate real monitoring time so the report shows actual duration, not just configured
         self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
@@ -1332,12 +1346,16 @@ class ThroughputQOS(Realm):
                         # log "CX Not Found" once per occurrence instead of on every tick
                         except Exception:
                             if sta not in self.cx_endpoint_lookup_failed_logged:
-                                logger.info(f'{sta}-A/B : CX Not Found')
-                                logger.info(f"Endpoint data : {endps}")
+                                logger.warning(
+                                    "%s-A/B : Endpoint Not Found\n"
+                                    "Endpoint keys: %s",
+                                    sta,
+                                    [key for endpoint in endps if isinstance(endpoint, dict) for key in endpoint],
+                                )
                                 self.cx_endpoint_lookup_failed_logged.add(sta)
                         else:
                             if sta in self.cx_endpoint_lookup_failed_logged:
-                                logger.info(f'{sta}-A/B : CX data is available again.')
+                                logger.info(f'{sta}-A/B : Endpoint data is available again.')
                                 self.cx_endpoint_lookup_failed_logged.discard(sta)
                         counter += 1
                     tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
@@ -3037,8 +3055,8 @@ class ThroughputQOS(Realm):
                 dropa_connections.update({keys[i]: avg_drop_a_per[i]})
             for i in range(len(avg_drop_b_per)):
                 dropb_connections.update({keys[i]: avg_drop_b_per[i]})
-            logger.info("connections download {}".format(connections_download))
-            logger.info("connections {}".format(connections_upload))
+            # logger.info("connections download {}".format(connections_download))
+            # logger.info("connections {}".format(connections_upload))
             test_results = {'test_results': []}
             data = {}
             test_results['test_results'].append(self.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
@@ -3099,8 +3117,8 @@ class ThroughputQOS(Realm):
                         time.sleep(10)
                         connections_download, connections_upload, drop_a_per, drop_b_per, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b = self.monitor(
                             curr_coordinate=coordinate)
-                        logger.info("connections download {}".format(connections_download))
-                        logger.info("connections upload {}".format(connections_upload))
+                        # logger.info("connections download {}".format(connections_download))
+                        # logger.info("connections upload {}".format(connections_upload))
                         self.stop()
                         time.sleep(5)
                         test_results['test_results'].append(self.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
@@ -3164,8 +3182,8 @@ class ThroughputQOS(Realm):
                             monitor_charge_time = datetime.now()
                             connections_download, connections_upload, drop_a_per, drop_b_per, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b = self.monitor(
                                 curr_coordinate=coordinate, curr_rotation=self.current_angle, monitor_charge_time=monitor_charge_time)
-                            logger.info("connections download {}".format(connections_download))
-                            logger.info("connections upload {}".format(connections_upload))
+                            # logger.info("connections download {}".format(connections_download))
+                            # logger.info("connections upload {}".format(connections_upload))
                             self.stop()
                             time.sleep(5)
                             test_results['test_results'].append(self.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
@@ -3882,8 +3900,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
         throughput_qos.start(False, False)
         time.sleep(10)
         connections_download, connections_upload, drop_a_per, drop_b_per, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b = throughput_qos.monitor()
-        logger.info("connections download {}".format(connections_download))
-        logger.info("connections upload {}".format(connections_upload))
+        # logger.info("connections download {}".format(connections_download))
+        # logger.info("connections upload {}".format(connections_upload))
         throughput_qos.stop()
         time.sleep(5)
         test_results['test_results'].append(throughput_qos.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
