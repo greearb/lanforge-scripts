@@ -131,6 +131,7 @@ LFCliBase = lfcli_base.LFCliBase
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 PortUtils = realm.PortUtils
+api_logger = importlib.import_module("lanforge_client.api_logger")
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
@@ -1644,6 +1645,12 @@ class HttpDownload(Realm):
 
         # To store http_datavalues.csv in report folder
         report_path_date_time = report.get_path_date_time()
+        # Copy the api log csv file (json_get/post/put/delete calls) into the report folder, if enabled
+        if api_logger.is_enabled():
+            try:
+                shutil.copy(api_logger.get_log_filename(), report_path_date_time)
+            except Exception:
+                logging.info("failed to copy api log file %s to report dir" % api_logger.get_log_filename())
         # It ensures no blocker for virtual clients
         if self.client_type == 'Real':
             shutil.move('http_datavalues.csv', report_path_date_time)
@@ -2838,6 +2845,10 @@ def main():
     optional.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
     optional.add_argument("--test_id", default="lf_webpage", help="test-id for kpi.csv,  script or test name")
     optional.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
+    optional.add_argument('--save_api', help="save json_get/json_post/json_put/json_delete calls to a lightweight csv log file",
+                          action="store_true", default=False)
+    optional.add_argument('--api_log_file_name', help="path to the api log csv file used when --save_api is set (default: ~/lf_api_calls.csv)",
+                          default=None)
     # ARGS for webGUI
     required.add_argument('--dowebgui', help="If true will execute script for webgui", default=False)  # FOR WEBGUI
     optional.add_argument('--result_dir',
@@ -2937,6 +2948,8 @@ times the file is downloaded.
     if args.help_summary:
         print(help_summary)
         exit(0)
+
+    api_logger.configure_api_call_logging(enabled=args.save_api, log_filename=args.api_log_file_name)
 
     args.bands.sort()
 
