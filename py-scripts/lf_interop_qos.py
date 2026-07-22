@@ -790,8 +790,16 @@ class ThroughputQOS(Realm):
             raise ValueError("Monitor needs a list of Layer 3 connections")
         # monitor columns
         start_time = datetime.now()
-        # set once, so repeated monitor() calls (bandsteering ticks) share one grace-period start
-        if self.monitor_start_time is None:
+        if self.do_bandsteering:
+            # Bandsteering invokes monitor() repeatedly as a per-tick callback within one
+            # continuous session, so only set this once for the whole session.
+            if self.monitor_start_time is None:
+                self.monitor_start_time = start_time
+        else:
+            # Every other robot_test flow (plain coordinate loop, rotation loop) calls
+            # monitor() once per coordinate/rotation, with CXs freshly restarted just before
+            # each call - restart the grace period each time instead of only on the very
+            # first coordinate.
             self.monitor_start_time = start_time
         test_start_time = datetime.now().strftime("%Y %d %H:%M:%S")
         if not self.do_bandsteering:
