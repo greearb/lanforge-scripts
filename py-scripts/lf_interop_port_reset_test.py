@@ -75,7 +75,6 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_report_pdf = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
-LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
@@ -189,6 +188,29 @@ class InteropPortReset(Realm):
             )
 
         return response
+
+    def change_port_to_ip(self, upstream_port):
+        # Resolves an ethernet port name (e.g. "eth1") to its IP via LANforge, used
+        # for --mgr_ip. This is only called once, at test start, and we cannot
+        # proceed without a resolved manager IP, so retry for a while and then
+        # abort instead of silently continuing with an unresolved port name.
+        if upstream_port.count('.') != 3:
+            target_port_list = self.name_to_eid(upstream_port)
+            shelf, resource, port, _ = target_port_list
+            response = self.json_get_with_retry(f'/port/{shelf}/{resource}/{port}?fields=ip')
+            try:
+                upstream_port = response['interface']['ip']
+            except (TypeError, KeyError) as e:
+                logging.error(
+                    f"change_port_to_ip: could not resolve upstream port '{upstream_port}' to an IP; LANforge "
+                    f"response is not in expected format ({e}). Data received: {response}")
+                logging.critical("Aborting the test: a valid manager IP is required to proceed.")
+                exit(1)
+            logging.info(f"Upstream port IP {upstream_port}")
+        else:
+            logging.info(f"Upstream port IP {upstream_port}")
+
+        return upstream_port
 
     def selecting_devices_from_available(self):
         # If device list is not provided by user, then it shows the available devices to choose from
@@ -1607,23 +1629,6 @@ class InteropPortReset(Realm):
         print(df_summary)
 
 
-def change_port_to_ip(upstream_port, lfclient_host, lfclient_port):
-    if upstream_port.count('.') != 3:
-        target_port_list = LFUtils.name_to_eid(upstream_port)
-        shelf, resource, port, _ = target_port_list
-        try:
-            realm_obj = Realm(lfclient_host=lfclient_host, lfclient_port=lfclient_port)
-            target_port_ip = realm_obj.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
-            upstream_port = target_port_ip
-        except Exception:
-            logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
-        logging.info(f"Upstream port IP {upstream_port}")
-    else:
-        logging.info(f"Upstream port IP {upstream_port}")
-
-    return upstream_port
-
-
 def main():
     help_summary = '''\
     The LANforge interop port reset test enables users to use real Wi-Fi stations and connect them to the Access Point
@@ -1757,8 +1762,6 @@ INCLUDE_IN_README: False
 
     if args.log_level:
         logger_config.set_level(level=args.log_level)
-    args.mgr_ip = change_port_to_ip(args.mgr_ip, args.host, args.port)
-    print(args.mgr_ip)
     if args.lf_logger_config_json:
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
@@ -1789,6 +1792,15 @@ INCLUDE_IN_README: False
                            get_live_view=args.get_live_view,
                            total_floors=args.total_floors
                            )
+
+    # mgr_ip may have been given as a port name (e.g. "eth1") rather than an IP;
+    # resolve it now that we have an instance to reuse for the LANforge lookup.
+    # base_interop_profile.server_ip was already captured from the unresolved
+    # mgr_ip at construction time above, so it must be patched too.
+    obj.mgr_ip = obj.change_port_to_ip(obj.mgr_ip)
+    obj.base_interop_profile.server_ip = obj.mgr_ip
+    print(obj.mgr_ip)
+
     obj.selecting_devices_from_available()
     if obj.robot_test:
         obj.run()
