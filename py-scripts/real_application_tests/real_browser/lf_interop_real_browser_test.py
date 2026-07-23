@@ -2228,7 +2228,7 @@ class RealBrowserTest(Realm):
                 self.upstream_port = target_port_ip
             except KeyError as e:
                 logger.error(f"Missing expected key {e} in LANforge /port/{shelf}/{resource}/{port} response. Aborting test.")
-                logger.info("LANforge response received:\n%s", json.dumps(port_resp, indent=2, default=str))
+                logger.info("LANforge response received:\n%s", json.dumps(response, indent=2, default=str))
                 exit(1)
             except Exception:
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {self.upstream_port}.')
@@ -2382,7 +2382,7 @@ class RealBrowserTest(Realm):
                 interop_tab_data = response["devices"]
             except KeyError as e:
                 logger.error(f"Missing expected key {e} in LANforge /adb/ response. Aborting test.")
-                logger.info("LANforge /adb/ response received:\n%s", json.dumps(interop_resp, indent=2, default=str))
+                logger.info("LANforge /adb/ response received:\n%s", json.dumps(response, indent=2, default=str))
                 exit(1)
             user_to_serial_map = {}
             for dev in interop_tab_data:
