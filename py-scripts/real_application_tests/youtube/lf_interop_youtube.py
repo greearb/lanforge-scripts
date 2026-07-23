@@ -1801,6 +1801,17 @@ class Youtube(Realm):
             try:
                 target_port_ip = response['interface']['ip']
                 upstream_port = target_port_ip
+            except KeyError as e:
+                logger.error(
+                    "/port/%s/%s/%s/?fields=ip response is not in the expected format, missing key %s. "
+                    "Data received:\n%s",
+                    shelf,
+                    resource,
+                    port,
+                    e,
+                    json.dumps(response, indent=2, default=str),
+                )
+                exit(1)
             except Exception as e:
                 logging.warning(f'Could not resolve IP for port {upstream_port}: {e}. Proceeding with the given upstream_port {upstream_port}.')
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
@@ -1910,9 +1921,9 @@ class Youtube(Realm):
         Returns:
             None
         """
-        interop_data = self.json_get_with_retry('/adb')
+        response = self.json_get_with_retry('/adb')
         try:
-            interop_mobile_data = interop_data.get('devices', {})
+            interop_mobile_data = response.get('devices', {})
 
             if isinstance(interop_mobile_data, dict):
                 for user in self.user_list:
@@ -1947,7 +1958,7 @@ class Youtube(Realm):
                 "/adb response is not in the expected format, missing key %s. "
                 "Data received:\n%s",
                 e,
-                json.dumps(interop_data, indent=2, default=str),
+                json.dumps(response, indent=2, default=str),
             )
             exit(1)
         except Exception as e:
