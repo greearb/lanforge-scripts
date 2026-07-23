@@ -828,9 +828,6 @@ class RealBrowserTest(Realm):
 
         # Retrieve data from LANforge port Manager tab including alias, MAC address, mode, parent device, RX rate, TX rate, SSID, and signal strength
         eid_data = self.json_get_with_retry("ports?fields=alias,mac,mode,Parent Dev,ssid,signal,phantom,down,ip")
-        if eid_data is None:
-            logger.error("GET ports?fields=alias,mac,mode,Parent Dev,ssid,signal,phantom,down,ip returned no response from LANforge. Aborting test.")
-            exit(1)
         try:
             interfaces = eid_data["interfaces"]
         except KeyError as e:
