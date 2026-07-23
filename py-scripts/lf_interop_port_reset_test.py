@@ -279,7 +279,13 @@ class InteropPortReset(Realm):
 
     def get_last_wifi_msg(self):
         a = self.json_get_with_retry("/wifi-msgs/last/1", debug_=True)
-        last = a['wifi-messages']['time-stamp']
+        try:
+            last = a['wifi-messages']['time-stamp']
+        except (TypeError, KeyError) as e:
+            logging.error(
+                f"get_last_wifi_msg: LANforge response is not in expected format ({e}). Data received: {a}")
+            logging.warning("Could not establish a wifi-msgs baseline timestamp; falling back to 'NA' for this reset.")
+            return "NA"
         logging.info(f"Last WiFi Message Time Stamp: {last}")
         return last
 
@@ -348,7 +354,17 @@ class InteropPortReset(Realm):
         # print("Waiting for 20 sec to fetch the logs...")
         # time.sleep(20)
         a = self.json_get_with_retry("/wifi-msgs/since=time/" + str(timee), debug_=True)
-        values = a['wifi-messages']
+        try:
+            values = a['wifi-messages']
+        except (TypeError, KeyError) as e:
+            logging.error(
+                f"get_time_from_wifi_msgs: LANforge response is not in expected format ({e}) while fetching "
+                f"wifi-msgs for device {phn_name}. Data received: {a}")
+            logging.warning(f"Marking device {phn_name} stats as 'NA' for this reset and continuing.")
+            for key in ("ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected",
+                        "Remarks", "cx time (us)"):
+                local_dict[str(phn_name)][key] = "NA"
+            return local_dict
         # print("Wifi msgs Response : ", values)
         logging.info(
             f"Counting the DISCONNECTIONS, SCANNING, ASSOC ATTEMPTS, ASSOC RECJECTIONS, CONNECTS for device {phn_name}")
@@ -365,7 +381,17 @@ class InteropPortReset(Realm):
         # print("Key list", keys_list)
         # android (flag) check for clustered lanforge cases
         android = False
-        for device_data in self.json_get_with_retry('/adb/')['devices']:
+        adb_response = self.json_get_with_retry('/adb/')
+        try:
+            adb_devices = adb_response['devices']
+        except (TypeError, KeyError) as e:
+            logging.error(
+                f"get_time_from_wifi_msgs: LANforge response is not in expected format ({e}) while fetching "
+                f"/adb/ devices. Data received: {adb_response}")
+            logging.warning(
+                f"Could not fetch adb device list; relying only on the '1.1.' prefix heuristic for {phn_name}.")
+            adb_devices = []
+        for device_data in adb_devices:
             device_name, _ = list(device_data.keys())[0], list(device_data.values())[0]
             if phn_name in device_name:
                 android = True
