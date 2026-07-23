@@ -27,7 +27,10 @@ python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.204.74" --signin
 
 Example-5:
 Command Line Interface to run Zoom test with robo feature
-python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 --audio --video --server_ip 192.168.214.123 --robo_ip 192.168.200.131 --coordinates 1,2 --rotations 30,40 --do_robo
+python3 lf_interop_zoom.py --duration 1  --lanforge_ip "192.168.214.219" \
+    --signin_email "demo@gmail.com" --signin_passwd "Demo@123" --participants 3 \
+    --audio --video --server_ip 192.168.214.123 --robo_ip 192.168.200.131 \
+    --coordinates 1,2 --rotations 30,40 --do_robo
 
 
 
@@ -62,7 +65,6 @@ from dotenv import load_dotenv
 import re
 import glob
 from collections import Counter
-import signal
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
@@ -4369,8 +4371,8 @@ and downstream traffic"""
             device_key = client
 
             # Safe Get
-            def get_val(key):
-                val = data.get(device_key, {}).get(key)
+            def get_val(key, d_key=device_key):
+                val = data.get(d_key, {}).get(key)
                 return val if val is not None else 0
 
             sent_vals.append(get_val(output_key))
