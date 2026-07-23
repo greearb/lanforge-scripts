@@ -451,12 +451,19 @@ class InteropPortReset(Realm):
             local_dict[str(phn_name)]["Association Rejection"] = adb_association_rejection
             if adb_connected_count > 0:
                 _, shelf, serial = phn_name.split('.')
-                resource_id = self.json_get_with_retry('/adb/1/{}/{}?fields=resource-id'.format(shelf, serial))
-                resource_id = resource_id['devices']['resource-id']
-
-                port_ssid_query = self.json_get_with_retry('port/1/{}/wlan0?fields=cx time (us)'.format(resource_id.split('.')[1]))
-                uptime = port_ssid_query['interface']['cx time (us)']
-                local_dict[str(phn_name)]['cx time (us)'] = uptime
+                resource_id_resp = self.json_get_with_retry('/adb/1/{}/{}?fields=resource-id'.format(shelf, serial))
+                port_ssid_query = None
+                try:
+                    resource_id = resource_id_resp['devices']['resource-id']
+                    port_ssid_query = self.json_get_with_retry('port/1/{}/wlan0?fields=cx time (us)'.format(resource_id.split('.')[1]))
+                    uptime = port_ssid_query['interface']['cx time (us)']
+                    local_dict[str(phn_name)]['cx time (us)'] = uptime
+                except (TypeError, KeyError) as e:
+                    logging.error(
+                        f"get_time_from_wifi_msgs: could not fetch cx time (us) for device {phn_name}; LANforge "
+                        f"response is not in expected format ({e}). resource-id response: {resource_id_resp}, "
+                        f"port response: {port_ssid_query}")
+                    local_dict[str(phn_name)]['cx time (us)'] = 'NA'
             else:
                 local_dict[str(phn_name)]['cx time (us)'] = 'NA'
         else:
@@ -499,9 +506,16 @@ class InteropPortReset(Realm):
                         if win_connected_count > 1 or win_connected_count == 0:
                             port_name = phn_name.split(".")
                             port_ssid_query = self.json_get_with_retry(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
-                            if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
-                                win_connected_count = 1
-                            else:
+                            try:
+                                if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
+                                    win_connected_count = 1
+                                else:
+                                    win_connected_count = 0
+                            except (TypeError, KeyError) as e:
+                                logging.error(
+                                    f"get_time_from_wifi_msgs: could not verify connection state for device "
+                                    f"{phn_name}; LANforge response is not in expected format ({e}). Data "
+                                    f"received: {port_ssid_query}")
                                 win_connected_count = 0
                 logging.info("Final Connected Count for %s: %s" % (phn_name, win_connected_count))
                 local_dict[str(phn_name)]["Connected"] = win_connected_count
@@ -519,8 +533,14 @@ class InteropPortReset(Realm):
                 if win_connected_count > 0:
                     port_name = phn_name.split(".")
                     port_ssid_query = self.json_get_with_retry(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=cx time (us)")
-                    uptime = port_ssid_query['interface']['cx time (us)']
-                    local_dict[str(phn_name)]['cx time (us)'] = uptime
+                    try:
+                        uptime = port_ssid_query['interface']['cx time (us)']
+                        local_dict[str(phn_name)]['cx time (us)'] = uptime
+                    except (TypeError, KeyError) as e:
+                        logging.error(
+                            f"get_time_from_wifi_msgs: could not fetch cx time (us) for device {phn_name}; "
+                            f"LANforge response is not in expected format ({e}). Data received: {port_ssid_query}")
+                        local_dict[str(phn_name)]['cx time (us)'] = 'NA'
                 else:
                     local_dict[str(phn_name)]['cx time (us)'] = 'NA'
             else:  # other means (for linux, mac)
@@ -563,9 +583,16 @@ class InteropPortReset(Realm):
                         if other_connected_count > 1 or other_connected_count == 0:
                             port_name = phn_name.split(".")
                             port_ssid_query = self.json_get_with_retry(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
-                            if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
-                                other_connected_count = 1
-                            else:
+                            try:
+                                if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
+                                    other_connected_count = 1
+                                else:
+                                    other_connected_count = 0
+                            except (TypeError, KeyError) as e:
+                                logging.error(
+                                    f"get_time_from_wifi_msgs: could not verify connection state for device "
+                                    f"{phn_name}; LANforge response is not in expected format ({e}). Data "
+                                    f"received: {port_ssid_query}")
                                 other_connected_count = 0
                 logging.info("Final Connected Count for %s: %s" % (phn_name, other_connected_count))
                 local_dict[str(phn_name)]["Connected"] = other_connected_count
@@ -583,8 +610,14 @@ class InteropPortReset(Realm):
                 if other_connected_count > 0:
                     port_name = phn_name.split(".")
                     port_ssid_query = self.json_get_with_retry(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=cx time (us)")
-                    uptime = port_ssid_query['interface']['cx time (us)']
-                    local_dict[str(phn_name)]['cx time (us)'] = uptime
+                    try:
+                        uptime = port_ssid_query['interface']['cx time (us)']
+                        local_dict[str(phn_name)]['cx time (us)'] = uptime
+                    except (TypeError, KeyError) as e:
+                        logging.error(
+                            f"get_time_from_wifi_msgs: could not fetch cx time (us) for device {phn_name}; "
+                            f"LANforge response is not in expected format ({e}). Data received: {port_ssid_query}")
+                        local_dict[str(phn_name)]['cx time (us)'] = 'NA'
                 else:
                     local_dict[str(phn_name)]['cx time (us)'] = 'NA'
         logging.info("local_dict " + str(local_dict))
