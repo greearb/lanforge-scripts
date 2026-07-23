@@ -170,6 +170,26 @@ class InteropPortReset(Realm):
         # logging.basicConfig(filename='port_reset.log', filemode='w', format='%(asctime)s - %(message)s',
         #                     level=logging.INFO, force=True)
 
+    def json_get_with_retry(self, url, wait_time=40, poll_interval=5, debug_=False):
+        """
+        Calls self.json_get(url), retrying every poll_interval seconds for up
+        to wait_time seconds if LANforge returns no response.
+        """
+        start_time = time.time()
+        response = self.json_get(url, debug_=debug_)
+        while response is None and (time.time() - start_time) < wait_time:
+            logging.warning(f"GET {url} returned no response from LANforge; retrying...")
+            time.sleep(poll_interval)
+            response = self.json_get(url, debug_=debug_)
+
+        if response is None:
+            logging.error(
+                f"GET {url} returned no response from LANforge after waiting "
+                f"{wait_time} seconds."
+            )
+
+        return response
+
     def selecting_devices_from_available(self):
         # If device list is not provided by user, then it shows the available devices to choose from
         if self.device_list is None:
@@ -236,7 +256,7 @@ class InteropPortReset(Realm):
                     file_names[file_name] = file_path
 
     def get_last_wifi_msg(self):
-        a = self.json_get("/wifi-msgs/last/1", debug_=True)
+        a = self.json_get_with_retry("/wifi-msgs/last/1", debug_=True)
         last = a['wifi-messages']['time-stamp']
         logging.info(f"Last WiFi Message Time Stamp: {last}")
         return last
@@ -305,7 +325,7 @@ class InteropPortReset(Realm):
     def get_time_from_wifi_msgs(self, local_dict=None, phn_name=None, timee=None, file_name="dummy.json", reset_cnt=None):
         # print("Waiting for 20 sec to fetch the logs...")
         # time.sleep(20)
-        a = self.json_get("/wifi-msgs/since=time/" + str(timee), debug_=True)
+        a = self.json_get_with_retry("/wifi-msgs/since=time/" + str(timee), debug_=True)
         values = a['wifi-messages']
         # print("Wifi msgs Response : ", values)
         logging.info(
@@ -323,7 +343,7 @@ class InteropPortReset(Realm):
         # print("Key list", keys_list)
         # android (flag) check for clustered lanforge cases
         android = False
-        for device_data in self.json_get('/adb/')['devices']:
+        for device_data in self.json_get_with_retry('/adb/')['devices']:
             device_name, _ = list(device_data.keys())[0], list(device_data.values())[0]
             if phn_name in device_name:
                 android = True
@@ -383,10 +403,10 @@ class InteropPortReset(Realm):
             local_dict[str(phn_name)]["Association Rejection"] = adb_association_rejection
             if adb_connected_count > 0:
                 _, shelf, serial = phn_name.split('.')
-                resource_id = self.json_get('/adb/1/{}/{}?fields=resource-id'.format(shelf, serial))
+                resource_id = self.json_get_with_retry('/adb/1/{}/{}?fields=resource-id'.format(shelf, serial))
                 resource_id = resource_id['devices']['resource-id']
 
-                port_ssid_query = self.json_get('port/1/{}/wlan0?fields=cx time (us)'.format(resource_id.split('.')[1]))
+                port_ssid_query = self.json_get_with_retry('port/1/{}/wlan0?fields=cx time (us)'.format(resource_id.split('.')[1]))
                 uptime = port_ssid_query['interface']['cx time (us)']
                 local_dict[str(phn_name)]['cx time (us)'] = uptime
             else:
@@ -430,7 +450,7 @@ class InteropPortReset(Realm):
                         # Double-checking
                         if win_connected_count > 1 or win_connected_count == 0:
                             port_name = phn_name.split(".")
-                            port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
+                            port_ssid_query = self.json_get_with_retry(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
                             if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
                                 win_connected_count = 1
                             else:
@@ -450,7 +470,7 @@ class InteropPortReset(Realm):
                 local_dict[str(phn_name)]["Remarks"] = remarks
                 if win_connected_count > 0:
                     port_name = phn_name.split(".")
-                    port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=cx time (us)")
+                    port_ssid_query = self.json_get_with_retry(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=cx time (us)")
                     uptime = port_ssid_query['interface']['cx time (us)']
                     local_dict[str(phn_name)]['cx time (us)'] = uptime
                 else:
@@ -494,7 +514,7 @@ class InteropPortReset(Realm):
                         # Double-checking & adding remarks if any
                         if other_connected_count > 1 or other_connected_count == 0:
                             port_name = phn_name.split(".")
-                            port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
+                            port_ssid_query = self.json_get_with_retry(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
                             if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
                                 other_connected_count = 1
                             else:
@@ -514,7 +534,7 @@ class InteropPortReset(Realm):
                 local_dict[str(phn_name)]["Remarks"] = remarks
                 if other_connected_count > 0:
                     port_name = phn_name.split(".")
-                    port_ssid_query = self.json_get(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=cx time (us)")
+                    port_ssid_query = self.json_get_with_retry(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=cx time (us)")
                     uptime = port_ssid_query['interface']['cx time (us)']
                     local_dict[str(phn_name)]['cx time (us)'] = uptime
                 else:
