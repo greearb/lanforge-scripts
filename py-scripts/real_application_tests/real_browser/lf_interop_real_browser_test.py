@@ -3476,6 +3476,7 @@ class RealBrowserTest(Realm):
 
 
 def main():
+    iot_summary = None
     try:
 
         help_summary = '''\
@@ -3797,7 +3798,6 @@ def main():
         obj.handle_incremental(args, obj, available_resources, available_resources)
         obj.handle_duration()
         obj.run_test(available_resources)
-        iot_summary = None
         if args.iot_test and args.iot_testname:
             base = os.path.join("results", args.iot_testname)
             p = os.path.join(base, "iot_summary.json")
