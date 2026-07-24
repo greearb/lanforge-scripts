@@ -101,14 +101,20 @@ class Realm(LFCliBase):
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _proxy_str=None,
-                 _capture_signal_list=None):
+                 _capture_signal_list=None,
+                 _save_api=False,
+                 _api_log_file_name=None,
+                 _lf_session=None):
         super().__init__(_lfjson_host=lfclient_host,
                          _lfjson_port=lfclient_port,
                          _debug=debug_,
                          _exit_on_error=_exit_on_error,
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
-                         _capture_signal_list=_capture_signal_list)
+                         _capture_signal_list=_capture_signal_list,
+                         _save_api=_save_api,
+                         _api_log_file_name=_api_log_file_name,
+                         _lf_session=_lf_session)
 
         if _capture_signal_list is None:
             _capture_signal_list = []

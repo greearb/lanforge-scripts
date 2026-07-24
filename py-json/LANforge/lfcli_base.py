@@ -14,6 +14,7 @@ import argparse
 import re
 import logging
 import math
+import json
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -25,6 +26,8 @@ debug_printer = pprint.PrettyPrinter(indent=2)
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 Logg = importlib.import_module("lanforge_client.logg")
+# shared with lanforge_api.py's own request layer, so both code paths log identically
+api_call_logger = importlib.import_module("lanforge_client.api_call_logger")
 logger = logging.getLogger(__name__)
 
 """
@@ -50,7 +53,12 @@ class LFCliBase:
                  _exit_on_fail=False,
                  _local_realm=None,
                  _proxy_str=None,
-                 _capture_signal_list=None):
+                 _capture_signal_list=None,
+                 _save_api=False,
+                 _api_log_file_name=None,
+                 _lf_session=None,
+                 _api_log_max_bytes=10 * 1024 * 1024,
+                 _api_log_backup_count=10):
         if _capture_signal_list is None:
             _capture_signal_list = []
         self.fail_pref = "FAILED: "
@@ -58,6 +66,26 @@ class LFCliBase:
         self.lfclient_host = _lfjson_host
         self.lfclient_port = _lfjson_port
         self.debug = _debug
+        # optional lanforge_api.LFSession -- when set, its session id (the same "cookie" the
+        # LANforge GUI logs) is attached to every request we send and to our own log lines,
+        # so the two can be correlated
+        self._lf_session = _lf_session
+        # when True, json_get/json_post/json_put/json_delete append a lightweight
+        # record of each call (url, payload, response_code/error) to api_log_filename.
+        # The file rotates at _api_log_max_bytes, keeping _api_log_backup_count old copies,
+        # so it's safe to leave enabled indefinitely (e.g. for diagnosing customer systems)
+        # instead of growing forever or getting wiped on every run.
+        self.save_api = _save_api
+        self.api_log_filename = _api_log_file_name or os.path.join(os.path.expanduser('~'), 'lf_api_calls.log')
+        self.api_log_max_bytes = _api_log_max_bytes
+        self.api_log_backup_count = _api_log_backup_count
+        self._api_logger = None
+        if self.save_api:
+            try:
+                self._api_logger = api_call_logger.get_api_logger(self.api_log_filename, self.api_log_max_bytes,
+                                                                   self.api_log_backup_count)
+            except Exception as x:
+                logger.debug("LFCliBase: unable to set up api logger for %s: %s" % (self.api_log_filename, x))
         # if (_debug):
         #     logger.debug("LFCliBase._proxy_str: %s" % _proxy_str)
         self.proxy = {}
@@ -216,6 +244,35 @@ class LFCliBase:
 
     # - END LOGGING -
 
+    def _session_id(self):
+        """
+        :return: the lanforge_api session id (the same "cookie" the LANforge GUI logs
+        against each REST request) if an LFSession was provided, else None.
+        """
+        if self._lf_session is not None:
+            return self._lf_session.get_session_id()
+        return None
+
+    def _log_api_call(self, method, url, data=None, response_code=None, error=None, diagnostics=None):
+        """
+        Record a json_get/json_post/json_put/json_delete call via the shared
+        lanforge_client.api_call_logger, tagged with this instance's session id if one is
+        set. Only writes when self.save_api is True (self._api_logger is None otherwise,
+        which api_call_logger.log_api_call() treats as a no-op).
+        :param method: "GET" | "POST" | "PUT" | "DELETE"
+        :param url: requested url
+        :param data: payload sent (POST/PUT only)
+        :param response_code: HTTP status code returned by the call, if any
+        :param error: exception raised by the call, if any -- marks the entry as ERROR
+        :param diagnostics: one-line summary from LFRequest.print_diagnostics(), if the
+        call went through a caught HTTPError/URLError (reason, X-Error-* headers, etc.)
+        """
+        if not self.save_api:
+            return
+        api_call_logger.log_api_call(self._api_logger, method, url, session_id=self._session_id(),
+                                     data=data, response_code=response_code, error=error,
+                                     diagnostics=diagnostics)
+
     def json_post(self, _req_url, _data, debug_=False, suppress_related_commands_=None, response_json_list_=None):
         """
         send json to the LANforge client
@@ -227,13 +284,16 @@ class LFCliBase:
         :return: http response object
         """
         json_response = None
+        _api_error = None
+        lf_r = None
         debug_ |= self.debug
         try:
             lf_r = LFRequest.LFRequest(url=self.lfclient_url,
                                        uri=_req_url,
                                        proxies_=self.proxy,
                                        debug_=debug_,
-                                       die_on_error_=self.exit_on_error)
+                                       die_on_error_=self.exit_on_error,
+                                       session_id_=self._session_id())
             if suppress_related_commands_ is None:
                 if 'suppress_preexec_cli' in _data:
                     del _data['suppress_preexec_cli']
@@ -264,13 +324,20 @@ class LFCliBase:
             if debug_ and (response_json_list_ is not None):
                 logger.debug(pprint.pformat(response_json_list_))
         except Exception as x:
+            _api_error = x
             if debug_ or self.exit_on_error:
                 logger.debug("json_post posted to %s" % _req_url)
                 logger.debug(pprint.pformat(_data))
                 logger.debug("Exception %s:" % x)
                 logger.debug(traceback.format_exception(Exception, x, x.__traceback__, chain=True))
             if self.exit_on_error:
+                self._log_api_call("POST", _req_url, data=_data,
+                                   response_code=getattr(json_response, 'status', None) or getattr(lf_r, 'last_response_code', None),
+                                   error=_api_error, diagnostics=getattr(lf_r, 'last_diagnostics', None))
                 exit(1)
+        self._log_api_call("POST", _req_url, data=_data,
+                           response_code=getattr(json_response, 'status', None) or getattr(lf_r, 'last_response_code', None),
+                           error=_api_error, diagnostics=getattr(lf_r, 'last_diagnostics', None))
         return json_response
 
     def json_put(self, _req_url, _data, debug_=False, response_json_list_=None):
@@ -286,12 +353,15 @@ class LFCliBase:
         """
         debug_ |= self.debug
         json_response = None
+        _api_error = None
+        lf_r = None
         try:
             lf_r = LFRequest.LFRequest(url=self.lfclient_url,
                                        uri=_req_url,
                                        proxies_=self.proxy,
                                        debug_=debug_,
-                                       die_on_error_=self.exit_on_error)
+                                       die_on_error_=self.exit_on_error,
+                                       session_id_=self._session_id())
             lf_r.addPostData(_data)
             if debug_:
                 logger.debug(debug_printer.pformat(_data))
@@ -302,13 +372,20 @@ class LFCliBase:
             if debug_ and (response_json_list_ is not None):
                 pprint.pprint(response_json_list_)
         except Exception as x:
+            _api_error = x
             if debug_ or self.exit_on_error:
                 logger.debug("json_put submitted to %s" % _req_url)
                 logger.debug(pprint.pformat(_data))
                 logger.debug("Exception %s:" % x)
                 logger.debug(traceback.format_exception(Exception, x, x.__traceback__, chain=True))
             if self.exit_on_error:
+                self._log_api_call("PUT", _req_url, data=_data,
+                                   response_code=getattr(json_response, 'status', None) or getattr(lf_r, 'last_response_code', None),
+                                   error=_api_error, diagnostics=getattr(lf_r, 'last_diagnostics', None))
                 exit(1)
+        self._log_api_call("PUT", _req_url, data=_data,
+                           response_code=getattr(json_response, 'status', None) or getattr(lf_r, 'last_response_code', None),
+                           error=_api_error, diagnostics=getattr(lf_r, 'last_diagnostics', None))
         return json_response
 
     def json_get(self, _req_url, debug_=None):
@@ -319,12 +396,15 @@ class LFCliBase:
         if debug_ is None:
             debug_ = self.debug
         json_response = None
+        _api_error = None
+        lf_r = None
         try:
             lf_r = LFRequest.LFRequest(url=self.lfclient_url,
                                        uri=_req_url,
                                        proxies_=self.proxy,
                                        debug_=debug_,
-                                       die_on_error_=self.exit_on_error)
+                                       die_on_error_=self.exit_on_error,
+                                       session_id_=self._session_id())
             json_response = lf_r.get_as_json()
             if json_response is None:
                 if debug_:
@@ -334,15 +414,22 @@ class LFCliBase:
                     else:
                         logger.debug("LFCliBase.json_get: no entity/response, check other errors")
                         time.sleep(10)
+                self._log_api_call("GET", _req_url, response_code=getattr(lf_r, 'last_response_code', None),
+                                   diagnostics=getattr(lf_r, 'last_diagnostics', None))
                 return None
         except ValueError as ve:
+            _api_error = ve
             if debug_ or self.exit_on_error:
                 logger.debug("jsonGet asked for {_req_url} ".format(_req_url=_req_url))
                 logger.debug("Exception %s:" % ve)
                 logger.debug(traceback.format_exception(ValueError, ve, ve.__traceback__, chain=True))
             if self.exit_on_error:
+                self._log_api_call("GET", _req_url, response_code=getattr(lf_r, 'last_response_code', None), error=_api_error,
+                                   diagnostics=getattr(lf_r, 'last_diagnostics', None))
                 sys.exit(1)
 
+        self._log_api_call("GET", _req_url, response_code=getattr(lf_r, 'last_response_code', None), error=_api_error,
+                           diagnostics=getattr(lf_r, 'last_diagnostics', None))
         return json_response
 
     def json_delete(self, _req_url, debug_=False):
@@ -350,27 +437,37 @@ class LFCliBase:
         if debug_:
             logger.debug("DELETE: {_req_url}".format(_req_url=_req_url))
         json_response = None
+        _api_error = None
+        lf_r = None
         try:
             # logger.info("----- DELETE ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
             lf_r = LFRequest.LFRequest(url=self.lfclient_url,
                                        uri=_req_url,
                                        proxies_=self.proxy,
                                        debug_=debug_,
-                                       die_on_error_=self.exit_on_error)
+                                       die_on_error_=self.exit_on_error,
+                                       session_id_=self._session_id())
             json_response = lf_r.json_delete(debug=debug_, die_on_error_=False)
             logger.info(json_response)
             # logger.debug(debug_printer.pformat(json_response))
             if (json_response is None) and debug_:
                 logger.debug("LFCliBase.json_delete: no entity/response, probabily status 404")
+                self._log_api_call("DELETE", _req_url, response_code=getattr(lf_r, 'last_response_code', None),
+                                   diagnostics=getattr(lf_r, 'last_diagnostics', None))
                 return None
         except ValueError as ve:
+            _api_error = ve
             if debug_ or self.exit_on_error:
                 logger.debug("json_delete asked for {_req_url}".format(_req_url=_req_url))
                 logger.debug("Exception %s:" % ve)
                 logger.debug(traceback.format_exception(ValueError, ve, ve.__traceback__, chain=True))
             if self.exit_on_error:
+                self._log_api_call("DELETE", _req_url, response_code=getattr(lf_r, 'last_response_code', None), error=_api_error,
+                                   diagnostics=getattr(lf_r, 'last_diagnostics', None))
                 sys.exit(1)
         # print("----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
+        self._log_api_call("DELETE", _req_url, response_code=getattr(lf_r, 'last_response_code', None), error=_api_error,
+                           diagnostics=getattr(lf_r, 'last_diagnostics', None))
         return json_response
 
     @staticmethod
