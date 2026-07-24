@@ -360,10 +360,12 @@ class InteropPortReset(Realm):
             logging.error(
                 f"get_time_from_wifi_msgs: LANforge response is not in expected format ({e}) while fetching "
                 f"wifi-msgs for device {phn_name}. Data received: {a}")
-            logging.warning(f"Marking device {phn_name} stats as 'NA' for this reset and continuing.")
-            for key in ("ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected",
-                        "Remarks", "cx time (us)"):
-                local_dict[str(phn_name)][key] = "NA"
+            logging.warning(f"Defaulting device {phn_name} stats to 0 for this reset and continuing.")
+            for key in ("ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected"):
+                local_dict[str(phn_name)][key] = 0
+            local_dict[str(phn_name)]["Remarks"] = "Data unavailable - LANforge API error, stats defaulted to 0"
+            local_dict[str(phn_name)]["cx time (us)"] = "NA"
+            self.write_reset_csvs(local_dict, reset_cnt)
             return local_dict
         # print("Wifi msgs Response : ", values)
         logging.info(
@@ -490,6 +492,7 @@ class InteropPortReset(Realm):
                 local_dict[str(phn_name)]["Association Rejection"] = win_association_rejection
                 win_connected_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
                                                      filter="connected")
+                win_connection_state_unverified = False
                 # assoc-rejection based logic
                 if win_association_rejection:
                     # Updating the connects
@@ -517,6 +520,7 @@ class InteropPortReset(Realm):
                                     f"{phn_name}; LANforge response is not in expected format ({e}). Data "
                                     f"received: {port_ssid_query}")
                                 win_connected_count = 0
+                                win_connection_state_unverified = True
                 logging.info("Final Connected Count for %s: %s" % (phn_name, win_connected_count))
                 local_dict[str(phn_name)]["Connected"] = win_connected_count
                 # Updating the association-rejections
@@ -529,6 +533,8 @@ class InteropPortReset(Realm):
                     remarks = "No Disconnections are seen but Client is UP and connected to user given SSID."
                 elif win_disconnect_count >= 1 and win_connected_count == 0:
                     remarks = "The Disconnections are seen but Client did not connected to user given SSID."
+                if win_connection_state_unverified:
+                    remarks = "Connection state unverified - LANforge API error while double-checking connect count"
                 local_dict[str(phn_name)]["Remarks"] = remarks
                 if win_connected_count > 0:
                     port_name = phn_name.split(".")
@@ -567,6 +573,7 @@ class InteropPortReset(Realm):
 
                 other_connected_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
                                                        filter="<3>CTRL-EVENT-CONNECTED")
+                other_connection_state_unverified = False
                 # assoc-rejection based logic
                 if other_association_rejection:
                     # Updating the connects
@@ -594,6 +601,7 @@ class InteropPortReset(Realm):
                                     f"{phn_name}; LANforge response is not in expected format ({e}). Data "
                                     f"received: {port_ssid_query}")
                                 other_connected_count = 0
+                                other_connection_state_unverified = True
                 logging.info("Final Connected Count for %s: %s" % (phn_name, other_connected_count))
                 local_dict[str(phn_name)]["Connected"] = other_connected_count
                 # Updating the association-rejections
@@ -606,6 +614,8 @@ class InteropPortReset(Realm):
                     remarks = "No Disconnections are seen but Client is UP and connected to user given SSID."
                 elif other_disconnect_count >= 1 and other_connected_count == 0:
                     remarks = "The Disconnections are seen but Client did not connected to user given SSID."
+                if other_connection_state_unverified:
+                    remarks = "Connection state unverified - LANforge API error while double-checking connect count"
                 local_dict[str(phn_name)]["Remarks"] = remarks
                 if other_connected_count > 0:
                     port_name = phn_name.split(".")
@@ -621,13 +631,16 @@ class InteropPortReset(Realm):
                 else:
                     local_dict[str(phn_name)]['cx time (us)'] = 'NA'
         logging.info("local_dict " + str(local_dict))
+        self.write_reset_csvs(local_dict, reset_cnt)
+
+        return local_dict
+
+    def write_reset_csvs(self, local_dict, reset_cnt):
         # storing results in csv file for each reset
         for interface_name, metrics in local_dict.items():
             df = pd.DataFrame([metrics])
             filename = f"{self.report_path}/{interface_name}_{reset_cnt}.csv"
             df.to_csv(filename, index=False)
-
-        return local_dict
 
     def aggregate_reset_dict(self, reset_dict):
         aggregated = {}
