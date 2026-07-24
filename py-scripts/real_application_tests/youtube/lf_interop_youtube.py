@@ -171,6 +171,10 @@ RealDevice = lf_base_interop_profile.RealDevice
 
 from IOT.iot_helper import start_iot_thread, with_iot_params_in_table, add_iot_report_section  # noqa: E402
 
+WINDOWS_REAL_APP_DIR = r"C:\Program Files (x86)\LANforge-Server\local\real_application_test\youtube"
+LINUX_REAL_APP_DIR = "/home/lanforge/local/real_application_test/youtube"
+MACOS_REAL_APP_DIR = "/Users/lanforge/local/real_application_test/youtube"
+
 
 class Youtube(Realm):
     """
@@ -409,14 +413,42 @@ class Youtube(Realm):
 
         for i in range(0, len(self.real_sta_os_types)):
             if self.real_sta_os_types[i] == 'windows':
-                cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = (
+                    fr'"{WINDOWS_REAL_APP_DIR}\youtube_stream.bat" '
+                    '--url "%s" --host "%s" --device_name "%s" --duration %s --res "%s"'
+                    % (
+                        self.url,
+                        self.upstream_port,
+                        self.real_sta_hostname[i],
+                        self.duration,
+                        self.resolution,
+                    )
+                )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_types[i] == 'linux':
-                cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.wifi_interface_list[i], self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = (
+                    f"su -l lanforge {LINUX_REAL_APP_DIR}/ctyt.bash "
+                    "%s %s %s %s %s %s"
+                ) % (
+                    self.wifi_interface_list[i],
+                    self.url,
+                    self.upstream_port,
+                    self.real_sta_hostname[i],
+                    self.duration,
+                    self.resolution,
+                )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
-
             elif self.real_sta_os_types[i] == 'macos':
-                cmd = "sudo bash ctyt.bash --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = (
+                    f"sudo bash {MACOS_REAL_APP_DIR}/ctyt.bash "
+                    "--url %s --host %s --device_name %s --duration %s --res %s"
+                ) % (
+                    self.url,
+                    self.upstream_port,
+                    self.real_sta_hostname[i],
+                    self.duration,
+                    self.resolution,
+                )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
         if self.generic_endps_profile.create(ports=self.lanforge_port_list, sleep_time=.5, real_client_os_types=self.lanforge_os_type,):
@@ -427,17 +459,9 @@ class Youtube(Realm):
 
         for i in range(0, len(self.lanforge_os_type)):
             cmd = (
-                "su - lanforge -c "
-                "\"cd /home/lanforge && "
-                "python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/youtube/youtube_android_test.py "
-                "--url '%s' --duration '%s' --devices '%s' --upstream_port '%s' --resolution '%s'\""
-            ) % (
-                self.url,
-                self.duration,
-                self.serial_list_str,
-                self.host,
-                self.resolution,
-            )
+                "python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/youtube/youtube_android_test.py --url %s --duration %s --devices %s --upstream_port %s --resolution %s "
+            ) % (self.url, self.duration, self.serial_list_str, self.host, self.resolution)
+
             logging.info(f"Setting command for Android devices: {cmd}")
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[-(i + 1)], cmd)
 
