@@ -268,6 +268,10 @@ class HttpDownload(Realm):
         self.monitor_start_time = None
         self.actual_monitor_duration = 0
         self.l4_fields = None
+        # Set when a monitor_for_runtime_csv() recovery wait times out with every CX still
+        # unresponsive, so perform_robo() stops moving to further coordinates/rotations instead
+        # of continuing a robot test none of the devices can respond to.
+        self.all_devices_stopped = False
 
 # The 'phantom_check' will be handled within the 'get_real_client_list' function
     def get_real_client_list(self):
@@ -787,10 +791,14 @@ class HttpDownload(Realm):
                         cx_found = True
             if not cx_found:
                 if cx not in self.missing_cx_logged:
+                    response_keys = [key for endpoint in endpoint_data
+                                     if isinstance(endpoint, dict) for key in endpoint]
                     logger.warning(
                         "CX '%s' is missing from the monitoring data, the device may have "
                         "disconnected or its connection was not created. Continuing the test "
-                        "with the remaining devices.", cx)
+                        "with the remaining devices.\n"
+                        "URL          : %s\n"
+                        "Response keys: %s", cx, url_str, response_keys)
                     self.missing_cx_logged.add(cx)
                     self.failed_cx.append(cx)
                     self.record_device_issue(cx, "CX missing from monitoring data")
@@ -914,8 +922,21 @@ class HttpDownload(Realm):
         return list(rx_rate), list(bytes_rd)
 
     def monitor_for_runtime_csv(self, duration):
+        if self.all_devices_stopped:
+            # A previous call already gave up waiting for devices to recover. Band steering
+            # invokes this function repeatedly as its own per-tick callback, so return
+            # immediately instead of re-running the 40s recovery wait on every tick.
+            return True
 
-        self.monitor_start_time = datetime.now()
+        if self.do_bandsteering:
+            # Band steering calls this function once per tick within one continuous session,
+            # so only start the CX-status grace period once for the whole session.
+            if self.monitor_start_time is None:
+                self.monitor_start_time = datetime.now()
+        else:
+            # Every other flow calls this function once per coordinate/rotation, with CXs
+            # freshly restarted just before each call - restart the grace period each time.
+            self.monitor_start_time = datetime.now()
         time_now = datetime.now()
         starttime = time_now.strftime("%d/%m %I:%M:%S %p")
         # duration = self.traffic_duration
@@ -1010,6 +1031,11 @@ class HttpDownload(Realm):
                                  "ending the monitor loop gracefully; the test will continue with "
                                  "the data collected so far.")
                     end_monitor_loop = True
+                    self.all_devices_stopped = True
+                    if self.robot_test:
+                        # Mark the WebUI as completed instead of leaving it at a later planned
+                        # navigation state.
+                        self.robot_obj.update_nav_data_for_all_cxs_stopped()
                 else:
                     l4_dict = self.get_layer4_data()
 
@@ -2427,16 +2453,19 @@ class HttpDownload(Realm):
             self.robot_obj.do_bandsteering = True
             self.start()
             for coordinate in cycle_coords:
-                if test_stopped_by_user:
+                if test_stopped_by_user or self.all_devices_stopped:
                     break
                 # Check for battery status before moving to next coordinate
                 if_paused, test_stopped_by_user, test_status = self.robot_obj.wait_for_battery(monitor_function=lambda: self.monitor_for_runtime_csv(self.duration))
                 # If test is stopped by user during battery wait
-                if test_stopped_by_user:
+                if test_stopped_by_user or self.all_devices_stopped:
                     break
                 robo_moved, abort, test_status = self.robot_obj.move_to_coordinate(coordinate, monitor_function=lambda: self.monitor_for_runtime_csv(self.duration))
                 # If robot failed to reach the coordinate
                 if abort:
+                    break
+                if self.all_devices_stopped:
+                    logger.warning("Band-steering test stopped because no devices recovered within 40 seconds.")
                     break
                 if robo_moved:
                     logger.info("Reached the coordinate {}".format(coordinate))
@@ -2444,7 +2473,9 @@ class HttpDownload(Realm):
             return
         for coordinate in range(len(self.coordinate_list)):
             # Check for battery status before moving to next coordinate
-            if test_stopped_by_user:
+            if test_stopped_by_user or self.all_devices_stopped:
+                if self.all_devices_stopped:
+                    logger.warning("Robot test stopped because no devices recovered within 40 seconds.")
                 break
             if_paused, test_stopped_by_user = self.robot_obj.wait_for_battery()
             # If test is stopped by user during battery wait
@@ -2470,7 +2501,7 @@ class HttpDownload(Realm):
                     for angle in range(len(self.rotation_list)):
                         # Check for battery status before rotating to next angle
                         is_paused, test_stopped_by_user = self.robot_obj.wait_for_battery()
-                        if test_stopped_by_user:
+                        if test_stopped_by_user or self.all_devices_stopped:
                             break
                         robo_rotated = self.robot_obj.rotate_angle(self.rotation_list[angle])
                         if robo_rotated:
@@ -2480,7 +2511,7 @@ class HttpDownload(Realm):
                             self.stop()
                             self.update_stop_status_robot()
                         # If test is stopped by user
-                        if test_stopped_by_user:
+                        if test_stopped_by_user or self.all_devices_stopped:
                             break
 
     def build_graphs_and_table(self, coord="", rotation="", report="", lis=None, bands=None):
