@@ -133,6 +133,12 @@ logging.basicConfig(
 # 2. Create the logger instance
 logger = logging.getLogger(__name__)
 
+# Directories on the real client stations where the Teams automation scripts
+# (teams_host.py, teams_client.py, ctteams.bash) are deployed.
+WINDOWS_TEAMS_DIR = r".\local\real_application_test\teams_automation"
+LINUX_TEAMS_DIR = "./local/real_application_test/teams_automation"
+MACOS_TEAMS_DIR = "./local/real_application_test/teams_automation"
+
 
 class TeamsAutomation(Realm):
     def __init__(
@@ -362,13 +368,15 @@ class TeamsAutomation(Realm):
             exit(0)
 
         if self.real_sta_os_types[0] == "windows":
-            cmd = f"py teams_host.py --ip {self.upstream_port}"
+            cmd = fr'"{WINDOWS_TEAMS_DIR}\teams.bat" --ip {self.upstream_port} host'
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         elif self.real_sta_os_types[0] == 'linux':
-            cmd = "su -l lanforge ctteams.bash %s %s %s" % (self.wifi_interfaces_list[0], self.upstream_port, "host")
+            cmd = "su -l lanforge %s/ctteams.bash %s %s %s" % (
+                LINUX_TEAMS_DIR, self.wifi_interfaces_list[0], self.upstream_port, "host"
+            )
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         elif self.real_sta_os_types[0] == 'macos':
-            cmd = "sudo bash ctteams.bash %s %s" % (self.upstream_port, "host")
+            cmd = "sudo bash %s/ctteams.bash %s %s" % (MACOS_TEAMS_DIR, self.upstream_port, "host")
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         self.generic_endps_profile.start_cx()
         time.sleep(5)
@@ -528,19 +536,19 @@ class TeamsAutomation(Realm):
 
         for i in range(1, len(self.real_sta_os_types)):
             if self.real_sta_os_types[i] == "windows":
-                cmd = f"py teams_client.py --ip {self.upstream_port}"
+                cmd = fr'"{WINDOWS_TEAMS_DIR}\teams.bat" --ip {self.upstream_port} client'
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
             elif self.real_sta_os_types[i] == 'linux':
-                cmd = "su -l lanforge ctteams.bash %s %s %s" % (
-                    self.wifi_interfaces_list[i], self.upstream_port, "client"
+                cmd = "su -l lanforge %s/ctteams.bash %s %s %s" % (
+                    LINUX_TEAMS_DIR, self.wifi_interfaces_list[i], self.upstream_port, "client"
                 )
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
             elif self.real_sta_os_types[i] == 'macos':
-                cmd = "sudo bash ctteams.bash %s %s" % (self.upstream_port, "client")
+                cmd = "sudo bash %s/ctteams.bash %s %s" % (MACOS_TEAMS_DIR, self.upstream_port, "client")
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
