@@ -121,6 +121,12 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 
+# Directories on the real client stations where the Zoom automation scripts
+# (zoom.bat, ctzoom.bash) are deployed.
+WINDOWS_ZOOM_DIR = r".\local\real_application_test\zoom_automation"
+LINUX_ZOOM_DIR = "./local/real_application_test/zoom_automation"
+MACOS_ZOOM_DIR = "./local/real_application_test/zoom_automation"
+
 
 class ZoomAutomation(Realm):
     def __init__(
@@ -1124,12 +1130,13 @@ class ZoomAutomation(Realm):
             exit(0)
 
         if self.real_sta_os_type[0] == "windows":
-            cmd = f"py zoom_host.py --ip {self.upstream_port}"
+            cmd = fr'"{WINDOWS_ZOOM_DIR}\zoom.bat" --ip {self.upstream_port} host'
             self.generic_endps_profile.set_cmd(
                 self.generic_endps_profile.created_endp[0], cmd
             )
         elif self.real_sta_os_type[0] == "linux":
-            cmd = "su -l lanforge ctzoom.bash %s %s %s" % (
+            cmd = "su -l lanforge %s/ctzoom.bash %s %s %s" % (
+                LINUX_ZOOM_DIR,
                 self.wifi_interface_list[0],
                 self.upstream_port,
                 "host",
@@ -1138,7 +1145,7 @@ class ZoomAutomation(Realm):
                 self.generic_endps_profile.created_endp[0], cmd
             )
         elif self.real_sta_os_type[0] == "macos":
-            cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "host")
+            cmd = "sudo bash %s/ctzoom.bash %s %s" % (MACOS_ZOOM_DIR, self.upstream_port, "host")
             self.generic_endps_profile.set_cmd(
                 self.generic_endps_profile.created_endp[0], cmd
             )
@@ -1210,12 +1217,13 @@ class ZoomAutomation(Realm):
 
         for i in range(1, len(self.real_sta_os_type)):
             if self.real_sta_os_type[i] == "windows":
-                cmd = f"py zoom_client.py --ip {self.upstream_port}"
+                cmd = fr'"{WINDOWS_ZOOM_DIR}\zoom.bat" --ip {self.upstream_port} client'
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
             elif self.real_sta_os_type[i] == "linux":
-                cmd = "su -l lanforge ctzoom.bash %s %s %s" % (
+                cmd = "su -l lanforge %s/ctzoom.bash %s %s %s" % (
+                    LINUX_ZOOM_DIR,
                     self.wifi_interface_list[i],
                     self.upstream_port,
                     "client",
@@ -1224,7 +1232,7 @@ class ZoomAutomation(Realm):
                     self.generic_endps_profile.created_endp[i], cmd
                 )
             elif self.real_sta_os_type[i] == "macos":
-                cmd = "sudo bash ctzoom.bash %s %s" % (self.upstream_port, "client")
+                cmd = "sudo bash %s/ctzoom.bash %s %s" % (MACOS_ZOOM_DIR, self.upstream_port, "client")
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
@@ -4600,6 +4608,7 @@ def main():
         if args.download_csv:
             zoom_automation.download_csv = True
         args.upstream_port = zoom_automation.change_port_to_ip(args.upstream_port)
+        zoom_automation.upstream_port = args.upstream_port
         realdevice = RealDevice(
             manager_ip=args.lanforge_ip,
             server_ip="192.168.1.61",
