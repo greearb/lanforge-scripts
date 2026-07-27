@@ -285,6 +285,7 @@ class ZoomAutomation(Realm):
             )
         self.successful_coords = []
         self.failed_coords = []
+        self.host_ever_ready = False
         self.is_csv_available = False
         self.wait_at_point = int(wait_at_point)
         self.resource_ip = resource_ip
@@ -404,12 +405,14 @@ class ZoomAutomation(Realm):
 
         @self.app.route("/get_participants_joined", methods=["GET"])
         def get_participants_joined():
+            logger.info(f"/get_participants_joined GET -> participants joined: {self.participants_joined}")
             return jsonify({"participants": self.participants_joined})
 
         @self.app.route("/set_participants_joined", methods=["POST"])
         def set_participants_joined():
             data = request.json
             self.participants_joined = data.get("participants_joined", None)
+            logger.info(f"/set_participants_joined POST -> participants joined: {self.participants_joined}")
             return jsonify(
                 {
                     "message": f"Updated participants joined status to {self.participants_joined}"
@@ -418,6 +421,7 @@ class ZoomAutomation(Realm):
 
         @self.app.route("/get_participants_req", methods=["GET"])
         def get_participants_req():
+            logger.info(f"/get_participants_req GET -> participants required: {self.participants_req}")
             return jsonify({"participants": self.participants_req})
 
         @self.app.route("/test_started", methods=["GET", "POST"])
@@ -624,6 +628,8 @@ class ZoomAutomation(Realm):
                 filename = data.get("filename", "csvdata.csv")
                 self.csv_file_name = f"received_{filename}"
                 rows = data.get("rows", [])
+                logger.info(f"/upload_csv POST: received filename={filename}")
+                logger.debug(f"/upload_csv POST: received rows={rows}")
                 if not rows:
                     return (
                         jsonify({"status": "error", "message": "No rows received"}),
@@ -720,25 +726,47 @@ class ZoomAutomation(Realm):
             self.end_time = self.start_time + timedelta(minutes=self.duration)
         return [self.start_time, self.end_time]
 
-    def check_gen_cx(self):
+    def check_gen_cx(self, stall_timeout=300):
+        """Return True once every generic endpoint is idle (Stopped/WAITING/NO-CX),
+        or once a stuck endpoint has been non-idle for longer than stall_timeout
+        seconds — in which case we stop waiting on it instead of hanging forever."""
+        if not hasattr(self, "_gen_cx_stall_since"):
+            self._gen_cx_stall_since = {}
+
+        now = time.time()
+        ready = True
+        generic_endpoint = None
+
         try:
 
-            for gen_endp in self.generic_endps_profile.created_endp:
+            for gen_endp in set(self.generic_endps_profile.created_endp):
                 generic_endpoint = self.json_get(f"/generic/{gen_endp}")
 
                 if not generic_endpoint or "endpoint" not in generic_endpoint:
                     logger.info(f"Error fetching endpoint data for {gen_endp}")
-                    return False
+                    endp_status = None  # unreachable/deleted endpoint
+                else:
+                    endp_status = generic_endpoint["endpoint"].get("status", "")
 
-                endp_status = generic_endpoint["endpoint"].get("status", "")
+                if endp_status in ["Stopped", "WAITING", "NO-CX", "FTM_WAIT"]:
+                    self._gen_cx_stall_since.pop(gen_endp, None)
+                    continue
 
-                if endp_status not in ["Stopped", "WAITING", "NO-CX", "FTM_WAIT"]:
-                    return False
-
-            return True
+                # Covers BOTH "stuck at a non-idle status" AND "can't be fetched/deleted"
+                stall_start = self._gen_cx_stall_since.setdefault(gen_endp, now)
+                stalled_for = now - stall_start
+                if stalled_for >= stall_timeout:
+                    logger.warning(
+                        f"{gen_endp} unresolved (status={endp_status!r}) for "
+                        f"{stalled_for:.0f}s (limit {stall_timeout}s) — giving up waiting on it."
+                    )
+                    continue
+                ready = False
+            return ready
         except Exception as e:
             logger.error(f"Error in check_gen_cx function {e}", exc_info=True)
             logger.info(f"generic endpoint data {generic_endpoint}")
+            return False
 
     def monitor_endpoint_status_changes(self, wait_time=40, poll_interval=5):
         """
@@ -760,9 +788,12 @@ class ZoomAutomation(Realm):
         endpoint_data = {}
         while True:
             for gen_endp in created_endp:
-                generic_endpoint = self.json_get(f"/generic/{gen_endp}")
-                if generic_endpoint and "endpoint" in generic_endpoint:
-                    endpoint_data[gen_endp] = generic_endpoint
+                try:
+                    generic_endpoint = self.json_get(f"/generic/{gen_endp}")
+                    if generic_endpoint and "endpoint" in generic_endpoint:
+                        endpoint_data[gen_endp] = generic_endpoint
+                except Exception as e:
+                    logger.error(f"Error fetching endpoint {gen_endp} status: {e}")
 
             if endpoint_data or (time.time() - start_time) >= wait_time:
                 break
@@ -854,6 +885,7 @@ class ZoomAutomation(Realm):
             gen_name_a = "%s-%s" % ("zoom", "_".join(port_name.split(".")))
             endp_tpls.append((shelf, resource, name, gen_name_a))
 
+        logger.debug(f"create_android: endp_tpls={endp_tpls}")
         for endp_tpl in endp_tpls:
             shelf = endp_tpl[0]
             resource = endp_tpl[1]
@@ -1126,6 +1158,12 @@ class ZoomAutomation(Realm):
                 logger.error(f"Error deleting file {file_path}: {e}")
 
     def create_host(self):
+        # Reset per round so start_cx()/stop_cx()/cleanup() only ever act on
+        # this coordinate's CXs/endpoints, instead of re-processing every
+        # stale entry from every previous coordinate.
+        self.generic_endps_profile.created_cx = []
+        self.generic_endps_profile.created_endp = []
+
         if self.generic_endps_profile.create(
             ports=[self.real_sta_list[0]],
             real_client_os_types=[self.real_sta_os_type[0]],
@@ -1161,8 +1199,23 @@ class ZoomAutomation(Realm):
         logger.debug(f"checking real sta list {self.real_sta_list}")
         logger.debug(f"checking real sta os type {self.real_sta_os_type}")
 
-    def wait_for_host_ready(self):
+    def wait_for_host_ready(self, timeout=300):
+        """Wait for the host device to confirm login.
+
+        Returns:
+            True once login is confirmed.
+            False if the host device stops before logging in, or if login
+            isn't confirmed within `timeout` seconds (default 5 minutes) —
+            instead of hanging forever or killing the whole process.
+        """
+        deadline = time.time() + timeout
         while not self.login_completed:
+            if time.time() >= deadline:
+                logger.error(
+                    f"Timed out after {timeout}s waiting for host device to log in."
+                )
+                self.generic_endps_profile.cleanup()
+                return False
             try:
                 generic_endpoint = self.json_get(
                     f"/generic/{self.generic_endps_profile.created_endp[0]}"
@@ -1171,7 +1224,7 @@ class ZoomAutomation(Realm):
                 if endp_status == "Stopped":
                     logger.error("Failed to Start the Host Device")
                     self.generic_endps_profile.cleanup()
-                    sys.exit(1)
+                    return False
                 time.sleep(5)
             except Exception as e:
                 logger.error(f"Error while checking login_completed status: {e}")
@@ -1190,8 +1243,13 @@ class ZoomAutomation(Realm):
             logger.error(f"Failed to save meet link file: {e}")
 
         self.login_completed = False
+        return True
 
     def create_participants(self):
+        logger.info(
+            f"Creating participants — ports={self.lanforge_port_list}, "
+            f"hostnames={self.real_sta_hostname}, serials={self.serial_list}"
+        )
         for i in range(1, len(self.real_sta_os_type)):
             if self.real_sta_os_type[i] == "android":
                 status, created_cx, created_endp = self.create_android(
@@ -1201,6 +1259,7 @@ class ZoomAutomation(Realm):
                 )
                 self.generic_endps_profile.created_endp.extend(created_endp)
                 self.generic_endps_profile.created_cx.extend(created_cx)
+                logger.debug(f"create_participants: created_cx now={self.generic_endps_profile.created_cx}")
                 cmd = (
                     f"su - lanforge -c "
                     f"\"cd /home/lanforge && "
@@ -1251,10 +1310,24 @@ class ZoomAutomation(Realm):
             )
             logger.info(f"Sending running state to.. {cx_name}")
 
-    def wait_for_test_start(self):
-        # Wait for the test to be started
+    def wait_for_test_start(self, timeout=180):
+        """Wait for the test-started signal.
+
+        Returns:
+            True once the test has started.
+            False if it isn't signaled within `timeout` seconds (default 3
+            minutes) — instead of hanging forever.
+        """
+        deadline = time.time() + timeout
         count = 0
         while not self.test_start:
+            if time.time() >= deadline:
+                logger.error(
+                    f"Unable to get the start signal from the host device within {timeout}s. "
+                    "Giving up and cleaning up this round's CXs."
+                )
+                self.generic_endps_profile.cleanup()
+                return False
             logger.info("WAITING FOR THE TEST TO BE STARTED")
             time.sleep(5)
             count += 1
@@ -1273,12 +1346,42 @@ class ZoomAutomation(Realm):
                 self.current_cord = self.from_cord
         self.set_start_time()
         logger.info("TEST WILL BE STARTING")
+        return True
 
     def run(self):
         self.create_host()
-        self.wait_for_host_ready()
+        if not self.wait_for_host_ready():
+            if self.do_robo:
+                self.failed_coords.append(self.current_cord)
+                if not self.host_ever_ready:
+                    logger.error(
+                        f"Host device failed to become ready on the very first coordinate ({self.current_cord}) — "
+                        "this points to a host device problem rather than a location issue. "
+                        "Aborting the robo test instead of trying the remaining coordinates."
+                    )
+                    return False
+                logger.error(
+                    f"Host device failed to become ready for coordinate {self.current_cord} — skipping this coordinate and continuing with the next one."
+                )
+                return True
+            else:
+                logger.error("Host device never became ready. Aborting test.")
+                sys.exit(1)
+        self.host_ever_ready = True
         self.create_participants()
-        self.wait_for_test_start()
+        if not self.wait_for_test_start():
+            if self.do_robo:
+                logger.error(
+                    f"Unable to get the start signal from the host device for coordinate {self.current_cord} — "
+                    "skipping this coordinate and continuing with the next one."
+                )
+                self.failed_coords.append(self.current_cord)
+                return True
+            else:
+                logger.error(
+                    "Unable to get the start signal from the host device — aborting test."
+                )
+                sys.exit(1)
 
         if self.do_bs:
             time.sleep(60)
@@ -1354,9 +1457,20 @@ class ZoomAutomation(Realm):
                         self.stop_signal = False
                         self.participants_joined = 0
                         self.create_host()
-                        self.wait_for_host_ready()
+                        if not self.wait_for_host_ready():
+                            logger.error(
+                                f"Host device failed to restart after battery pause for coordinate {self.current_cord} — skipping this round."
+                            )
+                            self.failed_coords.append(self.current_cord)
+                            return True
                         self.create_participants()
-                        self.wait_for_test_start()
+                        if not self.wait_for_test_start():
+                            logger.error(
+                                f"Unable to get the start signal from the host device after the battery pause "
+                                f"for coordinate {self.current_cord} — skipping this round."
+                            )
+                            self.failed_coords.append(self.current_cord)
+                            return True
                 self.monitor_endpoint_status_changes()
                 logger.info("Monitoring the Test")
                 time.sleep(5)
@@ -1365,6 +1479,7 @@ class ZoomAutomation(Realm):
             self.generic_endps_profile.cleanup()
             self.start_time = None
             self.end_time = None
+            return True
 
     def select_real_devices(self, real_device_obj, real_sta_list=None):
         final_device_list = []
@@ -1541,6 +1656,8 @@ class ZoomAutomation(Realm):
                 lf_stats_map[sta]["bssid"] = data.get(
                     "ap", "-"
                 )  # 'ap' is usually BSSID
+
+        logger.debug(f"get_signal_and_channel_data_dict: lf_stats_map={lf_stats_map}")
 
         return lf_stats_map
 
@@ -4183,11 +4300,19 @@ class ZoomAutomation(Realm):
                     else:
                         logger.error(f"Failed to Rotate the Angle {self.current_angle}")
                         sys.exit()
-                    self.run()
+                    if not self.run():
+                        logger.error(
+                            "Stopping robo test early — host device issue detected on the first coordinate."
+                        )
+                        return
                     self.participants_joined = 0
 
             else:
-                self.run()
+                if not self.run():
+                    logger.error(
+                        "Stopping robo test early — host device issue detected on the first coordinate."
+                    )
+                    return
                 self.participants_joined = 0
 
 
@@ -4771,9 +4896,9 @@ def main():
                                 + " "
                                 + device["hostname"]
                             )
-                    print("Available Devices For Testing")
+                    logger.info("Available Devices For Testing")
                     for device in device_list:
-                        print(device)
+                        logger.info(device)
                     zm_host = input("Enter Host Resource for the Test : ")
                     zm_host = zm_host.strip()
                     args.resources = input("Enter client Resources to run the test :")
