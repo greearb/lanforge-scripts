@@ -189,61 +189,62 @@ class WiFiCapacityTest(cv_test):
         time.sleep(2)
         self.sync_cv()
 
-        self.rm_text_blob(self.config_name, "Wifi-Capacity-")  # To delete old config with same name
-        self.show_text_blob(None, None, False)
-
-        # Test related settings
-        cfg_options = []
-
-        if self.upstream != "":
-            eid = LFUtils.name_to_eid(self.upstream)
-            port = "%i.%i.%s" % (eid[0], eid[1], eid[2])
-
-            port_list = [port]
-            if self.stations != "" or self.stations_list != []:
-                stas = None
-                if self.stations:
-                    stas = self.stations.split(",")
-                elif self.stations_list:
-                    stas = self.stations_list
-                for s in stas:
-                    port_list.append(s)
-            else:
-                stas = self.station_map()  # See realm
-                for eid in stas.keys():
-                    port_list.append(eid)
-            logger.info(f"Selected Port list: {port_list}")
-
-            idx = 0
-            for eid in port_list:
-                add_port = "sel_port-" + str(idx) + ": " + eid
-                self.create_test_config(self.config_name, "Wifi-Capacity-", add_port)
-                idx += 1
-        if self.batch_size != "":
-            cfg_options.append("batch_size: " + self.batch_size)
-        if self.loop_iter != "":
-            cfg_options.append("loop_iter: " + self.loop_iter)
-        if self.protocol != "":
-            cfg_options.append("protocol: " + str(self.protocol))
-        if self.duration != "":
-            cfg_options.append("duration: " + self.duration)
-        if self.upload_rate != "":
-            cfg_options.append("ul_rate: " + self.upload_rate)
-        if self.download_rate != "":
-            cfg_options.append("dl_rate: " + self.download_rate)
-        if self.test_rig != "":
-            cfg_options.append("test_rig: " + self.test_rig)
-        if self.test_tag != "":
-            cfg_options.append("test_tag: " + self.test_tag)
-
-        cfg_options.append("save_csv: 1")
-
-        self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
-
         blob_test = "Wifi-Capacity-"
 
-        # We deleted the scenario earlier, now re-build new one line at a time.
-        self.build_cfg(self.config_name, blob_test, cfg_options)
+        if not self.load_old_cfg:
+            self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
+            self.show_text_blob(None, None, False)
+
+            # Test related settings
+            cfg_options = []
+
+            if self.upstream != "":
+                eid = LFUtils.name_to_eid(self.upstream)
+                port = "%i.%i.%s" % (eid[0], eid[1], eid[2])
+
+                port_list = [port]
+                if self.stations != "" or self.stations_list != []:
+                    stas = None
+                    if self.stations:
+                        stas = self.stations.split(",")
+                    elif self.stations_list:
+                        stas = self.stations_list
+                    for s in stas:
+                        port_list.append(s)
+                else:
+                    stas = self.station_map()  # See realm
+                    for eid in stas.keys():
+                        port_list.append(eid)
+                logger.info(f"Selected Port list: {port_list}")
+
+                idx = 0
+                for eid in port_list:
+                    add_port = "sel_port-" + str(idx) + ": " + eid
+                    self.create_test_config(self.config_name, blob_test, add_port)
+                    idx += 1
+            if self.batch_size != "":
+                cfg_options.append("batch_size: " + self.batch_size)
+            if self.loop_iter != "":
+                cfg_options.append("loop_iter: " + self.loop_iter)
+            if self.protocol != "":
+                cfg_options.append("protocol: " + str(self.protocol))
+            if self.duration != "":
+                cfg_options.append("duration: " + self.duration)
+            if self.upload_rate != "":
+                cfg_options.append("ul_rate: " + self.upload_rate)
+            if self.download_rate != "":
+                cfg_options.append("dl_rate: " + self.download_rate)
+            if self.test_rig != "":
+                cfg_options.append("test_rig: " + self.test_rig)
+            if self.test_tag != "":
+                cfg_options.append("test_tag: " + self.test_tag)
+
+            cfg_options.append("save_csv: 1")
+
+            self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
+
+            # We deleted the scenario earlier, now re-build new one line at a time.
+            self.build_cfg(self.config_name, blob_test, cfg_options)
 
         cv_cmds = []
 
@@ -257,13 +258,22 @@ class WiFiCapacityTest(cv_test):
             cmd = "cv click '%s' 'Interleave Sort'" % self.instance_name
             cv_cmds.append(cmd)
 
-        self.create_and_run_test(lf_host=self.lfclient_host,
+        self.create_and_run_test(load_old_cfg=self.load_old_cfg,
+                                 test_name=self.test_name,
+                                 instance_name=self.instance_name,
+                                 config_name=self.config_name,
+                                 sets=self.sets,
+                                 pull_report=self.pull_report,
+                                 lf_host=self.lfclient_host,
+                                 lf_user=self.lf_user,
+                                 lf_password=self.lf_password,
                                  cv_cmds=cv_cmds,
-                                 **vars(self))
+                                 ssh_port=self.ssh_port,
+                                 local_lf_report_dir=self.local_lf_report_dir,
+                                 graph_groups_file=self.graph_groups)
 
-        self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
-
-        self.rm_text_blob(self.config_name, "Wifi-Capacity-")  # To delete old config with same name
+        if not self.load_old_cfg:
+            self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
 
 def main():
