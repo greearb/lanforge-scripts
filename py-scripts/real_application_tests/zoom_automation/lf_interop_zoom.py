@@ -348,6 +348,28 @@ class ZoomAutomation(Realm):
             shutil.move(source_dir, destination_dir)
             logger.info(f"Moved ping logs folder to {destination_dir}")
 
+    def move_log_folder(self):
+        source_dir = os.path.join(self.path, "zoom_laptop_client_logs")
+        if not os.path.isdir(source_dir):
+            logger.info(f"No zoom_laptop_client_logs directory found at {source_dir}")
+            return
+
+        destination_dir = os.path.join(self.report_path_date_time, "zoom_laptop_client_logs")
+        os.makedirs(self.report_path_date_time, exist_ok=True)
+
+        # If destination exists, merge files and remove source
+        if os.path.exists(destination_dir):
+            for file_name in os.listdir(source_dir):
+                src_file = os.path.join(source_dir, file_name)
+                dst_file = os.path.join(destination_dir, file_name)
+                if os.path.isfile(src_file):
+                    shutil.move(src_file, dst_file)
+            shutil.rmtree(source_dir, ignore_errors=True)
+            logger.info(f"Merged client logs into {destination_dir}")
+        else:
+            shutil.move(source_dir, destination_dir)
+            logger.info(f"Moved client logs folder to {destination_dir}")
+
     def handle_flask_server(self):
         self.stop_previous_flask_server()
         time.sleep(5)  # Ensure the port is released before starting the server
@@ -696,6 +718,38 @@ class ZoomAutomation(Realm):
                     200,
                 )
             except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+
+        @self.app.route("/upload_log", methods=["POST"])
+        def upload_log():
+            try:
+                data = request.json
+                hostname = data.get("hostname")
+                log_content = data.get("log")
+
+                if not hostname or log_content is None:
+                    return jsonify({"status": "error", "message": "Missing hostname or log"}), 400
+
+                log_dir = os.path.join(self.path, "zoom_laptop_client_logs")
+                os.makedirs(log_dir, exist_ok=True)
+
+                # Force a safe filename to avoid path traversal from client-supplied hostname
+                hostname = os.path.basename(hostname.strip())
+                if self.do_robo:
+                    if self.rotations_enabled:
+                        log_name = f"{hostname}_{self.current_cord}_{self.current_angle}.log"
+                    else:
+                        log_name = f"{hostname}_{self.current_cord}.log"
+                else:
+                    log_name = f"{hostname}.log"
+                save_path = os.path.join(log_dir, log_name)
+                with open(save_path, "w", errors="replace") as f:
+                    f.write(log_content)
+
+                logger.info(f"Log file uploaded from {hostname}")
+                return jsonify({"status": "success", "message": "Log file uploaded"}), 200
+            except Exception as e:
+                logger.error(f"Error uploading log file: {e}")
                 return jsonify({"status": "error", "message": str(e)}), 500
 
         try:
@@ -5032,6 +5086,7 @@ def main():
             time.sleep(5)
             zoom_automation.generic_endps_profile.cleanup()
             # zoom_automation.move_ping_logs()
+            zoom_automation.move_log_folder()
             logger.info("Done.")
 
 
