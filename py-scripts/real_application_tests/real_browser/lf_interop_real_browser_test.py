@@ -102,6 +102,9 @@ import re
 import traceback
 import requests
 
+WINDOWS_REAL_BROWSER_DIR = r".\local\real_application_test\real_browser"
+LINUX_REAL_BROWSER_DIR = "./local/real_application_test/real_browser"
+MACOS_REAL_BROWSER_DIR = "./local/real_application_test/real_browser"
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
@@ -199,7 +202,10 @@ class RealBrowserTest(Realm):
                  current_cord="",
                  current_angle=None,
                  rotations_enabled=False,
-                 duration_to_skip=None
+                 duration_to_skip=None,
+                 windows_dir=WINDOWS_REAL_BROWSER_DIR,
+                 linux_dir=LINUX_REAL_BROWSER_DIR,
+                 mac_dir=MACOS_REAL_BROWSER_DIR
                  ):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         # Initialize attributes with provided parameters
@@ -223,6 +229,9 @@ class RealBrowserTest(Realm):
         self.no_precleanup = no_precleanup
         self.direction = "dl"
         self.dest = "/dev/null"
+        self.windows_dir = windows_dir
+        self.linux_dir = linux_dir
+        self.mac_dir = mac_dir
 
         self.app = Flask(__name__)
         self.app.logger.setLevel(logging.WARNING)
@@ -412,13 +421,36 @@ class RealBrowserTest(Realm):
 
         for i in range(0, len(self.laptop_os_types)):
             if self.laptop_os_types[i] == 'windows':
-                cmd = "real_browser.bat --url %s --server %s --duration %s" % (self.url, self.upstream_port, self.duration)
+                cmd = (
+                    fr'"{self.windows_dir}\real_browser.bat" '
+                    '--url "%s" --server "%s" --duration %s'
+                    % (
+                        self.url,
+                        self.upstream_port,
+                        self.duration,
+                    )
+                )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.laptop_os_types[i] == 'linux':
-                cmd = "su -l lanforge  ctrb.bash %s %s %s %s" % (self.new_port_list[i], self.url, self.upstream_port, self.duration)
+                cmd = (
+                    f"su -l lanforge {self.linux_dir}/ctrb.bash "
+                    "%s %s %s %s"
+                ) % (
+                    self.new_port_list[i],
+                    self.url,
+                    self.upstream_port,
+                    self.duration,
+                )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.laptop_os_types[i] == 'macos':
-                cmd = "sudo bash ctrb.bash --url %s --server %s  --duration %s" % (self.url, self.upstream_port, self.duration)
+                cmd = (
+                    f"sudo bash {self.mac_dir}/ctrb.bash "
+                    "--url %s --server %s --duration %s"
+                ) % (
+                    self.url,
+                    self.upstream_port,
+                    self.duration,
+                )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
         if len(self.phone_data) != 0:
@@ -3429,6 +3461,12 @@ def main():
                             )
         parser.add_argument('--duration', type=str, help='time to run traffic')
         optional.add_argument('--test_name', help='Specify test name to store the runtime csv results', default=None)
+        optional.add_argument('--windows_dir', default=WINDOWS_REAL_BROWSER_DIR,
+                              help='Real Browser application directory on Windows clients')
+        optional.add_argument('--linux_dir', default=LINUX_REAL_BROWSER_DIR,
+                              help='Real Browser application directory on Linux clients')
+        optional.add_argument('--mac_dir', default=MACOS_REAL_BROWSER_DIR,
+                              help='Real Browser application directory on macOS clients')
         parser.add_argument('--dowebgui', help="If true will execute script for webgui", default=False, type=bool)
         parser.add_argument('--result_dir', help="Specify the result dir to store the runtime logs <Do not use in CLI, --used by webui>", default='')
 
@@ -3590,7 +3628,10 @@ def main():
                               cycles=args.cycles,
                               bssids=args.bssids,
                               rotations_enabled=rotations_enabled,
-                              duration_to_skip=args.duration_to_skip
+                              duration_to_skip=args.duration_to_skip,
+                              windows_dir=args.windows_dir,
+                              linux_dir=args.linux_dir,
+                              mac_dir=args.mac_dir
                               )
         obj.change_port_to_ip()
         obj.validate_and_process_args()
