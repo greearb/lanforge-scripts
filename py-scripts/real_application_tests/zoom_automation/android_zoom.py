@@ -42,8 +42,11 @@ class ZoomAutomator:
         # self.ping_monitor = PingMonitor(self.participant_name)
 
     def _create_logger(self):
-        log_dir = os.path.join(os.getcwd(), "zoom_mobile_logs")
+        log_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "zoom_mobile_logs"
+        )
         os.makedirs(log_dir, exist_ok=True)
+        self.log_dir = log_dir
 
         logger_name = f"{__name__}.{self.participant_name}"
         logger = logging.getLogger(logger_name)
@@ -522,9 +525,7 @@ class ZoomAutomator:
             )
 
     def upload_ping_log(self):
-        log_path = os.path.join(
-            os.getcwd(), "zoom_mobile_logs", f"{self.participant_name}_ping.log"
-        )
+        log_path = os.path.join(self.log_dir, f"{self.participant_name}_ping.log")
         if not os.path.exists(log_path):
             self.logger.warning(f"Ping log not found: {log_path}")
             return
@@ -546,6 +547,39 @@ class ZoomAutomator:
                 )
         except Exception as e:
             self.logger.error(f"[{self.device_serial}] Error uploading ping log: {e}")
+
+    def upload_log(self):
+        """
+        Push this run's log to the host's /upload_log endpoint. The server
+        namespaces the saved filename by the current robo coordinate (and
+        angle, if rotations are enabled) and archives it into the report
+        folder at the end of the test — same mechanism used for the
+        Windows/Linux/macOS real-device client logs.
+        """
+        log_path = os.path.join(self.log_dir, f"{self.participant_name}.log")
+        if not os.path.exists(log_path):
+            self.logger.warning(f"Log file not found: {log_path}")
+            return
+
+        endpoint_url = f"{self.base_url}/upload_log"
+        try:
+            with open(log_path, "r", errors="replace") as fp:
+                log_content = fp.read()
+
+            resp = requests.post(
+                endpoint_url,
+                json={"hostname": self.participant_name, "log": log_content},
+                timeout=30,
+            )
+
+            if resp.status_code == 200:
+                self.logger.info(f"[{self.device_serial}] Log uploaded successfully")
+            else:
+                self.logger.error(
+                    f"[{self.device_serial}] Log upload failed: {resp.status_code} {resp.text}"
+                )
+        except Exception as e:
+            self.logger.error(f"[{self.device_serial}] Error uploading log: {e}")
 
 
 def main():
@@ -576,6 +610,7 @@ def main():
         automator.logger.error(f"Error: {e}")
     finally:
         try:
+            automator.upload_log()
             # automator.upload_ping_log()
             automator.start_interop_app()
         except Exception as e:
