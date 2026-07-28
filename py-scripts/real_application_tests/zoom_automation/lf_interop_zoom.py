@@ -165,10 +165,16 @@ class ZoomAutomation(Realm):
         wait_at_point=30,
         resource_ip=None,
         do_roam=False,
+        window_dir=WINDOWS_ZOOM_DIR,
+        linux_dir=LINUX_ZOOM_DIR,
+        mac_dir=MACOS_ZOOM_DIR,
     ):
 
         super().__init__(lfclient_host=lanforge_ip)
         self.upstream_port = upstream_port
+        self.window_dir = window_dir
+        self.linux_dir = linux_dir
+        self.mac_dir = mac_dir
         self.mgr_ip = lanforge_ip
         self.app = Flask(__name__)
         self.devices = devices
@@ -1130,13 +1136,13 @@ class ZoomAutomation(Realm):
             exit(0)
 
         if self.real_sta_os_type[0] == "windows":
-            cmd = fr'"{WINDOWS_ZOOM_DIR}\zoom.bat" --ip {self.upstream_port} host'
+            cmd = fr'"{self.window_dir}\zoom.bat" --ip {self.upstream_port} host'
             self.generic_endps_profile.set_cmd(
                 self.generic_endps_profile.created_endp[0], cmd
             )
         elif self.real_sta_os_type[0] == "linux":
             cmd = "su -l lanforge %s/ctzoom.bash %s %s %s" % (
-                LINUX_ZOOM_DIR,
+                self.linux_dir,
                 self.wifi_interface_list[0],
                 self.upstream_port,
                 "host",
@@ -1145,7 +1151,7 @@ class ZoomAutomation(Realm):
                 self.generic_endps_profile.created_endp[0], cmd
             )
         elif self.real_sta_os_type[0] == "macos":
-            cmd = "sudo bash %s/ctzoom.bash %s %s" % (MACOS_ZOOM_DIR, self.upstream_port, "host")
+            cmd = "sudo bash %s/ctzoom.bash %s %s" % (self.mac_dir, self.upstream_port, "host")
             self.generic_endps_profile.set_cmd(
                 self.generic_endps_profile.created_endp[0], cmd
             )
@@ -1217,13 +1223,13 @@ class ZoomAutomation(Realm):
 
         for i in range(1, len(self.real_sta_os_type)):
             if self.real_sta_os_type[i] == "windows":
-                cmd = fr'"{WINDOWS_ZOOM_DIR}\zoom.bat" --ip {self.upstream_port} client'
+                cmd = fr'"{self.window_dir}\zoom.bat" --ip {self.upstream_port} client'
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
             elif self.real_sta_os_type[i] == "linux":
                 cmd = "su -l lanforge %s/ctzoom.bash %s %s %s" % (
-                    LINUX_ZOOM_DIR,
+                    self.linux_dir,
                     self.wifi_interface_list[i],
                     self.upstream_port,
                     "client",
@@ -1232,7 +1238,7 @@ class ZoomAutomation(Realm):
                     self.generic_endps_profile.created_endp[i], cmd
                 )
             elif self.real_sta_os_type[i] == "macos":
-                cmd = "sudo bash %s/ctzoom.bash %s %s" % (MACOS_ZOOM_DIR, self.upstream_port, "client")
+                cmd = "sudo bash %s/ctzoom.bash %s %s" % (self.mac_dir, self.upstream_port, "client")
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
@@ -4421,6 +4427,26 @@ def main():
             help="Specify if wanted to collect csv from dashboard. Only works with business account",
         )
 
+        # arguments related to the paths of the zoom automation scripts on real client stations
+        parser.add_argument(
+            "--window_dir",
+            type=str,
+            default=WINDOWS_ZOOM_DIR,
+            help="Directory on Windows real client stations where zoom.bat is deployed",
+        )
+        parser.add_argument(
+            "--linux_dir",
+            type=str,
+            default=LINUX_ZOOM_DIR,
+            help="Directory on Linux real client stations where ctzoom.bash is deployed",
+        )
+        parser.add_argument(
+            "--mac_dir",
+            type=str,
+            default=MACOS_ZOOM_DIR,
+            help="Directory on macOS real client stations where ctzoom.bash is deployed",
+        )
+
         # Arguments related to robo feature
         robo_group = parser.add_argument_group(
             "Robo Arguments", "Arguments related to robot movement and coordinates"
@@ -4604,6 +4630,9 @@ def main():
             cycles=args.cycles,
             bssids=bssids,
             do_roam=args.do_roam,
+            window_dir=args.window_dir,
+            linux_dir=args.linux_dir,
+            mac_dir=args.mac_dir,
         )
         if args.download_csv:
             zoom_automation.download_csv = True
