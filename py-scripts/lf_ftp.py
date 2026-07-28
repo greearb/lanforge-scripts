@@ -1262,6 +1262,10 @@ class FtpTest(LFCliBase):
                                  "ending the monitor loop gracefully; the test will continue with "
                                  "the data collected so far.")
                     self.all_devices_stopped = True
+                    # Mark the WebUI as completed instead of leaving it at a later planned
+                    # navigation state.
+                    if self.robot_test:
+                        self.robot_obj.update_nav_data_for_all_cxs_stopped()
                     break
 
             self.data["client"] = self.cx_list
