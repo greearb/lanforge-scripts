@@ -162,10 +162,16 @@ class TeamsAutomation(Realm):
         cycles=None,
         bssids=None,
         enable_mobile_stats=False,
+        window_dir=WINDOWS_TEAMS_DIR,
+        linux_dir=LINUX_TEAMS_DIR,
+        mac_dir=MACOS_TEAMS_DIR,
     ):
         super().__init__(lfclient_host=lanforge_ip)
         self.app = Flask(__name__)
         self.lanforge_ip = lanforge_ip
+        self.window_dir = window_dir
+        self.linux_dir = linux_dir
+        self.mac_dir = mac_dir
         self.duration = duration
         self.upstream_port = upstream_port
         self.no_pre_cleanup = no_pre_cleanup
@@ -368,15 +374,15 @@ class TeamsAutomation(Realm):
             exit(0)
 
         if self.real_sta_os_types[0] == "windows":
-            cmd = fr'"{WINDOWS_TEAMS_DIR}\teams.bat" --ip {self.upstream_port} host'
+            cmd = fr'"{self.window_dir}\teams.bat" --ip {self.upstream_port} host'
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         elif self.real_sta_os_types[0] == 'linux':
             cmd = "su -l lanforge %s/ctteams.bash %s %s %s" % (
-                LINUX_TEAMS_DIR, self.wifi_interfaces_list[0], self.upstream_port, "host"
+                self.linux_dir, self.wifi_interfaces_list[0], self.upstream_port, "host"
             )
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         elif self.real_sta_os_types[0] == 'macos':
-            cmd = "sudo bash %s/ctteams.bash %s %s" % (MACOS_TEAMS_DIR, self.upstream_port, "host")
+            cmd = "sudo bash %s/ctteams.bash %s %s" % (self.mac_dir, self.upstream_port, "host")
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[0], cmd)
         self.generic_endps_profile.start_cx()
         time.sleep(5)
@@ -536,19 +542,19 @@ class TeamsAutomation(Realm):
 
         for i in range(1, len(self.real_sta_os_types)):
             if self.real_sta_os_types[i] == "windows":
-                cmd = fr'"{WINDOWS_TEAMS_DIR}\teams.bat" --ip {self.upstream_port} client'
+                cmd = fr'"{self.window_dir}\teams.bat" --ip {self.upstream_port} client'
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
             elif self.real_sta_os_types[i] == 'linux':
                 cmd = "su -l lanforge %s/ctteams.bash %s %s %s" % (
-                    LINUX_TEAMS_DIR, self.wifi_interfaces_list[i], self.upstream_port, "client"
+                    self.linux_dir, self.wifi_interfaces_list[i], self.upstream_port, "client"
                 )
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
             elif self.real_sta_os_types[i] == 'macos':
-                cmd = "sudo bash %s/ctteams.bash %s %s" % (MACOS_TEAMS_DIR, self.upstream_port, "client")
+                cmd = "sudo bash %s/ctteams.bash %s %s" % (self.mac_dir, self.upstream_port, "client")
                 self.generic_endps_profile.set_cmd(
                     self.generic_endps_profile.created_endp[i], cmd
                 )
@@ -2262,6 +2268,26 @@ def main():
             help="Used to specify whether to collect mobile stats through chrome browser based UI automation or not",
         )
 
+        # arguments related to the paths of the teams automation scripts on real client stations
+        optional.add_argument(
+            "--window_dir",
+            type=str,
+            default=WINDOWS_TEAMS_DIR,
+            help="Directory on Windows real client stations where teams.bat is deployed",
+        )
+        optional.add_argument(
+            "--linux_dir",
+            type=str,
+            default=LINUX_TEAMS_DIR,
+            help="Directory on Linux real client stations where ctteams.bash is deployed",
+        )
+        optional.add_argument(
+            "--mac_dir",
+            type=str,
+            default=MACOS_TEAMS_DIR,
+            help="Directory on macOS real client stations where ctteams.bash is deployed",
+        )
+
         robo.add_argument("--robo_ip", type=str, help="Specify the robo ip")
         robo.add_argument(
             "--coordinates",
@@ -2338,6 +2364,9 @@ def main():
             bssids=args.bssids,
             rotations_enabled=rotations_enabled,
             enable_mobile_stats=args.enable_mobile_stats,
+            window_dir=args.window_dir,
+            linux_dir=args.linux_dir,
+            mac_dir=args.mac_dir,
         )
 
         teams.upstream_port = teams.change_port_to_ip(args.upstream_port)
