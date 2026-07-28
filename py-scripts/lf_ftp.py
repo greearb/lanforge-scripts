@@ -1160,7 +1160,14 @@ class FtpTest(LFCliBase):
     # FOR WEB-UI // function usd to fetch runtime values and fill the csv.
 
     def monitor_for_runtime_csv(self):
-        self.monitoring_start_time = datetime.now()
+        if self.do_bandsteering:
+            # Band steering invokes this function repeatedly as a per-tick callback within one
+            # continuous session, so only set this once for the whole session.
+            if self.monitoring_start_time is None:
+                self.monitoring_start_time = datetime.now()
+        else:
+            # Non-bandsteering flows restart the grace period on every call.
+            self.monitoring_start_time = datetime.now()
         time_now = datetime.now()
         start_time = time_now.strftime("%d/%m %I:%M:%S %p")
         duration = self.traffic_duration
