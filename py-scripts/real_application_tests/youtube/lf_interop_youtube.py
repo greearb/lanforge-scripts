@@ -171,6 +171,10 @@ RealDevice = lf_base_interop_profile.RealDevice
 
 from IOT.iot_helper import start_iot_thread, with_iot_params_in_table, add_iot_report_section  # noqa: E402
 
+WINDOWS_REAL_APP_DIR = r".\local\real_application_test\youtube"
+LINUX_REAL_APP_DIR = "./local/real_application_test/youtube"
+MACOS_REAL_APP_DIR = "./local/real_application_test/youtube"
+
 
 class Youtube(Realm):
     """
@@ -210,7 +214,10 @@ class Youtube(Realm):
                  current_cord="",
                  current_angle="NA",
                  rotations_enabled=False,
-                 scoring=False
+                 scoring=False,
+                 windows_dir=WINDOWS_REAL_APP_DIR,
+                 linux_dir=LINUX_REAL_APP_DIR,
+                 mac_dir=MACOS_REAL_APP_DIR
                  ):
         """
         Initialize the YouTube streaming test parameters.
@@ -225,6 +232,9 @@ class Youtube(Realm):
             ui_report_dir (str): Directory path to store webUI reports.
             debug (bool): Enable debugging output if True.
             stats_api_response (dict): Placeholder for API response statistics.
+            windows_dir (str): YouTube application directory on Windows clients.
+            linux_dir (str): YouTube application directory on Linux clients.
+            mac_dir (str): YouTube application directory on macOS clients.
         """
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
@@ -237,6 +247,9 @@ class Youtube(Realm):
         self.lfclient_port = port
         self.debug = debug
         self.scoring = scoring
+        self.windows_dir = windows_dir
+        self.linux_dir = linux_dir
+        self.mac_dir = mac_dir
         self.sta_list = sta_list
         self.real_sta_list = []
         self.real_sta_data_dict = {}
@@ -409,14 +422,43 @@ class Youtube(Realm):
 
         for i in range(0, len(self.real_sta_os_types)):
             if self.real_sta_os_types[i] == 'windows':
-                cmd = "youtube_stream.bat --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = (
+                    fr'"{self.windows_dir}\youtube_stream.bat" '
+                    '--url "%s" --host "%s" --device_name "%s" --duration %s --res "%s"'
+                    % (
+                        self.url,
+                        self.upstream_port,
+                        self.real_sta_hostname[i],
+                        self.duration,
+                        self.resolution,
+                    )
+                )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_types[i] == 'linux':
-                cmd = "su -l lanforge  ctyt.bash %s %s %s %s %s %s" % (self.wifi_interface_list[i], self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = (
+                    f"su -l lanforge {self.linux_dir}/ctyt.bash "
+                    "%s %s %s %s %s %s"
+                ) % (
+                    self.wifi_interface_list[i],
+                    self.url,
+                    self.upstream_port,
+                    self.real_sta_hostname[i],
+                    self.duration,
+                    self.resolution,
+                )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
             elif self.real_sta_os_types[i] == 'macos':
-                cmd = "sudo bash ctyt.bash --url %s --host %s --device_name %s --duration %s --res %s" % (self.url, self.upstream_port, self.real_sta_hostname[i], self.duration, self.resolution)
+                cmd = (
+                    f"sudo bash {self.mac_dir}/ctyt.bash "
+                    "--url %s --host %s --device_name %s --duration %s --res %s"
+                ) % (
+                    self.url,
+                    self.upstream_port,
+                    self.real_sta_hostname[i],
+                    self.duration,
+                    self.resolution,
+                )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
         if self.generic_endps_profile.create(ports=self.lanforge_port_list, sleep_time=.5, real_client_os_types=self.lanforge_os_type,):
@@ -2549,6 +2591,12 @@ NOTES:
         optional.add_argument('--no_post_cleanup', action="store_true", help='specify this flag to stop cleaning up generic cxs after the test')
         optional.add_argument('--debug', action="store_true", help='Enable debugging')
         optional.add_argument('--mgr_port', type=str, default=8080, help='port on which LANforge HTTP service is running')
+        optional.add_argument('--windows_dir', default=WINDOWS_REAL_APP_DIR,
+                              help='YouTube application directory on Windows clients')
+        optional.add_argument('--linux_dir', default=LINUX_REAL_APP_DIR,
+                              help='YouTube application directory on Linux clients')
+        optional.add_argument('--mac_dir', default=MACOS_REAL_APP_DIR,
+                              help='YouTube application directory on macOS clients')
         parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
         parser.add_argument('--res', default='Auto', help="to set resolution to  144p,240p,720p")
         parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
@@ -2740,7 +2788,10 @@ NOTES:
                 do_bandsteering=args.do_bandsteering,
                 bssids=bssids,
                 rotations_enabled=rotations_enabled,
-                scoring=args.scoring)
+                scoring=args.scoring,
+                windows_dir=args.windows_dir,
+                linux_dir=args.linux_dir,
+                mac_dir=args.mac_dir)
             youtube.start_flask_server()
             args.upstream_port = youtube.change_port_to_ip(args.upstream_port)
 
