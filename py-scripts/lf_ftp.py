@@ -284,6 +284,7 @@ class FtpTest(LFCliBase):
         self.missing_device_logged = set()
         self.cx_status_log = {}
         self.monitoring_start_time = None
+        self.all_devices_stopped = False
         self.uc_min = []
         self.uc_max = []
         self.url_data = []
@@ -1187,6 +1188,13 @@ class FtpTest(LFCliBase):
             client_id_list.append('.'.join(r_id[:2]))
         monitor_charge_time = current_time
         while (current_time < endtime):
+            if self.all_devices_stopped:
+                # An earlier call already gave up waiting for devices to recover. Band steering
+                # invokes this function repeatedly as its own monitor_function tick, so return
+                # immediately instead of re-running the 40s recovery wait on every tick.
+                if self.do_bandsteering:
+                    return test_stopped_by_user
+                break
             # If robot test mode is enabled, periodically check if a battery pause is needed
             if self.robot_test:
                 # Check if enough time has passed to trigger a battery check (300 sec)
@@ -1246,6 +1254,7 @@ class FtpTest(LFCliBase):
                     logger.error("No devices responded within 40 seconds during monitoring, "
                                  "ending the monitor loop gracefully; the test will continue with "
                                  "the data collected so far.")
+                    self.all_devices_stopped = True
                     break
 
             self.data["client"] = self.cx_list
@@ -3313,16 +3322,19 @@ class FtpTest(LFCliBase):
             self.robot_obj.do_bandsteering = True
             self.start(False, False)
             for coordinate in cycle_coords:
-                if test_stopped_by_user:
+                if test_stopped_by_user or self.all_devices_stopped:
                     break
                 # Check for battery status before moving to next coordinate
                 if_paused, test_stopped_by_user, test_status = self.robot_obj.wait_for_battery(monitor_function=lambda: self.monitor_for_runtime_csv())
                 # If test is stopped by user during battery wait
-                if test_stopped_by_user:
+                if test_stopped_by_user or self.all_devices_stopped:
                     break
                 robo_moved, abort, test_status = self.robot_obj.move_to_coordinate(coordinate, monitor_function=lambda: self.monitor_for_runtime_csv())
                 # If robot failed to reach the coordinate
                 if abort:
+                    break
+                if self.all_devices_stopped:
+                    logger.warning("Band-steering test stopped because no devices recovered within 40 seconds.")
                     break
                 if robo_moved:
                     logger.info("Reached the coordinate {}".format(coordinate))
@@ -3331,7 +3343,9 @@ class FtpTest(LFCliBase):
             return
 
         for coordinate in range(len(self.coordinate_list)):
-            if test_stopped_by_user:
+            if test_stopped_by_user or self.all_devices_stopped:
+                if self.all_devices_stopped:
+                    logger.warning("Robot test stopped because no devices recovered within 40 seconds.")
                 break
             # Check for battery status before moving to next coordinate
             if_paused, test_stopped_by_user = self.robot_obj.wait_for_battery()
@@ -3357,6 +3371,8 @@ class FtpTest(LFCliBase):
                 # if rotation mode
                 else:
                     for angle in range(len(self.rotation_list)):
+                        if self.all_devices_stopped:
+                            break
                         # Check for battery status before rotating to next angle
                         is_paused, test_stopped_by_user = self.robot_obj.wait_for_battery()
                         # If test is stopped by user during battery wait
