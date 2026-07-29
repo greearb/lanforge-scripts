@@ -259,6 +259,7 @@ class Youtube(Realm):
         self.generic_endps_profile = self.new_generic_endp_profile()
         self.generic_endps_profile.type = 'youtube'
         self.generic_endps_profile.name_prefix = "yt"
+        self.endpoint_last_status = {}
         self.Devices = None
         self.start_time = None
         self.stop_time = None
@@ -2173,6 +2174,7 @@ class Youtube(Realm):
                             self.start_generic()
                             end_time = datetime.now() + timedelta(minutes=self.duration)
 
+                        self.monitor_endpoint_status_changes()
                         time.sleep(5)
 
                     self.generic_endps_profile.stop_cx()
@@ -2191,6 +2193,7 @@ class Youtube(Realm):
                         self.start_generic()
                         end_time = datetime.now() + timedelta(minutes=self.duration)
 
+                    self.monitor_endpoint_status_changes()
                     time.sleep(5)
 
                 self.generic_endps_profile.stop_cx()
@@ -3096,6 +3099,7 @@ NOTES:
                 end_time = datetime.now() + timedelta(minutes=duration)
 
                 while datetime.now() < end_time or not youtube.check_gen_cx():
+                    youtube.monitor_endpoint_status_changes()
                     time.sleep(1)
 
                 youtube.generic_endps_profile.stop_cx()
