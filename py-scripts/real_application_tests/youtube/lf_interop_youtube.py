@@ -560,7 +560,7 @@ class Youtube(Realm):
         if real_sta_list is None:
             self.real_sta_list, _, _ = real_devices.query_user()
         else:
-            interface_data = self.json_get("/port/all")
+            interface_data = self.json_get_with_retry("/port/all")
             interfaces = interface_data["interfaces"]
             final_device_list = []  # Initialize the list
 
@@ -1711,6 +1711,96 @@ class Youtube(Realm):
         self.report.build_footer()
         self.report.write_html()
         self.report.write_pdf()
+
+    def json_get_with_retry(self, url, wait_time=40, poll_interval=5):
+        """
+        Calls self.json_get(url), retrying every poll_interval seconds for up
+        to wait_time seconds if LANforge returns no response. Aborts the test
+        if it still hasn't responded once wait_time has elapsed.
+        """
+        start_time = time.time()
+        response = self.json_get(url)
+        while response is None and (time.time() - start_time) < wait_time:
+            logger.warning(f"GET {url} returned no response from LANforge; retrying...")
+            time.sleep(poll_interval)
+            response = self.json_get(url)
+
+        if response is None:
+            logger.error(
+                f"GET {url} returned no response from LANforge after waiting "
+                f"{wait_time} seconds. Aborting test."
+            )
+            exit(1)
+
+        return response
+
+    def monitor_endpoint_status_changes(self, wait_time=40, poll_interval=5):
+        """
+        Checks the current status of every generic endpoint and, only the
+        first time an endpoint's status changes, logs a message and appends
+        a row (timestamp, endpoint_name, status) to
+        endpoint_status_changes.csv. Repeated polls of an unchanged status
+        are not logged or written again.
+
+        If every created endpoint is missing from the response, retries
+        every poll_interval seconds for up to wait_time seconds. Aborts the
+        test if still none of the created endpoints have responded once
+        wait_time has elapsed.
+        """
+        current_path = self.ui_report_dir if self.do_webUI else os.path.dirname(os.path.abspath(__file__))
+        csv_file = os.path.join(current_path, "endpoint_status_changes.csv")
+        if csv_file not in self.devices_list:
+            self.devices_list.append(csv_file)
+        created_endp = self.generic_endps_profile.created_endp
+
+        start_time = time.time()
+        endpoint_data = {}
+        while True:
+            for gen_endp in created_endp:
+                generic_endpoint = self.json_get(f"/generic/{gen_endp}")
+                if generic_endpoint and "endpoint" in generic_endpoint:
+                    endpoint_data[gen_endp] = generic_endpoint
+
+            if endpoint_data or (time.time() - start_time) >= wait_time:
+                break
+
+            logger.warning(
+                "No data received for any of the created endpoints; retrying..."
+            )
+            time.sleep(poll_interval)
+
+        if not endpoint_data:
+            logger.error(
+                f"No data received for any of the created endpoints after waiting "
+                f"{wait_time} seconds. Aborting test."
+            )
+            exit(1)
+
+        for gen_endp, generic_endpoint in endpoint_data.items():
+            current_status = generic_endpoint["endpoint"].get("status", "")
+            previous_status = self.endpoint_last_status.get(gen_endp)
+
+            if current_status == previous_status:
+                continue
+
+            logger.info(
+                f"Endpoint {gen_endp} status changed to: {current_status}"
+            )
+
+            file_exists = os.path.isfile(csv_file) and os.path.getsize(csv_file) > 0
+            with open(csv_file, mode="a", newline="") as f:
+                writer = csv.writer(f)
+                if not file_exists:
+                    writer.writerow(["timestamp", "endpoint_name", "status"])
+                writer.writerow(
+                    [
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        gen_endp,
+                        current_status,
+                    ]
+                )
+
+            self.endpoint_last_status[gen_endp] = current_status
 
     def check_gen_cx(self):
         try:
