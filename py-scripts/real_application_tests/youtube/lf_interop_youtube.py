@@ -1847,9 +1847,21 @@ class Youtube(Realm):
         if upstream_port.count('.') != 3:
             target_port_list = self.name_to_eid(upstream_port)
             shelf, resource, port, _ = target_port_list
+            response = self.json_get_with_retry(f'/port/{shelf}/{resource}/{port}?fields=ip')
             try:
-                target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
+                target_port_ip = response['interface']['ip']
                 upstream_port = target_port_ip
+            except KeyError as e:
+                logger.error(
+                    "/port/%s/%s/%s/?fields=ip response is not in the expected format, missing key %s. "
+                    "Data received:\n%s",
+                    shelf,
+                    resource,
+                    port,
+                    e,
+                    json.dumps(response, indent=2, default=str),
+                )
+                exit(1)
             except Exception as e:
                 logging.warning(f'Could not resolve IP for port {upstream_port}: {e}. Proceeding with the given upstream_port {upstream_port}.')
                 logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
@@ -1959,37 +1971,52 @@ class Youtube(Realm):
         Returns:
             None
         """
-        interop_data = self.json_get('/adb')
-        interop_mobile_data = interop_data.get('devices', {})
+        interop_data = self.json_get_with_retry('/adb')
+        try:
+            interop_mobile_data = interop_data.get('devices', {})
 
-        if isinstance(interop_mobile_data, dict):
-            for user in self.user_list:
-                if user != '':
-                    if interop_mobile_data.get('user-name') == user:
+            if isinstance(interop_mobile_data, dict):
+                for user in self.user_list:
+                    if user != '':
+                        if interop_mobile_data.get('user-name') == user:
 
-                        serial = interop_mobile_data.get('name', '')
-                        resource = serial.split('.')[1]
-                        serial_no = serial.split('.')[2]
-                        self.serial_list.append(serial_no)
-                        lanforge_port = f"1.{resource}.eth0"
-                        self.lanforge_port_list.add(lanforge_port)
+                            serial = interop_mobile_data.get('name', '')
+                            resource = serial.split('.')[1]
+                            serial_no = serial.split('.')[2]
+                            self.serial_list.append(serial_no)
+                            lanforge_port = f"1.{resource}.eth0"
+                            self.lanforge_port_list.add(lanforge_port)
 
-        else:
-            for user in self.user_list:
-                if user != '':
-                    for mobile_device in interop_mobile_data:
-                        for serial, device_data in mobile_device.items():
-                            if device_data.get('user-name') == user:
-                                resource = serial.split('.')[1]
-                                serial_no = serial.split('.')[2]
-                                self.serial_list.append(serial_no)
-                                lanforge_port = f"1.{resource}.eth0"
-                                self.lanforge_port_list.add(lanforge_port)
-                                break
+            else:
+                for user in self.user_list:
+                    if user != '':
+                        for mobile_device in interop_mobile_data:
+                            for serial, device_data in mobile_device.items():
+                                if device_data.get('user-name') == user:
+                                    resource = serial.split('.')[1]
+                                    serial_no = serial.split('.')[2]
+                                    self.serial_list.append(serial_no)
+                                    lanforge_port = f"1.{resource}.eth0"
+                                    self.lanforge_port_list.add(lanforge_port)
+                                    break
 
-        self.lanforge_port_list = list(self.lanforge_port_list)
-        self.lanforge_os_type = ["Linux"] * len(self.lanforge_port_list)
-        self.serial_list_str = ','.join(self.serial_list)
+            self.lanforge_port_list = list(self.lanforge_port_list)
+            self.lanforge_os_type = ["Linux"] * len(self.lanforge_port_list)
+            self.serial_list_str = ','.join(self.serial_list)
+        except KeyError as e:
+            logger.error(
+                "/adb response is not in the expected format, missing key %s. "
+                "Data received:\n%s",
+                e,
+                json.dumps(interop_data, indent=2, default=str),
+            )
+            exit(1)
+        except Exception as e:
+            logger.error(
+                f"Unexpected error while parsing /adb response: {e}",
+                exc_info=True,
+            )
+            exit(1)
 
     def get_device_data(self):
         """
@@ -2034,24 +2061,47 @@ class Youtube(Realm):
         self.user_list = []
 
         # Step 1: Retrieve information about all resources
-        response = self.json_get("/resource/all")
-        resource_data_list = response.get("resources", [])
+        response = self.json_get_with_retry("/resource/all")
+        try:
+            resource_data_list = response.get("resources", [])
 
-        # Step 2: Match user-specified resources with available resources in order.
-        for user_resource in user_resources:
-            for resource_entry in resource_data_list:
-                for resource_key, resource_values in resource_entry.items():
-                    if resource_key == user_resource:
-                        self.device_names.append(resource_values['hostname'])
-                        ports_list.append({
-                            'eid': resource_values['eid'],
-                            'ctrl-ip': resource_values['ctrl-ip']
-                        })
-                        self.user_list.append(resource_values['user'])
-                        break
+            # Step 2: Match user-specified resources with available resources in order.
+            for user_resource in user_resources:
+                for resource_entry in resource_data_list:
+                    for resource_key, resource_values in resource_entry.items():
+                        if resource_key == user_resource:
+                            self.device_names.append(resource_values['hostname'])
+                            ports_list.append({
+                                'eid': resource_values['eid'],
+                                'ctrl-ip': resource_values['ctrl-ip']
+                            })
+                            self.user_list.append(resource_values['user'])
+                            break
+                    else:
+                        continue
+                    break
                 else:
-                    continue
-                break
+                    logger.error(
+                        f"Resource {user_resource} not found in LANforge response. Aborting test."
+                    )
+                    logger.info(
+                        "LANforge resources fetched from /resource/all:\n%s",
+                        json.dumps(resource_data_list, indent=2, default=str),
+                    )
+                    exit(1)
+        except KeyError as e:
+            logger.error(
+                f"/resource/all response is not in the expected format, missing key {e}. "
+                "Data received:\n%s",
+                json.dumps(response, indent=2, default=str),
+            )
+            exit(1)
+        except Exception as e:
+            logger.error(
+                f"Unexpected error while parsing /resource/all response: {e}",
+                exc_info=True,
+            )
+            exit(1)
 
         self.mac_list = []
         self.rssi_list = []
@@ -2060,26 +2110,40 @@ class Youtube(Realm):
         self.wifi_interface_list = []
 
         # Step 3: Retrieve port information
-        response_port = self.json_get("/port/all")
-        interfaces_list = response_port.get('interfaces', [])
+        response_port = self.json_get_with_retry("/port/all")
+        try:
+            interfaces_list = response_port.get('interfaces', [])
 
-        # Step 4: Match ports associated with retrieved resources in the order of ports_list
-        for port_entry in ports_list:
-            expected_eid = port_entry['eid']
-            matched_ports = []
+            # Step 4: Match ports associated with retrieved resources in the order of ports_list
+            for port_entry in ports_list:
+                expected_eid = port_entry['eid']
+                matched_ports = []
 
-            for interface in interfaces_list:
-                for port, port_data in interface.items():
-                    if '.'.join(port.split('.')[:2]) == expected_eid:
-                        matched_ports.append((port, port_data))
+                for interface in interfaces_list:
+                    for port, port_data in interface.items():
+                        if '.'.join(port.split('.')[:2]) == expected_eid:
+                            matched_ports.append((port, port_data))
 
-            for port_name, port_data in matched_ports:
-                if port_data.get("parent dev") == 'wiphy0' and not port_data.get('down') and port_data.get('ip') != '0.0.0.0':
-                    self.mac_list.append(port_data.get("mac"))
-                    self.rssi_list.append(port_data.get("signal"))
-                    self.link_rate_list.append(port_data.get("rx-rate"))
-                    self.ssid_list.append(port_data.get("ssid"))
-                    self.wifi_interface_list.append(port_name.split('.')[2])
+                for port_name, port_data in matched_ports:
+                    if port_data.get("parent dev") == 'wiphy0' and not port_data.get('down') and port_data.get('ip') != '0.0.0.0':
+                        self.mac_list.append(port_data.get("mac"))
+                        self.rssi_list.append(port_data.get("signal"))
+                        self.link_rate_list.append(port_data.get("rx-rate"))
+                        self.ssid_list.append(port_data.get("ssid"))
+                        self.wifi_interface_list.append(port_name.split('.')[2])
+        except KeyError as e:
+            logger.error(
+                f"/port/all response is not in the expected format, missing key {e}. "
+                "Data received:\n%s",
+                json.dumps(response_port, indent=2, default=str),
+            )
+            exit(1)
+        except Exception as e:
+            logger.error(
+                f"Unexpected error while parsing /port/all response: {e}",
+                exc_info=True,
+            )
+            exit(1)
 
     def perform_robo_test(self):
         if self.do_webUI:
