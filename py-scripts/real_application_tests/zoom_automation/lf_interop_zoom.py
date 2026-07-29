@@ -1015,6 +1015,27 @@ class ZoomAutomation(Realm):
 
         return response
 
+    def json_get_with_retry_no_exit(self, url, wait_time=40, poll_interval=5):
+        """
+        Same as json_get_with_retry(), but for callers where the fetched data
+        is best-effort/non-critical: returns None instead of aborting the
+        test if LANforge still hasn't responded once wait_time has elapsed.
+        """
+        start_time = time.time()
+        response = self.json_get(url)
+        while response is None and (time.time() - start_time) < wait_time:
+            logger.warning(f"GET {url} returned no response from LANforge; retrying...")
+            time.sleep(poll_interval)
+            response = self.json_get(url)
+
+        if response is None:
+            logger.error(
+                f"GET {url} returned no response from LANforge after waiting "
+                f"{wait_time} seconds. Continuing without this data."
+            )
+
+        return response
+
     def get_resource_data(self):
         self.ports_list = []
         self.user_list = []
@@ -1675,11 +1696,22 @@ class ZoomAutomation(Realm):
 
         try:
             # Get raw data from LANforge API
-            port_data = self.json_get("/ports/all/")["interfaces"]
-            for port in port_data:
-                interfaces_dict.update(port)
+            response = self.json_get_with_retry_no_exit("/ports/all/")
+            if response:
+                port_data = response["interfaces"]
+                for port in port_data:
+                    interfaces_dict.update(port)
+            else:
+                return {}
+        except KeyError as e:
+            logger.error(
+                f"/ports/all/ response is not in the expected format, missing key {e}. "
+                "Data received:\n%s",
+                json.dumps(response, indent=2, default=str),
+            )
+            return {}
         except Exception as e:
-            logger.error(f"Error fetching port data: {e}")
+            logger.error(f"Error fetching port data: {e}", exc_info=True)
             return {}
 
         # Loop through your managed stations (e.g., sta001, sta002)
@@ -2940,8 +2972,19 @@ class ZoomAutomation(Realm):
             try:
                 target_port_ip = response['interface']['ip']
                 upstream_port = target_port_ip
+            except KeyError as e:
+                logging.error(
+                    f"/port/{shelf}/{resource}/{port} response is not in the expected format, missing key {e}. "
+                    "Data received:\n%s",
+                    json.dumps(response, indent=2, default=str),
+                )
+                exit(1)
             except Exception as e:
-                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}. Exception: {e}')
+                logging.error(
+                    f"Unexpected error while parsing /port/{shelf}/{resource}/{port} response: {e}",
+                    exc_info=True,
+                )
+                exit(1)
             logging.info(f"Upstream port IP {upstream_port}")
         else:
             logging.info(f"Upstream port IP {upstream_port}")
