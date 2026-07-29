@@ -127,8 +127,13 @@ from flask import Flask, request, jsonify
 from threading import Thread
 import traceback
 import threading
+import platform
+import signal
+import subprocess
 from collections import Counter
 import re
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 logger = logging.getLogger(__name__)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
@@ -1111,6 +1116,78 @@ class Youtube(Realm):
         flask_thread = Thread(target=run_flask)
         flask_thread.daemon = True
         flask_thread.start()
+
+    def stop_previous_flask_server(self, port=5002):
+        """Stop processes already listening on the YouTube statistics port."""
+        current_os = platform.system()
+        if current_os not in ["Linux", "Darwin"]:
+            logger.warning(
+                "Unsupported OS %s; cannot automatically clear port %s.",
+                current_os,
+                port,
+            )
+            return
+
+        logger.info("Checking whether port %s is already in use.", port)
+        try:
+            result = subprocess.run(
+                ["lsof", "-t", f"-iTCP:{port}", "-sTCP:LISTEN"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except OSError as exc:
+            logger.warning("Unable to inspect port %s: %s", port, exc)
+            return
+
+        pids = [pid for pid in result.stdout.splitlines() if pid.strip()]
+        if not pids:
+            logger.info("Port %s is clear and ready for the Flask server.", port)
+            return
+
+        for pid_text in pids:
+            try:
+                pid = int(pid_text)
+                logger.warning(
+                    "Stopping previous process %s listening on port %s.",
+                    pid,
+                    port,
+                )
+                os.kill(pid, signal.SIGKILL)
+            except (OSError, ValueError) as exc:
+                logger.warning(
+                    "Could not stop process %s on port %s: %s",
+                    pid_text,
+                    port,
+                    exc,
+                )
+
+    def wait_for_flask(
+        self,
+        url="http://127.0.0.1:5002/youtube_stats",
+        timeout=10,
+    ):
+        """Wait until the YouTube statistics server responds successfully."""
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                with urllib_request.urlopen(url, timeout=1) as response:
+                    if response.status == 200:
+                        logger.info("YouTube statistics server is ready on port 5002.")
+                        return
+            except (urllib_error.URLError, TimeoutError, OSError):
+                time.sleep(1)
+
+        raise RuntimeError(
+            f"YouTube statistics server did not start within {timeout} seconds"
+        )
+
+    def handle_flask_server(self):
+        """Clear port 5002, start Flask, and verify it before the test starts."""
+        self.stop_previous_flask_server(port=5002)
+        time.sleep(5)
+        self.start_flask_server()
+        self.wait_for_flask()
 
     def move_files(self, source_file, dest_dir):
         # Ensure the source file exists
@@ -2946,7 +3023,7 @@ NOTES:
                 windows_dir=args.windows_dir,
                 linux_dir=args.linux_dir,
                 mac_dir=args.mac_dir)
-            youtube.start_flask_server()
+            youtube.handle_flask_server()
             args.upstream_port = youtube.change_port_to_ip(args.upstream_port)
 
             resources = []
