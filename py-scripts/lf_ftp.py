@@ -285,6 +285,7 @@ class FtpTest(LFCliBase):
         self.cx_status_log = {}
         self.monitoring_start_time = None
         self.all_devices_stopped = False
+        self.bandsteering_start_time = None
         self.uc_min = []
         self.uc_max = []
         self.url_data = []
@@ -1160,6 +1161,9 @@ class FtpTest(LFCliBase):
     # FOR WEB-UI // function usd to fetch runtime values and fill the csv.
 
     def monitor_for_runtime_csv(self):
+        if self.do_bandsteering and self.all_devices_stopped:
+            # Exit early to preserve the last valid results.
+            return False
         if self.do_bandsteering:
             # Band steering invokes this function repeatedly as a per-tick callback within one
             # continuous session, so only set this once for the whole session.
@@ -1169,7 +1173,13 @@ class FtpTest(LFCliBase):
             # Non-bandsteering flows restart the grace period on every call.
             self.monitoring_start_time = datetime.now()
         time_now = datetime.now()
-        start_time = time_now.strftime("%d/%m %I:%M:%S %p")
+        if self.do_bandsteering:
+            # Report the session's start, not this tick's timestamp.
+            if self.bandsteering_start_time is None:
+                self.bandsteering_start_time = time_now
+            start_time = self.bandsteering_start_time.strftime("%d/%m %I:%M:%S %p")
+        else:
+            start_time = time_now.strftime("%d/%m %I:%M:%S %p")
         duration = self.traffic_duration
         endtime = time_now + timedelta(seconds=duration)
         end_time = endtime
@@ -1177,6 +1187,9 @@ class FtpTest(LFCliBase):
         current_time = datetime.now()
         self.data = {}
         self.data["url_data"] = []
+        # Seeded so these keys exist even if traffic_duration <= 0 and the loop below never runs.
+        self.data["start_time"] = [start_time] * len(self.cx_list)
+        self.data["end_time"] = [end_time.strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
         client_id_list = []
         test_stopped_by_user = False
         for port in self.input_devices_list:
@@ -1250,13 +1263,14 @@ class FtpTest(LFCliBase):
             # If every CX has stopped responding, retry for up to 40 seconds before giving up
             # on this monitor loop. This does not fail the test: the loop just ends gracefully
             # and execution continues with whatever data was already collected.
+            no_devices_data_found = False
             if self.cx_list and len(self.missing_cx_logged) == len(self.cx_list):
                 logger.warning("All devices have stopped responding during monitoring, retrying "
                                "for up to 40 seconds before ending the monitor loop.")
                 recovery = self.wait_for_any_cx_recovery(timeout=40, poll_interval=5)
                 if recovery == 'stopped':
                     test_stopped_by_user = True
-                    break
+                    no_devices_data_found = True
                 elif recovery == 'timeout':
                     logger.error("No devices responded within 40 seconds during monitoring, "
                                  "ending the monitor loop gracefully; the test will continue with "
@@ -1266,7 +1280,7 @@ class FtpTest(LFCliBase):
                     # navigation state.
                     if self.robot_test:
                         self.robot_obj.update_nav_data_for_all_cxs_stopped()
-                    break
+                    no_devices_data_found = True
 
             self.data["client"] = self.cx_list
             self.data["MAC"] = self.mac_id_list
@@ -1327,6 +1341,9 @@ class FtpTest(LFCliBase):
                 # To update end time at each interval
                 end_time = endtime
             self.data["end_time"] = [end_time.strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
+            if no_devices_data_found:
+                # Record the actual give-up time instead of the never-reached planned end_time.
+                self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
             self.data["remaining_time"] = [[str(int(total_hours)) + " hr and " + str(
                 int(remaining_minutes)) + " min" if int(total_hours) != 0 or int(
                 remaining_minutes) != 0 else '<1 min'][0]] * len(self.cx_list)
@@ -1368,6 +1385,8 @@ class FtpTest(LFCliBase):
             # Reusing monitor logic for band steering, but only need one record per call,
             # so break after first iteration instead of running for full duration.
             if self.do_bandsteering:
+                break
+            if no_devices_data_found:
                 break
             current_time = datetime.now()
         individual_device_csv_names = []
