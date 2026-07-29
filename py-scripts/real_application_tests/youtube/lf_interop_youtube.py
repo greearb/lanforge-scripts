@@ -141,9 +141,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.
 
 # Import LANforge-related modules
 
-# Set up logging
-logger = logging.getLogger(__name__)
-
 # Import LF logger configuration module
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
@@ -263,8 +260,8 @@ class Youtube(Realm):
         self.generic_endps_profile.type = 'youtube'
         self.generic_endps_profile.name_prefix = "yt"
         self.Devices = None
-        self.start_time = ""
-        self.stop_time = ""
+        self.start_time = None
+        self.stop_time = None
         self.do_webUI = do_webUI
         self.ui_report_dir = ui_report_dir
         self.devices = base_RealDevice(manager_ip=self.host, selected_bands=[])
@@ -276,8 +273,7 @@ class Youtube(Realm):
         self.ssid = ssid
         self.security = security
         self.band = band
-        self.start_time = None,
-        self.est_end_time = None,
+        self.est_end_time = None
         self.all_stop = False
         self.keys = []
         self.hostname_os_combination = None
@@ -2478,6 +2474,7 @@ class Youtube(Realm):
 
 
 def main():
+    iot_summary = None
     try:
         help_summary = '''\
         Youtube streaming automation
@@ -2950,7 +2947,6 @@ NOTES:
                 youtube.generic_endps_profile.stop_cx()
                 logging.info("Duration ended")
 
-            iot_summary = None
             if args.iot_test and args.iot_testname:
                 base = os.path.join("results", args.iot_testname)
                 p = os.path.join(base, "iot_summary.json")
