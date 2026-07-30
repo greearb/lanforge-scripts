@@ -262,9 +262,6 @@ class HttpDownload(Realm):
         self.device_issue_log = []
         self.monitor_start_time = None
         self.actual_monitor_duration = 0
-        # Set when a monitor_for_runtime_csv() recovery wait times out with every CX still
-        # unresponsive, so perform_robo() stops moving to further coordinates/rotations instead
-        # of continuing a robot test none of the devices can respond to.
         self.all_devices_stopped = False
 
 # The 'phantom_check' will be handled within the 'get_real_client_list' function
@@ -614,7 +611,7 @@ class HttpDownload(Realm):
         print("precleanup done")
 
     def get_upstream_ip(self):
-        """Gives the upstream ip"""
+        """Gives the upstream ip."""
         data = self.local_realm.json_get("ports/list?fields=IP")
         eid = self.local_realm.name_to_eid(self.upstream)
 
@@ -801,9 +798,6 @@ class HttpDownload(Realm):
                 l4_dict['bytes_rd'].append(0 if not self.tracking_map else self.tracking_map['bytes_rd'][idx])
                 l4_dict['total_err'].append(0 if not self.tracking_map else self.tracking_map['total_err'][idx])
                 l4_dict['status'].append('Stopped')
-                # Don't route through track_cx_status here: the "CX missing" warning/issue above
-                # already records this event, so this just keeps cx_status_log's baseline in
-                # sync without writing a second, redundant issue-log entry.
                 if self.monitoring_elapsed_seconds() >= 10:
                     self.cx_status_log[cx] = 'Stopped'
             elif cx in self.missing_cx_logged:
@@ -827,9 +821,7 @@ class HttpDownload(Realm):
         return (datetime.now() - self.monitor_start_time).total_seconds()
 
     def track_cx_status(self, cx, status):
-        # Ignore CX status for the first 10s of monitoring: CXs are still settling into "Run"
-        # right after the test starts, and treating that startup ramp-up as a real status
-        # change/recovery would be a false positive.
+        """Tracks the CXs status and logs any changes."""
         if not status or self.monitoring_elapsed_seconds() < 10:
             return
         previous = self.cx_status_log.get(cx)
@@ -843,20 +835,14 @@ class HttpDownload(Realm):
         self.cx_status_log[cx] = status
 
     def format_monitoring_duration(self):
+        """Formats the actual monitoring duration into a human-readable string."""
         total_seconds = int(self.actual_monitor_duration)
         minutes, seconds = divmod(total_seconds, 60)
         return "{}m {}s".format(minutes, seconds)
 
     def wait_for_any_cx_recovery(self, timeout=40, poll_interval=5):
         """
-        Polls layer4 data (via get_layer4_data) while every created CX is missing, giving
-        devices a chance to reappear before the caller gives up on this monitoring iteration.
-        Also honors a user-initiated stop from the webgui during the wait, so a stop request
-        isn't delayed by the full retry window.
-
-        Returns 'recovered' as soon as at least one CX responds again, 'stopped' if the user
-        stops the test during the wait, or 'timeout' if `timeout` seconds elapse with every CX
-        still missing.
+        Waits for any of the created CXs to recover (i.e., stop being missing" from the monitoring data) within a specified timeout.
         """
         wait_start = datetime.now()
         created_cx_count = len(self.http_profile.created_cx)
@@ -913,10 +899,8 @@ class HttpDownload(Realm):
         return list(rx_rate), list(bytes_rd)
 
     def monitor_for_runtime_csv(self, duration):
+        """Monitor the Layer 4 connections for a specified duration, collecting data and handling device issues."""
         if self.all_devices_stopped:
-            # A previous call already gave up waiting for devices to recover. Band steering
-            # invokes this function repeatedly as its own per-tick callback, so return
-            # immediately instead of re-running the 40s recovery wait on every tick.
             return True
 
         if self.do_bandsteering:
@@ -925,8 +909,6 @@ class HttpDownload(Realm):
             if self.monitor_start_time is None:
                 self.monitor_start_time = datetime.now()
         else:
-            # Every other flow calls this function once per coordinate/rotation, with CXs
-            # freshly restarted just before each call - restart the grace period each time.
             self.monitor_start_time = datetime.now()
         time_now = datetime.now()
         starttime = time_now.strftime("%d/%m %I:%M:%S %p")
@@ -1002,12 +984,6 @@ class HttpDownload(Realm):
             # total_url_data = self.json_get("layer4/list?fields=total-urls")
             # bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
             l4_dict = self.get_layer4_data()
-
-            # If every CX has stopped responding, retry for up to 40 seconds before giving up
-            # on this monitor loop. This does not fail the test: the data below is still
-            # assembled (get_layer4_data() already fills in zero/previous-value fallbacks for
-            # every CX) so self.data keeps all its expected keys, and the loop only ends
-            # *after* that data is saved, same as the existing webgui-stop check below.
             end_monitor_loop = False
             created_cx_count = len(self.http_profile.created_cx)
             if created_cx_count and len(self.missing_cx_logged) == created_cx_count:
@@ -3489,7 +3465,6 @@ times the file is downloaded.
     # FOR WEBGUI, filling csv at the end to get the last terminal logs
     if args.dowebgui:
         http.copy_reports_to_home_dir()
-    logger.info("successfully ran the http test")
 
 
 if __name__ == '__main__':
