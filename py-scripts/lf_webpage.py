@@ -122,7 +122,6 @@ import asyncio
 from typing import List, Optional
 import csv
 from lf_base_robo import RobotClass
-from lf_interop_utils import resolve_layer4_fields, layer4_fields_query
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -141,10 +140,6 @@ DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
-# Logical layer4 fields read from a CX record by get_layer4_data()/get_all_l4_data(), resolved
-# to this server's actual column names via lf_interop_utils.resolve_layer4_fields().
-L4_FIELD_KEYS = ('uc_avg', 'uc_max', 'uc_min', 'total_urls', 'rx_rate_1m', 'bytes_rd', 'total_err', 'status')
 
 iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
 if os.path.exists(iot_scripts_path):
@@ -267,7 +262,6 @@ class HttpDownload(Realm):
         self.device_issue_log = []
         self.monitor_start_time = None
         self.actual_monitor_duration = 0
-        self.l4_fields = None
         # Set when a monitor_for_runtime_csv() recovery wait times out with every CX still
         # unresponsive, so perform_robo() stops moving to further coordinates/rotations instead
         # of continuing a robot test none of the devices can respond to.
@@ -748,11 +742,8 @@ class HttpDownload(Realm):
             dict: mapping of metric names to lists of values, one per CX.
         """
         cx_list = list(self.http_profile.created_cx.keys())
-        if self.l4_fields is None and cx_list:
-            self.l4_fields = resolve_layer4_fields(self.local_realm, cx_list[0], L4_FIELD_KEYS)
-        fields = self.l4_fields or resolve_layer4_fields(self.local_realm, None, L4_FIELD_KEYS)
         try:
-            url_str = 'layer4/{}/list?fields={}'.format(','.join(cx_list), layer4_fields_query(fields, L4_FIELD_KEYS))
+            url_str = 'layer4/{}/list?fields=uc-avg,uc-max,uc-min,total-urls,rx rate (1m),bytes-rd,total-err,status'.format(','.join(cx_list))
             response = self.local_realm.json_get(url_str)
             endpoint_data = response.get("endpoint") if response else None
             if endpoint_data is None:
@@ -779,15 +770,15 @@ class HttpDownload(Realm):
             for i in endpoint_data:
                 for cx_name, value in i.items():
                     if cx == cx_name:
-                        l4_dict['uc_avg_data'].append(value[fields['uc_avg']])
-                        l4_dict['uc_max_data'].append(value[fields['uc_max']])
-                        l4_dict['uc_min_data'].append(value[fields['uc_min']])
-                        l4_dict['url_times'].append(value[fields['total_urls']])
-                        l4_dict['rx_rate'].append(value[fields['rx_rate_1m']])
-                        l4_dict['bytes_rd'].append(value[fields['bytes_rd']])
-                        l4_dict['total_err'].append(value[fields['total_err']])
-                        l4_dict['status'].append(value.get(fields['status'], ''))
-                        self.track_cx_status(cx, value.get(fields['status'], ''))
+                        l4_dict['uc_avg_data'].append(value['uc-avg'])
+                        l4_dict['uc_max_data'].append(value['uc-max'])
+                        l4_dict['uc_min_data'].append(value['uc-min'])
+                        l4_dict['url_times'].append(value['total-urls'])
+                        l4_dict['rx_rate'].append(value['rx rate (1m)'])
+                        l4_dict['bytes_rd'].append(value['bytes-rd'])
+                        l4_dict['total_err'].append(value['total-err'])
+                        l4_dict['status'].append(value.get('status', ''))
+                        self.track_cx_status(cx, value.get('status', ''))
                         cx_found = True
             if not cx_found:
                 if cx not in self.missing_cx_logged:
@@ -1167,12 +1158,11 @@ class HttpDownload(Realm):
         Returns:
             dict: A dictionary mapping each Layer 4 field to a list of values in the order of CXs.
         """
-        rx_rate_1m_field = (self.l4_fields or {}).get('rx_rate_1m', 'rx-rate-1m')
         fields = [
             "name", "eid", "type", "status", "total-urls", "urls/s", "bytes-rd", "bytes-wr",
             "total-buffers", "total-rebuffers", "total-wait-time", "video-format-bitrate",
             "audio-format-bitrate", "frame-rate", "video-quality", "tx rate", "tx-rate-1m",
-            "rx rate", rx_rate_1m_field, "fb-min", "fb-avg", "fb-max", "uc-min", "uc-avg",
+            "rx rate", "rx rate (1m)", "fb-min", "fb-avg", "fb-max", "uc-min", "uc-avg",
             "uc-max", "dns-min", "dns-avg", "dns-max", "total-err", "bad-proto", "bad-url",
             "rslv-p", "rslv-h", "!conn", "timeout", "nf (4xx)", "http-r", "http-p", "http-t",
             "acc. denied", "ftp-host", "ftp-stor", "ftp-port", "write", "read", "redir",
