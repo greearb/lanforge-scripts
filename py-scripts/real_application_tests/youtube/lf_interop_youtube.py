@@ -1102,12 +1102,25 @@ class Youtube(Realm):
             API endpoint to read YouTube data from CSV files and return the last row for each device.
             """
             device_data = {}
-            for csv_file_path in self.devices_list:
+            for csv_file_path in list(self.devices_list):
+                if not csv_file_path.endswith("_youtube_stats_report.csv"):
+                    continue
                 if not os.path.isfile(csv_file_path):
                     continue
-                df = pd.read_csv(csv_file_path)
+
+                try:
+                    df = pd.read_csv(csv_file_path)
+                except (OSError, pd.errors.EmptyDataError, pd.errors.ParserError) as exc:
+                    logger.warning(
+                        "Unable to read live YouTube data from %s: %s",
+                        csv_file_path,
+                        exc,
+                    )
+                    continue
+
                 if not df.empty:
-                    last_row = df.iloc[-1].to_dict()
+                    # Convert NumPy scalars and NaN into values Flask can encode.
+                    last_row = json.loads(df.iloc[-1].to_json())
                     device_name = os.path.basename(csv_file_path).split('_youtube_stats_report')[0]
                     device_data[device_name] = last_row
             return jsonify({"result": device_data}), 200
