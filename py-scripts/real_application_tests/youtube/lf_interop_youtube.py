@@ -908,6 +908,11 @@ class Youtube(Realm):
         2. Sets the start time (`self.start_time`) to the current datetime.
 
         """
+        # A robot test can reuse endpoint names across coordinates and angles.
+        # Do not carry completion-wait timers from an earlier run into this one.
+        self._gen_cx_stall_since = {}
+        self._gen_cx_timed_out = set()
+
         # Start the connections of generic endpoints
         self.generic_endps_profile.start_cx()
         # Set the start time to the current datetime
@@ -1886,25 +1891,61 @@ class Youtube(Realm):
 
             self.endpoint_last_status[gen_endp] = current_status
 
-    def check_gen_cx(self):
-        try:
+    def check_gen_cx(self, stall_timeout=300):
+        """Return whether all generic endpoints have finished.
 
-            for gen_endp in self.generic_endps_profile.created_endp:
-                generic_endpoint = self.json_get(f'/generic/{gen_endp}')
+        Once the configured test duration ends, callers use this method to wait
+        for every endpoint to enter an idle state. An endpoint that remains
+        non-idle, disappears, or cannot be queried for ``stall_timeout`` seconds
+        is treated as resolved so one bad endpoint cannot block cleanup and
+        report generation indefinitely.
+        """
+        if not hasattr(self, "_gen_cx_stall_since"):
+            self._gen_cx_stall_since = {}
+        if not hasattr(self, "_gen_cx_timed_out"):
+            self._gen_cx_timed_out = set()
+
+        idle_statuses = {"Stopped", "WAITING", "NO-CX", "PHANTOM", "FTM_WAIT"}
+        now = time.monotonic()
+        ready = True
+
+        try:
+            for gen_endp in set(self.generic_endps_profile.created_endp):
+                generic_endpoint = self.json_get(f"/generic/{gen_endp}")
 
                 if not generic_endpoint or "endpoint" not in generic_endpoint:
-                    logging.error(f"Error fetching endpoint data for {gen_endp}")
-                    return False
+                    endp_status = None
+                else:
+                    endp_status = generic_endpoint["endpoint"].get("status", "")
 
-                endp_status = generic_endpoint["endpoint"].get("status", "")
+                if endp_status in idle_statuses:
+                    self._gen_cx_stall_since.pop(gen_endp, None)
+                    self._gen_cx_timed_out.discard(gen_endp)
+                    continue
 
-                if endp_status not in ["Stopped", "WAITING", "NO-CX", "PHANTOM", "FTM_WAIT"]:
-                    return False
+                if gen_endp in self._gen_cx_timed_out:
+                    continue
 
-            return True
-        except Exception as e:
-            logging.error(f"Error in check_gen_cx funtion {e}", exc_info=True)
-            logging.info(f"Generic endpoint data {generic_endpoint}")
+                stall_start = self._gen_cx_stall_since.setdefault(gen_endp, now)
+                stalled_for = now - stall_start
+                if stalled_for >= stall_timeout:
+                    logger.warning(
+                        "Endpoint %s remained unresolved with status %r for %.0f "
+                        "seconds (limit: %s); continuing without waiting for it",
+                        gen_endp,
+                        endp_status,
+                        stalled_for,
+                        stall_timeout,
+                    )
+                    self._gen_cx_timed_out.add(gen_endp)
+                    continue
+
+                ready = False
+
+            return ready
+        except Exception:
+            logger.exception("Error while checking generic endpoint status")
+            return False
 
     def change_port_to_ip(self, upstream_port):
         """
