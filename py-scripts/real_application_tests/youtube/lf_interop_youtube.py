@@ -126,7 +126,6 @@ from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 from threading import Thread
 import traceback
-import threading
 import platform
 import signal
 import subprocess
@@ -482,7 +481,11 @@ class Youtube(Realm):
                 self.host,
                 self.resolution,
             )
-            logging.info(f"Setting command for Android devices: {cmd}")
+            logging.info(
+                "Configured YouTube streaming command for %d Android device(s)",
+                len(self.lanforge_os_type),
+            )
+            logger.debug("Android YouTube command: %s", cmd)
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[-(i + 1)], cmd)
 
     def get_test_results_data(self, test_results, group):
@@ -909,6 +912,10 @@ class Youtube(Realm):
         self.generic_endps_profile.start_cx()
         # Set the start time to the current datetime
         self.start_time = datetime.now()
+        logging.info(
+            "YouTube streaming started at %s",
+            datetime.now().astimezone().isoformat(timespec="seconds"),
+        )
 
     def stop_generic_cx(self,):
         self.generic_endps_profile.stop_cx()
@@ -969,18 +976,21 @@ class Youtube(Realm):
         @app.route('/stop_yt', methods=['GET'])
         def stop_yt():
             """
-            Endpoint to stop the YouTube test and trigger a graceful application shutdown.
+            Request that the main test flow stop and perform its normal cleanup
+            and report generation.
             """
-            logging.info("Stopping the test through web UI")
+            if self.stop_signal:
+                return jsonify({"message": "YouTube test stop is already in progress"}), 200
 
-            response = jsonify({"message": "Stopping Youtube Test"})
-            response.status_code = 200
+            logger.info("Stopping the test through WebUI")
+            self.stop_signal = True
 
-            # Start shutdown in a separate thread
-            shutdown_thread = threading.Thread(target=self.shutdown)
-            shutdown_thread.start()
+            try:
+                self.generic_endps_profile.stop_cx()
+            except Exception:
+                logger.exception("Unable to stop generic CXs after WebUI stop request")
 
-            return response
+            return jsonify({"message": "YouTube test stop requested"}), 200
 
         @app.route('/youtube_stats', methods=['GET', 'POST'])
         def youtube_stats():
@@ -1192,12 +1202,21 @@ class Youtube(Realm):
     def move_files(self, source_file, dest_dir):
         # Ensure the source file exists
         if not os.path.isfile(source_file):
-            logging.ERROR(f"Source file '{source_file}' does not exist or is not a regular file.")
+            logger.warning(
+                "Skipping report artifact because source file does not exist or "
+                "is not a regular file: %s",
+                source_file,
+            )
             return
 
         # Ensure the destination directory exists
         if not os.path.exists(dest_dir):
-            logging.ERROR(f"Destination directory '{dest_dir}' does not exist.")
+            logger.error(
+                "Cannot move report artifact %s because destination directory "
+                "does not exist: %s",
+                source_file,
+                dest_dir,
+            )
             return
 
         try:
@@ -1207,26 +1226,13 @@ class Youtube(Realm):
 
             logging.info(f"Successfully moved '{source_file}' to '{dest_file}'.")
 
-        except Exception as e:
-            logging.ERROR(f"Failed to move '{source_file}' to '{dest_dir}': {e}")
-
-    def shutdown(self):
-        """
-        Gracefully shut down the application.
-        """
-        logging.info("Initiating graceful shutdown...")
-        self.stop_signal = True
-        time.sleep(10)
-        self.generic_endps_profile.cleanup()
-        logging.info("Application Closed sucessfully")
-
-        if self.do_robo and not self.do_bandsteering:
-            self.create_robo_report()
-        else:
-            report_dir = self.ui_report_dir if self.do_webUI else ''
-            self.create_report(self.stats_api_response, report_dir)
-
-        os._exit(0)
+        except (OSError, shutil.Error) as e:
+            logger.error(
+                "Failed to move report artifact %s to %s: %s",
+                source_file,
+                dest_dir,
+                e,
+            )
 
     def updating_webui_runningjson(self, obj):
         data = {}
@@ -1628,10 +1634,10 @@ class Youtube(Realm):
         original_dir = os.getcwd()
 
         if self.do_webUI:
-            csv_files = [f for f in os.listdir(self.report_path_date_time) if f.endswith('.csv')]
+            csv_files = [f for f in os.listdir(self.report_path_date_time) if f.endswith('_youtube_stats_report.csv')]
             os.chdir(self.report_path_date_time)
         else:
-            csv_files = [f for f in os.listdir(self.report_path_date_time) if f.endswith('.csv')]
+            csv_files = [f for f in os.listdir(self.report_path_date_time) if f.endswith('_youtube_stats_report.csv')]
             os.chdir(self.report_path_date_time)
 
         for file_name in csv_files:
@@ -2196,6 +2202,11 @@ class Youtube(Realm):
             for port_entry in ports_list:
                 expected_eid = port_entry['eid']
                 matched_ports = []
+                mac = "NA"
+                rssi = "NA"
+                link_rate = "NA"
+                ssid = "NA"
+                wifi_interface = "NA"
 
                 for interface in interfaces_list:
                     for port, port_data in interface.items():
@@ -2204,11 +2215,26 @@ class Youtube(Realm):
 
                 for port_name, port_data in matched_ports:
                     if port_data.get("parent dev") == 'wiphy0' and not port_data.get('down') and port_data.get('ip') != '0.0.0.0':
-                        self.mac_list.append(port_data.get("mac"))
-                        self.rssi_list.append(port_data.get("signal"))
-                        self.link_rate_list.append(port_data.get("rx-rate"))
-                        self.ssid_list.append(port_data.get("ssid"))
-                        self.wifi_interface_list.append(port_name.split('.')[2])
+                        mac = port_data.get("mac") or "NA"
+                        rssi = port_data.get("signal") if port_data.get("signal") is not None else "NA"
+                        link_rate = port_data.get("rx-rate") if port_data.get("rx-rate") is not None else "NA"
+                        ssid = port_data.get("ssid") or "NA"
+                        port_parts = port_name.split('.')
+                        wifi_interface = port_parts[2] if len(port_parts) > 2 else "NA"
+                        break
+
+                self.mac_list.append(mac)
+                self.rssi_list.append(rssi)
+                self.link_rate_list.append(link_rate)
+                self.ssid_list.append(ssid)
+                self.wifi_interface_list.append(wifi_interface)
+
+                if wifi_interface == "NA":
+                    logger.warning(
+                        "No active wiphy0 interface with a valid IP was found for "
+                        "resource %s; network details will be reported as NA",
+                        expected_eid,
+                    )
         except KeyError as e:
             logger.error(
                 f"/port/all response is not in the expected format, missing key {e}. "
@@ -2229,6 +2255,8 @@ class Youtube(Realm):
             nav_data = os.path.join(base_dir, 'nav_data.json')  # To generate nav_data.json in webgui folder
             self.robo_obj.nav_data_path = nav_data
         for coordinate in self.coordinates_list:
+            if self.stop_signal:
+                break
             self.robo_obj.wait_for_battery()
             matched, aborted = self.robo_obj.move_to_coordinate(coord=coordinate)
             if not matched:
@@ -2236,14 +2264,21 @@ class Youtube(Realm):
             self.current_cord = coordinate
             if self.rotations_enabled:
                 for angle in self.angles_list:
+                    if self.stop_signal:
+                        break
                     self.robo_obj.wait_for_battery()
                     self.robo_obj.rotate_angle(angle_degree=angle)
                     self.current_angle = angle
                     self.start_generic()
                     duration = self.duration
                     end_time = datetime.now() + timedelta(minutes=duration)
-                    logging.info("Starting data collection for coordinate: %s and angle: %s", coordinate, angle)
-                    while datetime.now() < end_time or not self.check_gen_cx():
+                    logging.info(
+                        "Starting data collection for coordinate %s and angle %s at %s",
+                        coordinate,
+                        angle,
+                        datetime.now().astimezone().isoformat(timespec="seconds"),
+                    )
+                    while (datetime.now() < end_time or not self.check_gen_cx()) and not self.stop_signal:
                         pause, _ = self.robo_obj.wait_for_battery()
                         if pause:
                             self.delete_existing_csvs_for_current_point()
@@ -2255,14 +2290,24 @@ class Youtube(Realm):
                         time.sleep(5)
 
                     self.generic_endps_profile.stop_cx()
+                    logging.info(
+                        "Finished data collection for coordinate %s and angle %s at %s",
+                        coordinate,
+                        angle,
+                        datetime.now().astimezone().isoformat(timespec="seconds"),
+                    )
 
             else:
                 self.start_generic()
                 duration = self.duration
                 end_time = datetime.now() + timedelta(minutes=duration)
-                logging.info("Starting data collection for coordinate: %s", coordinate)
+                logging.info(
+                    "Starting data collection for coordinate %s at %s",
+                    coordinate,
+                    datetime.now().astimezone().isoformat(timespec="seconds"),
+                )
 
-                while datetime.now() < end_time or not self.check_gen_cx():
+                while (datetime.now() < end_time or not self.check_gen_cx()) and not self.stop_signal:
                     pause, _ = self.robo_obj.wait_for_battery()
                     if pause:
                         self.delete_existing_csvs_for_current_point()
@@ -2274,15 +2319,25 @@ class Youtube(Realm):
                     time.sleep(5)
 
                 self.generic_endps_profile.stop_cx()
+                logging.info(
+                    "Finished data collection for coordinate %s at %s",
+                    coordinate,
+                    datetime.now().astimezone().isoformat(timespec="seconds"),
+                )
 
     def perform_robo_bandsteering_test(self):
-        logging.info("Starting Band-Steering Robo YouTube Test")
+        logging.info(
+            "Starting band-steering robot YouTube test at %s",
+            datetime.now().astimezone().isoformat(timespec="seconds"),
+        )
 
         self.robo_obj.total_cycles = self.cycles
         self.robo_obj.coordinate_list = self.coordinates_list
         coordinate_list_with_robo = self.robo_obj.get_coordinates_list()
         time.sleep(5)
         for coordinate in coordinate_list_with_robo:
+            if self.stop_signal:
+                break
             logging.info(f"Moving robot to coordinate: {coordinate}")
             if self.to_coordinate == "":
                 self.to_coordinate = coordinate
@@ -2303,7 +2358,10 @@ class Youtube(Realm):
             self.current_cord = coordinate
             time.sleep(10)
 
-        logging.info("All coordinates completed - stopping Band-Steering Test")
+        logging.info(
+            "All band-steering coordinates completed at %s; stopping the test",
+            datetime.now().astimezone().isoformat(timespec="seconds"),
+        )
         self.generic_endps_profile.stop_cx()
 
         self.stop_bandsteering_test()
@@ -3145,22 +3203,27 @@ NOTES:
                 exit(0)
 
             if len(youtube.real_sta_list) > 0:
-                logging.info(f"checking real sta list while creating endpionts {youtube.real_sta_list}")
+                logging.info(
+                    "Creating YouTube endpoints for selected interfaces: %s",
+                    ", ".join(youtube.real_sta_list),
+                )
                 youtube.create_generic_endp()
             else:
-                logging.info(f"checking real sta list while creating endpionts {youtube.real_sta_list}")
-                logging.error("No Real Devies Available")
+                logging.error("No usable real devices are available")
                 exit(0)
 
             if args.do_webUI:
                 youtube.update_webui()
 
-            logging.info("TEST STARTED")
             if args.do_bandsteering:
-                logging.info('Running the Youtube Streaming until robo finishes all the cycles')
+                logging.info("YouTube streaming will run until all robot cycles finish")
             else:
-                logging.info('Running the Youtube Streaming test for {} minutes'.format(duration))
+                logging.info(
+                    "YouTube streaming is configured to run for %d minute(s)",
+                    duration,
+                )
 
+            logging.info("Waiting 10 seconds before starting YouTube streaming")
             time.sleep(10)
 
             youtube.start_time = datetime.now()
@@ -3175,12 +3238,15 @@ NOTES:
                 duration = args.duration
                 end_time = datetime.now() + timedelta(minutes=duration)
 
-                while datetime.now() < end_time or not youtube.check_gen_cx():
+                while (datetime.now() < end_time or not youtube.check_gen_cx()) and not youtube.stop_signal:
                     youtube.monitor_endpoint_status_changes()
                     time.sleep(1)
 
                 youtube.generic_endps_profile.stop_cx()
-                logging.info("Duration ended")
+                logging.info(
+                    "YouTube streaming finished at %s",
+                    datetime.now().astimezone().isoformat(timespec="seconds"),
+                )
 
             if args.iot_test and args.iot_testname:
                 base = os.path.join("results", args.iot_testname)
@@ -3189,7 +3255,7 @@ NOTES:
                     with open(p) as f:
                         iot_summary = json.load(f)
 
-            logging.info('Stopping the test')
+            logging.info("Stopping the YouTube test")
 
             # Perform post-test cleanup if not skipped
             if not args.no_post_cleanup:
@@ -3209,7 +3275,11 @@ NOTES:
                 youtube.create_report(youtube.stats_api_response, youtube.ui_report_dir, iot_summary=iot_summary)
             else:
                 youtube.create_report(youtube.stats_api_response, '', iot_summary=iot_summary)
-            logging.info("Waiting for Cleanup of Browsers in Devices")
+            logging.info(
+                "YouTube test and report generation completed at %s",
+                datetime.now().astimezone().isoformat(timespec="seconds"),
+            )
+            logging.info("Waiting 10 seconds for browser cleanup on client devices")
             time.sleep(10)
 
 
