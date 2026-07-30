@@ -768,7 +768,7 @@ class ZoomAutomation(Realm):
             self.generate_report_from_data()
         elif self.api_stats_collection:
             self.generate_report_from_api()
-        self.generic_endps_profile.cleanup()
+        self.cleanup_generic_endpoints()
         logger.info("Initiating graceful shutdown...")
         os._exit(0)
 
@@ -779,6 +779,96 @@ class ZoomAutomation(Realm):
         else:
             self.end_time = self.start_time + timedelta(minutes=self.duration)
         return [self.start_time, self.end_time]
+
+    def generic_endpoint_exists(self, endp_name):
+        """True if LANforge currently has a generic endpoint by this name."""
+        response = self.json_get(f"/generic/{endp_name}")
+        return bool(response and "endpoint" in response)
+
+    def predict_endpoint_names(self, port_name):
+        """
+        Reproduce GenCXProfile.create()'s naming convention without actually
+        creating anything, so we can check LANforge for a stale endpoint/CX
+        left over from a prior run that crashed before cleanup ran.
+
+        create() is always called here with real_client_os_types set, in
+        which case it builds gen_name_a from the port name UNMODIFIED (dots
+        and all) rather than just its final EID segment — see the first
+        loop in GenCXProfile.create() (gen_cxprofile.py), where
+        `name = port_name` when real_client_os_types is truthy, and that
+        `name` (not a later split() reassignment used only for the POST
+        body's "port" field) is what gen_name_a/cx_name are built from.
+
+        Example: port_name="1.400.wlan0", name_prefix="zoom" ->
+        ("zoom-1.400.wlan0", "CX_zoom-1.400.wlan0")
+        """
+        prefix = self.generic_endps_profile.name_prefix
+        return f"{prefix}-{port_name}", f"CX_{prefix}-{port_name}"
+
+    def predict_android_endpoint_names(self, port_name):
+        """
+        Reproduce create_android()'s naming convention — distinct from
+        GenCXProfile.create()'s: it keeps the full port EID (underscore-
+        joined) rather than just the final segment, and prefixes the CX
+        name with "generic" instead of "zoom".
+
+        Example: port_name="1.13.wlan0" ->
+        ("zoom-1_13_wlan0", "CX_generic-zoom-1_13_wlan0")
+        """
+        gen_name = "zoom-%s" % "_".join(port_name.split("."))
+        cx_name = "CX_generic-%s" % gen_name
+        return gen_name, cx_name
+
+    def pre_cleanup_stale_names(self, gen_name, cx_name):
+        """
+        Remove any endpoint/CX by these names that's still on LANforge from
+        a previous run — e.g. one that crashed before its own cleanup ran.
+
+        CX existence can't be queried directly: /cx/{name} only looks in
+        the L3 table, and generic-type CXs live elsewhere — LANforge
+        returns an empty/warning response for a generic CX regardless of
+        whether it exists, so a truthiness/membership check against it is
+        always False. Instead, infer CX presence from the endpoint: this
+        codebase always creates them as a 1:1 pair, and LANforge itself
+        refuses to rm_endp an endpoint that's still owned by a CX — so if
+        the endpoint exists, its CX must too, and has to go first.
+        """
+        if self.generic_endpoint_exists(gen_name):
+            logger.info(f"Removing stale CX {cx_name} left over from a previous run.")
+            self.json_post("cli-json/rm_cx", {"test_mgr": "default_tm", "cx_name": cx_name})
+            logger.info(f"Removing stale generic endpoint {gen_name} left over from a previous run.")
+            self.json_post("cli-json/rm_endp", {"endp_name": gen_name})
+
+    def pre_cleanup_stale_endpoint(self, port_name):
+        """Before creating a real-device generic endpoint for port_name."""
+        gen_name, cx_name = self.predict_endpoint_names(port_name)
+        self.pre_cleanup_stale_names(gen_name, cx_name)
+
+    def pre_cleanup_stale_android_endpoint(self, port_name):
+        """Before creating an Android generic endpoint for port_name."""
+        gen_name, cx_name = self.predict_android_endpoint_names(port_name)
+        self.pre_cleanup_stale_names(gen_name, cx_name)
+
+    def cleanup_generic_endpoints(self):
+        """
+        Like generic_endps_profile.cleanup(), but only deletes the endpoint
+        if LANforge still actually reports it as present.
+
+        CX existence can't be queried directly for generic-type CXs (see
+        pre_cleanup_stale_names()'s docstring), so — since these are our
+        own tracked created_cx names, known to have been created — rm_cx
+        is attempted unconditionally for each one, same as the original
+        cleanup(). This must run before the endpoint loop: LANforge
+        refuses to rm_endp an endpoint still owned by its CX.
+        """
+        for cx_name in self.generic_endps_profile.created_cx:
+            self.json_post("cli-json/rm_cx", {"test_mgr": "default_tm", "cx_name": cx_name})
+
+        for endp_name in self.generic_endps_profile.created_endp:
+            if self.generic_endpoint_exists(endp_name):
+                self.json_post("cli-json/rm_endp", {"endp_name": endp_name})
+            else:
+                logger.debug(f"Generic endpoint {endp_name} no longer exists on LANforge — skipping delete.")
 
     def check_gen_cx(self, stall_timeout=600):
         """Return True once every generic endpoint is idle (Stopped/WAITING/NO-CX),
@@ -1239,6 +1329,7 @@ class ZoomAutomation(Realm):
         self.generic_endps_profile.created_cx = []
         self.generic_endps_profile.created_endp = []
 
+        self.pre_cleanup_stale_endpoint(self.real_sta_list[0])
         if self.generic_endps_profile.create(
             ports=[self.real_sta_list[0]],
             real_client_os_types=[self.real_sta_os_type[0]],
@@ -1290,14 +1381,14 @@ class ZoomAutomation(Realm):
                 logger.error(
                     f"Timed out after {timeout}s waiting for host device ({host_endp}) to log in."
                 )
-                self.generic_endps_profile.cleanup()
+                self.cleanup_generic_endpoints()
                 return False
             try:
                 generic_endpoint = self.json_get(f"/generic/{host_endp}")
                 endp_status = generic_endpoint["endpoint"]["status"]
                 if endp_status == "Stopped":
                     logger.error(f"Failed to start the host device ({host_endp}).")
-                    self.generic_endps_profile.cleanup()
+                    self.cleanup_generic_endpoints()
                     return False
                 time.sleep(5)
             except Exception as e:
@@ -1328,6 +1419,7 @@ class ZoomAutomation(Realm):
         )
         for i in range(1, len(self.real_sta_os_type)):
             if self.real_sta_os_type[i] == "android":
+                self.pre_cleanup_stale_android_endpoint(self.real_sta_list[i])
                 status, created_cx, created_endp = self.create_android(
                     lanforge_res=self.lanforge_port_list[i],
                     ports=[self.real_sta_list[i]],
@@ -1351,6 +1443,7 @@ class ZoomAutomation(Realm):
                 )
 
             else:
+                self.pre_cleanup_stale_endpoint(self.real_sta_list[i])
                 self.generic_endps_profile.create(
                     ports=[self.real_sta_list[i]],
                     real_client_os_types=[self.real_sta_os_type[i]],
@@ -1402,7 +1495,7 @@ class ZoomAutomation(Realm):
                     f"Unable to get the start signal from the host device within {timeout}s. "
                     "Giving up and cleaning up this round's CXs."
                 )
-                self.generic_endps_profile.cleanup()
+                self.cleanup_generic_endpoints()
                 return False
             logger.info("WAITING FOR THE TEST TO BE STARTED")
             time.sleep(5)
@@ -1526,7 +1619,7 @@ class ZoomAutomation(Realm):
                     if pause:
                         self.stop_signal = True
                         self.generic_endps_profile.stop_cx()
-                        self.generic_endps_profile.cleanup()
+                        self.cleanup_generic_endpoints()
                         self.delete_current_csv_files()
                         self.start_time = None
                         self.end_time = None
@@ -1553,7 +1646,7 @@ class ZoomAutomation(Realm):
                 time.sleep(5)
         if self.do_robo:
             self.generic_endps_profile.stop_cx()
-            self.generic_endps_profile.cleanup()
+            self.cleanup_generic_endpoints()
             self.start_time = None
             self.end_time = None
             return True
@@ -5127,7 +5220,7 @@ def main():
             elif args.api_stats_collection:
                 zoom_automation.generate_report_from_api()
             time.sleep(5)
-            zoom_automation.generic_endps_profile.cleanup()
+            zoom_automation.cleanup_generic_endpoints()
             # zoom_automation.move_ping_logs()
             zoom_automation.move_log_folder()
             logger.info("Done.")
