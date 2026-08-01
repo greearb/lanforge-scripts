@@ -1,0 +1,40 @@
+name: PR Lint Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pylint bandit reviewdog
+
+      - name: Run flake8 and report via reviewdog
+        run: |
+          flake8 --format=default . > flake8.out || true
+          reviewdog -f=flake8 -name="flake8" -reporter=github-pr-review -level=warning < flake8.out
+
+      - name: Run pylint and report via reviewdog
+        run: |
+          pylint $(git ls-files "*.py") --output-format=text > pylint.out || true
+          reviewdog -f=pylint -name="pylint" -reporter=github-pr-review -level=warning < pylint.out
+
+      - name: Run bandit and report via reviewdog
+        run: |
+          bandit -r . -f json -o bandit.json || true
+          reviewdog -f=bandit -name="bandit" -reporter=github-pr-review -level=warning < bandit.json
