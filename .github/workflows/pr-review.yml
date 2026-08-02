@@ -1,0 +1,76 @@
+name: PR Lint Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pylint bandit
+
+      - name: Install reviewdog
+        run: |
+          # reviewdog is not a Python package; install the binary using the official installer
+          curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b /usr/local/bin v0.13.0
+
+      - name: Determine changed Python files
+        id: changes
+        run: |
+          echo "PR_BASE=${{ github.event.pull_request.base.sha }}"
+          # Ensure we have the base ref fetched
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1 || true
+          CHANGED_PY_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...HEAD | grep '\.py$' || true)
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_PY_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Skip if no Python files changed
+        if: steps.changes.outputs.changed_files == ''
+        run: |
+          echo "No Python files changed in this PR — skipping lint steps."
+
+      - name: Run flake8 on changed files and report via reviewdog
+        if: steps.changes.outputs.changed_files != ''
+        run: |
+          set -e
+          FILES=$(echo "${{ steps.changes.outputs.changed_files }}" | tr '\n' ' ')
+          echo "Running flake8 on: $FILES"
+          flake8 --format=default $FILES > flake8.out || true
+          reviewdog -f=flake8 -name="flake8" -reporter=github-pr-review -level=warning < flake8.out
+
+      - name: Run pylint on changed files and report via reviewdog
+        if: steps.changes.outputs.changed_files != ''
+        run: |
+          set -e
+          FILES=$(echo "${{ steps.changes.outputs.changed_files }}" | tr '\n' ' ')
+          echo "Running pylint on: $FILES"
+          pylint $FILES --output-format=text > pylint.out || true
+          reviewdog -f=pylint -name="pylint" -reporter=github-pr-review -level=warning < pylint.out
+
+      - name: Run bandit on changed files and report via reviewdog
+        if: steps.changes.outputs.changed_files != ''
+        run: |
+          set -e
+          FILES=$(echo "${{ steps.changes.outputs.changed_files }}" | tr '\n' ' ')
+          echo "Running bandit on: $FILES"
+          # bandit accepts files and directories; run against the changed files
+          bandit -r $FILES -f json -o bandit.json || true
+          reviewdog -f=bandit -name="bandit" -reporter=github-pr-review -level=warning < bandit.json
