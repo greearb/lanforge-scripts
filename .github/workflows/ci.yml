@@ -1,6 +1,6 @@
 name: CI
 
-on: [push, pull_request]
+on: push
 
 # Lint code using flake8 and run unit tests using pytest
 jobs:
