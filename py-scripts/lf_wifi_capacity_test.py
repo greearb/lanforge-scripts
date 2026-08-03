@@ -113,12 +113,14 @@ class WiFiCapacityTest(cv_test):
                  test_rig="",
                  test_tag="",
                  local_lf_report_dir="",
-                 sta_list="",
+                 sta_list=None,
                  verbosity="5",
                  force: bool = False,
                  **kwargs):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
+        if sta_list is None:
+            sta_list = []
         if enables is None:
             enables = []
         if disables is None:
@@ -194,16 +196,13 @@ class WiFiCapacityTest(cv_test):
         if not self.load_old_cfg:
             self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
             self.show_text_blob(None, None, False)
-
             # Test related settings
             cfg_options = []
-
             if self.upstream != "":
                 eid = LFUtils.name_to_eid(self.upstream)
                 port = "%i.%i.%s" % (eid[0], eid[1], eid[2])
-
                 port_list = [port]
-                if self.stations != "" or self.stations_list != []:
+                if self.stations or self.stations_list:
                     stas = None
                     if self.stations:
                         stas = self.stations.split(",")
@@ -212,7 +211,7 @@ class WiFiCapacityTest(cv_test):
                     for s in stas:
                         port_list.append(s)
                 else:
-                    stas = self.station_map()  # See realm
+                    stas = self.station_map()
                     for eid in stas.keys():
                         port_list.append(eid)
                 logger.info(f"Selected Port list: {port_list}")
@@ -243,7 +242,7 @@ class WiFiCapacityTest(cv_test):
 
             self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
 
-            # We deleted the scenario earlier, now re-build new one line at a time.
+            # Deleted the scenario earlier, now re-build new one line at a time.
             self.build_cfg(self.config_name, blob_test, cfg_options)
 
         cv_cmds = []
