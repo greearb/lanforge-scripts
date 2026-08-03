@@ -7,6 +7,7 @@
 import logging
 import sys
 import os
+from datetime import datetime
 from pprint import pformat, PrettyPrinter
 import urllib
 from urllib import request
@@ -43,6 +44,7 @@ class LFRequest:
         self.error_list = []
         self.last_response_code = None
         self.last_diagnostics = None
+        self.last_sent_at = None
 
         # please see this discussion on ProxyHandlers:
         # https://docs.python.org/3/library/urllib.request.html#urllib.request.ProxyHandler
@@ -185,6 +187,7 @@ class LFRequest:
 
         # https://stackoverflow.com/a/59635684/11014343
 
+        self.last_sent_at = datetime.now()
         try:
             resp = urllib.request.urlopen(myrequest)
             self.last_response_code = getattr(resp, 'status', None)
@@ -253,6 +256,7 @@ class LFRequest:
                                     headers=self.default_headers,
                                     method=method_)
         myresponses = []
+        self.last_sent_at = datetime.now()
         try:
             myresponses.append(request.urlopen(myrequest))
             return myresponses[0]
