@@ -1324,47 +1324,100 @@ class Throughput(Realm):
             [3]: RX drop percentage at the B endpoint
             [4]: Status of the Device ("Run" or "Stopped")
         """
-        cx_list_endp = []
-        cx_list_l3 = []
-        for i in self.cx_profile.created_cx.keys():
-            cx_list_endp.append(i + '-A')
-            cx_list_endp.append(i + '-B')
-            cx_list_l3.append(i)
-        # Fetch required throughput data from Lanforge
-        try:
-            # for dynamic data, taken rx rate lasts from layer3 endp tab
-            l3_endp_data = list(self.json_get('/endp/{}/list?fields=rx rate (last),rx drop %25,name,run,name'.format(','.join(cx_list_endp)))['endpoint'])
-            l3_cx_data = self.json_get('/cx/all')
-        except Exception as e:
-            cx_data = self.json_get('/cx/all/')
-            logger.info(cx_data)
-            logger.error(f"Endpoint not fetched from API {e}")
-        # Extracting and storing throughput data
         cx_list = list(self.cx_profile.created_cx.keys())
-        i = 0
+        # One URL fetching both A/B endpoints for every CX in a single request.
+        endpoint_names = [endpoint for cx in cx_list for endpoint in (cx + '-A', cx + '-B')]
+        monitor_url = '/endp/{}/list?fields=rx rate (last),rx drop %25,name,run'.format(','.join(endpoint_names))
+        endpoint_response = {}
+        cx_response = {}
+        try:
+            endpoint_response = self.json_get(monitor_url) or {}
+            cx_response = self.json_get('/cx/all') or {}
+        except Exception as e:
+            # Partial /endp response is expected for phantom clients; continue with default metrics.
+            logger.error("Endpoint not fetched from API: %s", e)
+            logger.error("URL     : %s", monitor_url)
+            logger.error("Response: %s", endpoint_response)
+
+        if not endpoint_response:
+            # json_get() returned None/empty with no exception; surface it instead of
+            # silently treating every CX as missing with no clue why.
+            logger.warning("Empty response fetching endpoint data.")
+            logger.warning("URL     : %s", monitor_url)
+            logger.warning("Response: %s", endpoint_response)
+
+        self.last_monitor_url = monitor_url
+        self.last_monitor_response = endpoint_response
+        # Normalize the two response shapes /endp/.../list can return into one name->metrics lookup.
+        endpoint_data = endpoint_response.get('endpoint', []) if isinstance(endpoint_response, dict) else []
+        if isinstance(endpoint_data, dict):
+            endpoint_data = [endpoint_data]
+        elif not isinstance(endpoint_data, (list, tuple)):
+            endpoint_data = []
+
+        metrics_by_endpoint = {}
+        for item in endpoint_data:
+            if not isinstance(item, dict):
+                continue
+            if 'name' in item:
+                value = item
+                name = value.get('name')
+                if name:
+                    metrics_by_endpoint[name] = value
+            else:
+                for name, value in item.items():
+                    if isinstance(value, dict):
+                        metrics_by_endpoint[value.get('name', name)] = value
+
+        rtt_by_cx = {}
+        state_by_cx = {}
+        # /cx/all keys its entries by index, not by name, so look up 'name' per value.
+        if isinstance(cx_response, dict):
+            for value in cx_response.values():
+                if isinstance(value, dict) and value.get('name'):
+                    rtt_by_cx[value['name']] = value.get('avg rtt', 0)
+                    state_by_cx[value['name']] = value.get("state", "Stopped")
+
         throughput = {}
-        # mapping the data based upon the cx_list order
-        for cx in cx_list:
-            throughput[i] = [0, 0, 0, 0, "Stopped", 0]
-            for j in l3_endp_data:
-                key, value = next(iter(j.items()))
-                endp_a = cx + '-A'
-                endp_b = cx + '-B'
-                if value['name'] == endp_a:
-                    throughput[i][0] = value['rx rate (last)']
-                    throughput[i][2] = value['rx drop %']
-                elif value['name'] == endp_b:
-                    throughput[i][1] = value['rx rate (last)']
-                    throughput[i][3] = value['rx drop %']
-                if value['name'] == endp_a or value['name'] == endp_b:
-                    throughput[i][4] = 'Run' if value['run'] else 'Stopped'
-            # To add average RTT
-            for j in l3_cx_data:
-                if not isinstance(l3_cx_data[j], dict):
-                    continue
-                if cx == l3_cx_data[j]['name']:
-                    throughput[i][5] = l3_cx_data[j]['avg rtt']
-            i += 1
+        # Suppress "not running" warnings for the first 10s so fresh CXs don't false-positive.
+        past_grace_period = (self.monitor_start_time is None or
+                             (datetime.now() - self.monitor_start_time).total_seconds() >= 10)
+        for index, cx in enumerate(cx_list):
+            endp_a, endp_b = cx + '-A', cx + '-B'
+            a_metrics = metrics_by_endpoint.get(endp_a)
+            b_metrics = metrics_by_endpoint.get(endp_b)
+            # Neither endpoint reported: log once when it first goes missing, not every poll.
+            if a_metrics is None and b_metrics is None:
+                if cx not in self.missing_cx_logged:
+                    logger.warning("CX '%s' is missing from monitoring data; continuing with the remaining devices.\nURL     : %s\nResponse: %s",
+                                   cx, monitor_url, endpoint_response)
+                    self.missing_cx_logged.add(cx)
+                    self.record_device_issue(cx, "CX missing from monitoring data")
+            elif cx in self.missing_cx_logged:
+                # It came back: clear the flag and log the recovery once.
+                logger.info("CX '%s' data is available again.", cx)
+                self.missing_cx_logged.discard(cx)
+
+            # Either endpoint reporting "run" counts the CX as running.
+            running = any(bool(metrics and metrics.get('run')) for metrics in (a_metrics, b_metrics))
+            status = 'Run' if running else state_by_cx.get(cx, "Stopped")
+            if status != 'Run' and past_grace_period and cx not in self.cx_not_running_logged:
+                # Log the transition into "not running" once, not on every poll.
+                logger.warning("CX '%s' status is '%s', not running.", cx, status)
+                self.cx_not_running_logged.add(cx)
+                self.record_device_issue(cx, "CX status is '{}', not running".format(status))
+            elif status == 'Run' and cx in self.cx_not_running_logged:
+                logger.info("CX '%s' status is back to running.", cx)
+                self.cx_not_running_logged.discard(cx)
+
+            throughput[index] = [
+                (a_metrics or {}).get('rx rate (last)', 0),
+                (b_metrics or {}).get('rx rate (last)', 0),
+                (a_metrics or {}).get('rx drop %', 0),
+                (b_metrics or {}).get('rx drop %', 0),
+                status,
+                rtt_by_cx.get(cx, 0),
+            ]
         return throughput
 
     def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured):
