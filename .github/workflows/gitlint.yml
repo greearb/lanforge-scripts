@@ -1,0 +1,43 @@
+name: Gitlint + Reviewdog
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  gitlint:
+    runs-on: ubuntu-22.04
+    name: Git commit message lint (gitlint) with reviewdog
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install gitlint and reviewdog
+        run: |
+          python -m pip install --upgrade pip
+          pip install gitlint
+          # install reviewdog (Go-based)
+          if ! command -v reviewdog >/dev/null 2>&1; then
+            echo "Installing reviewdog"
+            go install github.com/reviewdog/reviewdog/cmd/reviewdog@latest
+            echo "${HOME}/go/bin" >> $GITHUB_PATH
+          fi
+
+      - name: Run gitlint and report with reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          # Determine commit range for PRs; fallback for push
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          else
+            RANGE="HEAD~5..HEAD"
+          fi
+
+          echo "Checking commits in range: $RANGE"
+
+          # Run gitlint over the commits in the PR and pipe to reviewdog
+          gitlint --commits "$RANGE" | reviewdog -f=gitlint -name="gitlint" -reporter=github-pr-review -level=error || true
