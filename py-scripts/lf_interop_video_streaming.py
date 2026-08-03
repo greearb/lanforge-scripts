@@ -1253,7 +1253,7 @@ class VideoStreamingTest(Realm):
                     if from_coordinate == to_coordinate:
                         return test_stopped_by_user
                     individual_df_data.extend([robot_x, robot_y, from_coordinate, to_coordinate])
-                if self.robot_test and self.rotation_enabled:
+                elif self.robot_test and self.rotation_enabled:
                     individual_df_data.append(self.current_angle)
                 individual_df.loc[len(individual_df)] = individual_df_data
                 new_row_df = individual_df.tail(1)
@@ -1342,7 +1342,10 @@ class VideoStreamingTest(Realm):
                 individual_df_data.extend([sum(overall_video_rate), present_time, iteration + 1, actual_start_time.strftime('%Y-%m-%d %H:%M:%S'),
                                            self.data['end_time_webGUI'][0], self.data['remaining_time_webGUI'][0], "Stopped"])
 
-            if self.robot_test and self.rotation_enabled:
+            if self.robot_test and self.do_bandsteering:
+                robot_x, robot_y, from_coordinate, to_coordinate = self.robot.get_robot_pose()
+                individual_df_data.extend([robot_x, robot_y, from_coordinate, to_coordinate])
+            elif self.robot_test and self.rotation_enabled:
                 individual_df_data.append(self.current_angle)
 
             individual_df.loc[len(individual_df)] = individual_df_data
