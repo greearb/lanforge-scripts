@@ -1449,12 +1449,13 @@ class FtpTest(LFCliBase):
                         cx_found = True
             if not cx_found:
                 if cx not in self.missing_cx_logged:
+                    response_cx_names = [cx_name for i in l4_data for cx_name in i.keys()]
                     logger.warning(
                         "CX '{}' is missing from the monitoring data, the device may have "
                         "disconnected or its connection was not created. Continuing the test "
                         "with the remaining devices.\n"
-                        "URL     : {}\n"
-                        "Response: {}".format(cx, url_str, l4_data))
+                        "URL          : {}\n"
+                        "Response CXs : {}".format(cx, url_str, response_cx_names))
                     self.missing_cx_logged.add(cx)
                     self.failed_cx.append(cx)
                     self.record_device_issue(cx, "CX missing from monitoring data")
