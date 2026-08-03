@@ -104,20 +104,34 @@ flask_server_logger = logging.getLogger(__name__)
 flask_server_log = logging.getLogger("werkzeug")
 flask_server_log.setLevel(logging.ERROR)
 
-# 1. Configure the logging system
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("lf_interop_zoom.log", mode="w"),  # Writes to file
-        logging.StreamHandler(sys.stdout),  # Writes to terminal
-    ],
+# Run log, kept next to this script so it lands in a predictable place
+# regardless of which directory the test was launched from.
+LOG_FILE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "lf_interop_zoom.log"
 )
 
-# 2. Create the logger instance
-logger = logging.getLogger(__name__)
+# Terminal and file get the same line. filename/lineno matter because the other
+# modules (DeviceConfig, lf_base_robo, gen_cxprofile, LFRequest) log through the
+# root logger into here too, and that is what tells them apart. The log file is
+# opened in append mode deliberately — a re-run must not destroy the log of the
+# run that just failed.
+#
+# force=True is required: DeviceConfig calls logging.basicConfig() when it is
+# imported above, and without force our call here would be a silent no-op and
+# the run log would never be written.
+LOG_FORMAT = "%(asctime)s - %(levelname)-8s - %(message)s (%(filename)s:%(lineno)s)"
 
-lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+logging.basicConfig(
+    level=logging.INFO,
+    format=LOG_FORMAT,
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler(LOG_FILE, mode="a"),
+    ],
+    force=True,
+)
+
+logger = logging.getLogger(__name__)
 
 robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 
@@ -332,8 +346,17 @@ class ZoomAutomation(Realm):
             logger.info(f"No ping_logs directory found at {source_dir}")
             return
 
-        destination_dir = os.path.join(self.report_path_date_time, "ping_logs")
-        os.makedirs(self.report_path_date_time, exist_ok=True)
+        # report_path_date_time is only created once a report has been built,
+        # so it can be missing here — this runs from main()'s finally block,
+        # which is reached however the run ended. Crashing would replace the
+        # real error with an AttributeError and skip the cleanup below it.
+        report_dir = getattr(self, "report_path_date_time", None)
+        if not report_dir:
+            logger.warning(f"No report folder for this run; ping logs stay at {source_dir}")
+            return
+
+        destination_dir = os.path.join(report_dir, "ping_logs")
+        os.makedirs(report_dir, exist_ok=True)
 
         # If destination exists, merge files and remove source
         if os.path.exists(destination_dir):
@@ -354,8 +377,15 @@ class ZoomAutomation(Realm):
             logger.info(f"No zoom_laptop_client_logs directory found at {source_dir}")
             return
 
-        destination_dir = os.path.join(self.report_path_date_time, "zoom_laptop_client_logs")
-        os.makedirs(self.report_path_date_time, exist_ok=True)
+        # Missing whenever the run aborted before a report was built — see the
+        # note in move_ping_logs().
+        report_dir = getattr(self, "report_path_date_time", None)
+        if not report_dir:
+            logger.warning(f"No report folder for this run; client logs stay at {source_dir}")
+            return
+
+        destination_dir = os.path.join(report_dir, "zoom_laptop_client_logs")
+        os.makedirs(report_dir, exist_ok=True)
 
         # If destination exists, merge files and remove source
         if os.path.exists(destination_dir):
@@ -369,6 +399,55 @@ class ZoomAutomation(Realm):
         else:
             shutil.move(source_dir, destination_dir)
             logger.info(f"Moved client logs folder to {destination_dir}")
+
+    def move_run_log_to_report(self):
+        """Move this run's own log file into the report folder. CLI runs only.
+
+        Skipped under --do_webUI: there the report directory is handed to us by
+        the web UI (--report_dir), so the log is left at its fixed path next to
+        the script rather than relocated into a directory the UI owns.
+
+        The log file is opened in append mode, so moving it out is also what
+        gives the next CLI run an empty one — each report folder ends up
+        holding the log of the run that produced it. Anything logged after this
+        point belongs to the same run, so the handler is re-attached at the new
+        path instead of just being closed.
+        """
+        if self.do_webui:
+            return
+
+        report_dir = getattr(self, "report_path_date_time", None)
+        if not report_dir or not os.path.isdir(report_dir):
+            # Aborted before a report was built. The log stays where it is —
+            # it is the only record of what went wrong.
+            logger.info(f"No report folder for this run; run log stays at {LOG_FILE}")
+            return
+
+        source = os.path.abspath(LOG_FILE)
+        if not os.path.isfile(source):
+            return
+
+        destination = os.path.join(report_dir, os.path.basename(source))
+
+        # Release the file before moving it: on a cross-filesystem move shutil
+        # copies and deletes, and a handler still holding the old descriptor
+        # would keep writing into the deleted inode.
+        root = logging.getLogger()
+        for handler in root.handlers[:]:
+            if getattr(handler, "baseFilename", None) == source:
+                root.removeHandler(handler)
+                handler.close()
+
+        try:
+            shutil.move(source, destination)
+        except Exception as e:
+            logger.error(f"Could not move run log to {destination}: {e}", exc_info=True)
+            destination = source  # re-attach where the log actually still is
+
+        handler = logging.FileHandler(destination, mode="a")
+        handler.setFormatter(logging.Formatter(LOG_FORMAT))
+        root.addHandler(handler)
+        logger.info(f"Run log: {destination}")
 
     def handle_flask_server(self):
         self.stop_previous_flask_server()
@@ -680,6 +759,11 @@ class ZoomAutomation(Realm):
                 )
 
             except Exception as e:
+                logger.error(
+                    f"/upload_csv POST failed: {e}. The Zoom dashboard CSV for this "
+                    "round was not saved.",
+                    exc_info=True,
+                )
                 return jsonify({"status": "error", "message": str(e)}), 500
 
         @self.app.route("/upload_ping_log", methods=["POST"])
@@ -718,6 +802,7 @@ class ZoomAutomation(Realm):
                     200,
                 )
             except Exception as e:
+                logger.error(f"/upload_ping_log POST failed: {e}", exc_info=True)
                 return jsonify({"status": "error", "message": str(e)}), 500
 
         @self.app.route("/upload_log", methods=["POST"])
@@ -1323,6 +1408,13 @@ class ZoomAutomation(Realm):
                 logger.error(f"Error deleting file {file_path}: {e}")
 
     def create_host(self):
+        """Create and start the host device's generic endpoint.
+
+        Returns:
+            True if the endpoint was created and started.
+            False if creation failed — the caller decides whether that aborts
+            the run or just skips this coordinate (see _handle_host_failure).
+        """
         # Reset per round so start_cx()/stop_cx()/cleanup() only ever act on
         # this coordinate's CXs/endpoints, instead of re-processing every
         # stale entry from every previous coordinate.
@@ -1336,8 +1428,11 @@ class ZoomAutomation(Realm):
         ):
             logger.info("Real client generic endpoint creation completed.")
         else:
-            logger.error("Real client generic endpoint creation failed.")
-            exit(0)
+            logger.error(
+                f"Generic endpoint creation failed for the host device "
+                f"{self.real_sta_list[0]} (os={self.real_sta_os_type[0]})."
+            )
+            return False
 
         if self.real_sta_os_type[0] == "windows":
             cmd = fr'"{self.window_dir}\zoom.bat" --ip {self.upstream_port} host'
@@ -1364,6 +1459,49 @@ class ZoomAutomation(Realm):
 
         logger.debug(f"checking real sta list {self.real_sta_list}")
         logger.debug(f"checking real sta os type {self.real_sta_os_type}")
+        return True
+
+    def _handle_host_failure(self, reason):
+        """Decide whether a host-device failure aborts the run or skips a point.
+
+        Centralises the abort-vs-skip rule so endpoint-creation failures and
+        readiness failures are treated identically.
+
+        Args:
+            reason: what failed, phrased so it reads before "on the very first
+                round ..." / "for ...".
+
+        Returns:
+            The value run() should return — False to abort the whole robo test,
+            True to skip this round and carry on with the next one. A non-robo
+            run has no next round, so it exits non-zero instead.
+        """
+        if self.do_robo:
+            # With rotations on, the same coordinate is visited at several
+            # angles — naming only the coordinate wouldn't say which round.
+            if self.rotations_enabled:
+                where = (
+                    f"coordinate {self.current_cord} at angle {self.current_angle}"
+                )
+            else:
+                where = f"coordinate {self.current_cord}"
+
+            self.failed_coords.append(self.current_cord)
+            if not self.host_ever_ready:
+                logger.error(
+                    f"{reason} on the very first round ({where}) — this points to "
+                    "a host device problem rather than a location issue. Aborting "
+                    "the robo test instead of trying the remaining coordinates."
+                )
+                return False
+            logger.error(
+                f"{reason} for {where} — skipping this round and continuing with "
+                "the next one."
+            )
+            return True
+
+        logger.error(f"{reason}. Aborting test.")
+        sys.exit(1)
 
     def wait_for_host_ready(self, timeout=600):
         """Wait for the host device to confirm login.
@@ -1518,24 +1656,12 @@ class ZoomAutomation(Realm):
         return True
 
     def run(self):
-        self.create_host()
+        if not self.create_host():
+            return self._handle_host_failure(
+                "Host device generic endpoint creation failed"
+            )
         if not self.wait_for_host_ready():
-            if self.do_robo:
-                self.failed_coords.append(self.current_cord)
-                if not self.host_ever_ready:
-                    logger.error(
-                        f"Host device failed to become ready on the very first coordinate ({self.current_cord}) — "
-                        "this points to a host device problem rather than a location issue. "
-                        "Aborting the robo test instead of trying the remaining coordinates."
-                    )
-                    return False
-                logger.error(
-                    f"Host device failed to become ready for coordinate {self.current_cord} — skipping this coordinate and continuing with the next one."
-                )
-                return True
-            else:
-                logger.error("Host device never became ready. Aborting test.")
-                sys.exit(1)
+            return self._handle_host_failure("Host device failed to become ready")
         self.host_ever_ready = True
         self.create_participants()
         if not self.wait_for_test_start():
@@ -1626,13 +1752,15 @@ class ZoomAutomation(Realm):
                         time.sleep(20)
                         self.stop_signal = False
                         self.participants_joined = 0
-                        self.create_host()
-                        if not self.wait_for_host_ready():
-                            logger.error(
-                                f"Host device failed to restart after battery pause for coordinate {self.current_cord} — skipping this round."
+                        if not self.create_host():
+                            return self._handle_host_failure(
+                                "Host device generic endpoint creation failed after "
+                                "battery pause"
                             )
-                            self.failed_coords.append(self.current_cord)
-                            return True
+                        if not self.wait_for_host_ready():
+                            return self._handle_host_failure(
+                                "Host device failed to restart after battery pause"
+                            )
                         self.create_participants()
                         if not self.wait_for_test_start():
                             logger.error(
@@ -2120,7 +2248,12 @@ class ZoomAutomation(Realm):
         # General case: "123 kbps", "45 ms", "6.7 %"
         try:
             return float(value.split()[0].replace("%", ""))
-        except Exception:
+        except Exception as e:
+            # Every expected empty/graded/avg-max form is handled above, so an
+            # unparseable value here is genuinely unrecognised. It becomes a
+            # blank cell in the report — log the raw value so that blank can be
+            # traced back to its input.
+            logger.debug(f"Could not parse stat value {value!r} as a number: {e}")
             return None
 
     def _clean_zoom_participant_name(self, participant_name):
@@ -3414,8 +3547,13 @@ class ZoomAutomation(Realm):
                 )
                 report.build_objective()
         except Exception as e:
-            logger.error(f"Exeception Occured {e}")
-            logger.error("Error Occured ", exc_info=True)
+            # This handler wraps the whole function, so the failure could be
+            # anywhere from CSV discovery to graph building — the traceback is
+            # what narrows it down.
+            logger.error(
+                f"Failed to build the band-steering report section: {e}",
+                exc_info=True,
+            )
 
     def add_live_view_images_to_report(self):
         """
@@ -4186,6 +4324,11 @@ class ZoomAutomation(Realm):
             _path=self.path,
         )
         report_path_date_time = self.report.get_path_date_time()
+        # Recorded on self like the other two report generators do: the cleanup
+        # in main()'s finally block reads it to place the client logs and the
+        # run log, and this is the only generator that runs for
+        # --do_robo --api_stats_collection.
+        self.report_path_date_time = report_path_date_time
         self.report.set_title("Zoom Call Automated Report")
         self.report.build_banner()
 
@@ -4455,7 +4598,13 @@ class ZoomAutomation(Realm):
                 with open(json_path, "r") as f:
                     try:
                         data = json.load(f)
-                    except json.JSONDecodeError:
+                    except json.JSONDecodeError as e:
+                        # Existing contents are discarded — say so, otherwise
+                        # the keys that were in this file vanish with no trace.
+                        logger.warning(
+                            f"{json_path} is not valid JSON ({e}); its existing "
+                            "contents are being discarded and the file rewritten."
+                        )
                         data = {}
 
             # 2. Update status
@@ -4513,6 +4662,11 @@ class ZoomAutomation(Realm):
 
 
 def main():
+    # Bound up front so the finally block below can always test it. It stays
+    # None whenever we leave the try before the test object is built — --help,
+    # a bad argument, a validation exit — and there is nothing to clean up.
+    zoom_automation = None
+
     try:
         parser = argparse.ArgumentParser(
             prog=__file__,
@@ -4585,7 +4739,11 @@ def main():
             help="Time set to wait for the CSV files",
         )
         parser.add_argument("--log_level", help="Level of the logs to be dispalyed")
-        parser.add_argument("--lf_logger_config_json", help="lf_logger config json")
+        parser.add_argument(
+            "--lf_logger_config_json",
+            help="Accepted for backwards compatibility but ignored; this test "
+            "logs to stdout and to lf_interop_zoom.log next to the script",
+        )
         parser.add_argument("--resources", help="resources participated in the test")
         parser.add_argument(
             "--do_webUI",
@@ -4850,15 +5008,13 @@ def main():
 
         args = parser.parse_args()
 
-        # set the logger level to debug
-        logger_config = lf_logger_config.lf_logger_config()
-
         if args.log_level:
-            logger_config.set_level(level=args.log_level)
+            logging.getLogger().setLevel(args.log_level.upper())
 
-        if args.lf_logger_config_json:
-            logger_config.lf_logger_config_json = args.lf_logger_config_json
-            logger_config.load_lf_logger_config()
+        logger.info("=" * 70)
+        logger.info("Zoom test run starting — log file: %s", LOG_FILE)
+        logger.info("Command: %s", " ".join(sys.argv))
+        logger.info("=" * 70)
 
         if (
             args.expected_passfail_value is not None
@@ -5207,7 +5363,12 @@ def main():
         logger.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
         traceback.print_exc()
     finally:
-        if not ("--help" in sys.argv or "-h" in sys.argv):
+        # Covers --help too: argparse exits inside parse_args(), long before
+        # the object is built. Deliberately an if rather than an early return —
+        # a return here would discard the exception on its way out, including
+        # the SystemExit carrying the exit code, turning a failed run into a
+        # silent success.
+        if zoom_automation is not None:
             zoom_automation.stop_signal = True
             logger.info("Waiting for Browser Cleanup in Laptops")
             time.sleep(10)
@@ -5224,6 +5385,9 @@ def main():
             # zoom_automation.move_ping_logs()
             zoom_automation.move_log_folder()
             logger.info("Done.")
+            # Last thing in the run — everything above is now in the log that
+            # travels with the report.
+            zoom_automation.move_run_log_to_report()
 
 
 if __name__ == "__main__":
