@@ -104,11 +104,12 @@ flask_server_logger = logging.getLogger(__name__)
 flask_server_log = logging.getLogger("werkzeug")
 flask_server_log.setLevel(logging.ERROR)
 
-# Run log, kept next to this script so it lands in a predictable place
-# regardless of which directory the test was launched from.
-LOG_FILE = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "lf_interop_zoom.log"
-)
+# Everything this test writes is anchored here rather than to the working
+# directory, so results land in the same predictable place no matter which
+# directory the test was launched from.
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+LOG_FILE = os.path.join(SCRIPT_DIR, "lf_interop_zoom.log")
 
 # Terminal and file get the same line. filename/lineno matter because the other
 # modules (DeviceConfig, lf_base_robo, gen_cxprofile, LFRequest) log through the
@@ -222,9 +223,12 @@ class ZoomAutomation(Realm):
         self.stop_signal = False
         self.download_csv = False
         self.csv_file_name = "csvdata.csv"
-        self.path = os.path.join(os.getcwd(), "zoom_test_results")
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
+        # Next to the script, not in the working directory: a run launched from
+        # /home/lanforge and one launched from the script's own folder now put
+        # their results in the same place. Overridden with --report_dir when the
+        # web UI drives the test.
+        self.path = os.path.join(SCRIPT_DIR, "zoom_test_results")
+        os.makedirs(self.path, exist_ok=True)
 
         self.device_names = []
         self.hostname_os_combination = None
@@ -726,7 +730,20 @@ class ZoomAutomation(Realm):
                         400,
                     )
 
-                filename = data.get("filename", "csvdata.csv")
+                # basename() because the name comes off the network: without it
+                # a client could steer this write out of self.path with a
+                # filename like "../../x.csv". Same treatment as the hostname
+                # in /upload_log below. It also collapses a path-only value to
+                # "", which is rejected here rather than silently renamed.
+                filename = os.path.basename((data.get("filename") or "").strip())
+                if not filename:
+                    logger.error("/upload_csv POST: missing or invalid filename")
+                    return (
+                        jsonify(
+                            {"status": "error", "message": "Missing or invalid filename"}
+                        ),
+                        400,
+                    )
                 self.csv_file_name = f"received_{filename}"
                 rows = data.get("rows", [])
                 logger.info(f"/upload_csv POST: received filename={filename}")
@@ -737,7 +754,7 @@ class ZoomAutomation(Realm):
                         400,
                     )
 
-                filepath = f"received_{filename}"
+                filepath = os.path.join(self.path, self.csv_file_name)
                 logger.info(
                     f"Data Received from Zoom dashboard is stored at: {filepath}"
                 )
@@ -2041,8 +2058,9 @@ class ZoomAutomation(Realm):
         return []
 
     def save_json(self, data, filename):
-        os.makedirs("zoom_api_responses", exist_ok=True)
-        path = os.path.join("zoom_api_responses", filename)
+        api_dir = os.path.join(self.path, "zoom_api_responses")
+        os.makedirs(api_dir, exist_ok=True)
+        path = os.path.join(api_dir, filename)
         with open(path, "w") as f:
             json.dump(data, f, indent=2)
 
@@ -3742,8 +3760,9 @@ class ZoomAutomation(Realm):
         else:
             csv_device_data = {}
             try:
-                if not os.path.exists(os.path.join(os.getcwd(), self.csv_file_name)):
-                    logger.error(f"File not found: {self.csv_file_name}")
+                csv_path = os.path.join(self.path, self.csv_file_name)
+                if not os.path.exists(csv_path):
+                    logger.error(f"File not found: {csv_path}")
                     self.report.set_table_title("Test Devices:")
                     self.report.build_table_title()
                     device_details = pd.DataFrame(
@@ -3759,7 +3778,7 @@ class ZoomAutomation(Realm):
                         }
                     )
                 else:
-                    csv_device_data = self.summarize_csv_audio_video(self.csv_file_name)
+                    csv_device_data = self.summarize_csv_audio_video(csv_path)
                     device_data = csv_device_data
                     self.report.set_table_title("Test Devices:")
                     self.report.build_table_title()
@@ -4291,18 +4310,18 @@ class ZoomAutomation(Realm):
             self.move_files(file_to_move_path, self.report_path_date_time)
         if self.download_csv:
             self.move_files(
-                os.path.join(os.getcwd(), self.csv_file_name),
+                os.path.join(self.path, self.csv_file_name),
                 self.report_path_date_time,
             )
         self.move_files(
             os.path.join(
-                os.getcwd(), "zoom_api_responses", f"{self.remote_login_url}_qos.json"
+                self.path, "zoom_api_responses", f"{self.remote_login_url}_qos.json"
             ),
             self.report_path_date_time,
         )
         self.move_files(
             os.path.join(
-                os.getcwd(),
+                self.path,
                 "zoom_api_responses",
                 f"{self.remote_login_url}_raw_qos.json",
             ),
@@ -4419,7 +4438,7 @@ class ZoomAutomation(Realm):
 
                 # 2. Load Data
                 json_pattern = f"*_{coord}_{angle}_qos.json"
-                file_path = os.path.join("zoom_api_responses", json_pattern)
+                file_path = os.path.join(self.path, "zoom_api_responses", json_pattern)
                 found_files = glob.glob(file_path)
                 device_data = {}
                 if found_files:
@@ -4576,7 +4595,7 @@ class ZoomAutomation(Realm):
 
         # 2. Move Robo JSONs (Wildcard search for Multi-Location files)
         if self.do_robo:
-            pattern = os.path.join(os.getcwd(), "zoom_api_responses", "*_qos.json")
+            pattern = os.path.join(self.path, "zoom_api_responses", "*_qos.json")
             for f in glob.glob(pattern):
                 self.move_files(f, report_path_date_time)
 
