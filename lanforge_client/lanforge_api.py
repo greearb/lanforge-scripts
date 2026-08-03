@@ -580,6 +580,7 @@ class BaseLFJsonRequest:
         finish_time_ms = (max_timeout_sec * 1000) + begin_time_ms
         attempt = 1
         while (time.time() * 1000) < finish_time_ms:
+            sent_at = datetime.now()
             try:
                 response = urllib.request.urlopen(myrequest)
                 resp_data = response.read().decode('utf-8')
@@ -642,7 +643,8 @@ class BaseLFJsonRequest:
                     self.logger.debug("----------------- BAD STATUS --------------------------------")
                     if die_on_error:
                         sys.exit(1)
-                api_logger.record_api_call(method=method_, url=url, data=post_data, response_code=response.status)
+                api_logger.record_api_call(method=method_, url=url, data=post_data, response_code=response.status,
+                                            sent_at=sent_at)
                 return responses[0]
 
             except urllib.error.HTTPError as herror:
@@ -659,7 +661,7 @@ class BaseLFJsonRequest:
                                   debug_=debug,
                                   die_on_error_=False)
                 api_logger.record_api_call(method=method_, url=url, data=post_data, response_code=herror.code,
-                                            error=herror, diagnostics=diagnostics)
+                                            error=herror, diagnostics=diagnostics, sent_at=sent_at)
                 if die_on_error:
                     sys.exit(1)
 
@@ -669,7 +671,7 @@ class BaseLFJsonRequest:
                 if (url.endswith("endsession")):
                     logging.info("lfclient closed connection before script exit")
                     api_logger.record_api_call(method=method_, url=url, data=post_data, error=uerror,
-                                                diagnostics="session ended")
+                                                diagnostics="session ended", sent_at=sent_at)
                     die_on_error = True
                     break
                 else:
@@ -681,7 +683,7 @@ class BaseLFJsonRequest:
                                       debug_=debug,
                                       die_on_error_=False)
                     api_logger.record_api_call(method=method_, url=url, data=post_data, error=uerror,
-                                                diagnostics=diagnostics)
+                                                diagnostics=diagnostics, sent_at=sent_at)
                 if die_on_error:
                     sys.exit(1)
             # ~while
@@ -814,9 +816,11 @@ class BaseLFJsonRequest:
             myrequest.timeout = connection_timeout_sec
 
         myresponses: list = []  # list[HTTPResponse]
+        sent_at = datetime.now()
         try:
             myresponses.append(request.urlopen(myrequest))
-            api_logger.record_api_call(method=method_, url=requested_url, response_code=myresponses[0].status)
+            api_logger.record_api_call(method=method_, url=requested_url, response_code=myresponses[0].status,
+                                        sent_at=sent_at)
             return myresponses[0]
 
         except urllib.error.HTTPError as herror:
@@ -830,7 +834,7 @@ class BaseLFJsonRequest:
                               debug_=debug,
                               die_on_error_=False)
             api_logger.record_api_call(method=method_, url=requested_url, response_code=herror.code,
-                                        error=herror, diagnostics=diagnostics)
+                                        error=herror, diagnostics=diagnostics, sent_at=sent_at)
             if die_on_error:
                 sys.exit(1)
         except urllib.error.URLError as uerror:
@@ -841,7 +845,8 @@ class BaseLFJsonRequest:
                               error_list_=self.error_list,
                               debug_=debug,
                               die_on_error_=False)
-            api_logger.record_api_call(method=method_, url=requested_url, error=uerror, diagnostics=diagnostics)
+            api_logger.record_api_call(method=method_, url=requested_url, error=uerror, diagnostics=diagnostics,
+                                        sent_at=sent_at)
             if die_on_error:
                 sys.exit(1)
         if die_on_error:
