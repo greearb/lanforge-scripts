@@ -2853,12 +2853,12 @@ def main():
     optional.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
     optional.add_argument("--test_id", default="lf_webpage", help="test-id for kpi.csv,  script or test name")
     optional.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
-    optional.add_argument('--save_api', help="save json_get/json_post/json_put/json_delete calls to a lightweight csv log file",
+    optional.add_argument('--enable_api_logging', help="save json_get/json_post/json_put/json_delete calls to a lightweight csv log file",
                           action="store_true", default=False)
-    optional.add_argument('--api_log_file_name', help="path to the api log csv file used when --save_api is set (default: ~/lf_api_calls.csv)",
+    optional.add_argument('--api_log_file_name', help="path to the api log csv file used when --enable_api_logging is set (default: ~/lf_api_calls.csv)",
                           default=None)
     optional.add_argument('--log_monitor_api_calls', help="also record API calls made during the runtime-CSV monitor loop "
-                          "(off by default to keep --save_api's log focused on setup/teardown calls)",
+                          "(off by default to keep --enable_api_logging's log focused on setup/teardown calls)",
                           action="store_true", default=False)
     # ARGS for webGUI
     required.add_argument('--dowebgui', help="If true will execute script for webgui", default=False)  # FOR WEBGUI
@@ -2960,7 +2960,7 @@ times the file is downloaded.
         print(help_summary)
         exit(0)
 
-    api_logger.configure_api_call_logging(enabled=args.save_api, log_filename=args.api_log_file_name)
+    api_logger.configure_api_call_logging(enabled=args.enable_api_logging, log_filename=args.api_log_file_name)
 
     args.bands.sort()
 
