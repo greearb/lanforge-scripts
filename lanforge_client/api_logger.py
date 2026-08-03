@@ -91,7 +91,8 @@ def get_log_filename() -> Optional[str]:
 
 
 def record_api_call(method: str, url: str, data: Optional[Any] = None, response_code: Optional[int] = None,
-                    error: Optional[Exception] = None, diagnostics: Optional[str] = None) -> None:
+                    error: Optional[Exception] = None, diagnostics: Optional[str] = None,
+                    sent_at: Optional[datetime.datetime] = None) -> None:
     """
     Append one CSV row for a json_get/json_post/json_put/json_delete call. No-op unless
     configure_api_call_logging(enabled=True) was called first, or while paused (see pause()/resume()).
@@ -104,6 +105,9 @@ def record_api_call(method: str, url: str, data: Optional[Any] = None, response_
         error: Exception raised by the call, if any -- marks the entry as ERROR.
         diagnostics: One-line summary from LFRequest.print_diagnostics(), if the call
             went through a caught HTTPError/URLError (reason, X-Error-* headers, etc.)
+        sent_at: Timestamp captured by the caller right before the request was issued.
+            Falls back to datetime.now() (this function's call time) when not provided,
+            which is captured well after the request completed and is less accurate.
 
     Returns:
         None.
@@ -119,7 +123,7 @@ def record_api_call(method: str, url: str, data: Optional[Any] = None, response_
     try:
         with open(_log_filename, 'a', newline='') as csv_file:
             csv.writer(csv_file).writerow([
-                datetime.datetime.now().isoformat(),
+                (sent_at or datetime.datetime.now()).isoformat(),
                 method,
                 url,
                 status,
