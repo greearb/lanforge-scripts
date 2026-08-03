@@ -7,6 +7,7 @@
 import logging
 import sys
 import os
+import time
 from datetime import datetime
 from pprint import pformat, PrettyPrinter
 import urllib
@@ -45,6 +46,7 @@ class LFRequest:
         self.last_response_code = None
         self.last_diagnostics = None
         self.last_sent_at = None
+        self.last_elapsed_ms = None
 
         # please see this discussion on ProxyHandlers:
         # https://docs.python.org/3/library/urllib.request.html#urllib.request.ProxyHandler
@@ -188,8 +190,10 @@ class LFRequest:
         # https://stackoverflow.com/a/59635684/11014343
 
         self.last_sent_at = datetime.now()
+        _t0 = time.perf_counter()
         try:
             resp = urllib.request.urlopen(myrequest)
+            self.last_elapsed_ms = (time.perf_counter() - _t0) * 1000
             self.last_response_code = getattr(resp, 'status', None)
             resp_data = resp.read().decode('utf-8')
             if debug or die_on_error_:
@@ -214,6 +218,7 @@ class LFRequest:
             return responses[0]
 
         except urllib.error.HTTPError as error:
+            self.last_elapsed_ms = (time.perf_counter() - _t0) * 1000
             self.last_response_code = error.code
             self.last_diagnostics = print_diagnostics(url_=self.requested_url,
                                                       request_=myrequest,
@@ -222,6 +227,7 @@ class LFRequest:
                                                       debug_=debug)
 
         except urllib.error.URLError as uerror:
+            self.last_elapsed_ms = (time.perf_counter() - _t0) * 1000
             self.last_diagnostics = print_diagnostics(url_=self.requested_url,
                                                       request_=myrequest,
                                                       responses_=responses,
@@ -257,11 +263,14 @@ class LFRequest:
                                     method=method_)
         myresponses = []
         self.last_sent_at = datetime.now()
+        _t0 = time.perf_counter()
         try:
             myresponses.append(request.urlopen(myrequest))
+            self.last_elapsed_ms = (time.perf_counter() - _t0) * 1000
             return myresponses[0]
 
         except urllib.error.HTTPError as error:
+            self.last_elapsed_ms = (time.perf_counter() - _t0) * 1000
             self.last_response_code = error.code
             self.last_diagnostics = print_diagnostics(url_=self.requested_url,
                                                       request_=myrequest,
@@ -271,6 +280,7 @@ class LFRequest:
                                                       debug_=self.debug)
 
         except urllib.error.URLError as uerror:
+            self.last_elapsed_ms = (time.perf_counter() - _t0) * 1000
             self.last_diagnostics = print_diagnostics(url_=self.requested_url,
                                                       request_=myrequest,
                                                       responses_=myresponses,
