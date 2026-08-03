@@ -1042,7 +1042,12 @@ class VideoStreamingTest(Realm):
             resource_ids = list(map(int, self.resource_ids.split(',')))
             self.data_for_webui['resources'] = resource_ids
             starttime = datetime.now()
-            if self.monitor_start_time is None:
+            if self.do_bandsteering:
+                # bandsteering runs one continuous session, so only set this once
+                if self.monitor_start_time is None:
+                    self.monitor_start_time = starttime
+            else:
+                # other robot_test flows restart CXs per coordinate/rotation, so restart this too
                 self.monitor_start_time = starttime
             self.data["name"] = self.my_monitor('name')
             current_time = datetime.now()
