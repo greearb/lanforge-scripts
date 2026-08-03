@@ -386,6 +386,18 @@ class Throughput(Realm):
         self.do_bandsteering = do_bandsteering
         self.total_cycles = total_cycles
         self.bssids = bssids if bssids else []
+        # Keep monitoring output stable when a client disconnects or temporarily disappears
+        # from LANforge.  Reports still retain one row per configured client.
+        self.missing_cx_logged = set()
+        self.all_devices_stopped = False
+        self.missing_signal_logged = set()
+        self.cx_not_running_logged = set()
+        self.device_issue_log = []
+        self.actual_monitoring_duration_seconds = 0
+        self.pre_monitoring_missing_logged = False
+        self.last_monitor_url = None
+        self.last_monitor_response = None
+        self.monitor_start_time = None
         # Variables related to Robo
         self.robo_ip = robo_ip
         self.angle_list = angle_list if angle_list else [0]
@@ -401,6 +413,67 @@ class Throughput(Realm):
             self.robot.time_to_reach = int(duration_to_skip) * 60
             self.robot.coordinate_list = self.coordinate_list
             self.robot.total_cycles = self.total_cycles
+
+    def record_device_issue(self, device, issue):
+        """Append a timestamped device/issue entry, later written out as clients_issue.csv."""
+        self.device_issue_log.append({
+            "Time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "Device": device,
+            "Issue": issue,
+        })
+
+    def should_stop_for_missing_cx(self, timeout=40, poll_interval=5):
+        """Stop the current test run when every CX disappears and recovery never succeeds."""
+        if self.stop_test:
+            logger.info("Stop already requested; skipping missing-CX recovery wait.")
+            return True
+        if not self.cx_profile.created_cx:
+            return False
+        if len(self.missing_cx_logged) != len(self.cx_profile.created_cx):
+            return False
+        logger.warning("All CXs are missing from monitoring data; stopping the current test run.")
+        if not self.wait_for_any_cx_recovery(timeout=timeout, poll_interval=poll_interval):
+            logger.error("No devices recovered after the retry window; stopping the test run.")
+            self.stop_test = True
+            self.all_devices_stopped = True
+            if self.robo_ip:
+                self.robot.update_nav_data_for_all_cxs_stopped()
+            if self.actual_monitoring_duration_seconds == 0:
+                raise RuntimeError(
+                    "All {} CX(s) are missing right from the start of monitoring; no data was ever collected.".format(
+                        len(self.cx_profile.created_cx)))
+            return True
+        return self.stop_test
+
+    def wait_for_any_cx_recovery(self, timeout=40, poll_interval=5):
+        """Wait briefly for a CX to recover, while honoring WebUI stop requests."""
+        wait_start = datetime.now()
+        while (datetime.now() - wait_start).total_seconds() < timeout:
+            time.sleep(poll_interval)
+            if self.dowebgui:
+                running_file = os.path.join(
+                    self.result_dir, "../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name))
+                try:
+                    with open(running_file, 'r') as file:
+                        if json.load(file).get("status") != "Running":
+                            logger.info("Test was stopped by the user during the CX recovery wait.")
+                            self.stop_test = True
+                            return True
+                except (FileNotFoundError, json.JSONDecodeError) as error:
+                    logger.warning("Unable to read WebUI test status during CX recovery: %s", error)
+            self.get_layer3_endp_data()
+            elapsed = (datetime.now() - wait_start).total_seconds()
+            if len(self.missing_cx_logged) < len(self.cx_profile.created_cx):
+                logger.info("Device(s) responded again after {:.0f}s, resuming.".format(elapsed))
+                return True
+            logger.warning("Still no devices responding after {:.0f}s, retrying...".format(elapsed))
+        return False
+
+    def format_monitoring_duration(self):
+        """Render self.actual_monitoring_duration_seconds as an 'Xm Ys' string for logging."""
+        total_seconds = int(self.actual_monitoring_duration_seconds)
+        minutes, seconds = divmod(total_seconds, 60)
+        return "{}m {}s".format(minutes, seconds)
 
     def perform_robo(self, args, clients_to_run):
         """
