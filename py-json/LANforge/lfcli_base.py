@@ -220,7 +220,8 @@ class LFCliBase:
 
     def _log_api_call(self, method: str, url: str, data: Optional[Any] = None, response_code: Optional[int] = None,
                       error: Optional[Exception] = None, diagnostics: Optional[str] = None,
-                      sent_at: Optional[datetime.datetime] = None) -> None:
+                      sent_at: Optional[datetime.datetime] = None,
+                      elapsed_ms: Optional[float] = None) -> None:
         """
         Record one json_get/json_post/json_put/json_delete call via lanforge_client.api_logger.
 
@@ -234,12 +235,15 @@ class LFCliBase:
             sent_at: Timestamp captured by LFRequest right before the request was issued
                 (its last_sent_at attribute); falls back to record_api_call's own call time
                 when not available.
+            elapsed_ms: Wall-clock duration of the underlying urlopen() call in milliseconds
+                (LFRequest's last_elapsed_ms attribute). None when not measured.
 
         Returns:
             None.
         """
         api_logger.record_api_call(method=method, url=url, data=data, response_code=response_code,
-                                   error=error, diagnostics=diagnostics, sent_at=sent_at)
+                                   error=error, diagnostics=diagnostics, sent_at=sent_at,
+                                   elapsed_ms=elapsed_ms)
 
     def json_post(self, _req_url, _data, debug_=False, suppress_related_commands_=None, response_json_list_=None):
         """
@@ -301,12 +305,14 @@ class LFCliBase:
                 self._log_api_call("POST", _req_url, data=_data,
                                    response_code=getattr(json_response, 'status', None) or getattr(lf_r, 'last_response_code', None),
                                    error=_api_error, diagnostics=getattr(lf_r, 'last_diagnostics', None),
-                                   sent_at=getattr(lf_r, 'last_sent_at', None))
+                                   sent_at=getattr(lf_r, 'last_sent_at', None),
+                                   elapsed_ms=getattr(lf_r, 'last_elapsed_ms', None))
                 exit(1)
         self._log_api_call("POST", _req_url, data=_data,
                            response_code=getattr(json_response, 'status', None) or getattr(lf_r, 'last_response_code', None),
                            error=_api_error, diagnostics=getattr(lf_r, 'last_diagnostics', None),
-                           sent_at=getattr(lf_r, 'last_sent_at', None))
+                           sent_at=getattr(lf_r, 'last_sent_at', None),
+                           elapsed_ms=getattr(lf_r, 'last_elapsed_ms', None))
         return json_response
 
     def json_put(self, _req_url, _data, debug_=False, response_json_list_=None):
@@ -350,12 +356,14 @@ class LFCliBase:
                 self._log_api_call("PUT", _req_url, data=_data,
                                    response_code=getattr(json_response, 'status', None) or getattr(lf_r, 'last_response_code', None),
                                    error=_api_error, diagnostics=getattr(lf_r, 'last_diagnostics', None),
-                                   sent_at=getattr(lf_r, 'last_sent_at', None))
+                                   sent_at=getattr(lf_r, 'last_sent_at', None),
+                                   elapsed_ms=getattr(lf_r, 'last_elapsed_ms', None))
                 exit(1)
         self._log_api_call("PUT", _req_url, data=_data,
                            response_code=getattr(json_response, 'status', None) or getattr(lf_r, 'last_response_code', None),
                            error=_api_error, diagnostics=getattr(lf_r, 'last_diagnostics', None),
-                           sent_at=getattr(lf_r, 'last_sent_at', None))
+                           sent_at=getattr(lf_r, 'last_sent_at', None),
+                           elapsed_ms=getattr(lf_r, 'last_elapsed_ms', None))
         return json_response
 
     def json_get(self, _req_url, debug_=None):
@@ -385,7 +393,8 @@ class LFCliBase:
                         time.sleep(10)
                 self._log_api_call("GET", _req_url, response_code=getattr(lf_r, 'last_response_code', None),
                                    diagnostics=getattr(lf_r, 'last_diagnostics', None),
-                                   sent_at=getattr(lf_r, 'last_sent_at', None))
+                                   sent_at=getattr(lf_r, 'last_sent_at', None),
+                                   elapsed_ms=getattr(lf_r, 'last_elapsed_ms', None))
                 return None
         except ValueError as ve:
             _api_error = ve
@@ -396,12 +405,14 @@ class LFCliBase:
             if self.exit_on_error:
                 self._log_api_call("GET", _req_url, response_code=getattr(lf_r, 'last_response_code', None), error=_api_error,
                                    diagnostics=getattr(lf_r, 'last_diagnostics', None),
-                                   sent_at=getattr(lf_r, 'last_sent_at', None))
+                                   sent_at=getattr(lf_r, 'last_sent_at', None),
+                                   elapsed_ms=getattr(lf_r, 'last_elapsed_ms', None))
                 sys.exit(1)
 
         self._log_api_call("GET", _req_url, response_code=getattr(lf_r, 'last_response_code', None), error=_api_error,
                            diagnostics=getattr(lf_r, 'last_diagnostics', None),
-                           sent_at=getattr(lf_r, 'last_sent_at', None))
+                           sent_at=getattr(lf_r, 'last_sent_at', None),
+                           elapsed_ms=getattr(lf_r, 'last_elapsed_ms', None))
         return json_response
 
     def json_delete(self, _req_url, debug_=False):
@@ -425,7 +436,8 @@ class LFCliBase:
                 logger.debug("LFCliBase.json_delete: no entity/response, probabily status 404")
                 self._log_api_call("DELETE", _req_url, response_code=getattr(lf_r, 'last_response_code', None),
                                    diagnostics=getattr(lf_r, 'last_diagnostics', None),
-                                   sent_at=getattr(lf_r, 'last_sent_at', None))
+                                   sent_at=getattr(lf_r, 'last_sent_at', None),
+                                   elapsed_ms=getattr(lf_r, 'last_elapsed_ms', None))
                 return None
         except ValueError as ve:
             _api_error = ve
@@ -436,12 +448,14 @@ class LFCliBase:
             if self.exit_on_error:
                 self._log_api_call("DELETE", _req_url, response_code=getattr(lf_r, 'last_response_code', None), error=_api_error,
                                    diagnostics=getattr(lf_r, 'last_diagnostics', None),
-                                   sent_at=getattr(lf_r, 'last_sent_at', None))
+                                   sent_at=getattr(lf_r, 'last_sent_at', None),
+                                   elapsed_ms=getattr(lf_r, 'last_elapsed_ms', None))
                 sys.exit(1)
         # print("----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
         self._log_api_call("DELETE", _req_url, response_code=getattr(lf_r, 'last_response_code', None), error=_api_error,
                            diagnostics=getattr(lf_r, 'last_diagnostics', None),
-                           sent_at=getattr(lf_r, 'last_sent_at', None))
+                           sent_at=getattr(lf_r, 'last_sent_at', None),
+                           elapsed_ms=getattr(lf_r, 'last_elapsed_ms', None))
         return json_response
 
     @staticmethod
