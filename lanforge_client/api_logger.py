@@ -9,7 +9,7 @@ import csv
 import datetime
 import json
 import logging
-import os
+from pathlib import Path
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ def configure_api_call_logging(enabled: bool, log_filename: Optional[str] = None
     _logging_paused = False
     if not _logging_enabled:
         return
-    _log_filename = log_filename or os.path.join(os.path.expanduser('~'), 'lf_api_calls.csv')
+    _log_filename = log_filename or str(Path.home() / 'lf_api_calls.csv')
     # start each run with a clean log file
     try:
         with open(_log_filename, 'w', newline='') as csv_file:
