@@ -124,7 +124,7 @@ import shutil
 import glob
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
-from threading import Thread
+from threading import Event, Thread
 import traceback
 import platform
 import signal
@@ -301,6 +301,7 @@ class Youtube(Realm):
         self.lanforge_port_list = set()
         self.lanforge_os_type = list()
         self.android = 0
+        self.android_log_received = Event()
         self.wifi_interface_list = []
         self.devices_list = []
         self.max_buffer = {}
@@ -913,6 +914,9 @@ class Youtube(Realm):
         self._gen_cx_stall_since = {}
         self._gen_cx_timed_out = set()
 
+        if self.android:
+            self.android_log_received.clear()
+
         # Start the connections of generic endpoints
         self.generic_endps_profile.start_cx()
         # Set the start time to the current datetime
@@ -925,6 +929,20 @@ class Youtube(Realm):
     def stop_generic_cx(self,):
         self.generic_endps_profile.stop_cx()
         self.stop_time = datetime.now()
+
+    def wait_for_android_shutdown(self, timeout=30):
+        """Give Android time to stop YouTube and upload its combined log."""
+        if not self.android:
+            return True
+        if self.android_log_received.wait(timeout=timeout):
+            logger.info("Android shutdown completed and test log was received.")
+            return True
+        logger.warning(
+            "Android did not upload its test log within %s seconds; "
+            "force-stopping the generic CX.",
+            timeout,
+        )
+        return False
 
     def get_youtube_lf_wifi_stats(self):
         """
@@ -974,6 +992,49 @@ class Youtube(Realm):
         """
         app = Flask(__name__)
 
+        @app.route('/upload_youtube_log', methods=['POST'])
+        def upload_youtube_log():
+            """Store a client log for inclusion in the active test report."""
+            device_name = request.form.get('device_name', '').strip()
+            device_type = request.form.get('device_type', 'client').strip().lower()
+            log_kind = request.form.get('log_kind', 'test').strip().lower()
+            log_file = request.files.get('log_file')
+
+            if not device_name or log_file is None:
+                return jsonify({"error": "device_name and log_file are required"}), 400
+
+            safe_device_name = re.sub(r'[^A-Za-z0-9_.-]+', '_', device_name)
+            safe_device_type = re.sub(r'[^A-Za-z0-9_.-]+', '_', device_type)
+            safe_log_kind = re.sub(r'[^A-Za-z0-9_.-]+', '_', log_kind)
+            log_directory = (
+                self.ui_report_dir
+                if self.do_webUI and self.ui_report_dir
+                else os.path.dirname(os.path.abspath(__file__))
+            )
+            os.makedirs(log_directory, exist_ok=True)
+            if safe_device_type == 'android':
+                log_filename = "android_youtube_test.log"
+            elif safe_log_kind == 'debug':
+                log_filename = f"{safe_device_name}_client_youtube_debug.log"
+            else:
+                log_filename = (
+                    f"{safe_device_name}_{safe_device_type}_youtube_test.log"
+                )
+            log_path = os.path.join(log_directory, log_filename)
+
+            try:
+                log_file.save(log_path)
+            except OSError as exc:
+                logger.exception("Unable to store YouTube log for %s", device_name)
+                return jsonify({"error": str(exc)}), 500
+
+            if log_path not in self.devices_list:
+                self.devices_list.append(log_path)
+            if safe_device_type == 'android':
+                self.android_log_received.set()
+            logger.info("Received YouTube test log for %s: %s", device_name, log_path)
+            return jsonify({"message": "Log uploaded successfully"}), 200
+
         @app.route('/check_stop', methods=['GET'])
         def check_stop():
             return jsonify({"stop": self.stop_signal})
@@ -989,11 +1050,6 @@ class Youtube(Realm):
 
             logger.info("Stopping the test through WebUI")
             self.stop_signal = True
-
-            try:
-                self.generic_endps_profile.stop_cx()
-            except Exception:
-                logger.exception("Unable to stop generic CXs after WebUI stop request")
 
             return jsonify({"message": "YouTube test stop requested"}), 200
 
@@ -1227,7 +1283,23 @@ class Youtube(Realm):
             )
             return
 
+        # Keep uploaded client logs separate from reports, CSVs, and graphs.
+        filename = os.path.basename(source_file)
+        if filename.endswith(("_youtube_test.log", "_youtube_debug.log")):
+            dest_dir = os.path.join(dest_dir, "client_logs")
+
         # Ensure the destination directory exists
+        if not os.path.exists(dest_dir) and os.path.basename(dest_dir) == "client_logs":
+            try:
+                os.makedirs(dest_dir, exist_ok=True)
+            except OSError as exc:
+                logger.error(
+                    "Cannot create client log directory %s: %s",
+                    dest_dir,
+                    exc,
+                )
+                return
+
         if not os.path.exists(dest_dir):
             logger.error(
                 "Cannot move report artifact %s because destination directory "
@@ -1238,7 +1310,6 @@ class Youtube(Realm):
             return
 
         try:
-            filename = os.path.basename(source_file)
             dest_file = os.path.join(dest_dir, filename)
             shutil.move(source_file, dest_file)
 
@@ -2343,6 +2414,8 @@ class Youtube(Realm):
                         self.monitor_endpoint_status_changes()
                         time.sleep(5)
 
+                    if self.stop_signal:
+                        self.wait_for_android_shutdown(timeout=30)
                     self.generic_endps_profile.stop_cx()
                     logging.info(
                         "Finished data collection for coordinate %s and angle %s at %s",
@@ -2372,6 +2445,8 @@ class Youtube(Realm):
                     self.monitor_endpoint_status_changes()
                     time.sleep(5)
 
+                if self.stop_signal:
+                    self.wait_for_android_shutdown(timeout=30)
                 self.generic_endps_profile.stop_cx()
                 logging.info(
                     "Finished data collection for coordinate %s at %s",
@@ -2416,6 +2491,8 @@ class Youtube(Realm):
             "All band-steering coordinates completed at %s; stopping the test",
             datetime.now().astimezone().isoformat(timespec="seconds"),
         )
+        if self.stop_signal:
+            self.wait_for_android_shutdown(timeout=30)
         self.generic_endps_profile.stop_cx()
 
         self.stop_bandsteering_test()
@@ -2424,6 +2501,8 @@ class Youtube(Realm):
         logging.info("Stopping Band-Steering YouTube Test")
 
         try:
+            if self.stop_signal:
+                self.wait_for_android_shutdown(timeout=30)
             self.generic_endps_profile.stop_cx()
         except Exception as e:
             logging.error(f"Error stopping CX: {e}")
@@ -3296,6 +3375,8 @@ NOTES:
                     youtube.monitor_endpoint_status_changes()
                     time.sleep(1)
 
+                if youtube.stop_signal:
+                    youtube.wait_for_android_shutdown(timeout=30)
                 youtube.generic_endps_profile.stop_cx()
                 logging.info(
                     "YouTube streaming finished at %s",
