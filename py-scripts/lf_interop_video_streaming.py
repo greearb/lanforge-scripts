@@ -2311,7 +2311,7 @@ class VideoStreamingTest(Realm):
         """
         date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
 
-        test_setup_info = self.create_test_setup_info(media_source=args.media_source, media_quality=args.media_quality)
+        test_setup_info = self.create_test_setup_info(media_source=self.media_source_name, media_quality=self.media_quality_name)
         params = {
             "date": None,
             "iterations_before_test_stopped_by_user": None,
@@ -2772,7 +2772,7 @@ class VideoStreamingTest(Realm):
                 last_row_df.to_csv("video_streaming_realtime_data.csv", mode="a", header=False, index=False)
             #  stop cx's after completing all cycles in bandsteering mode or if test is stopped by user in between the test
             self.stop()
-            test_setup_info = self.create_test_setup_info(media_source=self.media_source, media_quality=self.media_quality)
+            test_setup_info = self.create_test_setup_info(media_source=self.media_source_name, media_quality=self.media_quality_name)
             date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
             self.generate_report(date, [0], test_setup_info=test_setup_info, realtime_dataset=individual_df, iot_summary=None)
             if self.postcleanup:
@@ -2935,7 +2935,7 @@ class VideoStreamingTest(Realm):
                             if int(coordinate) not in self.vs_data:
                                 self.vs_data[int(coordinate)] = {}
                             self.vs_data[int(coordinate)][self.rotation_list[angle]] = params
-        test_setup_info = self.create_test_setup_info(media_source=args.media_source, media_quality=args.media_quality)
+        test_setup_info = self.create_test_setup_info(media_source=self.media_source_name, media_quality=self.media_quality_name)
         if self.dowebgui:
             self.copy_reports_to_home_dir()
             with open(nav_data, 'r') as x:
@@ -3506,6 +3506,9 @@ def main():
                              bssids=args.bssids.split(",") if args.bssids else [],
                              duration_to_skip=args.duration_to_skip
                              )
+    # preserve the human-readable names so the report shows e.g. "Hls" instead of the numeric code "3"
+    obj.media_source_name = media_source
+    obj.media_quality_name = media_quality
     args.upstream_port = obj.change_port_to_ip(args.upstream_port)
     obj.upstream_port = args.upstream_port
     obj.validate_args()
