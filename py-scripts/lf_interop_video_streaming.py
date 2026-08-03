@@ -790,14 +790,15 @@ class VideoStreamingTest(Realm):
 
             for cx_name in self.created_cx.keys():
                 value = cx_metrics.get(cx_name)
-                if value is None:
+                was_missing = value is None
+                if was_missing:
                     if cx_name not in self.missing_cx_logged:
                         logger.warning(
                             "CX '{}' is missing from the monitoring data, the device may have disconnected "
                             "or its connection was not created. Continuing the test with the remaining "
                             "devices.\n"
                             "URL     : {}\n"
-                            "Response: {}".format(cx_name, monitor_url, data)
+                            "Response keys: {}".format(cx_name, monitor_url, list(cx_metrics.keys()))
                         )
                         self.missing_cx_logged.add(cx_name)
                         self.record_device_issue(self.port_label_from_cx_name(cx_name),
@@ -809,19 +810,19 @@ class VideoStreamingTest(Realm):
                         self.missing_cx_logged.discard(cx_name)
 
                 status = value.get('status', 'Stopped')
-                # Give devices a 10s grace period after monitoring starts before treating a
-                # non-'Run' status as noteworthy, since it's normal for CXs to still be starting
-                # up right after the monitor loop begins.
-                past_grace_period = (self.monitor_start_time is None or (datetime.now() - self.monitor_start_time).total_seconds() >= 10)
-                if status != 'Run':
-                    if past_grace_period and cx_name not in self.cx_not_running_logged:
-                        logger.warning("CX '{}' status is '{}', not running.".format(cx_name, status))
-                        self.cx_not_running_logged.add(cx_name)
-                        self.record_device_issue(self.port_label_from_cx_name(cx_name),
-                                                 "CX '{}' status is '{}', not running".format(cx_name, status))
-                elif cx_name in self.cx_not_running_logged:
-                    logger.info("CX '{}' status is back to running.".format(cx_name))
-                    self.cx_not_running_logged.discard(cx_name)
+                # skip the status check for an already-missing CX, since it defaults to 'Stopped' and would just be a redundant warning
+                if not was_missing:
+                    # 10s grace period after monitor start, since CXs may still be starting up
+                    past_grace_period = (self.monitor_start_time is None or (datetime.now() - self.monitor_start_time).total_seconds() >= 10)
+                    if status != 'Run':
+                        if past_grace_period and cx_name not in self.cx_not_running_logged:
+                            logger.warning("CX '{}' status is '{}', not running.".format(cx_name, status))
+                            self.cx_not_running_logged.add(cx_name)
+                            self.record_device_issue(self.port_label_from_cx_name(cx_name),
+                                                     "CX '{}' status is '{}', not running".format(cx_name, status))
+                    elif cx_name in self.cx_not_running_logged:
+                        logger.info("CX '{}' status is back to running.".format(cx_name))
+                        self.cx_not_running_logged.discard(cx_name)
 
                 names.append(value.get('name', cx_name))
                 statuses.append(status)
@@ -1010,11 +1011,12 @@ class VideoStreamingTest(Realm):
             value = signal_by_resource.get(resource_id)
             if value is None:
                 if resource_id not in self.missing_signal_logged:
+                    response_keys = [key for iface in eid_data.get("interfaces", []) for key in iface]
                     logger.warning(
                         "Signal data for device on port 1.{} is unavailable, it may have disconnected. "
                         "Continuing the test with the remaining devices.\n"
                         "URL     : {}\n"
-                        "Response: {}".format(resource_id, signal_url, eid_data)
+                        "Response keys: {}".format(resource_id, signal_url, response_keys)
                     )
                     self.missing_signal_logged.add(resource_id)
                     self.record_device_issue("1.{}".format(resource_id), "Signal data unavailable (device may have disconnected)")
@@ -1112,13 +1114,20 @@ class VideoStreamingTest(Realm):
                     # This pre-check runs on every call to monitor_for_runtime_csv, which in
                     # bandsteering/robot mode is invoked repeatedly as the monitor_function tick.
                     # Only print this summary once per test instead of on every tick.
+                    last_response_endpoint = self.last_monitor_response.get('endpoint') if self.last_monitor_response else None
+                    if isinstance(last_response_endpoint, list):
+                        response_keys = [key for endpoint in last_response_endpoint for key in endpoint]
+                    elif isinstance(last_response_endpoint, dict):
+                        response_keys = list(last_response_endpoint.keys())
+                    else:
+                        response_keys = []
                     logger.warning("The following device(s) are missing before monitoring starts, "
                                    "continuing the test with the remaining {} device(s): {}\n"
                                    "URL     : {}\n"
-                                   "Response: {}".format(
+                                   "Response keys: {}".format(
                                        len(self.created_cx) - len(self.missing_cx_logged),
                                        sorted(self.port_label_from_cx_name(cx) for cx in self.missing_cx_logged),
-                                       self.last_monitor_url, self.last_monitor_response))
+                                       self.last_monitor_url, response_keys))
                     self.pre_monitoring_missing_logged = True
 
             # Loop until the current time is less than the end time
