@@ -1138,6 +1138,9 @@ class VideoStreamingTest(Realm):
             # Loop until the current time is less than the end time
             while current_time < endtime_check or self.background_run:
                 if self.test_stopped:
+                    # bandsteering re-enters this function per tick, so return now instead of falling through to code that assumes a loop iteration ran
+                    if self.do_bandsteering:
+                        return test_stopped_by_user
                     break
                 if self.robot_test:
                     # monitor_charge_time is None when this function is invoked as the
@@ -1207,6 +1210,11 @@ class VideoStreamingTest(Realm):
                         logger.error("No devices responded within 40 seconds during monitoring, "
                                      "ending the monitor loop gracefully; the test will continue with "
                                      "the data collected so far.")
+                        # stop the whole robot test instead of moving on to another coordinate/rotation
+                        self.test_stopped = True
+                        # mark the WebUI as completed instead of leaving it at a later planned navigation state
+                        if self.robot_test:
+                            self.robot.update_nav_data_for_all_cxs_stopped()
                         break
 
                 overall_video_rate = []
@@ -2441,6 +2449,9 @@ class VideoStreamingTest(Realm):
                 for angle in range(len(self.rotation_list)):
                     self.current_angle = self.rotation_list[angle]
                     coord, ang = self.coordinate_list[coordinate], self.rotation_list[angle]
+                    # a stopped test may not have reached every configured angle, so skip missing ones
+                    if ang not in self.vs_data[int(coord)]:
+                        continue
                     self.data = self.vs_data[int(coord)][ang]["self_data"]
                     self.generate_individual_coordinate(report, device_type, username, ssid, mac, channel, mode, rssi, tx_rate, created_incremental_values, keys)
                 shutil.move('video_streaming_realtime_data{}.csv'.format(csv_suffix), report_path_date_time)
@@ -2744,16 +2755,24 @@ class VideoStreamingTest(Realm):
             self.start_specific(cx_order_list[i])
             individual_df = pd.DataFrame(columns=individual_dataframe_columns)
             for coord in coordinate_list_with_robo:
-                #  To check for battery level before moving to next coordinate and also monitor cx while moving to next coordinate in bandsteering mode
-                pause, stopped, all_data_frames = self.robot.wait_for_battery(
-                    monitor_function=lambda: self.monitor_for_runtime_csv(
-                        args.duration, file_path, individual_df, i, actual_start_time, cx_order_list[i]))
-                if stopped:
+                try:
+                    #  To check for battery level before moving to next coordinate and also monitor cx while moving to next coordinate in bandsteering mode
+                    pause, stopped, all_data_frames = self.robot.wait_for_battery(
+                        monitor_function=lambda: self.monitor_for_runtime_csv(
+                            args.duration, file_path, individual_df, i, actual_start_time, cx_order_list[i]))
+                    if stopped:
+                        break
+                    # Moving to next coordinate and also monitor cx while moving to next coordinate in bandsteering mode
+                    matched, abort, all_data_frames = self.robot.move_to_coordinate(
+                        coord, monitor_function=lambda: self.monitor_for_runtime_csv(
+                            args.duration, file_path, individual_df, i, actual_start_time, cx_order_list[i]))
+                except RuntimeError as e:
+                    logger.debug("Stopping bandsteering test: %s", e)
+                    # no devices ever responded; stop the test and report with the data collected so far
+                    self.test_stopped = True
+                    if self.robot_test:
+                        self.robot.update_nav_data_for_all_cxs_stopped()
                     break
-                # Moving to next coordinate and also monitor cx while moving to next coordinate in bandsteering mode
-                matched, abort, all_data_frames = self.robot.move_to_coordinate(
-                    coord, monitor_function=lambda: self.monitor_for_runtime_csv(
-                        args.duration, file_path, individual_df, i, actual_start_time, cx_order_list[i]))
                 if coord == self.coordinate_list[0]:
                     curr_cycle += 1
                     if curr_cycle > int(self.total_cycles):
@@ -2762,14 +2781,15 @@ class VideoStreamingTest(Realm):
                         logger.info("current cycle {}".format(curr_cycle))
                 if abort:
                     break
-            # To get add last entry in the csv
-            last_idx = individual_df.index[-1]
-            individual_df.loc[last_idx, "status"] = "Stopped"
-            last_row_df = individual_df.loc[[last_idx]]
-            if self.dowebgui:
-                last_row_df.to_csv(f"{args.result_dir}/video_streaming_realtime_data.csv", mode="a", header=False, index=False)
-            else:
-                last_row_df.to_csv("video_streaming_realtime_data.csv", mode="a", header=False, index=False)
+            # add last entry in the csv, skipping if no data was ever collected
+            if len(individual_df) > 0:
+                last_idx = individual_df.index[-1]
+                individual_df.loc[last_idx, "status"] = "Stopped"
+                last_row_df = individual_df.loc[[last_idx]]
+                if self.dowebgui:
+                    last_row_df.to_csv(f"{args.result_dir}/video_streaming_realtime_data.csv", mode="a", header=False, index=False)
+                else:
+                    last_row_df.to_csv("video_streaming_realtime_data.csv", mode="a", header=False, index=False)
             #  stop cx's after completing all cycles in bandsteering mode or if test is stopped by user in between the test
             self.stop()
             test_setup_info = self.create_test_setup_info(media_source=self.media_source_name, media_quality=self.media_quality_name)
@@ -2829,9 +2849,24 @@ class VideoStreamingTest(Realm):
                                     if data["status"] != "Running":
                                         self.test_stopped = True
                                         break
-                            test_stopped_by_user = self.monitor_for_runtime_csv(args.duration, file_path, coordinate_df, i, actual_start_time, cx_order_list[i])
+                            try:
+                                test_stopped_by_user = self.monitor_for_runtime_csv(args.duration, file_path, coordinate_df, i, actual_start_time, cx_order_list[i])
+                            except RuntimeError as e:
+                                logger.debug("Stopping robot test at coordinate {}: {}".format(self.current_coordinate, e))
+                                # no devices ever responded at this coordinate; stop the whole robot test
+                                self.test_stopped = True
+                                if self.robot_test:
+                                    self.robot.update_nav_data_for_all_cxs_stopped()
+                                break
                         else:
-                            test_stopped_by_user = self.monitor_for_runtime_csv(args.duration, file_path, coordinate_df, i, actual_start_time, cx_order_list[i])
+                            try:
+                                test_stopped_by_user = self.monitor_for_runtime_csv(args.duration, file_path, coordinate_df, i, actual_start_time, cx_order_list[i])
+                            except RuntimeError as e:
+                                logger.debug("Stopping robot test at coordinate {}: {}".format(self.current_coordinate, e))
+                                self.test_stopped = True
+                                if self.robot_test:
+                                    self.robot.update_nav_data_for_all_cxs_stopped()
+                                break
                         if not test_stopped_by_user:
                             # Append current iteration index to iterations_before_test_stopped_by_user
                             iterations_before_test_stopped_by_user.append(i)
@@ -2851,6 +2886,8 @@ class VideoStreamingTest(Realm):
                     else:
                         exit_from_monitor = False
                         for angle in range(len(self.rotation_list)):
+                            if self.test_stopped:
+                                break
                             final_angle = 0
                             # Check battery level: if below 20% robot charges fully before resuming
                             pause_angle, test_stopped_by_user = self.robot.wait_for_battery(stop=self.stop)
@@ -2899,27 +2936,44 @@ class VideoStreamingTest(Realm):
                                         if data["status"] != "Running":
                                             self.test_stopped = True
                                             break
-                                test_stopped_by_user = self.monitor_for_runtime_csv(
-                                    args.duration,
-                                    file_path,
-                                    individual_df,
-                                    i,
-                                    actual_start_time,
-                                    cx_order_list[i],
-                                    curr_coordinate=coordinate,
-                                    curr_rotation=self.rotation_list[angle],
-                                    monitor_charge_time=monitor_charge_time)
+                                try:
+                                    test_stopped_by_user = self.monitor_for_runtime_csv(
+                                        args.duration,
+                                        file_path,
+                                        individual_df,
+                                        i,
+                                        actual_start_time,
+                                        cx_order_list[i],
+                                        curr_coordinate=coordinate,
+                                        curr_rotation=self.rotation_list[angle],
+                                        monitor_charge_time=monitor_charge_time)
+                                except RuntimeError as e:
+                                    logger.debug("Stopping robot test at coordinate {} angle {}: {}".format(
+                                        coordinate, self.rotation_list[angle], e))
+                                    # stop the whole robot test; breaking here also stops the outer coordinate loop
+                                    self.test_stopped = True
+                                    if self.robot_test:
+                                        self.robot.update_nav_data_for_all_cxs_stopped()
+                                    break
                             else:
-                                test_stopped_by_user = self.monitor_for_runtime_csv(
-                                    args.duration,
-                                    file_path,
-                                    individual_df,
-                                    i,
-                                    actual_start_time,
-                                    cx_order_list[i],
-                                    curr_coordinate=coordinate,
-                                    curr_rotation=self.rotation_list[angle],
-                                    monitor_charge_time=monitor_charge_time)
+                                try:
+                                    test_stopped_by_user = self.monitor_for_runtime_csv(
+                                        args.duration,
+                                        file_path,
+                                        individual_df,
+                                        i,
+                                        actual_start_time,
+                                        cx_order_list[i],
+                                        curr_coordinate=coordinate,
+                                        curr_rotation=self.rotation_list[angle],
+                                        monitor_charge_time=monitor_charge_time)
+                                except RuntimeError as e:
+                                    logger.debug("Stopping robot test at coordinate {} angle {}: {}".format(
+                                        coordinate, self.rotation_list[angle], e))
+                                    self.test_stopped = True
+                                    if self.robot_test:
+                                        self.robot.update_nav_data_for_all_cxs_stopped()
+                                    break
                             if not test_stopped_by_user:
                                 # Append current iteration index to iterations_before_test_stopped_by_user
                                 iterations_before_test_stopped_by_user.append(i)
@@ -2928,6 +2982,9 @@ class VideoStreamingTest(Realm):
                                 iterations_before_test_stopped_by_user.append(i)
                                 params = self.build_report_params_for_robo(args, cx_order_list, individual_df, iterations_before_test_stopped_by_user)
                                 params["self_data"] = self.data.copy()
+                                if int(coordinate) not in self.vs_data:
+                                    self.vs_data[int(coordinate)] = {}
+                                self.vs_data[int(coordinate)][self.rotation_list[angle]] = params
                                 break
                             self.stop()
                             params = self.build_report_params_for_robo(args, cx_order_list, individual_df, iterations_before_test_stopped_by_user)
