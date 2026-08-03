@@ -2009,25 +2009,56 @@ class ZoomAutomation(Realm):
             )
             return None
 
-    def get_participants_qos(self, meeting_id, access_token, test_type="past"):
+    def get_participants_qos(
+        self,
+        meeting_id,
+        access_token,
+        test_type="past",
+        timeout=300,
+        request_timeout=30,
+    ):
+        """Fetch every page of participant QoS for a meeting.
+
+        Two separate bounds, because there are two ways this can hang:
+
+        request_timeout caps each individual HTTP call, so an unresponsive
+        Zoom endpoint cannot block forever. This matters most for the "live"
+        fetch, which runs inside the /upload_stats request — a stalled socket
+        there holds a Flask worker thread and the client waiting on it.
+
+        timeout caps the whole pagination walk. The loop otherwise ends only
+        when Zoom stops handing back a next_page_token; a repeating token
+        would page indefinitely. On expiry the pages collected so far are
+        kept rather than discarded.
+        """
         url = f"https://api.zoom.us/v2/metrics/meetings/{meeting_id}/participants/qos"
         headers = {"Authorization": f"Bearer {access_token}"}
         params = {"type": test_type}
         all_participants = []
         next_page_token = None
+        deadline = time.time() + timeout
 
         try:
             while True:
                 if next_page_token:
                     params["next_page_token"] = next_page_token
 
-                response = requests.get(url, headers=headers, params=params)
+                response = requests.get(
+                    url, headers=headers, params=params, timeout=request_timeout
+                )
                 if response.status_code == 200:
                     data = response.json()
                     participants = data.get("participants", [])
                     all_participants.extend(participants)
                     next_page_token = data.get("next_page_token")
                     if not next_page_token:
+                        break
+                    if time.time() >= deadline:
+                        logger.warning(
+                            f"Stopped paging {test_type} participant QoS after "
+                            f"{timeout}s with {len(all_participants)} participants "
+                            "collected; keeping what was fetched so far."
+                        )
                         break
                 else:
                     raise Exception(
@@ -2576,23 +2607,62 @@ class ZoomAutomation(Realm):
         except Exception as e:
             logging.error(f"Failed to move '{source_file}' to '{dest_dir}': {e}")
 
-    def updating_webui_runningjson(self, obj):
-        data = {}
-        file_path = self.path + "/../../Running_instances/{}_{}_running.json".format(self.mgr_ip, self.testname)
+    def updating_webui_runningjson(self, obj, timeout=60):
+        """Merge obj into the web UI's running json for this test.
 
-        # Wait until the file exists
+        Returns True when the file was updated, False when it existed but could
+        not be read or written — that only costs the web UI a status update, so
+        it is logged and the test carries on.
+
+        A missing file is different and ends the run. The web UI creates it
+        before launching the script, so if it has not appeared within timeout
+        seconds it is not coming, and every later status update would fail the
+        same way — the web UI would show a test that never reports progress or
+        completion. The usual cause is a name that can never match: --testname
+        left unset makes this look for "<ip>_None_running.json". The message
+        names the exact path so that is obvious at a glance.
+        """
+        file_path = os.path.join(
+            self.path,
+            "..",
+            "..",
+            "Running_instances",
+            f"{self.mgr_ip}_{self.testname}_running.json",
+        )
+
+        deadline = time.time() + timeout
         while not os.path.exists(file_path):
-            logging.info("Waiting for the running json file to be created")
+            if time.time() >= deadline:
+                logger.error(
+                    f"Aborting the test: the web UI running json never appeared "
+                    f"at {file_path} after {timeout}s. Check that --testname "
+                    f"(got {self.testname!r}) and --report_dir match what the "
+                    f"web UI created."
+                )
+                # sys.exit rather than an exception: this is a configuration
+                # problem, not a test failure, and it keeps the output to the
+                # one line above instead of a traceback. SystemExit still runs
+                # main()'s finally block, so endpoints are cleaned up.
+                sys.exit(1)
+            logger.info(f"Waiting for the running json file to be created: {file_path}")
             time.sleep(1)
-        logging.info("Running Json file found")
-        with open(file_path, 'r') as file:
-            data = json.load(file)
 
-        for key in obj:
-            data[key] = obj[key]
+        try:
+            with open(file_path, "r") as file:
+                data = json.load(file)
 
-        with open(file_path, 'w') as file:
-            json.dump(data, file, indent=4)
+            for key in obj:
+                data[key] = obj[key]
+
+            with open(file_path, "w") as file:
+                json.dump(data, file, indent=4)
+        except (OSError, ValueError) as e:
+            # ValueError covers json.JSONDecodeError — a truncated or
+            # half-written file must not take the whole test down.
+            logger.error(f"Could not update the web UI running json {file_path}: {e}")
+            return False
+
+        return True
 
     def generate_report(self):
         report = lf_report(_output_pdf='zoom_call_report.pdf',
@@ -5085,6 +5155,29 @@ def main():
             )
             exit(0)
 
+        # Zoom API credentials, resolved before anything else is set up: without
+        # them an --api_stats_collection run cannot produce its report, so there
+        # is no point reaching LANforge or starting the Flask server first.
+        account_id = client_id = client_secret = None
+        if args.api_stats_collection:
+            if args.env_file:
+                if not os.path.exists(args.env_file):
+                    logger.error(f".env file '{args.env_file}' not found")
+                    sys.exit(1)
+                load_dotenv(args.env_file)
+                logger.info(f"Loaded environment variables from {args.env_file}")
+
+            account_id = args.account_id or os.environ.get("ACCOUNT_ID")
+            client_id = args.client_id or os.environ.get("CLIENT_ID")
+            client_secret = args.client_secret or os.environ.get("CLIENT_SECRET")
+
+            if not all([account_id, client_id, client_secret]):
+                logger.error(
+                    "Missing Zoom credentials: pass --account_id/--client_id/"
+                    "--client_secret or set ACCOUNT_ID/CLIENT_ID/CLIENT_SECRET"
+                )
+                sys.exit(1)
+
         rotations_enabled = False
         bssids = []
         if args.do_robo or args.do_bs or args.do_roam:
@@ -5130,6 +5223,12 @@ def main():
             linux_dir=args.linux_dir,
             mac_dir=args.mac_dir,
         )
+        # Already resolved and validated above; None unless this is an
+        # --api_stats_collection run.
+        zoom_automation.account_id = account_id
+        zoom_automation.client_id = client_id
+        zoom_automation.client_secret = client_secret
+
         if args.download_csv:
             zoom_automation.download_csv = True
         args.upstream_port = zoom_automation.change_port_to_ip(args.upstream_port)
@@ -5341,34 +5440,6 @@ def main():
         zoom_automation.get_resource_data()
         zoom_automation.get_ports_data()
         zoom_automation.get_interop_data()
-
-        if args.api_stats_collection:
-            # load environment file if specified
-            if args.env_file:
-                if os.path.exists(args.env_file):
-                    load_dotenv(args.env_file)
-                    logger.info(f"Loaded environment variables from {args.env_file}")
-                else:
-                    raise FileNotFoundError(f".env file '{args.env_file}' not found")
-
-            # Fetching zoom credentials for account
-            zoom_automation.account_id = args.account_id or os.environ.get("ACCOUNT_ID")
-            zoom_automation.client_id = args.client_id or os.environ.get("CLIENT_ID")
-            zoom_automation.client_secret = args.client_secret or os.environ.get(
-                "CLIENT_SECRET"
-            )
-
-            if not all(
-                [
-                    zoom_automation.account_id,
-                    zoom_automation.client_id,
-                    zoom_automation.client_secret,
-                ]
-            ):
-                logger.info("Exiting test.")
-                raise ValueError(
-                    "Missing Zoom credentials (account_id, client_id, client_secret)"
-                )
 
         if args.do_robo:
             zoom_automation.run_robo_test()
