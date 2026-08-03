@@ -1134,6 +1134,15 @@ class Throughput(Realm):
         for port in port_data:
             interfaces_dict.update(port)
         for sta in station_names:
+            if sta not in interfaces_dict:
+                if sta not in self.missing_signal_logged:
+                    logger.warning("Signal data for station '%s' is unavailable; continuing with default metrics.", sta)
+                    self.missing_signal_logged.add(sta)
+                    self.record_device_issue(sta, "Signal data unavailable (device may have disconnected)")
+            elif sta in self.missing_signal_logged:
+                logger.info("Signal data for station '%s' is available again.", sta)
+                self.missing_signal_logged.discard(sta)
+        for sta in station_names:
             if sta in interfaces_dict:
                 if "dBm" in interfaces_dict[sta]['signal']:
                     signal_list.append(interfaces_dict[sta]['signal'].split(" ")[0])
