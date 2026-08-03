@@ -133,7 +133,7 @@ def record_api_call(method: str, url: str, data: Optional[Any] = None, response_
                 status,
                 response_code if response_code is not None else 'No response_code',
                 round(elapsed_ms, 3) if elapsed_ms is not None else 'Unknown',
-                json.dumps(data, default=str) if data is not None else 'No payload',
+                json.dumps(data, default=str) if data is not None else '-',
                 error,
                 diagnostics if diagnostics is not None else 'No diagnostics',
             ])
