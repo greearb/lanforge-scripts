@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # CSV header for API call logs with prefixed column names to avoid ambiguity across reports.
 CSV_FIELDS = ['api_timestamp', 'api_method', 'api_url', 'api_status', 'api_response_code',
-              'api_payload', 'api_error', 'api_diagnostics']
+              'api_elapsed_ms', 'api_payload', 'api_error', 'api_diagnostics']
 
 _logging_enabled = False
 _logging_paused = False
@@ -92,7 +92,8 @@ def get_log_filename() -> Optional[str]:
 
 def record_api_call(method: str, url: str, data: Optional[Any] = None, response_code: Optional[int] = None,
                     error: Optional[Exception] = None, diagnostics: Optional[str] = None,
-                    sent_at: Optional[datetime.datetime] = None) -> None:
+                    sent_at: Optional[datetime.datetime] = None,
+                    elapsed_ms: Optional[float] = None) -> None:
     """
     Append one CSV row for a json_get/json_post/json_put/json_delete call. No-op unless
     configure_api_call_logging(enabled=True) was called first, or while paused (see pause()/resume()).
@@ -108,6 +109,9 @@ def record_api_call(method: str, url: str, data: Optional[Any] = None, response_
         sent_at: Timestamp captured by the caller right before the request was issued.
             Falls back to datetime.now() (this function's call time) when not provided,
             which is captured well after the request completed and is less accurate.
+        elapsed_ms: Wall-clock duration of the underlying urlopen() call in milliseconds,
+            measured by the caller with time.perf_counter() around just the request itself
+            (excludes diagnostics/logging overhead). None when not measured.
 
     Returns:
         None.
@@ -128,6 +132,7 @@ def record_api_call(method: str, url: str, data: Optional[Any] = None, response_
                 url,
                 status,
                 response_code if response_code is not None else 'No response_code',
+                round(elapsed_ms, 3) if elapsed_ms is not None else 'Unknown',
                 json.dumps(data, default=str) if data is not None else 'No payload',
                 error,
                 diagnostics if diagnostics is not None else 'No diagnostics',
