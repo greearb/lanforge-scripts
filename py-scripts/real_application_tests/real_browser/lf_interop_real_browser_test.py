@@ -102,6 +102,9 @@ import re
 import traceback
 import requests
 
+WINDOWS_REAL_BROWSER_DIR = r".\local\real_application_test\real_browser"
+LINUX_REAL_BROWSER_DIR = "./local/real_application_test/real_browser"
+MACOS_REAL_BROWSER_DIR = "./local/real_application_test/real_browser"
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
@@ -199,7 +202,10 @@ class RealBrowserTest(Realm):
                  current_cord="",
                  current_angle=None,
                  rotations_enabled=False,
-                 duration_to_skip=None
+                 duration_to_skip=None,
+                 windows_dir=WINDOWS_REAL_BROWSER_DIR,
+                 linux_dir=LINUX_REAL_BROWSER_DIR,
+                 mac_dir=MACOS_REAL_BROWSER_DIR
                  ):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         # Initialize attributes with provided parameters
@@ -223,6 +229,9 @@ class RealBrowserTest(Realm):
         self.no_precleanup = no_precleanup
         self.direction = "dl"
         self.dest = "/dev/null"
+        self.windows_dir = windows_dir
+        self.linux_dir = linux_dir
+        self.mac_dir = mac_dir
 
         self.app = Flask(__name__)
         self.app.logger.setLevel(logging.WARNING)
@@ -413,13 +422,36 @@ class RealBrowserTest(Realm):
 
         for i in range(0, len(self.laptop_os_types)):
             if self.laptop_os_types[i] == 'windows':
-                cmd = "real_browser.bat --url %s --server %s --duration %s" % (self.url, self.upstream_port, self.duration)
+                cmd = (
+                    fr'"{self.windows_dir}\real_browser.bat" '
+                    '--url "%s" --server "%s" --duration %s'
+                    % (
+                        self.url,
+                        self.upstream_port,
+                        self.duration,
+                    )
+                )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.laptop_os_types[i] == 'linux':
-                cmd = "su -l lanforge  ctrb.bash %s %s %s %s" % (self.new_port_list[i], self.url, self.upstream_port, self.duration)
+                cmd = (
+                    f"su -l lanforge {self.linux_dir}/ctrb.bash "
+                    "%s %s %s %s"
+                ) % (
+                    self.new_port_list[i],
+                    self.url,
+                    self.upstream_port,
+                    self.duration,
+                )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.laptop_os_types[i] == 'macos':
-                cmd = "sudo bash ctrb.bash --url %s --server %s  --duration %s" % (self.url, self.upstream_port, self.duration)
+                cmd = (
+                    f"sudo bash {self.mac_dir}/ctrb.bash "
+                    "--url %s --server %s --duration %s"
+                ) % (
+                    self.url,
+                    self.upstream_port,
+                    self.duration,
+                )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
         if len(self.phone_data) != 0:
@@ -999,24 +1031,49 @@ class RealBrowserTest(Realm):
         flask_thread.start()
         self.wait_for_flask()
 
-    def check_gen_cx(self):
-        """
-        Check if all endpoints have a status of 'Stopped' or 'WAITING'.
+    def check_gen_cx(self, stall_timeout=300):
+        """Return True once every generic endpoint is idle (Stopped/WAITING/NO-CX),
+        or once a stuck endpoint has been non-idle for longer than stall_timeout
+        seconds — in which case we stop waiting on it instead of hanging forever."""
+        if not hasattr(self, "_gen_cx_stall_since"):
+            self._gen_cx_stall_since = {}
 
-        Returns:
-            bool: True if all endpoints are either 'Stopped' or 'WAITING', False otherwise.
-        """
-        for gen_endp in self.generic_endps_profile.created_endp:
-            generic_endpoint = self.json_get(f'/generic/{gen_endp}')
-            if not generic_endpoint or "endpoint" not in generic_endpoint:
-                logging.info(f"Error fetching endpoint data for {gen_endp}")
-                return False  # Handle case where endpoint data is not available
-            endp_status = generic_endpoint["endpoint"].get("status", "")
-            # If the endpoint status is not 'Stopped' or 'WAITING', return False
-            if endp_status not in ["Stopped", "WAITING", "FTM_WAIT", "NO-CX"]:
-                return False
-        # If all endpoints are in 'Stopped' or 'WAITING', return True
-        return True
+        now = time.time()
+        ready = True
+
+        try:
+            created_endp = [(e, "generic") for e in set(self.generic_endps_profile.created_endp)] + \
+                                [(e, "layer4") for e in self.created_cx.keys()]
+
+            for gen_endp, api in created_endp:
+                generic_endpoint = self.json_get(f"/{api}/{gen_endp}")
+
+                if not generic_endpoint or "endpoint" not in generic_endpoint or not isinstance(generic_endpoint["endpoint"], dict):
+                    logger.info(f"Error fetching endpoint data for {gen_endp}")
+                    endp_status = None  # unreachable/deleted endpoint
+                else:
+                    endp_status = generic_endpoint["endpoint"].get("status", "")
+
+                if endp_status in ["Stopped", "WAITING", "NO-CX", "FTM_WAIT", None]:
+                    self._gen_cx_stall_since.pop(gen_endp, None)
+                    continue
+
+                # Covers BOTH "stuck at a non-idle status" AND "can't be fetched/deleted"
+                stall_start = self._gen_cx_stall_since.setdefault(gen_endp, now)
+                stalled_for = now - stall_start
+                if stalled_for >= stall_timeout:
+                    logger.warning(
+                        f"{gen_endp} unresolved (status={endp_status!r}) for "
+                        f"{stalled_for:.0f}s (limit {stall_timeout}s) — giving up waiting on it."
+                    )
+                    continue
+
+                ready = False
+
+            return ready
+        except Exception as e:
+            logger.error(f"Error in check_gen_cx function {e}", exc_info=True)
+            return False
 
     def json_get_with_retry(self, url, wait_time=40, poll_interval=5):
         """
@@ -1049,19 +1106,21 @@ class RealBrowserTest(Realm):
         are not logged or written again.
         """
         csv_file = "endpoint_status_changes.csv"
-        if csv_file not in self.csv_file_names:
-            self.csv_file_names.append(csv_file)
-        created_endp = self.generic_endps_profile.created_endp
+        created_endp = [(e, "generic") for e in self.generic_endps_profile.created_endp] + \
+                            [(e, "layer4") for e in self.created_cx.keys()]
 
         start_time = time.time()
         endpoint_data = {}
         while True:
-            for gen_endp in created_endp:
-                generic_endpoint = self.json_get(f"/generic/{gen_endp}")
-                if generic_endpoint and "endpoint" in generic_endpoint:
+            active = 0
+            for gen_endp, api in created_endp:
+                generic_endpoint = self.json_get(f"/{api}/{gen_endp}")
+                if generic_endpoint:
                     endpoint_data[gen_endp] = generic_endpoint
+                    if generic_endpoint.get("empty") != "no elements":
+                        active += 1
 
-            if endpoint_data or (time.time() - start_time) >= wait_time:
+            if active > 0 or (time.time() - start_time) >= wait_time:
                 break
 
             logger.warning(
@@ -1077,7 +1136,10 @@ class RealBrowserTest(Realm):
             exit(1)
 
         for gen_endp, generic_endpoint in endpoint_data.items():
-            current_status = generic_endpoint["endpoint"].get("status", "")
+            if generic_endpoint.get("empty") == "no elements":
+                current_status = "Not Found / Deleted"
+            else:
+                current_status = generic_endpoint["endpoint"].get("status", "")
             previous_status = self.endpoint_last_status.get(gen_endp)
 
             if current_status == previous_status:
@@ -1094,13 +1156,17 @@ class RealBrowserTest(Realm):
                     writer.writerow(["timestamp", "endpoint_name", "status"])
                 writer.writerow(
                     [
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
                         gen_endp,
                         current_status,
                     ]
                 )
 
             self.endpoint_last_status[gen_endp] = current_status
+
+        if active == 0:
+            logger.error(f"No active endpoints after waiting {wait_time}s. Aborting.")
+            exit(1)
 
     def update_webui_json(self):
         """
@@ -2124,7 +2190,7 @@ class RealBrowserTest(Realm):
                             # Handle the case where only one CX endpoint is created
                             elif len(self.created_cx.keys()) == 1:
                                 endpoint = mobile_data.get('endpoint', {})
-                                if True:
+                                if endpoint:
                                     cx_name = endpoint.get('name', 'NA')
                                     match = re.search(r'http(\d+)', cx_name)
                                     res_no = match.group(1) if match else 'NA'
@@ -2509,12 +2575,17 @@ class RealBrowserTest(Realm):
                     self.csv_file_names = [self.csv_file_names[-1]]
 
             for i in range(0, len(self.csv_file_names)):
+                if self.csv_file_names[i] == 'endpoint_status_changes.csv':
+                    continue
 
                 final_eid_data, mac_data, channel_data, signal_data, ssid_data, tx_rate_data, device_names, device_type_data = self.extract_device_data(self.csv_file_names[i])
                 report.set_graph_title("Successful URL's per Device")
                 report.build_graph_title()
 
                 data = pd.read_csv(self.csv_file_names[i])
+                if data.empty:
+                    logging.warning(f"No data found in {csv_file}. Skipping graph generation.")
+                    return
 
                 # Extract device names from CSV
                 if 'total_urls' in data.columns:
@@ -2835,6 +2906,7 @@ class RealBrowserTest(Realm):
         # logging.info(f"Checking final eid data {final_eid_data}")
         for eid in final_eid_data:
             port_data = self.local_realm.json_get("port/list?fields=ssid,mac,parent dev,signal,tx-rate,channel,down,ip")
+            found = False
             for interface in port_data['interfaces']:
                 for key, value in interface.items():
                     temp_eid = key.split(".")
@@ -2846,6 +2918,24 @@ class RealBrowserTest(Realm):
                         signal_data.append(value.get("signal", 'None'))
                         ssid_data.append(value.get("ssid", 'None'))
                         tx_rate_data.append(value.get("tx-rate", 'None'))
+                        found = True
+            if not found:
+                # ponytail: device unreachable (down/phantom) this poll; keep columns aligned with device_names
+                mac_data.append('NA')
+                channel_data.append('NA')
+                signal_data.append('NA')
+                ssid_data.append('NA')
+                tx_rate_data.append('NA')
+
+        # devices with no resource match at all also need placeholders so
+        # every returned column stays the same length as device_names
+        for _ in range(len(device_names) - len(final_eid_data)):
+            final_eid_data.append('NA')
+            mac_data.append('NA')
+            channel_data.append('NA')
+            signal_data.append('NA')
+            ssid_data.append('NA')
+            tx_rate_data.append('NA')
 
         return final_eid_data, mac_data, channel_data, signal_data, ssid_data, tx_rate_data, device_names, device_type_data
 
@@ -3047,7 +3137,7 @@ class RealBrowserTest(Realm):
                             # Handle the case where only one CX endpoint is created
                             elif len(self.created_cx.keys()) == 1:
                                 endpoint = mobile_data.get('endpoint', {})
-                                if True:
+                                if endpoint:
                                     cx_name = endpoint.get('name', 'NA')
                                     match = re.search(r'http(\d+)', cx_name)
                                     res_no = match.group(1) if match else 'NA'
@@ -3172,8 +3262,6 @@ class RealBrowserTest(Realm):
             if not self.dowebgui:
                 source_dir = "."
                 destination_dir = self.report_path_date_time
-                if 'endpoint_status_changes.csv' not in self.robo_csv_files:
-                    self.robo_csv_files.append('endpoint_status_changes.csv')
                 for filename in self.robo_csv_files:
                     source_path = os.path.join(source_dir, filename)
                     destination_path = os.path.join(destination_dir, filename)
@@ -3444,7 +3532,6 @@ class RealBrowserTest(Realm):
 
 
 def main():
-    iot_summary = None
     try:
 
         help_summary = '''\
@@ -3544,6 +3631,12 @@ def main():
                             )
         parser.add_argument('--duration', type=str, help='time to run traffic')
         optional.add_argument('--test_name', help='Specify test name to store the runtime csv results', default=None)
+        optional.add_argument('--windows_dir', default=WINDOWS_REAL_BROWSER_DIR,
+                              help='Real Browser application directory on Windows clients')
+        optional.add_argument('--linux_dir', default=LINUX_REAL_BROWSER_DIR,
+                              help='Real Browser application directory on Linux clients')
+        optional.add_argument('--mac_dir', default=MACOS_REAL_BROWSER_DIR,
+                              help='Real Browser application directory on macOS clients')
         parser.add_argument('--dowebgui', help="If true will execute script for webgui", default=False, type=bool)
         parser.add_argument('--result_dir', help="Specify the result dir to store the runtime logs <Do not use in CLI, --used by webui>", default='')
 
@@ -3654,6 +3747,8 @@ def main():
             if args.rotations:
                 rotations_enabled = True
 
+        iot_summary = None        
+
         # Initialize an instance of RealBrowserTest with various parameters
         obj = RealBrowserTest(host=args.host,
                               ssid=args.ssid,
@@ -3705,7 +3800,10 @@ def main():
                               cycles=args.cycles,
                               bssids=args.bssids,
                               rotations_enabled=rotations_enabled,
-                              duration_to_skip=args.duration_to_skip
+                              duration_to_skip=args.duration_to_skip,
+                              windows_dir=args.windows_dir,
+                              linux_dir=args.linux_dir,
+                              mac_dir=args.mac_dir
                               )
         obj.change_port_to_ip()
         obj.validate_and_process_args()
