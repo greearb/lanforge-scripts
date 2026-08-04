@@ -775,7 +775,7 @@ class HttpDownload(Realm):
                         l4_dict['bytes_rd'].append(value['bytes-rd'])
                         l4_dict['total_err'].append(value['total-err'])
                         l4_dict['status'].append(value.get('status', ''))
-                        self.track_cx_status(cx, value.get('status', ''))
+                        self.track_cx_status(cx, value.get('status', ''), api_response=value)
                         cx_found = True
             if not cx_found:
                 if cx not in self.missing_cx_logged:
@@ -789,7 +789,7 @@ class HttpDownload(Realm):
                         "Response keys: %s", cx, url_str, response_keys)
                     self.missing_cx_logged.add(cx)
                     self.failed_cx.append(cx)
-                    self.record_device_issue(cx, "CX missing from monitoring data")
+                    self.record_device_issue(cx, "CX missing from monitoring data", api_response=response_keys)
                 l4_dict['uc_avg_data'].append(0 if not self.tracking_map else self.tracking_map['uc_avg_data'][idx])
                 l4_dict['uc_max_data'].append(0 if not self.tracking_map else self.tracking_map['uc_max_data'][idx])
                 l4_dict['uc_min_data'].append(0 if not self.tracking_map else self.tracking_map['uc_min_data'][idx])
@@ -808,11 +808,12 @@ class HttpDownload(Realm):
 
         return l4_dict
 
-    def record_device_issue(self, device, issue):
+    def record_device_issue(self, device, issue, api_response=None):
         self.device_issue_log.append({
             "Time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             "Device": device,
             "Issue": issue,
+            "API Response": api_response if api_response is not None else '',
         })
 
     def monitoring_elapsed_seconds(self):
@@ -820,7 +821,7 @@ class HttpDownload(Realm):
             return 0
         return (datetime.now() - self.monitor_start_time).total_seconds()
 
-    def track_cx_status(self, cx, status):
+    def track_cx_status(self, cx, status, api_response=None):
         """Tracks the CXs status and logs any changes."""
         if not status or self.monitoring_elapsed_seconds() < 10:
             return
@@ -828,10 +829,10 @@ class HttpDownload(Realm):
         if previous is not None and previous != status:
             if status.lower() != 'run':
                 logger.warning("CX '%s' status changed: %s -> %s", cx, previous, status)
-                self.record_device_issue(cx, "Status changed: {} -> {}".format(previous, status))
+                self.record_device_issue(cx, "Status changed: {} -> {}".format(previous, status), api_response=api_response)
             elif previous.lower() != 'run':
                 logger.info("CX '%s' recovered: %s -> %s", cx, previous, status)
-                self.record_device_issue(cx, "Recovered: {} -> {}".format(previous, status))
+                self.record_device_issue(cx, "Recovered: {} -> {}".format(previous, status), api_response=api_response)
         self.cx_status_log[cx] = status
 
     def format_monitoring_duration(self):
@@ -2210,7 +2211,8 @@ class HttpDownload(Realm):
                         "Signal data for device '%s' is unavailable, it may have disconnected. "
                         "Continuing the test with the remaining devices.", sta)
                     self.missing_device_logged.add(sta)
-                    self.record_device_issue(sta, "Signal data unavailable (device may have disconnected)")
+                    self.record_device_issue(sta, "Signal data unavailable (device may have disconnected)",
+                                             api_response=list(interfaces_dict.keys()))
                 signal_list.append('-')
                 link_speed_list.append('-')
                 rx_rate_list.append('-')
