@@ -3595,10 +3595,13 @@ class Throughput(Realm):
                 self.add_live_view_images_to_report(report)
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
+        if self.device_issue_log:
+            pd.DataFrame(self.device_issue_log).to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         # report.build_custom()
         report.build_footer()
         report.write_html()
         report.write_pdf(_orientation="Landscape")
+        logger.info("Monitoring Duration: %s", self.format_monitoring_duration())
 
     def generate_report_robo(self, iterations_before_test_stopped_by_user, incremental_capacity_list, data=None, data1=None, report_path='', result_dir_name='Throughput_Test_report',
                              selected_real_clients_names=None):
@@ -4178,10 +4181,13 @@ class Throughput(Realm):
                         report.set_custom_html('<hr>')
                         report.build_custom()
 
+        if self.device_issue_log:
+            pd.DataFrame(self.device_issue_log).to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         # report.build_custom()
         report.build_footer()
         report.write_html()
         report.write_pdf(_orientation="Landscape")
+        logger.info("Monitoring Duration: %s", self.format_monitoring_duration())
 
     # Creates a separate DataFrame for each group of devices.
 
