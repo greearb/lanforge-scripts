@@ -1430,6 +1430,9 @@ class Throughput(Realm):
         return throughput
 
     def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured):
+        # Skip re-polling once a stop is already decided while the robot is still moving.
+        if self.do_bandsteering and self.stop_test:
+            return individual_df, True
         individual_df_for_webui = individual_df.copy()  # for webui
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download = {}, [], [], [], [], {}, {}
         drop_a, drop_a_per, drop_b, drop_b_per, state, state_of_device, avg_rtt = [], [], [], [], [], [], []  # noqa: F841
@@ -1440,10 +1443,23 @@ class Throughput(Realm):
             raise ValueError("Monitor needs a list of Layer 3 connections")
 
         start_time = datetime.now()
+        if self.monitor_start_time is None:
+            self.monitor_start_time = start_time
 
         logger.info("Monitoring cx and endpoints")
         end_time = start_time + timedelta(seconds=int(self.test_duration))
         self.overall = []
+
+        # Don't start an interval if every CX is already missing; give recovery a chance first.
+        if self.cx_profile.created_cx:
+            self.get_layer3_endp_data()
+            if self.should_stop_for_missing_cx():
+                return individual_df, True
+            if self.missing_cx_logged and not self.pre_monitoring_missing_logged:
+                logger.warning("Missing before monitoring; continuing with %s device(s): %s\nURL     : %s\nResponse: %s",
+                               len(self.cx_profile.created_cx) - len(self.missing_cx_logged),
+                               sorted(self.missing_cx_logged), self.last_monitor_url, self.last_monitor_response)
+                self.pre_monitoring_missing_logged = True
 
         # Initialize variables for real-time connections data
         index = -1
@@ -1462,11 +1478,22 @@ class Throughput(Realm):
         time_break = 0
         # Continuously collect data until end time is reached
         while datetime.now() < end_time:
+            if self.all_devices_stopped and self.do_bandsteering:
+                logger.info("All devices previously stopped during bandsteering; returning early.")
+                return individual_df, True
             index += 1
             current_time = datetime.now()
             signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
             signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
+            if self.stop_test:
+                logger.info("Stop already requested; ending monitoring interval.")
+                test_stopped_by_user = True
+                break
             throughput[index] = self.get_layer3_endp_data()
+            if self.cx_profile.created_cx and self.should_stop_for_missing_cx():
+                logger.error("No devices recovered; ending this monitoring interval with collected data.")
+                test_stopped_by_user = True
+                break
             # Check if next sleep would overshoot the end_time
             is_last_iteration = ((current_time + timedelta(seconds=1 if self.dowebgui else self.report_timer)) >= end_time)
             # For the WebUI, data is appended as "STOPPED" outside the loop.
@@ -1560,9 +1587,11 @@ class Throughput(Realm):
                         logger.warning('Test is stopped by the user')
                         test_stopped_by_user = True
                         if self.do_bandsteering:
+                            self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
                             return individual_df, test_stopped_by_user
                         break
                 if self.do_bandsteering:
+                    self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
                     return individual_df, test_stopped_by_user
                 # Adjust time_gap based on elapsed time since start (for webui)
                 d = datetime.now()
@@ -1662,6 +1691,7 @@ class Throughput(Realm):
                 individual_df.loc[len(individual_df)] = individual_df_data
                 individual_df.to_csv('throughput_data.csv', index=False)
                 if self.do_bandsteering:
+                    self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
                     return individual_df, test_stopped_by_user
 
             if self.stop_test:
@@ -1758,6 +1788,7 @@ class Throughput(Realm):
         logger.info("connections download {}".format(connections_download))
         logger.info("connections upload {}".format(connections_upload))
 
+        self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
         return individual_df, test_stopped_by_user
 
     def monitor_for_robo(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured):
@@ -1788,10 +1819,17 @@ class Throughput(Realm):
             raise ValueError("Monitor needs a list of Layer 3 connections")
 
         start_time = datetime.now()
+        if self.monitor_start_time is None:
+            self.monitor_start_time = start_time
 
         logger.info("Monitoring cx and endpoints")
         end_time = start_time + timedelta(seconds=int(self.test_duration))
         self.overall = []
+
+        if self.cx_profile.created_cx:
+            self.get_layer3_endp_data()
+            if self.should_stop_for_missing_cx():
+                return individual_df, True
 
         # Initialize variables for real-time connections data
         index = -1
@@ -1846,11 +1884,22 @@ class Throughput(Realm):
 
             # Continuously collect data until end time is reached
             while datetime.now() < end_time:
+                if self.all_devices_stopped and self.do_bandsteering:
+                    logger.info("All devices previously stopped during bandsteering; returning early.")
+                    return individual_df, True
                 index += 1
                 current_time = datetime.now()
                 signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
                 signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
+                if self.stop_test:
+                    logger.info("Stop already requested; ending monitoring interval.")
+                    test_stopped_by_user = True
+                    break
                 throughput[index] = self.get_layer3_endp_data()
+                if self.cx_profile.created_cx and self.should_stop_for_missing_cx():
+                    logger.error("No devices recovered; ending this monitoring interval with collected data.")
+                    test_stopped_by_user = True
+                    break
                 # Check if next sleep would overshoot the end_time
                 is_last_iteration = ((current_time + timedelta(seconds=1 if self.dowebgui else self.report_timer)) >= end_time)
                 # For the WebUI, data is appended as "STOPPED" outside the loop.
@@ -2233,6 +2282,7 @@ class Throughput(Realm):
         logger.info("connections download {}".format(connections_download))
         logger.info("connections upload {}".format(connections_upload))
 
+        self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
         return individual_df, test_stopped_by_user
 
     def perform_intended_load(self, iteration, incremental_capacity_list):
