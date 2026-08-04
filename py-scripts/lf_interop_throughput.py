@@ -550,6 +550,9 @@ class Throughput(Realm):
             logger.info("Current Cycle: {}".format(curr_cycle))
             # Iterate through all the points and monitoring throughput,bandsteering stats and as well as robot position
             for coord in coordinate_list_with_robo:
+                if self.stop_test:
+                    logger.info("Stopping band-steering run because all CXs are missing or the test was stopped.")
+                    break
                 pause, stopped = self.robot.wait_for_battery(lambda: self.monitor(
                     0,
                     individual_df,
@@ -560,7 +563,7 @@ class Throughput(Realm):
                     is_device_configured
                 )
                 )
-                if stopped:
+                if self.stop_test or stopped:
                     break
 
                 matched, abort, all_dataframes = self.robot.move_to_coordinate(
@@ -575,6 +578,9 @@ class Throughput(Realm):
                         is_device_configured
                     )
                 )
+                if abort or self.stop_test:
+                    break
+
                 if coord == self.coordinate_list[0]:
                     curr_cycle += 1
                     if curr_cycle > int(self.total_cycles):
@@ -582,8 +588,6 @@ class Throughput(Realm):
                     else:
                         logger.info("current cycle {}".format(curr_cycle))
 
-                if abort:
-                    break
                 if not matched:
                     continue
             # To add last entry in the csv
@@ -610,6 +614,9 @@ class Throughput(Realm):
 
         # Loop through the coordinate list when coordinates are specified.
         for coord in self.coordinate_list:
+            if self.stop_test:
+                logger.info("Stopping robot run because all CXs are missing or the test was stopped.")
+                break
             # checking the battery status of robot before moving to a point
             pause_coord, test_stopped_by_user = self.robot.wait_for_battery()
             if test_stopped_by_user:
@@ -701,13 +708,17 @@ class Throughput(Realm):
                     iterations_before_test_stopped_by_user.append(i)
                     break
 
+            # Stop the whole robot run on a user stop or an unrecoverable CX loss.
+            if test_stopped_by_user:
+                break
+
         #     logger.info("connections download {}".format(connections_download))
         #     logger.info("connections upload {}".format(connections_upload))
             self.stop()
         if args.postcleanup:
             self.cleanup()
 
-        # Clear navigation status fields in nav_data.json when the test completes from Web UI
+        # Mark nav_data.json as completed for the Web UI.
         if args.dowebgui:
             with open(nav_data, 'r') as x:
                 navdata = json.load(x)
