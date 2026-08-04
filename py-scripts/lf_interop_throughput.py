@@ -1306,6 +1306,9 @@ class Throughput(Realm):
                 "cx_name": cx_name,
                 "cx_state": "RUNNING"
             }, debug_=self.debug)
+        # Re-sync local CX state with LANforge right after starting, so the very first
+        # get_layer3_endp_data() poll sees each CX's real state instead of a stale one.
+        self.cx_profile.refresh_cx()
         # self.cx_profile.start_cx_specific(cx_list)
 
     def stop_specific(self, cx_list):
@@ -1324,10 +1327,26 @@ class Throughput(Realm):
         self.cx_profile.stop_cx()
         self.station_profile.admin_down()
 
+    def remove_missing_cx(self):
+        """Drop CXs still marked missing out of created_cx so stop()/cleanup() skip them."""
+        if not self.missing_cx_logged or not self.cx_profile.created_cx:
+            return
+        missing_cxs = set(self.missing_cx_logged).intersection(self.cx_profile.created_cx.keys())
+        if missing_cxs:
+            logger.warning(
+                "Excluding %s missing CX(s) because endpoints were unavailable: %s",
+                len(missing_cxs), sorted(missing_cxs)
+            )
+            for cx in missing_cxs:
+                self.cx_profile.created_cx.pop(cx, None)
+
     def pre_cleanup(self):
         self.cx_profile.cleanup()
 
     def cleanup(self):
+        if self.robo_ip:
+            self.remove_missing_cx()
+        logger.info("self.cx_profile.created_cx %s", self.cx_profile.created_cx)
         logger.info("cleanup done")
         self.cx_profile.cleanup()
 
@@ -5253,6 +5272,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
 
     #     logger.info("connections download {}".format(connections_download))
     #     logger.info("connections upload {}".format(connections_upload))
+    throughput.remove_missing_cx()
     throughput.stop()
     if args.postcleanup:
         throughput.cleanup()
