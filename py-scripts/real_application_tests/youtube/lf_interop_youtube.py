@@ -1327,11 +1327,21 @@ class Youtube(Realm):
         data = {}
         file_path = self.ui_report_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name)
 
-        # Wait until the file exists
+        # Wait up to three minutes for the WebGUI to create the running file.
+        wait_timeout = 180
+        wait_deadline = time.monotonic() + wait_timeout
         while not os.path.exists(file_path):
-            logging.info("Waiting for Running json filed to be created")
+            if time.monotonic() >= wait_deadline:
+                logging.error(
+                    "Running JSON file was not created by the WebGUI within %s "
+                    "seconds: %s. Skipping this status update.",
+                    wait_timeout,
+                    file_path,
+                )
+                return
+            logging.info("Waiting for Running JSON file to be created")
             time.sleep(1)
-        logging.info("Running Json file created")
+        logging.info("Running JSON file created")
         with open(file_path, 'r') as file:
             data = json.load(file)
 
