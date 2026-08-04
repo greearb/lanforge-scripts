@@ -904,7 +904,7 @@ class Throughput(Realm):
 
         if "resources" not in response.keys():
             logger.error("There are no real devices.")
-            exit(1)
+            raise RuntimeError("'resources' key not found in /resource/all response; no real devices available. Response: {}".format(response))
 
         # Iterate over the response to categorize resources
         for key, value in response.items():
@@ -956,7 +956,7 @@ class Throughput(Realm):
         response_port = self.json_get("/port/all")
         if "interfaces" not in response_port.keys():
             logger.error("Error: 'interfaces' key not found in port data")
-            exit(1)
+            raise RuntimeError("'interfaces' key not found in /port/all response; no port data available. Response: {}".format(response_port))
 
         # mac_id1_list=[]
 
@@ -1027,7 +1027,7 @@ class Throughput(Realm):
                 self.device_found = False
                 if self.device_list != "all":
                     logger.warning("Test can not be initiated on any selected devices")
-                    exit(1)
+                    raise RuntimeError("No devices available to continue the test")
 
         else:
             devices_list = ","
@@ -1094,7 +1094,7 @@ class Throughput(Realm):
             if not self.config and not self.interopability_config:
                 if len(self.mac_id_list) == 0:
                     logger.error("Devices selected is less than given incremental capacity")
-                    return False, self.real_client_list
+                    raise RuntimeError("Devices selected (0) is less than given incremental capacity ({})".format(self.incremental_capacity))
                 configured_devices = len(self.mac_id_list)
                 given_capacity = list(map(int, self.incremental_capacity.split(",")))
                 adjusted_capacity = [cap for cap in given_capacity if cap <= configured_devices]
