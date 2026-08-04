@@ -712,11 +712,12 @@ class VideoStreamingTest(Realm):
         match = re.search(r'(\d+)_l4$', cx_name)
         return "1.{}".format(match.group(1)) if match else cx_name
 
-    def record_device_issue(self, device, issue):
+    def record_device_issue(self, device, issue, api_response=None):
         self.device_issue_log.append({
             "Time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             "Device": device,
             "Issue": issue,
+            "API Response": api_response if api_response is not None else '',
         })
 
     def my_monitor_runtime(self):
@@ -802,7 +803,8 @@ class VideoStreamingTest(Realm):
                         )
                         self.missing_cx_logged.add(cx_name)
                         self.record_device_issue(self.port_label_from_cx_name(cx_name),
-                                                 "CX '{}' missing from monitoring data".format(cx_name))
+                                                 "CX '{}' missing from monitoring data".format(cx_name),
+                                                 api_response=list(cx_metrics.keys()))
                     value = dict(default_cx_metrics, name=cx_name)
                 else:
                     if cx_name in self.missing_cx_logged:
@@ -819,7 +821,8 @@ class VideoStreamingTest(Realm):
                             logger.warning("CX '{}' status is '{}', not running.".format(cx_name, status))
                             self.cx_not_running_logged.add(cx_name)
                             self.record_device_issue(self.port_label_from_cx_name(cx_name),
-                                                     "CX '{}' status is '{}', not running".format(cx_name, status))
+                                                     "CX '{}' status is '{}', not running".format(cx_name, status),
+                                                     api_response=value)
                     elif cx_name in self.cx_not_running_logged:
                         logger.info("CX '{}' status is back to running.".format(cx_name))
                         self.cx_not_running_logged.discard(cx_name)
@@ -1019,7 +1022,8 @@ class VideoStreamingTest(Realm):
                         "Response keys: {}".format(resource_id, signal_url, response_keys)
                     )
                     self.missing_signal_logged.add(resource_id)
-                    self.record_device_issue("1.{}".format(resource_id), "Signal data unavailable (device may have disconnected)")
+                    self.record_device_issue("1.{}".format(resource_id), "Signal data unavailable (device may have disconnected)",
+                                             api_response=response_keys)
                 value = default_signal
             else:
                 if resource_id in self.missing_signal_logged:
