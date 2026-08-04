@@ -1043,7 +1043,7 @@ class RealBrowserTest(Realm):
 
         try:
             created_endp = [(e, "generic") for e in set(self.generic_endps_profile.created_endp)] + \
-                                [(e, "layer4") for e in self.created_cx.keys()]
+                [(e, "layer4") for e in self.created_cx.keys()]
 
             for gen_endp, api in created_endp:
                 generic_endpoint = self.json_get(f"/{api}/{gen_endp}")
@@ -1107,7 +1107,7 @@ class RealBrowserTest(Realm):
         """
         csv_file = "endpoint_status_changes.csv"
         created_endp = [(e, "generic") for e in self.generic_endps_profile.created_endp] + \
-                            [(e, "layer4") for e in self.created_cx.keys()]
+            [(e, "layer4") for e in self.created_cx.keys()]
 
         start_time = time.time()
         endpoint_data = {}
@@ -2584,7 +2584,7 @@ class RealBrowserTest(Realm):
 
                 data = pd.read_csv(self.csv_file_names[i])
                 if data.empty:
-                    logging.warning(f"No data found in {csv_file}. Skipping graph generation.")
+                    logging.warning(f"No data found in {self.csv_file_names[i]}. Skipping graph generation.")
                     return
 
                 # Extract device names from CSV
@@ -3747,7 +3747,7 @@ def main():
             if args.rotations:
                 rotations_enabled = True
 
-        iot_summary = None        
+        iot_summary = None
 
         # Initialize an instance of RealBrowserTest with various parameters
         obj = RealBrowserTest(host=args.host,
