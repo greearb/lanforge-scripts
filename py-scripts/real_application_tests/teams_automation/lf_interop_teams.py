@@ -509,17 +509,99 @@ class TeamsAutomation(Realm):
         time.sleep(5)
 
     def wait_for_login(self):
-        while not self.login_completed:
+        # Avoid waiting forever if the host never reports a completed login.
+        login_timeout = 5 * 60
+        wait_started = time.monotonic()
+        host_endp = self.generic_endps_profile.created_endp[0]
+        host_url = f'/generic/{host_endp}'
+        host_reached_run = False
+        host_missing_since = None
+        host_missing_timeout = 40
+        # Keep polling even after the login callback arrives. Login completion
+        # alone is not enough to proceed if the only CX is currently missing.
+        while True:
+            if time.monotonic() - wait_started >= login_timeout:
+                raise TimeoutError(
+                    f"Host login did not complete within {login_timeout} seconds"
+                )
             try:
-                generic_endpoint = self.json_get(f'/generic/{self.generic_endps_profile.created_endp[0]}')
-                endp_status = generic_endpoint["endpoint"]["status"]
+                generic_endpoint = self.json_get(host_url)
+                endpoint_data = generic_endpoint.get("endpoint") if isinstance(generic_endpoint, dict) else None
+
+                if not isinstance(endpoint_data, dict):
+                    if host_missing_since is None:
+                        host_missing_since = time.monotonic()
+                    missing_for = time.monotonic() - host_missing_since
+                    run_context = "before reaching Run state" if not host_reached_run else "after reaching Run state"
+                    first_missing_poll = self._gen_cx_last_status.get(host_endp) != "MISSING"
+                    if first_missing_poll:
+                        logger.warning(
+                            "Host CX endpoint '%s' is missing %s.\n"
+                            "URL: %s\n"
+                            "Endpoint keys present: []",
+                            host_endp,
+                            run_context,
+                            host_url,
+                        )
+                        self.record_device_issue(host_endp,
+                                                 "Host CX endpoint missing {}".format(run_context))
+                    else:
+                        logger.warning("Host CX endpoint '%s' is still missing (%.0fs/%ss).",
+                                       host_endp, missing_for, host_missing_timeout)
+                    self._gen_cx_last_status[host_endp] = "MISSING"
+                    if missing_for >= host_missing_timeout:
+                        logger.error("Host CX endpoint '%s' remained missing for %.0fs (limit %ss). Stopping the test.",
+                                     host_endp, missing_for, host_missing_timeout)
+                        self.record_device_issue(
+                            host_endp,
+                            "Host CX missing for {:.0f}s; test stopped".format(missing_for),
+                        )
+                        self.stop_signal = True
+                        return False
+                    time.sleep(5)
+                    continue
+
+                endp_status = endpoint_data.get("status", "")
+                if host_missing_since is not None:
+                    logger.info("Host CX endpoint '%s' is available again after %.0fs.",
+                                host_endp, time.monotonic() - host_missing_since)
+                host_missing_since = None
+                if endp_status in ("Run", "RUNNING"):
+                    host_reached_run = True
+                self._gen_cx_last_status[host_endp] = endp_status
                 if endp_status == "Stopped":
                     logging.error("Failed to Start the Host Device")
                     self.cleanup_generic_endpoints()
                     os._exit(1)
+                if self.login_completed:
+                    logger.info("Host login is complete and CX endpoint '%s' is available. Proceeding with participant creation.",
+                                host_endp)
+                    return True
                 time.sleep(5)
             except Exception as e:
-                logging.info(f"Error while checking login_completed status: {e}")
+                if host_missing_since is None:
+                    host_missing_since = time.monotonic()
+                missing_for = time.monotonic() - host_missing_since
+                run_context = "before reaching Run state" if not host_reached_run else "after reaching Run state"
+                first_missing_poll = self._gen_cx_last_status.get(host_endp) != "MISSING"
+                if first_missing_poll:
+                    logger.warning("Host CX endpoint '%s' is missing %s.\nURL: %s\nEndpoint keys present: [] (request failed: %s)",
+                                   host_endp, run_context, host_url, e)
+                    self.record_device_issue(host_endp,
+                                             "Host CX endpoint missing {}".format(run_context))
+                else:
+                    logger.warning("Host CX endpoint '%s' is still missing (%.0fs/%ss).",
+                                   host_endp, missing_for, host_missing_timeout)
+                self._gen_cx_last_status[host_endp] = "MISSING"
+                if missing_for >= host_missing_timeout:
+                    logger.error("Host CX endpoint '%s' remained missing for %.0fs (limit %ss). Stopping the test.",
+                                 host_endp, missing_for, host_missing_timeout)
+                    self.record_device_issue(
+                        host_endp,
+                        "Host CX missing for {:.0f}s; test stopped".format(missing_for),
+                    )
+                    self.stop_signal = True
+                    return False
                 time.sleep(5)
 
     def create_android(
@@ -923,7 +1005,9 @@ class TeamsAutomation(Realm):
 
     def run(self):
         self.create_host()
-        self.wait_for_login()
+        if not self.wait_for_login():
+            logger.error("Teams test stopped before participant creation because the host CX did not recover.")
+            return
         self.create_participants()
 
         self.wait_for_test_start()
@@ -983,6 +1067,12 @@ class TeamsAutomation(Realm):
     def wait_for_test_start(self):
         check_count = 0
         while len(self.real_sta_list) != self.participants_joined:
+            # Poll endpoints during callbacks to detect CX changes promptly.
+            self.check_gen_cx()
+            if self.stop_signal:
+                logging.warning("Stopping the participant-join wait because the CX status check stopped the current test.")
+                break
+
             logging.info(
                 f"Waiting for all participants to join the call. Joined: {self.participants_joined}, Expected: {len(self.real_sta_list)}"
             )
