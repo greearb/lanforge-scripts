@@ -240,6 +240,7 @@ class RealBrowserTest(Realm):
         self.hw = None
         self.mac_list = None
         self.csv_file_names = []
+        self.log_file_names = []
         self.stop_signal = False
         self.webui_stop_clicked = False
         self.device_targets = {}
@@ -1002,6 +1003,50 @@ class RealBrowserTest(Realm):
                     self.laptop_stats[hostname]['current_cord'] = self.current_cord
                     self.laptop_stats[hostname]['rotations_enabled'] = self.rotations_enabled
             return jsonify({"status": "success"}), 200
+
+        @self.app.route('/upload_test_log', methods=['POST'])
+        def upload_test_log():
+            """Store a client log for inclusion in the active test report."""
+            device_name = request.form.get('device_name', '').strip()
+            device_type = request.form.get('device_type', 'client').strip().lower()
+            log_kind = request.form.get('log_kind', 'test').strip().lower()
+            log_file = request.files.get('log_file')
+
+            if not device_name or log_file is None:
+                logger.error("Missing required parameters: device_name or log_file")
+                logger.info(f"Device name: {device_name}, Log file: {log_file}")
+                return jsonify({"error": "device_name and log_file are required"}), 400
+
+            safe_device_name = re.sub(r'[^A-Za-z0-9_.-]+', '_', device_name)
+            safe_device_type = re.sub(r'[^A-Za-z0-9_.-]+', '_', device_type)
+            safe_log_kind = re.sub(r'[^A-Za-z0-9_.-]+', '_', log_kind)
+            log_directory = (
+                self.result_dir
+                if self.dowebgui and self.result_dir
+                else os.path.dirname(os.path.abspath(__file__))
+            )
+            os.makedirs(log_directory, exist_ok=True)
+            if safe_device_type == 'android':
+                log_filename = "android_test.log"
+            elif safe_log_kind == 'debug':
+                log_filename = f"{safe_device_name}_client_debug.log"
+            else:
+                log_filename = (
+                    f"{safe_device_name}_{safe_device_type}_test.log"
+                )
+            log_path = os.path.join(log_directory, log_filename)
+
+            try:
+                log_file.save(log_path)
+            except OSError as exc:
+                logger.exception("Unable to store log for %s", device_name)
+                return jsonify({"error": str(exc)}), 500
+
+            logger.info(f"Before appending {self.log_file_names}")
+            self.log_file_names.append(log_filename)
+            logger.info(f"After appending {self.log_file_names}")
+            logger.info("Received test log for %s: %s", device_name, log_path)
+            return jsonify({"message": "Log uploaded successfully"}), 200
 
         # New route to check the health of the Flask server
         @self.app.route('/check_health', methods=['GET'])
@@ -2855,6 +2900,18 @@ class RealBrowserTest(Realm):
                         try:
                             shutil.move(source_path, destination_path)
                             logging.info(f"Moved {filename} to {destination_dir}")
+                        except Exception as e:
+                            logging.warning(f"Could not move {filename}: {e}")
+
+                log_dir = os.path.join(destination_dir, "log")
+                os.makedirs(log_dir, exist_ok=True)
+                for filename in self.log_file_names:
+                    source_path = os.path.join(source_dir, filename)
+
+                    if os.path.isfile(source_path):
+                        try:
+                            shutil.move(source_path, log_dir)
+                            logging.info(f"Moved {filename} to {log_dir}")
                         except Exception as e:
                             logging.warning(f"Could not move {filename}: {e}")
 
