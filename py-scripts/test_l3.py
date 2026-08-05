@@ -967,12 +967,16 @@ class L3VariableTime(Realm):
         self.polling_interval = polling_interval
         self.cx_profile = self.new_l3_cx_profile()
         self.multicast_profile = self.new_multicast_profile()
+        self.missing_endp_logged = set()
+        self.not_running_endp_logged = set()
         self.mtx_endps = set()
         self.mrx_endps = set()
         self.multicast_profile.name_prefix = "MLT-"
         self.station_profiles = []
         self.args = args
         self.outfile = outfile
+        self.client_issue_csv_name = os.path.join(os.path.dirname(self.outfile),
+                                                  "client_issue.csv")
         self.csv_started = False
         self.epoch_time = int(time.time())
         self.debug = debug
@@ -7683,6 +7687,140 @@ class L3VariableTime(Realm):
 
                 report.set_custom_html('<hr>')
                 report.build_custom()
+
+    def append_cx_data(self, is_cx, name, state):
+        file_exists = os.path.isfile(self.client_issue_csv_name)
+
+        with open(self.client_issue_csv_name, "a", newline="") as file:
+            writer = csv.writer(file)
+
+            if not file_exists:
+                if is_cx:
+                    writer.writerow(["TIMESTAMP", "CX_NAME", "STATE"])
+                else:
+                    writer.writerow(["TIMESTAMP", "ENDP_NAME", "STATE"])
+
+            writer.writerow([
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                name,
+                state
+            ])
+
+    def check_endpoint_availability(self, expected_endps, present_endps, endp_list):
+        for endp_name in expected_endps:
+            if endp_name not in present_endps.keys():
+                if endp_name not in self.missing_endp_logged:
+                    logger.warning(
+                        "Endpoint '{}' is missing from the monitoring data.\n"
+                        "Requested URL: 'endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll,run'\n"
+                        "Response: {}".format(endp_name, endp_list))
+                    self.append_cx_data(is_cx=False, name=endp_name, state="MISSING")
+                    self.missing_endp_logged.add(endp_name)
+                self.not_running_endp_logged.discard(endp_name)
+            elif not present_endps[endp_name]:
+                if endp_name not in self.not_running_endp_logged:
+                    logger.warning(
+                        "Endpoint '{}' is not running in the monitoring data.\n"
+                        "Requested URL: 'endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll,run'\n"
+                        "Response: {}".format(endp_name, endp_list))
+                    self.append_cx_data(is_cx=False, name=endp_name, state="NOT RUNNING")
+                    self.not_running_endp_logged.add(endp_name)
+                self.missing_endp_logged.discard(endp_name)
+            else:
+                if endp_name in self.missing_endp_logged or endp_name in self.not_running_endp_logged:
+                    logger.info(
+                        "Endpoint '{}' is running in the monitoring data\n"
+                        "Requested URL: 'endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll,run'\n"
+                        "Response: {}".format(endp_name, endp_list))
+                    self.append_cx_data(is_cx=False, name=endp_name, state="RUNNING")
+                self.missing_endp_logged.discard(endp_name)
+                self.not_running_endp_logged.discard(endp_name)
+
+    def is_test_stopped_by_webgui(self):
+        if not self.dowebgui:
+            return False
+        running_file = f"{self.result_dir}/../../Running_instances/{self.ip}_{self.test_name}_running.json"
+        try:
+            with open(running_file, "r") as file:
+                data = json.load(file)
+            if data.get("status") != "Running":
+                logging.warning("Test is stopped by the user")
+                self.test_stopped_user = True
+                return True
+        except FileNotFoundError:
+            logging.warning(f"Running instance file not found: {running_file}")
+            return True
+        except json.JSONDecodeError:
+            logging.warning(f"Running instance file corrupted or empty: {running_file}")
+            return True
+        except Exception as e:
+            logging.error(f"Unexpected error reading running.json: {e}")
+            return True
+        return False
+
+    def monitor_endp_availability(self, expected_endps, return_endpoint_data=False, duration=40, interval=5):
+        start_time = time.time()
+        end_time = start_time + duration
+        no_of_attempts = duration // interval
+        count = 0
+        endpoint = []
+        while (start_time <= end_time):
+            count += 1
+            if self.is_test_stopped_by_webgui():
+                logger.info("Test stopped by user via WebGUI. Exiting monitoring.")
+                return [] if return_endpoint_data else False
+            if count > 1:
+                logger.info("Attempt {} of {} to check endpoint availability".format(count, no_of_attempts))
+            endp_url = "endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll,run"
+            endp_list = self.json_get(endp_url, debug_=True)
+            if not endp_list:
+                logger.error(
+                    "Failed to fetch endpoints. Received empty response.\n"
+                    f"Requested URL: '{endp_url}'\n"
+                    f"Response: {endp_list}")
+                endp_list = {}
+                # time.sleep(interval)
+                # start_time = time.time()
+                # continue
+            endpoint = endp_list.get('endpoint', [])
+            if isinstance(endpoint, dict):
+                endpoint = [{endpoint['name']: endpoint}]
+            present_endps = {}
+            for endp_name in endpoint:
+                for item, endp_value in endp_name.items():
+                    present_endps[item] = endp_value.get('run')
+            self.check_endpoint_availability(expected_endps, present_endps, endp_list)
+            expected_endps_set = set(expected_endps)
+            missing_endps = self.missing_endp_logged & expected_endps_set
+            not_running_endps = self.not_running_endp_logged & expected_endps_set
+            missed = len(missing_endps)
+            not_run = len(not_running_endps)
+            if missed == len(expected_endps):
+                if not return_endpoint_data:
+                    logger.error("All expected tx endpoints ({}) are missing from the monitoring data. So we are checking again".format(
+                        ", ".join(missing_endps)))
+                else:
+                    logger.error("All expected rx endpoints ({}) are missing from the monitoring data. But we are checking again".format(
+                        ", ".join(missing_endps)))
+            elif not_run == len(expected_endps):
+                if not return_endpoint_data:
+                    logger.error("All expected endpoints ({}) are present but not running. So we are checking again".format(
+                        ", ".join(not_running_endps)))
+                else:
+                    logger.error("All expected endpoints ({}) are present but not running. But we are checking again".format(
+                        ", ".join(not_running_endps)))
+            elif missed + not_run == len(expected_endps):
+                if not return_endpoint_data:
+                    logger.error("Some expected endpoints ({}) are missing and some endpoints ({}) are not running. So we are checking again".format(
+                        ", ".join(missing_endps), ", ".join(not_running_endps)))
+                else:
+                    logger.error("Some expected endpoints ({}) are missing and some endpoints ({}) are not running. But we are checking again".format(
+                        ", ".join(missing_endps), ", ".join(not_running_endps)))
+            else:
+                return endpoint if return_endpoint_data else True
+            time.sleep(interval)
+            start_time = time.time()
+        return [] if return_endpoint_data else False
 
 
 # Converting the upstream_port to IP address for configuration purposes
