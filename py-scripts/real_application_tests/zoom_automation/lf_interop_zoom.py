@@ -301,8 +301,21 @@ class ZoomAutomation(Realm):
             logger.info(
                 f"User mentioned coordinates list: {self.robo_obj.coordinate_list}"
             )
+        # Robot navigation only — whether the robot physically reached the
+        # coordinate. Everything that goes wrong *after* arrival belongs in one
+        # of the buckets below, so "the robot couldn't get there" is never
+        # confused with "the round there produced no data".
         self.successful_coords = []
         self.failed_coords = []
+        # Angles the robot could not rotate to, {coordinate: [angles]}.
+        self.failed_angles = {}
+        # Rounds abandoned because the host device failed or never signalled
+        # the start of the test.
+        self.host_failure_coords = []
+        # Rounds abandoned because none of the round's generic endpoints could
+        # be read — they may have been deleted, or the manager may have been
+        # unreachable; the poll can't tell those apart.
+        self.endpoint_loss_coords = []
         self.host_ever_ready = False
         self.is_csv_available = False
         self.wait_at_point = int(wait_at_point)
@@ -1023,9 +1036,13 @@ class ZoomAutomation(Realm):
         are not logged or written again.
 
         If every created endpoint is missing from the response, retries
-        every poll_interval seconds for up to wait_time seconds. Aborts the
-        test if still none of the created endpoints have responded once
-        wait_time has elapsed.
+        every poll_interval seconds for up to wait_time seconds.
+
+        Returns:
+            True while at least one created endpoint is still responding.
+            False if none of them have responded once wait_time has elapsed —
+            the caller decides whether that skips just this coordinate or
+            aborts the run (see _handle_round_failure).
         """
         csv_file = os.path.join(self.path, "endpoint_status_changes.csv")
         created_endp = self.generic_endps_profile.created_endp
@@ -1052,9 +1069,9 @@ class ZoomAutomation(Realm):
         if not endpoint_data:
             logger.error(
                 f"No data received for any of the created endpoints after waiting "
-                f"{wait_time} seconds. Aborting test."
+                f"{wait_time} seconds."
             )
-            exit(1)
+            return False
 
         for gen_endp, generic_endpoint in endpoint_data.items():
             current_status = generic_endpoint["endpoint"].get("status", "")
@@ -1081,6 +1098,8 @@ class ZoomAutomation(Realm):
                 )
 
             self.endpoint_last_status[gen_endp] = current_status
+
+        return True
 
     def wait_for_flask(self, url="http://127.0.0.1:5000/get_latest_stats", timeout=10):
         """Wait until the Flask server is up, but exit if it takes longer than `timeout` seconds."""
@@ -1430,7 +1449,7 @@ class ZoomAutomation(Realm):
         Returns:
             True if the endpoint was created and started.
             False if creation failed — the caller decides whether that aborts
-            the run or just skips this coordinate (see _handle_host_failure).
+            the run or just skips this coordinate (see _handle_round_failure).
         """
         # Reset per round so start_cx()/stop_cx()/cleanup() only ever act on
         # this coordinate's CXs/endpoints, instead of re-processing every
@@ -1478,15 +1497,33 @@ class ZoomAutomation(Realm):
         logger.debug(f"checking real sta os type {self.real_sta_os_type}")
         return True
 
-    def _handle_host_failure(self, reason):
-        """Decide whether a host-device failure aborts the run or skips a point.
+    def _record_round_issue(self, bucket):
+        """Note the current coordinate in `bucket`, once.
 
-        Centralises the abort-vs-skip rule so endpoint-creation failures and
-        readiness failures are treated identically.
+        With rotations on a coordinate is visited at several angles, so the
+        same coordinate can fail repeatedly. These buckets answer "which
+        locations are missing data", so one entry per coordinate is what the
+        report wants — the per-angle detail stays in the log.
+        """
+        if self.current_cord not in bucket:
+            bucket.append(self.current_cord)
+
+    def _handle_round_failure(self, reason, record_in=None):
+        """Decide whether a mid-run failure aborts the run or skips a point.
+
+        Centralises the abort-vs-skip rule so endpoint-creation failures,
+        readiness failures, and endpoints disappearing mid-round are all
+        treated identically.
 
         Args:
             reason: what failed, phrased so it reads before "on the very first
                 round ..." / "for ...".
+            record_in: the list this round's coordinate is recorded in.
+                Defaults to host_failure_coords. The endpoint-loss path passes
+                its own list instead, so "we never got a reading here" stays
+                separable from a host fault when the report is built. Neither
+                touches failed_coords, which is reserved for the robot failing
+                to reach the coordinate at all.
 
         Returns:
             The value run() should return — False to abort the whole robo test,
@@ -1503,7 +1540,9 @@ class ZoomAutomation(Realm):
             else:
                 where = f"coordinate {self.current_cord}"
 
-            self.failed_coords.append(self.current_cord)
+            self._record_round_issue(
+                self.host_failure_coords if record_in is None else record_in
+            )
             if not self.host_ever_ready:
                 logger.error(
                     f"{reason} on the very first round ({where}) — this points to "
@@ -1675,11 +1714,11 @@ class ZoomAutomation(Realm):
 
     def run(self):
         if not self.create_host():
-            return self._handle_host_failure(
+            return self._handle_round_failure(
                 "Host device generic endpoint creation failed"
             )
         if not self.wait_for_host_ready():
-            return self._handle_host_failure("Host device failed to become ready")
+            return self._handle_round_failure("Host device failed to become ready")
         self.host_ever_ready = True
         self.create_participants()
         if not self.wait_for_test_start():
@@ -1688,7 +1727,7 @@ class ZoomAutomation(Realm):
                     f"Unable to get the start signal from the host device for coordinate {self.current_cord} — "
                     "skipping this coordinate and continuing with the next one."
                 )
-                self.failed_coords.append(self.current_cord)
+                self._record_round_issue(self.host_failure_coords)
                 return True
             else:
                 logger.error(
@@ -1771,12 +1810,12 @@ class ZoomAutomation(Realm):
                         self.stop_signal = False
                         self.participants_joined = 0
                         if not self.create_host():
-                            return self._handle_host_failure(
+                            return self._handle_round_failure(
                                 "Host device generic endpoint creation failed after "
                                 "battery pause"
                             )
                         if not self.wait_for_host_ready():
-                            return self._handle_host_failure(
+                            return self._handle_round_failure(
                                 "Host device failed to restart after battery pause"
                             )
                         self.create_participants()
@@ -1785,9 +1824,23 @@ class ZoomAutomation(Realm):
                                 f"Unable to get the start signal from the host device after the battery pause "
                                 f"for coordinate {self.current_cord} — skipping this round."
                             )
-                            self.failed_coords.append(self.current_cord)
+                            self._record_round_issue(self.host_failure_coords)
                             return True
-                self.monitor_endpoint_status_changes()
+                if not self.monitor_endpoint_status_changes():
+                    # None of this round's endpoints answered — they may have
+                    # been deleted, or the manager may just be unreachable, and
+                    # the poll can't tell those apart. Either way tear the round
+                    # down so the next coordinate starts clean; the normal
+                    # teardown below is skipped by the early return.
+                    if self.do_robo:
+                        self.generic_endps_profile.stop_cx()
+                        self.cleanup_generic_endpoints()
+                        self.start_time = None
+                        self.end_time = None
+                    return self._handle_round_failure(
+                        "None of the generic endpoints could be read",
+                        record_in=self.endpoint_loss_coords,
+                    )
                 logger.info("Monitoring the Test")
                 time.sleep(5)
         if self.do_robo:
@@ -4730,11 +4783,17 @@ class ZoomAutomation(Realm):
                 for angle in self.angles_list:
                     self.robo_obj.wait_for_battery()
                     rotated = self.robo_obj.rotate_angle(angle_degree=angle)
-                    if rotated:
-                        self.current_angle = angle
-                    else:
-                        logger.error(f"Failed to Rotate the Angle {self.current_angle}")
-                        sys.exit()
+                    if not rotated:
+                        # One unreachable angle is a per-angle problem, the
+                        # same shape as an unreachable coordinate — skip it
+                        # rather than taking down every angle still to come.
+                        logger.error(
+                            f"Failed to rotate to angle {angle} at coordinate "
+                            f"{coordinate} — skipping this angle and trying the next one."
+                        )
+                        self.failed_angles.setdefault(coordinate, []).append(angle)
+                        continue
+                    self.current_angle = angle
                     if not self.run():
                         logger.error(
                             "Stopping robo test early — host device issue detected on the first coordinate."
