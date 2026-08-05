@@ -327,6 +327,51 @@ class Adb:
         self.stats[device_serial] = stats
         self.send_stats_to_server()
 
+    def rotate_to_landscape(self, serial):
+        """Rotate a device to landscape and verify the resulting orientation."""
+        self.execute_cmd(
+            serial,
+            "content insert --uri content://settings/system --bind name:s:accelerometer_rotation --bind value:i:0",
+        )
+        self.execute_cmd(
+            serial,
+            "content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1",
+        )
+
+        time.sleep(2)
+
+        orientation = self.execute_cmd(
+            serial, "dumpsys input | grep -i SurfaceOrientation"
+        )
+        logging.info(
+            f"[{serial}] Rotation check after existing approach: {orientation}"
+        )
+
+        if "SurfaceOrientation: 1" in orientation:
+            logging.info(
+                f"[{serial}] Landscape rotation successful using existing approach"
+            )
+            return True
+
+        self.execute_cmd(serial, "wm user-rotation free")
+        time.sleep(1)
+        self.execute_cmd(serial, "wm user-rotation lock 1")
+        time.sleep(2)
+
+        orientation = self.execute_cmd(
+            serial, "dumpsys input | grep -i SurfaceOrientation"
+        )
+        logging.info(f"[{serial}] Rotation check after wm fallback: {orientation}")
+
+        if "SurfaceOrientation: 1" in orientation:
+            logging.info(
+                f"[{serial}] Landscape rotation successful using wm fallback"
+            )
+            return True
+
+        logging.warning(f"[{serial}] Unable to verify landscape rotation")
+        return False
+
     def check_stop_signal(self):
         """Check the stop signal from the Flask server."""
         if self.stop_signal:
@@ -394,11 +439,8 @@ class Adb:
                 if self.check_stop_signal():
                     return
 
-            # Rotate screen to landscape.
-            self.execute_cmd(
-                serial,
-                "content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1",
-            )
+            # Rotate screen to landscape and use wm as a fallback if needed.
+            self.rotate_to_landscape(serial)
             if self.check_stop_signal():
                 return
 
