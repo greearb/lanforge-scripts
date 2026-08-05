@@ -1863,13 +1863,6 @@ class L3VariableTime(Realm):
     # Query all endpoints to generate rx and other stats, returned
     # as an array of objects.
     def __get_rx_values(self):
-        endp_list = self.json_get(
-            "endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll",
-            debug_=False)
-        # multicast only shows tx rates
-        # endp_list = self.json_get(
-        #    "endp?fields=name,eid,delay,jitter,tx+rate,tx+rate+ll,tx+bytes,tx+drop+%25,tx+pkts+ll",
-        #    debug_=False)
 
         endp_rx_drop_map = {}
         endp_rx_map = {}
@@ -1880,101 +1873,114 @@ class L3VariableTime(Realm):
         total_ul_ll = 0
         total_dl = 0
         total_dl_ll = 0
+        # For multicast checking the alteast one tx and alteast one rx endpoint is there if not exiting
+        if self.mtx_endps:
+            available = self.monitor_endp_availability(self.mtx_endps)
+            if not available:
+                return False, endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
+            endpoint = self.monitor_endp_availability(self.mrx_endps, return_endpoint_data=True)
+            if not endpoint:
+                return False, endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
+        # Checking atleast one cx is there if not exiting
+        else:
+            available = self.monitor_cx_availability(self.cx_profile.get_cx_names())
+            if not available:
+                return False, endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
+            endp_url = "endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll,run"
+            endp_list = self.json_get(endp_url, debug_=True)
+            if not endp_list:
+                logger.error(
+                    "Failed to fetch endpoints. Received empty response.\n"
+                    f"Requested URL: '{endp_url}'\n"
+                    f"Response: {endp_list}")
+                return False, endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
+            endpoint = endp_list.get('endpoint', [])
+            if isinstance(endpoint, dict):
+                endpoint = [{endpoint['name']: endpoint}]
 
         # Multicast endpoints
         for e in self.multicast_profile.get_mc_names():
             our_endps[e] = e
-        try:
-            for endp_name in endp_list['endpoint']:
-                logger.debug("endpoint: {}".format(endp_name))
-                if endp_name != 'uri' and endp_name != 'handler':
-                    for item, endp_value in endp_name.items():
-                        # multicast does not support use existing: or self.use_existing_station_lists:
-                        if item in our_endps:
-                            # endps.append(endp_value) need to see how to affect
-                            # NOTE: during each monitor period the rates are added to get the totals
-                            # this is done so that if there is an issue the rate information will be in
-                            # the csv for the individual polling period
-                            logger.debug(
-                                "multicast endpoint: {item} value:\n".format(item=item))
-                            logger.debug(endp_value)
-                            for value_name, value in endp_value.items():
-                                if isinstance(value, str) and not value.isnumeric():
-                                    logging.debug(
-                                        'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
-                                    value = 0
-                                if value_name == 'rx rate':
-                                    # This hack breaks for mcast or if someone names endpoints weirdly.
-                                    # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
-                                    if "-mrx-" in item:
-                                        total_dl += int(value)
-                                    else:
-                                        total_ul += int(value)
-                                if value_name == 'rx rate ll':
-                                    # This hack breaks for mcast or if someone
-                                    # names endpoints weirdly.
-                                    if "-mrx-" in item:
-                                        total_dl_ll += int(value)
-                                    else:
-                                        total_ul_ll += int(value)
 
-                                # TODO need a way to report rates
-        except Exception as e:
-            overall_response = self.json_get('/cx/all/')
-            logger.info(overall_response)
-            logger.error(f"Endpoint not fetched from API {e}")
+        for endp_name in endpoint:
+            logger.debug("endpoint: {}".format(endp_name))
+            for item, endp_value in endp_name.items():
+                # multicast does not support use existing: or self.use_existing_station_lists:
+                if item in our_endps:
+                    # endps.append(endp_value) need to see how to affect
+                    # NOTE: during each monitor period the rates are added to get the totals
+                    # this is done so that if there is an issue the rate information will be in
+                    # the csv for the individual polling period
+                    logger.debug(
+                        "multicast endpoint: {item} value:\n".format(item=item))
+                    logger.debug(endp_value)
+                    for value_name, value in endp_value.items():
+                        if isinstance(value, str) and not value.isnumeric():
+                            logging.debug(
+                                'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
+                            value = 0
+                        if value_name == 'rx rate':
+                            # This hack breaks for mcast or if someone names endpoints weirdly.
+                            # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
+                            if "-mrx-" in item:
+                                total_dl += int(value)
+                            else:
+                                total_ul += int(value)
+                        if value_name == 'rx rate ll':
+                            # This hack breaks for mcast or if someone
+                            # names endpoints weirdly.
+                            if "-mrx-" in item:
+                                total_dl_ll += int(value)
+                            else:
+                                total_ul_ll += int(value)
+
+                        # TODO need a way to report rates
         # Unicast endpoints
         for e in self.cx_profile.created_endp.keys():
             our_endps[e] = e
-        try:
-            for endp_name in endp_list['endpoint']:
-                if endp_name != 'uri' and endp_name != 'handler':
-                    for item, endp_value in endp_name.items():
-                        if item in our_endps or self.use_existing_station_lists:
-                            endps.append(endp_value)
-                            logger.debug(
-                                "endpoint: {item} value:\n".format(item=item))
-                            logger.debug(endp_value)
+        for endp_name in endpoint:
+            for item, endp_value in endp_name.items():
+                if item in our_endps:
+                    endps.append(endp_value)
+                    logger.debug(
+                        "endpoint: {item} value:\n".format(item=item))
+                    logger.debug(endp_value)
 
-                            for value_name, value in endp_value.items():
-                                if value_name == 'rx bytes':
-                                    endp_rx_map[item] = value
-                                if value_name == 'rx rate':
-                                    endp_rx_map[item] = value
-                                if value_name == 'rx rate ll':
-                                    endp_rx_map[item] = value
-                                if value_name == 'rx pkts ll':
-                                    endp_rx_map[item] = value
-                                if value_name == 'rx drop %':
-                                    endp_rx_drop_map[item] = value
-                                if value_name == 'rx rate':
-                                    if isinstance(value, str) and not value.isnumeric():
-                                        logging.debug(
-                                            'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
-                                        value = 0
-                                    # This hack breaks for mcast or if someone names endpoints weirdly.
-                                    # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
-                                    if item.endswith("-A"):
-                                        total_dl += int(value)
-                                    elif item.endswith("-B"):
-                                        total_ul += int(value)
-                                if value_name == 'rx rate ll':
-                                    if isinstance(value, str) and not value.isnumeric():
-                                        logging.debug(
-                                            'Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
-                                        value = 0
-                                    # This hack breaks for mcast or if someone
-                                    # names endpoints weirdly.
-                                    if item.endswith("-A"):
-                                        total_dl_ll += int(value)
-                                    elif item.endswith("-B"):
-                                        total_ul_ll += int(value)
-        except Exception as e:
-            overall_response = self.json_get('/cx/all/')
-            logger.info(overall_response)
-            logger.error(f"Endpoint not fetched from API {e}")
+                    for value_name, value in endp_value.items():
+                        if value_name == 'rx bytes':
+                            endp_rx_map[item] = value
+                        if value_name == 'rx rate':
+                            endp_rx_map[item] = value
+                        if value_name == 'rx rate ll':
+                            endp_rx_map[item] = value
+                        if value_name == 'rx pkts ll':
+                            endp_rx_map[item] = value
+                        if value_name == 'rx drop %':
+                            endp_rx_drop_map[item] = value
+                        if value_name == 'rx rate':
+                            if isinstance(value, str) and not value.isnumeric():
+                                logging.debug(
+                                    'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
+                                value = 0
+                            # This hack breaks for mcast or if someone names endpoints weirdly.
+                            # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
+                            if item.endswith("-A"):
+                                total_dl += int(value)
+                            elif item.endswith("-B"):
+                                total_ul += int(value)
+                        if value_name == 'rx rate ll':
+                            if isinstance(value, str) and not value.isnumeric():
+                                logging.debug(
+                                    'Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
+                                value = 0
+                            # This hack breaks for mcast or if someone
+                            # names endpoints weirdly.
+                            if item.endswith("-A"):
+                                total_dl_ll += int(value)
+                            elif item.endswith("-B"):
+                                total_ul_ll += int(value)
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
-        return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
+        return True, endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
     # This script supports resetting ports, allowing one to test AP/controller under data load
     # while bouncing wifi stations.  Check here to see if we should reset
     # ports.
