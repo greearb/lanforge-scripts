@@ -6821,22 +6821,24 @@ class L3VariableTime(Realm):
             group_names = ', '.join(config_devices.keys())
             profile_names = ', '.join(config_devices.values())
             configmap = "Groups:" + group_names + " -> Profiles:" + profile_names
+            report_test_duration = self.actual_test_duration_display if self.need_endps_stopped else self.test_duration
             test_input_info = {
                 "LANforge ip": self.lfmgr,
                 "LANforge port": self.lfmgr_port,
                 "Upstream": self.upstream_port,
-                "Test Duration": self.test_duration,
+                "Test Duration": report_test_duration,
                 "Test Configuration": configmap,
                 "Polling Interval": self.polling_interval,
                 "Total No. of Devices": self.station_count,
             }
         else:
+            report_test_duration = self.actual_test_duration_display if self.need_endps_stopped else self.test_duration
             if self.robo_test:
                 test_input_info = {
                     "LANforge ip": self.lfmgr,
                     "LANforge port": self.lfmgr_port,
                     "Upstream": self.upstream_port,
-                    "Test Duration": self.test_duration,
+                    "Test Duration": report_test_duration,
                     "Polling Interval": self.polling_interval,
                     "Total No. of Devices": self.station_count,
                     "Robot Coordinates": ", ".join(self.coordinate_list),
@@ -6847,7 +6849,7 @@ class L3VariableTime(Realm):
                     "LANforge ip": self.lfmgr,
                     "LANforge port": self.lfmgr_port,
                     "Upstream": self.upstream_port,
-                    "Test Duration": self.test_duration,
+                    "Test Duration": report_test_duration,
                     "Polling Interval": self.polling_interval,
                     "Total No. of Devices": self.station_count,
                 }
@@ -6936,7 +6938,8 @@ class L3VariableTime(Realm):
         # Generate per-coordinate/rotation graphs and tables for robot test
         if self.robo_test and not self.do_bandsteering:
             logger.info("Building per-coordinate/rotation graphs and tables for robot test (from memory dict)")
-            self.add_live_view_images_to_report()
+            if self.dowebgui and self.get_live_view:
+                self.add_live_view_images_to_report()
             if not hasattr(self, "multicast_robot_results") or not self.multicast_robot_results:
                 self.report.set_custom_html("<p><i>No robot test results found.</i></p>")
                 self.report.build_custom()
