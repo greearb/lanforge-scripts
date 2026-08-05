@@ -219,7 +219,6 @@ class ZoomAutomator:
         instead, and the run only dies ~30s later with a misleading "name input
         screen not found" error.
         """
-        serial = self.device_serial
         try:
             output = self.adb_device.shell(f"pm list packages {ZOOM_PACKAGE}") or ""
         except Exception as e:
@@ -251,7 +250,7 @@ class ZoomAutomator:
 
             # Connect using uiautomator2 for UI interaction
             self.u2_device = u2.connect(serial)
-            self.logger.info(f"Successfully connected to device.")
+            self.logger.info("Successfully connected to device.")
 
         except Exception as e:
             self.logger.error(f"Failed to connect: {e}")
@@ -260,7 +259,7 @@ class ZoomAutomator:
     def start_interop_app(self):
         if not self.adb_device:
             raise RuntimeError("Device not set. Call set_device() first.")
-        self.logger.info(f"Launching Interop App...")
+        self.logger.info("Launching Interop App...")
         self.adb_device.shell("am force-stop us.zoom.videomeetings")
         time.sleep(1)
         self.adb_device.shell("am force-stop com.candela.wecan")
@@ -269,7 +268,7 @@ class ZoomAutomator:
             "am start --es auto_start 1 -n com.candela.wecan/com.candela.wecan.StartupActivity"
         )
         time.sleep(5)
-        self.logger.info(f"Interop App launched successfully.")
+        self.logger.info("Interop App launched successfully.")
 
     def check_stop_signal(self):
         """Check the stop signal from the Flask server."""
@@ -343,7 +342,7 @@ class ZoomAutomator:
         # 3. Detect preview screen
         preview_join = d(text="Editing display name")
         if preview_join.wait(timeout=5):
-            self.logger.info(f"Preview screen detected.")
+            self.logger.info("Preview screen detected.")
 
             # Enter name if field is present
             name_input = d(className="android.widget.EditText")
@@ -356,27 +355,27 @@ class ZoomAutomator:
                 ok_btn = d(text="OK")
                 if ok_btn.wait(timeout=10):
                     ok_btn.click()
-                    self.logger.info(f"Clicked 'OK' on preview screen.")
+                    self.logger.info("Clicked 'OK' on preview screen.")
                 else:
-                    raise RuntimeError(f"'OK' button not found within 10 seconds on preview screen.")
+                    raise RuntimeError("'OK' button not found within 10 seconds on preview screen.")
             else:
                 self.logger.error(
-                    f"Name input screen not found "
-                    f"(className='android.widget.EditText'). "
-                    f"Aborting automation."
+                    "Name input screen not found "
+                    "(className='android.widget.EditText'). "
+                    "Aborting automation."
                 )
                 raise RuntimeError(
-                    f"Could not find name input screen. "
-                    f"Zoom may not have launched correctly or the UI flow changed."
+                    "Could not find name input screen. "
+                    "Zoom may not have launched correctly or the UI flow changed."
                 )
 
             # Tap join on preview
             join_btn = d(text="Join")
             if join_btn.wait(timeout=10):
                 join_btn.click()
-                self.logger.info(f"Clicked 'Join' on preview screen.")
+                self.logger.info("Clicked 'Join' on preview screen.")
             else:
-                raise RuntimeError(f"'Join' button not found within 10 seconds on preview screen.")
+                raise RuntimeError("'Join' button not found within 10 seconds on preview screen.")
 
         else:
             # 4. Old flow: check for name input screen
@@ -392,20 +391,20 @@ class ZoomAutomator:
                     ok_btn.click()
                 else:
                     d(resourceId="us.zoom.videomeetings:id/button1").click()
-                self.logger.info(f"Clicked 'Ok Button'")
+                self.logger.info("Clicked 'Ok Button'")
             else:
                 self.logger.error(
-                    f"Name input screen not found "
-                    f"(resourceId='us.zoom.videomeetings:id/edtScreenName'). "
-                    f"Aborting automation."
+                    "Name input screen not found "
+                    "(resourceId='us.zoom.videomeetings:id/edtScreenName'). "
+                    "Aborting automation."
                 )
                 raise RuntimeError(
-                    f"Could not find name input screen. "
-                    f"Zoom may not have launched correctly or the UI flow changed."
+                    "Could not find name input screen. "
+                    "Zoom may not have launched correctly or the UI flow changed."
                 )
 
         # 5. Wait to join the meeting
-        self.logger.info(f"Waiting to join meeting...")
+        self.logger.info("Waiting to join meeting...")
         time.sleep(10)
 
         # Reveal controls before checking meeting state or toggles.
@@ -419,11 +418,11 @@ class ZoomAutomator:
             )
         else:
             self.logger.warning(
-                f"Leave button not found. Checking toolbar..."
+                "Leave button not found. Checking toolbar..."
             )
             if d(resourceId="us.zoom.videomeetings:id/panelMeetingToolbar").exists:
                 self.logger.info(
-                    f"Found meeting toolbar - likely in meeting."
+                    "Found meeting toolbar - likely in meeting."
                 )
 
         time.sleep(2)
@@ -434,7 +433,7 @@ class ZoomAutomator:
             count += 1
             if count > 60:
                 self.logger.error(
-                    f"Failed to retrieve meeting end time from server after 5 minutes. Leaving meeting."
+                    "Failed to retrieve meeting end time from server after 5 minutes. Leaving meeting."
                 )
                 sys.exit(1)
             try:
@@ -460,7 +459,7 @@ class ZoomAutomator:
         while datetime.now(self.tz) < meeting_end_dt:
             if self.check_stop_signal():
                 self.logger.info(
-                    f"Stop signal received. Leaving meeting early."
+                    "Stop signal received. Leaving meeting early."
                 )
                 break
             time.sleep(2)
@@ -470,17 +469,17 @@ class ZoomAutomator:
             self.reveal_zoom_controls(d, (width // 2, height // 2))
 
             # 8. Leave the meeting
-            self.logger.info(f"Leaving meeting...")
+            self.logger.info("Leaving meeting...")
             leave_bounds, _leave_status = self.get_leave_control_info(d)
             if leave_bounds and self.tap_bounds_center(d, leave_bounds):
                 time.sleep(2)
                 leave_confirm = d(text="Leave meeting")
                 if leave_confirm.wait(timeout=5):
                     leave_confirm.click()
-                    self.logger.info(f"Confirmed leaving meeting.")
+                    self.logger.info("Confirmed leaving meeting.")
             else:
                 self.logger.warning(
-                    f"Leave button not found. Pressing back..."
+                    "Leave button not found. Pressing back..."
                 )
                 d.press("back")
                 time.sleep(1)
@@ -509,8 +508,7 @@ class ZoomAutomator:
         """
         Continuously check and enable audio and video until both are enabled or retries exhausted.
         """
-        serial = self.device_serial
-        self.logger.info(f"Ensuring audio and video are enabled...")
+        self.logger.info("Ensuring audio and video are enabled...")
 
         retries = 0
         audio_enabled = False
@@ -530,10 +528,10 @@ class ZoomAutomator:
                     self.logger.info(f"Audio status: {audio_status}")
 
                     if audio_enabled_state is True:
-                        self.logger.info(f"Audio already enabled")
+                        self.logger.info("Audio already enabled")
                         audio_enabled = True
                     elif audio_enabled_state is False:
-                        self.logger.info(f"Audio is disabled. Enabling...")
+                        self.logger.info("Audio is disabled. Enabling...")
                         if self.tap_bounds_center(d, audio_bounds):
                             time.sleep(1)
                             (
@@ -545,7 +543,7 @@ class ZoomAutomator:
                                 f"Audio status after tap: {audio_status}"
                             )
                             if audio_enabled_state is True:
-                                self.logger.info(f"Audio enabled")
+                                self.logger.info("Audio enabled")
                                 audio_enabled = True
                         else:
                             self.logger.warning(
@@ -555,12 +553,12 @@ class ZoomAutomator:
                         join_audio = d(text="Join Audio")
                         if join_audio.exists:
                             self.logger.info(
-                                f"Audio prompt found. Joining audio..."
+                                "Audio prompt found. Joining audio..."
                             )
                             join_audio.click()
                             time.sleep(1)
                         else:
-                            self.logger.warning(f"Audio button not visible")
+                            self.logger.warning("Audio button not visible")
                 except Exception as e:
                     self.logger.error(f"Error checking audio: {e}")
 
@@ -573,10 +571,10 @@ class ZoomAutomator:
                     self.logger.info(f"Video status: {video_status}")
 
                     if video_enabled_state is True:
-                        self.logger.info(f"Video already enabled")
+                        self.logger.info("Video already enabled")
                         video_enabled = True
                     elif video_enabled_state is False:
-                        self.logger.info(f"Video is disabled. Enabling...")
+                        self.logger.info("Video is disabled. Enabling...")
                         if self.tap_bounds_center(d, video_bounds):
                             time.sleep(1)
                             (
@@ -588,7 +586,7 @@ class ZoomAutomator:
                                 f"Video status after tap: {video_status}"
                             )
                             if video_enabled_state is True:
-                                self.logger.info(f"Video enabled")
+                                self.logger.info("Video enabled")
                                 video_enabled = True
                         else:
                             self.logger.warning(
@@ -598,19 +596,19 @@ class ZoomAutomator:
                         join_video = d(text="Join Video")
                         if join_video.exists:
                             self.logger.info(
-                                f"Video prompt found. Joining video..."
+                                "Video prompt found. Joining video..."
                             )
                             join_video.click()
                             time.sleep(1)
                         else:
-                            self.logger.warning(f"Video button not visible")
+                            self.logger.warning("Video button not visible")
                 except Exception as e:
                     self.logger.error(f"Error checking video: {e}")
 
             time.sleep(2)
 
         if audio_enabled and video_enabled:
-            self.logger.info(f"Both audio and video are enabled.")
+            self.logger.info("Both audio and video are enabled.")
         else:
             self.logger.warning(
                 f"Could not fully enable audio/video after {max_retries} retries."
@@ -631,7 +629,7 @@ class ZoomAutomator:
 
             if resp.status_code == 200:
                 self.logger.info(
-                    f"Ping log uploaded successfully"
+                    "Ping log uploaded successfully"
                 )
             else:
                 self.logger.error(
@@ -665,7 +663,7 @@ class ZoomAutomator:
             )
 
             if resp.status_code == 200:
-                self.logger.info(f"Log uploaded successfully")
+                self.logger.info("Log uploaded successfully")
             else:
                 self.logger.error(
                     f"Log upload failed: {resp.status_code} {resp.text}"
