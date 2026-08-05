@@ -1583,10 +1583,11 @@ class ZoomAutomation(Realm):
                 self.generic_endps_profile.created_endp.extend(created_endp)
                 self.generic_endps_profile.created_cx.extend(created_cx)
                 logger.debug(f"create_participants: created_cx now={self.generic_endps_profile.created_cx}")
+                android_zoom_path = os.path.join(SCRIPT_DIR, "android_zoom.py")
                 cmd = (
                     f"su - lanforge -c "
                     f"\"cd /home/lanforge && "
-                    f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/zoom_automation/android_zoom.py "
+                    f"python3 {android_zoom_path} "
                     f"--serial {self.serial_list[i]} "
                     f"--meeting_url '{self.meet_link}' "
                     f"--participant_name '{self.real_sta_hostname[i]}' "
