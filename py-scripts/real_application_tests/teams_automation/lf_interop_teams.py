@@ -286,8 +286,12 @@ class TeamsAutomation(Realm):
         data = {}
         file_path = self.path + "/../../Running_instances/{}_{}_running.json".format(self.lanforge_ip, self.test_name)
 
-        # Wait until the file exists
+        # Avoid waiting forever if the Web UI fails to create the running JSON.
+        running_json_timeout = 5 * 60
+        wait_started = time.monotonic()
         while not os.path.exists(file_path):
+            if time.monotonic() - wait_started >= running_json_timeout:
+                raise TimeoutError(f"Running JSON file was not created within {running_json_timeout} seconds: {file_path}")
             logging.info("Waiting for the running json file to be created")
             time.sleep(1)
         logging.info("Running Json file found")
