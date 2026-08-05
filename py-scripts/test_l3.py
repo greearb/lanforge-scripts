@@ -969,6 +969,8 @@ class L3VariableTime(Realm):
         self.multicast_profile = self.new_multicast_profile()
         self.missing_endp_logged = set()
         self.not_running_endp_logged = set()
+        self.missing_cx_logged = set()
+        self.not_running_cx_logged = set()
         self.mtx_endps = set()
         self.mrx_endps = set()
         self.multicast_profile.name_prefix = "MLT-"
@@ -7821,6 +7823,79 @@ class L3VariableTime(Realm):
             time.sleep(interval)
             start_time = time.time()
         return [] if return_endpoint_data else False
+
+    def check_cx_availability(self, expected_cxs, present_cxs, cx_list):
+        for cx_name in expected_cxs:
+            if cx_name not in present_cxs.keys():
+                if cx_name not in self.missing_cx_logged:
+                    logger.warning(
+                        "Cross-connect '{}' is missing from the monitoring data.\n"
+                        "Requested URL: 'cx/all'\n"
+                        "Response: {}".format(cx_name, cx_list))
+                    self.append_cx_data(is_cx=True, name=cx_name, state="MISSING")
+                    self.missing_cx_logged.add(cx_name)
+                self.not_running_cx_logged.discard(cx_name)
+            elif present_cxs[cx_name].lower() != "run":
+                if cx_name not in self.not_running_cx_logged:
+                    logger.warning(
+                        "Cross-connect '{}' is not running in the monitoring data.\n"
+                        "Requested URL: 'cx/all'\n"
+                        "Response: {}".format(cx_name, cx_list))
+                    self.append_cx_data(is_cx=True, name=cx_name, state=present_cxs[cx_name])
+                    self.not_running_cx_logged.add(cx_name)
+                self.missing_cx_logged.discard(cx_name)
+            else:
+                if cx_name in self.missing_cx_logged or cx_name in self.not_running_cx_logged:
+                    logger.info(
+                        "Cross-connect '{}' is running in the monitoring data\n"
+                        "Requested URL: 'cx/all'\n"
+                        "Response: {}".format(cx_name, cx_list))
+                    self.append_cx_data(is_cx=True, name=cx_name, state="RUNNING")
+                self.missing_cx_logged.discard(cx_name)
+                self.not_running_cx_logged.discard(cx_name)
+
+    def monitor_cx_availability(self, expected_cxs, duration=40, interval=5):
+        start_time = time.time()
+        end_time = start_time + duration
+        no_of_attempts = duration // interval
+        count = 0
+        while (start_time <= end_time):
+            count += 1
+            if self.is_test_stopped_by_webgui():
+                logger.info("Test stopped by user via WebGUI. Exiting monitoring.")
+                return False
+            if count > 1:
+                logger.info("Attempt {} of {} to check cross-connect availability".format(count, no_of_attempts))
+            cx_list = self.json_get("cx/all", debug_=True)
+            if not cx_list:
+                logger.error(
+                    "Failed to fetch cross-connects. Received empty response.\n"
+                    "Requested URL: 'cx/all'\n"
+                    f"Response: {cx_list}")
+                time.sleep(interval)
+                start_time = time.time()
+                continue
+            present_cxs = {}
+            for cx_name, cx_info in cx_list.items():
+                if cx_name and isinstance(cx_info, dict):
+                    present_cxs[cx_name] = cx_info.get('state', 'Stopped')
+            self.check_cx_availability(expected_cxs, present_cxs, cx_list)
+            missed = len(self.missing_cx_logged)
+            not_run = len(self.not_running_cx_logged)
+            if missed == len(expected_cxs):
+                logger.error("All expected cross-connects ({}) are missing from the monitoring data. So we are checking again".format(
+                    ", ".join(self.missing_cx_logged)))
+            elif not_run == len(expected_cxs):
+                logger.error("All expected cross-connects ({}) are present but not running. So we are checking again".format(
+                    ", ".join(self.not_running_cx_logged)))
+            elif missed + not_run == len(expected_cxs):
+                logger.error("Some expected cross-connects ({}) are missing and some cross-connects ({}) are not running. So we are checking again".format(
+                    ", ".join(self.missing_cx_logged), ", ".join(self.not_running_cx_logged)))
+            else:
+                return True
+            time.sleep(interval)
+            start_time = time.time()
+        return False
 
 
 # Converting the upstream_port to IP address for configuration purposes
