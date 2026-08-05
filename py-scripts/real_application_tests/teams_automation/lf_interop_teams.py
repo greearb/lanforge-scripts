@@ -371,6 +371,17 @@ class TeamsAutomation(Realm):
 
         return upstream_port
 
+    def predict_endpoint_names(self, port_name):
+        """Return the normal Teams endpoint/CX names created by GenCXProfile."""
+        prefix = self.generic_endps_profile.name_prefix
+        return f"{prefix}-{port_name}", f"CX_{prefix}-{port_name}"
+
+    @staticmethod
+    def predict_android_endpoint_names(port_name):
+        """Return the Teams Android endpoint/CX names created by create_android()."""
+        gen_name = "teams-%s" % "_".join(port_name.split("."))
+        return gen_name, f"CX_generic-{gen_name}"
+
     def create_host(self):
         if self.generic_endps_profile.create(ports=[self.real_sta_list[0]], real_client_os_types=[self.real_sta_os_types[0]]):
             logging.info('Real client generic endpoint creation completed.')
