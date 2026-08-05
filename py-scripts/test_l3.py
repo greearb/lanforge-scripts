@@ -1439,6 +1439,7 @@ class L3VariableTime(Realm):
         dur = self.duration_time_to_seconds(self.test_duration)
 
         if self.polling_interval_seconds > dur + 1:
+            logger.info(f"Polling interval {self.polling_interval_seconds} is greater than test duration {dur}. Setting polling interval to {dur - 1} seconds.")
             self.polling_interval_seconds = dur - 1
 
         # Full spread-sheet data
