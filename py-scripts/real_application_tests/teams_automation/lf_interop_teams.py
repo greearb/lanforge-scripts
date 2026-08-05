@@ -371,6 +371,29 @@ class TeamsAutomation(Realm):
 
         return upstream_port
 
+    def get_generic_endpoint_for_cleanup(self, endp_name):
+        """
+        Query the generic endpoint and return its data for cleanup validation.
+
+        Returns:
+            tuple: (query_succeeded, endpoint_data), where endpoint_data is the
+            endpoint details if available, otherwise None.
+        """
+        try:
+            response = self.json_get(f"/generic/{endp_name}")
+        except Exception as error:
+            logger.warning(
+                "Unable to check generic endpoint '%s' before cleanup: %s",
+                endp_name,
+                error,
+            )
+            return False, None
+
+        if not isinstance(response, dict):
+            return True, None
+        endpoint_data = response.get("endpoint")
+        return True, endpoint_data if isinstance(endpoint_data, dict) else None
+
     def predict_endpoint_names(self, port_name):
         """Return the normal Teams endpoint/CX names created by GenCXProfile."""
         prefix = self.generic_endps_profile.name_prefix
