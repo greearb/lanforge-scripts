@@ -13,9 +13,11 @@ import logging
 import pytesseract
 import cv2
 import subprocess
+import os
+LOG_FILE_PATH = os.path.abspath("youtube_test.log")
 
 logging.basicConfig(
-    filename='youtube_test.log',
+    filename=LOG_FILE_PATH,
     filemode='w',
     level=logging.INFO,
     format='%(asctime)s %(levelname)s %(message)s'
@@ -25,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 class Adb:
     def __init__(self, host="127.0.0.1", port=5037, upstream_port=None):
+        """Initialize ADB clients and per-device test state."""
         self.host = host
         self.port = port
         self.client = AdbClient(host=self.host, port=self.port)
@@ -36,6 +39,27 @@ class Adb:
         self.test_serials = []
         self.stop_signal = False
 
+    def upload_test_log(self):
+        """Upload one combined log for all Android devices in this test."""
+        for handler in logging.getLogger().handlers:
+            handler.flush()
+        try:
+            with open(LOG_FILE_PATH, "rb") as log_file:
+                response = requests.post(
+                    f"http://{self.upstream_port}:5002/upload_youtube_log",
+                    data={"device_name": "android", "device_type": "android"},
+                    files={"log_file": ("youtube_test.log", log_file, "text/plain")},
+                    timeout=30,
+                )
+            if response.status_code != 200:
+                logger.error(
+                    "Failed to upload Android YouTube log: "
+                    "HTTP %s",
+                    response.status_code,
+                )
+        except Exception as exc:
+            logger.error("Failed to upload Android YouTube log: %s", exc)
+
     def get_devices(self):
         """Return list of connected ADB serials without side-effects."""
         devices = self.client.devices()
@@ -43,26 +67,36 @@ class Adb:
 
     def connect_devices(self):
         """Connect to devices and create uiautomator2 sessions."""
+        connected_serials = []
         for serial in self.test_serials:
             try:
                 device = self.client.device(serial)
                 self.devices[serial] = device
                 self.adb_serials[serial] = serial
                 self.u2_sessions[serial] = u2.connect(serial)
+                connected_serials.append(serial)
                 logging.info(f"Connected to device: {serial}")
             except Exception as e:
-                logging.info(f"Failed to connect to device {serial}: {e}")
+                logging.error(f"Failed to connect to device {serial}: {e}")
+                self.devices.pop(serial, None)
+                self.adb_serials.pop(serial, None)
+                self.u2_sessions.pop(serial, None)
+        return connected_serials
 
     def execute_cmd(self, device_serial, cmd):
+        """Run an ADB shell command on the selected device."""
         return self.devices[device_serial].shell(cmd)
 
     def execute_tap(self, device_serial, x, y):
+        """Tap the specified screen coordinates on a device."""
         self.devices[device_serial].input_tap(x, y)
 
     def execute_keyevent(self, device_serial, key_code):
+        """Send an Android key event to a device."""
         self.devices[device_serial].input_keyevent(key_code)
 
     def open_interop_app(self, serial):
+        """Open the Interop app and enter its test room."""
         d = self.u2_sessions[serial]
         d.app_start("com.candela.wecan")
         count = 0
@@ -101,6 +135,7 @@ class Adb:
         d.click(0.2, 0.2)
 
         def find_and_click_stats():
+            """Find and select the Stats for nerds menu option."""
             for _ in range(6):
                 # Try text match
                 stats_btn = d(textMatches="(?i).*stats.*nerds.*")
@@ -185,6 +220,9 @@ class Adb:
         start = time.time()
 
         while time.time() - start < timeout:
+            if self.check_stop_signal():
+                logging.info(f"[{serial}] Stop requested while waiting for video UI")
+                return False
 
             # If skip button exists, click it
             if d(textContains="Skip").exists:
@@ -213,6 +251,7 @@ class Adb:
         return False
 
     def send_stats_to_server(self):
+        """Send the latest statistics for all devices to the report server."""
         url = f"http://{self.upstream_port}:5002/youtube_stats"
         headers = {"Content-Type": "application/json"}
         try:
@@ -227,6 +266,7 @@ class Adb:
             logging.info(f"Error sending stats: {e}")
 
     def fetch_stats_for_nerds(self, device_serial):
+        """Read and parse YouTube Stats for nerds for one device."""
         # Get the UI dump directly via uiautomator2
         d = self.u2_sessions[device_serial]
         xml_content = d.dump_hierarchy(compressed=True)
@@ -289,10 +329,12 @@ class Adb:
 
     def check_stop_signal(self):
         """Check the stop signal from the Flask server."""
+        if self.stop_signal:
+            return True
         try:
             endpoint_url = f"http://{self.upstream_port}:5002/check_stop"
 
-            response = requests.get(endpoint_url)
+            response = requests.get(endpoint_url, timeout=3)
             if response.status_code == 200:
 
                 stop_signal_from_server = response.json().get("stop", False)
@@ -308,54 +350,82 @@ class Adb:
             return self.stop_signal
         except Exception as e:
             logging.info(f"Error checking stop signal: {e}")
+            return self.stop_signal
+
+    def wait_or_stop(self, seconds):
+        """Wait in short intervals so WebUI stop requests are handled promptly."""
+        deadline = time.time() + seconds
+        while time.time() < deadline:
+            if self.check_stop_signal():
+                return True
+            time.sleep(min(1, max(0, deadline - time.time())))
+        return self.check_stop_signal()
 
     def run_on_device(self, serial, video_url, delay, duration, resolution):
-        # Force-stop YouTube app if running
-        self.execute_cmd(serial, "am force-stop com.google.android.youtube")
-        time.sleep(10)
+        """Run YouTube playback and statistics collection on one device."""
+        try:
+            # Force-stop YouTube app if running
+            self.execute_cmd(serial, "am force-stop com.google.android.youtube")
+            if self.wait_or_stop(10):
+                return
 
-        # Launch YouTube video
-        self.execute_cmd(
-            serial,
-            f"am start -a android.intent.action.VIEW -d {video_url} com.google.android.youtube",
-        )
-        time.sleep(delay)
+            # Launch YouTube video
+            self.execute_cmd(
+                serial,
+                f"am start -a android.intent.action.VIEW -d {video_url} com.google.android.youtube",
+            )
+            if self.wait_or_stop(delay):
+                return
 
-        # Disable auto-rotate
-        self.execute_cmd(
-            serial,
-            "content insert --uri content://settings/system --bind name:s:accelerometer_rotation --bind value:i:0",
-        )
-
-        # wait for video ui and try skipping ads if present
-        self.wait_for_video_ui(serial)
-        if resolution:
-            self.set_resolution(serial, resolution)
-
-        # Rotate screen to landscape
-        self.execute_cmd(
-            serial,
-            "content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1",
-        )
-
-        # Enable stats
-        self.enable_stats_for_nerds(serial)
-
-        start_time = time.time()
-        end_time = start_time + duration  # duration is in seconds
-
-        while time.time() < end_time:
-            self.fetch_stats_for_nerds(serial)
-            time.sleep(1)  # control polling frequency
+            # Disable auto-rotate
+            self.execute_cmd(
+                serial,
+                "content insert --uri content://settings/system --bind name:s:accelerometer_rotation --bind value:i:0",
+            )
             if self.check_stop_signal():
-                break
-        self.execute_cmd(serial, "am force-stop com.google.android.youtube")
-        self.open_interop_app(serial)
-        logging.info(f"[{serial}] Test completed or stopped.")
+                return
+
+            # Wait for video UI and try skipping ads if present.
+            self.wait_for_video_ui(serial)
+            if self.check_stop_signal():
+                return
+            if resolution:
+                self.set_resolution(serial, resolution)
+                if self.check_stop_signal():
+                    return
+
+            # Rotate screen to landscape.
+            self.execute_cmd(
+                serial,
+                "content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1",
+            )
+            if self.check_stop_signal():
+                return
+
+            self.enable_stats_for_nerds(serial)
+            if self.check_stop_signal():
+                return
+
+            end_time = time.time() + duration
+            while time.time() < end_time and not self.check_stop_signal():
+                self.fetch_stats_for_nerds(serial)
+                if self.wait_or_stop(1):
+                    break
+        finally:
+            try:
+                self.execute_cmd(serial, "am force-stop com.google.android.youtube")
+            except Exception as exc:
+                logging.error(f"[{serial}] Failed to stop YouTube: {exc}")
+            try:
+                self.open_interop_app(serial)
+            except Exception as exc:
+                logging.error(f"[{serial}] Failed to reopen Interop app: {exc}")
+            logging.info(f"[{serial}] Test completed or stopped.")
 
     def run_on_multiple_devices(
         self, device_serials, video_url, delay, duration, resolution, max_workers=5
     ):
+        """Run the YouTube automation concurrently on the selected devices."""
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [
                 executor.submit(self.run_on_device, serial, video_url, delay, duration, resolution)
@@ -447,6 +517,7 @@ class Adb:
         return rows
 
     def click_row(self, serial, row):
+        """Click the center of a validated YouTube settings row."""
 
         d = self.u2_sessions[serial]
 
@@ -673,13 +744,19 @@ if __name__ == "__main__":
     logging.info(f"Running test on devices: {test_serials}")
     logging.info(f"All connected devices: {device_serials}")
     adb_client.test_serials = test_serials
-    adb_client.connect_devices()
-    if test_serials:
-        adb_client.run_on_multiple_devices(
-            test_serials,
-            video_url,
-            delay,
-            duration,
-            resolution,
-            max_workers=len(test_serials),
-        )
+    connected_serials = adb_client.connect_devices()
+    try:
+        if connected_serials:
+            adb_client.run_on_multiple_devices(
+                connected_serials,
+                video_url,
+                delay,
+                duration,
+                resolution,
+                max_workers=len(connected_serials),
+            )
+        else:
+            logging.error("No Android devices connected; skipping test execution")
+    finally:
+        if test_serials:
+            adb_client.upload_test_log()
