@@ -2239,13 +2239,25 @@ class L3VariableTime(Realm):
                 "summary": {},
             }
 
-        endp_data = self.json_get(
-            "endp/all?fields=name,tx+rate,rx+rate,rx+bytes,a/b,tos,eid,type,rx+drop+%25"
-        )
+        url = "/endp/all?fields=name,tx+rate,rx+rate,rx+bytes,a/b,tos,eid,type,rx+drop+%25"
+        endp_data = self.json_get(url, debug_=True)
         endpoints = {}
 
-        if endp_data and "endpoint" in endp_data:
-            for endp_item in endp_data["endpoint"]:
+        if endp_data is None:
+            logger.error(
+                "Failed to fetch endpoint data. Received empty response.\n"
+                f"Requested URL: '{url}'\n"
+                f"Response: {endp_data}")
+        elif "endpoint" not in endp_data:
+            logger.error(
+                "'endpoint' key not found in response.\n"
+                f"Requested URL: '{url}'\n"
+                f"Response: {endp_data}")
+        else:
+            endpoint_list = endp_data["endpoint"]
+            if isinstance(endpoint_list, dict):
+                endpoint_list = [{endpoint_list['name']: endpoint_list}]
+            for endp_item in endpoint_list:
                 for name, info in endp_item.items():
                     endpoints[name] = info
 
@@ -2500,13 +2512,27 @@ class L3VariableTime(Realm):
             dict: Collected client data for the given TOS, including clients,
                 uplink/downlink rates, resource aliases, and port signals.
         """
-        port_data = self.json_get('port/all?fields=signal,signal')
+        port_url = 'port/all?fields=signal,signal'
+        port_data = self.json_get(port_url, debug_=True)
+        if not port_data:
+            logger.error(
+                "Failed to fetch port data. Received empty response.\n"
+                f"Requested URL: '{port_url}'\n"
+                f"Response: {port_data}")
+            port_data = {}
         port_data.pop("handler", None)
         port_data.pop("uri", None)
         port_data.pop("warnings", None)
 
         # Gather resource data (only need hostname for alias)
-        resource_data = self.json_get('resource/all?fields=eid,hostname')
+        resource_url = 'resource/all?fields=eid,hostname'
+        resource_data = self.json_get(resource_url, debug_=True)
+        if not resource_data:
+            logger.error(
+                "Failed to fetch resource data. Received empty response.\n"
+                f"Requested URL: '{resource_url}'\n"
+                f"Response: {resource_data}")
+            resource_data = {}
         resource_data.pop("handler", None)
         resource_data.pop("uri", None)
         if not self.dowebgui:
@@ -2519,14 +2545,22 @@ class L3VariableTime(Realm):
 
         # Gather endpoint data (name, tx/rx rate, a/b, tos, eid, type)
         endp_type_present = False
-        endp_data = self.json_get('endp/all?fields=name,tx+rate,rx+rate,a/b,tos,eid,type')
+        endp_url = 'endp/all?fields=name,tx+rate,rx+rate,a/b,tos,eid,type'
+        endp_data = self.json_get(endp_url, debug_=True)
         if endp_data is not None:
             endp_type_present = True
         else:
             logger.info(
                 "Consider upgrading to 5.4.7 + endp field type not supported in LANforge GUI version results for Multicast reversed in graphs and tables")
-            endp_data = self.json_get('endp/all?fields=name,tx+rate,rx+rate,a/b,eid')
+            endp_url = 'endp/all?fields=name,tx+rate,rx+rate,a/b,eid'
+            endp_data = self.json_get(endp_url, debug_=True)
             endp_type_present = False
+        if not endp_data:
+            logger.error(
+                "Failed to fetch endpoint data. Received empty response.\n"
+                f"Requested URL: '{endp_url}'\n"
+                f"Response: {endp_data}")
+            endp_data = {}
         endp_data.pop("handler", None)
         endp_data.pop("uri", None)
 
@@ -2543,7 +2577,11 @@ class L3VariableTime(Realm):
         resource_alias_B = []
         port_signal_B = []
 
-        for endp in endp_data['endpoint']:
+        endpoint = endp_data.get('endpoint', [])
+        if isinstance(endpoint, dict):
+            endp_data['endpoint'] = [{endpoint['name']: endpoint}]
+
+        for endp in endp_data.get('endpoint', []):
             endp_key = list(endp.keys())[0]
             endp_info = endp[endp_key]
 
@@ -2555,7 +2593,7 @@ class L3VariableTime(Realm):
                 # Resource lookup (for alias)
                 eid_tmp_resource = f"{self.name_to_eid(endp_info['eid'])[0]}.{self.name_to_eid(endp_info['eid'])[1]}"
                 alias = 'NA'
-                for res in resource_data['resources']:
+                for res in resource_data.get('resources', []):
                     res_key = list(res.keys())[0]
                     if res_key == eid_tmp_resource:
                         # resource_found = True
@@ -2570,7 +2608,7 @@ class L3VariableTime(Realm):
                 eid_info = endp_info['name'].split('-')
                 eid_tmp_port = f"{eid_tmp_resource}.{eid_info[3 if endp_type_present and endp_info['type'] == 'Mcast' else 1]}"
                 signal = 'NA'
-                for port in port_data['interfaces']:
+                for port in port_data.get('interfaces', []):
                     port_key = list(port.keys())[0]
                     if port_key == eid_tmp_port:
                         signal = port[port_key]['signal']
@@ -3199,22 +3237,21 @@ class L3VariableTime(Realm):
                                               eid[1], eid[2])
 
                     # read LANforge to get the mac
-                    response = self.json_get(url)
-                    if (response is None) or ("interface" not in response):
-                        logger.info(
-                            "query-port: %s: incomplete response:" % url)
-                        logger.info(pformat(response))
+                    response = self.json_get(url, debug_=True)
+                    if response is None:
+                        logger.error(
+                            "Failed to fetch port data. Received empty response.\n"
+                            f"Requested URL: '{url}'\n"
+                            f"Response: {response}")
+                        continue
+                    elif "interface" not in response:
+                        logger.error(
+                            "'interface' key not found in response.\n"
+                            f"Requested URL: '{url}'\n"
+                            f"Response: {response}")
+                        continue
                     else:
-                        if not self.dowebgui:
-                            # print("response".format(response))
-                            logger.info(pformat(response))
                         port_data = response['interface']
-                        logger.info(
-                            "From LANforge: port_data, response['insterface']:{}".format(port_data))
-                        mac = port_data['mac']
-                        if not self.dowebgui:
-                            logger.info(
-                                "From LANforge: port_data, response['insterface']:{}".format(port_data))
                         mac = port_data['mac']
                         logger.debug("mac : {mac}".format(mac=mac))
 
@@ -3229,76 +3266,76 @@ class L3VariableTime(Realm):
                         self.get_endp_stats_for_port(
                             port_data["port"], endps)
 
-                    if tx_dl_mac_found:
-                        if not self.dowebgui:
-                            logger.info("mac {mac} ap_row_tx_dl {ap_row_tx_dl}".format(
-                                mac=mac, ap_row_tx_dl=ap_row_tx_dl))
-                        # Find latency, jitter for connections
-                        # using this port.
-                        (latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll,
-                            dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll,
-                            total_ul_pkts_ll, ul_rx_drop_percent) = self.get_endp_stats_for_port(
-                            port_data["port"], endps)
+                        if tx_dl_mac_found:
+                            if not self.dowebgui:
+                                logger.info("mac {mac} ap_row_tx_dl {ap_row_tx_dl}".format(
+                                    mac=mac, ap_row_tx_dl=ap_row_tx_dl))
+                            # Find latency, jitter for connections
+                            # using this port.
+                            (latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll,
+                                dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll,
+                                total_ul_pkts_ll, ul_rx_drop_percent) = self.get_endp_stats_for_port(
+                                port_data["port"], endps)
 
-                        ap_row_tx_dl.append(ap_row_chanim)
+                            ap_row_tx_dl.append(ap_row_chanim)
 
-                        if self.do_bandsteering:
-                            robot_x, robot_y, from_coordinate, to_coordinate = self.robot_obj.get_robot_pose()
-                            bandsteering_data = [robot_x, robot_y, from_coordinate, to_coordinate]
+                            if self.do_bandsteering:
+                                robot_x, robot_y, from_coordinate, to_coordinate = self.robot_obj.get_robot_pose()
+                                bandsteering_data = [robot_x, robot_y, from_coordinate, to_coordinate]
 
-                        self.write_dl_port_csv(
-                            len(self.station_names_list),
-                            ul,
-                            dl,
-                            ul_pdu_str,
-                            dl_pdu_str,
-                            atten_val,
-                            port_eid,
-                            port_data,
-                            latency,
-                            jitter,
-                            total_ul_rate,
-                            total_ul_rate_ll,
-                            total_ul_pkts_ll,
-                            ul_rx_drop_percent,
-                            total_dl_rate,
-                            total_dl_rate_ll,
-                            total_dl_pkts_ll,
-                            dl_rx_drop_percent,
-                            ap_row_tx_dl,
-                            bandsteering_data=bandsteering_data)  # this is where the AP data is added
+                            self.write_dl_port_csv(
+                                len(self.station_names_list),
+                                ul,
+                                dl,
+                                ul_pdu_str,
+                                dl_pdu_str,
+                                atten_val,
+                                port_eid,
+                                port_data,
+                                latency,
+                                jitter,
+                                total_ul_rate,
+                                total_ul_rate_ll,
+                                total_ul_pkts_ll,
+                                ul_rx_drop_percent,
+                                total_dl_rate,
+                                total_dl_rate_ll,
+                                total_dl_pkts_ll,
+                                dl_rx_drop_percent,
+                                ap_row_tx_dl,
+                                bandsteering_data=bandsteering_data)  # this is where the AP data is added
 
-                        # now report the ap_chanim_stats
+                            # now report the ap_chanim_stats
 
-                    if rx_ul_mac_found:
-                        # Find latency, jitter for connections
-                        # using this port.
-                        # latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate,
-                        # total_ul_rate_ll, total_ul_pkts_ll, ul_tx_drop_percent = self.get_endp_stats_for_port(
-                        #    port_data["port"], endps)
-                        self.write_ul_port_csv(
-                            len(self.station_names_list),
-                            ul,
-                            dl,
-                            ul_pdu_str,
-                            dl_pdu_str,
-                            atten_val,
-                            port_eid,
-                            port_data,
-                            latency,
-                            jitter,
-                            total_ul_rate,
-                            total_ul_rate_ll,
-                            total_ul_pkts_ll,
-                            ul_rx_drop_percent,
-                            total_dl_rate,
-                            total_dl_rate_ll,
-                            total_dl_pkts_ll,
-                            dl_rx_drop_percent,
-                            ap_row_rx_ul)  # ap_ul_row added
-                    if not self.dowebgui:
-                        logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(
-                            ap_row_rx_ul=ap_row_rx_ul))
+                            if rx_ul_mac_found:
+                                # Find latency, jitter for connections
+                                # using this port.
+                                # latency, jitter, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate,
+                                # total_ul_rate_ll, total_ul_pkts_ll, ul_tx_drop_percent = self.get_endp_stats_for_port(
+                                #    port_data["port"], endps)
+                                self.write_ul_port_csv(
+                                    len(self.station_names_list),
+                                    ul,
+                                    dl,
+                                    ul_pdu_str,
+                                    dl_pdu_str,
+                                    atten_val,
+                                    port_eid,
+                                    port_data,
+                                    latency,
+                                    jitter,
+                                    total_ul_rate,
+                                    total_ul_rate_ll,
+                                    total_ul_pkts_ll,
+                                    ul_rx_drop_percent,
+                                    total_dl_rate,
+                                    total_dl_rate_ll,
+                                    total_dl_pkts_ll,
+                                    dl_rx_drop_percent,
+                                    ap_row_rx_ul)  # ap_ul_row added
+                                if not self.dowebgui:
+                                    logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(
+                                        ap_row_rx_ul=ap_row_rx_ul))
 
             ####################################
             else:
@@ -3313,12 +3350,17 @@ class L3VariableTime(Realm):
                     eid = self.name_to_eid(port_eid)
                     url = "/port/%s/%s/%s" % (eid[0],
                                               eid[1], eid[2])
-                    response = self.json_get(url)
-                    if (response is None) or (
-                            "interface" not in response):
-                        logger.info(
-                            "query-port: %s: incomplete response:" % url)
-                        logger.debug(pformat(response))
+                    response = self.json_get(url, debug_=True)
+                    if response is None:
+                        logger.error(
+                            "Failed to fetch port information. Received empty response.\n"
+                            f"Requested URL: '{url}'\n"
+                            f"Response: {response}")
+                    elif "interface" not in response:
+                        logger.error(
+                            "'interface' key not found in response.\n"
+                            f"Requested URL: '{url}'\n"
+                            f"Response: {pformat(response)}")
                     else:
                         port_data = response['interface']
                         (latency, jitter, total_dl_rate, total_dl_rate_ll,
@@ -3629,44 +3671,68 @@ class L3VariableTime(Realm):
 
         # gather port data
         # TODO
-        self.port_data = self.json_get('port/all?fields=alias,port,mac,channel,ssid,mode,bps+rx,rx-rate,bps+tx,tx-rate')
-        # self.port_data = self.json_get('port/all')
-        self.port_data.pop("handler")
-        self.port_data.pop("uri")
-        self.port_data.pop("warnings")
-        logger.info("self.port_data type: {dtype} data: {data}".format(dtype=type(self.port_data), data=self.port_data))
+        url = 'port/all?fields=alias,port,mac,channel,ssid,mode,bps+rx,rx-rate,bps+tx,tx-rate'
+        self.port_data = self.json_get(url, debug_=True)
+        if self.port_data is None:
+            logger.error(
+                "Failed to fetch port data. Received empty response.\n"
+                f"Requested URL: '{url}'\n"
+                f"Response: {self.port_data}")
+            self.port_data = {}
+        else:
+            self.port_data.pop("handler", None)
+            self.port_data.pop("uri", None)
+            self.port_data.pop("warnings", None)
+            logger.info("self.port_data type: {dtype} data: {data}".format(dtype=type(self.port_data), data=self.port_data))
 
-        self.resource_data = self.json_get('resource/all?fields=eid,hostname,hw+version,kernel')
+        url = "/resource/all?fields=eid,hostname,hw+version,kernel"
+        self.resource_data = self.json_get(url, debug_=True)
+
+        if self.resource_data is None:
+            logger.error(
+                "Failed to fetch resource data. Received empty response.\n"
+                f"Requested URL: '{url}'\n"
+                f"Response: {self.resource_data}")
+            self.resource_data = {}
+        else:
+            self.resource_data.pop("handler", None)
+            self.resource_data.pop("uri", None)
+            # self.resource_data.pop("warnings")
+            # This is to handle the case where there is only one resourse
+            if "resource" in self.resource_data.keys():
+                self.resource_data["resources"] = [{'1.1': self.resource_data['resource']}]
+                self.resource_data.pop("resource")
+
         # self.resource_data = self.json_get('resource/all')
-        self.resource_data.pop("handler")
-        self.resource_data.pop("uri")
-        # self.resource_data.pop("warnings")
+
         if not self.dowebgui:
             logger.info("self.resource_data type: {dtype}".format(dtype=type(self.port_data)))
         # logger.info("self.resource_data : {data}".format(data=self.port_data))
-
-        # This is to handle the case where there is only one resourse
-        if "resource" in self.resource_data.keys():
-            self.resource_data["resources"] = [{'1.1': self.resource_data['resource']}]
-            self.resource_data.pop("resource")
 
         # Note will type will only work for 5.4.7
         # gather endp data
         endp_type_present = False
 
         # TODO check for 400 bad request instead of try except
-        self.endp_data = self.json_get(
-            'endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid,type,rx Drop %25')
+        url = "/endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,tos,eid,type,rx Drop %25"
+        self.endp_data = self.json_get(url, debug_=True)
         if self.endp_data is not None:
             endp_type_present = True
         else:
             logger.info(
                 "Consider upgrading to 5.4.7 + endp field type not supported in LANforge GUI version results for Multicast reversed in graphs and tables")
-            self.endp_data = self.json_get(
-                'endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,eid,rx Drop %25')
-            endp_type_present = False
-        self.endp_data.pop("handler")
-        self.endp_data.pop("uri")
+            url = "/endp/all?fields=name,tx+rate+ll,tx+rate,rx+rate+ll,rx+rate,a/b,eid,rx Drop %25"
+            self.endp_data = self.json_get(url, debug_=True)
+        if not self.endp_data:
+            logger.error(
+                "Failed to fetch endpoint data. Received empty response.\n"
+                f"Requested URL: '{url}'\n"
+                f"Response: {self.endp_data}")
+            self.endp_data = {}
+        else:
+            self.endp_data.pop("handler", None)
+            self.endp_data.pop("uri", None)
+
         logger.info("self.endpoint_data type: {dtype} data: {data}".format(
             dtype=type(self.endp_data), data=self.endp_data))
         # self.side_b_min_bps= str(str(int(self.cx_profile.side_b_min_bps) / 1000000) +' '+'Mbps')
@@ -3674,8 +3740,11 @@ class L3VariableTime(Realm):
 
         self.side_b_min_bps = self.cx_profile.side_b_min_bps
         self.side_a_min_bps = self.cx_profile.side_a_min_bps
-
-        for endp_data in self.endp_data['endpoint']:
+        endpoint = self.endp_data.get('endpoint', [])
+        if isinstance(endpoint, dict):
+            logger.info("endpoint is a dict, converting to list")
+            self.endp_data['endpoint'] = [{endpoint['name']: endpoint}]
+        for endp_data in self.endp_data.get('endpoint', []):
             logger.info("endp_data type {endp_type} endp_data {endp_data}".format(
                 endp_type=type(endp_data), endp_data=endp_data))
             # The dictionary only has one key
@@ -3711,7 +3780,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -3740,7 +3809,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.bk_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -3777,7 +3846,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -3807,7 +3876,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.bk_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -3846,7 +3915,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -3876,7 +3945,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.be_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -3913,7 +3982,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -3943,7 +4012,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.be_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -3982,7 +4051,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4012,7 +4081,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vi_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -4049,7 +4118,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4079,7 +4148,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vi_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -4118,7 +4187,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4148,7 +4217,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vo_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -4185,7 +4254,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4215,7 +4284,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vo_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -4257,7 +4326,7 @@ class L3VariableTime(Realm):
                             # look up the resource may need to have try except to handle cases where
                             # there is an issue getting data
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4286,7 +4355,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.bk_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -4323,7 +4392,7 @@ class L3VariableTime(Realm):
                             # look up the resource may need to have try except to handle cases where
                             # there is an issue getting data
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4353,7 +4422,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.bk_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -4393,7 +4462,7 @@ class L3VariableTime(Realm):
                             # look up the resource may need to have try except to handle cases where
                             # there is an issue getting data
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4423,7 +4492,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.be_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -4460,7 +4529,7 @@ class L3VariableTime(Realm):
                             # look up the resource may need to have try except to handle cases where
                             # there is an issue getting data
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4491,7 +4560,7 @@ class L3VariableTime(Realm):
                             port_found = False
                             self.be_port_eid_B.append(eid_tmp_port)
 
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -4529,7 +4598,7 @@ class L3VariableTime(Realm):
                             # look up the resource may need to have try except to handle cases where
                             # there is an issue getting data
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4559,7 +4628,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vi_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -4596,7 +4665,7 @@ class L3VariableTime(Realm):
                             # look up the resource may need to have try except to handle cases where
                             # there is an issue getting data
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4625,7 +4694,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vi_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -4664,7 +4733,7 @@ class L3VariableTime(Realm):
                             # look up the resource may need to have try except to handle cases where
                             # there is an issue getting data
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4693,7 +4762,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vo_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -4730,7 +4799,7 @@ class L3VariableTime(Realm):
                             # look up the resource may need to have try except to handle cases where
                             # there is an issue getting data
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4760,7 +4829,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vo_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -4802,7 +4871,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4832,7 +4901,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.bk_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -4870,7 +4939,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4899,7 +4968,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.bk_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -4937,7 +5006,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -4966,7 +5035,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.be_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -5003,7 +5072,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5033,7 +5102,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.be_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -5072,7 +5141,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5102,7 +5171,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vi_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -5140,7 +5209,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5170,7 +5239,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vi_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -5209,7 +5278,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5238,7 +5307,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vo_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -5275,7 +5344,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5305,7 +5374,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vo_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -5345,7 +5414,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5375,7 +5444,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.bk_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -5411,7 +5480,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5440,7 +5509,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.bk_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.bk_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -5479,7 +5548,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5508,7 +5577,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.be_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -5544,7 +5613,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5574,7 +5643,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.be_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.be_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -5611,7 +5680,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5641,7 +5710,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vi_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -5677,7 +5746,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5707,7 +5776,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vi_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vi_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -5744,7 +5813,7 @@ class L3VariableTime(Realm):
                                                    0]) + '.' + str(self.name_to_eid(endp_data[endp_data_key]['eid'])[1])
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5773,7 +5842,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vo_port_eid_A.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_A.append(port_data[port_data_key]['mac'])
@@ -5805,7 +5874,7 @@ class L3VariableTime(Realm):
 
                             # look up the resource
                             resource_found = False
-                            for resource_data in self.resource_data['resources']:
+                            for resource_data in self.resource_data.get('resources', []):
                                 resource_data_key = list(resource_data.keys())[0]
                                 if resource_data_key == eid_tmp_resource:
                                     resource_found = True
@@ -5835,7 +5904,7 @@ class L3VariableTime(Realm):
 
                             port_found = False
                             self.vo_port_eid_B.append(eid_tmp_port)
-                            for port_data in self.port_data['interfaces']:
+                            for port_data in self.port_data.get('interfaces', []):
                                 port_data_key = list(port_data.keys())[0]
                                 if port_data_key == eid_tmp_port:
                                     self.vo_port_mac_B.append(port_data[port_data_key]['mac'])
@@ -7439,7 +7508,24 @@ class L3VariableTime(Realm):
         input_list = []
         drop = []
         statuslist = []
-        interop_tab_data = self.json_get('/adb/')["devices"]
+        adb_url = '/adb/'
+        adb_response = self.json_get(adb_url, debug_=True)
+        if adb_response is None:
+            logger.error(
+                "Failed to fetch adb device data. Received empty response.\n"
+                f"Requested URL: '{adb_url}'\n"
+                f"Response: {adb_response}")
+            interop_tab_data = []
+        elif "devices" not in adb_response:
+            logger.error(
+                "'devices' key not found in response.\n"
+                f"Requested URL: '{adb_url}'\n"
+                f"Response: {adb_response}")
+            interop_tab_data = []
+        else:
+            interop_tab_data = adb_response["devices"]
+            if isinstance(interop_tab_data, dict):
+                interop_tab_data = [{interop_tab_data['name']: interop_tab_data}]
         for i in range(len(devclient)):
             for j in groupdevlist:
                 if j == devhostname[i] and devclient[i].split('_')[-1] != 'Android':
@@ -7596,7 +7682,24 @@ class L3VariableTime(Realm):
         test_input_list = []
         pass_fail_list = []
         # When device_csv_name specified
-        interop_tab_data = self.json_get('/adb/')["devices"]
+        adb_url = '/adb/'
+        adb_response = self.json_get(adb_url, debug_=True)
+        if adb_response is None:
+            logger.error(
+                "Failed to fetch adb device data. Received empty response.\n"
+                f"Requested URL: '{adb_url}'\n"
+                f"Response: {adb_response}")
+            interop_tab_data = []
+        elif "devices" not in adb_response:
+            logger.error(
+                "'devices' key not found in response.\n"
+                f"Requested URL: '{adb_url}'\n"
+                f"Response: {adb_response}")
+            interop_tab_data = []
+        else:
+            interop_tab_data = adb_response["devices"]
+            if isinstance(interop_tab_data, dict):
+                interop_tab_data = [{interop_tab_data['name']: interop_tab_data}]
         if self.expected_passfail_value == '' or self.expected_passfail_value is None:
             for client in self.client_dict_A[tos]['resource_alias_A']:
                 # Check if the client type (second word in "1.15 android samsungmob") is 'android'
@@ -7990,12 +8093,28 @@ def change_port_to_ip(upstream_port, lfclient_host, lfclient_port):
     if upstream_port.count('.') != 3:
         target_port_list = LFUtils.name_to_eid(upstream_port)
         shelf, resource, port, _ = target_port_list
-        try:
-            realm_obj = Realm(lfclient_host=lfclient_host, lfclient_port=lfclient_port)
-            target_port_ip = realm_obj.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
-            upstream_port = target_port_ip
-        except Exception:
-            logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
+        realm_obj = Realm(lfclient_host=lfclient_host, lfclient_port=lfclient_port)
+        port_url = f'/port/{shelf}/{resource}/{port}?fields=ip'
+        response = realm_obj.json_get(port_url, debug_=True)
+        if not response:
+            logging.error(
+                "Failed to fetch port info. Received empty response.\n"
+                f"Requested URL: '{port_url}'\n"
+                f"Response: {response}")
+            exit(1)
+        if 'interface' not in response:
+            logging.error(
+                "'interface' key not found in response.\n"
+                f"Requested URL: '{port_url}'\n"
+                f"Response: {response}")
+            exit(1)
+        if 'ip' not in response['interface']:
+            logging.error(
+                "'ip' key not found in response.\n"
+                f"Requested URL: '{port_url}'\n"
+                f"Response: {response}")
+            exit(1)
+        upstream_port = response['interface']['ip']
         logging.info(f"Upstream port IP {upstream_port}")
     else:
         logging.info(f"Upstream port IP {upstream_port}")
