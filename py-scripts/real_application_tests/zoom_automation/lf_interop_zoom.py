@@ -389,9 +389,9 @@ class ZoomAutomation(Realm):
             logger.info(f"Moved ping logs folder to {destination_dir}")
 
     def move_log_folder(self):
-        source_dir = os.path.join(self.path, "zoom_laptop_client_logs")
+        source_dir = os.path.join(self.path, "zoom_client_logs")
         if not os.path.isdir(source_dir):
-            logger.info(f"No zoom_laptop_client_logs directory found at {source_dir}")
+            logger.info(f"No zoom_client_logs directory found at {source_dir}")
             return
 
         # Missing whenever the run aborted before a report was built — see the
@@ -401,7 +401,7 @@ class ZoomAutomation(Realm):
             logger.warning(f"No report folder for this run; client logs stay at {source_dir}")
             return
 
-        destination_dir = os.path.join(report_dir, "zoom_laptop_client_logs")
+        destination_dir = os.path.join(report_dir, "zoom_client_logs")
         os.makedirs(report_dir, exist_ok=True)
 
         # If destination exists, merge files and remove source
@@ -845,7 +845,7 @@ class ZoomAutomation(Realm):
                 if not hostname or log_content is None:
                     return jsonify({"status": "error", "message": "Missing hostname or log"}), 400
 
-                log_dir = os.path.join(self.path, "zoom_laptop_client_logs")
+                log_dir = os.path.join(self.path, "zoom_client_logs")
                 os.makedirs(log_dir, exist_ok=True)
 
                 # Force a safe filename to avoid path traversal from client-supplied hostname
