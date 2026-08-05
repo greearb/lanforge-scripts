@@ -6240,6 +6240,12 @@ class L3VariableTime(Realm):
 
     # Stop traffic and admin down stations.
     def stop(self):
+        # Drop endpoints/cxs confirmed missing from the LANforge side so stop only
+        # targets what's actually present, irrespective of monitoring errors.
+        for endp_name in self.missing_endp_logged:
+            self.multicast_profile.created_mc.pop(endp_name, None)
+        for cx_name in self.missing_cx_logged:
+            self.cx_profile.created_cx.pop(cx_name, None)
         self.cx_profile.stop_cx()
         self.multicast_profile.stop_mc()
         for station_list in self.station_lists:
