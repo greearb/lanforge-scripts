@@ -378,6 +378,44 @@ class Youtube(Realm):
         else:
             return True
 
+    def generic_endpoint_exists(self, endpoint_name):
+        """Return whether LANforge currently has the generic endpoint."""
+        response = self.json_get(f"/generic/{endpoint_name}")
+        return bool(response and "endpoint" in response)
+
+    def pre_cleanup_stale_youtube_endpoints(self, ports):
+        """Remove stale YouTube CX/endpoint pairs before creating them.
+
+        YouTube creates desktop and Android LANforge endpoints through
+        GenCXProfile.create() with real-client OS types, so both use names
+        based on the complete port EID, for example ``yt-1.40.wlan0`` and
+        ``CX_yt-1.40.wlan0``.
+        """
+        prefix = self.generic_endps_profile.name_prefix
+        for port_name in ports:
+            endpoint_name = f"{prefix}-{port_name}"
+            cx_name = f"CX_{prefix}-{port_name}"
+
+            if not self.generic_endpoint_exists(endpoint_name):
+                continue
+
+            logging.info(
+                "Removing stale YouTube CX %s before endpoint creation",
+                cx_name,
+            )
+            self.json_post(
+                "cli-json/rm_cx",
+                {"test_mgr": "default_tm", "cx_name": cx_name},
+            )
+            logging.info(
+                "Removing stale YouTube endpoint %s before endpoint creation",
+                endpoint_name,
+            )
+            self.json_post(
+                "cli-json/rm_endp",
+                {"endp_name": endpoint_name},
+            )
+
     def create_generic_endp(self):
         """
         Create and configure generic endpoints for real client YouTube tests.
@@ -416,6 +454,7 @@ class Youtube(Realm):
         self.get_android_device_data()
         self.process_device_data()
 
+        self.pre_cleanup_stale_youtube_endpoints(self.real_sta_list)
         if self.generic_endps_profile.create(ports=self.real_sta_list, sleep_time=.5, real_client_os_types=self.real_sta_os_types,):
             logging.info('Real client generic endpoint creation completed.')
         else:
@@ -463,6 +502,7 @@ class Youtube(Realm):
                 )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
+        self.pre_cleanup_stale_youtube_endpoints(self.lanforge_port_list)
         if self.generic_endps_profile.create(ports=self.lanforge_port_list, sleep_time=.5, real_client_os_types=self.lanforge_os_type,):
             logging.info('Real client generic endpoint creation completed.')
         else:
