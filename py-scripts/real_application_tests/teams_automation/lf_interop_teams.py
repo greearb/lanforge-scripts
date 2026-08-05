@@ -236,6 +236,12 @@ class TeamsAutomation(Realm):
         self.device_issue_log = []
         self.missing_signal_logged = set()
         self.joined_device_names = set()
+        self._gen_cx_last_status = {}
+        self._gen_cx_stall_since = {}
+        self._gen_cx_gave_up_logged = set()
+        self._all_cx_missing_since = None
+        self.actual_monitoring_duration_seconds = 0
+        self.monitor_start_time = None
         # Map each endpoint to its CX for safe cleanup.
         self.generic_cx_pairs = {}
         self.path = os.path.join(os.getcwd(), "teams_test_results")
@@ -588,12 +594,18 @@ class TeamsAutomation(Realm):
 
         for data in post_data:
             url = "/cli-json/add_cx"
-            self.json_post(
+            response = self.json_post(
                 url,
                 data,
                 debug_=debug_,
                 suppress_related_commands_=suppress_related_commands_,
             )
+            # Track missing CX creation responses for subsequent monitoring.
+            if response is None:
+                logger.warning("No response received while creating CX '%s'. The CX will remain tracked and monitoring will wait for it to appear.",
+                               data["alias"])
+                self.record_device_issue(data["alias"],
+                                         "No response received from CX creation request; waiting for CX to appear")
         if sleep_time:
             time.sleep(sleep_time)
 
@@ -688,7 +700,38 @@ class TeamsAutomation(Realm):
             logger.info(f"sending running state to.. {cx_name}")
 
     def monitor_test(self):
-        while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
+        """Run test monitoring and record the actual duration."""
+        self.monitor_start_time = datetime.now()
+        try:
+            self._monitor_test_loop()
+        finally:
+            # Track and log the actual monitoring duration on every exit path.
+            self.actual_monitoring_duration_seconds += (datetime.now() - self.monitor_start_time).total_seconds()
+            logger.info("Monitoring Duration: {}".format(self.format_monitoring_duration()))
+
+    def _monitor_test_loop(self):
+        # Once the configured end time is reached, allow CXs five minutes to
+        # finish before ending monitoring instead of waiting indefinitely.
+        cx_finish_grace_period = 5 * 60
+        end_time_reached_at = None
+
+        while True:
+            # Poll every iteration to promptly detect CX state changes.
+            gen_cx_finished = self.check_gen_cx()
+            if datetime.now(self.tz) >= self.end_time:
+                if gen_cx_finished:
+                    break
+
+                if end_time_reached_at is None:
+                    end_time_reached_at = time.monotonic()
+                elif time.monotonic() - end_time_reached_at >= cx_finish_grace_period:
+                    logger.error("Generic CXs did not finish within five minutes after the configured end time. "
+                                 "Stopping monitoring.")
+                    self.record_device_issue("ALL",
+                                             "Generic CXs did not finish within the post-test grace period")
+                    self.stop_signal = True
+                    break
+
             if self.stop_signal:
                 break
 
@@ -763,6 +806,10 @@ class TeamsAutomation(Realm):
         self.generic_endps_profile.created_cx = []
         self.generic_endps_profile.created_endp = []
         self.generic_cx_pairs = {}
+        self._gen_cx_last_status = {}
+        self._gen_cx_stall_since = {}
+        self._gen_cx_gave_up_logged = set()
+        self._all_cx_missing_since = None
 
     def get_signal_and_channel_data(self):
         """
@@ -1475,25 +1522,159 @@ class TeamsAutomation(Realm):
             "Issue": issue,
         })
 
-    def check_gen_cx(self):
+    def format_monitoring_duration(self):
+        """Format the actual monitoring duration as minutes and seconds."""
+        total_seconds = int(self.actual_monitoring_duration_seconds)
+        minutes, seconds = divmod(total_seconds, 60)
+        return "{}m {}s".format(minutes, seconds)
+
+    def poll_gen_endp_status(self, gen_endp):
+        """Fetch the CX status for a generic endpoint, returning None if unreachable."""
         try:
-
-            for gen_endp in self.generic_endps_profile.created_endp:
-                generic_endpoint = self.json_get(f'/generic/{gen_endp}')
-
-                if not generic_endpoint or "endpoint" not in generic_endpoint:
-                    logging.info(f"Error fetching endpoint data for {gen_endp}")
-                    return False
-
-                endp_status = generic_endpoint["endpoint"].get("status", "")
-
-                if endp_status not in ["Stopped", "WAITING", "NO-CX", "PHANTOM", "FTM_WAIT"]:
-                    return False
-
-            return True
+            generic_endpoint = self.json_get(f'/generic/{gen_endp}')
         except Exception as e:
-            logging.error(f"Error in check_gen_cx function {e}", exc_info=True)
-            logging.info(f"generic endpoint data {generic_endpoint}")
+            generic_endpoint = None
+            logger.error(f"Error fetching endpoint data for {gen_endp}: {e}", exc_info=True)
+
+        if not generic_endpoint or "endpoint" not in generic_endpoint:
+            return None
+
+        return generic_endpoint["endpoint"].get("status", "")
+
+    def build_missing_endpoint_debug_lines(self, gen_endp):
+        """Build debug lines showing the queried URL and currently available endpoints."""
+        single_url = f'/generic/{gen_endp}'
+        all_endpoints = sorted(set(self.generic_endps_profile.created_endp))
+        if not all_endpoints:
+            return [f"URL: {single_url}"]
+
+        all_url = f"/generic/{','.join(all_endpoints)}"
+        try:
+            response = self.json_get(all_url)
+        except Exception as e:
+            logger.error(f"Error fetching {all_url} for debug: {e}", exc_info=True)
+            return [f"URL: {single_url}"]
+
+        if response and "endpoints" in response:
+            present_keys = [name for endp in response["endpoints"] for name in endp.keys()]
+        elif response and "endpoint" in response:
+            present_keys = all_endpoints[:1]
+        else:
+            present_keys = []
+
+        return [
+            f"URL: {all_url}",
+            f"Endpoint keys present: {present_keys}",
+        ]
+
+    def log_gen_cx_status_change(self, gen_endp, status):
+        """Log generic endpoint status changes and unavailable endpoints."""
+        status_key = status if status is not None else "MISSING"
+        prev_status_key = self._gen_cx_last_status.get(gen_endp)
+
+        if prev_status_key == status_key:
+            return
+
+        if status is None:
+            debug_lines = self.build_missing_endpoint_debug_lines(gen_endp)
+            logger.info(
+                f"Endpoint '{gen_endp}' is not available. Its CX may not have "
+                "been created, or it may be temporarily disconnected. "
+                "Continuing to monitor it.\n"
+                + "\n".join(debug_lines)
+            )
+            self.record_device_issue(
+                gen_endp,
+                "Endpoint unavailable (CX may not be created yet or device may "
+                "be disconnected)",
+            )
+        elif prev_status_key is not None:
+            logger.info(f"Endpoint '{gen_endp}' status changed to '{status}'.")
+            self.record_device_issue(gen_endp, f"Endpoint status changed to '{status}'")
+
+        self._gen_cx_last_status[gen_endp] = status_key
+
+    def check_gen_cx(self, stall_timeout=300, all_missing_timeout=40):
+        """
+        Check the status of all created generic CX endpoints.
+
+        Args:
+            stall_timeout: Timeout for an unreachable endpoint.
+            all_missing_timeout: Timeout when all endpoints are unavailable.
+
+        Returns:
+            bool: True if monitoring is complete; otherwise False.
+        """
+        finished_statuses = ("Stopped", "WAITING", "FTM_WAIT")
+        disconnected_statuses = ("NO-CX", "PHANTOM")
+        now = time.time()
+        all_finished = True
+
+        try:
+            if not self.generic_endps_profile.created_endp:
+                logger.error("No generic CX endpoints were created for any device. Stopping the test.")
+                self.record_device_issue("ALL", "No generic CX endpoints were created; test stopped")
+                self.stop_signal = True
+                return True
+
+            statuses = {}
+            for gen_endp in set(self.generic_endps_profile.created_endp):
+                status = self.poll_gen_endp_status(gen_endp)
+                self.log_gen_cx_status_change(gen_endp, status)
+                statuses[gen_endp] = status
+
+                if status in finished_statuses:
+                    self._gen_cx_stall_since.pop(gen_endp, None)
+                    self._gen_cx_gave_up_logged.discard(gen_endp)
+                    continue
+
+                if status in disconnected_statuses:
+                    self._gen_cx_stall_since.pop(gen_endp, None)
+                    self._gen_cx_gave_up_logged.discard(gen_endp)
+                    continue
+
+                if status is not None:
+                    # Successfully fetched a status that isn't a known finished/disconnected
+                    # value (e.g. "Run") - the endpoint is alive and still going.
+                    self._gen_cx_stall_since.pop(gen_endp, None)
+                    self._gen_cx_gave_up_logged.discard(gen_endp)
+                    all_finished = False
+                    continue
+
+                # status is None - the endpoint couldn't be fetched at all (unreachable/deleted).
+                stall_start = self._gen_cx_stall_since.setdefault(gen_endp, now)
+                stalled_for = now - stall_start
+                if stalled_for >= stall_timeout:
+                    if gen_endp not in self._gen_cx_gave_up_logged:
+                        logger.warning(f"'{gen_endp}' unresolved (status={status!r}) for "
+                                       f"{stalled_for:.0f}s (limit {stall_timeout}s) - giving up waiting on it.")
+                        self._gen_cx_gave_up_logged.add(gen_endp)
+                        self.record_device_issue(
+                            gen_endp,
+                            f"Gave up waiting on endpoint after {stalled_for:.0f}s (status={status!r})",
+                        )
+                    continue
+
+                all_finished = False
+
+            if not self.do_robo and statuses and all(s is None for s in statuses.values()):
+                if self._all_cx_missing_since is None:
+                    self._all_cx_missing_since = now
+                missing_for = now - self._all_cx_missing_since
+                if missing_for >= all_missing_timeout:
+                    logger.error(f"All {len(statuses)} generic endpoint(s) have been unreachable for {missing_for:.0f}s "
+                                 f"(limit {all_missing_timeout}s) - stopping the test.")
+                    self.record_device_issue("ALL", f"All endpoints unreachable for {missing_for:.0f}s - test stopped")
+                    self.stop_signal = True
+                else:
+                    logger.warning(f"All {len(statuses)} generic endpoint(s) are unreachable - retrying... "
+                                   f"{missing_for:.0f}s/{all_missing_timeout}s before giving up and stopping the test.")
+            elif not self.do_robo:
+                self._all_cx_missing_since = None
+
+            return all_finished
+        except Exception as e:
+            logger.error(f"Error in check_gen_cx function: {e}", exc_info=True)
             return False
 
     def set_start_time(self):
