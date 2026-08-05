@@ -979,6 +979,8 @@ class L3VariableTime(Realm):
         self.outfile = outfile
         self.client_issue_csv_name = os.path.join(os.path.dirname(self.outfile),
                                                   "client_issue.csv")
+        self.need_endps_stopped = False
+        self.actual_test_duration_display = None
         self.csv_started = False
         self.epoch_time = int(time.time())
         self.debug = debug
@@ -3006,6 +3008,15 @@ class L3VariableTime(Realm):
         # individual_device_data = {}
         # Monitor loop
         bandsteering_data = None
+        if self.need_endps_stopped and self.do_bandsteering:
+            logger.info("Required endpoints stopped, moving to the respective coordinate..")
+            data = {
+                "total_dl_bps": total_dl_bps,
+                "total_ul_bps": total_ul_bps,
+                "total_dl_ll_bps": total_dl_ll_bps,
+                "total_ul_ll_bps": total_ul_ll_bps
+            }
+            return data
         while cur_time < end_time:
             # interval_time = cur_time + datetime.timedelta(seconds=5)
             interval_time = cur_time + \
@@ -3024,7 +3035,24 @@ class L3VariableTime(Realm):
                     self.reset_port_check()
 
             self.epoch_time = int(time.time())
-            endp_rx_map, endp_rx_drop_map, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
+            available, endp_rx_map, endp_rx_drop_map, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
+            if not available:
+                logger.warning("Endpoint data not available, exiting monitoring loop early.")
+                self.actual_test_duration_display = self.format_duration(cur_time - start_time)
+                self.need_endps_stopped = True
+                if self.do_bandsteering:
+                    self.total_dl_bps = total_dl_bps
+                    self.total_ul_bps = total_ul_bps
+                    self.total_dl_ll_bps = total_dl_ll_bps
+                    self.total_ul_ll_bps = total_ul_ll_bps
+                    data = {
+                        "total_dl_bps": total_dl_bps,
+                        "total_ul_bps": total_ul_bps,
+                        "total_dl_ll_bps": total_dl_ll_bps,
+                        "total_ul_ll_bps": total_ul_ll_bps
+                    }
+                    return data
+                return total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps
 
             log_msg = "main loop, total-dl: {total_dl_bps} total-ul: {total_ul_bps} total-dl-ll: {total_dl_ll_bps}".format(
                 total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total_dl_ll_bps=total_dl_ll_bps)
@@ -7906,8 +7934,28 @@ class L3VariableTime(Realm):
             start_time = time.time()
         return False
 
+    def format_duration(self, td):
+        total_seconds = int(td.total_seconds())
 
+        days, remainder = divmod(total_seconds, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        parts = []
+
+        if days:
+            parts.append(f"{days} day{'s' if days != 1 else ''}")
+        if hours:
+            parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+        if minutes:
+            parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+        if seconds or not parts:
+            parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
+
+        return " ".join(parts)
 # Converting the upstream_port to IP address for configuration purposes
+
+
 def change_port_to_ip(upstream_port, lfclient_host, lfclient_port):
     if upstream_port.count('.') != 3:
         target_port_list = LFUtils.name_to_eid(upstream_port)
