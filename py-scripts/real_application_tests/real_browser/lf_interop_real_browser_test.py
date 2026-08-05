@@ -101,6 +101,9 @@ import csv
 import re
 import traceback
 import requests
+import platform
+import subprocess
+import signal
 
 WINDOWS_REAL_BROWSER_DIR = r".\local\real_application_test\real_browser"
 LINUX_REAL_BROWSER_DIR = "./local/real_application_test/real_browser"
@@ -413,6 +416,11 @@ class RealBrowserTest(Realm):
         self.http_profile.created_cx.clear()
 
         self.new_port_list = [item.split('.')[2] for item in self.laptops]
+
+        for port in self.laptops:
+            self.pre_cleanup_stale_endpoint(port)
+        for port in self.phone_data:
+            self.pre_cleanup_stale_android_endpoint(port)
 
         if self.generic_endps_profile.create(ports=self.laptops, sleep_time=.5, real_client_os_types=self.laptop_os_types,):
 
@@ -820,12 +828,95 @@ class RealBrowserTest(Realm):
         time.sleep(10)
 
     def precleanup(self):
-        self.http_profile.cleanup()
-        self.generic_endps_profile.cleanup()
+        self.cleanup_layer4_endpoints()
+        self.cleanup_generic_endpoints()
 
     def postcleanup(self):
-        self.http_profile.cleanup()
-        self.generic_endps_profile.cleanup()
+        self.cleanup_layer4_endpoints()
+        self.cleanup_generic_endpoints()
+
+    def generic_endpoint_exists(self, endp_name):
+        """True if LANforge currently has a generic endpoint by this name."""
+        response = self.json_get(f"/generic/{endp_name}")
+        return bool(response and "endpoint" in response)
+
+    def layer4_endpoint_exists(self, endp_name):
+        """True if LANforge currently has a layer4 endpoint by this name."""
+        response = self.json_get(f"/layer4/{endp_name}")
+        return bool(response and "endpoint" in response)
+
+    def cx_exists(self, cx_name):
+        """True if LANforge currently has a CX by this name."""
+        response = self.json_get(f"/cx/{cx_name}")
+        return bool(response and cx_name in response)
+
+    def predict_endpoint_names(self, port_name):
+        """
+        Reproduce GenCXProfile.create()'s naming convention without actually
+        creating anything, so we can check LANforge for a stale endpoint/CX
+        left over from a prior run that crashed before cleanup ran.
+        """
+        prefix = getattr(self.generic_endps_profile, 'name_prefix', 'rb')
+        return f"{prefix}-{port_name}", f"CX_{prefix}-{port_name}"
+
+    def predict_android_endpoint_names(self, port_name):
+        """
+        Reproduce create_android()'s naming convention.
+        """
+        prefix = getattr(self.generic_endps_profile, 'name_prefix', 'rb')
+        gen_name = f"{prefix}-%s" % "_".join(port_name.split("."))
+        cx_name = f"CX_generic-{gen_name}"
+        return gen_name, cx_name
+
+    def pre_cleanup_stale_names(self, gen_name, cx_name):
+        """
+        Remove any endpoint/CX by these names that's still on LANforge from
+        a previous run — e.g. one that crashed before its own cleanup ran.
+        """
+        if self.generic_endpoint_exists(gen_name) or self.layer4_endpoint_exists(gen_name):
+            logger.info(f"Removing stale CX {cx_name} left over from a previous run.")
+            self.json_post("cli-json/rm_cx", {"test_mgr": "default_tm", "cx_name": cx_name})
+            logger.info(f"Removing stale endpoint {gen_name} left over from a previous run.")
+            self.json_post("cli-json/rm_endp", {"endp_name": gen_name})
+
+    def pre_cleanup_stale_endpoint(self, port_name):
+        """Before creating a real-device generic endpoint for port_name."""
+        gen_name, cx_name = self.predict_endpoint_names(port_name)
+        self.pre_cleanup_stale_names(gen_name, cx_name)
+
+    def pre_cleanup_stale_android_endpoint(self, port_name):
+        """Before creating an Android generic endpoint for port_name."""
+        gen_name, cx_name = self.predict_android_endpoint_names(port_name)
+        self.pre_cleanup_stale_names(gen_name, cx_name)
+
+    def cleanup_generic_endpoints(self):
+        """
+        Like generic_endps_profile.cleanup(), but only deletes the endpoint
+        if LANforge still actually reports it as present.
+        """
+        for cx_name in self.generic_endps_profile.created_cx:
+            self.json_post("cli-json/rm_cx", {"test_mgr": "default_tm", "cx_name": cx_name})
+
+        for endp_name in self.generic_endps_profile.created_endp:
+            if self.generic_endpoint_exists(endp_name):
+                self.json_post("cli-json/rm_endp", {"endp_name": endp_name})
+            else:
+                logger.debug(f"Generic endpoint {endp_name} no longer exists on LANforge — skipping delete.")
+
+    def cleanup_layer4_endpoints(self):
+        """
+        Like http_profile.cleanup(), but only deletes the CX/endpoint
+        if LANforge still actually reports it as present.
+        """
+        for cx_name in set(self.created_cx.values()):
+            if self.cx_exists(cx_name):
+                self.json_post("cli-json/rm_cx", {"test_mgr": "default_tm", "cx_name": cx_name})
+
+        for endp_name in set(self.created_cx.keys()):
+            if self.layer4_endpoint_exists(endp_name):
+                self.json_post("cli-json/rm_endp", {"endp_name": endp_name})
+            else:
+                logger.debug(f"Layer4 endpoint {endp_name} no longer exists on LANforge — skipping delete.")
 
     def set_available_resources_ids(self, available_list):
         self.resource_ids = available_list
@@ -962,6 +1053,49 @@ class RealBrowserTest(Realm):
                                 break
         return station_name, laptops, laptop_os_types, user_name, mac_address,
 
+    def stop_previous_flask_server(self):
+        """
+        Forcefully kills any process currently listening on port 5003 (Linux/Darwin only).
+        """
+        port = 5003
+        logger.info(
+            f"Checking for processes using port {port} to forcefully kill them..."
+        )
+
+        current_os = platform.system()
+
+        try:
+            if current_os in ["Linux", "Darwin"]:
+                # Find PID on Linux/Mac using lsof
+                command = f"lsof -t -i:{port}"
+                try:
+                    output = subprocess.check_output(command, shell=True, text=True)
+                    pids = output.strip().split("\n")
+                    for pid in pids:
+                        if pid.strip():
+                            logger.info(
+                                f"Killing process {pid} on port {port} ({current_os})..."
+                            )
+                            os.kill(int(pid.strip()), signal.SIGKILL)
+                except subprocess.CalledProcessError:
+                    logger.info(f"No process found using port {port} on {current_os}.")
+                    logger.info(f"Port {port} is clear, ready to start Flask server.")
+                    pass
+            else:
+                logger.warning(
+                    f"Unsupported OS: {current_os}. Expected Linux or Darwin. Cannot automatically clear port {port}."
+                )
+
+        except Exception as e:
+            logger.warning(f"Error while trying to clear port {port}: {e}")
+
+    def handle_flask_server(self):
+        self.stop_previous_flask_server()
+        time.sleep(5)  # Ensure the port is released before starting the server
+        flask_thread = threading.Thread(target=self.start_flask_server)
+        flask_thread.daemon = True
+        flask_thread.start()
+
     def start_flask_server(self):
 
         @self.app.route('/stop_rb', methods=['GET'])
@@ -1023,17 +1157,23 @@ class RealBrowserTest(Realm):
             log_directory = (
                 self.result_dir
                 if self.dowebgui and self.result_dir
-                else os.path.dirname(os.path.abspath(__file__))
+                else "."
             )
             os.makedirs(log_directory, exist_ok=True)
-            if safe_device_type == 'android':
-                log_filename = "android_test.log"
-            elif safe_log_kind == 'debug':
-                log_filename = f"{safe_device_name}_client_debug.log"
+            if safe_log_kind == 'debug':
+                base_name = f"{safe_device_name}_client_debug.log"
             else:
-                log_filename = (
-                    f"{safe_device_name}_{safe_device_type}_test.log"
+                base_name = (
+                    f"{safe_device_name}_{safe_device_type}_test"
                 )
+            # If running a Robo test, append the point name (and angle if enabled):
+            if self.do_robo and self.current_cord:
+                if getattr(self, "rotations_enabled", False) and self.current_angle is not None:
+                    log_filename = f"{base_name}_pt{self.current_cord}_{self.current_angle}.log"
+                else:
+                    log_filename = f"{base_name}_pt{self.current_cord}.log"
+            else:
+                log_filename = f"{base_name}.log"
             log_path = os.path.join(log_directory, log_filename)
 
             try:
@@ -1071,7 +1211,7 @@ class RealBrowserTest(Realm):
 
     def run_flask_server(self):
 
-        flask_thread = threading.Thread(target=self.start_flask_server)
+        flask_thread = threading.Thread(target=self.handle_flask_server)
         flask_thread.daemon = True
         flask_thread.start()
         self.wait_for_flask()
@@ -3316,9 +3456,9 @@ class RealBrowserTest(Realm):
         except Exception as e:
             logging.error(f"Error in create_robo_report function {e}", exc_info=True)
         finally:
+            destination_dir = self.report_path_date_time
             if not self.dowebgui:
                 source_dir = "."
-                destination_dir = self.report_path_date_time
                 for filename in self.robo_csv_files:
                     source_path = os.path.join(source_dir, filename)
                     destination_path = os.path.join(destination_dir, filename)
@@ -3327,6 +3467,18 @@ class RealBrowserTest(Realm):
                         logging.info(f"Moved {filename} to {destination_dir}")
                     else:
                         logging.info(f"{filename} not found in the current directory")
+
+            log_dir = os.path.join(destination_dir, "log")
+            os.makedirs(log_dir, exist_ok=True)
+            for filename in set(self.log_file_names + [f for f in os.listdir(".") if f.endswith("_client_test.log") or f.endswith("_test.log")]):
+                source_path = os.path.join(".", filename)
+
+                if os.path.isfile(source_path):
+                    try:
+                        shutil.move(source_path, log_dir)
+                        logging.info(f"Moved {filename} to {log_dir}")
+                    except Exception as e:
+                        logging.warning(f"Could not move {filename}: {e}")
 
     def create_robo_graphs_test_results(self, csv_file, coordinate, angle=None):
         """
@@ -3925,6 +4077,7 @@ def main():
         logger.error("An exception occurred:\n%s", tb_str)
     finally:
         if '--help' not in sys.argv and '-h' not in sys.argv:
+            obj.stop()
             if args.do_robo and args.do_bandsteering:
                 if args.dowebgui:
                     obj.stop_webui_test()
@@ -3935,7 +4088,6 @@ def main():
                 obj.create_robo_report()
             else:
                 obj.create_report(iot_summary=iot_summary)
-            obj.stop()
 
             if not args.no_postcleanup:
                 obj.postcleanup()
