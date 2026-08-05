@@ -233,6 +233,7 @@ class TeamsAutomation(Realm):
                 self.header = ['timestamp'] + self.video_stats_header
         self.data_store = {}
         self.stop_signal = False
+        self.device_issue_log = []
         self.path = os.path.join(os.getcwd(), "teams_test_results")
         if not os.path.exists(self.path):
             os.makedirs(self.path)
@@ -1118,6 +1119,10 @@ class TeamsAutomation(Realm):
                 self.add_live_view_images_to_report()
             if self.do_bs:
                 self.add_bandsteering_report_section()
+            # Save recorded device issues alongside the test report.
+            if self.device_issue_log:
+                issues_df = pd.DataFrame(self.device_issue_log)
+                issues_df.to_csv(os.path.join(self.report_path_date_time, "clients_issue.csv"), index=False)
             self.report.write_html()
             self.report.write_pdf()
         except Exception as e:
@@ -1319,6 +1324,14 @@ class TeamsAutomation(Realm):
                 self.report.build_table_title()
                 self.report.set_table_dataframe(filtered_df)
                 self.report.build_table()
+
+    def record_device_issue(self, device, issue):
+        """Record a timestamped device issue for inclusion in the test report."""
+        self.device_issue_log.append({
+            "Time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "Device": device,
+            "Issue": issue,
+        })
 
     def check_gen_cx(self):
         try:
