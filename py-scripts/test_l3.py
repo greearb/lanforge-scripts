@@ -1472,6 +1472,7 @@ class L3VariableTime(Realm):
                 json.dump({}, file)
 
             # self.robot_obj.robo_ip = f"{self.robo_ip}" # Fake Server Testing
+            self.robot_obj.ip = self.ip
             self.robot_obj.nav_data_path = nav_data
             self.robot_obj.result_directory = os.path.dirname(nav_data)
             self.robot_obj.runtime_dir = self.result_dir
