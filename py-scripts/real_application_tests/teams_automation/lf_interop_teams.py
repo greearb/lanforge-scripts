@@ -1055,6 +1055,7 @@ class TeamsAutomation(Realm):
         if not self.wait_for_login():
             logger.error("Teams test stopped before participant creation because the host CX did not recover.")
             if self.do_robo:
+                self.archive_mobile_logs_for_robot_run()
                 self.reset_variables_for_next_run()
             return
         self.create_participants()
@@ -1064,6 +1065,8 @@ class TeamsAutomation(Realm):
         self.stop_signal = True
         time.sleep(10)
         if self.do_robo:
+            # Save Android logs with the current run's coordinate/rotation.
+            self.archive_mobile_logs_for_robot_run()
             if self.robot_run_skipped:
                 location = f"coordinate {self.current_coord}"
                 if self.rotations_enabled:
@@ -1466,6 +1469,7 @@ class TeamsAutomation(Realm):
         finally:
             self.move_csv_files()
             self.move_log_folder()
+            self.move_mobile_log_folder()
 
     def add_live_view_images_to_report(self):
         """
@@ -2159,6 +2163,81 @@ class TeamsAutomation(Realm):
                 shutil.rmtree(dest)
             shutil.move(log_dir, dest)
 
+    def move_mobile_log_folder(self):
+        """Move mobile Teams logs to the current test report directory."""
+        mobile_log_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "ms_teams_mobile_logs",
+        )
+        if os.path.isdir(mobile_log_dir):
+            dest = os.path.join(self.report_path_date_time, "ms_teams_mobile_logs")
+            if os.path.isdir(dest):
+                shutil.rmtree(dest)
+            shutil.move(mobile_log_dir, dest)
+
+    def archive_mobile_logs_for_robot_run(self):
+        """
+        Archive Android logs after each robot run by renaming them with the
+        current coordinate (and rotation, if enabled).
+        """
+        mobile_log_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "ms_teams_mobile_logs",
+        )
+        if not os.path.isdir(mobile_log_dir):
+            return
+
+        def safe_name(value):
+            return "".join(
+                character if character.isalnum() or character in ("-", "_", ".") else "_"
+                for character in str(value)
+            )
+
+        coordinate = safe_name(self.current_coord)
+        rotation = safe_name(self.current_rotation)
+
+        for index, os_type in enumerate(self.real_sta_os_types):
+            if os_type != "android":
+                continue
+
+            hostname = os.path.basename(str(self.real_sta_hostname[index]).strip())
+            source = os.path.join(mobile_log_dir, f"{hostname}.log")
+            if not os.path.isfile(source):
+                logger.warning(
+                    "Android log was not found for '%s' after the robot run: %s",
+                    hostname,
+                    source,
+                )
+                continue
+
+            if self.rotations_enabled:
+                archived_name = f"{safe_name(hostname)}_{coordinate}_{rotation}.log"
+            else:
+                archived_name = f"{safe_name(hostname)}_{coordinate}.log"
+
+            destination = os.path.join(mobile_log_dir, archived_name)
+            suffix = 2
+            while os.path.exists(destination):
+                stem, extension = os.path.splitext(archived_name)
+                destination = os.path.join(
+                    mobile_log_dir, f"{stem}_{suffix}{extension}"
+                )
+                suffix += 1
+
+            try:
+                os.replace(source, destination)
+                logger.info(
+                    "Archived Android log for robot run: %s",
+                    destination,
+                )
+            except OSError as error:
+                logger.error(
+                    "Unable to archive Android log '%s': %s",
+                    source,
+                    error,
+                    exc_info=True,
+                )
+
     def shutdown(self):
         """
         Gracefully shut down the application.
@@ -2468,6 +2547,7 @@ class TeamsAutomation(Realm):
                 data = request.json
                 hostname = data.get("hostname")
                 log_content = data.get("log")
+                error_log_content = data.get("error_log")
 
                 if not hostname or log_content is None:
                     return jsonify({"status": "error", "message": "Missing hostname or log"}), 400
@@ -2475,12 +2555,57 @@ class TeamsAutomation(Realm):
                 log_dir = os.path.join(self.path, "teams_laptop_client_logs")
                 os.makedirs(log_dir, exist_ok=True)
 
-                hostname = hostname.strip()
-                save_path = os.path.join(log_dir, f"{hostname}.log")
+                hostname = os.path.basename(hostname.strip())
+
+                def safe_name(value):
+                    # Replace filename-unsafe characters with underscores.
+                    return "".join(
+                        character
+                        if character.isalnum() or character in ("-", "_", ".")
+                        else "_"
+                        for character in str(value)
+                    )
+
+                safe_hostname = safe_name(hostname)
+                if self.do_robo:
+                    coordinate = safe_name(self.current_coord)
+                    if self.rotations_enabled:
+                        rotation = safe_name(self.current_rotation)
+                        log_name = (
+                            f"{safe_hostname}_{coordinate}_{rotation}.log"
+                        )
+                    else:
+                        log_name = f"{safe_hostname}_{coordinate}.log"
+                else:
+                    log_name = f"{safe_hostname}.log"
+
+                save_path = os.path.join(log_dir, log_name)
+                suffix = 2
+                # Avoid overwriting an existing log by appending a numeric suffix.
+                while os.path.exists(save_path):
+                    stem, extension = os.path.splitext(log_name)
+                    save_path = os.path.join(
+                        log_dir, f"{stem}_{suffix}{extension}"
+                    )
+                    suffix += 1
+
                 with open(save_path, "w", errors="replace") as f:
                     f.write(log_content)
 
-                logging.info(f"Log file uploaded from {hostname}")
+                # Newer clients send the detailed traceback log separately.
+                # Keep accepting older clients that only provide "log".
+                if error_log_content is not None:
+                    error_stem, _ = os.path.splitext(
+                        os.path.basename(save_path)
+                    )
+                    error_save_path = os.path.join(
+                        log_dir, f"{error_stem}_errors.log"
+                    )
+                    with open(error_save_path, "w", errors="replace") as f:
+                        f.write(error_log_content)
+
+                logging.info("Log file uploaded from %s and saved as %s",
+                             hostname, os.path.basename(save_path))
                 return jsonify({"status": "success", "message": "Log file uploaded"}), 200
             except Exception as e:
                 logging.error(f"Error uploading log file: {e}")
@@ -2932,10 +3057,11 @@ def main():
                 teams.stop_signal = True
                 if args.do_webUI:
                     teams.stop_test_in_webui()
-                teams.generate_report()
                 logger.info("Waiting for Browser Cleanup at Client Side")
                 time.sleep(10)
                 logger.info("Browser Cleanup Completed")
+                # Wait for client cleanup to finish so the report includes late log uploads.
+                teams.generate_report()
                 if not teams.no_post_cleanup:
                     teams.cleanup_generic_endpoints()
                 logger.info("Test Completed")
