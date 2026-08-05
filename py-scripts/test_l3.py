@@ -2945,11 +2945,14 @@ class L3VariableTime(Realm):
                     passes = 0
                     expected_passes = 0
                     logger.info("Getting initial values.")
-                    self.__get_rx_values()
+                    available = self.__get_rx_values()[0]
                     self.overall = []
                     # monitor stats
                     if self.do_bandsteering:
-                        return ul, dl, ul_pdu_str, dl_pdu_str, atten_val, ul_pdu, dl_pdu, passes, expected_passes, coordinate, rotation
+                        return available, ul, dl, ul_pdu_str, dl_pdu_str, atten_val, ul_pdu, dl_pdu, passes, expected_passes, coordinate, rotation
+                    if not available:
+                        logger.warning("Endpoint data not available, skipping monitoring.")
+                        continue
                     total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.monitor(ul, dl, ul_pdu_str, dl_pdu_str, atten_val, coordinate, rotation)
                     self.process_port_interval_statistics(total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps, ul, dl,
                                                           ul_pdu_str, dl_pdu_str, ul_pdu, dl_pdu, atten_val, passes, expected_passes)
