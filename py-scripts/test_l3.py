@@ -967,6 +967,8 @@ class L3VariableTime(Realm):
         self.polling_interval = polling_interval
         self.cx_profile = self.new_l3_cx_profile()
         self.multicast_profile = self.new_multicast_profile()
+        self.mtx_endps = set()
+        self.mrx_endps = set()
         self.multicast_profile.name_prefix = "MLT-"
         self.station_profiles = []
         self.args = args
@@ -2115,6 +2117,7 @@ class L3VariableTime(Realm):
                             etype=etype, tos=_tos))
                         self.multicast_profile.create_mc_tx(
                             etype, self.side_b, tos=_tos, add_tos_to_name=True)
+            self.mtx_endps = self.multicast_profile.get_mc_names()
             logger.info("Creating test station port(s)")
             for station_profile in self.station_profiles:
                 if not rebuild and not self.use_existing_station_lists:
@@ -2161,6 +2164,11 @@ class L3VariableTime(Realm):
                                 self.tcp_endps = self.tcp_endps + these_endp
                             # after we create the cxs, append to global
                             self.cx_names.append(these_cx)
+            # for getting only the rx endpoints in the case of multicast
+            if self.mtx_endps:
+                for endp in self.multicast_profile.get_mc_names():
+                    if endp not in self.mtx_endps:
+                        self.mrx_endps.add(endp)
 
         self.cx_count = self.cx_profile.get_cx_count()
 
