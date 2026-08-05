@@ -234,6 +234,8 @@ class TeamsAutomation(Realm):
         self.data_store = {}
         self.stop_signal = False
         self.device_issue_log = []
+        # Map each endpoint to its CX for safe cleanup.
+        self.generic_cx_pairs = {}
         self.path = os.path.join(os.getcwd(), "teams_test_results")
         if not os.path.exists(self.path):
             os.makedirs(self.path)
@@ -405,12 +407,84 @@ class TeamsAutomation(Realm):
         gen_name = "teams-%s" % "_".join(port_name.split("."))
         return gen_name, f"CX_generic-{gen_name}"
 
+    def pre_cleanup_stale_names(self, endp_name, cx_name):
+        """Remove a same-named pair left by an earlier interrupted Teams run."""
+        if self.no_pre_cleanup:
+            return
+
+        query_succeeded, endpoint_data = self.get_generic_endpoint_for_cleanup(endp_name)
+        if not query_succeeded or endpoint_data is None:
+            return
+
+        if endpoint_data.get("status") == "NO-CX":
+            logger.info("Stale CX '%s' is already missing; skipping its removal.", cx_name)
+        else:
+            logger.info("Removing stale CX '%s' left by a previous run.", cx_name)
+            self.json_post(
+                "cli-json/rm_cx",
+                {"test_mgr": "default_tm", "cx_name": cx_name},
+            )
+        logger.info(
+            "Removing stale generic endpoint '%s' left by a previous run.",
+            endp_name,
+        )
+        self.json_post("cli-json/rm_endp", {"endp_name": endp_name})
+
+    def pre_cleanup_stale_endpoint(self, port_name):
+        self.pre_cleanup_stale_names(*self.predict_endpoint_names(port_name))
+
+    def pre_cleanup_stale_android_endpoint(self, port_name):
+        self.pre_cleanup_stale_names(*self.predict_android_endpoint_names(port_name))
+
+    def cleanup_generic_endpoints(self):
+        """
+        Clean up tracked generic endpoints and their CXs, skipping objects
+        already missing from LANforge. If the existence check fails, fall back
+        to the original cleanup behavior.
+        """
+        pairs = dict(self.generic_cx_pairs)
+        for endp_name, cx_name in zip(
+                self.generic_endps_profile.created_endp,
+                self.generic_endps_profile.created_cx):
+            pairs.setdefault(endp_name, cx_name)
+
+        for endp_name, cx_name in pairs.items():
+            query_succeeded, endpoint_data = self.get_generic_endpoint_for_cleanup(endp_name)
+
+            if query_succeeded and endpoint_data is None:
+                logger.info(
+                    "Skipping cleanup for CX '%s' and endpoint '%s': they are "
+                    "already missing from LANforge.",
+                    cx_name,
+                    endp_name,
+                )
+                continue
+
+            status = endpoint_data.get("status", "") if endpoint_data else ""
+            if status == "NO-CX":
+                logger.info("Skipping cleanup for already-missing CX '%s'.", cx_name)
+            else:
+                self.json_post(
+                    "cli-json/rm_cx",
+                    {"test_mgr": "default_tm", "cx_name": cx_name},
+                )
+
+            # If the query failed, preserve the old unconditional endpoint cleanup.
+            self.json_post("cli-json/rm_endp", {"endp_name": endp_name})
+
     def create_host(self):
+        # Clean up stale endpoints before creating a new one.
+        self.pre_cleanup_stale_endpoint(self.real_sta_list[0])
         if self.generic_endps_profile.create(ports=[self.real_sta_list[0]], real_client_os_types=[self.real_sta_os_types[0]]):
             logging.info('Real client generic endpoint creation completed.')
         else:
             logging.error('Real client generic endpoint creation failed.')
             exit(0)
+
+        # Store the created endpoint-to-CX mapping.
+        self.generic_cx_pairs[
+            self.generic_endps_profile.created_endp[0]
+        ] = self.generic_endps_profile.created_cx[0]
 
         if self.real_sta_os_types[0] == "windows":
             cmd = fr'"{self.window_dir}\teams.bat" --ip {self.upstream_port} host'
@@ -433,7 +507,7 @@ class TeamsAutomation(Realm):
                 endp_status = generic_endpoint["endpoint"]["status"]
                 if endp_status == "Stopped":
                     logging.error("Failed to Start the Host Device")
-                    self.generic_endps_profile.cleanup()
+                    self.cleanup_generic_endpoints()
                     os._exit(1)
                 time.sleep(5)
             except Exception as e:
@@ -537,6 +611,7 @@ class TeamsAutomation(Realm):
         logger.debug(self.serial_list)
         for i in range(1, len(self.real_sta_os_types)):
             if self.real_sta_os_types[i] == "android":
+                self.pre_cleanup_stale_android_endpoint(self.real_sta_list[i])
                 status, created_cx, created_endp = self.create_android(
                     lanforge_res=self.lanforge_port_list[i],
                     ports=[self.real_sta_list[i]],
@@ -544,6 +619,7 @@ class TeamsAutomation(Realm):
                 )
                 self.generic_endps_profile.created_endp.extend(created_endp)
                 self.generic_endps_profile.created_cx.extend(created_cx)
+                self.generic_cx_pairs.update(zip(created_endp, created_cx))
                 logger.debug(self.generic_endps_profile.created_cx)
                 if self.enable_mobile_stats:
                     cmd = (
@@ -574,10 +650,13 @@ class TeamsAutomation(Realm):
                     self.generic_endps_profile.created_endp[i], cmd
                 )
             else:
+                self.pre_cleanup_stale_endpoint(self.real_sta_list[i])
                 self.generic_endps_profile.create(
                     ports=[self.real_sta_list[i]],
                     real_client_os_types=[self.real_sta_os_types[i]],
                 )
+                endp_name, cx_name = self.predict_endpoint_names(self.real_sta_list[i])
+                self.generic_cx_pairs[endp_name] = cx_name
 
         for i in range(1, len(self.real_sta_os_types)):
             if self.real_sta_os_types[i] == "windows":
@@ -674,12 +753,13 @@ class TeamsAutomation(Realm):
         self.meet_link = ""
         self.data_store = {}
         self.cred_index = 0
-        self.generic_endps_profile.cleanup()
+        self.cleanup_generic_endpoints()
         self.start_time = None
         self.end_time = None
         self.stop_signal = False
         self.generic_endps_profile.created_cx = []
         self.generic_endps_profile.created_endp = []
+        self.generic_cx_pairs = {}
 
     def get_signal_and_channel_data(self):
         """
@@ -1713,7 +1793,7 @@ class TeamsAutomation(Realm):
         time.sleep(10)
         self.create_avg_data()
         self.generate_report()
-        self.generic_endps_profile.cleanup()
+        self.cleanup_generic_endpoints()
         self.stop_test_in_webui()
         logging.info("Exiting the application.")
         os._exit(0)
@@ -2464,7 +2544,7 @@ def main():
                 time.sleep(10)
                 logger.info("Browser Cleanup Completed")
                 if not teams.no_post_cleanup:
-                    teams.generic_endps_profile.cleanup()
+                    teams.cleanup_generic_endpoints()
                 logger.info("Test Completed")
 
 
