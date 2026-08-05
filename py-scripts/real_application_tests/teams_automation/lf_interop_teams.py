@@ -233,6 +233,7 @@ class TeamsAutomation(Realm):
                 self.header = ['timestamp'] + self.video_stats_header
         self.data_store = {}
         self.stop_signal = False
+        self.robot_run_skipped = False
         self.device_issue_log = []
         self.missing_signal_logged = set()
         self.joined_device_names = set()
@@ -557,6 +558,8 @@ class TeamsAutomation(Realm):
                             "Host CX missing for {:.0f}s; test stopped".format(missing_for),
                         )
                         self.stop_signal = True
+                        if self.do_robo:
+                            self.robot_run_skipped = True
                         return False
                     time.sleep(5)
                     continue
@@ -601,6 +604,8 @@ class TeamsAutomation(Realm):
                         "Host CX missing for {:.0f}s; test stopped".format(missing_for),
                     )
                     self.stop_signal = True
+                    if self.do_robo:
+                        self.robot_run_skipped = True
                     return False
                 time.sleep(5)
 
@@ -814,7 +819,7 @@ class TeamsAutomation(Realm):
                     self.stop_signal = True
                     break
 
-            if self.stop_signal:
+            if self.stop_signal or self.robot_run_skipped:
                 break
 
             if self.do_robo:
@@ -843,11 +848,14 @@ class TeamsAutomation(Realm):
                     return
 
             elif self.do_bs:
-                time.sleep(27)
-                logger.info(
-                    f"Robo will be moving through the following coordinates: {self.bs_coord_result}"
-                )
+                if not self.wait_for_bandsteering_interval(27):
+                    return
+                logger.info("Robo will move through the following coordinates: %s", self.bs_coord_result)
                 for coordinate in self.bs_coord_result:
+                    if self.stop_signal:
+                        logger.warning("Stopping band-steering coordinate traversal because there is no active CX.")
+                        return
+
                     if not self.to_coordinate:
                         self.to_coordinate = coordinate
                     else:
@@ -859,6 +867,11 @@ class TeamsAutomation(Realm):
                     matched, aborted = self.robo_obj.move_to_coordinate(
                         coord=coordinate
                     )
+
+                    # Check CX status after each robot move since movement blocks execution.
+                    if not self.check_bandsteering_cx_status():
+                        return
+
                     if matched:
                         self.current_coord = coordinate
                         self.successful_coords.append(coordinate)
@@ -869,10 +882,43 @@ class TeamsAutomation(Realm):
                         logger.error(f"Failed to reach the {coordinate}")
                         self.failed_coords.append(coordinate)
                         sys.exit()
-                    time.sleep(10)
+                    if not self.wait_for_bandsteering_interval(10):
+                        return
                 return
 
             time.sleep(5)
+
+    def check_bandsteering_cx_status(self):
+        """
+        Check generic CX status during band-steering traversal.
+
+        Returns:
+            bool: True to continue monitoring, False to stop when all CXs are
+            finished, disconnected, or monitoring has been terminated.
+        """
+        gen_cx_finished = self.check_gen_cx()
+        if self.stop_signal:
+            return False
+
+        if gen_cx_finished:
+            logger.error("All generic CXs are finished or disconnected; stopping the band-steering test.")
+            self.record_device_issue("ALL", "All CXs finished or disconnected during band-steering")
+            self.stop_signal = True
+            return False
+
+        return True
+
+    def wait_for_bandsteering_interval(self, duration, poll_interval=5):
+        """Wait for a band-steering interval while continuing to poll CX status."""
+        deadline = time.monotonic() + duration
+        while True:
+            if not self.check_bandsteering_cx_status():
+                return False
+
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return True
+            time.sleep(min(poll_interval, remaining))
 
     def reset_variables_for_next_run(self):
         self.participants_joined = 0
@@ -892,6 +938,7 @@ class TeamsAutomation(Realm):
         self._gen_cx_stall_since = {}
         self._gen_cx_gave_up_logged = set()
         self._all_cx_missing_since = None
+        self.robot_run_skipped = False
 
     def get_signal_and_channel_data(self):
         """
@@ -1007,6 +1054,8 @@ class TeamsAutomation(Realm):
         self.create_host()
         if not self.wait_for_login():
             logger.error("Teams test stopped before participant creation because the host CX did not recover.")
+            if self.do_robo:
+                self.reset_variables_for_next_run()
             return
         self.create_participants()
 
@@ -1015,6 +1064,14 @@ class TeamsAutomation(Realm):
         self.stop_signal = True
         time.sleep(10)
         if self.do_robo:
+            if self.robot_run_skipped:
+                location = f"coordinate {self.current_coord}"
+                if self.rotations_enabled:
+                    location += f", angle {self.current_rotation}"
+                logger.warning(f"Stopping the current Teams run at {location} because all CX endpoints are unavailable. "
+                               "Collected data has been retained, and testing will continue with the next angle or coordinate.")
+                self.reset_variables_for_next_run()
+                return
             if self.rotations_enabled:
                 logger.info(
                     f"Completed one cycle of test for coordinate {self.current_coord} with rotation {self.current_rotation}"
@@ -1747,6 +1804,30 @@ class TeamsAutomation(Realm):
 
                 all_finished = False
 
+            if self.do_robo:
+                # Advance to the next coordinate or angle only when all tracked CXs are unavailable.
+                all_cxs_unavailable = statuses and all(
+                    status is None or status in disconnected_statuses
+                    for status in statuses.values()
+                )
+                if all_cxs_unavailable:
+                    if self._all_cx_missing_since is None:
+                        self._all_cx_missing_since = now
+                    unavailable_for = now - self._all_cx_missing_since
+                    if unavailable_for >= all_missing_timeout:
+                        location = f"coordinate {self.current_coord}"
+                        if self.rotations_enabled:
+                            location += f", angle {self.current_rotation}"
+                        logger.warning(f"All {len(statuses)} CX endpoints have been unavailable for {unavailable_for:.0f}s "
+                                       f"at {location}. Skipping this run and continuing with the next angle or coordinate.")
+                        self.record_device_issue("ALL",
+                                                 f"All CXs unavailable for {unavailable_for:.0f}s; current robot run skipped")
+                        self.stop_signal = True
+                        self.robot_run_skipped = True
+                        return all_finished
+                else:
+                    self._all_cx_missing_since = None
+
             if not self.do_robo and statuses and all(s is None for s in statuses.values()):
                 if self._all_cx_missing_since is None:
                     self._all_cx_missing_since = now
@@ -2456,7 +2537,8 @@ class TeamsAutomation(Realm):
                         self.path, f"*{self.current_coord}_{self.current_rotation}.csv"
                     )
                 ):
-                    if csv_path.endswith("teams_cred.csv"):
+                    if csv_path.endswith("teams_cred.csv") or os.path.basename(
+                            csv_path).startswith("teams_call_avg_data"):
                         continue
                     df = pd.read_csv(csv_path)
 
@@ -2478,7 +2560,8 @@ class TeamsAutomation(Realm):
                 for csv_path in glob.glob(
                     os.path.join(self.path, f"*{self.current_coord}.csv")
                 ):
-                    if csv_path.endswith("teams_cred.csv"):
+                    if csv_path.endswith("teams_cred.csv") or os.path.basename(
+                            csv_path).startswith("teams_call_avg_data"):
                         continue
                     df = pd.read_csv(csv_path)
 
@@ -2510,6 +2593,18 @@ class TeamsAutomation(Realm):
                 row = averages.to_dict()
                 row["Device Name"] = device_name
                 summary_rows.append(row)
+
+        # Skip averaging when a robot run ends before monitoring produces any CSV data.
+        if not summary_rows:
+            location = f"coordinate {self.current_coord}"
+            if self.rotations_enabled:
+                location += f", rotation {self.current_rotation}"
+            logger.warning(
+                "No monitoring data was collected for %s; skipping average-data "
+                "generation for this run.",
+                location,
+            )
+            return
 
         summary_df = pd.DataFrame(summary_rows)
 
