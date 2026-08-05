@@ -981,6 +981,7 @@ class L3VariableTime(Realm):
                                                   "client_issue.csv")
         self.need_endps_stopped = False
         self.actual_test_duration_display = None
+        self.bandsteering_start_time = None
         self.csv_started = False
         self.epoch_time = int(time.time())
         self.debug = debug
@@ -2447,8 +2448,12 @@ class L3VariableTime(Realm):
             logger.info("Exiting test")
             exit(1)
         self.robot_obj.do_bandsteering = True
-        ul, dl, ul_pdu_str, dl_pdu_str, atten_val, ul_pdu, dl_pdu, passes, expected_passes, coordinate, rotation = self.start()
-        logger.info("Starting CXs")
+        available, ul, dl, ul_pdu_str, dl_pdu_str, atten_val, ul_pdu, dl_pdu, passes, expected_passes, coordinate, rotation = self.start()
+        if not available:
+            logger.warning("Endpoint data not available, so not going to monitor and skipping band steering test.")
+            return 0
+        # the bandsteering_start_time is used to calculate the actual test duration as we call the monitor multiple times unlike others
+        self.bandsteering_start_time = datetime.datetime.now()
         for coordinate in cycle_coords:
             if test_stopped_by_user:
                 break
@@ -2457,14 +2462,22 @@ class L3VariableTime(Realm):
             # If test is stopped by user during battery wait
             if test_stopped_by_user:
                 break
+            if self.need_endps_stopped:
+                logger.info("Required endpoints stopped, exiting band steering test ...")
+                self.actual_test_duration_display = self.format_duration(datetime.datetime.now() - self.bandsteering_start_time)
+                break
             robo_moved, abort, test_data = self.robot_obj.move_to_coordinate(coordinate, monitor_function=lambda: self.monitor(ul, dl, ul_pdu_str, dl_pdu_str, atten_val, coordinate, rotation))
+            if robo_moved:
+                logger.info("Reached the coordinate {}".format(coordinate))
             # If robot failed to reach the coordinate
             if abort:
                 break
+            if self.need_endps_stopped:
+                logger.info("Required endpoints stopped, exiting band steering test ...")
+                self.actual_test_duration_display = self.format_duration(datetime.datetime.now() - self.bandsteering_start_time)
+                break
             if not robo_moved:
                 continue
-            if robo_moved:
-                logger.info("Reached the coordinate {}".format(coordinate))
         self.process_port_interval_statistics(self.total_dl_bps, self.total_ul_bps, self.total_dl_ll_bps, self.total_ul_ll_bps,
                                               ul, dl, ul_pdu_str, dl_pdu_str, ul_pdu, dl_pdu, atten_val, passes, expected_passes)
         # total_dl_bps,total_ul_bps,total_dl_ll
