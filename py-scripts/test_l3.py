@@ -2355,10 +2355,8 @@ class L3VariableTime(Realm):
             logger.info(f"Moving to coordinate {coord_index}: {coordinate}")
 
             pause_coord, test_stopped_by_user = self.robot_obj.wait_for_battery(self.stop)
-            if pause_coord:
-                print("Test stopped by user, exiting...")
-                exit(0)
-            if self.test_stopped_user:
+            if test_stopped_by_user:
+                logger.info("Test stopped by user, exiting...")
                 break
 
             # Move robot to coordinate
@@ -2373,9 +2371,9 @@ class L3VariableTime(Realm):
                     # Rotation mode - run test at each rotation angle
                     for angle_index, rotation_angle in enumerate(self.rotation_list):
                         pause_coord, test_stopped_by_user = self.robot_obj.wait_for_battery(self.stop)
-                        if pause_coord:
-                            print("Test stopped by user, exiting...")
-                            exit(0)
+                        if test_stopped_by_user:
+                            logger.info("Test stopped by user, exiting...")
+                            break
                         logger.info(f"Rotating to angle {angle_index}: {rotation_angle} degrees")
 
                         robo_rotated = self.robot_obj.rotate_angle(rotation_angle)
@@ -2383,8 +2381,16 @@ class L3VariableTime(Realm):
                         if robo_rotated:
                             logger.info(f"Successfully rotated to {rotation_angle} degrees")
                             self.perform_robo_multicast(coordinate=coordinate, rotation=rotation_angle)
+                            if self.need_endps_stopped:
+                                logger.info("Required endpoints stopped, exiting without performing other rotations ...")
+                                self.robot_obj.update_nav_data_for_all_cxs_stopped()
+                                break
                         else:
                             logger.error(f"Failed to rotate to angle {rotation_angle} at coordinate {coordinate}")
+                if self.need_endps_stopped:
+                    logger.info("Required endpoints stopped, exiting without moving to the other coordinates ...")
+                    self.robot_obj.update_nav_data_for_all_cxs_stopped()
+                    break
             else:
                 logger.error(f"Failed to move to coordinate {coordinate}")
 
