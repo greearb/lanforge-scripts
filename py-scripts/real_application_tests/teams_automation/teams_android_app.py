@@ -39,7 +39,12 @@ class TeamsAndroidApp:
         self.base_url = f"http://{self.upstream_port}:5005"
         self.participant_name = participant_name
 
-        os.makedirs(f"{os.getcwd()}/ms_teams_mobile_logs", exist_ok=True)
+        # Store mobile logs in a fixed location relative to this script, independent of the current working directory.
+        mobile_log_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "ms_teams_mobile_logs",
+        )
+        os.makedirs(mobile_log_dir, exist_ok=True)
 
         # Configure the logging system
         logging.basicConfig(
@@ -47,7 +52,7 @@ class TeamsAndroidApp:
             format="%(asctime)s - %(levelname)s - %(message)s",
             handlers=[
                 logging.FileHandler(
-                    f"{os.getcwd()}/ms_teams_mobile_logs/{self.participant_name}.log",
+                    os.path.join(mobile_log_dir, f"{self.participant_name}.log"),
                     mode="w",
                 ),  # Writes to file
                 logging.StreamHandler(sys.stdout),  # Writes to terminal
@@ -83,7 +88,8 @@ class TeamsAndroidApp:
 
         endpoint_url = f"{self.base_url}/set_participants_joined"
         try:
-            response = requests.get(endpoint_url, timeout=5)
+            # Include the participant name so the server can identify which device joined the call.
+            response = requests.get(endpoint_url, params={"device": self.participant_name}, timeout=5)
             if response.status_code == 200:
                 self.logger.info(
                     f"[{self.participant_name} ({self.serial})] Device participation status updated successfully."
