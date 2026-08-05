@@ -8296,10 +8296,21 @@ def query_real_clients(args):
     android_list = []
     mac_id1_list = []
     user_list = []
-    response = config_obj.json_get("/resource/all")
+    resource_url = "/resource/all"
+    response = config_obj.json_get(resource_url, debug_=True)
 
-    if "resources" not in response.keys():
-        logger.error("There are no real devices.")
+    if not response:
+        logger.error(
+            "Failed to fetch resources. Received empty response.\n"
+            f"Requested URL: '{resource_url}'\n"
+            f"Response: {response}")
+        exit(1)
+
+    if "resources" not in response:
+        logger.error(
+            "There are no real devices. 'resources' key not found in response.\n"
+            f"Requested URL: '{resource_url}'\n"
+            f"Response: {response}")
         exit(1)
 
     for key, value in response.items():
@@ -8331,9 +8342,19 @@ def query_real_clients(args):
                             android_list.append(b['hw version'])
                             devices_available.append(b['eid'] + " " + 'android' + " " + b['user'])
 
-    response_port = config_obj.json_get("/port/all")
-    if "interfaces" not in response_port.keys():
-        logger.error("Error: 'interfaces' key not found in port data")
+    port_url = "/port/all"
+    response_port = config_obj.json_get(port_url, debug_=True)
+    if not response_port:
+        logger.error(
+            "Failed to fetch ports. Received empty response.\n"
+            f"Requested URL: '{port_url}'\n"
+            f"Response: {response_port}")
+        exit(1)
+    if "interfaces" not in response_port:
+        logger.error(
+            "'interfaces' key not found in response.\n"
+            f"Requested URL: '{port_url}'\n"
+            f"Response: {response_port}")
         exit(1)
     for interface in response_port['interfaces']:
         for port, port_data in interface.items():
@@ -8372,16 +8393,20 @@ def query_real_clients(args):
             for endp in traffic_type:
                 graph_input_list.append('L3_' + endp.split('_')[1].upper() + '_DL')
     sample_list = []
+    matched_devices = []
     if args.device_list:
         for interface in response_port['interfaces']:
             for port, port_data in interface.items():
                 if not port_data['phantom'] and not port_data['down'] and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0':
                     port_list = port.split('.')
+                    device_id = port_list[0] + '.' + port_list[1]
                     for device in args.device_list[0].split(','):
-                        if (port_list[0] + '.' + port_list[1]) == device:
+                        if device_id == device:
                             sample_list.append([port])
-        if sample_list == []:
-            logger.info("Selected devices are not available")
+                            matched_devices.append(device_id)
+        if len(sample_list) != len(args.device_list[0].split(',')):
+            not_available_devices = [device for device in args.device_list[0].split(',') if device not in matched_devices]
+            logger.info(f"{', '.join(not_available_devices)} devices are not available")
             exit(1)
         args.existing_station_list = sample_list
         args.use_existing_station_list = True
