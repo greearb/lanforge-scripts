@@ -2106,6 +2106,15 @@ class L3VariableTime(Realm):
         else:
             # TODO for multicast when using single station there needs to be an interop mode
             # with a single transmitter for all of the multi-cast
+            for etype in self.endp_types:
+                # TODO multi cast build each type only once
+                if etype == "mc_udp" or etype == "mc_udp6":
+                    # TODO add multicast to name be passed in
+                    for _tos in self.tos:
+                        logger.info("Creating Multicast connections for endpoint type:  {etype} TOS: {tos}".format(
+                            etype=etype, tos=_tos))
+                        self.multicast_profile.create_mc_tx(
+                            etype, self.side_b, tos=_tos, add_tos_to_name=True)
             logger.info("Creating test station port(s)")
             for station_profile in self.station_profiles:
                 if not rebuild and not self.use_existing_station_lists:
@@ -2135,8 +2144,6 @@ class L3VariableTime(Realm):
                         for _tos in self.tos:
                             logger.info("Creating Multicast connections for endpoint type:  {etype} TOS: {tos}".format(
                                 etype=etype, tos=_tos))
-                            self.multicast_profile.create_mc_tx(
-                                etype, self.side_b, tos=_tos, add_tos_to_name=True)
                             self.multicast_profile.create_mc_rx(
                                 etype, side_rx=station_profile.station_names, tos=_tos, add_tos_to_name=True)
 
