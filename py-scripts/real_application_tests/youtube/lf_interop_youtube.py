@@ -1299,7 +1299,7 @@ class Youtube(Realm):
                     if response.status == 200:
                         logger.info("YouTube statistics server is ready on port 5002.")
                         return
-            except (urllib_error.URLError, TimeoutError, OSError):
+            except (urllib_error.URLError, OSError):
                 time.sleep(1)
 
         raise RuntimeError(
