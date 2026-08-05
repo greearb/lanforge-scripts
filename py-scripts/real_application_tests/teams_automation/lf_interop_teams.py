@@ -234,6 +234,8 @@ class TeamsAutomation(Realm):
         self.data_store = {}
         self.stop_signal = False
         self.device_issue_log = []
+        self.missing_signal_logged = set()
+        self.joined_device_names = set()
         # Map each endpoint to its CX for safe cleanup.
         self.generic_cx_pairs = {}
         self.path = os.path.join(os.getcwd(), "teams_test_results")
@@ -749,6 +751,7 @@ class TeamsAutomation(Realm):
 
     def reset_variables_for_next_run(self):
         self.participants_joined = 0
+        self.joined_device_names = set()
         self.login_completed = False
         self.meet_link = ""
         self.data_store = {}
@@ -769,14 +772,15 @@ class TeamsAutomation(Realm):
 
         lf_stats_map = {}
         interfaces_dict = dict()
+        ports_url = "/ports/all/"
 
         try:
             # Get raw data from LANforge API
-            port_data = self.json_get("/ports/all/")["interfaces"]
+            port_data = self.json_get(ports_url)["interfaces"]
             for port in port_data:
                 interfaces_dict.update(port)
         except Exception as e:
-            print(f"Error fetching port data: {e}")
+            logger.error(f"Error fetching port data: {e}", exc_info=True)
             return {}
 
         # Loop through your managed stations (e.g., sta001, sta002)
@@ -791,24 +795,36 @@ class TeamsAutomation(Realm):
                 "bssid": "-",
             }
 
-            if sta in interfaces_dict:
-                data = interfaces_dict[sta]
+            if sta not in interfaces_dict:
+                # Track signal-data loss and recovery for each station.
+                if sta not in self.missing_signal_logged:
+                    logger.warning("Signal data for '{}' is unavailable, it may have disconnected. Continuing the test "
+                                   "with the remaining devices.\nURL     : {}".format(sta, ports_url))
+                    self.missing_signal_logged.add(sta)
+                    self.record_device_issue(sta, "Signal data unavailable (device may have disconnected)")
+                continue
 
-                # --- Signal Parsing ---
-                sig = data.get("signal", "-")
-                if "dBm" in str(sig):
-                    lf_stats_map[sta]["signal"] = sig.split(" ")[0]
-                else:
-                    lf_stats_map[sta]["signal"] = sig
+            if sta in self.missing_signal_logged:
+                logger.info(f"Signal data for '{sta}' is available again.")
+                self.missing_signal_logged.discard(sta)
 
-                # --- Other Fields ---
-                lf_stats_map[sta]["channel"] = data.get("channel", "-")
-                lf_stats_map[sta]["mode"] = data.get("mode", "-")
-                lf_stats_map[sta]["tx_rate"] = data.get("tx-rate", "-")
-                lf_stats_map[sta]["rx_rate"] = data.get("rx-rate", "-")
-                lf_stats_map[sta]["bssid"] = data.get(
-                    "ap", "-"
-                )  # 'ap' is usually BSSID
+            data = interfaces_dict[sta]
+
+            # --- Signal Parsing ---
+            sig = data.get("signal", "-")
+            if "dBm" in str(sig):
+                lf_stats_map[sta]["signal"] = sig.split(" ")[0]
+            else:
+                lf_stats_map[sta]["signal"] = sig
+
+            # --- Other Fields ---
+            lf_stats_map[sta]["channel"] = data.get("channel", "-")
+            lf_stats_map[sta]["mode"] = data.get("mode", "-")
+            lf_stats_map[sta]["tx_rate"] = data.get("tx-rate", "-")
+            lf_stats_map[sta]["rx_rate"] = data.get("rx-rate", "-")
+            lf_stats_map[sta]["bssid"] = data.get(
+                "ap", "-"
+            )  # 'ap' is usually BSSID
 
         print(lf_stats_map)
 
@@ -929,6 +945,14 @@ class TeamsAutomation(Realm):
                 logging.warning(
                     f"Proceeding with the test with the participants that have joined. Joined: {self.participants_joined}, Expected: {len(self.real_sta_list)}"
                 )
+                missing_devices = [
+                    hostname for hostname in self.real_sta_hostname
+                    if hostname not in self.joined_device_names
+                ]
+                if missing_devices:
+                    logging.warning(f"Devices that did not join the call: {missing_devices}")
+                    for device in missing_devices:
+                        self.record_device_issue(device, "Did not join the Teams call before timeout")
                 break
 
         if len(self.real_sta_list) == self.participants_joined:
@@ -1841,6 +1865,9 @@ class TeamsAutomation(Realm):
 
         @self.app.route('/set_participants_joined', methods=['GET'])
         def set_participants_joined():
+            device = request.args.get('device', '').strip()
+            if device:
+                self.joined_device_names.add(device)
             self.participants_joined += 1
             return jsonify({"message": f"Updated participants joined status to {self.participants_joined}"})
 
