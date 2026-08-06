@@ -80,7 +80,17 @@ import json
 import sys
 import traceback
 import glob
+import shlex
 from collections import Counter
+
+# Resolve helper scripts relative to this module, avoiding fixed paths.
+TEAMS_AUTOMATION_DIR = os.path.dirname(os.path.abspath(__file__))
+TEAMS_ANDROID_SCRIPT = os.path.join(
+    TEAMS_AUTOMATION_DIR, "teams_android.py"
+)
+TEAMS_ANDROID_APP_SCRIPT = os.path.join(
+    TEAMS_AUTOMATION_DIR, "teams_android_app.py"
+)
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
@@ -726,7 +736,7 @@ class TeamsAutomation(Realm):
                     cmd = (
                         f"su - lanforge -c "
                         f"\"cd /home/lanforge && "
-                        f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android.py "
+                        f"python3 {shlex.quote(TEAMS_ANDROID_SCRIPT)} "
                         f"--devices {self.serial_list[i]} "
                         f"--meet_link '{self.meet_link}' "
                         f"--participant_name '{self.real_sta_hostname[i]}' "
@@ -739,7 +749,7 @@ class TeamsAutomation(Realm):
                     cmd = (
                         f"su - lanforge -c "
                         f"\"cd /home/lanforge && "
-                        f"python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/teams_automation/teams_android_app.py "
+                        f"python3 {shlex.quote(TEAMS_ANDROID_APP_SCRIPT)} "
                         f"--device {self.serial_list[i]} "
                         f"--meet_link '{self.meet_link}' "
                         f"--participant_name '{self.real_sta_hostname[i]}' "
@@ -1665,12 +1675,13 @@ class TeamsAutomation(Realm):
                 self.report.set_table_dataframe(filtered_df)
                 self.report.build_table()
 
-    def record_device_issue(self, device, issue):
+    def record_device_issue(self, device, issue, api_response=None):
         """Record a timestamped device issue for inclusion in the test report."""
         self.device_issue_log.append({
             "Time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             "Device": device,
             "Issue": issue,
+            "API Response": api_response if api_response is not None else '',
         })
 
     def format_monitoring_duration(self):
@@ -1680,7 +1691,7 @@ class TeamsAutomation(Realm):
         return "{}m {}s".format(minutes, seconds)
 
     def poll_gen_endp_status(self, gen_endp):
-        """Fetch the CX status for a generic endpoint, returning None if unreachable."""
+        """Return the CX status and this endpoint's API payload, or ``(None, None)``."""
         try:
             generic_endpoint = self.json_get(f'/generic/{gen_endp}')
         except Exception as e:
@@ -1688,23 +1699,24 @@ class TeamsAutomation(Realm):
             logger.error(f"Error fetching endpoint data for {gen_endp}: {e}", exc_info=True)
 
         if not generic_endpoint or "endpoint" not in generic_endpoint:
-            return None
+            return None, None
 
-        return generic_endpoint["endpoint"].get("status", "")
+        endpoint_data = generic_endpoint["endpoint"]
+        return endpoint_data.get("status", ""), endpoint_data
 
-    def build_missing_endpoint_debug_lines(self, gen_endp):
-        """Build debug lines showing the queried URL and currently available endpoints."""
+    def get_missing_endpoint_debug(self, gen_endp):
+        """Return debug lines and the endpoint keys present in the combined API response."""
         single_url = f'/generic/{gen_endp}'
         all_endpoints = sorted(set(self.generic_endps_profile.created_endp))
         if not all_endpoints:
-            return [f"URL: {single_url}"]
+            return [f"URL: {single_url}"], []
 
         all_url = f"/generic/{','.join(all_endpoints)}"
         try:
             response = self.json_get(all_url)
         except Exception as e:
             logger.error(f"Error fetching {all_url} for debug: {e}", exc_info=True)
-            return [f"URL: {single_url}"]
+            return [f"URL: {single_url}"], []
 
         if response and "endpoints" in response:
             present_keys = [name for endp in response["endpoints"] for name in endp.keys()]
@@ -1713,12 +1725,12 @@ class TeamsAutomation(Realm):
         else:
             present_keys = []
 
-        return [
+        return ([
             f"URL: {all_url}",
             f"Endpoint keys present: {present_keys}",
-        ]
+        ], present_keys)
 
-    def log_gen_cx_status_change(self, gen_endp, status):
+    def log_gen_cx_status_change(self, gen_endp, status, api_response=None):
         """Log generic endpoint status changes and unavailable endpoints."""
         status_key = status if status is not None else "MISSING"
         prev_status_key = self._gen_cx_last_status.get(gen_endp)
@@ -1727,7 +1739,7 @@ class TeamsAutomation(Realm):
             return
 
         if status is None:
-            debug_lines = self.build_missing_endpoint_debug_lines(gen_endp)
+            debug_lines, present_keys = self.get_missing_endpoint_debug(gen_endp)
             logger.info(
                 f"Endpoint '{gen_endp}' is not available. Its CX may not have "
                 "been created, or it may be temporarily disconnected. "
@@ -1738,10 +1750,15 @@ class TeamsAutomation(Realm):
                 gen_endp,
                 "Endpoint unavailable (CX may not be created yet or device may "
                 "be disconnected)",
+                api_response=present_keys,
             )
         elif prev_status_key is not None:
             logger.info(f"Endpoint '{gen_endp}' status changed to '{status}'.")
-            self.record_device_issue(gen_endp, f"Endpoint status changed to '{status}'")
+            self.record_device_issue(
+                gen_endp,
+                f"Endpoint status changed to '{status}'",
+                api_response=api_response,
+            )
 
         self._gen_cx_last_status[gen_endp] = status_key
 
@@ -1770,8 +1787,8 @@ class TeamsAutomation(Realm):
 
             statuses = {}
             for gen_endp in set(self.generic_endps_profile.created_endp):
-                status = self.poll_gen_endp_status(gen_endp)
-                self.log_gen_cx_status_change(gen_endp, status)
+                status, endpoint_data = self.poll_gen_endp_status(gen_endp)
+                self.log_gen_cx_status_change(gen_endp, status, api_response=endpoint_data)
                 statuses[gen_endp] = status
 
                 if status in finished_statuses:
@@ -1829,6 +1846,13 @@ class TeamsAutomation(Realm):
                         self.stop_signal = True
                         self.robot_run_skipped = True
                         return all_finished
+                    location = f"coordinate {self.current_coord}"
+                    if self.rotations_enabled:
+                        location += f", angle {self.current_rotation}"
+                    logger.warning(
+                        f"All {len(statuses)} CX endpoints are unavailable at {location} - retrying... "
+                        f"{unavailable_for:.0f}s/{all_missing_timeout}s before skipping this run."
+                    )
                 else:
                     self._all_cx_missing_since = None
 
@@ -2547,7 +2571,6 @@ class TeamsAutomation(Realm):
                 data = request.json
                 hostname = data.get("hostname")
                 log_content = data.get("log")
-                error_log_content = data.get("error_log")
 
                 if not hostname or log_content is None:
                     return jsonify({"status": "error", "message": "Missing hostname or log"}), 400
@@ -2591,18 +2614,6 @@ class TeamsAutomation(Realm):
 
                 with open(save_path, "w", errors="replace") as f:
                     f.write(log_content)
-
-                # Newer clients send the detailed traceback log separately.
-                # Keep accepting older clients that only provide "log".
-                if error_log_content is not None:
-                    error_stem, _ = os.path.splitext(
-                        os.path.basename(save_path)
-                    )
-                    error_save_path = os.path.join(
-                        log_dir, f"{error_stem}_errors.log"
-                    )
-                    with open(error_save_path, "w", errors="replace") as f:
-                        f.write(error_log_content)
 
                 logging.info("Log file uploaded from %s and saved as %s",
                              hostname, os.path.basename(save_path))
