@@ -9,8 +9,9 @@
 # 1 * * * *  root /home/lanforge/scripts/check_large_files.sh -a 2>&1 | logger -t check_large_files     #
 #                                                                                                       #
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
-# set -x
-# set -e
+if [[ "${DEBUG:-}" == 1 ]]; then
+    set -veux -o pipefail
+fi
 # these are default selections
 selections=()
 show_menu=1
@@ -50,6 +51,82 @@ if (( eyedee != 0 )); then
     exit 1
 fi
 
+# source os-release to help identify OS
+if [[ -f /etc/os-release ]]; then
+    . /etc/os-release
+fi
+
+HR=" ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
+function hr() {
+  echo "$HR"
+}
+
+declare -g -A totals=(
+    [b]=0
+    [c]=0
+    [d]=0
+    [e]=0
+    [k]=0
+    [l]=0
+    [m]=0
+    [n]=0
+    [p]=0
+    [r]=0
+    [s]=0
+    [t]=0
+    [u]=0
+    [z]=0
+)
+declare -g -A desc=(
+    [a]='automatic operation'
+    [b]='kernel files'
+    [c]='core files'
+    [d]='lf downloads'
+    [e]='lanforge logs'
+    [k]='lf/ath10,be200 files'
+    [l]='/var/log'
+    [m]='/mnt/lf files'
+    [n]='dnf cache'
+    [p]='pcap data'
+    [r]='report data'
+    [s]='trash can'
+    [t]='/var/tmp'
+    [u]='test configuration backups (DB-pre\*.tar.gz)'
+    [z]='compressed files'
+)
+declare -g -A surveyors_map=(
+    [b]='survey_kernel_files'
+    [c]='survey_core_files'
+    [d]='survey_lf_downloads'
+    [e]='survey_lflogs'
+    [k]='survey_ath10_files'
+    [l]='survey_var_log'
+    [m]='survey_mnt_lf_files'
+    [n]='survey_dnf_cache'
+    [p]='survey_pcap_files'
+    [r]='survey_report_data'
+    [s]='survey_trash_can'
+    [t]='survey_var_tmp'
+    [u]='survey_db_files'
+    [z]='survey_compressed_files'
+)
+declare -g -A cleaners_map=(
+    [b]='clean_old_kernels'
+    [c]='clean_core_files'
+    [d]='clean_lf_downloads'
+    [e]='clean_lflogs'
+    [k]='clean_ath10_files'
+    [l]='clean_var_log'
+    [m]='clean_mnt_lf_files'
+    [n]='clean_dnf_cache'
+    [p]='clean_pcap_files'
+    [r]='compress_report_data'
+    [s]='empty_trash_can'
+    [t]='clean_var_tmp'
+    [u]='clean_db_files'
+    [z]='clean_compressed_files'
+)
+
 debug() {
     if [[ x$verbose = x ]] || (( $verbose < 1 )); then return; fi
     echo ": $1"
@@ -66,8 +143,9 @@ function contains() {
         exit 1
     fi
     # these two lines below are important to not modify
-    local tmp="${1}[@]"
-    local array=( ${!tmp} )
+    # local tmp="${1}[@]"
+    # local array=( ${!tmp} )
+    local -n array=$1
 
     # if [[ x$verbose = x1 ]]; then
     #    printf "contains array %s\n" "${array[@]}"
@@ -108,6 +186,16 @@ function remove() {
     done
     return 1
 }
+
+kernel_files=()         # temp
+lib_module_dirs=()      # temp
+declare -A kernel_sort_names
+declare -A pkg_sort_names
+declare -A libmod_sort_names
+removable_kernels=()    # these are for CT kernels
+removable_libmod_dirs=() # these are for CT kernels
+removable_packages=()   # these are for Fedora kernels
+removable_pkg_series=()
 
 function disk_space_below() {
     if [[ x$1 = x ]] || [[ x$2 = x ]]; then
@@ -206,76 +294,6 @@ done
 #  exit 0
 #fi
 
-HR=" ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"
-function hr() {
-  echo "$HR"
-}
-
-declare -A totals=(
-    [b]=0
-    [c]=0
-    [d]=0
-    [e]=0
-    [k]=0
-    [l]=0
-    [m]=0
-    [p]=0
-    [r]=0
-    [s]=0
-    [t]=0
-    [u]=0
-    [z]=0
-)
-declare -A desc=(
-    [b]="kernel files"
-    [c]="core files"
-    [d]="lf downloads"
-    [e]="lanforge logs"
-    [k]="lf/ath10,be200 files"
-    [l]="/var/log"
-    [m]="/mnt/lf files"
-    [n]="dnf cache"
-    [p]="pcap data"
-    [r]="report data"
-    [s]="trash can"
-    [t]="/var/tmp"
-    [u]="test configuration backups (DB-pre\*.tar.gz)"
-    [z]="compressed files"
-)
-declare -A surveyors_map=(
-    [b]="survey_kernel_files"
-    [c]="survey_core_files"
-    [d]="survey_lf_downloads"
-    [e]="survey_lflogs"
-    [k]="survey_ath10_files"
-    [l]="survey_var_log"
-    [m]="survey_mnt_lf_files"
-    [n]="survey_dnf_cache"
-    [p]="survey_pcap_files"
-    [r]="survey_report_data"
-    [s]="survey_trash_can"
-    [t]="survey_var_tmp"
-    [u]="survey_db_files"
-    [z]="survey_compressed_files"
-)
-
-declare -A cleaners_map=(
-    [b]="clean_old_kernels"
-    [c]="clean_core_files"
-    [d]="clean_lf_downloads"
-    [e]="clean_lflogs"
-    [k]="clean_ath10_files"
-    [l]="clean_var_log"
-    [m]="clean_mnt_lf_files"
-    [n]="clean_dnf_cache"
-    [p]="clean_pcap_files"
-    [r]="compress_report_data"
-    [s]="empty_trash_can"
-    [t]="clean_var_tmp"
-    [u]="clean_db_files"
-    [z]="clean_compressed_files"
-)
-
 kernel_to_relnum() {
     #set -euxv
     local hunks=()
@@ -333,7 +351,7 @@ empty_trash_can() {
         done
     fi
     totals[s]=0
-    set +vux
+    # set +vux
 }
 
 clean_compressed_files() {
@@ -377,43 +395,48 @@ clean_lflogs() {
 clean_old_kernels() {
     note "Cleaning old CT kernels..."
     local f
-    if (( ${#removable_packages[@]} > 0 )); then
-        for f in "${removable_packages[@]}"; do
-            echo "$f\*"
-        done | xargs /usr/bin/rpm --nodeps -hve
+    if declare -p removable_packages[] &>/dev/null; then
+        if (( ${#removable_packages[@]} > 0 )); then
+            for f in "${removable_packages[@]}"; do
+                echo "$f\*"
+            done | xargs /usr/bin/rpm --nodeps -hve
+        fi
+        if (( ${#removable_kernels[@]} > 0 )); then
+            for f in "${removable_kernels[@]}"; do
+                echo "$f"
+            done | xargs rm -f
+        fi
     fi
-    if (( ${#removable_kernels[@]} > 0 )); then
-        for f in "${removable_kernels[@]}"; do
-            echo "$f"
-        done | xargs rm -f
-    fi
-
-    if (( ${#removable_libmod_dirs[@]} > 0 )); then
-        printf "        removable_libmod_dirs[/lib/modules/%s]\n" "${removable_libmod_dirs[@]}"
-        for f in "${removable_libmod_dirs[@]}"; do
-            echo "/lib/modules/$f"
-        done | xargs rm -rf
+    if declare -p removable_libmod_dirs; then
+        if (( ${#removable_libmod_dirs[@]} > 0 )); then
+            printf "        removable_libmod_dirs[/lib/modules/%s]\n" "${removable_libmod_dirs[@]}"
+            for f in "${removable_libmod_dirs[@]}"; do
+                echo "/lib/modules/$f"
+            done | xargs rm -rf
+        fi
     fi
     # check to see if there are 50_candela-x files that
     # lack a /lib/modules directory
-    local fifty_files=(`ls /etc/grub.d/50_candela_*`)
-    local k_v
-    for file in "${fifty_files[@]}"; do
-        k_v=${file#/etc/grub.d/50_candela_}
-        #echo "K_V[$k_v]"
-        if [ ! -d /lib/modules/$k_v ]; then
-            echo "/lib/modules/$k_v not found, removing /etc/grub.d/50_candela_$k_v"
-            rm -f "/etc/grub.d/50_candela_${k_v}"
-        fi
-    done
-
-    grub2-mkconfig -o /boot/grub2/grub.cfg
-
-    if [ -d "/boot2" ]; then
+    if [[ -d /etc/grub.d ]]; then
+        local fifty_files=(`ls /etc/grub.d/50_candela_*`)
+        local k_v
+        for file in "${fifty_files[@]}"; do
+            k_v=${file#/etc/grub.d/50_candela_}
+            #echo "K_V[$k_v]"
+            if [ ! -d /lib/modules/$k_v ]; then
+                echo "/lib/modules/$k_v not found, removing /etc/grub.d/50_candela_$k_v"
+                rm -f "/etc/grub.d/50_candela_${k_v}"
+            fi
+        done
+    fi
+    if [[ -d /boot/grub2 ]]; then
+        grub2-mkconfig -o /boot/grub2/grub.cfg
+    fi
+    if [[ -d "/boot2" ]]; then
         rm -rf /boot2/*
         rsync -a /boot/. /boot2/
         local dev2=`df /boot2/ |awk '/dev/{print $1}'`
-        if [ x$dev2 != x ]; then
+        if [[ ! -z "$dev2" ]]; then
             /usr/sbin/grub2-install $dev2 ||:
         fi
     fi
@@ -642,7 +665,11 @@ compress_report_data() {
 }
 
 clean_db_files() {
-    note "clean configuration backups"
+    if [[ ! -d /home/lanforge ]]; then
+        echo "Cannot find '/home/lanforge', ignoring task."
+        return
+    fi
+    note "Clean configuration backups"
     if [[ ! -s /tmp/db-pre_files.txt ]]; then
         note "  no files surveyed"
         return
@@ -652,11 +679,17 @@ clean_db_files() {
         printf "    %s\n" "${db_pre_files[@]}"
         sleep 1
     fi
+    cd /home/lanforge/
     for f in "${db_pre_files[@]}"; do
+        if [[ ! -f "$f" ]]; then
+            echo "Cannot see `pwd`$$f, skipping..."
+            continue
+        fi
         rm -f "$f"
         echo -n '.'
         sleep 0.05
     done
+    cd -
 }
 
 clean_var_tmp() {
@@ -676,16 +709,6 @@ clean_var_tmp() {
         sleep 0.05
     done
 }
-
-kernel_files=()         # temp
-lib_module_dirs=()      # temp
-declare -A kernel_sort_names
-declare -A pkg_sort_names
-declare -A libmod_sort_names
-removable_kernels=()    # these are for CT kernels
-removable_libmod_dirs=() # these are for CT kernels
-removable_packages=()   # these are for Fedora kernels
-removable_pkg_series=()
 
 survey_kernel_files() {
     unset removable_kernels
@@ -724,7 +747,6 @@ survey_kernel_files() {
 
     debug printf "c: %s\n" "${do_not_delete[@]}"
 
-    local dnd_grep="| grep -F -v "
     # notice that we do not want to add quotes to the %s because the grep -F will
     # interpret them literally and not match the filename
     local grep_args=$(printf " -e %s " "${do_not_delete[@]}")
@@ -732,21 +754,20 @@ survey_kernel_files() {
     find /boot -maxdepth 1 -type f -a \( \
         -iname "System*" -o -iname "init*img" -o -iname "vm*" -o -iname "ct*" \) \
         > $temp_fn 2>/dev/null
-    echo 'Listing of kernel files:'
-    cat $temp_fn
-    # temp list of files
-    kernel_files=()
-    if [[ -z "$grep_args" ]]; then
-        echo 'No GREP ARGS'
-        mapfile -t kernel_files < <( sort < $temp_fn )
+    if [[ -s "$temp_fn" ]]; then
+        echo 'Listing of kernel files:'
+        cat $temp_fn
+        # temp list of files
+        kernel_files=()
+        if [[ -z "$grep_args" ]]; then
+            echo 'No GREP ARGS'
+            mapfile -t kernel_files < <( sort < $temp_fn )
+        else
+            mapfile -t kernel_files < <( grep -Fv $grep_args $temp_fn | sort)
+        fi
     else
-#        echo "GREP $grep_args"
-#        set -x
-#        grep -Fv $grep_args $temp_fn | sort
-        mapfile -t kernel_files < <( grep -Fv $grep_args $temp_fn | sort)
-#        set +x
+        echo 'No kernel files present. You might be on AT7 or Rpi hardware.'
     fi
-
     mapfile -t lib_module_dirs < <(find /lib/modules -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
     local booted=`uname -r`
 
@@ -842,11 +863,11 @@ survey_kernel_files() {
         note "Does not appear to be an rpm system."
         return 0
     fi
-    local ur=$( uname -r )
+    # local ur=$( uname -r )
     local kern_pkgs=( $( rpm -qa 'kernel*' | sort ) )
     local ser
     local zpkg
-    declare -A pkg_to_ser
+    # declare -A pkg_to_ser
     for pkg in "${kern_pkgs[@]}"; do
         if [[ $pkg = kernel-tools-* ]] \
             || [[ $pkg = kernel-headers-* ]] \
@@ -872,7 +893,7 @@ survey_kernel_files() {
         fi
         kernel_series=$( kernel_to_relnum ${zpkg##kernel-} )
 
-        pkg_to_ser[$pkg]="$kernel_series"
+        # pkg_to_ser[$pkg]="$kernel_series"
         pkg_sort_names[$kernel_series]=1
     done
 
@@ -1089,11 +1110,16 @@ survey_mnt_lf_files() {
 }
 
 survey_dnf_cache() {
-    local yum="dnf"
-    which --skip-alias dnf &> /dev/null
-    (( $? < 0 )) && yum="yum"
-    debug "Surveying $yum cache"
-    totals[n]=$(du -hc '/var/cache/{dnf,yum}' 2>/dev/null | awk '/total/{print $1}')
+    if [[ ! -z "${ID:-}" ]] && [[ "${ID}" != *debian* ]]; then
+        local yum="dnf"
+        which --skip-alias dnf &> /dev/null
+        (( $? < 0 )) && yum="yum"
+        debug "Surveying $yum cache"
+        totals[n]=$(du -hc '/var/cache/{dnf,yum}' 2>/dev/null | awk '/total/{print $1}')
+    else
+        echo "Not a Red Hat derived OS."
+        totals[n]=0
+    fi
 }
 
 compressed_files=()
@@ -1145,7 +1171,9 @@ survey_pcap_files() {
         \) -print0 \
         > /tmp/pcap_files.txt 2>/dev/null ||:
     # pcap_list+=(`find /tmp -type f -a \( -name '*pcap' -o -name '*.pcapng' \)`)
-    fnum=$(grep -zc $'\0' /tmp/pcap_files.txt)
+    if [[ -s /tmp/pcap_files.txt ]]; then
+        fnum=$(grep -zc $'\0' /tmp/pcap_files.txt)
+    fi
     if (( $fnum > 0 )); then
         fsiz=$(du -hcs --files0-from=/tmp/pcap_files.txt | tail -1)
     fi
@@ -1196,10 +1224,14 @@ survey_lflogs() {
         -type f -iname '*.pcap.txt' \
         -print0 >> /tmp/removable_lflogs.txt ||:
 
-    fnum=$( grep -cz '' /tmp/removable_lflogs.txt )
-    #printf '      %s\n' "${removable_lflogs[@]}"
-    if (( $fnum > 1 )); then
-        fsiz=$(du -sch --files0-from=/tmp/removable_lflogs.txt | tail -1)
+    if [[ -s /tmp/removable_lflogs.txt ]]; then
+        fnum=$( grep -cz '' /tmp/removable_lflogs.txt )
+        #printf '      %s\n' "${removable_lflogs[@]}"
+        if (( $fnum > 1 )); then
+            fsiz=$(du -sch --files0-from=/tmp/removable_lflogs.txt | tail -1)
+        fi
+    else
+        fnum=0
     fi
     totals[e]="$fnum files ($fsiz)"
     [[ x${totals[e]} = x ]] && totals[e]=0
@@ -1300,8 +1332,14 @@ survey_areas() {
 #       report sizes here                                                 #
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 disk_usage_report() {
+    local a_description
     for k in "${!totals[@]}"; do
-        echo -e "\t${desc[$k]}:\t${totals[$k]}"
+        if [[ -v 'desc[$k]' ]]; then
+            a_description="${desc[$k]}"
+        else
+            a_description='--'
+        fi
+        echo -e "\t${a_description}:\t${totals[$k]}"
     done
 }
 survey_areas
@@ -1350,8 +1388,12 @@ if contains "selections" "a" ; then
     # printf "%s\n" "${selections[@]}"
     debug "Doing automatic cleanup"
     for z in "${selections[@]}"; do
-        debug "Will perform ${desc[$z]}"
-        ${cleaners_map[$z]}
+        if [[ -v 'desc[z]' ]]; then
+            debug "Will perform ${desc[$z]}"
+            ${cleaners_map[$z]}
+        else
+            echo "action desc[$z] not found"
+        fi
     done
     survey_areas
     disk_usage_report
