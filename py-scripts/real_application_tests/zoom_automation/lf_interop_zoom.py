@@ -293,9 +293,7 @@ class ZoomAutomation(Realm):
         self.resource_ip = resource_ip
 
     def stop_previous_flask_server(self):
-        """
-        Forcefully kills any process currently listening on port 5000 (Linux/Darwin only).
-        """
+        """Kill any process listening on port 5000 (Linux/Darwin only)."""
         port = 5000
         logger.info(
             f"Checking for processes using port {port} to forcefully kill them..."
@@ -380,17 +378,10 @@ class ZoomAutomation(Realm):
             logger.info(f"Moved client logs folder to {destination_dir}")
 
     def move_run_log_to_report(self):
-        """Move this run's own log file into the report folder. CLI runs only.
+        """Move this run's log file into the report folder. CLI runs only.
 
-        Skipped under --do_webUI: there the report directory is handed to us by
-        the web UI (--report_dir), so the log is left at its fixed path next to
-        the script rather than relocated into a directory the UI owns.
-
-        The log file is opened in append mode, so moving it out is also what
-        gives the next CLI run an empty one — each report folder ends up
-        holding the log of the run that produced it. Anything logged after this
-        point belongs to the same run, so the handler is re-attached at the new
-        path instead of just being closed.
+        Skipped under --do_webUI, where the report directory belongs to the web
+        UI. The logging handler is re-attached at the new path.
         """
         if self.do_webui:
             return
@@ -669,9 +660,7 @@ class ZoomAutomation(Realm):
 
         @self.app.route("/stop_zoom", methods=["GET"])
         def stop_zoom():
-            """
-            Endpoint to stop the Zoom test and trigger a graceful application shutdown.
-            """
+            """Stop the Zoom test and shut the application down."""
             logger.info("Stopping the test through web UI")
             self.stop_signal = True  # Signal to stop the application
             response = jsonify({"message": "Stopping Zoom Test"})
@@ -824,9 +813,7 @@ class ZoomAutomation(Realm):
             sys.exit(0)
 
     def shutdown(self):
-        """
-        Gracefully shut down the application.
-        """
+        """Shut the application down gracefully."""
         if self.do_robo and self.api_stats_collection:
             self.generate_report_from_data()
         elif self.api_stats_collection:
@@ -844,57 +831,34 @@ class ZoomAutomation(Realm):
         return [self.start_time, self.end_time]
 
     def generic_endpoint_exists(self, endp_name):
-        """True if LANforge currently has a generic endpoint by this name."""
+        """Return True if LANforge has a generic endpoint by this name."""
         response = self.json_get(f"/generic/{endp_name}")
         return bool(response and "endpoint" in response)
 
     def predict_endpoint_names(self, port_name):
-        """
-        Reproduce GenCXProfile.create()'s naming convention without actually
-        creating anything, so we can check LANforge for a stale endpoint/CX
-        left over from a prior run that crashed before cleanup ran.
+        """Return the generic endpoint and CX names for a port.
 
-        create() is always called here with real_client_os_types set, in
-        which case it builds gen_name_a from the port name UNMODIFIED (dots
-        and all) rather than just its final EID segment — see the first
-        loop in GenCXProfile.create() (gen_cxprofile.py), where
-        `name = port_name` when real_client_os_types is truthy, and that
-        `name` (not a later split() reassignment used only for the POST
-        body's "port" field) is what gen_name_a/cx_name are built from.
-
-        Example: port_name="1.400.wlan0", name_prefix="zoom" ->
-        ("zoom-1.400.wlan0", "CX_zoom-1.400.wlan0")
+        Both are built from the configured name prefix: port "1.400.wlan0" with
+        prefix "zoom" gives ("zoom-1.400.wlan0", "CX_zoom-1.400.wlan0").
         """
         prefix = self.generic_endps_profile.name_prefix
         return f"{prefix}-{port_name}", f"CX_{prefix}-{port_name}"
 
     def predict_android_endpoint_names(self, port_name):
-        """
-        Reproduce create_android()'s naming convention — distinct from
-        GenCXProfile.create()'s: it keeps the full port EID (underscore-
-        joined) rather than just the final segment, and prefixes the CX
-        name with "generic" instead of "zoom".
+        """Return the generic endpoint and CX names for an Android port.
 
-        Example: port_name="1.13.wlan0" ->
-        ("zoom-1_13_wlan0", "CX_generic-zoom-1_13_wlan0")
+        The port EID is underscore-joined: "1.13.wlan0" gives
+        ("zoom-1_13_wlan0", "CX_generic-zoom-1_13_wlan0").
         """
         gen_name = "zoom-%s" % "_".join(port_name.split("."))
         cx_name = "CX_generic-%s" % gen_name
         return gen_name, cx_name
 
     def pre_cleanup_stale_names(self, gen_name, cx_name):
-        """
-        Remove any endpoint/CX by these names that's still on LANforge from
-        a previous run — e.g. one that crashed before its own cleanup ran.
+        """Delete the named CX and generic endpoint from LANforge.
 
-        CX existence can't be queried directly: /cx/{name} only looks in
-        the L3 table, and generic-type CXs live elsewhere — LANforge
-        returns an empty/warning response for a generic CX regardless of
-        whether it exists, so a truthiness/membership check against it is
-        always False. Instead, infer CX presence from the endpoint: this
-        codebase always creates them as a 1:1 pair, and LANforge itself
-        refuses to rm_endp an endpoint that's still owned by a CX — so if
-        the endpoint exists, its CX must too, and has to go first.
+        Does nothing if the endpoint is not present. The CX goes first, since
+        LANforge refuses to delete an endpoint its CX still owns.
         """
         if self.generic_endpoint_exists(gen_name):
             logger.info(f"Removing stale CX {cx_name} left over from a previous run.")
@@ -913,16 +877,10 @@ class ZoomAutomation(Realm):
         self.pre_cleanup_stale_names(gen_name, cx_name)
 
     def cleanup_generic_endpoints(self):
-        """
-        Like generic_endps_profile.cleanup(), but only deletes the endpoint
-        if LANforge still actually reports it as present.
+        """Delete every CX and generic endpoint this run created.
 
-        CX existence can't be queried directly for generic-type CXs (see
-        pre_cleanup_stale_names()'s docstring), so — since these are our
-        own tracked created_cx names, known to have been created — rm_cx
-        is attempted unconditionally for each one, same as the original
-        cleanup(). This must run before the endpoint loop: LANforge
-        refuses to rm_endp an endpoint still owned by its CX.
+        Each CX is removed first, then the endpoints LANforge still reports;
+        endpoints already gone are skipped.
         """
         for cx_name in self.generic_endps_profile.created_cx:
             self.json_post("cli-json/rm_cx", {"test_mgr": "default_tm", "cx_name": cx_name})
@@ -934,9 +892,11 @@ class ZoomAutomation(Realm):
                 logger.debug(f"Generic endpoint {endp_name} no longer exists on LANforge — skipping delete.")
 
     def check_gen_cx(self, stall_timeout=600):
-        """Return True once every generic endpoint is idle (Stopped/WAITING/NO-CX),
-        or once a stuck endpoint has been non-idle for longer than stall_timeout
-        seconds — in which case we stop waiting on it instead of hanging forever."""
+        """Return True once every generic endpoint is idle.
+
+        Idle means Stopped, WAITING or NO-CX — or non-idle for longer than
+        stall_timeout seconds, so a stuck endpoint stops being waited on.
+        """
         if not hasattr(self, "_gen_cx_stall_since"):
             self._gen_cx_stall_since = {}
 
@@ -976,21 +936,11 @@ class ZoomAutomation(Realm):
             return False
 
     def monitor_endpoint_status_changes(self, wait_time=40, poll_interval=5):
-        """
-        Checks the current status of every generic endpoint and, only the
-        first time an endpoint's status changes, logs a message and appends
-        a row (timestamp, endpoint_name, status) to
-        endpoint_status_changes.csv. Repeated polls of an unchanged status
-        are not logged or written again.
+        """Log and record each generic endpoint's first status change.
 
-        If every created endpoint is missing from the response, retries
-        every poll_interval seconds for up to wait_time seconds.
-
-        Returns:
-            True while at least one created endpoint is still responding.
-            False if none of them have responded once wait_time has elapsed —
-            the caller decides whether that skips just this coordinate or
-            aborts the run (see _handle_round_failure).
+        Rows are appended to endpoint_status_changes.csv; unchanged statuses are
+        ignored. Returns True while any endpoint still responds, False once none
+        have answered for wait_time seconds.
         """
         csv_file = os.path.join(self.path, "endpoint_status_changes.csv")
         created_endp = self.generic_endps_profile.created_endp
@@ -1153,10 +1103,10 @@ class ZoomAutomation(Realm):
         return True, created_cx, created_endp
 
     def json_get_with_retry(self, url, wait_time=40, poll_interval=5):
-        """
-        Calls self.json_get(url), retrying every poll_interval seconds for up
-        to wait_time seconds if LANforge returns no response. Aborts the test
-        if it still hasn't responded once wait_time has elapsed.
+        """Call self.json_get(url), retrying until LANforge responds.
+
+        Retries every poll_interval seconds for up to wait_time seconds, then
+        aborts the test.
         """
         start_time = time.time()
         response = self.json_get(url)
@@ -1175,10 +1125,10 @@ class ZoomAutomation(Realm):
         return response
 
     def json_get_with_retry_no_exit(self, url, wait_time=40, poll_interval=5):
-        """
-        Same as json_get_with_retry(), but for callers where the fetched data
-        is best-effort/non-critical: returns None instead of aborting the
-        test if LANforge still hasn't responded once wait_time has elapsed.
+        """GET `url` from LANforge, retrying until it responds.
+
+        Retries every poll_interval seconds for up to wait_time seconds.
+        Returns the decoded response, or None if there was still none.
         """
         start_time = time.time()
         response = self.json_get(url)
@@ -1379,12 +1329,10 @@ class ZoomAutomation(Realm):
                 logger.error(f"Error deleting file {file_path}: {e}")
 
     def create_host(self):
-        """Create and start the host device's generic endpoint.
+        """Create the host device's generic endpoint and set its Zoom command.
 
-        Returns:
-            True if the endpoint was created and started.
-            False if creation failed — the caller decides whether that aborts
-            the run or just skips this coordinate (see _handle_round_failure).
+        The command sent depends on the host's OS. Returns True once the
+        endpoint is created and started, False if creation failed.
         """
         self.generic_endps_profile.created_cx = []  # reset per round so cleanup() only touches this coordinate's CXs
         self.generic_endps_profile.created_endp = []
@@ -1430,37 +1378,16 @@ class ZoomAutomation(Realm):
         return True
 
     def _record_round_issue(self, bucket):
-        """Note the current coordinate in `bucket`, once.
-
-        With rotations on a coordinate is visited at several angles, so the
-        same coordinate can fail repeatedly. These buckets answer "which
-        locations are missing data", so one entry per coordinate is what the
-        report wants — the per-angle detail stays in the log.
-        """
+        """Append the current coordinate to `bucket` if it is not already there."""
         if self.current_cord not in bucket:
             bucket.append(self.current_cord)
 
     def _handle_round_failure(self, reason, record_in=None):
-        """Decide whether a mid-run failure aborts the run or skips a point.
+        """Log a round failure and report whether the run should continue.
 
-        Centralises the abort-vs-skip rule so endpoint-creation failures,
-        readiness failures, and endpoints disappearing mid-round are all
-        treated identically.
-
-        Args:
-            reason: what failed, phrased so it reads before "on the very first
-                round ..." / "for ...".
-            record_in: the list this round's coordinate is recorded in.
-                Defaults to host_failure_coords. The endpoint-loss path passes
-                its own list instead, so "we never got a reading here" stays
-                separable from a host fault when the report is built. Neither
-                touches failed_coords, which is reserved for the robot failing
-                to reach the coordinate at all.
-
-        Returns:
-            The value run() should return — False to abort the whole robo test,
-            True to skip this round and carry on with the next one. A non-robo
-            run has no next round, so it exits non-zero instead.
+        Records the current coordinate in `record_in`, defaulting to
+        host_failure_coords. Returns False if the host was never ready, True to
+        carry on. A non-robo run exits with status 1 instead of returning.
         """
         if self.do_robo:
             if self.rotations_enabled:  # coordinate alone would not identify the round
@@ -1492,11 +1419,8 @@ class ZoomAutomation(Realm):
     def wait_for_host_ready(self, timeout=600):
         """Wait for the host device to confirm login.
 
-        Returns:
-            True once login is confirmed.
-            False if the host device stops before logging in, or if login
-            isn't confirmed within `timeout` seconds (default 5 minutes) —
-            instead of hanging forever or killing the whole process.
+        Returns True once confirmed, False if the host stops first or `timeout`
+        seconds pass.
         """
         deadline = time.time() + timeout
         while not self.login_completed:
@@ -1606,10 +1530,8 @@ class ZoomAutomation(Realm):
     def wait_for_test_start(self, timeout=180):
         """Wait for the test-started signal.
 
-        Returns:
-            True once the test has started.
-            False if it isn't signaled within `timeout` seconds (default 3
-            minutes) — instead of hanging forever.
+        Returns True once the test has started, False if it is not signalled
+        within `timeout` seconds.
         """
         deadline = time.time() + timeout
         count = 0
@@ -1897,8 +1819,8 @@ class ZoomAutomation(Realm):
         return self.real_sta_list
 
     def get_signal_and_channel_data_dict(self):
-        """
-        Returns a dictionary of LANforge stats keyed by station name.
+        """Return LANforge stats keyed by station name.
+
         Example: {'sta001': {'lf_signal': -55, 'lf_channel': 36, ...}}
         """
         lf_stats_map = {}
@@ -1987,17 +1909,9 @@ class ZoomAutomation(Realm):
     ):
         """Fetch every page of participant QoS for a meeting.
 
-        Two separate bounds, because there are two ways this can hang:
-
-        request_timeout caps each individual HTTP call, so an unresponsive
-        Zoom endpoint cannot block forever. This matters most for the "live"
-        fetch, which runs inside the /upload_stats request — a stalled socket
-        there holds a Flask worker thread and the client waiting on it.
-
-        timeout caps the whole pagination walk. The loop otherwise ends only
-        when Zoom stops handing back a next_page_token; a repeating token
-        would page indefinitely. On expiry the pages collected so far are
-        kept rather than discarded.
+        `request_timeout` caps each HTTP call and `timeout` the whole pagination
+        walk; on expiry the pages already collected are kept. Returns the
+        participant records, or [] if none could be fetched.
         """
         url = f"https://api.zoom.us/v2/metrics/meetings/{meeting_id}/participants/qos"
         headers = {"Authorization": f"Bearer {access_token}"}
@@ -2218,15 +2132,10 @@ class ZoomAutomation(Realm):
             return None
 
     def parse_zoom_value(self, value):
-        """
-        Convert Zoom string metrics into a float.
-        Handles cases like:
-        - "123 kbps"
-        - "21 ms"
-        - "5.6 %"
-        - "21 ms/40 ms"
-        - "Good(4.41)"
-        - "-" or empty values
+        """Convert a Zoom string metric to a float.
+
+        Handles "123 kbps", "21 ms/40 ms", "Good(4.41)", "-" and empty values.
+        Returns None when the value cannot be parsed.
         """
         if not value or str(value).strip() in ["-", ""]:
             return None
@@ -2454,14 +2363,10 @@ class ZoomAutomation(Realm):
         return self._match_summary_data_to_hostnames(summary, host_device_key)
 
     def summarize_audio_video(self, json_data):
-        """
-        Summarize per-device audio and video stats: avg/max of bitrate, jitter, latency, packet loss.
+        """Summarize per-device audio and video stats from Zoom participant JSON.
 
-        Args:
-            json_data (list): Zoom JSON as list of participants.
-
-        Returns:
-            dict: {device_name: {metric_field_avg/max: value, ...}}
+        Returns {device_name: {metric_avg/max: value}} covering bitrate, jitter,
+        latency and packet loss.
         """
         if not json_data:
             summary_data = self._get_summary_zoom_stats()
@@ -2513,12 +2418,9 @@ class ZoomAutomation(Realm):
         return self._match_summary_data_to_hostnames(summary, host_device_key)
 
     def check_tab_exists(self):
-        """
-        Checks if the 'generic' tab exists by making a JSON GET request.
+        """Check whether the 'generic' tab exists.
 
-        Returns:
-        - True if the 'generic' tab exists (response is not None).
-        - False if the 'generic' tab does not exist (response is None).
+        Returns True if it does, False otherwise.
         """
         response = self.json_get("generic")
         # Check if the response is None (indicating the tab does not exist)
@@ -2548,19 +2450,11 @@ class ZoomAutomation(Realm):
             logging.error(f"Failed to move '{source_file}' to '{dest_dir}': {e}")
 
     def updating_webui_runningjson(self, obj, timeout=60):
-        """Merge obj into the web UI's running json for this test.
+        """Merge `obj` into the web UI's running json for this test.
 
-        Returns True when the file was updated, False when it existed but could
-        not be read or written — that only costs the web UI a status update, so
-        it is logged and the test carries on.
-
-        A missing file is different and ends the run. The web UI creates it
-        before launching the script, so if it has not appeared within timeout
-        seconds it is not coming, and every later status update would fail the
-        same way — the web UI would show a test that never reports progress or
-        completion. The usual cause is a name that can never match: --testname
-        left unset makes this look for "<ip>_None_running.json". The message
-        names the exact path so that is obvious at a glance.
+        Returns True when written, False when the file exists but could not be
+        read or written. A file still missing after `timeout` seconds ends the
+        run — usually --testname was left unset, so the name can never match.
         """
         file_path = os.path.join(
             self.path,
@@ -3188,26 +3082,10 @@ class ZoomAutomation(Realm):
         )
 
     def change_port_to_ip(self, upstream_port):
-        """
-        Convert a given port name to its corresponding IP address if it's not already an IP.
+        """Resolve a LANforge port name such as "1.1.eth1" to its IP address.
 
-        This function checks whether the provided `upstream_port` is a valid IPv4 address.
-        If it's not, it attempts to extract the IP address of the port by resolving it
-        via the internal `name_to_eid()` method and then querying the IP using `json_get()`.
-
-        Args:
-            upstream_port (str): The name or IP of the upstream port. This could be a
-                                 LANforge port name like '1.1.eth1' or an IP address.
-
-        Returns:
-            str: The resolved IP address if the port name was converted successfully,
-                otherwise returns the original input if it was already an IP or
-                if resolution fails.
-
-        Logs:
-            - A warning if the port is not Ethernet or IP resolution fails.
-            - Info logs for the resolved or passed IP.
-
+        Returns the resolved IP, or the input unchanged if it was already an IP
+        or could not be resolved.
         """
         if upstream_port.count('.') != 3:
             target_port_list = self.name_to_eid(upstream_port)
@@ -3236,43 +3114,10 @@ class ZoomAutomation(Realm):
         return upstream_port
 
     def get_test_results_data(self, test_results, group):
-        """
-        Filters the overall test results to include only the data belonging to a specific group.
+        """Return `test_results` with only the rows for devices in `group`.
 
-        This function maps hostnames to their respective groups using the configuration object
-        (`self.configobj.get_groups_devices`). It then filters the input `test_results` dictionary
-        so that only entries corresponding to devices in the specified `group` are retained.
-
-        Args:
-            test_results (dict): A dictionary containing lists of test result values for all devices.
-                Example:
-                    {
-                        "Hostname": ["Device1", "Device2"],
-                        "RSSI": [-45, -50],
-                        "Link Rate": [300, 150],
-                        ...
-                    }
-            group (str): The name of the group whose test result data needs to be extracted.
-
-        Returns:
-            dict: A dictionary in the same structure as `test_results`, but filtered to include
-            only entries for hostnames that belong to the given `group`.
-
-        Example:
-            >>> test_results = {
-            ...     "Hostname": ["D1", "D2", "D3"],
-            ...     "RSSI": [-40, -50, -55]
-            ... }
-            >>> self.get_test_results_data(test_results, "GroupA")
-            {
-                "Hostname": ["D1", "D3"],
-                "RSSI": [-40, -55]
-            }
-
-        Notes:
-            - Relies on `self.configobj.get_groups_devices()` to retrieve the mapping of
-            groups to device hostnames.
-            - Returns an empty dictionary if no hostnames from the group are found.
+        Rows are matched on the "Device Name" column. Every original key is
+        kept, holding an empty list when no device matches.
         """
         groups_devices_map = self.config_obj.get_groups_devices(data=self.selected_groups, groupdevmap=True)
         group_hostnames = groups_devices_map.get(group, [])
@@ -3289,34 +3134,11 @@ class ZoomAutomation(Realm):
         return group_test_results
 
     def filter_ios_devices(self, device_list):
-        """
-        Filters out iOS devices from the given device list based on hardware and software identifiers.
+        """Drop iOS devices from a list or comma-separated string of device ids.
 
-        This method accepts a list or comma-separated string of device identifiers and removes
-        devices identified as iOS (Apple) based on their hardware version, app ID, and kernel info
-        fetched via the `/resource/{shelf}/{resource}` API endpoint.
-
-        Supported input formats for each device:
-        - "shelf.resource"
-        - "shelf.resource.port"
-        - "resource" (assumes shelf = 1)
-
-        iOS devices are identified if:
-        - 'Apple' is found in the hardware version, and
-        - `app-id` is not empty and is either non-zero or the kernel is empty
-
-        Args:
-            device_list (Union[list[str], str]): A list or comma-separated string of devices to be filtered.
-
-        Returns:
-            Union[list[int], str]: A list of valid (non-iOS) device IDs as integers,
-                                or a comma-separated string if the input was a string.
-
-        Logs:
-            - Warnings for invalid formats or missing device data.
-            - Info when an iOS device is skipped.
-            - Exceptions if errors occur during processing.
-
+        Accepts "shelf.resource", "shelf.resource.port" or "resource". Returns
+        the non-iOS ids in the form the input used: a list of ints, or a
+        comma-separated string if a string was passed.
         """
         modified_device_list = device_list
         if isinstance(device_list, str):
@@ -3565,9 +3387,7 @@ class ZoomAutomation(Realm):
             )
 
     def add_live_view_images_to_report(self):
-        """
-        Waits for and adds the Video and Audio heatmap images for Floor 1.
-        """
+        """Wait for the Floor 1 video and audio heatmaps, then add them."""
         live_view_dir = os.path.join(self.path, "live_view_images")
 
         video_img_name = f"zoom_video_{self.testname}_floor1.png"
@@ -4309,9 +4129,7 @@ class ZoomAutomation(Realm):
         )
 
     def generate_report_from_data(self):
-        """
-        Main function to generate report from API data.
-        """
+        """Generate the report from collected API data."""
         self.report = lf_report(
             _output_pdf="zoom_call_report.pdf",
             _output_html="zoom_call_report.html",
@@ -4381,9 +4199,9 @@ class ZoomAutomation(Realm):
         self._move_report_files(report_path_date_time)
 
     def _generate_robo_per_location_report(self):
-        """
-        Iterates through every coordinate and angle, loads the specific JSON,
-        and generates Device-Specific Bar Graphs (Device Name on Y-Axis).
+        """Generate per-device bar graphs for every coordinate and angle.
+
+        Loads each round's JSON and plots device names on the Y-axis.
         """
         coords = self.coordinates_list if self.coordinates_list else ["0,0,0"]
 
@@ -4466,9 +4284,7 @@ class ZoomAutomation(Realm):
     def _build_metric_graph(
         self, media_type, metric_name, unit, data, input_key, output_key, suffix=""
     ):
-        """
-        Helper to build standard horizontal bar graphs with Device Names on Y-Axis.
-        """
+        """Build a horizontal bar graph with device names on the Y-axis."""
         self.report.set_graph_title(f"{media_type} {metric_name} (Sent/Received)")
         self.report.build_graph_title()
 
@@ -4497,7 +4313,7 @@ class ZoomAutomation(Realm):
         self.report.build_graph()
 
     def _build_results_table(self, data, media_type):
-        """Helper for Summary Table"""
+        """Build the summary results table."""
 
         def fmt_val(client, key):
             val = data.get(client, {}).get(key)
@@ -4533,9 +4349,7 @@ class ZoomAutomation(Realm):
         self.report.html += self.report.dataframe_html
 
     def _move_report_files(self, report_path_date_time):
-        """
-        Helper to move CSVs, and Robo JSONs to the report folder.
-        """
+        """Move CSVs and robo JSONs into the report folder."""
         if self.do_robo:
             for coord in self.coordinates_list:
                 if self.rotations_enabled:
@@ -4563,9 +4377,7 @@ class ZoomAutomation(Realm):
         )
 
     def stop_webui(self):
-        """
-        Updates the running_status.json file to mark the test as Completed.
-        """
+        """Mark the test Completed in running_status.json."""
         try:
             json_path = os.path.join(self.path, "running_status.json")
 
