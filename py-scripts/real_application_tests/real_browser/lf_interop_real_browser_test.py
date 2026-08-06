@@ -828,27 +828,24 @@ class RealBrowserTest(Realm):
         time.sleep(10)
 
     def precleanup(self):
-        self.cleanup_layer4_endpoints()
-        self.cleanup_generic_endpoints()
+        for port in self.laptops:
+            self.pre_cleanup_stale_endpoint(port)
+        for port in self.phone_data:
+            self.pre_cleanup_stale_android_endpoint(port)
 
     def postcleanup(self):
-        self.cleanup_layer4_endpoints()
         self.cleanup_generic_endpoints()
+        self.cleanup_layer4_endpoints()
 
     def generic_endpoint_exists(self, endp_name):
         """True if LANforge currently has a generic endpoint by this name."""
         response = self.json_get(f"/generic/{endp_name}")
-        return bool(response and "endpoint" in response)
+        return bool(response and "empty" not in response)
 
     def layer4_endpoint_exists(self, endp_name):
-        """True if LANforge currently has a layer4 endpoint by this name."""
+        """True if LANforge currently has a layer 4 endpoint by this name."""
         response = self.json_get(f"/layer4/{endp_name}")
-        return bool(response and "endpoint" in response)
-
-    def cx_exists(self, cx_name):
-        """True if LANforge currently has a CX by this name."""
-        response = self.json_get(f"/cx/{cx_name}")
-        return bool(response and cx_name in response)
+        return bool(response and "empty" not in response)
 
     def predict_endpoint_names(self, port_name):
         """
@@ -856,16 +853,15 @@ class RealBrowserTest(Realm):
         creating anything, so we can check LANforge for a stale endpoint/CX
         left over from a prior run that crashed before cleanup ran.
         """
-        prefix = getattr(self.generic_endps_profile, 'name_prefix', 'rb')
+        prefix = self.generic_endps_profile.name_prefix
         return f"{prefix}-{port_name}", f"CX_{prefix}-{port_name}"
 
     def predict_android_endpoint_names(self, port_name):
         """
         Reproduce create_android()'s naming convention.
         """
-        prefix = getattr(self.generic_endps_profile, 'name_prefix', 'rb')
-        gen_name = f"{prefix}-%s" % "_".join(port_name.split("."))
-        cx_name = f"CX_generic-{gen_name}"
+        gen_name = "rb-%s" % "_".join(port_name.split("."))
+        cx_name = "CX_generic-%s" % gen_name
         return gen_name, cx_name
 
     def pre_cleanup_stale_names(self, gen_name, cx_name):
@@ -873,11 +869,17 @@ class RealBrowserTest(Realm):
         Remove any endpoint/CX by these names that's still on LANforge from
         a previous run — e.g. one that crashed before its own cleanup ran.
         """
-        if self.generic_endpoint_exists(gen_name) or self.layer4_endpoint_exists(gen_name):
+        if self.generic_endpoint_exists(gen_name):
             logger.info(f"Removing stale CX {cx_name} left over from a previous run.")
             self.json_post("cli-json/rm_cx", {"test_mgr": "default_tm", "cx_name": cx_name})
-            logger.info(f"Removing stale endpoint {gen_name} left over from a previous run.")
+            logger.info(f"Removing stale generic endpoint {gen_name} left over from a previous run.")
             self.json_post("cli-json/rm_endp", {"endp_name": gen_name})
+
+        if self.layer4_endpoint_exists(cx_name):
+            logger.info(f"Removing stale Layer 4 endpoint {cx_name} left over from a previous run.")
+            self.json_post("cli-json/rm_endp", {"endp_name": cx_name})
+            logger.info(f"Removing stale Layer 4 CX {cx_name} left over from a previous run.")
+            self.json_post("cli-json/rm_cx", {"test_mgr": "default_tm", "cx_name": cx_name})
 
     def pre_cleanup_stale_endpoint(self, port_name):
         """Before creating a real-device generic endpoint for port_name."""
@@ -895,25 +897,23 @@ class RealBrowserTest(Realm):
         if LANforge still actually reports it as present.
         """
         for cx_name in self.generic_endps_profile.created_cx:
-            self.json_post("cli-json/rm_cx", {"test_mgr": "default_tm", "cx_name": cx_name})
+            if self.generic_endpoint_exists(cx_name):
+                self.json_post("cli-json/rm_cx", {"test_mgr": "default_tm", "cx_name": cx_name})
 
         for endp_name in self.generic_endps_profile.created_endp:
             if self.generic_endpoint_exists(endp_name):
                 self.json_post("cli-json/rm_endp", {"endp_name": endp_name})
             else:
-                logger.debug(f"Generic endpoint {endp_name} no longer exists on LANforge — skipping delete.")
+                logger.debug(f"CX endpoint {endp_name} no longer exists on LANforge — skipping delete.")
 
     def cleanup_layer4_endpoints(self):
         """
         Like http_profile.cleanup(), but only deletes the CX/endpoint
         if LANforge still actually reports it as present.
         """
-        for cx_name in set(self.created_cx.values()):
-            if self.cx_exists(cx_name):
-                self.json_post("cli-json/rm_cx", {"test_mgr": "default_tm", "cx_name": cx_name})
-
-        for endp_name in set(self.created_cx.keys()):
+        for endp_name, cx_name in list(self.http_profile.created_cx.items()):
             if self.layer4_endpoint_exists(endp_name):
+                self.json_post("cli-json/rm_cx", {"test_mgr": "default_tm", "cx_name": cx_name})
                 self.json_post("cli-json/rm_endp", {"endp_name": endp_name})
             else:
                 logger.debug(f"Layer4 endpoint {endp_name} no longer exists on LANforge — skipping delete.")
@@ -1102,7 +1102,7 @@ class RealBrowserTest(Realm):
         def stop_rb():
             logging.info("Stopping the test through WEB GUI")
             self.webui_stop_clicked = True
-            response = jsonify({"message": "Stopping Zoom Test"})
+            response = jsonify({"message": "Stopping Real Browser Test"})
             response.status_code = 200
             self.stop()
 
@@ -1182,9 +1182,7 @@ class RealBrowserTest(Realm):
                 logger.exception("Unable to store log for %s", device_name)
                 return jsonify({"error": str(exc)}), 500
 
-            logger.info(f"Before appending {self.log_file_names}")
             self.log_file_names.append(log_filename)
-            logger.info(f"After appending {self.log_file_names}")
             logger.info("Received test log for %s: %s", device_name, log_path)
             return jsonify({"message": "Log uploaded successfully"}), 200
 
@@ -2266,7 +2264,7 @@ class RealBrowserTest(Realm):
                     return
             except requests.exceptions.ConnectionError:
                 time.sleep(1)
-        logging.error("❌ Flask server did not start within 10 seconds. Exiting.")
+        logging.error(f"❌ Flask server did not start within {timeout} seconds. Exiting.")
         sys.exit(1)
 
     def get_stats(self, duration, file_path, iteration_number, resource_list_sorted, cx_order_list, i, initial_target_urls):
