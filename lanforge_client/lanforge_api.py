@@ -22652,8 +22652,7 @@ class LFJsonQuery(JsonQuery):
         rx+rate+%281m%29, rx+rate+%28last%29, status, time-stamp, timeout, total-buffers, 
         total-err, total-rebuffers, total-urls, total-wait-time, tx+rate, tx+rate+%281%C2%A0min%29, 
         tx+rate+%28last%29, type, uc-avg, uc-max, uc-min, urls%2Fs, video-format-bitrate, 
-        video-quality, write        # hidden columns:
-        rpt-time
+        video-quality, write
     Example URL: /layer4?fields=%21conn,acc.+denied
 
     Example py-json call (it knows the URL):
