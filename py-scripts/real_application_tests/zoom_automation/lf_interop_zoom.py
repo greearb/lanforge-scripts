@@ -100,46 +100,31 @@ DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_base_interop_profile = importlib.import_module("py-scripts.lf_base_interop_profile")
 RealDevice = lf_base_interop_profile.RealDevice
 
-# Set up logging
 flask_server_logger = logging.getLogger(__name__)
 flask_server_log = logging.getLogger("werkzeug")
 flask_server_log.setLevel(logging.ERROR)
 
-# Everything this test writes is anchored here rather than to the working
-# directory, so results land in the same predictable place no matter which
-# directory the test was launched from.
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))  # everything is anchored here, not the cwd
 
 LOG_FILE = os.path.join(SCRIPT_DIR, "lf_interop_zoom.log")
 
-# Terminal and file get the same line. filename/lineno matter because the other
-# modules (DeviceConfig, lf_base_robo, gen_cxprofile, LFRequest) log through the
-# root logger into here too, and that is what tells them apart. The log file is
-# opened in append mode deliberately — a re-run must not destroy the log of the
-# run that just failed.
-#
-# force=True is required: DeviceConfig calls logging.basicConfig() when it is
-# imported above, and without force our call here would be a silent no-op and
-# the run log would never be written.
-LOG_FORMAT = "%(asctime)s - %(levelname)-8s - %(message)s (%(filename)s:%(lineno)s)"
+LOG_FORMAT = "%(asctime)s - %(levelname)-8s - %(message)s (%(filename)s:%(lineno)s)"  # filename/lineno tell apart the modules logging through root
 
 logging.basicConfig(
     level=logging.INFO,
     format=LOG_FORMAT,
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler(LOG_FILE, mode="a"),
+        logging.FileHandler(LOG_FILE, mode="a"),  # append: a re-run must not destroy the failed run's log
     ],
-    force=True,
+    force=True,  # DeviceConfig ran basicConfig() on import; without this ours is a no-op
 )
 
 logger = logging.getLogger(__name__)
 
 robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 
-# Directories on the real client stations where the Zoom automation scripts
-# (zoom.bat, ctzoom.bash) are deployed.
-WINDOWS_ZOOM_DIR = r".\local\real_application_test\zoom_automation"
+WINDOWS_ZOOM_DIR = r".\local\real_application_test\zoom_automation"  # zoom.bat/ctzoom.bash live on the client Laptops
 LINUX_ZOOM_DIR = "./local/real_application_test/zoom_automation"
 MACOS_ZOOM_DIR = "./local/real_application_test/zoom_automation"
 
@@ -224,11 +209,7 @@ class ZoomAutomation(Realm):
         self.stop_signal = False
         self.download_csv = False
         self.csv_file_name = "csvdata.csv"
-        # Next to the script, not in the working directory: a run launched from
-        # /home/lanforge and one launched from the script's own folder now put
-        # their results in the same place. Overridden with --report_dir when the
-        # web UI drives the test.
-        self.path = os.path.join(SCRIPT_DIR, "zoom_test_results")
+        self.path = os.path.join(SCRIPT_DIR, "zoom_test_results")  # not the cwd; --report_dir overrides
         os.makedirs(self.path, exist_ok=True)
 
         self.device_names = []
@@ -268,7 +249,6 @@ class ZoomAutomation(Realm):
         self.selected_groups = list(selected_groups or [])
         self.selected_profiles = list(selected_profiles or [])
         self.duration = duration
-        # Single container for raw Zoom QoS and summarized report data.
         self.zoom_stats_data = {"raw_qos": [], "summary": {}}
         self.env_file = env_file
 
@@ -302,21 +282,11 @@ class ZoomAutomation(Realm):
             logger.info(
                 f"User mentioned coordinates list: {self.robo_obj.coordinate_list}"
             )
-        # Robot navigation only — whether the robot physically reached the
-        # coordinate. Everything that goes wrong *after* arrival belongs in one
-        # of the buckets below, so "the robot couldn't get there" is never
-        # confused with "the round there produced no data".
-        self.successful_coords = []
-        self.failed_coords = []
-        # Angles the robot could not rotate to, {coordinate: [angles]}.
-        self.failed_angles = {}
-        # Rounds abandoned because the host device failed or never signalled
-        # the start of the test.
-        self.host_failure_coords = []
-        # Rounds abandoned because none of the round's generic endpoints could
-        # be read — they may have been deleted, or the manager may have been
-        # unreachable; the poll can't tell those apart.
-        self.endpoint_loss_coords = []
+        self.successful_coords = []  # robot reached the coordinate
+        self.failed_coords = []  # robot never got there
+        self.failed_angles = {}  # {coordinate: [angles]} it could not rotate to
+        self.host_failure_coords = []  # host device failed or never signalled start
+        self.endpoint_loss_coords = []  # no endpoint answered: deleted or unreachable
         self.host_ever_ready = False
         self.is_csv_available = False
         self.wait_at_point = int(wait_at_point)
@@ -335,7 +305,6 @@ class ZoomAutomation(Realm):
 
         try:
             if current_os in ["Linux", "Darwin"]:
-                # Find PID on Linux/Mac using lsof
                 command = f"lsof -t -i:{port}"
                 try:
                     output = subprocess.check_output(command, shell=True, text=True)
@@ -364,10 +333,6 @@ class ZoomAutomation(Realm):
             logger.info(f"No ping_logs directory found at {source_dir}")
             return
 
-        # report_path_date_time is only created once a report has been built,
-        # so it can be missing here — this runs from main()'s finally block,
-        # which is reached however the run ended. Crashing would replace the
-        # real error with an AttributeError and skip the cleanup below it.
         report_dir = getattr(self, "report_path_date_time", None)
         if not report_dir:
             logger.warning(f"No report folder for this run; ping logs stay at {source_dir}")
@@ -376,7 +341,6 @@ class ZoomAutomation(Realm):
         destination_dir = os.path.join(report_dir, "ping_logs")
         os.makedirs(report_dir, exist_ok=True)
 
-        # If destination exists, merge files and remove source
         if os.path.exists(destination_dir):
             for file_name in os.listdir(source_dir):
                 src_file = os.path.join(source_dir, file_name)
@@ -395,9 +359,7 @@ class ZoomAutomation(Realm):
             logger.info(f"No zoom_client_logs directory found at {source_dir}")
             return
 
-        # Missing whenever the run aborted before a report was built — see the
-        # note in move_ping_logs().
-        report_dir = getattr(self, "report_path_date_time", None)
+        report_dir = getattr(self, "report_path_date_time", None)  # see move_ping_logs()
         if not report_dir:
             logger.warning(f"No report folder for this run; client logs stay at {source_dir}")
             return
@@ -405,7 +367,6 @@ class ZoomAutomation(Realm):
         destination_dir = os.path.join(report_dir, "zoom_client_logs")
         os.makedirs(report_dir, exist_ok=True)
 
-        # If destination exists, merge files and remove source
         if os.path.exists(destination_dir):
             for file_name in os.listdir(source_dir):
                 src_file = os.path.join(source_dir, file_name)
@@ -436,9 +397,7 @@ class ZoomAutomation(Realm):
 
         report_dir = getattr(self, "report_path_date_time", None)
         if not report_dir or not os.path.isdir(report_dir):
-            # Aborted before a report was built. The log stays where it is —
-            # it is the only record of what went wrong.
-            logger.info(f"No report folder for this run; run log stays at {LOG_FILE}")
+            logger.info(f"No report folder for this run; run log stays at {LOG_FILE}")  # the only record of what went wrong
             return
 
         source = os.path.abspath(LOG_FILE)
@@ -447,10 +406,7 @@ class ZoomAutomation(Realm):
 
         destination = os.path.join(report_dir, os.path.basename(source))
 
-        # Release the file before moving it: on a cross-filesystem move shutil
-        # copies and deletes, and a handler still holding the old descriptor
-        # would keep writing into the deleted inode.
-        root = logging.getLogger()
+        root = logging.getLogger()  # release the file first: a cross-fs move leaves the handler on a deleted inode
         for handler in root.handlers[:]:
             if getattr(handler, "baseFilename", None) == source:
                 root.removeHandler(handler)
@@ -631,7 +587,6 @@ class ZoomAutomation(Realm):
                             else:
                                 stats["rotations_enabled"] = False
 
-                        # --- CSV FILE PATH GENERATION ---
                         if self.do_robo:
                             if self.rotations_enabled:
                                 csv_name = f"{hostname}_{self.current_cord}_{self.current_angle}.csv"
@@ -642,7 +597,6 @@ class ZoomAutomation(Realm):
 
                         csv_file = os.path.join(self.path, csv_name)
 
-                        # --- WRITING DATA TO CSV ---
                         file_exists = (
                             os.path.isfile(csv_file) and os.path.getsize(csv_file) > 0
                         )
@@ -711,7 +665,6 @@ class ZoomAutomation(Realm):
 
         @self.app.route("/get_latest_stats", methods=["GET"])
         def get_latest_stats():
-            # Return the latest data for all hostnames
             return jsonify(self._get_summary_zoom_stats()), 200
 
         @self.app.route("/stop_zoom", methods=["GET"])
@@ -721,7 +674,6 @@ class ZoomAutomation(Realm):
             """
             logger.info("Stopping the test through web UI")
             self.stop_signal = True  # Signal to stop the application
-            # Respond to the client
             response = jsonify({"message": "Stopping Zoom Test"})
             response.status_code = 200
             # Trigger shutdown in a separate thread to avoid blocking
@@ -744,12 +696,7 @@ class ZoomAutomation(Realm):
                         400,
                     )
 
-                # basename() because the name comes off the network: without it
-                # a client could steer this write out of self.path with a
-                # filename like "../../x.csv". Same treatment as the hostname
-                # in /upload_log below. It also collapses a path-only value to
-                # "", which is rejected here rather than silently renamed.
-                filename = os.path.basename((data.get("filename") or "").strip())
+                filename = os.path.basename((data.get("filename") or "").strip())  # basename blocks "../../x.csv" traversal; name comes off the network
                 if not filename:
                     logger.error("/upload_csv POST: missing or invalid filename")
                     return (
@@ -1258,10 +1205,8 @@ class ZoomAutomation(Realm):
             ".".join(item.split(".")[:2]) for item in self.real_sta_list
         ]
 
-        # Step 1: Retrieve information about all resources
         response = self.json_get_with_retry("/resource/all")
 
-        # Step 2: Match user-specified resources with available resources sequentially
         if self.user_resources:
             try:
                 resources = response["resources"]
@@ -1311,22 +1256,16 @@ class ZoomAutomation(Realm):
         self.link_rate_list = []
         self.ssid_list = []
 
-        # Step 3: Retrieve port information
         response_port = self.json_get_with_retry("/port/all")
 
-        # Step 4: Match ports associated with retrieved resources in the order of ports_list
         try:
             for port_entry in self.ports_list:
-                # Extract the eid and ctrl-ip from the current ports_list entry
                 expected_eid = port_entry["eid"]
 
-                # Iterate over the port interfaces to find a matching port
                 for interface in response_port["interfaces"]:
                     for port, _port_data in interface.items():
-                        # Extract the first two segments of the port identifier to match with expected_eid
                         result = ".".join(port.split(".")[:2])
 
-                        # Check if the result matches the current expected eid from ports_list
                         if result == expected_eid:
                             self.gen_ports_list.append(port.split(".")[-1])
                             break
@@ -1335,16 +1274,12 @@ class ZoomAutomation(Realm):
                     break
 
             for port_entry in self.ports_list:
-                # Extract the eid and ctrl-ip from the current ports_list entry
                 expected_eid = port_entry["eid"]
 
-                # Iterate over the port interfaces to find a matching port
                 for interface in response_port["interfaces"]:
                     for port, port_data in interface.items():
-                        # Extract the first two segments of the port identifier to match with expected_eid
                         result = ".".join(port.split(".")[:2])
 
-                        # Check if the result matches the current expected eid from ports_list
                         if result == expected_eid and port_data["parent dev"] == "wiphy0":
                             self.mac_list.append(port_data["mac"])
                             self.rssi_list.append(port_data["signal"])
@@ -1383,7 +1318,6 @@ class ZoomAutomation(Realm):
                     self.lanforge_port_list.append("")
                 else:
                     user_found = False
-                    # 1. Handle Single Device (Flat Dictionary)
                     if isinstance(interop_mobile_data, dict):
                         if interop_mobile_data["user-name"] == user:
                             # Extract details from 'name' (e.g., '1.1.3200f8664a91a5e9')
@@ -1452,10 +1386,7 @@ class ZoomAutomation(Realm):
             False if creation failed — the caller decides whether that aborts
             the run or just skips this coordinate (see _handle_round_failure).
         """
-        # Reset per round so start_cx()/stop_cx()/cleanup() only ever act on
-        # this coordinate's CXs/endpoints, instead of re-processing every
-        # stale entry from every previous coordinate.
-        self.generic_endps_profile.created_cx = []
+        self.generic_endps_profile.created_cx = []  # reset per round so cleanup() only touches this coordinate's CXs
         self.generic_endps_profile.created_endp = []
 
         self.pre_cleanup_stale_endpoint(self.real_sta_list[0])
@@ -1532,9 +1463,7 @@ class ZoomAutomation(Realm):
             run has no next round, so it exits non-zero instead.
         """
         if self.do_robo:
-            # With rotations on, the same coordinate is visited at several
-            # angles — naming only the coordinate wouldn't say which round.
-            if self.rotations_enabled:
+            if self.rotations_enabled:  # coordinate alone would not identify the round
                 where = (
                     f"coordinate {self.current_cord} at angle {self.current_angle}"
                 )
@@ -1595,7 +1524,6 @@ class ZoomAutomation(Realm):
         self.meet_link = f"https://us04web.zoom.us/j/{self.remote_login_url}?pwd={self.remote_login_passwd}"
         logger.info(f"Meet link for android devices: {self.meet_link}")
 
-        # Save meet link in a text file under self.path
         try:
             meet_link_file = os.path.join(self.path, "meet_link.txt")
             with open(meet_link_file, "w") as f:
@@ -1828,12 +1756,7 @@ class ZoomAutomation(Realm):
                             self._record_round_issue(self.host_failure_coords)
                             return True
                 if not self.monitor_endpoint_status_changes():
-                    # None of this round's endpoints answered — they may have
-                    # been deleted, or the manager may just be unreachable, and
-                    # the poll can't tell those apart. Either way tear the round
-                    # down so the next coordinate starts clean; the normal
-                    # teardown below is skipped by the early return.
-                    if self.do_robo:
+                    if self.do_robo:  # no endpoint answered (deleted, or manager unreachable); early return skips the normal teardown
                         self.generic_endps_profile.stop_cx()
                         self.cleanup_generic_endpoints()
                         self.start_time = None
@@ -1876,7 +1799,6 @@ class ZoomAutomation(Realm):
         9. Returns the sorted list of selected real station names.
 
         """
-        # Query and retrieve all user-defined real stations if `real_sta_list` is not provided
         if real_sta_list is None:
             self.real_sta_list, _, _ = real_device_obj.query_user()
         else:
@@ -1897,7 +1819,6 @@ class ZoomAutomation(Realm):
                     ) in (
                         interface_dict.items()
                     ):  # Iterate through items of each interface dictionary
-                        # Check conditions for adding the device
                         key_parts = key.split(".")
                         extracted_key = ".".join(key_parts[:2])
                         if (
@@ -1916,11 +1837,9 @@ class ZoomAutomation(Realm):
 
             self.real_sta_list = final_device_list
 
-        # Log an error and exit if no real stations are selected for testing
         if len(self.real_sta_list) == 0:
             logger.error("There are no real devices in this testbed. Aborting test")
             exit(0)
-        # Filter out iOS devices from the real_sta_list before proceeding
         self.real_sta_list = self.filter_ios_devices(self.real_sta_list)
 
         # Rebuild a clean, ordered and unique station list (avoid mutating while iterating)
@@ -1971,12 +1890,10 @@ class ZoomAutomation(Realm):
             elif value["ostype"] == "android":
                 self.android = self.android + 1
 
-        # Create mapping: { 'Hostname': 'Station_ID' }
         self.hostname_to_station_map = dict(
             zip(self.real_sta_hostname, self.real_sta_list)
         )
 
-        # Return the sorted list of selected real station names
         return self.real_sta_list
 
     def get_signal_and_channel_data_dict(self):
@@ -1988,7 +1905,6 @@ class ZoomAutomation(Realm):
         interfaces_dict = dict()
 
         try:
-            # Get raw data from LANforge API
             response = self.json_get_with_retry_no_exit("/ports/all/")
             if response:
                 port_data = response["interfaces"]
@@ -2007,7 +1923,6 @@ class ZoomAutomation(Realm):
             logger.error(f"Error fetching port data: {e}", exc_info=True)
             return {}
 
-        # Loop through your managed stations (e.g., sta001, sta002)
         for sta in self.real_sta_list:
             # Default values if station is missing
             lf_stats_map[sta] = {
@@ -2022,14 +1937,12 @@ class ZoomAutomation(Realm):
             if sta in interfaces_dict:
                 data = interfaces_dict[sta]
 
-                # --- Signal Parsing ---
                 sig = data.get("signal", "-")
                 if "dBm" in str(sig):
                     lf_stats_map[sta]["signal"] = sig.split(" ")[0]
                 else:
                     lf_stats_map[sta]["signal"] = sig
 
-                # --- Other Fields ---
                 lf_stats_map[sta]["channel"] = data.get("channel", "-")
                 lf_stats_map[sta]["mode"] = data.get("mode", "-")
                 lf_stats_map[sta]["tx_rate"] = data.get("tx-rate", "-")
@@ -2152,7 +2065,6 @@ class ZoomAutomation(Realm):
 
     def get_live_data(self):
         try:
-            # retrieving with past meetings
             token = self.get_access_token(
                 self.account_id, self.client_id, self.client_secret
             )
@@ -2172,7 +2084,6 @@ class ZoomAutomation(Realm):
             )
 
     def get_final_qos_data(self):
-        # 1. Check Credentials (using instance variables)
         if not all([self.account_id, self.client_id, self.client_secret]):
             logger.error("Exiting test due to missing credentials.")
             raise ValueError(
@@ -2182,7 +2093,6 @@ class ZoomAutomation(Realm):
         meeting_id = self.remote_login_url
         logger.info(f"Meeting ID: {meeting_id}")
 
-        # 2. Get Token & Wait for Data Indexing
         token = self.get_access_token(
             self.account_id, self.client_id, self.client_secret
         )
@@ -2190,15 +2100,12 @@ class ZoomAutomation(Realm):
             logger.error("Unable to obtain Zoom access token. Aborting QoS data fetch.")
             return
 
-        # Zoom QoS data is typically available ~20 seconds after meeting end.
-        # We wait 150 seconds to be safe and simplify the logic.
-        wait_time = 150
+        wait_time = 150  # QoS data appears ~20s after meeting end; 150 is the safe margin
         logger.info(
             f"Waiting {wait_time} seconds for Zoom servers to index past meeting QoS data..."
         )
         time.sleep(wait_time)
 
-        # 3. Fetch Data (Try 'Past' first, fallback to 'Live')
         try:
             logger.info("Attempting to fetch 'past' meeting data...")
             past_qos_data = self.get_participants_qos(meeting_id, token, "past")
@@ -2216,11 +2123,9 @@ class ZoomAutomation(Realm):
             except Exception as e_live:
                 logger.error(f"Failed to fetch both past and live data: {e_live}")
 
-        # 4. Summarize and Save JSON
         raw_qos_data = self._get_raw_zoom_stats()
         summary_data = self.summarize_audio_video(raw_qos_data)
 
-        # Construct JSON filename
         if self.do_robo:
             json_name = (
                 f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json"
@@ -2230,12 +2135,10 @@ class ZoomAutomation(Realm):
 
         self.save_json(raw_qos_data, json_name)
 
-        # 5. Write to CSV (Integrated Logic)
         if self.do_robo or self.do_bs or self.api_stats_collection:
             if summary_data:
                 logger.info("Writing final QoS data to CSV...")
 
-                # Fetch Wifi Data if needed
                 lf_wifi_data = {}
                 if self.do_bs:
                     try:
@@ -2248,7 +2151,6 @@ class ZoomAutomation(Realm):
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     stats["timestamp"] = timestamp
 
-                    # Add Robot/BS specific data
                     if self.do_bs:
                         x, y, _, _ = self.robo_obj.get_robot_pose()
                         stats["X"] = x
@@ -2271,7 +2173,6 @@ class ZoomAutomation(Realm):
                                 }
                             )
 
-                    # Add Coordinate/Angle data
                     if self.do_robo or self.do_bs:
                         stats["current_cord"] = self.current_cord
                         if self.rotations_enabled:
@@ -2280,7 +2181,6 @@ class ZoomAutomation(Realm):
                         else:
                             stats["rotations_enabled"] = False
 
-                    # Generate CSV Filename
                     if self.do_robo:
                         if self.rotations_enabled:
                             csv_name = f"{final_filename}_{self.current_cord}_{self.current_angle}.csv"
@@ -2291,7 +2191,6 @@ class ZoomAutomation(Realm):
 
                     csv_file = os.path.join(self.path, csv_name)
 
-                    # Write to File
                     try:
                         file_exists = (
                             os.path.isfile(csv_file) and os.path.getsize(csv_file) > 0
@@ -2353,11 +2252,7 @@ class ZoomAutomation(Realm):
         try:
             return float(value.split()[0].replace("%", ""))
         except Exception as e:
-            # Every expected empty/graded/avg-max form is handled above, so an
-            # unparseable value here is genuinely unrecognised. It becomes a
-            # blank cell in the report — log the raw value so that blank can be
-            # traced back to its input.
-            logger.debug(f"Could not parse stat value {value!r} as a number: {e}")
+            logger.debug(f"Could not parse stat value {value!r} as a number: {e}")  # every known form is handled above; log the raw value so the blank cell is traceable
             return None
 
     def _clean_zoom_participant_name(self, participant_name):
@@ -2466,7 +2361,6 @@ class ZoomAutomation(Realm):
         return normalized_summary
 
     def summarize_csv_audio_video(self, csv_path):
-        # Step 1: Find the correct header line
         with open(csv_path, "r", encoding="utf-8-sig") as f:
             lines = f.readlines()
 
@@ -2477,7 +2371,6 @@ class ZoomAutomation(Realm):
             if pd.notna(host_value):
                 csv_host_name = self._clean_zoom_participant_name(host_value)
 
-        # Step 2: Find the line index where real participant data header starts
         header_line_idx = None
         for i, line in enumerate(lines):
             if line.strip().startswith("Participant,"):
@@ -2489,7 +2382,6 @@ class ZoomAutomation(Realm):
                 "Could not find the participant metrics section in the CSV."
             )
 
-        # Step 3: Read only the participant section
         df = pd.read_csv(csv_path, skiprows=header_line_idx, encoding="utf-8-sig")
         df.columns = df.columns.str.strip()
 
@@ -2606,7 +2498,6 @@ class ZoomAutomation(Realm):
                         if val is not None:
                             temp_values[m][f].append(val)
 
-            # calculate avg and max
             for m in metrics:
                 for f in fields:
                     vals = temp_values[m][f]
@@ -2629,7 +2520,6 @@ class ZoomAutomation(Realm):
         - True if the 'generic' tab exists (response is not None).
         - False if the 'generic' tab does not exist (response is None).
         """
-        # Make a JSON GET request to check the existence of the 'generic' tab
         response = self.json_get("generic")
         # Check if the response is None (indicating the tab does not exist)
         if response is None:
@@ -2638,24 +2528,19 @@ class ZoomAutomation(Realm):
             return True
 
     def move_files(self, source_file, dest_dir):
-        # Ensure the source file exists
         if not os.path.isfile(source_file):
             logging.error(f"Source file '{source_file}' does not exist or is not a regular file.")
             return
 
-        # Ensure the destination directory exists
         if not os.path.exists(dest_dir):
             logging.error(f"Destination directory '{dest_dir}' does not exist.")
             return
 
         try:
-            # Extract the filename from the source file path
             filename = os.path.basename(source_file)
 
-            # Construct the destination file path
             dest_file = os.path.join(dest_dir, filename)
 
-            # Move the file
             shutil.move(source_file, dest_file)
 
             logging.info(f"Successfully moved '{source_file}' to '{dest_file}'.")
@@ -2694,11 +2579,7 @@ class ZoomAutomation(Realm):
                     f"(got {self.testname!r}) and --report_dir match what the "
                     f"web UI created."
                 )
-                # sys.exit rather than an exception: this is a configuration
-                # problem, not a test failure, and it keeps the output to the
-                # one line above instead of a traceback. SystemExit still runs
-                # main()'s finally block, so endpoints are cleaned up.
-                sys.exit(1)
+                sys.exit(1)  # config problem, not a test failure: no traceback, and finally still cleans up
             logger.info(f"Waiting for the running json file to be created: {file_path}")
             time.sleep(1)
 
@@ -2712,9 +2593,7 @@ class ZoomAutomation(Realm):
             with open(file_path, "w") as file:
                 json.dump(data, file, indent=4)
         except (OSError, ValueError) as e:
-            # ValueError covers json.JSONDecodeError — a truncated or
-            # half-written file must not take the whole test down.
-            logger.error(f"Could not update the web UI running json {file_path}: {e}")
+            logger.error(f"Could not update the web UI running json {file_path}: {e}")  # ValueError covers JSONDecodeError; a truncated file must not kill the test
             return False
 
         return True
@@ -2761,10 +2640,8 @@ class ZoomAutomation(Realm):
 
             }])
         elif len(self.selected_groups) > 0 and len(self.selected_profiles) > 0:
-            # Map each group with a profile
             gp_pairs = zip(self.selected_groups, self.selected_profiles)
 
-            # Create a string by joining the mapped pairs
             gp_map = ", ".join(f"{group} -> {profile}" for group, profile in gp_pairs)
 
             test_parameters = pd.DataFrame([{
@@ -3149,7 +3026,6 @@ class ZoomAutomation(Realm):
                     for client in accepted_clients
                 ]
             }
-            # If both groups and profiles are selected, generate separate audio results tables per group; otherwise show a single combined results table.
             if self.selected_groups and self.selected_profiles:
                 for group in self.selected_groups:
                     group_specific_audio_test_results = self.get_test_results_data(audio_test_results_dict, group)
@@ -3280,7 +3156,6 @@ class ZoomAutomation(Realm):
                     for client in accepted_clients
                 ]
             }
-            # If both groups and profiles are selected, generate separate video results tables per group; otherwise show a single combined results table.
             if self.selected_groups and self.selected_profiles:
                 for group in self.selected_groups:
                     group_specific_video_test_results = self.get_test_results_data(video_test_results_dict, group)
@@ -3508,7 +3383,6 @@ class ZoomAutomation(Realm):
 
             logger.info(f"Bandsteering report dir: {report_dir}")
 
-            # Search for CSV files in self.path
             csv_files = glob.glob(os.path.join(report_dir, "*.csv"))
             logger.info(f"Bandsteering CSV files found: {csv_files}")
 
@@ -3557,14 +3431,12 @@ class ZoomAutomation(Realm):
 
                 device_name = os.path.basename(csv_file_path).replace(".csv", "")
 
-                # Clean columns
                 df["BSSID"] = df["BSSID"].fillna("NA").astype(str)
                 df["TimeStamp"] = df["TimeStamp"].fillna("NA").astype(str)
                 df["From_Coord"] = df["From_Coord"].fillna("NA").astype(str)
                 df["To_Coord"] = df["To_Coord"].fillna("NA").astype(str)
                 df["Channel"] = df["Channel"].fillna("NA").astype(str)
 
-                # Filter only configured BSSIDs (if provided)
                 if allowed_bssids:
                     df = df[df["BSSID"].isin(allowed_bssids)]
 
@@ -3589,7 +3461,6 @@ class ZoomAutomation(Realm):
 
                 skip_table = not mask.any()
 
-                # Count BSSID switches
                 if skip_table:
                     # Ensure all expected BSSIDs show zero
                     bssid_counts = {bssid: 0 for bssid in self.bssids}
@@ -3664,7 +3535,6 @@ class ZoomAutomation(Realm):
                 report.set_table_dataframe(table_df)
                 report.build_table()
 
-            # Handle Charging Timestamps (Check if robo_obj exists first)
             if (
                 hasattr(self, "robo_obj")
                 and hasattr(self.robo_obj, "charging_timestamps")
@@ -3679,7 +3549,6 @@ class ZoomAutomation(Realm):
                         "charging_completion_timestamp",
                     ],
                 )
-                # Add S.No column
                 df.insert(0, "S.No", range(1, len(df) + 1))
                 report.set_table_dataframe(df)
                 report.build_table()
@@ -3689,10 +3558,7 @@ class ZoomAutomation(Realm):
                     _obj="Robot did not go to charge during this test",
                 )
                 report.build_objective()
-        except Exception as e:
-            # This handler wraps the whole function, so the failure could be
-            # anywhere from CSV discovery to graph building — the traceback is
-            # what narrows it down.
+        except Exception as e:  # wraps the whole function; exc_info is what narrows the failure down
             logger.error(
                 f"Failed to build the band-steering report section: {e}",
                 exc_info=True,
@@ -3704,7 +3570,6 @@ class ZoomAutomation(Realm):
         """
         live_view_dir = os.path.join(self.path, "live_view_images")
 
-        # Define the specific filenames for Floor 1
         video_img_name = f"zoom_video_{self.testname}_floor1.png"
         audio_img_name = f"zoom_audio_{self.testname}_floor1.png"
 
@@ -3714,7 +3579,6 @@ class ZoomAutomation(Realm):
         timeout = 90  # seconds
         start_time = time.time()
 
-        # 1. Wait for the Video image (Primary trigger)
         while not (os.path.exists(video_path) and os.path.exists(audio_path)):
             if time.time() - start_time > timeout:
                 logger.error(f"Timeout: {video_img_name} not found within 60 seconds.")
@@ -3731,10 +3595,8 @@ class ZoomAutomation(Realm):
         else:
             logger.warning(f"Audio heatmap image not found: {audio_path}")
 
-        # 2. Build the HTML Report Content
         html_content = ""
 
-        # Add Video Map (if found)
         if os.path.exists(video_path):
             html_content += (
                 '<div style="page-break-before: always;"></div>'
@@ -3742,7 +3604,6 @@ class ZoomAutomation(Realm):
                 f'<div style="text-align:center;"><img src="file://{video_path}" style="width:1200px; height:800px;"></img></div>'
             )
 
-        # Add Audio Map (if found)
         if os.path.exists(audio_path):
             html_content += (
                 '<div style="page-break-before: always;"></div>'
@@ -3750,7 +3611,6 @@ class ZoomAutomation(Realm):
                 f'<div style="text-align:center;"><img src="file://{audio_path}" style="width:1200px; height:800px;"></img></div>'
             )
 
-        # 3. Inject into Report
         if html_content:
             self.report.set_custom_html(html_content)
 
@@ -3958,7 +3818,6 @@ class ZoomAutomation(Realm):
             )
             self.report.build_text_simple()
 
-            # audio bitrate graph
             self.report.set_graph_title("a. Audio Bitrate (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
@@ -3996,7 +3855,6 @@ class ZoomAutomation(Realm):
             self.report.move_graph_image()
             self.report.build_graph()
 
-            # audio latency graph
             self.report.set_graph_title("b. Audio Latency (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
@@ -4033,7 +3891,6 @@ class ZoomAutomation(Realm):
             self.report.move_graph_image()
             self.report.build_graph()
 
-            # audio jitter graph
             self.report.set_graph_title("c. Audio Jitter (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
@@ -4070,7 +3927,6 @@ class ZoomAutomation(Realm):
             self.report.move_graph_image()
             self.report.build_graph()
 
-            # audio packet loss graph
             self.report.set_graph_title("d. Audio Packet Loss (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
@@ -4198,7 +4054,6 @@ class ZoomAutomation(Realm):
             )
             self.report.build_text_simple()
 
-            # video bitrate graph
             self.report.set_graph_title("a. Video Bitrate (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
@@ -4235,7 +4090,6 @@ class ZoomAutomation(Realm):
             self.report.move_graph_image()
             self.report.build_graph()
 
-            # video latency graph
             self.report.set_graph_title("b. Video Latency (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
@@ -4272,7 +4126,6 @@ class ZoomAutomation(Realm):
             self.report.move_graph_image()
             self.report.build_graph()
 
-            # video jitter graph
             self.report.set_graph_title("c. Video Jitter (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
@@ -4309,7 +4162,6 @@ class ZoomAutomation(Realm):
             self.report.move_graph_image()
             self.report.build_graph()
 
-            # video packet loss graph
             self.report.set_graph_title("d. Video Packet Loss (Recevied/Sent)")
             self.report.build_graph_title()
             x_data_set = [
@@ -4460,7 +4312,6 @@ class ZoomAutomation(Realm):
         """
         Main function to generate report from API data.
         """
-        # --- Initialize Report ---
         self.report = lf_report(
             _output_pdf="zoom_call_report.pdf",
             _output_html="zoom_call_report.html",
@@ -4468,15 +4319,10 @@ class ZoomAutomation(Realm):
             _path=self.path,
         )
         report_path_date_time = self.report.get_path_date_time()
-        # Recorded on self like the other two report generators do: the cleanup
-        # in main()'s finally block reads it to place the client logs and the
-        # run log, and this is the only generator that runs for
-        # --do_robo --api_stats_collection.
-        self.report_path_date_time = report_path_date_time
+        self.report_path_date_time = report_path_date_time  # main()'s finally reads this to place the client and run logs
         self.report.set_title("Zoom Call Automated Report")
         self.report.build_banner()
 
-        # --- Objective Section ---
         self.report.set_table_title("Objective:")
         self.report.build_table_title()
         self.report.set_text(
@@ -4487,7 +4333,6 @@ class ZoomAutomation(Realm):
         )
         self.report.build_text_simple()
 
-        # --- Test Parameters Table ---
         self.report.set_table_title("Test Parameters:")
         self.report.build_table_title()
 
@@ -4512,7 +4357,6 @@ class ZoomAutomation(Realm):
             "Mode": "Robo Motion" if self.do_robo else "Static",
         }
 
-        # Add conditional fields
         if self.config:
             param_data["Configured Devices"] = self.hostname_os_combination
             param_data["SSID"] = self.ssid
@@ -4526,13 +4370,11 @@ class ZoomAutomation(Realm):
         self.report.set_table_dataframe(pd.DataFrame([param_data]))
         self.report.build_table()
 
-        # ROBO MODE: Iterate through Coords/Angles and generate device graphs for each
         self._generate_robo_per_location_report()
 
         if self.do_webui:
             self.add_live_view_images_to_report()
 
-        # --- Finalize Report ---
         self.report.build_custom()
         self.report.write_html()
         self.report.write_pdf(_page_size="Legal", _orientation="Landscape")
@@ -4546,14 +4388,12 @@ class ZoomAutomation(Realm):
         coords = self.coordinates_list if self.coordinates_list else ["0,0,0"]
 
         for coord in coords:
-            # Determine angles loop
             if self.rotations_enabled and self.angles_list:
                 angles_loop = self.angles_list
             else:
                 angles_loop = [self.current_angle]
 
             for angle in angles_loop:
-                # 1. Heading for this Location
                 if self.rotations_enabled:
                     heading = f"Audio and Video graphs at coordinate {coord} and angle {angle}"
                 else:
@@ -4561,7 +4401,6 @@ class ZoomAutomation(Realm):
                 self.report.set_table_title(heading)
                 self.report.build_table_title()
 
-                # 2. Load Data
                 json_pattern = f"*_{coord}_{angle}_qos.json"
                 file_path = os.path.join(self.path, "zoom_api_responses", json_pattern)
                 found_files = glob.glob(file_path)
@@ -4581,7 +4420,6 @@ class ZoomAutomation(Realm):
                     self.report.build_text_simple()
                     continue
 
-                # 3. Generate Audio Graphs (Device on Y-Axis)
                 if self.audio:
                     suffix = f"_{coord}_{angle}"
                     self._build_metric_graph(
@@ -4602,7 +4440,6 @@ class ZoomAutomation(Realm):
                     )
                     self._build_results_table(device_data, "audio")
 
-                # 4. Generate Video Graphs (Device on Y-Axis)
                 if self.video:
                     suffix = f"_{coord}_{angle}"
                     self._build_metric_graph(
@@ -4623,7 +4460,6 @@ class ZoomAutomation(Realm):
                     )
                     self._build_results_table(device_data, "video")
 
-                # Add a separator between coordinates
                 self.report.set_custom_html("<hr>")
                 self.report.build_custom()
 
@@ -4700,7 +4536,6 @@ class ZoomAutomation(Realm):
         """
         Helper to move CSVs, and Robo JSONs to the report folder.
         """
-        # 1. Move Client CSV files
         if self.do_robo:
             for coord in self.coordinates_list:
                 if self.rotations_enabled:
@@ -4718,13 +4553,11 @@ class ZoomAutomation(Realm):
                         if os.path.exists(csv_path):
                             self.move_files(csv_path, report_path_date_time)
 
-        # 2. Move Robo JSONs (Wildcard search for Multi-Location files)
         if self.do_robo:
             pattern = os.path.join(self.path, "zoom_api_responses", "*_qos.json")
             for f in glob.glob(pattern):
                 self.move_files(f, report_path_date_time)
 
-        # 3. Move the endpoint status change log
         self.move_files(
             os.path.join(self.path, "endpoint_status_changes.csv"), report_path_date_time
         )
@@ -4736,25 +4569,20 @@ class ZoomAutomation(Realm):
         try:
             json_path = os.path.join(self.path, "running_status.json")
 
-            # 1. Load existing data or create new dict
             data = {}
             if os.path.exists(json_path):
                 with open(json_path, "r") as f:
                     try:
                         data = json.load(f)
-                    except json.JSONDecodeError as e:
-                        # Existing contents are discarded — say so, otherwise
-                        # the keys that were in this file vanish with no trace.
+                    except json.JSONDecodeError as e:  # warn loudly: the keys already in this file are about to vanish
                         logger.warning(
                             f"{json_path} is not valid JSON ({e}); its existing "
                             "contents are being discarded and the file rewritten."
                         )
                         data = {}
 
-            # 2. Update status
             data["status"] = "Completed"
 
-            # 3. Write back to file
             with open(json_path, "w") as f:
                 json.dump(data, f, indent=4)
 
@@ -4784,10 +4612,7 @@ class ZoomAutomation(Realm):
                 for angle in self.angles_list:
                     self.robo_obj.wait_for_battery()
                     rotated = self.robo_obj.rotate_angle(angle_degree=angle)
-                    if not rotated:
-                        # One unreachable angle is a per-angle problem, the
-                        # same shape as an unreachable coordinate — skip it
-                        # rather than taking down every angle still to come.
+                    if not rotated:  # per-angle skip, same shape as an unreachable coordinate
                         logger.error(
                             f"Failed to rotate to angle {angle} at coordinate "
                             f"{coordinate} — skipping this angle and trying the next one."
@@ -4812,10 +4637,7 @@ class ZoomAutomation(Realm):
 
 
 def main():
-    # Bound up front so the finally block below can always test it. It stays
-    # None whenever we leave the try before the test object is built — --help,
-    # a bad argument, a validation exit — and there is nothing to clean up.
-    zoom_automation = None
+    zoom_automation = None  # bound up front so the finally block below can always test it
 
     try:
         parser = argparse.ArgumentParser(
@@ -5216,10 +5038,7 @@ def main():
             )
             exit(0)
 
-        # Zoom API credentials, resolved before anything else is set up: without
-        # them an --api_stats_collection run cannot produce its report, so there
-        # is no point reaching LANforge or starting the Flask server first.
-        account_id = client_id = client_secret = None
+        account_id = client_id = client_secret = None  # resolved first: no point reaching LANforge without them
         if args.api_stats_collection:
             if args.env_file:
                 if not os.path.exists(args.env_file):
@@ -5284,9 +5103,7 @@ def main():
             linux_dir=args.linux_dir,
             mac_dir=args.mac_dir,
         )
-        # Already resolved and validated above; None unless this is an
-        # --api_stats_collection run.
-        zoom_automation.account_id = account_id
+        zoom_automation.account_id = account_id  # None unless this is an --api_stats_collection run
         zoom_automation.client_id = client_id
         zoom_automation.client_secret = client_secret
 
@@ -5355,9 +5172,7 @@ def main():
                             elif j in all_res.keys():
                                 eid_list.append(all_res[j])
             if args.zoom_host in eid_list:
-                # Remove the existing instance of args.zoom_host from the list
                 eid_list.remove(args.zoom_host)
-                # Insert args.zoom_host at the beginning of the list
                 eid_list.insert(0, args.zoom_host)
 
             args.resources = ",".join(id for id in eid_list)
@@ -5406,7 +5221,6 @@ def main():
                         )
                     args.resources = ",".join(id for id in dev_list)
             else:
-                # If no resources provided, prompt user to select devices manually
                 if args.config:
                     all_devices = config_obj.get_all_devices()
                     device_list = []
@@ -5452,7 +5266,6 @@ def main():
                 )
                 for item in get_data:
                     item = item.strip()
-                    # Find and append the matching lap to result_list
                     matching_laps = [lap for lap in laptops if lap.startswith(item)]
                     result_list.extend(matching_laps)
                 if not result_list:
@@ -5513,12 +5326,7 @@ def main():
     except Exception as e:
         logger.error(f"AN ERROR OCCURED WHILE RUNNING TEST {e}")
         traceback.print_exc()
-    finally:
-        # Covers --help too: argparse exits inside parse_args(), long before
-        # the object is built. Deliberately an if rather than an early return —
-        # a return here would discard the exception on its way out, including
-        # the SystemExit carrying the exit code, turning a failed run into a
-        # silent success.
+    finally:  # covers --help; an if not a return, which would swallow SystemExit
         if zoom_automation is not None:
             zoom_automation.stop_signal = True
             logger.info("Waiting for Browser Cleanup in Laptops")
@@ -5536,9 +5344,7 @@ def main():
             # zoom_automation.move_ping_logs()
             zoom_automation.move_log_folder()
             logger.info("Done.")
-            # Last thing in the run — everything above is now in the log that
-            # travels with the report.
-            zoom_automation.move_run_log_to_report()
+            zoom_automation.move_run_log_to_report()  # last: everything above is now in the log that travels with the report
 
 
 if __name__ == "__main__":
