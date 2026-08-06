@@ -749,7 +749,13 @@ survey_kernel_files() {
 
     # notice that we do not want to add quotes to the %s because the grep -F will
     # interpret them literally and not match the filename
-    local grep_args=$(printf " -e %s " "${do_not_delete[@]}")
+    local grep_args
+    if [[ "${#do_not_delete[@]}" -gt 0 ]]; then
+        grep_args=$(printf " -e %s " "${do_not_delete[@]}")
+    else
+        grep_args=''
+    fi
+
     local temp_fn='/tmp/survey_k_files'
     find /boot -maxdepth 1 -type f -a \( \
         -iname "System*" -o -iname "init*img" -o -iname "vm*" -o -iname "ct*" \) \
@@ -1110,16 +1116,25 @@ survey_mnt_lf_files() {
 }
 
 survey_dnf_cache() {
-    if [[ ! -z "${ID:-}" ]] && [[ "${ID}" != *debian* ]]; then
-        local yum="dnf"
-        which --skip-alias dnf &> /dev/null
-        (( $? < 0 )) && yum="yum"
-        debug "Surveying $yum cache"
-        totals[n]=$(du -hc '/var/cache/{dnf,yum}' 2>/dev/null | awk '/total/{print $1}')
-    else
-        echo "Not a Red Hat derived OS."
+    case "$ID" in
+        debian|ubuntu)
+            echo "Not a Red Hat derived OS."
+            totals[n]=0
+            return
+            ;;
+        *)
+            ;;
+    esac
+    if [[ -z "${ID:-}" ]]; then
         totals[n]=0
+        return
     fi
+    local yum="dnf"
+    which --skip-alias dnf &> /dev/null
+    (( $? < 0 )) && yum="yum"
+    debug "Surveying $yum cache"
+    totals[n]=$(du -hc '/var/cache/{dnf,yum}' 2>/dev/null | awk '/total/{print $1}')
+
 }
 
 compressed_files=()
@@ -1197,7 +1212,7 @@ survey_lflogs() {
     elif [[ -d /var/log/apache2 ]]; then
         directories="$directories  /var/log/apache2/"
     fi
-    mapfile -d '' removable_lflogs < <( find $directories \
+    find $directories \
         -type f -a \( \
                -iname 'error.log'                \
             -o -iname '*access.log'              \
@@ -1218,8 +1233,8 @@ survey_lflogs() {
             -o -iname 'gnuforge_log_*'           \
             -o -iname 'helper_shared_log_*'      \
             -o -iname '*:1.log'                  \
-        \) -print0 > /tmp/removable_lflogs.txt ||:)
-    # printf '\0' >> /tmp/removable_lflogs.txt ||:
+        \) -print0 > /tmp/removable_lflogs.txt ||:
+
     find /home/lanforge/LANforgeGUI_* \
         -type f -iname '*.pcap.txt' \
         -print0 >> /tmp/removable_lflogs.txt ||:
