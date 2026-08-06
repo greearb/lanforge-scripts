@@ -3459,6 +3459,7 @@ class RealBrowserTest(Realm):
             destination_dir = self.report_path_date_time
             if not self.dowebgui:
                 source_dir = "."
+                destination_dir = self.report_path_date_time
                 for filename in self.robo_csv_files:
                     source_path = os.path.join(source_dir, filename)
                     destination_path = os.path.join(destination_dir, filename)
