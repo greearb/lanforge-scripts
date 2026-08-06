@@ -646,11 +646,14 @@ class Throughput(Realm):
 
                 if not matched:
                     continue
-            # To add last entry in the csv
-            all_dataframes = pd.concat(
-                [df for df in all_dataframes if isinstance(df, pd.DataFrame)],
-                ignore_index=True
-            )
+            # Generate a band-steering report only when monitoring collected rows.
+            collected_dataframes = [df for df in all_dataframes if isinstance(df, pd.DataFrame)]
+            if not collected_dataframes or all(df.empty for df in collected_dataframes):
+                self.stop()
+                if args.postcleanup:
+                    self.cleanup()
+                raise RuntimeError("All active CXs were missing; no band-steering monitoring data was collected.")
+            all_dataframes = pd.concat(collected_dataframes, ignore_index=True)
             last_idx = all_dataframes.index[-1]
 
             all_dataframes.loc[last_idx, "status"] = "Stopped"
@@ -735,6 +738,9 @@ class Throughput(Realm):
                     if args.do_interopability and i != 0:
                         self.stop_specific(to_run_cxs[i - 1])
                         time.sleep(5)
+                    elif not args.do_interopability and i != 0:
+                        # Reset the previous cumulative CX set before the next capacity.
+                        self.stop_specific(created_cx_lists_keys[:incremental_capacity_list[i - 1]])
                     if args.interopability_config:
                         if args.do_interopability and i == 0:
                             # To disconnect all the selected devices at the starting selected
@@ -744,7 +750,11 @@ class Throughput(Realm):
                             # To configure device which is under test
                             is_device_configured = self.configure_specific([device_to_run_resource])
                     if is_device_configured:
-                        self.start_specific(to_run_cxs[i])
+                        # Start cumulative CXs for capacity tests or isolated CXs for interoperability.
+                        if args.do_interopability:
+                            self.start_specific(to_run_cxs[i])
+                        else:
+                            self.start_specific(created_cx_lists_keys[:incremental_capacity_list[i]])
 
                 # Determine device names based on the current iteration
                 if args.do_interopability and args.load_type != "wc_intended_load":
@@ -1383,10 +1393,18 @@ class Throughput(Realm):
                 "cx_name": cx_name,
                 "cx_state": "STOPPED"
             }, debug_=self.debug)
+        self.clear_endp_counters()
+
+    def clear_endp_counters(self):
+        """Clear all endpoint counters after CXs stop."""
+        self.json_post("/cli-json/clear_endp_counters", {
+            "endp_name": "all"
+        }, debug_=self.debug)
 
     def stop(self):
 
         self.cx_profile.stop_cx()
+        self.clear_endp_counters()
         self.station_profile.admin_down()
 
     def remove_missing_cx(self):
@@ -1426,7 +1444,6 @@ class Throughput(Realm):
     def cleanup(self):
         if self.robo_ip:
             self.remove_missing_cx()
-        logger.info("self.cx_profile.created_cx %s", self.cx_profile.created_cx)
         logger.info("cleanup done")
         self.cx_profile.cleanup()
 
@@ -1577,7 +1594,8 @@ class Throughput(Realm):
                 if self.stopped_by_user:
                     individual_df = self.append_stopped_monitor_row(
                         individual_df, iteration, incremental_capacity_list, overall_start_time)
-                return individual_df, self.stop_test
+                # Propagate missing CX failure to stop band-steering coordinates.
+                return individual_df, True if self.do_bandsteering else self.stop_test
             self.monitoring_started_with_available_cx = True
             missing_active_cxs = set(self.current_iteration_cxs).intersection(self.missing_cx_logged)
             if missing_active_cxs and not self.pre_monitoring_missing_logged:
@@ -1617,8 +1635,8 @@ class Throughput(Realm):
                 break
             throughput[index] = self.get_layer3_endp_data(self.current_iteration_cxs)
             if self.current_iteration_cxs and self.should_stop_for_missing_cx(self.current_iteration_cxs):
-                logger.error("No active CX recovered; ending this iteration with collected data.")
-                test_stopped_by_user = self.stop_test
+                # Propagate missing CX failure to stop band-steering coordinates.
+                test_stopped_by_user = True if self.do_bandsteering else self.stop_test
                 break
             # Check if next sleep would overshoot the end_time
             is_last_iteration = ((current_time + timedelta(seconds=1 if self.dowebgui else self.report_timer)) >= end_time)
@@ -1912,9 +1930,6 @@ class Throughput(Realm):
         for i in range(len(upload_throughput)):
             connections_upload.update({keys[i]: float(f"{(upload_throughput[i]):.2f}")})
 
-        logger.info("connections download {}".format(connections_download))
-        logger.info("connections upload {}".format(connections_upload))
-
         self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
         return individual_df, test_stopped_by_user
 
@@ -1962,7 +1977,8 @@ class Throughput(Realm):
                 if self.stopped_by_user:
                     individual_df = self.append_stopped_monitor_row(
                         individual_df, iteration, incremental_capacity_list, overall_start_time)
-                return individual_df, self.stop_test
+                # End robot monitoring so collected data can proceed to report generation.
+                return individual_df, True
             self.monitoring_started_with_available_cx = True
 
         # Initialize variables for real-time connections data
@@ -2031,8 +2047,8 @@ class Throughput(Realm):
                     break
                 throughput[index] = self.get_layer3_endp_data(self.current_iteration_cxs)
                 if self.current_iteration_cxs and self.should_stop_for_missing_cx(self.current_iteration_cxs):
-                    logger.error("No active CX recovered; ending this iteration with collected data.")
-                    test_stopped_by_user = self.stop_test
+                    # End robot monitoring so collected data can proceed to report generation.
+                    test_stopped_by_user = True
                     break
                 # Check if next sleep would overshoot the end_time
                 is_last_iteration = ((current_time + timedelta(seconds=1 if self.dowebgui else self.report_timer)) >= end_time)
@@ -2413,9 +2429,6 @@ class Throughput(Realm):
             connections_download.update({keys[i]: float(f"{(download_throughput[i]):.2f}")})
         for i in range(len(upload_throughput)):
             connections_upload.update({keys[i]: float(f"{(upload_throughput[i]):.2f}")})
-
-        logger.info("connections download {}".format(connections_download))
-        logger.info("connections upload {}".format(connections_upload))
 
         self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
         return individual_df, test_stopped_by_user
@@ -2993,6 +3006,10 @@ class Throughput(Realm):
                 data_iter = data[data['Iteration'] == i + 1]
                 avg_rtt_data = []
 
+                if data_iter.empty:
+                    logger.warning("Skipping report section for iteration %s because no monitoring data was collected.", i + 1)
+                    continue
+
                 # for sig in self.signal_list[0:int(incremental_capacity_list[i])]:
                 #     signal_data.append(int(sig)*(-1))
                 # rssi_signal_data.append(signal_data)
@@ -3462,6 +3479,10 @@ class Throughput(Realm):
                 rssi_data = []
                 data_iter = data[data['Iteration'] == i + 1]
                 avg_rtt_data = []
+
+                if data_iter.empty:
+                    logger.warning("Skipping report section for iteration %s because no monitoring data was collected.", i + 1)
+                    continue
 
                 # Fetch devices_on_running from real_client_list
                 devices_on_running.append(self.real_client_list[data1[i][-1] - 1].split(" ")[-1])
@@ -3936,6 +3957,12 @@ class Throughput(Realm):
                         rssi_data = []
                         data_iter = data[data['Iteration'] == i + 1]
                         avg_rtt_data = []
+
+                        if data_iter.empty:
+                            logger.warning(
+                                "Skipping report section for iteration %s at coordinate %s because no monitoring data was collected.",
+                                i + 1, coordinate)
+                            continue
 
                         # for sig in self.signal_list[0:int(incremental_capacity_list[i])]:
                         #     signal_data.append(int(sig)*(-1))
@@ -5355,6 +5382,9 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                 if args.do_interopability and i != 0:
                     throughput.stop_specific(to_run_cxs[i - 1])
                     time.sleep(5)
+                elif not args.do_interopability and i != 0:
+                    # Reset the previous cumulative CX set before the next capacity.
+                    throughput.stop_specific(created_cx_lists_keys[:incremental_capacity_list[i - 1]])
                 if args.interopability_config:
                     if args.do_interopability and i == 0:
                         # To disconnect all the selected devices at the starting selected
@@ -5364,7 +5394,11 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                         # To configure device which is under test
                         is_device_configured = throughput.configure_specific([device_to_run_resource])
                 if is_device_configured:
-                    throughput.start_specific(to_run_cxs[i])
+                    # Start cumulative CXs for capacity tests or isolated CXs for interoperability.
+                    if args.do_interopability:
+                        throughput.start_specific(to_run_cxs[i])
+                    else:
+                        throughput.start_specific(created_cx_lists_keys[:incremental_capacity_list[i]])
 
             # Determine device names based on the current iteration
             if args.do_interopability and args.load_type != "wc_intended_load":
