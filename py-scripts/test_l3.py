@@ -1910,12 +1910,7 @@ class L3VariableTime(Realm):
         for endp_name in endpoint:
             logger.debug("endpoint: {}".format(endp_name))
             for item, endp_value in endp_name.items():
-                # multicast does not support use existing: or self.use_existing_station_lists:
                 if item in our_endps:
-                    # endps.append(endp_value) need to see how to affect
-                    # NOTE: during each monitor period the rates are added to get the totals
-                    # this is done so that if there is an issue the rate information will be in
-                    # the csv for the individual polling period
                     logger.debug(
                         "multicast endpoint: {item} value:\n".format(item=item))
                     logger.debug(endp_value)
@@ -1925,21 +1920,16 @@ class L3VariableTime(Realm):
                                 'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
                             value = 0
                         if value_name == 'rx rate':
-                            # This hack breaks for mcast or if someone names endpoints weirdly.
-                            # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
                             if "-mrx-" in item:
                                 total_dl += int(value)
                             else:
                                 total_ul += int(value)
                         if value_name == 'rx rate ll':
-                            # This hack breaks for mcast or if someone
-                            # names endpoints weirdly.
                             if "-mrx-" in item:
                                 total_dl_ll += int(value)
                             else:
                                 total_ul_ll += int(value)
 
-                        # TODO need a way to report rates
         # Unicast endpoints
         for e in self.cx_profile.created_endp.keys():
             our_endps[e] = e
@@ -1967,8 +1957,6 @@ class L3VariableTime(Realm):
                                 logging.debug(
                                     'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
                                 value = 0
-                            # This hack breaks for mcast or if someone names endpoints weirdly.
-                            # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
                             if item.endswith("-A"):
                                 total_dl += int(value)
                             elif item.endswith("-B"):
@@ -1978,8 +1966,6 @@ class L3VariableTime(Realm):
                                 logging.debug(
                                     'Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
                                 value = 0
-                            # This hack breaks for mcast or if someone
-                            # names endpoints weirdly.
                             if item.endswith("-A"):
                                 total_dl_ll += int(value)
                             elif item.endswith("-B"):
@@ -7861,6 +7847,7 @@ class L3VariableTime(Realm):
                 report.build_custom()
 
     def append_cx_data(self, is_cx, name, state):
+        """Append an endpoint/CX state change to client_issue_csv_name."""
         file_exists = os.path.isfile(self.client_issue_csv_name)
 
         with open(self.client_issue_csv_name, "a", newline="") as file:
@@ -7879,6 +7866,7 @@ class L3VariableTime(Realm):
             ])
 
     def check_endpoint_availability(self, expected_endps, present_endps, endp_list):
+        """Log endpoint missing/not-running/recovered transitions and update the tracking sets."""
         for endp_name in expected_endps:
             if endp_name not in present_endps.keys():
                 if endp_name not in self.missing_endp_logged:
@@ -7909,6 +7897,7 @@ class L3VariableTime(Realm):
                 self.not_running_endp_logged.discard(endp_name)
 
     def is_test_stopped_by_webgui(self):
+        """Check the webgui running-instance file to see if the user stopped the test."""
         if not self.dowebgui:
             return False
         running_file = f"{self.result_dir}/../../Running_instances/{self.ip}_{self.test_name}_running.json"
@@ -7931,6 +7920,7 @@ class L3VariableTime(Realm):
         return False
 
     def monitor_endp_availability(self, expected_endps, return_endpoint_data=False, duration=40, interval=5):
+        """Retry for up to duration seconds until at least one expected endpoint is present and running."""
         start_time = time.time()
         end_time = start_time + duration
         no_of_attempts = duration // interval
@@ -7951,9 +7941,6 @@ class L3VariableTime(Realm):
                     f"Requested URL: '{endp_url}'\n"
                     f"Response: {endp_list}")
                 endp_list = {}
-                # time.sleep(interval)
-                # start_time = time.time()
-                # continue
             endpoint = endp_list.get('endpoint', [])
             if isinstance(endpoint, dict):
                 endpoint = [{endpoint['name']: endpoint}]
@@ -7995,6 +7982,7 @@ class L3VariableTime(Realm):
         return [] if return_endpoint_data else False
 
     def check_cx_availability(self, expected_cxs, present_cxs, cx_list):
+        """Log CX missing/not-running/recovered transitions and update the tracking sets."""
         for cx_name in expected_cxs:
             if cx_name not in present_cxs.keys():
                 if cx_name not in self.missing_cx_logged:
@@ -8025,6 +8013,7 @@ class L3VariableTime(Realm):
                 self.not_running_cx_logged.discard(cx_name)
 
     def monitor_cx_availability(self, expected_cxs, duration=40, interval=5):
+        """Retry for up to duration seconds until at least one expected cross-connect is present and running."""
         start_time = time.time()
         end_time = start_time + duration
         no_of_attempts = duration // interval
@@ -8068,6 +8057,7 @@ class L3VariableTime(Realm):
         return False
 
     def format_duration(self, td):
+        """Convert a timedelta into a readable duration string, e.g. "1 hour 5 minutes"."""
         total_seconds = int(td.total_seconds())
 
         days, remainder = divmod(total_seconds, 86400)
