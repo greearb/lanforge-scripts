@@ -1390,13 +1390,31 @@ class Throughput(Realm):
         self.station_profile.admin_down()
 
     def remove_missing_cx(self):
-        """Drop CXs still marked missing out of created_cx so stop()/cleanup() skip them."""
-        if not self.missing_cx_logged or not self.cx_profile.created_cx:
+        """Remove locally tracked CXs absent from the current Layer-3 CX list."""
+        # Refresh Layer-3 CX availability before modifying the local CX profile.
+        if not self.cx_profile.created_cx:
             return
-        missing_cxs = set(self.missing_cx_logged).intersection(self.cx_profile.created_cx.keys())
+        try:
+            cx_response = self.json_get('/cx/all')
+        except Exception as error:
+            logger.warning("Unable to refresh the Layer-3 CX list before cleanup: %s", error)
+            return
+        if not isinstance(cx_response, dict) or not cx_response:
+            logger.warning("Unable to refresh the Layer-3 CX list before cleanup; unexpected response: %s", cx_response)
+            return
+        created_cxs = set(self.cx_profile.created_cx.keys())
+        metadata_keys = {'handler', 'uri', 'buttons', 'empty'}
+        available_cxs = set(cx_response.keys()) - metadata_keys
+        for value in cx_response.values():
+            entries = value if isinstance(value, list) else [value]
+            for entry in entries:
+                if isinstance(entry, dict) and entry.get('name'):
+                    available_cxs.add(entry['name'])
+        available_cxs.intersection_update(created_cxs)
+        missing_cxs = created_cxs - available_cxs
         if missing_cxs:
             logger.warning(
-                "Excluding %s missing CX(s) because endpoints were unavailable: %s",
+                "Excluding %s CX(s) missing from the current Layer-3 response: %s",
                 len(missing_cxs), sorted(missing_cxs)
             )
             for cx in missing_cxs:
