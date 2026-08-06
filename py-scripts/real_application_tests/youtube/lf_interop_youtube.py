@@ -136,8 +136,7 @@ from urllib import request as urllib_request
 logger = logging.getLogger(__name__)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
-
-
+YOUTUBE_STATS_URL = "http://127.0.0.1:5002/youtube_stats"
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
@@ -1288,7 +1287,7 @@ class Youtube(Realm):
 
     def wait_for_flask(
         self,
-        url="http://127.0.0.1:5002/youtube_stats",
+        url=YOUTUBE_STATS_URL,
         timeout=10,
     ):
         """Wait until the YouTube statistics server responds successfully."""
@@ -1959,16 +1958,8 @@ class Youtube(Realm):
 
     def monitor_endpoint_status_changes(self, wait_time=40, poll_interval=5):
         """
-        Checks the current status of every generic endpoint and, only the
-        first time an endpoint's status changes, logs a message and appends
-        a row (timestamp, endpoint_name, status) to
-        endpoint_status_changes.csv. Repeated polls of an unchanged status
-        are not logged or written again.
-
-        If every created endpoint is missing from the response, retries
-        every poll_interval seconds for up to wait_time seconds. Aborts the
-        test if still none of the created endpoints have responded once
-        wait_time has elapsed.
+        Monitor generic endpoint status changes and record them in CSV.
+        Retry missing responses until wait_time, then abort the test.
         """
         current_path = self.ui_report_dir if self.do_webUI else os.path.dirname(os.path.abspath(__file__))
         csv_file = os.path.join(current_path, "endpoint_status_changes.csv")
@@ -2026,13 +2017,8 @@ class Youtube(Realm):
             self.endpoint_last_status[gen_endp] = current_status
 
     def check_gen_cx(self, stall_timeout=300):
-        """Return whether all generic endpoints have finished.
-
-        Once the configured test duration ends, callers use this method to wait
-        for every endpoint to enter an idle state. An endpoint that remains
-        non-idle, disappears, or cannot be queried for ``stall_timeout`` seconds
-        is treated as resolved so one bad endpoint cannot block cleanup and
-        report generation indefinitely.
+        """Check whether all generic endpoints have reached an idle state.
+        Treat unresponsive or stalled endpoints as resolved after stall_timeout.
         """
         if not hasattr(self, "_gen_cx_stall_since"):
             self._gen_cx_stall_since = {}
