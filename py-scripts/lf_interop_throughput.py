@@ -554,6 +554,10 @@ class Throughput(Realm):
         iterations_before_test_stopped_by_user = []
         test_stopped_by_user = False
 
+        if not self.precheck_all_created_cx_endpoints():
+            self.stop()
+            return
+
         # if band steering is enabled
         if self.do_bandsteering:
             # checking the battery status of robot before moving to a point
@@ -657,6 +661,7 @@ class Throughput(Realm):
             self.stop()
             if args.postcleanup:
                 self.cleanup()
+            self.ensure_monitoring_data_collected()
             iterations_before_test_stopped_by_user.append(0)
             self.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
             if self.dowebgui:
@@ -742,7 +747,10 @@ class Throughput(Realm):
                         self.start_specific(to_run_cxs[i])
 
                 # Determine device names based on the current iteration
-                device_names = created_cx_lists_keys[:to_run_cxs_len[i][-1]]
+                if args.do_interopability and args.load_type != "wc_intended_load":
+                    device_names = list(to_run_cxs[i])
+                else:
+                    device_names = created_cx_lists_keys[:to_run_cxs_len[i][-1]]
 
                 # Monitor throughput and capture all dataframes and test stop status
                 all_dataframes, test_stopped_by_user = self.monitor_for_robo(i, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured)
@@ -769,6 +777,8 @@ class Throughput(Realm):
             self.stop()
         if args.postcleanup:
             self.cleanup()
+
+        self.ensure_monitoring_data_collected()
 
         # Mark nav_data.json as completed for the Web UI.
         if args.dowebgui:
@@ -5284,6 +5294,10 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
             throughput.perform_robo(args, clients_to_run)
             exit(1)
 
+        if not throughput.precheck_all_created_cx_endpoints():
+            throughput.stop()
+            return
+
         individual_dataframe_column = []
 
         to_run_cxs, to_run_cxs_len, created_cx_lists_keys, incremental_capacity_list = throughput.get_incremental_capacity_list()
@@ -5335,7 +5349,10 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                     throughput.start_specific(to_run_cxs[i])
 
             # Determine device names based on the current iteration
-            device_names = created_cx_lists_keys[:to_run_cxs_len[i][-1]]
+            if args.do_interopability and args.load_type != "wc_intended_load":
+                device_names = list(to_run_cxs[i])
+            else:
+                device_names = created_cx_lists_keys[:to_run_cxs_len[i][-1]]
 
             # Monitor throughput and capture all dataframes and test stop status
             all_dataframes, test_stopped_by_user = throughput.monitor(i, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured)
@@ -5359,6 +5376,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     throughput.stop()
     if args.postcleanup:
         throughput.cleanup()
+    throughput.ensure_monitoring_data_collected()
     iot_summary = None
     if args.iot_test and args.iot_testname:
         # Load IoT summary data from the specified JSON file
