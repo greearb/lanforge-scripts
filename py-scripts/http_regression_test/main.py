@@ -34,7 +34,7 @@ import importlib
 from enum import Enum
 from dataclasses import dataclass
 from typing import Tuple, Optional
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser, Namespace, Action
 from comparators import Comparator, Result, Success, Warning, Failure
 
 # Some shenannigans to import the logger config from a cousin file
@@ -354,10 +354,45 @@ def run_test(args: Namespace):
 #
 
 
+class HelpSummaryAction(Action):
+    """
+    A custom argparse action that halts argument parsing when the --help_summary argument is encountered.
+    Even if the program is missing otherwise required arguments, print the summary and exit
+    """
+    def __init__(self, option_strings, dest, nargs=0, **kwargs):
+        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        self.print_help_summary()
+        parser.print_help()
+        parser.exit(0)
+
+    def print_help_summary(self):
+        print("The http_Regression_test suite is intended to detect unintended changes to the\n"
+              "external behavior of the LANforge HTTP JSON REST API. This script can execute in\n"
+              "two modes \"baseline\", and \"test\".\n")
+
+        print("The baseline mode produces a stable artifact that represents the behavior of\n"
+              "a known-good version of the software, against which the behavior of future\n"
+              "versions can be compared. In this mode, the script performs a given series of\n"
+              "HTTP requests against the specified LANforge API host, saving the status and\n"
+              "content of each response as a json-encoded artifact.\n")
+
+        print("In test mode, the script accepts a previous baseline as ground truth, performs\n"
+              "each of the same requests against the same host, and compares each of the new\n"
+              "responses against that ground truth.\n")
+
+        print("Since each LANforge HTTP endpoint has differing response content and requires\n"
+              "different semantics for acceptable amounts of deviation, the test subcommand\n"
+              "calls out to the http_regression_test.comparators module, which will implement\n"
+              "comparator logic for each endpoint.\n")
+
+
 def parse_args() -> Namespace:
     parser = ArgumentParser(prog="http_regression_test.py")
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--help_summary', help='Show summary of what this script does', action=HelpSummaryAction)
 
     subparsers = parser.add_subparsers(
         dest="mode",
