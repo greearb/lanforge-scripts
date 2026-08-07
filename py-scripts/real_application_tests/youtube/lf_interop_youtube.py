@@ -174,6 +174,11 @@ from IOT.iot_helper import start_iot_thread, with_iot_params_in_table, add_iot_r
 WINDOWS_REAL_APP_DIR = r".\local\real_application_test\youtube"
 LINUX_REAL_APP_DIR = "./local/real_application_test/youtube"
 MACOS_REAL_APP_DIR = "./local/real_application_test/youtube"
+YOUTUBE_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ANDROID_TEST_SCRIPT = os.path.join(
+    YOUTUBE_SCRIPT_DIR,
+    "youtube_android_test.py",
+)
 
 
 class Youtube(Realm):
@@ -511,10 +516,12 @@ class Youtube(Realm):
         for i in range(0, len(self.lanforge_os_type)):
             cmd = (
                 "su - lanforge -c "
-                "\"cd /home/lanforge && "
-                "python3 /home/lanforge/lanforge-scripts/py-scripts/real_application_tests/youtube/youtube_android_test.py "
+                "\"cd '%s' && "
+                "python3 '%s' "
                 "--url '%s' --duration '%s' --devices '%s' --upstream_port '%s' --resolution '%s'\""
             ) % (
+                YOUTUBE_SCRIPT_DIR,
+                ANDROID_TEST_SCRIPT,
                 self.url,
                 self.duration,
                 self.serial_list_str,
