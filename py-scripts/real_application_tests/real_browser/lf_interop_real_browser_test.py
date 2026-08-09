@@ -239,6 +239,7 @@ class RealBrowserTest(Realm):
         self.app = Flask(__name__)
         self.app.logger.setLevel(logging.WARNING)
         self.laptop_stats = {}
+        self.mobile_stats = {}
         self.user_name = None
         self.hw = None
         self.mac_list = None
@@ -2355,47 +2356,47 @@ class RealBrowserTest(Realm):
                             cx_names = []
                             # Check if multiple CX endpoints are created
                             if len(self.created_cx.keys()) > 1:
-                                data = mobile_data['endpoint']
-                                for endpoint in data:
-                                    for _key, value in endpoint.items():
-                                        if True:
-                                            cx_name = value.get('name', 'NA')
-                                            match = re.search(r'http(\d+)', cx_name)
-                                            res_no = match.group(1) if match else 'NA'
-                                            hostname = self.local_realm.json_get("resource/1/%s/list?fields=user" % (res_no))
-                                            hostname = hostname["resource"]["user"]
-                                            pass_url = value.get('total-urls', 0)
-                                            total_urls.append(pass_url)
-                                            uc_min.append(value.get('uc-min', 0.0))
-                                            uc_avg.append(value.get('uc-avg', 0.0))
-                                            uc_max.append(value.get('uc-max', 0.0))
-                                            total_err.append(value.get('total-err', 0))
-                                            hostnames.append(hostname)
-                                            cx_names.append(cx_name)
-                                            if hostname not in self.device_targets:
-                                                self.device_targets[hostname] = initial_target_urls
-                                            # Check if the mobile device reaches the current target URL count
-                                            if pass_url >= self.device_targets[hostname] and hostname not in time_taken:
-                                                time_taken[hostname] = (datetime.now() - start_time).total_seconds()
-                                # Save each mobile device's data to the CSV
-                                for i in range(len(total_urls)):
-                                    row = {
-                                        'device_type': 'mobile',
-                                        'device_name': hostnames[i],
-                                        'total_urls': total_urls[i],
-                                        'uc_min': float(uc_min[i]) / 1000,
-                                        'uc_avg': float(uc_avg[i]) / 1000,
-                                        'uc_max': float(uc_max[i]) / 1000,
-                                        'total_err': total_err[i],
-                                        'time_to_target_urls': time_taken.get(hostnames[i], 0.0),
-                                        'cx_name': cx_names[i],
-                                    }
-                                    writer.writerow(row)
-                                    last_data.append(row)
+                                if mobile_data and mobile_data.get('empty') != 'no elements':
+                                    data = mobile_data['endpoint']
+                                    for endpoint in data:
+                                        for _key, value in endpoint.items():
+                                            if True:
+                                                cx_name = value.get('name', 'NA')
+                                                match = re.search(r'http(\d+)', cx_name)
+                                                res_no = match.group(1) if match else 'NA'
+                                                hostname = self.local_realm.json_get("resource/1/%s/list?fields=user" % (res_no))
+                                                hostname = hostname["resource"]["user"]
+                                                pass_url = value.get('total-urls', 0)
+                                                total_urls.append(pass_url)
+                                                uc_min.append(value.get('uc-min', 0.0))
+                                                uc_avg.append(value.get('uc-avg', 0.0))
+                                                uc_max.append(value.get('uc-max', 0.0))
+                                                total_err.append(value.get('total-err', 0))
+                                                hostnames.append(hostname)
+                                                cx_names.append(cx_name)
+                                                if hostname not in self.device_targets:
+                                                    self.device_targets[hostname] = initial_target_urls
+                                                # Check if the mobile device reaches the current target URL count
+                                                if pass_url >= self.device_targets[hostname] and hostname not in time_taken:
+                                                    time_taken[hostname] = (datetime.now() - start_time).total_seconds()
+                                    # Save each mobile device's data to the Cache
+                                    for i in range(len(total_urls)):
+                                        row = {
+                                            'device_type': 'mobile',
+                                            'device_name': hostnames[i],
+                                            'total_urls': total_urls[i],
+                                            'uc_min': float(uc_min[i]) / 1000,
+                                            'uc_avg': float(uc_avg[i]) / 1000,
+                                            'uc_max': float(uc_max[i]) / 1000,
+                                            'total_err': total_err[i],
+                                            'time_to_target_urls': time_taken.get(hostnames[i], 0.0),
+                                            'cx_name': cx_names[i],
+                                        }
+                                        self.mobile_stats[cx_names[i]] = row
                             # Handle the case where only one CX endpoint is created
                             elif len(self.created_cx.keys()) == 1:
-                                endpoint = mobile_data.get('endpoint', {})
-                                if endpoint:
+                                if mobile_data and mobile_data.get('empty') != 'no elements':
+                                    endpoint = mobile_data.get('endpoint', {})
                                     cx_name = endpoint.get('name', 'NA')
                                     match = re.search(r'http(\d+)', cx_name)
                                     res_no = match.group(1) if match else 'NA'
@@ -2419,8 +2420,10 @@ class RealBrowserTest(Realm):
                                         'time_to_target_urls': time_taken.get(hostname, 0.0),
                                         'cx_name': cx_name
                                     }
-                                    writer.writerow(row)
-                                    last_data.append(row)
+                                    self.mobile_stats[cx_name] = row
+                            for _, row in self.mobile_stats.items():
+                                writer.writerow(row)
+                                last_data.append(row)
                     self.monitor_endpoint_status_changes()
                     time.sleep(1)
                 except Exception as e:
@@ -3248,6 +3251,7 @@ class RealBrowserTest(Realm):
             start_time = datetime.now()
             self.device_targets = {}
             self.laptop_stats = {}
+            self.mobile_stats = {}
             while datetime.now() <= end_time or not self.check_gen_cx():
                 pause, _ = self.robo_obj.wait_for_battery()
                 if pause:
@@ -3314,55 +3318,55 @@ class RealBrowserTest(Realm):
                             cx_names = []
                             # Check if multiple CX endpoints are created
                             if len(self.created_cx.keys()) > 1:
-                                data = mobile_data['endpoint']
-                                for endpoint in data:
-                                    for _key, value in endpoint.items():
-                                        if True:
-                                            cx_name = value.get('name', 'NA')
-                                            match = re.search(r'http(\d+)', cx_name)
-                                            res_no = match.group(1) if match else 'NA'
-                                            hostname = self.local_realm.json_get("resource/1/%s/list?fields=user" % (res_no))
-                                            hostname = hostname["resource"]["user"]
-                                            pass_url = value.get('total-urls', 0)
-                                            total_urls.append(pass_url)
-                                            uc_min.append(value.get('uc-min', 0.0))
-                                            uc_avg.append(value.get('uc-avg', 0.0))
-                                            uc_max.append(value.get('uc-max', 0.0))
-                                            total_err.append(value.get('total-err', 0))
-                                            hostnames.append(hostname)
-                                            cx_names.append(cx_name)
-                                            if hostname not in self.device_targets:
-                                                self.device_targets[hostname] = initial_target_urls
-                                            # Check if the mobile device reaches the current target URL count
-                                            if pass_url >= self.device_targets[hostname] and hostname not in time_taken:
-                                                time_taken[hostname] = (datetime.now() - start_time).total_seconds()
-                                            if self.do_robo:
-                                                self.robo_mobile_data[hostname] = {
-                                                    'current_angle': self.current_angle,
-                                                    'current_cord': self.current_cord,
-                                                    'rotations_enabled': self.rotations_enabled,
-                                                    'total_urls': pass_url
-                                                }
-                                # Save each mobile device's data to the CSV
-                                for i in range(len(total_urls)):
-                                    row = {
-                                        'device_type': 'mobile',
-                                        'device_name': hostnames[i],
-                                        'total_urls': total_urls[i],
-                                        'uc_min': float(uc_min[i]) / 1000,
-                                        'uc_avg': float(uc_avg[i]) / 1000,
-                                        'uc_max': float(uc_max[i]) / 1000,
-                                        'total_err': total_err[i],
-                                        'time_to_target_urls': time_taken.get(hostnames[i], 0.0),
-                                        'cx_name': cx_names[i],
-                                        'angle': angle
-                                    }
-                                    writer.writerow(row)
-                                    last_data.append(row)
+                                if mobile_data and mobile_data.get('empty') != 'no elements':
+                                    data = mobile_data.get('endpoint')
+                                    for endpoint in data:
+                                        for _key, value in endpoint.items():
+                                            if True:
+                                                cx_name = value.get('name', 'NA')
+                                                match = re.search(r'http(\d+)', cx_name)
+                                                res_no = match.group(1) if match else 'NA'
+                                                hostname = self.local_realm.json_get("resource/1/%s/list?fields=user" % (res_no))
+                                                hostname = hostname["resource"]["user"]
+                                                pass_url = value.get('total-urls', 0)
+                                                total_urls.append(pass_url)
+                                                uc_min.append(value.get('uc-min', 0.0))
+                                                uc_avg.append(value.get('uc-avg', 0.0))
+                                                uc_max.append(value.get('uc-max', 0.0))
+                                                total_err.append(value.get('total-err', 0))
+                                                hostnames.append(hostname)
+                                                cx_names.append(cx_name)
+                                                if hostname not in self.device_targets:
+                                                    self.device_targets[hostname] = initial_target_urls
+                                                # Check if the mobile device reaches the current target URL count
+                                                if pass_url >= self.device_targets[hostname] and hostname not in time_taken:
+                                                    time_taken[hostname] = (datetime.now() - start_time).total_seconds()
+                                                if self.do_robo:
+                                                    self.robo_mobile_data[hostname] = {
+                                                        'current_angle': self.current_angle,
+                                                        'current_cord': self.current_cord,
+                                                        'rotations_enabled': self.rotations_enabled,
+                                                        'total_urls': pass_url
+                                                    }
+                                    # Save each mobile device's data to the Cache
+                                    for i in range(len(total_urls)):
+                                        row = {
+                                            'device_type': 'mobile',
+                                            'device_name': hostnames[i],
+                                            'total_urls': total_urls[i],
+                                            'uc_min': float(uc_min[i]) / 1000,
+                                            'uc_avg': float(uc_avg[i]) / 1000,
+                                            'uc_max': float(uc_max[i]) / 1000,
+                                            'total_err': total_err[i],
+                                            'time_to_target_urls': time_taken.get(hostnames[i], 0.0),
+                                            'cx_name': cx_names[i],
+                                            'angle': angle
+                                        }
+                                        self.mobile_stats[cx_names[i]] = row
                             # Handle the case where only one CX endpoint is created
                             elif len(self.created_cx.keys()) == 1:
-                                endpoint = mobile_data.get('endpoint', {})
-                                if endpoint:
+                                if mobile_data and mobile_data.get('empty') != 'no elements':
+                                    endpoint = mobile_data.get('endpoint', {})
                                     cx_name = endpoint.get('name', 'NA')
                                     match = re.search(r'http(\d+)', cx_name)
                                     res_no = match.group(1) if match else 'NA'
@@ -3394,8 +3398,10 @@ class RealBrowserTest(Realm):
                                             'rotations_enabled': self.rotations_enabled,
                                             'total_urls': pass_url
                                         }
-                                    writer.writerow(row)
-                                    last_data.append(row)
+                                    self.mobile_stats[cx_name] = row
+                            for _, row in self.mobile_stats.items():
+                                writer.writerow(row)
+                                last_data.append(row)
                     self.monitor_endpoint_status_changes()
                     time.sleep(1)
                 except Exception as e:
