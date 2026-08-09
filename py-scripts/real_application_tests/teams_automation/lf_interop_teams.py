@@ -1012,8 +1012,6 @@ class TeamsAutomation(Realm):
                 "ap", "-"
             )  # 'ap' is usually BSSID
 
-        print(lf_stats_map)
-
         return lf_stats_map
 
     def stop_previous_flask_server(self):
