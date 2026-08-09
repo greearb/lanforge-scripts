@@ -776,11 +776,26 @@ class RealBrowserTest(Realm):
         # Start the CX for HTTP profile
         self.http_profile.start_cx()
         self.generic_endps_profile.start_cx()
+        # Longest we wait for a single CX to reach 'Run', and how often we poll while waiting.
+        cx_start_timeout = 30
+        cx_start_poll_interval = 1
         try:
             # Loop through each CX endpoint and wait until it reaches the 'Run' state
             for i in self.created_cx.keys():
-                while self.local_realm.json_get("/cx/" + i).get(i).get('state') != 'Run':
-                    continue
+                wait_start = time.time()
+                while True:
+                    cx_response = self.local_realm.json_get("/cx/" + i)
+                    cx_data = cx_response.get(i) if cx_response else None
+                    cx_state = cx_data.get('state') if cx_data else None
+                    if cx_state == 'Run':
+                        break
+                    if time.time() - wait_start >= cx_start_timeout:
+                        logging.error(
+                            f"CX {i} did not reach the 'Run' state within {cx_start_timeout} seconds "
+                            f"(last reported state: {cx_state}). Aborting test."
+                        )
+                        exit(1)
+                    time.sleep(cx_start_poll_interval)
         except Exception as e:
             logging.info(e)
             pass
@@ -2052,6 +2067,13 @@ class RealBrowserTest(Realm):
             elif len(self.incremental) == 1 and len(keys) > 1:
                 incremental_value = self.incremental[0]
                 max_index = len(keys)
+                # A non-positive step would never advance index, looping forever.
+                if incremental_value <= 0:
+                    logging.error(
+                        f"Invalid incremental value {incremental_value}; it must be greater than 0. "
+                        "Aborting test."
+                    )
+                    exit(1)
                 while index < max_index:
                     next_index = min(index + incremental_value, max_index)
                     cx_order_list.append(keys[index:next_index])
@@ -2431,8 +2453,16 @@ class RealBrowserTest(Realm):
     def updating_webui_runningjson(self, obj):
         data = {}
         file_path = self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name)
-        # Wait until the file exists
+        # Wait until the file exists, but don't hang forever if the WebUI never creates it.
+        running_json_timeout = 60
+        wait_start = time.time()
         while not os.path.exists(file_path):
+            if time.time() - wait_start >= running_json_timeout:
+                logging.error(
+                    f"Running Json file {file_path} was not created within "
+                    f"{running_json_timeout} seconds. Aborting test."
+                )
+                exit(1)
             logging.info("Waiting for the Running Json file to be created")
             time.sleep(1)
         logging.info("Running Json file created")
