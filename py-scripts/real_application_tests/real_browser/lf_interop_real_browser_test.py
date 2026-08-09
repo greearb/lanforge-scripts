@@ -1306,6 +1306,8 @@ class RealBrowserTest(Realm):
         are not logged or written again.
         """
         csv_file = "endpoint_status_changes.csv"
+        gen_url = "generic/%s/list?fields=name,status" % (",".join(set(self.generic_endps_profile.created_endp))) if self.generic_endps_profile.created_endp else ""
+        layer4_url = "layer4/%s/list?fields=name,status" % (",".join(self.created_cx.keys())) if self.created_cx else ""
         created_endp = [(e, "generic") for e in self.generic_endps_profile.created_endp] + \
             [(e, "layer4") for e in self.created_cx.keys()]
 
@@ -1335,9 +1337,32 @@ class RealBrowserTest(Realm):
             )
             exit(1)
 
-        for gen_endp, generic_endpoint in endpoint_data.items():
-            url = f"/{api}/{gen_endp}"
-            keys = list(generic_endpoint.keys())
+        def get_keys(resp):
+            if not resp or resp.get("empty") == "no elements":
+                return []
+            items = resp.get("endpoints") or resp.get("endpoint") or []
+            if isinstance(items, dict):
+                items = [items]
+            keys = []
+            for item in items:
+                if isinstance(item, dict):
+                    if "name" in item:
+                        keys.append(item["name"])
+                    else:
+                        keys.extend([k for k, v in item.items() if isinstance(v, dict)])
+            return keys
+
+        gen_resp = self.json_get(gen_url) if gen_url else None
+        layer4_resp = self.json_get(layer4_url) if layer4_url else None
+        active_keys_map = {
+            "generic": get_keys(gen_resp),
+            "layer4": get_keys(layer4_resp)
+        }
+
+        for gen_endp, api in created_endp:
+            generic_endpoint = endpoint_data.get(gen_endp, {})
+            url = layer4_url if api == "layer4" else gen_url
+            keys = active_keys_map.get(api, [])
             if generic_endpoint.get("empty") == "no elements":
                 current_status = "Not Found / Deleted"
                 if gen_endp not in self.missing_cx_logged:
@@ -2376,6 +2401,8 @@ class RealBrowserTest(Realm):
                             if len(self.created_cx.keys()) > 1:
                                 if mobile_data and mobile_data.get('empty') != 'no elements':
                                     data = mobile_data['endpoint']
+                                    if isinstance(data, dict):
+                                        data = [{data.get('name', 'endp'): data}]
                                     for endpoint in data:
                                         for _key, value in endpoint.items():
                                             if True:
