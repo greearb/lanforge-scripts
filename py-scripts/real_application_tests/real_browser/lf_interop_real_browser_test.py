@@ -240,6 +240,7 @@ class RealBrowserTest(Realm):
         self.app.logger.setLevel(logging.WARNING)
         self.laptop_stats = {}
         self.mobile_stats = {}
+        self.missing_cx_logged = set()
         self.user_name = None
         self.hw = None
         self.mac_list = None
@@ -1323,7 +1324,7 @@ class RealBrowserTest(Realm):
                 break
 
             logger.warning(
-                "No data received for any of the created endpoints; retrying..."
+                f"All {len(created_endp)} generic endpoint(s) are unreachable - retrying... {int(time.time() - start_time)}s/{wait_time}s before giving up and stopping the test."
             )
             time.sleep(poll_interval)
 
@@ -1335,29 +1336,46 @@ class RealBrowserTest(Realm):
             exit(1)
 
         for gen_endp, generic_endpoint in endpoint_data.items():
+            url = f"/{api}/{gen_endp}"
+            keys = list(generic_endpoint.keys())
             if generic_endpoint.get("empty") == "no elements":
                 current_status = "Not Found / Deleted"
+                if gen_endp not in self.missing_cx_logged:
+                    logger.warning(
+                        f"CX '{gen_endp}' is missing from the monitoring data, the device may have disconnected "
+                        f"or its connection was not created. Continuing the test with the remaining devices.\n"
+                        f"URL     : {url}\n"
+                        f"Response keys: {keys}"
+                    )
+                    self.missing_cx_logged.add(gen_endp)
             else:
                 current_status = generic_endpoint["endpoint"].get("status", "")
+                if gen_endp in self.missing_cx_logged:
+                    logger.info(f"CX '{gen_endp}' data is available again.")
+                    self.missing_cx_logged.discard(gen_endp)
+
             previous_status = self.endpoint_last_status.get(gen_endp)
 
             if current_status == previous_status:
                 continue
 
-            logger.info(
-                f"Endpoint {gen_endp} status changed to: {current_status}"
-            )
+            if current_status != "Not Found / Deleted":
+                logger.info(
+                    f"Endpoint {gen_endp} status changed to: {current_status}"
+                )
 
             file_exists = os.path.isfile(csv_file) and os.path.getsize(csv_file) > 0
             with open(csv_file, mode="a", newline="") as f:
                 writer = csv.writer(f)
                 if not file_exists:
-                    writer.writerow(["timestamp", "endpoint_name", "status"])
+                    writer.writerow(["timestamp", "endpoint_name", "status", "url", "response_keys"])
                 writer.writerow(
                     [
                         datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
                         gen_endp,
                         current_status,
+                        url,
+                        keys
                     ]
                 )
 
