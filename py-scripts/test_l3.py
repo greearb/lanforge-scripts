@@ -2116,7 +2116,7 @@ class L3VariableTime(Realm):
                 if etype == "mc_udp" or etype == "mc_udp6":
                     # TODO add multicast to name be passed in
                     for _tos in self.tos:
-                        logger.info("Creating Multicast connections for endpoint type:  {etype} TOS: {tos}".format(
+                        logger.info("Creating Multicast upstream connections for endpoint type:  {etype} TOS: {tos}".format(
                             etype=etype, tos=_tos))
                         self.multicast_profile.create_mc_tx(
                             etype, self.side_b, tos=_tos, add_tos_to_name=True)
@@ -7935,7 +7935,7 @@ class L3VariableTime(Realm):
                 logger.info("Test stopped by user via WebGUI. Exiting monitoring.")
                 return [] if return_endpoint_data else False
             if count > 1:
-                logger.info("Attempt {} of {} to check endpoint availability".format(count, no_of_attempts))
+                logger.info("Attempt {} of {} to check endpoints availability".format(count, no_of_attempts))
             endp_url = "endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll,run"
             endp_list = self.json_get(endp_url, debug_=True)
             if not endp_list:
@@ -7959,24 +7959,24 @@ class L3VariableTime(Realm):
             not_run = len(not_running_endps)
             if missed == len(expected_endps):
                 if not return_endpoint_data:
-                    logger.error("All expected tx endpoints ({}) are missing from the monitoring data. So we are checking again".format(
+                    logger.error("All expected tx endpoints ({}) are missing from the monitoring data. Retrying... Before giving up and stopping test".format(
                         ", ".join(missing_endps)))
                 else:
-                    logger.error("All expected rx endpoints ({}) are missing from the monitoring data. But we are checking again".format(
+                    logger.error("All expected rx endpoints ({}) are missing from the monitoring data. Retrying... Before giving up and stopping test".format(
                         ", ".join(missing_endps)))
             elif not_run == len(expected_endps):
                 if not return_endpoint_data:
-                    logger.error("All expected endpoints ({}) are present but not running. So we are checking again".format(
+                    logger.error("All expected endpoints ({}) are present but not running. Retrying... Before giving up and stopping test".format(
                         ", ".join(not_running_endps)))
                 else:
-                    logger.error("All expected endpoints ({}) are present but not running. But we are checking again".format(
+                    logger.error("All expected endpoints ({}) are present but not running. Retrying... Before giving up and stopping test".format(
                         ", ".join(not_running_endps)))
             elif missed + not_run == len(expected_endps):
                 if not return_endpoint_data:
-                    logger.error("Some expected endpoints ({}) are missing and some endpoints ({}) are not running. So we are checking again".format(
+                    logger.error("Some expected endpoints ({}) are missing and some endpoints ({}) are not running. Retrying... Before giving up and stopping test".format(
                         ", ".join(missing_endps), ", ".join(not_running_endps)))
                 else:
-                    logger.error("Some expected endpoints ({}) are missing and some endpoints ({}) are not running. But we are checking again".format(
+                    logger.error("Some expected endpoints ({}) are missing and some endpoints ({}) are not running. Retrying... Before giving up and stopping test".format(
                         ", ".join(missing_endps), ", ".join(not_running_endps)))
             else:
                 return endpoint if return_endpoint_data else True
@@ -8030,7 +8030,7 @@ class L3VariableTime(Realm):
                 logger.info("Test stopped by user via WebGUI. Exiting monitoring.")
                 return False
             if count > 1:
-                logger.info("Attempt {} of {} to check cross-connect availability".format(count, no_of_attempts))
+                logger.info("Attempt {} of {} to check cross-connections availability".format(count, no_of_attempts))
             cx_list = self.json_get("cx/all", debug_=True)
             if not cx_list:
                 logger.error(
@@ -8048,13 +8048,13 @@ class L3VariableTime(Realm):
             missed = len(self.missing_cx_logged)
             not_run = len(self.not_running_cx_logged)
             if missed == len(expected_cxs):
-                logger.error("All expected cross-connects ({}) are missing from the monitoring data. So we are checking again".format(
+                logger.error("All expected cross-connects ({}) are missing from the monitoring data. Retrying... Before giving up and stopping test".format(
                     ", ".join(self.missing_cx_logged)))
             elif not_run == len(expected_cxs):
-                logger.error("All expected cross-connects ({}) are present but not running. So we are checking again".format(
+                logger.error("All expected cross-connects ({}) are present but not running. Retrying... Before giving up and stopping test".format(
                     ", ".join(self.not_running_cx_logged)))
             elif missed + not_run == len(expected_cxs):
-                logger.error("Some expected cross-connects ({}) are missing and some cross-connects ({}) are not running. So we are checking again".format(
+                logger.error("Some expected cross-connects ({}) are missing and some cross-connects ({}) are not running. Retrying... Before giving up and stopping test".format(
                     ", ".join(self.missing_cx_logged), ", ".join(self.not_running_cx_logged)))
             else:
                 return True
