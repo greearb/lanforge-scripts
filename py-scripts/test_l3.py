@@ -7608,8 +7608,8 @@ class L3VariableTime(Realm):
 
     def webgui_finalize(self, coord=None, rot=None):
         """Test report finalization run when in WebGUI mode."""
-        print(f"DEBUG: result_dir = {self.result_dir}")
-        print(f"DEBUG: coord = {coord}, rot = {rot}")
+        logger.debug("Result directory: %s", self.result_dir)
+        logger.debug("Coordinate: %s, rotation: %s", coord, rot)
 
         if not self.overall:
             logger.warning("webgui_finalize() called but self.overall is empty. Creating default entry.")
@@ -7645,24 +7645,24 @@ class L3VariableTime(Realm):
             filename = 'overall_multicast_throughput.csv'
 
         filepath = os.path.join(self.result_dir, filename)
-        print(f"DEBUG: Saving to {filepath}")
+        logger.debug("Saving WebGUI results to %s", filepath)
 
         try:
             df1.to_csv(filepath, index=False)
-            print(f"INFO: Successfully saved results to {filepath}")
+            logger.info("Successfully saved WebGUI results to %s", filepath)
         except PermissionError as e:
             # Try alternative location if permission denied
-            print(f"ERROR: Permission denied for {filepath}. Trying alternative...")
+            logger.warning("Permission denied for %s: %s. Trying an alternative location.", filepath, e)
             alt_dir = os.path.join(os.path.expanduser("~"), "test_results")
             os.makedirs(alt_dir, exist_ok=True)
             alt_path = os.path.join(alt_dir, filename)
             df1.to_csv(alt_path, index=False)
-            print(f"INFO: Saved to alternative location: {alt_path}")
+            logger.info("Saved WebGUI results to alternative location: %s", alt_path)
         except Exception as e:
-            print(f"ERROR: Failed to save CSV: {e}")
+            logger.error("Failed to save WebGUI results to %s: %s", filepath, e)
             # Save to current directory as last resort
             df1.to_csv(filename, index=False)
-            print(f"INFO: Saved to current directory: {filename}")
+            logger.info("Saved WebGUI results to current directory: %s", filename)
 
     def get_pass_fail_list(self, tos, up, down):
         res_list = []
