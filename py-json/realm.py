@@ -487,6 +487,13 @@ class Realm(LFCliBase):
         }
         self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
+    def start_cx(self, cx_name):
+        self.json_post("/cli-json/set_cx_state", {
+            "test_mgr": "ALL",
+            "cx_name": cx_name,
+            "cx_state": "RUNNING"
+        }, debug_=self.debug)
+
     def stop_cx(self, cx_name):
         self.json_post("/cli-json/set_cx_state", {
             "test_mgr": "ALL",
@@ -501,6 +508,78 @@ class Realm(LFCliBase):
             "cx_name": cx_name,
             "cx_state": "QUIESCE"
         }, debug_=self.debug)
+
+    def get_all_cxs(self):
+        """Get all Cross-connection names."""
+        cx_names = []
+        ignore_keys = {'handler', 'uri', 'warnings'}
+
+        cx_json = self.json_get("cx")
+        if cx_json and 'empty' not in cx_json and isinstance(cx_json, dict):
+            for key in cx_json.keys():
+                if key not in ignore_keys:
+                    cx_names.append(key)
+
+        return cx_names
+
+    def get_all_stations(self, prefix="sta"):
+        """Get all station names with a specific prefix.
+
+        Args:
+            prefix: Station prefix.
+
+        Returns:
+            List of station names with the specified prefix.
+        """
+        sta_names = []
+        try:
+            response = self.json_get("/port/?fields=alias")
+            if response and 'interfaces' in response and isinstance(response['interfaces'], list):
+                for interface_item in response['interfaces']:
+                    if isinstance(interface_item, dict):
+                        for alias in interface_item.keys():
+                            info = self.name_to_eid(alias)
+                            port_name = str(info[2])
+                            if port_name.startswith(prefix) or ('sta' in port_name):
+                                sta_names.append(alias)
+        except Exception as e:
+            logger.warning("Error querying stations from LANforge: %s", e)
+
+        return sta_names
+
+    def is_port_exists(self, target, existing_ports):
+        """Verify the target or given port present or not.
+
+        Args:
+            target: The port name to check.
+            existing_ports: List of existing port names.
+
+        Returns:
+            The matching port name if found, otherwise None.
+        """
+        target_clean = str(target).strip()
+        for port in existing_ports:
+            port_clean = str(port).strip()
+            if target_clean == port_clean or port_clean.endswith(f".{target_clean}") or target_clean in port_clean:
+                return port_clean
+        return None
+
+    def is_cx_exists(self, target, existing_cxs):
+        """Verify the target or given cross-connection present or not.
+
+        Args:
+            target: The cross-connection name to check.
+            existing_cxs: List of existing cross-connection names.
+
+        Returns:
+            The matching cross-connection name if found, otherwise None.
+        """
+        target_clean = str(target).strip()
+        for cx in existing_cxs:
+            cx_clean = str(cx).strip()
+            if target_clean == cx_clean or target_clean in cx_clean:
+                return cx_clean
+        return None
 
     def cleanup_cxe_prefix(self, prefix):
         cx_list = self.cx_list()
