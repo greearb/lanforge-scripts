@@ -23,7 +23,9 @@ class TeamsAndroidApp:
         serial=None,
         audio=True,
         video=True,
+        prejoin_timeout=180,
     ):
+        self.prejoin_timeout = prejoin_timeout
         self.host = host
         self.client = AdbClient(host=self.host, port=port)
         self.serial = serial
@@ -46,13 +48,19 @@ class TeamsAndroidApp:
         )
         os.makedirs(mobile_log_dir, exist_ok=True)
 
+        log_name = (
+            f"{self.participant_name}_{self.serial}.log"
+            if self.serial
+            else f"{self.participant_name}.log"
+        )
+
         # Configure the logging system
         logging.basicConfig(
             level=logging.INFO,
             format="%(asctime)s - %(levelname)s - %(message)s",
             handlers=[
                 logging.FileHandler(
-                    os.path.join(mobile_log_dir, f"{self.participant_name}.log"),
+                    os.path.join(mobile_log_dir, log_name),
                     mode="w",
                 ),  # Writes to file
                 logging.StreamHandler(sys.stdout),  # Writes to terminal
@@ -188,23 +196,55 @@ class TeamsAndroidApp:
         with open(f"dump_{self.d.serial}.xml", "w", encoding="utf-8") as f:
             f.write(xml)
 
-    def enable_audio(self):
-        wait_count = 0
-        while (
-            "Mic muted" not in self.d.dump_hierarchy()
-            and "Mic unmuted" not in self.d.dump_hierarchy()
-        ):
-            time.sleep(1)
-            self.logger.info(
-                f"Waiting for Mute/Unmute button to be available for device {self.participant_name} ({self.serial})..."
+    def _hierarchy(self):
+        """One UI dump. A failed dump means 'nothing readable on screen yet'."""
+        try:
+            return self.d.dump_hierarchy()
+        except Exception as e:
+            self.logger.debug(
+                f"[{self.participant_name} ({self.serial})] UI dump failed: {e}"
             )
-            wait_count += 1
-            if wait_count > 60:
-                self.logger.error(
-                    f"Mute/Unmute button not found in time for device {self.participant_name} ({self.serial})"
+            return ""
+
+    def wait_for_text(self, texts, timeout, what):
+        """Poll the UI until any string in texts appears. Return the hierarchy, or "".
+
+        One dump per poll, and a wall-clock deadline rather than an iteration
+        count. dump_hierarchy() takes seconds on a loading screen, so counting
+        iterations turns a nominal 60s limit into several minutes — which is
+        what made a slow Teams launch look like a hang.
+        """
+        deadline = time.monotonic() + timeout
+        announced_loading = False
+        while True:
+            xml = self._hierarchy()
+            if any(t in xml for t in texts):
+                return xml
+
+            if not announced_loading and ("Hang tight" in xml or "Loading" in xml):
+                # Distinguishes "Teams is still starting" from "the screen we
+                # want never appeared", which read identically in the old logs.
+                self.logger.info(
+                    f"[{self.participant_name} ({self.serial})] Teams is still loading; "
+                    f"waiting for {what}."
                 )
-                return
-        if "Mic unmuted" in self.d.dump_hierarchy():
+                announced_loading = True
+
+            if time.monotonic() >= deadline:
+                self.logger.error(
+                    f"[{self.participant_name} ({self.serial})] {what} did not appear "
+                    f"within {timeout}s."
+                )
+                return ""
+            time.sleep(1)
+
+    def enable_audio(self, timeout=60):
+        xml = self.wait_for_text(
+            ("Mic muted", "Mic unmuted"), timeout, "Mute/Unmute button"
+        )
+        if not xml:
+            return
+        if "Mic unmuted" in xml:
             self.logger.info(
                 f"Audio is already unmuted for device {self.participant_name} ({self.serial})"
             )
@@ -221,23 +261,13 @@ class TeamsAndroidApp:
                     f"[{self.participant_name} ({self.serial})] Un Mute button not found to click."
                 )
 
-    def enable_video(self):
-        count = 0
-        while (
-            "Video is off" not in self.d.dump_hierarchy()
-            and "Video is on" not in self.d.dump_hierarchy()
-        ):
-            time.sleep(1)
-            self.logger.info(
-                f"Waiting for Video Turn on button {self.participant_name} ({self.serial})..."
-            )
-            count += 1
-            if count > 60:
-                self.logger.error(
-                    f"Unable to find Video Turn on Button or Video Turn off Button {self.participant_name} ({self.serial})"
-                )
-                return
-        if "Video is on" in self.d.dump_hierarchy():
+    def enable_video(self, timeout=60):
+        xml = self.wait_for_text(
+            ("Video is off", "Video is on"), timeout, "Video on/off button"
+        )
+        if not xml:
+            return
+        if "Video is on" in xml:
             self.logger.info(
                 f"Video is already on for Device {self.participant_name} - {self.serial}"
             )
@@ -254,7 +284,8 @@ class TeamsAndroidApp:
                     f"[{self.participant_name} ({self.serial})] Video Turn on button not found to click."
                 )
 
-    def join_meeting(self):
+    def _launch_meeting_intent(self):
+        """Hand the meeting link to Teams as a VIEW intent."""
         subprocess.run(
             [
                 "adb",
@@ -271,25 +302,49 @@ class TeamsAndroidApp:
             ]
         )
 
+    def _current_activity(self):
+        """Return the foreground activity name, or "" if it cannot be read."""
+        try:
+            return self.d.app_current().get("activity", "")
+        except Exception as e:
+            self.logger.debug(
+                f"[{self.participant_name} ({self.serial})] app_current failed: {e}"
+            )
+            return ""
+
+    def join_meeting(self):
+        attempts = 3
+        per_attempt = max(30, self.prejoin_timeout // attempts)
+        for attempt in range(1, attempts + 1):
+            self._launch_meeting_intent()
+            if self.wait_for_text(
+                ("Enter name", "Join now"), per_attempt, "Teams pre-join screen"
+            ):
+                break
+            self.logger.warning(
+                f"[{self.participant_name} ({self.serial})] attempt {attempt}/{attempts}: "
+                f"no pre-join screen after {per_attempt}s, still on "
+                f"{self._current_activity() or 'unknown activity'}."
+            )
+            if attempt < attempts:
+                self.d.app_stop("com.microsoft.teams")
+                time.sleep(2)
+        else:
+            self.logger.error(
+                f"[{self.participant_name} ({self.serial})] Teams did not reach the "
+                f"pre-join screen after {attempts} attempts."
+            )
+            sys.exit(1)
+
+        self.enter_participant_name()
+
         if self.video:
             self.enable_video()
         if self.audio:
             self.enable_audio()
 
-        self.enter_participant_name()
-
-        wait_count = 0
-        while "Join now" not in self.d.dump_hierarchy():
-            time.sleep(1)
-            wait_count += 1
-            self.logger.info(
-                f"Waiting for meeting join screen to load on device {self.participant_name} ({self.serial})..."
-            )
-            if wait_count > 60:
-                self.logger.error(
-                    f"Meeting join screen did not load in time for device {self.participant_name} ({self.serial})"
-                )
-                sys.exit(1)
+        if not self.wait_for_text(("Join now",), 60, "Join now button"):
+            sys.exit(1)
 
         join_btn = self.d.xpath('//*[@text="Join now"]')
 
@@ -304,19 +359,9 @@ class TeamsAndroidApp:
             )
             sys.exit(1)
 
-    def enter_participant_name(self):
-        wait_count = 0
-        while "Enter name" not in self.d.dump_hierarchy():
-            time.sleep(1)
-            wait_count += 1
-            self.logger.info(
-                f"Waiting for participant name input field to be available for device {self.participant_name} ({self.serial})..."
-            )
-            if wait_count > 60:
-                self.logger.error(
-                    f"Participant name input field did not appear in time for device {self.participant_name} ({self.serial})"
-                )
-                sys.exit(1)
+    def enter_participant_name(self, timeout=60):
+        if not self.wait_for_text(("Enter name",), timeout, "participant name field"):
+            sys.exit(1)
         name_input = self.d.xpath('//*[@text="Enter name"]')
         if name_input.wait(timeout=20):
             name_input.set_text(self.participant_name)
