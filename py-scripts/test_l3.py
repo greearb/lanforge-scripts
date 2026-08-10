@@ -9534,7 +9534,402 @@ INCLUDE_IN_README: False
                           default='',
                           help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
 
+    # TOOLBOX ARGS
+    optional.add_argument('--toolbox', '--tool_box',
+                          dest='toolbox',
+                          action='store_true',
+                          help='Enable toolbox mode to execute a single building block action and exit immediately.')
+
+    optional.add_argument('--create_station', '--create_stations',
+                          dest='create_station',
+                          action='store_true',
+                          help='Toolbox action: Create stations using specified --radio configuration.')
+
+    optional.add_argument('--stations',
+                          nargs='+',
+                          default=None,
+                          help='Specify station port EIDs / names (comma or space separated, e.g. "1.1.sta1000,1.1.sta10001").')
+
+    optional.add_argument('--build_cxs', '--build_cx', '--build_cx',
+                          dest='build_cxs',
+                          action='store_true',
+                          help='Toolbox action: Build Layer-3 cross-connections between --upstream_port and --stations for specified --endp_type.')
+
+    optional.add_argument('--stop_cx',
+                          nargs='?',
+                          const='all',
+                          default=None,
+                          help='Toolbox action: Stop specified cross-connections (comma-separated list, e.g. "cx_1,cx_2" or "all" [default]).')
+
+    optional.add_argument('--start_cx',
+                          nargs='?',
+                          const='all',
+                          default=None,
+                          help='Toolbox action: Start specified cross-connections (comma-separated list, e.g. "cx_1,cx_2" or "all" [default]).')
+
+    optional.add_argument('--del_cx',
+                          nargs='?',
+                          const='all',
+                          default=None,
+                          help='Toolbox action: Delete specified cross-connections (comma-separated list, e.g. "cx_1,cx_2" or "all" [default]). Also removes associated endpoints.')
+
+    optional.add_argument('--del_stations',
+                          nargs='?',
+                          const='all',
+                          default=None,
+                          help='Toolbox action: Delete specified Wi-Fi stations (comma-separated list, e.g. "sta0000,sta0001" or default: all stations with "sta" prefix).')
+
+    optional.add_argument('--ports_up',
+                          nargs='?',
+                          const='all',
+                          default=None,
+                          help='Toolbox action: Set specified stations/ports admin UP (comma-separated list, e.g. "sta0000,sta0001" or default: all stations with "sta" prefix).')
+
+    optional.add_argument('--ports_down',
+                          nargs='?',
+                          const='all',
+                          default=None,
+                          help='Toolbox action: Set specified stations/ports admin DOWN (comma-separated list, e.g. "sta0000,sta0001" or default: all stations with "sta" prefix).')
+
+
     return parser.parse_args()
+
+
+def handle_toolbox(args):
+    """Execute standalone toolbox actions for LANforge building-block operations.
+
+    Args:
+        args: Parsed command line arguments instance.
+
+    Returns:
+        bool: True if a toolbox action was executed, otherwise False.
+    """
+    if not args.toolbox:
+        return False
+
+    logger.info("Toolbox mode enabled.")
+    lf_realm = Realm(lfclient_host=args.lfmgr, lfclient_port=args.lfmgr_port, debug_=args.debug)
+    action_performed = False
+
+    # Action 1: Station Creation (--create_station)
+    if getattr(args, 'create_station', False):
+        action_performed = True
+        logger.info("Toolbox: Creating station(s)...")
+
+        if not args.radio:
+            logger.warning("Toolbox: --create_station specified, but no --radio configuration provided.")
+        else:
+            radios = args.radio if isinstance(args.radio, list) else [args.radio]
+            sta_offset = int(args.sta_start_offset) if args.sta_start_offset else 0
+            total_created = 0
+
+            for radio_ in radios:
+                radio_info_dict = dict(
+                    map(
+                        lambda x: x.split('=='),
+                        str(radio_).replace('"', '').replace('[', '').replace(']', '').replace("'", "").replace(',', ' ').split()
+                    )
+                )
+                radio_name = radio_info_dict.get('radio', 'wiphy0')
+                num_stations = int(radio_info_dict.get('stations', 1))
+                ssid = radio_info_dict.get('ssid', '')
+                ssid_pw = radio_info_dict.get('ssid_pw', '[BLANK]')
+                security = radio_info_dict.get('security', 'open')
+                wifi_mode = radio_info_dict.get('mode', None)
+
+                logger.info(
+                    "Toolbox: Creating %d station(s) on radio '%s' (SSID: '%s', Security: '%s', Start Offset: %d)...",
+                    num_stations, radio_name, ssid, security, sta_offset
+                )
+
+                station_profile = lf_realm.new_station_profile()
+                station_profile.lfclient_url = lf_realm.lfclient_url
+                station_profile.ssid = ssid
+                station_profile.ssid_pass = ssid_pw
+                station_profile.security = security
+                if wifi_mode is not None:
+                    station_profile.mode = wifi_mode
+
+                station_list = LFUtils.portNameSeries(
+                    prefix_="sta",
+                    start_id_=sta_offset,
+                    end_id_=sta_offset + num_stations - 1,
+                    padding_number_=10000,
+                    radio=radio_name
+                )
+
+                station_profile.use_security(security, ssid, ssid_pw)
+                station_profile.create(
+                    radio=radio_name,
+                    sta_names_=station_list,
+                    debug=args.debug,
+                    up_=True
+                )
+
+                for sta in station_list:
+                    lf_realm.admin_up(sta)
+
+                sta_offset += 1000
+                total_created += num_stations
+
+            logger.info("Toolbox: Successfully created %d station(s).", total_created)
+
+    # Action 2: Layer-3 Cross-Connection Building (--build_cxs)
+    if getattr(args, 'build_cxs', False) or getattr(args, 'build_cx', False):
+        action_performed = True
+        logger.info("Toolbox: Building Layer-3 cross-connection(s)...")
+        if not args.stations:
+            logger.warning("Toolbox: --build_cxs specified, but no --stations provided.")
+        else:
+            stations = []
+            st_raw = args.stations if isinstance(args.stations, list) else [args.stations]
+            for s in st_raw:
+                cleaned = str(s).replace('[', '').replace(']', '').replace("'", '').replace('"', '').split(',')
+                for item in cleaned:
+                    if item.strip():
+                        stations.append(item.strip())
+
+            upstream_port = args.upstream_port
+            endp_types = args.endp_type if isinstance(args.endp_type, list) else [args.endp_type] if args.endp_type else ["lf_udp"]
+            tos_list = args.tos if isinstance(args.tos, list) else [args.tos] if args.tos else ["BE"]
+
+            cx_profile = lf_realm.new_l3_cx_profile()
+            cx_profile.host = args.lfmgr
+            cx_profile.port = args.lfmgr_port
+            cx_profile.side_a_min_bps = args.side_a_min_bps if hasattr(args, 'side_a_min_bps') else "256000"
+            cx_profile.side_a_max_bps = cx_profile.side_a_min_bps
+            cx_profile.side_b_min_bps = args.side_b_min_bps if getattr(args, 'side_b_min_bps', None) else "256000"
+            cx_profile.side_b_max_bps = cx_profile.side_b_min_bps
+
+            for etype in endp_types:
+                for _tos in tos_list:
+                    logger.info("Creating Layer-3 connections for endpoint type: %s, TOS: %s between upstream '%s' and stations %s", etype, _tos, upstream_port, stations)
+                    these_cx, these_endp = cx_profile.create(
+                        endp_type=etype,
+                        side_a=stations,
+                        side_b=upstream_port,
+                        sleep_time=0,
+                        tos=_tos,
+                        add_tos_to_name=True
+                    )
+                    logger.info("Created Layer-3 cross-connections: %s", these_cx)
+
+    # Action 3: Stop Cross Connections (--stop_cx)
+    if args.stop_cx is not None:
+        action_performed = True
+        target_cxs = str(args.stop_cx).strip()
+        existing_cxs = lf_realm.get_all_cxs()
+
+        if not target_cxs or target_cxs.lower() == 'all':
+            logger.info("Toolbox: Stopping all cross-connections ('all')...")
+            if not existing_cxs:
+                logger.warning("No cross-connection stopped due to unavailable")
+            else:
+                logger.info("Found %d cross-connection(s): %s", len(existing_cxs), existing_cxs)
+                for cx_name in existing_cxs:
+                    logger.info("Stopping cross-connection '%s'", cx_name)
+                    lf_realm.stop_cx(cx_name)
+                logger.info("Successfully stopped %d cross-connection(s).", len(existing_cxs))
+        else:
+            cx_list = [c.strip() for c in target_cxs.split(',') if c.strip()]
+            logger.info("Toolbox: Stopping specified cross-connections: %s", cx_list)
+            stopped_count = 0
+            for cx_name in cx_list:
+                matched_cx = lf_realm.is_cx_exists(cx_name, existing_cxs)
+                if matched_cx:
+                    logger.info("Stopping cross-connection '%s'", matched_cx)
+                    lf_realm.stop_cx(matched_cx)
+                    stopped_count += 1
+                else:
+                    logger.warning("No cross-connection stopped due to unavailable: '%s'", cx_name)
+
+            if stopped_count == 0:
+                logger.warning("No cross-connection stopped due to unavailable")
+            else:
+                logger.info("Completed stopping %d cross-connection(s).", stopped_count)
+
+    # Action 4: Start Cross Connections (--start_cx)
+    if args.start_cx is not None:
+        action_performed = True
+        target_cxs = str(args.start_cx).strip()
+        existing_cxs = lf_realm.get_all_cxs()
+
+        if not target_cxs or target_cxs.lower() == 'all':
+            logger.info("Toolbox: Starting all cross-connections ('all')...")
+            if not existing_cxs:
+                logger.warning("No cross-connection started due to unavailable")
+            else:
+                logger.info("Found %d cross-connection(s): %s", len(existing_cxs), existing_cxs)
+                for cx_name in existing_cxs:
+                    logger.info("Starting cross-connection '%s'", cx_name)
+                    lf_realm.start_cx(cx_name)
+                logger.info("Successfully started %d cross-connection(s).", len(existing_cxs))
+        else:
+            cx_list = [c.strip() for c in target_cxs.split(',') if c.strip()]
+            logger.info("Toolbox: Starting specified cross-connections: %s", cx_list)
+            started_count = 0
+            for cx_name in cx_list:
+                matched_cx = lf_realm.is_cx_exists(cx_name, existing_cxs)
+                if matched_cx:
+                    logger.info("Starting cross-connection '%s'", matched_cx)
+                    lf_realm.start_cx(matched_cx)
+                    started_count += 1
+                else:
+                    logger.warning("No cross-connection started due to unavailable: '%s'", cx_name)
+
+            if started_count == 0:
+                logger.warning("No cross-connection started due to unavailable")
+            else:
+                logger.info("Completed starting %d cross-connection(s).", started_count)
+
+    # Action 5: Delete Cross Connections (--del_cx)
+    if args.del_cx is not None:
+        action_performed = True
+        target_cxs = str(args.del_cx).strip()
+        existing_cxs = lf_realm.get_all_cxs()
+
+        if not target_cxs or target_cxs.lower() == 'all':
+            logger.info("Toolbox: Deleting all cross-connections ('all')...")
+            if not existing_cxs:
+                logger.warning("No cross-connection deleted due to unavailable")
+            else:
+                logger.info("Found %d cross-connection(s) to delete: %s", len(existing_cxs), existing_cxs)
+                for cx_name in existing_cxs:
+                    logger.info("Deleting cross-connection '%s'", cx_name)
+                    lf_realm.rm_cx(cx_name)
+                    lf_realm.rm_endp(cx_name + "-A")
+                    lf_realm.rm_endp(cx_name + "-B")
+                logger.info("Successfully deleted %d cross-connection(s).", len(existing_cxs))
+        else:
+            cx_list = [c.strip() for c in target_cxs.split(',') if c.strip()]
+            logger.info("Toolbox: Deleting specified cross-connections: %s", cx_list)
+            deleted_count = 0
+            for cx_name in cx_list:
+                matched_cx = lf_realm.is_cx_exists(cx_name, existing_cxs)
+                if matched_cx:
+                    logger.info("Deleting cross-connection '%s'", matched_cx)
+                    lf_realm.rm_cx(matched_cx)
+                    lf_realm.rm_endp(matched_cx + "-A")
+                    lf_realm.rm_endp(matched_cx + "-B")
+                    deleted_count += 1
+                else:
+                    logger.warning("No cross-connection deleted due to unavailable: '%s'", cx_name)
+
+            if deleted_count == 0:
+                logger.warning("No cross-connection deleted due to unavailable")
+            else:
+                logger.info("Completed deleting %d cross-connection(s).", deleted_count)
+
+    # Action 6: Delete Stations (--del_stations)
+    if args.del_stations is not None:
+        action_performed = True
+        target_stas = str(args.del_stations).strip()
+        existing_stas = lf_realm.get_all_stations(prefix="sta")
+
+        if not target_stas or target_stas.lower() == 'all':
+            logger.info("Toolbox: Deleting all stations with 'sta' prefix...")
+            if not existing_stas:
+                logger.warning("No stations deleted due to unavailable")
+            else:
+                logger.info("Found %d station(s) to delete: %s", len(existing_stas), existing_stas)
+                for sta_name in existing_stas:
+                    logger.info("Deleting station '%s'", sta_name)
+                    lf_realm.admin_down(sta_name)
+                    lf_realm.rm_port(sta_name)
+                logger.info("Successfully deleted %d station(s).", len(existing_stas))
+        else:
+            sta_list = [s.strip() for s in target_stas.split(',') if s.strip()]
+            logger.info("Toolbox: Deleting specified stations: %s", sta_list)
+            deleted_count = 0
+            for sta_name in sta_list:
+                matched_port = lf_realm.is_port_exists(sta_name, existing_stas)
+                if matched_port:
+                    logger.info("Deleting station '%s'", matched_port)
+                    lf_realm.admin_down(matched_port)
+                    lf_realm.rm_port(matched_port)
+                    deleted_count += 1
+                else:
+                    logger.warning("No stations deleted due to unavailable: '%s'", sta_name)
+
+            if deleted_count == 0:
+                logger.warning("No stations deleted due to unavailable")
+            else:
+                logger.info("Completed deleting %d station(s).", deleted_count)
+
+    # Action 7: Ports Admin UP (--ports_up)
+    if args.ports_up is not None:
+        action_performed = True
+        target_stas = str(args.ports_up).strip()
+        existing_stas = lf_realm.get_all_stations(prefix="sta")
+
+        if not target_stas or target_stas.lower() == 'all':
+            logger.info("Toolbox: Setting all stations with 'sta' prefix admin UP...")
+            if not existing_stas:
+                logger.warning("No ports set admin up due to unavailable")
+            else:
+                logger.info("Found %d station(s) to set admin UP: %s", len(existing_stas), existing_stas)
+                for sta_name in existing_stas:
+                    logger.info("Setting station '%s' admin UP", sta_name)
+                    lf_realm.admin_up(sta_name)
+                logger.info("Successfully set %d station(s) admin UP.", len(existing_stas))
+        else:
+            sta_list = [s.strip() for s in target_stas.split(',') if s.strip()]
+            logger.info("Toolbox: Setting specified stations admin UP: %s", sta_list)
+            up_count = 0
+            for sta_name in sta_list:
+                matched_port = lf_realm.is_port_exists(sta_name, existing_stas)
+                if matched_port:
+                    logger.info("Setting station '%s' admin UP", matched_port)
+                    lf_realm.admin_up(matched_port)
+                    up_count += 1
+                else:
+                    logger.warning("No ports set admin up due to unavailable: '%s'", sta_name)
+
+            if up_count == 0:
+                logger.warning("No ports set admin up due to unavailable")
+            else:
+                logger.info("Completed setting %d station(s) admin UP.", up_count)
+
+    # Action 8: Ports Admin DOWN (--ports_down)
+    if args.ports_down is not None:
+        action_performed = True
+        target_stas = str(args.ports_down).strip()
+        existing_stas = lf_realm.get_all_stations(prefix="sta")
+
+        if not target_stas or target_stas.lower() == 'all':
+            logger.info("Toolbox: Setting all stations with 'sta' prefix admin DOWN...")
+            if not existing_stas:
+                logger.warning("No ports set admin down due to unavailable")
+            else:
+                logger.info("Found %d station(s) to set admin DOWN: %s", len(existing_stas), existing_stas)
+                for sta_name in existing_stas:
+                    logger.info("Setting station '%s' admin DOWN", sta_name)
+                    lf_realm.admin_down(sta_name)
+                logger.info("Successfully set %d station(s) admin DOWN.", len(existing_stas))
+        else:
+            sta_list = [s.strip() for s in target_stas.split(',') if s.strip()]
+            logger.info("Toolbox: Setting specified stations admin DOWN: %s", sta_list)
+            down_count = 0
+            for sta_name in sta_list:
+                matched_port = lf_realm.is_port_exists(sta_name, existing_stas)
+                if matched_port:
+                    logger.info("Setting station '%s' admin DOWN", matched_port)
+                    lf_realm.admin_down(matched_port)
+                    down_count += 1
+                else:
+                    logger.warning("No ports set admin down due to unavailable: '%s'", sta_name)
+
+            if down_count == 0:
+                logger.warning("No ports set admin down due to unavailable")
+            else:
+                logger.info("Completed setting %d station(s) admin DOWN.", down_count)
+
+    if action_performed:
+        logger.info("Toolbox action completed successfully.")
+        return True
+
+    logger.warning("Toolbox flag specified, but no valid toolbox action provided.")
+    return True
 
 
 # Starting point for running this from cmd line.
@@ -9698,6 +10093,10 @@ and generate a report.
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
+
+    if args.toolbox:
+        handle_toolbox(args)
+        sys.exit(0)
 
     validate_args(args)
     endp_input_list = []
