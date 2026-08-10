@@ -1487,6 +1487,13 @@ class L3VariableTime(Realm):
         # if it is a dataplane test the side_a is not None and an ethernet port
         # if side_a is None then side_a is radios
         if not self.dataplane:
+            # Use existing station list is similiar to no rebuild
+            if self.use_existing_station_lists:
+                station_profile = self.new_station_profile()
+                for existing_station_list in self.existing_station_lists:
+                    station_profile.station_names.append(existing_station_list)
+
+                self.station_profiles.append(station_profile)
             for (
                     _radio_,
                     ssid_,
@@ -1628,13 +1635,6 @@ class L3VariableTime(Realm):
                                                 reset_port_max_time=reset_port_max_time_sec)
                 self.station_profiles.append(station_profile)
 
-            # Use existing station list is similiar to no rebuild
-            if self.use_existing_station_lists:
-                station_profile = self.new_station_profile()
-                for existing_station_list in self.existing_station_lists:
-                    station_profile.station_names.append(existing_station_list)
-
-                self.station_profiles.append(station_profile)
         else:
             # Dataplane style test
             #
@@ -2122,8 +2122,8 @@ class L3VariableTime(Realm):
                             etype, self.side_b, tos=_tos, add_tos_to_name=True)
             self.mtx_endps = self.multicast_profile.get_mc_names()
             logger.info("Creating test station port(s)")
-            for station_profile in self.station_profiles:
-                if not rebuild and not self.use_existing_station_lists:
+            for i, station_profile in enumerate(self.station_profiles):
+                if not rebuild and (not self.use_existing_station_lists or self.use_existing_station_lists and i != 0):
                     station_profile.use_security(
                         station_profile.security,
                         station_profile.ssid,
