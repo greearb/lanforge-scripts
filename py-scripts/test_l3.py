@@ -7847,7 +7847,7 @@ class L3VariableTime(Realm):
                 report.set_custom_html('<hr>')
                 report.build_custom()
 
-    def append_cx_data(self, is_cx, name, state):
+    def append_cx_data(self, is_cx, name, state, response):
         """Append an endpoint/CX state change to client_issue_csv_name."""
         file_exists = os.path.isfile(self.client_issue_csv_name)
 
@@ -7856,35 +7856,37 @@ class L3VariableTime(Realm):
 
             if not file_exists:
                 if is_cx:
-                    writer.writerow(["TIMESTAMP", "CX_NAME", "STATE"])
+                    writer.writerow(["TIMESTAMP", "CX_NAME", "STATE", "API RESPONSE"])
                 else:
-                    writer.writerow(["TIMESTAMP", "ENDP_NAME", "STATE"])
+                    writer.writerow(["TIMESTAMP", "ENDP_NAME", "STATE", "API RESPONSE"])
 
             writer.writerow([
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 name,
-                state
+                state,
+                response
             ])
 
-    def check_endpoint_availability(self, expected_endps, present_endps, endp_list):
+    def check_endpoint_availability(self, expected_endps, present_endps):
         """Log endpoint missing/not-running/recovered transitions and update the tracking sets."""
         for endp_name in expected_endps:
             if endp_name not in present_endps.keys():
                 if endp_name not in self.missing_endp_logged:
+                    present_endp_names = list(present_endps)
                     logger.warning(
                         "Endpoint '{}' is missing from the monitoring data.\n"
                         "Requested URL: 'endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll,run'\n"
-                        "Response: {}".format(endp_name, endp_list))
-                    self.append_cx_data(is_cx=False, name=endp_name, state="MISSING")
+                        "Response: {}".format(endp_name, present_endp_names))
+                    self.append_cx_data(is_cx=False, name=endp_name, state="MISSING", response=present_endp_names)
                     self.missing_endp_logged.add(endp_name)
                 self.not_running_endp_logged.discard(endp_name)
-            elif not present_endps[endp_name]:
+            elif not present_endps[endp_name].get('run'):
                 if endp_name not in self.not_running_endp_logged:
                     logger.warning(
                         "Endpoint '{}' is not running in the monitoring data.\n"
                         "Requested URL: 'endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll,run'\n"
-                        "Response: {}".format(endp_name, endp_list))
-                    self.append_cx_data(is_cx=False, name=endp_name, state="NOT RUNNING")
+                        "Response: {}".format(endp_name, present_endps[endp_name]))
+                    self.append_cx_data(is_cx=False, name=endp_name, state="NOT RUNNING", response=present_endps[endp_name])
                     self.not_running_endp_logged.add(endp_name)
                 self.missing_endp_logged.discard(endp_name)
             else:
@@ -7892,8 +7894,8 @@ class L3VariableTime(Realm):
                     logger.info(
                         "Endpoint '{}' is running in the monitoring data\n"
                         "Requested URL: 'endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll,run'\n"
-                        "Response: {}".format(endp_name, endp_list))
-                    self.append_cx_data(is_cx=False, name=endp_name, state="RUNNING")
+                        "Response: {}".format(endp_name, present_endps[endp_name]))
+                    self.append_cx_data(is_cx=False, name=endp_name, state="RUNNING", response=present_endps[endp_name])
                 self.missing_endp_logged.discard(endp_name)
                 self.not_running_endp_logged.discard(endp_name)
 
@@ -7946,10 +7948,10 @@ class L3VariableTime(Realm):
             if isinstance(endpoint, dict):
                 endpoint = [{endpoint['name']: endpoint}]
             present_endps = {}
-            for endp_name in endpoint:
-                for item, endp_value in endp_name.items():
-                    present_endps[item] = endp_value.get('run')
-            self.check_endpoint_availability(expected_endps, present_endps, endp_list)
+            for endp_entry in endpoint:
+                for endp_name, endp_response in endp_entry.items():
+                    present_endps[endp_name] = endp_response
+            self.check_endpoint_availability(expected_endps, present_endps)
             expected_endps_set = set(expected_endps)
             missing_endps = self.missing_endp_logged & expected_endps_set
             not_running_endps = self.not_running_endp_logged & expected_endps_set
@@ -7982,25 +7984,28 @@ class L3VariableTime(Realm):
             start_time = time.time()
         return [] if return_endpoint_data else False
 
-    def check_cx_availability(self, expected_cxs, present_cxs, cx_list):
+    def check_cx_availability(self, expected_cxs, present_cxs):
         """Log CX missing/not-running/recovered transitions and update the tracking sets."""
         for cx_name in expected_cxs:
             if cx_name not in present_cxs.keys():
                 if cx_name not in self.missing_cx_logged:
+                    present_cx_names = list(present_cxs)
                     logger.warning(
                         "Cross-connect '{}' is missing from the monitoring data.\n"
                         "Requested URL: 'cx/all'\n"
-                        "Response: {}".format(cx_name, cx_list))
-                    self.append_cx_data(is_cx=True, name=cx_name, state="MISSING")
+                        "Response: {}".format(cx_name, present_cx_names))
+                    self.append_cx_data(is_cx=True, name=cx_name, state="MISSING", response=present_cx_names)
                     self.missing_cx_logged.add(cx_name)
                 self.not_running_cx_logged.discard(cx_name)
-            elif present_cxs[cx_name].lower() != "run":
+            elif present_cxs[cx_name].get('state', 'Stopped').lower() != "run":
                 if cx_name not in self.not_running_cx_logged:
                     logger.warning(
                         "Cross-connect '{}' is not running in the monitoring data.\n"
                         "Requested URL: 'cx/all'\n"
-                        "Response: {}".format(cx_name, cx_list))
-                    self.append_cx_data(is_cx=True, name=cx_name, state=present_cxs[cx_name])
+                        "Response: {}".format(cx_name, present_cxs[cx_name]))
+                    self.append_cx_data(is_cx=True, name=cx_name,
+                                        state=present_cxs[cx_name].get('state', 'Stopped'),
+                                        response=present_cxs[cx_name])
                     self.not_running_cx_logged.add(cx_name)
                 self.missing_cx_logged.discard(cx_name)
             else:
@@ -8008,8 +8013,8 @@ class L3VariableTime(Realm):
                     logger.info(
                         "Cross-connect '{}' is running in the monitoring data\n"
                         "Requested URL: 'cx/all'\n"
-                        "Response: {}".format(cx_name, cx_list))
-                    self.append_cx_data(is_cx=True, name=cx_name, state="RUNNING")
+                        "Response: {}".format(cx_name, present_cxs[cx_name]))
+                    self.append_cx_data(is_cx=True, name=cx_name, state="RUNNING", response=present_cxs[cx_name])
                 self.missing_cx_logged.discard(cx_name)
                 self.not_running_cx_logged.discard(cx_name)
 
@@ -8038,8 +8043,8 @@ class L3VariableTime(Realm):
             present_cxs = {}
             for cx_name, cx_info in cx_list.items():
                 if cx_name and isinstance(cx_info, dict):
-                    present_cxs[cx_name] = cx_info.get('state', 'Stopped')
-            self.check_cx_availability(expected_cxs, present_cxs, cx_list)
+                    present_cxs[cx_name] = cx_info
+            self.check_cx_availability(expected_cxs, present_cxs)
             missed = len(self.missing_cx_logged)
             not_run = len(self.not_running_cx_logged)
             if missed == len(expected_cxs):
