@@ -2728,8 +2728,9 @@ class L3VariableTime(Realm):
             "-dl-all-eids-sum-per-interval.csv"
 
         # add some calculations, will need some selectable graphs
-        logger.info("all_dl_ports_stations_sum_df : {df}".format(
-            df=all_dl_ports_stations_sum_df))
+        if not self.dowebgui:
+            logger.info("all_dl_ports_stations_sum_df : {df}".format(
+                df=all_dl_ports_stations_sum_df))
 
         if all_dl_ports_stations_sum_df.empty:
             logger.warning(
@@ -3669,6 +3670,8 @@ class L3VariableTime(Realm):
             self.port_data.pop("handler", None)
             self.port_data.pop("uri", None)
             self.port_data.pop("warnings", None)
+
+        if not self.dowebgui:
             logger.info("self.port_data type: {dtype} data: {data}".format(dtype=type(self.port_data), data=self.port_data))
 
         url = "/resource/all?fields=eid,hostname,hw+version,kernel"
@@ -3719,8 +3722,9 @@ class L3VariableTime(Realm):
             self.endp_data.pop("handler", None)
             self.endp_data.pop("uri", None)
 
-        logger.info("self.endpoint_data type: {dtype} data: {data}".format(
-            dtype=type(self.endp_data), data=self.endp_data))
+        if not self.dowebgui:
+            logger.info("self.endpoint_data type: {dtype} data: {data}".format(
+                dtype=type(self.endp_data), data=self.endp_data))
         # self.side_b_min_bps= str(str(int(self.cx_profile.side_b_min_bps) / 1000000) +' '+'Mbps')
         # self.side_a_min_bps= str(str(int(self.cx_profile.side_a_min_bps) / 1000000) +' '+'Mbps')
 
