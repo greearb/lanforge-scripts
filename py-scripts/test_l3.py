@@ -6688,9 +6688,6 @@ class L3VariableTime(Realm):
                     print("Timeout: Images not found within 60 seconds.")
                     break
                 time.sleep(1)
-            while not os.path.exists(throughput_image_path) and not os.path.exists(rssi_image_path):
-                if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
-                    break
             if os.path.exists(throughput_image_path):
                 self.report.set_custom_html('<div style="page-break-before: always;"></div>')
                 self.report.build_custom()
@@ -6995,7 +6992,7 @@ class L3VariableTime(Realm):
         # Generate per-coordinate/rotation graphs and tables for robot test
         if self.robo_test and not self.do_bandsteering:
             logger.info("Building per-coordinate/rotation graphs and tables for robot test (from memory dict)")
-            if self.dowebgui and self.get_live_view:
+            if self.dowebgui:
                 self.add_live_view_images_to_report()
             if not hasattr(self, "multicast_robot_results") or not self.multicast_robot_results:
                 self.report.set_custom_html("<p><i>No robot test results found.</i></p>")
