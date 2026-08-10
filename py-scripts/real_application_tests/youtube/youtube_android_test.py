@@ -20,7 +20,7 @@ logging.basicConfig(
     filename=LOG_FILE_PATH,
     filemode='w',
     level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(message)s'
+    format='%(asctime)s %(levelname)-8s [%(threadName)s] %(message)s'
 )
 logger = logging.getLogger(__name__)
 
@@ -75,9 +75,9 @@ class Adb:
                 self.adb_serials[serial] = serial
                 self.u2_sessions[serial] = u2.connect(serial)
                 connected_serials.append(serial)
-                logging.info(f"Connected to device: {serial}")
-            except Exception as e:
-                logging.error(f"Failed to connect to device {serial}: {e}")
+                logger.info("[%s] Device connected", serial)
+            except Exception:
+                logger.exception("[%s] Device connection failed", serial)
                 self.devices.pop(serial, None)
                 self.adb_serials.pop(serial, None)
                 self.u2_sessions.pop(serial, None)
@@ -102,11 +102,11 @@ class Adb:
         count = 0
         while "com.candela.wecan:id/enter_button" not in d.dump_hierarchy():
             time.sleep(1)
-            logging.info(f"Waiting for Interop app to load on device {d.serial}...")
+            logger.debug("[%s] Waiting for Interop app", d.serial)
             count += 1
             if count > 15:
                 raise Exception(
-                    f"❌ Interop app did not load in time for device {d.serial}"
+                    f"? Interop app did not load in time for device {d.serial}"
                 )
         enter_test_room = d(resourceId="com.candela.wecan:id/enter_button")
         if enter_test_room.wait(timeout=10):
@@ -115,7 +115,7 @@ class Adb:
             raise Exception(
                 f"Enter button not found in Interop app for device {d.serial}"
             )
-        logging.info(f"Opened Interop app on device {d.serial}")
+        logger.info("[%s] Interop app opened", d.serial)
 
     def enable_stats_for_nerds(self, serial):
         """
@@ -168,14 +168,14 @@ class Adb:
         if overflow.exists:
             overflow.click()
         elif settings_icon.exists:
-            logging.info("settings icon exists, clicking it")
+            logger.debug("[%s] Opening player settings", serial)
             settings_icon.click()
         else:
             return False
 
         # Step 2: Try finding Stats immediately (some versions show it directly)
         if find_and_click_stats():
-            logging.info(f"[{serial}] Stats enabled (direct)")
+            logger.info("[%s] Stats for nerds enabled (direct path)", serial)
             return True
 
         # Step 3: Try clicking "More" if present (bottom sheet case)
@@ -188,7 +188,7 @@ class Adb:
             time.sleep(1)
 
             if find_and_click_stats():
-                logging.info(f"[{serial}] Stats enabled (via More)")
+                logger.info("[%s] Stats for nerds enabled (More path)", serial)
                 return True
 
         # Step 4: Try clicking "Settings"
@@ -198,7 +198,7 @@ class Adb:
             time.sleep(1)
 
             if find_and_click_stats():
-                logging.info(f"[{serial}] Stats enabled (via Settings)")
+                logger.info("[%s] Stats for nerds enabled (Settings path)", serial)
                 return True
 
         # Step 5: Try clicking "Advanced"
@@ -208,10 +208,10 @@ class Adb:
             time.sleep(1)
 
             if find_and_click_stats():
-                logging.info(f"[{serial}] Stats enabled (via Advanced)")
+                logger.info("[%s] Stats for nerds enabled (Advanced path)", serial)
                 return True
 
-        logging.info(f"[{serial}] Stats not found in any menu path")
+        logger.warning("[%s] Stats for nerds option not found", serial)
         return False
 
     def wait_for_video_ui(self, serial, timeout=40):
@@ -221,7 +221,7 @@ class Adb:
 
         while time.time() - start < timeout:
             if self.check_stop_signal():
-                logging.info(f"[{serial}] Stop requested while waiting for video UI")
+                logger.info("[%s] Stop requested while waiting for video UI", serial)
                 return False
 
             # If skip button exists, click it
@@ -236,34 +236,40 @@ class Adb:
                 or d(text="Ad").exists
                 or d(textContains="Sponsored").exists
             ):
-                logging.info(f"[{serial}] Ad playing, waiting...")
+                logger.debug("[%s] Ad playing; waiting", serial)
                 time.sleep(1)
                 continue
 
             # Check if overflow button exists (means real video UI is ready)
             if d(resourceId="com.google.android.youtube:id/player_overflow_button").exists:
-                logging.info(f"[{serial}] Video UI ready")
+                logger.info("[%s] Video UI ready", serial)
                 return True
 
             time.sleep(1)
 
-        logging.info(f"[{serial}] Timeout waiting for video UI")
+        logger.warning("[%s] Timed out waiting for video UI", serial)
         return False
 
-    def send_stats_to_server(self):
-        """Send the latest statistics for all devices to the report server."""
+    def send_stats_to_server(self, device_serial, stats):
+        """Send one device's newly collected statistics to the report server."""
         url = f"http://{self.upstream_port}:5002/youtube_stats"
         headers = {"Content-Type": "application/json"}
         try:
-            response = requests.post(url, headers=headers, data=json.dumps(self.stats))
+            response = requests.post(
+                url,
+                headers=headers,
+                data=json.dumps({device_serial: stats}),
+            )
             if response.status_code == 200:
-                logging.info("Stats sent successfully.")
+                logger.debug("[%s] Stats uploaded successfully", device_serial)
             else:
-                logging.info(
-                    f"Failed to send stats. Status code: {response.status_code}"
+                logger.warning(
+                    "[%s] Stats upload failed: HTTP %s",
+                    device_serial,
+                    response.status_code,
                 )
         except Exception as e:
-            logging.info(f"Error sending stats: {e}")
+            logger.warning("[%s] Stats upload error: %s", device_serial, e)
 
     def fetch_stats_for_nerds(self, device_serial):
         """Read and parse YouTube Stats for nerds for one device."""
@@ -325,7 +331,7 @@ class Adb:
 
         stats["Timestamp"] = datetime.now().strftime("%H:%M:%S")
         self.stats[device_serial] = stats
-        self.send_stats_to_server()
+        self.send_stats_to_server(device_serial, stats)
 
     def rotate_to_landscape(self, serial):
         """Rotate a device to landscape and verify the resulting orientation."""
@@ -343,14 +349,10 @@ class Adb:
         orientation = self.execute_cmd(
             serial, "dumpsys input | grep -i SurfaceOrientation"
         )
-        logging.info(
-            f"[{serial}] Rotation check after existing approach: {orientation}"
-        )
+        logger.debug("[%s] Primary rotation result: %s", serial, orientation.strip())
 
         if "SurfaceOrientation: 1" in orientation:
-            logging.info(
-                f"[{serial}] Landscape rotation successful using existing approach"
-            )
+            logger.info("[%s] Landscape rotation verified (primary method)", serial)
             return True
 
         self.execute_cmd(serial, "wm user-rotation free")
@@ -361,15 +363,13 @@ class Adb:
         orientation = self.execute_cmd(
             serial, "dumpsys input | grep -i SurfaceOrientation"
         )
-        logging.info(f"[{serial}] Rotation check after wm fallback: {orientation}")
+        logger.debug("[%s] Fallback rotation result: %s", serial, orientation.strip())
 
         if "SurfaceOrientation: 1" in orientation:
-            logging.info(
-                f"[{serial}] Landscape rotation successful using wm fallback"
-            )
+            logger.info("[%s] Landscape rotation verified (fallback method)", serial)
             return True
 
-        logging.warning(f"[{serial}] Unable to verify landscape rotation")
+        logger.warning("[%s] Unable to verify landscape rotation", serial)
         return False
 
     def check_stop_signal(self):
@@ -386,15 +386,12 @@ class Adb:
 
                 if stop_signal_from_server:
                     self.stop_signal = True
-                    logging.info(
-                        "Stop signal received from the server. Exiting the loop."
-                    )
+                    logger.info("Stop signal received; ending test")
                 else:
-
-                    logging.info("No stop signal received from the server. Continuing.")
+                    logger.debug("No stop signal received")
             return self.stop_signal
         except Exception as e:
-            logging.info(f"Error checking stop signal: {e}")
+            logger.warning("Unable to check stop signal: %s", e)
             return self.stop_signal
 
     def wait_or_stop(self, seconds):
@@ -409,12 +406,18 @@ class Adb:
     def run_on_device(self, serial, video_url, delay, duration, resolution):
         """Run YouTube playback and statistics collection on one device."""
         try:
+            logger.info(
+                "[%s] Test started (delay=%ss, duration=%ss, resolution=%s)",
+                serial, delay, duration, resolution or "auto",
+            )
             # Force-stop YouTube app if running
+            logger.info("[%s] Resetting YouTube app", serial)
             self.execute_cmd(serial, "am force-stop com.google.android.youtube")
             if self.wait_or_stop(10):
                 return
 
             # Launch YouTube video
+            logger.info("[%s] Launching video", serial)
             self.execute_cmd(
                 serial,
                 f"am start -a android.intent.action.VIEW -d {video_url} com.google.android.youtube",
@@ -435,6 +438,7 @@ class Adb:
             if self.check_stop_signal():
                 return
             if resolution:
+                logger.info("[%s] Applying requested resolution %s", serial, resolution)
                 self.set_resolution(serial, resolution)
                 if self.check_stop_signal():
                     return
@@ -453,16 +457,19 @@ class Adb:
                 self.fetch_stats_for_nerds(serial)
                 if self.wait_or_stop(1):
                     break
+        except Exception:
+            logger.exception("[%s] Test failed with an unexpected error", serial)
+            raise
         finally:
             try:
                 self.execute_cmd(serial, "am force-stop com.google.android.youtube")
-            except Exception as exc:
-                logging.error(f"[{serial}] Failed to stop YouTube: {exc}")
+            except Exception:
+                logger.exception("[%s] Failed to stop YouTube", serial)
             try:
                 self.open_interop_app(serial)
-            except Exception as exc:
-                logging.error(f"[{serial}] Failed to reopen Interop app: {exc}")
-            logging.info(f"[{serial}] Test completed or stopped.")
+            except Exception:
+                logger.exception("[%s] Failed to reopen Interop app", serial)
+            logger.info("[%s] Test cleanup completed", serial)
 
     def run_on_multiple_devices(
         self, device_serials, video_url, delay, duration, resolution, max_workers=5
@@ -484,7 +491,7 @@ class Adb:
 
         d = self.u2_sessions[serial]
 
-        logging.info(f"[{serial}] Dumping UI hierarchy")
+        logger.debug("[%s] Dumping UI hierarchy", serial)
 
         xml = d.dump_hierarchy(compressed=False)
         root = ET.fromstring(xml)
@@ -508,7 +515,7 @@ class Adb:
             ):
 
                 container_found = True
-                logging.info(f"[{serial}] Resolution container found → {res_id}")
+                logger.debug("[%s] Resolution container found: %s", serial, res_id)
 
                 for child in node.iter("node"):
 
@@ -543,18 +550,22 @@ class Adb:
 
                     rows.append(row)
 
-                    logging.info(
-                        f"[{serial}] Row detected index={row['adapter_index']} bounds={bounds}"
+                    logger.debug(
+                        "[%s] Resolution row detected: index=%s bounds=%s",
+                        serial, row["adapter_index"], bounds,
                     )
 
                 break
 
         if not container_found:
-            logging.warning(f"[{serial}] No RecyclerView / bottom sheet container found")
+            logger.warning("[%s] Resolution menu container not found", serial)
 
         rows.sort(key=lambda r: r["adapter_index"])
 
-        logging.info(f"[{serial}] Final row order: {[r['adapter_index'] for r in rows]}")
+        logger.debug(
+            "[%s] Resolution row order: %s",
+            serial, [r["adapter_index"] for r in rows],
+        )
 
         return rows
 
@@ -569,21 +580,22 @@ class Adb:
 
         width, height = d.window_size()
 
-        logging.info(
-            f"[{serial}] Clicking row index={row['adapter_index']} center=({cx},{cy}) screen=({width},{height})"
+        logger.debug(
+            "[%s] Clicking row: index=%s center=(%s,%s) screen=(%s,%s)",
+            serial, row["adapter_index"], cx, cy, width, height,
         )
 
         if cx < 10 or cx > width - 10:
-            logging.warning(f"[{serial}] Invalid click X")
+            logger.warning("[%s] Resolution row has invalid X coordinate: %s", serial, cx)
             return False
 
         if cy < 50 or cy > height - 50:
-            logging.warning(f"[{serial}] Invalid click Y")
+            logger.warning("[%s] Resolution row has invalid Y coordinate: %s", serial, cy)
             return False
 
         d.click(cx, cy)
 
-        logging.info(f"[{serial}] Row clicked successfully")
+        logger.debug("[%s] Row clicked successfully", serial)
 
         return True
 
@@ -607,7 +619,7 @@ class Adb:
 
         screenshot_file = f"resolution_screen_{serial}.png"
 
-        logging.info(f"[{serial}] Capturing screenshot")
+        logger.debug("[%s] Capturing resolution screenshot", serial)
 
         try:
             with open(screenshot_file, "wb") as f:
@@ -616,17 +628,17 @@ class Adb:
                     stdout=f,
                     check=True
                 )
-        except Exception as e:
-            logging.error(f"[{serial}] Screenshot capture failed: {e}")
+        except Exception:
+            logger.exception("[%s] Resolution screenshot capture failed", serial)
             return []
 
         img = cv2.imread(screenshot_file)
 
         if img is None:
-            logging.error(f"[{serial}] Screenshot failed")
+            logger.error("[%s] Resolution screenshot could not be read", serial)
             return []
 
-        logging.info(f"[{serial}] Screenshot shape {img.shape}")
+        logger.debug("[%s] Screenshot shape: %s", serial, img.shape)
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -636,7 +648,7 @@ class Adb:
 
         text = pytesseract.image_to_string(thresh)
 
-        logging.info(f"[{serial}] OCR text:\n{text}")
+        logger.debug("[%s] OCR text: %s", serial, " ".join(text.split()))
 
         resolutions = re.findall(r"\d{3,4}p(?:\s*Premium)?", text)
 
@@ -645,7 +657,7 @@ class Adb:
 
         resolutions = list(dict.fromkeys(resolutions))
 
-        logging.info(f"[{serial}] OCR resolutions detected → {resolutions}")
+        logger.info("[%s] Resolutions detected: %s", serial, resolutions)
 
         return resolutions
 
@@ -667,7 +679,7 @@ class Adb:
 
         d = self.u2_sessions[serial]
 
-        logging.info(f"[{serial}] ===== Setting resolution {resolution} =====")
+        logger.info("[%s] Setting resolution to %s", serial, resolution)
 
         # show player controls
         for _ in range(2):
@@ -679,10 +691,10 @@ class Adb:
         overflow = d(resourceId="com.google.android.youtube:id/player_overflow_button")
 
         if not overflow.exists:
-            logging.warning(f"[{serial}] Overflow button not found")
+            logger.warning("[%s] Cannot set resolution: player menu button not found", serial)
             return False
 
-        logging.info(f"[{serial}] Opening settings menu")
+        logger.debug("[%s] Opening settings menu", serial)
         overflow.click()
 
         time.sleep(1)
@@ -693,10 +705,10 @@ class Adb:
             quality = d(descriptionMatches="(?i).*quality.*")
 
         if not quality.wait(timeout=5):
-            logging.warning(f"[{serial}] Quality option not found")
+            logger.warning("[%s] Cannot set resolution: Quality option not found", serial)
             return False
 
-        logging.info(f"[{serial}] Opening Quality menu")
+        logger.debug("[%s] Opening Quality menu", serial)
         quality.click()
 
         time.sleep(1.5)
@@ -705,37 +717,42 @@ class Adb:
         rows = self.get_rows(serial, visible_only=True)
 
         if not rows:
-            logging.warning(f"[{serial}] No rows found in Quality menu")
+            logger.warning("[%s] Cannot set resolution: Quality menu is empty", serial)
             return False
 
-        logging.info(f"[{serial}] Clicking last row (assumed Advanced)")
+        logger.debug("[%s] Opening Advanced quality menu", serial)
         self.click_row(serial, rows[-1])
 
         time.sleep(2)
 
-        logging.info(f"[{serial}] Detecting resolutions using OCR")
+        logger.debug("[%s] Detecting resolutions using OCR", serial)
 
         resolutions = self.detect_resolutions_with_ocr(serial)
 
         rows = self.get_rows(serial, visible_only=True)
 
-        logging.info(
-            f"[{serial}] Mapping resolution → rows | OCR={resolutions} rows={[r['adapter_index'] for r in rows]}"
+        logger.debug(
+            "[%s] Resolution mapping: OCR=%s row_indexes=%s",
+            serial, resolutions, [r["adapter_index"] for r in rows],
         )
 
         if resolution not in resolutions:
-            logging.warning(f"[{serial}] Requested resolution {resolution} not found")
+            logger.warning(
+                "[%s] Requested resolution %s not detected; available=%s",
+                serial, resolution, resolutions,
+            )
             return False
 
         target_index = resolutions.index(resolution)
 
         if target_index >= len(rows):
-            logging.warning(
-                f"[{serial}] OCR index {target_index} exceeds row count {len(rows)}"
+            logger.warning(
+                "[%s] Cannot map resolution %s: OCR index=%s, menu rows=%s",
+                serial, resolution, target_index, len(rows),
             )
             return False
 
-        logging.info(f"[{serial}] Clicking resolution {resolution}")
+        logger.info("[%s] Selecting resolution %s", serial, resolution)
 
         self.click_row(serial, rows[target_index])
 
@@ -783,8 +800,11 @@ if __name__ == "__main__":
     device_serials = adb_client.get_devices()
     requested = args.devices.split(",")
     test_serials = [s for s in requested if s in device_serials]
-    logging.info(f"Running test on devices: {test_serials}")
-    logging.info(f"All connected devices: {device_serials}")
+    logger.info("Test requested for devices: %s", requested)
+    logger.debug("ADB devices discovered: %s", device_serials)
+    missing_serials = [s for s in requested if s not in device_serials]
+    if missing_serials:
+        logger.warning("Requested devices not found: %s", missing_serials)
     adb_client.test_serials = test_serials
     connected_serials = adb_client.connect_devices()
     try:
@@ -798,7 +818,7 @@ if __name__ == "__main__":
                 max_workers=len(connected_serials),
             )
         else:
-            logging.error("No Android devices connected; skipping test execution")
+            logger.error("No requested Android devices are available; test not run")
     finally:
         if test_serials:
             adb_client.upload_test_log()
