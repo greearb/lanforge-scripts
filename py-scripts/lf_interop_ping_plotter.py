@@ -1311,7 +1311,7 @@ class Ping(Realm):
         if config_devices == '':
             test_setup_info = {
                 'SSID': [self.ssid if self.ssid else 'TEST CONFIGURED'][0],
-                'Security': [self.security if self.ssid else 'TEST CONFIGURED'][0],
+                'Security': [self.security if self.security else 'TEST CONFIGURED'][0],
                 'Website / IP': self.target,
                 'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
                 'Duration': self.duration
@@ -2458,7 +2458,7 @@ class Ping(Realm):
         if config_devices == '':
             test_setup_info = {
                 'SSID': [self.ssid if self.ssid else 'TEST CONFIGURED'][0],
-                'Security': [self.security if self.ssid else 'TEST CONFIGURED'][0],
+                'Security': [self.security if self.security else 'TEST CONFIGURED'][0],
                 'Website / IP': self.target,
                 'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
                 'Duration': self.duration,
