@@ -208,6 +208,9 @@ class Ping(Realm):
         self.endpoint_status_csv_path = os.path.join(os.getcwd(), 'endpoint_status_log.csv')
         with open(self.endpoint_status_csv_path, 'w', newline='') as f:
             csv.writer(f).writerow(['timestamp', 'resource_id', 'endpoint_name', 'status'])
+        self.device_issue_log = []
+        self.monitor_start_time = None
+        self.actual_monitor_duration = 0
         self.generic_endps_profile = self.new_generic_endp_profile()
         self.generic_endps_profile.type = 'lfping'
         self.generic_endps_profile.dest = self.change_target_to_ip()
@@ -464,10 +467,32 @@ class Ping(Realm):
         self.generic_endps_profile.stop_cx()
         self.stop_time = datetime.now()
 
+    def record_device_issue(self, device, issue, api_response=None):
+        """Records a timestamped device issue, later written to clients_issue.csv."""
+        self.device_issue_log.append({
+            "Time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "Device": device,
+            "Issue": issue,
+            "API Response": api_response if api_response is not None else '',
+        })
+
+    def monitoring_elapsed_seconds(self):
+        """Seconds since the current monitor() call started, or 0 if not monitoring."""
+        if not self.monitor_start_time:
+            return 0
+        return (datetime.now() - self.monitor_start_time).total_seconds()
+
+    def format_monitoring_duration(self):
+        """Formats the actual time spent monitoring as "Xm Ys"."""
+        total_seconds = int(self.actual_monitor_duration)
+        minutes, seconds = divmod(total_seconds, 60)
+        return "{}m {}s".format(minutes, seconds)
+
     def log_endpoint_status_change(self, endpoint_name, endpoint_data):
         status = endpoint_data.get('status')
         if self.endpoint_status_history.get(endpoint_name) == status:
             return
+        previous_status = self.endpoint_status_history.get(endpoint_name)
         self.endpoint_status_history[endpoint_name] = status
 
         resource_id = ''
@@ -481,7 +506,12 @@ class Ping(Realm):
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         with open(self.endpoint_status_csv_path, 'a', newline='') as f:
             csv.writer(f).writerow([timestamp, resource_id, endpoint_name, status])
-        logger.info(f"Endpoint {endpoint_name} (resource {resource_id}) status changed to {status}")
+        # 10s grace period: skip noise from endpoints still starting up
+        if previous_status is not None and self.monitoring_elapsed_seconds() >= 10:
+            logger.info(f"Endpoint {endpoint_name} (resource {resource_id}) status changed to {status}")
+            self.record_device_issue(resource_id or endpoint_name,
+                                     "Endpoint '{}' status changed: {} -> {}".format(endpoint_name, previous_status, status),
+                                     api_response=endpoint_data)
 
     def get_results(self):
         endp = "/generic/{}".format(','.join(self.generic_endps_profile.created_endp))
@@ -505,9 +535,18 @@ class Ping(Realm):
                 missing = [name for name in self.generic_endps_profile.created_endp if name not in returned_names]
                 newly_missing = [name for name in missing if name not in self.reported_missing_endpoints]
                 if newly_missing:
-                    logger.warning(f"GET {endp} response is missing results for endpoints: {newly_missing}")
-                    logger.warning(json.dumps(results, indent=2))
+                    logger.warning(
+                        "GET %s response is missing results for endpoints: %s\n"
+                        "Response keys: %s", endp, newly_missing, returned_names)
+                    for endpoint_name in newly_missing:
+                        self.record_device_issue(endpoint_name, "Endpoint missing from monitoring data",
+                                                 api_response=returned_names)
                     self.reported_missing_endpoints.update(newly_missing)
+                elif self.reported_missing_endpoints:
+                    recovered = [name for name in self.reported_missing_endpoints if name in returned_names]
+                    if recovered:
+                        logger.info("Endpoint(s) data is available again: %s", recovered)
+                        self.reported_missing_endpoints.difference_update(recovered)
             except Exception:
                 logger.error(f"GET {endp} 'endpoints' list is not in the expected format.")
                 return results
@@ -517,10 +556,14 @@ class Ping(Realm):
             results = results['endpoint']
             self.log_endpoint_status_change(results['name'], results)
         except Exception:
-            logger.error(f"GET {endp} response does not contain the 'endpoint' or 'endpoints' key, or the data is not in the expected format.")
-            overallres = self.json_get("/generic/all")
-            logger.error("GET /generic/all response:")
-            logger.error(json.dumps(overallres, indent=2))
+            response_keys = list(results.keys()) if isinstance(results, dict) else []
+            logger.error(
+                "GET %s response does not contain the 'endpoint' or 'endpoints' key, or the data "
+                "is not in the expected format.\n"
+                "Response keys: %s", endp, response_keys)
+            self.record_device_issue(','.join(self.generic_endps_profile.created_endp),
+                                     "Unexpected GET {} response format".format(endp),
+                                     api_response=response_keys)
             return results
 
         return results
@@ -1505,9 +1548,13 @@ class Ping(Realm):
             report.build_table()
 
         # closing
+        if self.device_issue_log:
+            issues_df = pd.DataFrame(self.device_issue_log)
+            issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         report.build_footer()
         report.write_html()
         report.write_pdf()
+        logger.info("Monitoring Duration: %s", self.format_monitoring_duration())
 
         if self.do_webUI:
             self.copy_reports(report_path_date_time)
@@ -1726,6 +1773,8 @@ class Ping(Realm):
                 - In standard mode: returns None implicitly after the loop ends.
         """
         logging.info("Monitoringcx")
+        self.monitor_start_time = datetime.now()
+        monitor_start = datetime.now()
         if Devices is None:
             Devices = RealDevice(manager_ip=self.host, selected_bands=[])
         stop_status = False
@@ -2035,6 +2084,7 @@ class Ping(Realm):
                         individual_data, stop_status = self.store_bandsteeringcsv()
                         stop_status = True
                         individual_df.to_csv('bandsteering_data.csv', index=False)
+                        self.actual_monitor_duration += (datetime.now() - monitor_start).total_seconds()
                         return individual_df, stop_status
                     break
 
@@ -2043,6 +2093,7 @@ class Ping(Realm):
                 if not stop_status:
                     individual_df.loc[len(individual_df)] = individual_data
                     individual_df.to_csv('bandsteering_data.csv', index=False)
+                self.actual_monitor_duration += (datetime.now() - monitor_start).total_seconds()
                 return individual_df, stop_status
 
             time.sleep(1)
@@ -2051,6 +2102,7 @@ class Ping(Realm):
             t_end = datetime.now()
             # print(t_end, abs(t_init - t_end).total_seconds())
             loop_timer += abs(t_init - t_end).total_seconds()
+        self.actual_monitor_duration += (datetime.now() - monitor_start).total_seconds()
 
     def perform_robo(self, Devices, config_devices, group_device_map):
         """
@@ -2701,9 +2753,13 @@ class Ping(Realm):
             if last_interation:
                 break
         # closing
+        if self.device_issue_log:
+            issues_df = pd.DataFrame(self.device_issue_log)
+            issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         report.build_footer()
         report.write_html()
         report.write_pdf()
+        logger.info("Monitoring Duration: %s", self.format_monitoring_duration())
 
         if self.do_webUI:
             self.copy_reports(report_path_date_time)
@@ -3409,6 +3465,8 @@ connectivity problems.
             'received': [],
             'dropped': []
         }
+    ping.monitor_start_time = datetime.now()
+    monitor_start = datetime.now()
     while (loop_timer <= duration):
         t_init = datetime.now()
         try:
@@ -3839,6 +3897,7 @@ connectivity problems.
         # print(t_end, abs(t_init - t_end).total_seconds())
         loop_timer += abs(t_init - t_end).total_seconds()
     # time.sleep(duration * 60)
+    ping.actual_monitor_duration += (datetime.now() - monitor_start).total_seconds()
 
     logging.info('Stopping the test')
     ping.stop_generic()
