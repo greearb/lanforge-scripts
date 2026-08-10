@@ -663,6 +663,35 @@ class Youtube(Realm):
 
         return self.real_sta_list
 
+    @staticmethod
+    def sum_reset_counter(values):
+        """Sum cumulative-counter segment maxima, ignoring unavailable samples."""
+        valid_values = []
+        for value in values:
+            try:
+                counter = int(float(value))
+            except (TypeError, ValueError, OverflowError):
+                continue
+            if counter >= 0:
+                valid_values.append(counter)
+
+        if not valid_values:
+            return 0
+
+        previous = valid_values[0]
+        segment_max = previous
+        total = 0
+
+        for current in valid_values[1:]:
+            if current < previous:
+                total += segment_max
+                segment_max = current
+            else:
+                segment_max = max(segment_max, current)
+            previous = current
+
+        return int(total + segment_max)
+
     def calculate_device_score(self, df, os_type="laptop"):
         """
         Calculate device score based on YouTube streaming metrics.
@@ -725,27 +754,8 @@ class Youtube(Realm):
             buffer_score = (avg_buffer / 10) * 5
 
         # 5. DROPPED FRAME LOGIC (RESET SAFE)
-        dropped_series = pd.to_numeric(df["DroppedFrames"], errors="coerce").fillna(0).astype(int)
-        total_series = pd.to_numeric(df["TotalFrames"], errors="coerce").fillna(0).astype(int)
-
-        def segment_sum(series):
-            total = 0
-            last_val = series.iloc[0]
-            max_val = last_val
-
-            for val in series:
-                if val < last_val:
-                    total += max_val
-                    max_val = val
-                else:
-                    max_val = max(max_val, val)
-                last_val = val
-
-            total += max_val
-            return total
-
-        total_dropped = segment_sum(dropped_series)
-        total_frames = segment_sum(total_series)
+        total_dropped = self.sum_reset_counter(df["DroppedFrames"])
+        total_frames = self.sum_reset_counter(df["TotalFrames"])
 
         drop_percent = (total_dropped / total_frames) * 100 if total_frames > 0 else 0
 
@@ -1563,6 +1573,34 @@ class Youtube(Realm):
                                 _obj="Robot did not went to charge during this test")
             report.build_objective()
 
+    def get_report_frame_totals(self, hostname):
+        """Calculate reset-aware frame totals from a device's raw CSV rows."""
+        frame_data = {"TotalFrames": [], "DroppedFrames": []}
+
+        for csv_file_path in self.devices_list:
+            if not csv_file_path.endswith("_youtube_stats_report.csv"):
+                continue
+            try:
+                data = pd.read_csv(csv_file_path)
+            except (OSError, pd.errors.EmptyDataError, pd.errors.ParserError) as exc:
+                logger.warning("Unable to calculate frame totals from %s: %s", csv_file_path, exc)
+                continue
+
+            if "Instance Name" not in data or data.empty:
+                continue
+            device_rows = data[data["Instance Name"].astype(str) == str(hostname)]
+            for column in frame_data:
+                if column in device_rows:
+                    frame_data[column].extend(device_rows[column].tolist())
+
+        if not any(frame_data.values()):
+            return None
+
+        return {
+            column: self.sum_reset_counter(values)
+            for column, values in frame_data.items()
+        }
+
     def create_report(self, data=None, ui_report_dir=None, iot_summary=None):
         data = data or self.stats_api_response
         ui_report_dir = ui_report_dir or self.ui_report_dir
@@ -1684,12 +1722,21 @@ class Youtube(Realm):
         for hostname in self.real_sta_hostname:
             if hostname in self.mydatajson:
                 stats = self.mydatajson[hostname]
+                frame_totals = self.get_report_frame_totals(hostname)
                 viewport_list.append(stats.get("Viewport", ""))
                 current_res_list.append(stats.get("CurrentRes", ""))
                 optimal_res_list.append(stats.get("OptimalRes", ""))
 
-                dropped_frames = stats.get("DroppedFrames", "0")
-                total_frames = stats.get("TotalFrames", "0")
+                dropped_frames = (
+                    frame_totals["DroppedFrames"]
+                    if frame_totals is not None
+                    else stats.get("DroppedFrames", "0")
+                )
+                total_frames = (
+                    frame_totals["TotalFrames"]
+                    if frame_totals is not None
+                    else stats.get("TotalFrames", "0")
+                )
                 max_buffer_health_list.append(self.max_buffer.get(hostname, 0.0))
                 min_buffer_health_list.append(self.min_buffer.get(hostname, 0.0))
                 try:
@@ -2770,8 +2817,8 @@ class Youtube(Realm):
             Reads all CSV files in the current directory that start with '<current_cord>_',
             filters rows up to current_angle, and collects stats:
             - Instance Name
-            - Max Total Frames
-            - Max Dropped Frames
+            - Reset-aware Total Frames
+            - Reset-aware Dropped Frames
             - Viewport
             - Current Resolution
             - Optimal Resolution
@@ -2819,8 +2866,8 @@ class Youtube(Realm):
                 viewport = df_filtered["Viewport"].iloc[-1]
                 current_res = df_filtered["CurrentRes"].iloc[-1]
                 optimal_res = df_filtered["OptimalRes"].iloc[-1]
-                max_total_frames = df_filtered["TotalFrames"].max()
-                max_dropped_frames = df_filtered["DroppedFrames"].max()
+                total_frames = self.sum_reset_counter(df_filtered["TotalFrames"])
+                dropped_frames = self.sum_reset_counter(df_filtered["DroppedFrames"])
                 max_buffer_health = df_filtered["BufferHealth"].max()
                 min_buffer_health = df_filtered["BufferHealth"].min()
 
@@ -2828,8 +2875,8 @@ class Youtube(Realm):
                     "Viewport": viewport,
                     "Current Resolution": current_res,
                     "Optimal Resolution": optimal_res,
-                    "Total Frames": int(max_total_frames),
-                    "Dropped Frames": int(max_dropped_frames),
+                    "Total Frames": total_frames,
+                    "Dropped Frames": dropped_frames,
                     "Max Buffer Health": round(float(max_buffer_health), 2),
                     "Min Buffer Health": round(float(min_buffer_health), 2),
                 }
