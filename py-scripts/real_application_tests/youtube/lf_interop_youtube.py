@@ -181,6 +181,14 @@ ANDROID_TEST_SCRIPT = os.path.join(
 )
 
 
+class WebUIStopRequested(Exception):
+    """Unwind the active test loop and continue through final reporting."""
+
+
+class AllEndpointsUnreachable(Exception):
+    """Unwind after every monitored endpoint is absent for 40 seconds."""
+
+
 class Youtube(Realm):
     """
     Class for automating YouTube streaming tests using LANforge.
@@ -2010,65 +2018,154 @@ class Youtube(Realm):
 
         return response
 
+    def write_endpoint_status_csv(self, csv_file, endpoint_name, status,
+                                  api_response=None):
+        """Append an endpoint status change to the monitoring CSV."""
+        file_exists = os.path.isfile(csv_file) and os.path.getsize(csv_file) > 0
+        with open(csv_file, mode="a", newline="") as csv_handle:
+            writer = csv.writer(csv_handle)
+            if not file_exists:
+                writer.writerow([
+                    "timestamp", "endpoint_name", "status", "api_response"
+                ])
+            writer.writerow([
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                endpoint_name,
+                status,
+                json.dumps(api_response, default=str, sort_keys=True),
+            ])
+
     def monitor_endpoint_status_changes(self, wait_time=40, poll_interval=5):
         """
-        Monitor generic endpoint status changes and record them in CSV.
-        Retry missing responses until wait_time, then abort the test.
+        Record endpoint status changes.  If every endpoint disappears, retry
+        for ``wait_time`` seconds and then unwind to report generation.
         """
         current_path = self.ui_report_dir if self.do_webUI else os.path.dirname(os.path.abspath(__file__))
         csv_file = os.path.join(current_path, "endpoint_status_changes.csv")
         if csv_file not in self.devices_list:
             self.devices_list.append(csv_file)
         created_endp = self.generic_endps_profile.created_endp
-
         start_time = time.time()
-        endpoint_data = {}
         while True:
+            if self.stop_signal:
+                logger.info(
+                    "WebUI stop requested while waiting for endpoint data; "
+                    "unwinding directly to report generation."
+                )
+                raise WebUIStopRequested
+
+            endpoint_data = {}
+            endpoint_responses = {}
             for gen_endp in created_endp:
+                if self.stop_signal:
+                    logger.info(
+                        "WebUI stop requested during endpoint polling; "
+                        "unwinding directly to report generation."
+                    )
+                    raise WebUIStopRequested
                 generic_endpoint = self.json_get(f"/generic/{gen_endp}")
+                endpoint_responses[gen_endp] = generic_endpoint
                 if generic_endpoint and "endpoint" in generic_endpoint:
                     endpoint_data[gen_endp] = generic_endpoint
 
-            if endpoint_data or (time.time() - start_time) >= wait_time:
-                break
+            newly_missing = [
+                gen_endp for gen_endp in created_endp
+                if gen_endp not in endpoint_data
+                and self.endpoint_last_status.get(gen_endp) != "MISSING"
+            ]
+            missing_url = f"/generic/{','.join(sorted(set(created_endp)))}"
+            present_keys = []
+            if newly_missing:
+                try:
+                    combined_response = self.json_get(missing_url)
+                    if combined_response and "endpoints" in combined_response:
+                        present_keys = [
+                            name for endpoint in combined_response["endpoints"]
+                            for name in endpoint
+                        ]
+                    elif combined_response and "endpoint" in combined_response:
+                        present_keys = list(endpoint_data)
+                except Exception:
+                    logger.exception(
+                        "Unable to retrieve combined endpoint status from %s",
+                        missing_url,
+                    )
 
-            logger.warning(
-                "No data received for any of the created endpoints; retrying..."
-            )
-            time.sleep(poll_interval)
-
-        if not endpoint_data:
-            logger.error(
-                f"No data received for any of the created endpoints after waiting "
-                f"{wait_time} seconds. Aborting test."
-            )
-            exit(1)
-
-        for gen_endp, generic_endpoint in endpoint_data.items():
-            current_status = generic_endpoint["endpoint"].get("status", "")
-            previous_status = self.endpoint_last_status.get(gen_endp)
-
-            if current_status == previous_status:
-                continue
-
-            logger.info(
-                f"Endpoint {gen_endp} status changed to: {current_status}"
-            )
-
-            file_exists = os.path.isfile(csv_file) and os.path.getsize(csv_file) > 0
-            with open(csv_file, mode="a", newline="") as f:
-                writer = csv.writer(f)
-                if not file_exists:
-                    writer.writerow(["timestamp", "endpoint_name", "status"])
-                writer.writerow(
-                    [
-                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            for gen_endp in created_endp:
+                generic_endpoint = endpoint_data.get(gen_endp)
+                current_status = (
+                    generic_endpoint["endpoint"].get("status", "")
+                    if generic_endpoint else "MISSING"
+                )
+                if self.endpoint_last_status.get(gen_endp) != current_status:
+                    if current_status == "MISSING":
+                        logger.info(
+                            "Endpoint '%s' is unavailable (endpoint_present=False). "
+                            "It may have been deleted, may not have been created, "
+                            "or may be temporarily disconnected. Continuing to "
+                            "monitor it.\nURL: %s\nEndpoint keys present: %s",
+                            gen_endp,
+                            missing_url,
+                            present_keys,
+                        )
+                    else:
+                        logger.info(
+                            "Endpoint %s status changed to: %s",
+                            gen_endp,
+                            current_status,
+                        )
+                    self.write_endpoint_status_csv(
+                        csv_file,
                         gen_endp,
                         current_status,
-                    ]
+                        (present_keys if current_status == "MISSING" else
+                         endpoint_responses.get(gen_endp)),
+                    )
+                    self.endpoint_last_status[gen_endp] = current_status
+
+            if endpoint_data:
+                return True
+
+            missing_for = time.time() - start_time
+            if missing_for >= wait_time:
+                logger.error(
+                    "All %s generic endpoint(s) have been unreachable for %.0fs "
+                    "(limit %ss) - stopping the test.",
+                    len(created_endp),
+                    missing_for,
+                    wait_time,
+                )
+                self.write_endpoint_status_csv(
+                    csv_file,
+                    "ALL",
+                    "ALL_ENDPOINTS_UNREACHABLE",
+                    endpoint_responses,
+                )
+                raise AllEndpointsUnreachable(
+                    f"All generic endpoints were unreachable for {wait_time} seconds"
                 )
 
-            self.endpoint_last_status[gen_endp] = current_status
+            logger.warning(
+                "All %s generic endpoint(s) are unreachable - retrying... "
+                "%.0fs/%ss before giving up and stopping the test.",
+                len(created_endp),
+                missing_for,
+                wait_time,
+            )
+            # Sleep in short intervals so a WebUI stop is acted on promptly,
+            # even while this method is in its missing-endpoint retry window.
+            retry_deadline = time.monotonic() + poll_interval
+            while time.monotonic() < retry_deadline:
+                if self.stop_signal:
+                    logger.info(
+                        "WebUI stop requested while waiting for endpoint data; "
+                        "unwinding directly to report generation."
+                    )
+                    raise WebUIStopRequested
+                remaining = retry_deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                time.sleep(min(0.25, remaining))
 
     def check_gen_cx(self, stall_timeout=300):
         """Check whether all generic endpoints have reached an idle state.
