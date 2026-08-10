@@ -1094,11 +1094,12 @@ class FtpTest(LFCliBase):
             self.bytes_rd[i] = max(self.max_bytes_rd[i], self.bytes_rd[i])
         return list(dataset)
 
-    def record_device_issue(self, device, issue):
+    def record_device_issue(self, device, issue, api_response=None):
         self.device_issue_log.append({
             "Time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             "Device": device,
             "Issue": issue,
+            "API Response": api_response if api_response is not None else '',
         })
 
     def monitoring_elapsed_seconds(self):
@@ -1106,7 +1107,7 @@ class FtpTest(LFCliBase):
             return 0
         return (datetime.now() - self.monitoring_start_time).total_seconds()
 
-    def track_cx_status(self, cx, status):
+    def track_cx_status(self, cx, status, api_response=None):
         # Ignore CX status for the first 10s of monitoring: CXs are still settling into "Run"
         # right after the test starts (e.g. Login/Wait), and treating that startup ramp-up as a
         # real status change/recovery would be a false positive. Nothing is recorded - not even
@@ -1118,10 +1119,10 @@ class FtpTest(LFCliBase):
         if previous is not None and previous != status:
             if status.lower() != 'run':
                 logger.warning("CX '{}' status changed: {} -> {}".format(cx, previous, status))
-                self.record_device_issue(cx, "Status changed: {} -> {}".format(previous, status))
+                self.record_device_issue(cx, "Status changed: {} -> {}".format(previous, status), api_response=api_response)
             elif previous.lower() != 'run':
                 logger.info("CX '{}' recovered: {} -> {}".format(cx, previous, status))
-                self.record_device_issue(cx, "Recovered: {} -> {}".format(previous, status))
+                self.record_device_issue(cx, "Recovered: {} -> {}".format(previous, status), api_response=api_response)
         self.cx_status_log[cx] = status
 
     def format_monitoring_duration(self):
@@ -1445,7 +1446,7 @@ class FtpTest(LFCliBase):
                         l4_dict['bytes_rd'].append(value['bytes-rd'])
                         l4_dict['total_err'].append(value['total-err'])
                         l4_dict['status'].append(value['status'])
-                        self.track_cx_status(cx, value['status'])
+                        self.track_cx_status(cx, value['status'], api_response=value)
                         cx_found = True
             if not cx_found:
                 if cx not in self.missing_cx_logged:
@@ -1458,7 +1459,7 @@ class FtpTest(LFCliBase):
                         "Response CXs : {}".format(cx, url_str, response_cx_names))
                     self.missing_cx_logged.add(cx)
                     self.failed_cx.append(cx)
-                    self.record_device_issue(cx, "CX missing from monitoring data")
+                    self.record_device_issue(cx, "CX missing from monitoring data", api_response=response_cx_names)
                 l4_dict['uc_avg_data'].append(0 if not self.tracking_map else self.tracking_map['uc_avg_data'][idx])
                 l4_dict['uc_max_data'].append(0 if not self.tracking_map else self.tracking_map['uc_max_data'][idx])
                 l4_dict['uc_min_data'].append(0 if not self.tracking_map else self.tracking_map['uc_min_data'][idx])
@@ -1547,7 +1548,8 @@ class FtpTest(LFCliBase):
                         "Signal data for device '{}' is unavailable, it may have disconnected. "
                         "Continuing the test with the remaining devices.".format(sta))
                     self.missing_device_logged.add(sta)
-                    self.record_device_issue(sta, "Signal data unavailable (device may have disconnected)")
+                    self.record_device_issue(sta, "Signal data unavailable (device may have disconnected)",
+                                             api_response=list(interfaces_dict.keys()))
                 self.rssi_list.append('-')
                 self.tx_rate.append('-')
                 self.port_rx_rate.append('-')
