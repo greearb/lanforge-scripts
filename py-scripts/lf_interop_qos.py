@@ -626,12 +626,13 @@ class ThroughputQOS(Realm):
         match = re.match(r'^[0-9]+\.[0-9]+', cx_name)
         return match.group() if match else cx_name
 
-    def record_device_issue(self, device, issue):
+    def record_device_issue(self, device, issue, api_response=None):
         """Records a timestamped device issue, later written to the clients_issue.csv."""
         self.device_issue_log.append({
             "Time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             "Device": device,
             "Issue": issue,
+            "API Response": api_response if api_response is not None else '',
         })
 
     def format_monitoring_duration(self):
@@ -940,7 +941,11 @@ class ThroughputQOS(Realm):
                                 "disconnected. Continuing the test with the remaining devices.".format(port)
                             )
                             self.missing_signal_logged.add(port)
-                            self.record_device_issue(port, "Signal data unavailable (device may have disconnected)")
+                            self.record_device_issue(
+                                port,
+                                "Signal data unavailable (device may have disconnected)",
+                                api_response=[key for interface in port_mgr_data
+                                              if isinstance(interface, dict) for key in interface])
                     elif port in self.missing_signal_logged:
                         logger.info("Signal data for device on port {} is available again.".format(port))
                         self.missing_signal_logged.discard(port)
@@ -986,7 +991,8 @@ class ThroughputQOS(Realm):
                             )
                             self.missing_cx_logged.add(cx)
                             self.record_device_issue(self.port_label_from_cx_name(cx),
-                                                     "CX '{}' missing from monitoring data".format(cx))
+                                                     "CX '{}' missing from monitoring data".format(cx),
+                                                     api_response=response_keys)
                     elif cx in self.missing_cx_logged:
                         logger.info("CX '{}' data is available again.".format(cx))
                         self.missing_cx_logged.discard(cx)
@@ -999,8 +1005,10 @@ class ThroughputQOS(Realm):
                         if past_grace_period and cx not in self.cx_not_running_logged:
                             logger.warning("CX '{}' status is '{}', not running.".format(cx, cx_state))
                             self.cx_not_running_logged.add(cx)
-                            self.record_device_issue(self.port_label_from_cx_name(cx),
-                                                     "CX '{}' status is '{}', not running".format(cx, cx_state))
+                            self.record_device_issue(
+                                self.port_label_from_cx_name(cx),
+                                "CX '{}' status is '{}', not running".format(cx, cx_state),
+                                api_response=overallresponse.get(cx, {}))
                     elif cx_state == 'Run' and cx in self.cx_not_running_logged:
                         logger.info("CX '{}' status is back to running.".format(cx))
                         self.cx_not_running_logged.discard(cx)
