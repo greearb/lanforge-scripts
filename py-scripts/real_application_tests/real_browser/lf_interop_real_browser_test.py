@@ -1400,7 +1400,7 @@ class RealBrowserTest(Realm):
                         gen_endp,
                         current_status,
                         url,
-                        keys
+                        keys if current_status == "Not Found / Deleted" else generic_endpoint.get("endpoint", {})
                     ]
                 )
 
