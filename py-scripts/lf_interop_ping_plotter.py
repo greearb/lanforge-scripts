@@ -211,6 +211,7 @@ class Ping(Realm):
         self.device_issue_log = []
         self.monitor_start_time = None
         self.actual_monitor_duration = 0
+        self.all_devices_stopped = False
         self.generic_endps_profile = self.new_generic_endp_profile()
         self.generic_endps_profile.type = 'lfping'
         self.generic_endps_profile.dest = self.change_target_to_ip()
@@ -581,6 +582,20 @@ class Ping(Realm):
         keys = [list(d.keys())[0] for d in result_data]
         return any('UNKNOWN' not in key for key in keys)
 
+    def all_endpoints_stopped(self, result_data):
+        """
+        True if every non-UNKNOWN endpoint in result_data reports a 'Stopped' status. A stopped
+        endpoint keeps a valid name, so has_valid_endpoint_data() alone won't catch it - this is
+        the actual signal that a device stopped responding.
+        """
+        if result_data is None:
+            return False
+        entries = [result_data] if isinstance(result_data, dict) else [list(d.values())[0] for d in result_data]
+        valid_entries = [e for e in entries if 'UNKNOWN' not in e.get('name', 'UNKNOWN')]
+        if not valid_entries:
+            return False
+        return all(str(e.get('status', '')).lower() == 'stopped' for e in valid_entries)
+
     def wait_for_valid_endpoints(self, timeout=40, poll_interval=2):
         """
         Called when a poll comes back with no valid (non-UNKNOWN) generic
@@ -598,9 +613,12 @@ class Ping(Realm):
         wait_start = datetime.now()
         while (datetime.now() - wait_start).total_seconds() < timeout:
             time.sleep(poll_interval)
-            if self.has_valid_endpoint_data(self.get_results()):
+            latest_result = self.get_results()
+            if self.has_valid_endpoint_data(latest_result) and not self.all_endpoints_stopped(latest_result):
                 logger.info("Valid endpoint data recovered; resuming the test.")
                 return True
+            elapsed = (datetime.now() - wait_start).total_seconds()
+            logger.warning("Still no valid generic endpoints after %.0fs, retrying...", elapsed)
         logger.error(f"No valid generic endpoints recovered after waiting {timeout}s.")
         return False
 
@@ -623,6 +641,8 @@ class Ping(Realm):
             if ports_response is not None:
                 logger.info("GET /ports/all/ succeeded; resuming the test.")
                 return ports_response
+            elapsed = (datetime.now() - wait_start).total_seconds()
+            logger.warning("GET /ports/all/ still no response after %.0fs, retrying...", elapsed)
         logger.error(f"GET /ports/all/ still returned no response after waiting {timeout}s.")
         return None
 
@@ -645,6 +665,8 @@ class Ping(Realm):
             if adb_response is not None:
                 logger.info("GET /adb/ succeeded.")
                 return adb_response
+            elapsed = (datetime.now() - wait_start).total_seconds()
+            logger.warning("GET /adb/ still no response after %.0fs, retrying...", elapsed)
         logger.error(f"GET /adb/ still returned no response after waiting {timeout}s.")
         return None
 
@@ -1773,7 +1795,16 @@ class Ping(Realm):
                 - In standard mode: returns None implicitly after the loop ends.
         """
         logging.info("Monitoringcx")
-        self.monitor_start_time = datetime.now()
+        if self.all_devices_stopped:
+            # already gave up on recovery earlier; don't re-run the 40s wait on every bandsteering tick
+            return (individual_df, True) if self.do_bandsteering else None
+        if self.do_bandsteering:
+            # one continuous session: start the grace period once, not every tick
+            if self.monitor_start_time is None:
+                self.monitor_start_time = datetime.now()
+        else:
+            # fresh endpoints per coordinate/rotation: restart the grace period each call
+            self.monitor_start_time = datetime.now()
         monitor_start = datetime.now()
         if Devices is None:
             Devices = RealDevice(manager_ip=self.host, selected_bands=[])
@@ -1804,14 +1835,26 @@ class Ping(Realm):
                     time.sleep(1)
                     loop_timer += abs(t_init - datetime.now()).total_seconds()
                     continue
-                if not self.has_valid_endpoint_data(result_data):
-                    raise ValueError("There are no valid generic endpoints to run the test")
+                # skip the stopped-status check during the startup grace period, since endpoints
+                # can briefly still report their pre-start status right after start_generic()
+                stopped = self.monitoring_elapsed_seconds() >= 10 and self.all_endpoints_stopped(result_data)
+                if not self.has_valid_endpoint_data(result_data) or stopped:
+                    raise ValueError("There are no valid generic endpoints to run the test" if not stopped
+                                     else "All generic endpoints have stopped responding")
             except ValueError as e:
                 logger.info(result_data)
                 logger.error(e)
                 if self.wait_for_valid_endpoints(timeout=40):
                     loop_timer += abs(t_init - datetime.now()).total_seconds()
                     continue
+                logger.error("No devices responded within 40 seconds during monitoring, ending "
+                             "the monitor loop gracefully; the test will continue with the data "
+                             "collected so far.")
+                self.record_device_issue(','.join(self.generic_endps_profile.created_endp), str(e))
+                self.all_devices_stopped = True
+                if self.robot is not None:
+                    # mark the WebUI nav state as completed rather than stuck mid-navigation
+                    self.robot.update_nav_data_for_all_cxs_stopped()
                 break
             # logging.info(result_data)
             # Robot battery management — check every 300 seconds
@@ -2188,6 +2231,9 @@ class Ping(Realm):
             exit(1)
         # Standard robot test — iterate over coordinates and angles
         for coord in self.coordinate_list:
+            if self.all_devices_stopped:
+                logging.warning("Robot test stopped because no devices recovered within 40 seconds.")
+                break
             # WebUI stop request between coordinates
             if self.do_webUI:
                 if self.check_stop_status():
@@ -2256,6 +2302,9 @@ class Ping(Realm):
                 logging.info('Stopping the cx')
                 self.stop_generic()
                 # self.clear_counter_endp()
+
+                if self.all_devices_stopped:
+                    break
 
             if self.do_webUI:
                 self.copy_reports_to_home_dir()
@@ -2447,6 +2496,14 @@ class Ping(Realm):
         last_interation = False
         for coord in self.coordinates_completed:
             for angle in self.angle_list:
+                # a coordinate stopped before any data was collected has nothing to report - skip it
+                if self.rotation_enabled:
+                    if coord not in self.coordinate_json or angle not in self.coordinate_json[coord]:
+                        logger.warning("No ping data was collected for coordinate %s angle %s; skipping it in the report.", coord, angle)
+                        continue
+                elif coord not in self.coordinate_json:
+                    logger.warning("No ping data was collected for coordinate %s; skipping it in the report.", coord)
+                    continue
                 # Detect the final iteration so we can break the outer loop
                 if coord == len(self.coordinates_completed) - 1 and self.angle_list[angle] == self.currentangle:
                     last_interation = True
@@ -3471,19 +3528,23 @@ connectivity problems.
         t_init = datetime.now()
         try:
             result_data = ping.get_results()
-            if result_data is None:
-                logger.warning("get_results() returned no data this poll; skipping to the next iteration.")
-                time.sleep(1)
-                loop_timer += abs(t_init - datetime.now()).total_seconds()
-                continue
-            if not ping.has_valid_endpoint_data(result_data):
-                raise ValueError("There are no valid generic endpoints to run the test")
+            # skip the stopped-status check during the startup grace period, since endpoints
+            # can briefly still report their pre-start status right after start_generic()
+            stopped = result_data is not None and ping.monitoring_elapsed_seconds() >= 10 and ping.all_endpoints_stopped(result_data)
+            if not ping.has_valid_endpoint_data(result_data) or stopped:
+                raise ValueError("There are no valid generic endpoints to run the test" if not stopped
+                                 else "All generic endpoints have stopped responding")
         except ValueError as e:
             logger.info(result_data)
             logger.error(e)
             if ping.wait_for_valid_endpoints(timeout=40):
                 loop_timer += abs(t_init - datetime.now()).total_seconds()
                 continue
+            logger.error("No devices responded within 40 seconds during monitoring, ending "
+                         "the monitor loop gracefully; the test will continue with the data "
+                         "collected so far.")
+            ping.record_device_issue(','.join(ping.generic_endps_profile.created_endp), str(e))
+            ping.all_devices_stopped = True
             break
         if args.virtual:
             logger.debug("GET /ports/all/")
