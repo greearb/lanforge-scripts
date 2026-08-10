@@ -1008,6 +1008,57 @@ class Youtube(Realm):
         )
         return False
 
+    def wait_stop_aware(self, duration, context, poll_interval=0.25):
+        """Wait for a fixed delay while honoring WebUI stop requests."""
+        deadline = time.monotonic() + duration
+        while True:
+            if self.stop_signal:
+                logger.info("WebUI stop requested %s.", context)
+                raise WebUIStopRequested
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return
+            time.sleep(min(poll_interval, remaining))
+
+    def check_robo_stop(self):
+        """Robot callback that immediately unwinds a WebUI-stopped test."""
+        if self.stop_signal:
+            logger.info(
+                "WebUI stop requested during robot battery/movement handling; "
+                "unwinding directly to report generation."
+            )
+            raise WebUIStopRequested
+        return {}
+
+    def finalize_test_run(self, args, iot_summary=None):
+        """Stop clients, generate the report, then clean up the test."""
+        self.stop()
+        # Stop collection before WebUI completion triggers the final live image.
+        if args.do_webUI:
+            self.stop_webui_test()
+        logger.info("Waiting 10 seconds for client cleanup and log uploads")
+        time.sleep(10)
+        try:
+            if args.do_robo and not args.do_bandsteering:
+                self.create_robo_report()
+            else:
+                self.create_report(
+                    self.stats_api_response,
+                    self.ui_report_dir if args.do_webUI else "",
+                    iot_summary=iot_summary,
+                )
+            logger.info("YouTube report generated: %s", self.report_path_date_time)
+        finally:
+            try:
+                self.generic_endps_profile.stop_cx()
+            except Exception:
+                logger.exception("Unable to stop all YouTube CXs during cleanup")
+            if not args.no_post_cleanup:
+                try:
+                    self.generic_endps_profile.cleanup()
+                except Exception:
+                    logger.exception("Unable to clean up all YouTube endpoints")
+
     def get_youtube_lf_wifi_stats(self):
         """
         Returns dict: { sta_name : { BSSID, RSSI, channel, mode, tx_rate, rx_rate } }
@@ -2571,6 +2622,8 @@ class Youtube(Realm):
                 break
             self.robo_obj.wait_for_battery()
             matched, aborted = self.robo_obj.move_to_coordinate(coord=coordinate)
+            if self.stop_signal:
+                raise WebUIStopRequested
             if not matched:
                 continue
             self.current_cord = coordinate
@@ -2602,7 +2655,11 @@ class Youtube(Realm):
                         time.sleep(5)
 
                     if self.stop_signal:
-                        self.wait_for_android_shutdown(timeout=30)
+                        logging.info(
+                            "Robot YouTube stop requested; deferring CX shutdown "
+                            "to common finalization so clients can upload logs."
+                        )
+                        return
                     self.generic_endps_profile.stop_cx()
                     logging.info(
                         "Finished data collection for coordinate %s and angle %s at %s",
@@ -2633,7 +2690,11 @@ class Youtube(Realm):
                     time.sleep(5)
 
                 if self.stop_signal:
-                    self.wait_for_android_shutdown(timeout=30)
+                    logging.info(
+                        "Robot YouTube stop requested; deferring CX shutdown to "
+                        "common finalization so clients can upload logs."
+                    )
+                    return
                 self.generic_endps_profile.stop_cx()
                 logging.info(
                     "Finished data collection for coordinate %s at %s",
@@ -2650,7 +2711,7 @@ class Youtube(Realm):
         self.robo_obj.total_cycles = self.cycles
         self.robo_obj.coordinate_list = self.coordinates_list
         coordinate_list_with_robo = self.robo_obj.get_coordinates_list()
-        time.sleep(5)
+        self.wait_stop_aware(5, "before band-steering coordinate traversal")
         for coordinate in coordinate_list_with_robo:
             if self.stop_signal:
                 break
@@ -2662,9 +2723,16 @@ class Youtube(Realm):
                 self.from_coordinate = self.to_coordinate
                 self.to_coordinate = coordinate
 
-            self.robo_obj.wait_for_battery()
+            self.robo_obj.wait_for_battery(
+                monitor_function=self.check_robo_stop
+            )
 
-            matched, abort = self.robo_obj.move_to_coordinate(coord=coordinate)
+            matched, abort = self.robo_obj.move_to_coordinate(
+                coord=coordinate,
+                monitor_function=self.check_robo_stop,
+            )
+            if self.stop_signal:
+                raise WebUIStopRequested
             if matched:
                 logger.info("Reached the coordinate {}".format(coordinate))
             if abort:
@@ -2672,32 +2740,44 @@ class Youtube(Realm):
             if not matched:
                 continue
             self.current_cord = coordinate
-            time.sleep(10)
 
-        logging.info(
-            "All band-steering coordinates completed at %s; stopping the test",
-            datetime.now().astimezone().isoformat(timespec="seconds"),
-        )
+            # Monitor endpoints during the existing dwell so band-steering
+            # follows the same stop and reporting behavior as other modes.
+            coordinate_dwell_deadline = time.monotonic() + 10
+            while time.monotonic() < coordinate_dwell_deadline:
+                self.monitor_endpoint_status_changes()
+                remaining = coordinate_dwell_deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                dwell_poll_deadline = time.monotonic() + min(1, remaining)
+                while time.monotonic() < dwell_poll_deadline:
+                    if self.stop_signal:
+                        logger.info(
+                            "WebUI stop requested during band-steering endpoint "
+                            "monitoring; unwinding directly to report generation."
+                        )
+                        raise WebUIStopRequested
+                    sleep_remaining = dwell_poll_deadline - time.monotonic()
+                    if sleep_remaining <= 0:
+                        break
+                    time.sleep(min(0.25, sleep_remaining))
+
         if self.stop_signal:
-            self.wait_for_android_shutdown(timeout=30)
-        self.generic_endps_profile.stop_cx()
-
+            logging.info(
+                "Band-steering test stopped before all coordinates completed at %s",
+                datetime.now().astimezone().isoformat(timespec="seconds"),
+            )
+        else:
+            logging.info(
+                "All band-steering coordinates completed at %s; stopping the test",
+                datetime.now().astimezone().isoformat(timespec="seconds"),
+            )
         self.stop_bandsteering_test()
 
     def stop_bandsteering_test(self):
         logging.info("Stopping Band-Steering YouTube Test")
 
-        try:
-            if self.stop_signal:
-                self.wait_for_android_shutdown(timeout=30)
-            self.generic_endps_profile.stop_cx()
-        except Exception as e:
-            logging.error(f"Error stopping CX: {e}")
-        try:
-            self.generic_endps_profile.cleanup()
-        except Exception as e:
-            logging.error(f"Error during cleanup of CX: {e}")
-
+        # Common finalization waits for client uploads and cleans endpoints once.
         self.stop_signal = True
 
         logging.info("Band-Steering Test stopped")
@@ -3087,6 +3167,8 @@ class Youtube(Realm):
 
 def main():
     iot_summary = None
+    args = None
+    youtube = None
     try:
         help_summary = '''\
         Youtube streaming automation
@@ -3544,7 +3626,7 @@ NOTES:
                 )
 
             logging.info("Waiting 10 seconds before starting YouTube streaming")
-            time.sleep(10)
+            youtube.wait_stop_aware(10, "before YouTube streaming started")
 
             youtube.start_time = datetime.now()
             if args.do_robo:
@@ -3562,9 +3644,8 @@ NOTES:
                     youtube.monitor_endpoint_status_changes()
                     time.sleep(1)
 
-                if youtube.stop_signal:
-                    youtube.wait_for_android_shutdown(timeout=30)
-                youtube.generic_endps_profile.stop_cx()
+                if not youtube.stop_signal:
+                    youtube.generic_endps_profile.stop_cx()
                 logging.info(
                     "YouTube streaming finished at %s",
                     datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -3578,31 +3659,27 @@ NOTES:
                         iot_summary = json.load(f)
 
             logging.info("Stopping the YouTube test")
-
-            # Perform post-test cleanup if not skipped
-            if not args.no_post_cleanup:
-                youtube.generic_endps_profile.cleanup()
+    except WebUIStopRequested:
+        logging.info(
+            "WebUI stop acknowledged during endpoint retry; entering report generation."
+        )
+    except AllEndpointsUnreachable as exc:
+        logging.error("%s; entering report generation.", exc)
     except Exception as e:
         logging.error(f"Error occured {e}")
         tb_str = traceback.format_exc()  # capture traceback as string
         logger.error("An exception occurred:\n%s", tb_str)
     finally:
-        if not ('--help' in sys.argv or '-h' in sys.argv):
-            if args.do_webUI:
-                youtube.stop_webui_test()
-            youtube.stop()
-            if args.do_robo and not args.do_bandsteering:
-                youtube.create_robo_report()
-            elif args.do_webUI:
-                youtube.create_report(youtube.stats_api_response, youtube.ui_report_dir, iot_summary=iot_summary)
-            else:
-                youtube.create_report(youtube.stats_api_response, '', iot_summary=iot_summary)
+        if (
+            args is not None
+            and youtube is not None
+            and not ('--help' in sys.argv or '-h' in sys.argv)
+        ):
+            youtube.finalize_test_run(args, iot_summary=iot_summary)
             logging.info(
                 "YouTube test and report generation completed at %s",
                 datetime.now().astimezone().isoformat(timespec="seconds"),
             )
-            logging.info("Waiting 10 seconds for browser cleanup on client devices")
-            time.sleep(10)
 
 
 if __name__ == "__main__":
