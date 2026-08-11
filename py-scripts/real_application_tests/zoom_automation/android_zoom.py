@@ -5,6 +5,7 @@ import argparse
 import logging
 import os
 import re
+import subprocess
 import sys
 import time
 from datetime import datetime, timedelta
@@ -241,6 +242,60 @@ class ZoomAutomator:
             self.logger.error(f"Failed to connect: {e}")
             raise
 
+    def _adb(self, *args):
+        """Run an adb shell command on this device and return the result."""
+        return subprocess.run(
+            ["adb", "-s", self.device_serial, "shell", *args],
+            capture_output=True,
+            text=True,
+        )
+
+    def grant_permissions(self, package_name=ZOOM_PACKAGE):
+        """Pre-grant the app's runtime permissions so no dialog blocks the join.
+
+        Reads the permissions the package actually declares on this device, so
+        one call covers every API level in the fleet. Returns the number still
+        ungranted afterwards.
+        """
+        self._set_phase("PERMISSIONS")
+
+        listing = self._adb("dumpsys", "package", package_name).stdout
+        wanted, in_runtime = [], False
+        for raw in listing.splitlines():
+            line = raw.strip()
+            if line.startswith("runtime permissions:"):
+                in_runtime = True
+            elif in_runtime:
+                if line.startswith("android.permission."):
+                    wanted.append(line.split(":", 1)[0])
+                elif line:
+                    break
+
+        granted = 0
+        for permission in wanted:
+            result = self._adb("pm", "grant", package_name, permission)
+            output = result.stdout + result.stderr
+            if "GRANT_RUNTIME_PERMISSIONS" in output:
+                self.logger.error(
+                    "This ROM blocks adb from granting permissions. "
+                    "Accept the prompts manually once."
+                )
+                break
+            if not output.strip():
+                granted += 1
+
+        # Not a runtime permission — it is an appop, so pm grant cannot set it.
+        self._adb("appops", "set", package_name, "SYSTEM_ALERT_WINDOW", "allow")
+
+        remaining = self._adb("dumpsys", "package", package_name).stdout.count(
+            "granted=false"
+        )
+        self.logger.info(
+            f"Permissions: granted {granted}/{len(wanted)}, "
+            f"{remaining} still ungranted."
+        )
+        return remaining
+
     def start_interop_app(self):
         """Force-stop Zoom and hand the device back to the interop app.
 
@@ -311,32 +366,15 @@ class ZoomAutomator:
         self.logger.info(f"Starting {ZOOM_PACKAGE} and opening the meeting link.")
         d.app_start(ZOOM_PACKAGE, stop=True)
         time.sleep(2)
-
+        
         self.adb_device.shell(
-            f'am start -a android.intent.action.VIEW -d "{meeting_url}"'
+            f'am start -a android.intent.action.VIEW -d "{meeting_url}" {ZOOM_PACKAGE}'
         )
         self.logger.info(f"Meeting link handed to Zoom: {meeting_url}")
         time.sleep(8)
 
-        self._set_phase("PERMISSIONS")
-        self.logger.info("Checking for permission prompts.")
-        allow_while_using = d(text="While using the app")
-        if allow_while_using.wait(timeout=8):
-            allow_while_using.click()
-            self.logger.info("Granted 'While using the app'.")
-            time.sleep(2)
-
-            for permission_text in ["Allow", "ALLOW"]:
-                allow_btn = d(text=permission_text, className="android.widget.Button")
-                if allow_btn.wait(timeout=5):
-                    allow_btn.click()
-                    self.logger.info(f"Clicked '{permission_text}'.")
-                    time.sleep(1)
-        else:
-            self.logger.info("No permission prompt appeared; already granted.")
-
         preview_join = d(text="Editing display name")
-        if preview_join.wait(timeout=5):
+        if preview_join.wait(timeout=30):
             self.logger.info("Preview screen detected.")
 
             name_input = d(className="android.widget.EditText")
@@ -694,6 +732,7 @@ def main():
     )
     try:
         automator.set_device(args.serial)
+        automator.grant_permissions()
         automator.join_zoom_meeting(args.meeting_url, args.participant_name)
     except Exception as e:
         automator.logger.error(f"Error: {e}")
