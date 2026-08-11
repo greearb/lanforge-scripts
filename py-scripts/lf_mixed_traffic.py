@@ -3374,7 +3374,7 @@ INCLUDE_IN_README: False
                                                                     start_id=args.sixg_start_id, all_sta=True)
                 # updating num stations and station list
                 virtual_station_list = sta_list_2g + sta_list_5g + sta_list_6g
-                logger.info("List of selected virtual stations:", virtual_station_list)
+                logger.info("List of selected virtual stations: {}".format(virtual_station_list))
                 mixed_obj.station_list = virtual_station_list
                 mixed_obj.num_staions = args.twog_num_stations + args.fiveg_num_stations + args.sixg_num_stations
             if (args.use_default_config):
