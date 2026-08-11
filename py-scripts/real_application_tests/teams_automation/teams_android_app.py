@@ -1,3 +1,4 @@
+"""Join a Microsoft Teams meeting on one Android device for LANforge tests."""
 import argparse
 import logging
 import os
@@ -14,6 +15,13 @@ from ppadb.client import Client as AdbClient
 
 
 class TeamsAndroidApp:
+    """Drive one Android device through a Teams meeting.
+
+    Talks to the device over ADB for shell commands and uiautomator2 for UI
+    interaction, and to the host's Flask server for meeting timing. One
+    instance drives one device, identified by its ADB serial.
+    """
+
     def __init__(
         self,
         host="127.0.0.1",
@@ -26,6 +34,11 @@ class TeamsAndroidApp:
         video=True,
         prejoin_timeout=180,
     ):
+        """Set up the ADB client and this participant's logger.
+
+        host/port address the ADB server, upstream_port the host's Flask
+        server.
+        """
         self.prejoin_timeout = prejoin_timeout
         self.host = host
         self.client = AdbClient(host=self.host, port=port)
@@ -72,11 +85,15 @@ class TeamsAndroidApp:
         self.logger = logging.getLogger(__name__)
 
     def get_devices(self):
-        """Return list of connected ADB serials"""
+        """Return the ADB serials of every connected device."""
         devices = self.client.devices()
         return [d.serial for d in devices]
 
     def connect(self):
+        """Open a uiautomator2 session to this device's serial.
+
+        Must be called before any UI interaction.
+        """
         self.d = u2.connect(self.serial)
         self.logger.info(f"[{self.participant_name} ({self.serial})] Connected")
 
@@ -146,7 +163,11 @@ class TeamsAndroidApp:
         return remaining
 
     def update_participation(self):
+        """Tell the host server this device has joined the call.
 
+        Failures are logged and swallowed, since a missed status update does
+        not affect the call itself.
+        """
         endpoint_url = f"{self.base_url}/set_participants_joined"
         try:
             # Include the participant name so the server can identify which device joined the call.
@@ -195,6 +216,10 @@ class TeamsAndroidApp:
             return self.stop_signal
 
     def close_meeting(self):
+        """Stop the Teams app on this device.
+
+        Does nothing if no uiautomator2 session was opened.
+        """
         if self.d is not None:
             self.d.app_stop("com.microsoft.teams")
             self.logger.info(
@@ -202,6 +227,11 @@ class TeamsAndroidApp:
             )
 
     def open_interop_app(self):
+        """Launch the interop app and tap into its test room.
+
+        Waits up to 60s for the app to load, raising if it never appears or
+        the enter button cannot be clicked.
+        """
         if self.d is None:
             return
         self.d.app_start("com.candela.wecan")
@@ -228,6 +258,11 @@ class TeamsAndroidApp:
         )
 
     def get_start_and_end_time(self):
+        """Fetch the meeting's start and end time from the host.
+
+        Sets self.start_time and self.end_time. On any failure it logs and
+        leaves both unchanged, so the caller can poll until they arrive.
+        """
         endpoint_url = f"{self.base_url}/get_start_end_time"
         try:
             response = requests.get(endpoint_url, timeout=5)
@@ -245,6 +280,7 @@ class TeamsAndroidApp:
             )
 
     def dump_xml(self):
+        """Write the current UI hierarchy to dump_<serial>.xml for debugging."""
         xml = self.d.dump_hierarchy()
         with open(f"dump_{self.d.serial}.xml", "w", encoding="utf-8") as f:
             f.write(xml)
@@ -292,6 +328,11 @@ class TeamsAndroidApp:
             time.sleep(1)
 
     def enable_audio(self, timeout=60):
+        """Unmute the microphone if it is muted.
+
+        Returns without acting if the mute control does not appear within
+        `timeout` seconds.
+        """
         xml = self.wait_for_text(
             ("Mic muted", "Mic unmuted"), timeout, "Mute/Unmute button"
         )
@@ -315,6 +356,11 @@ class TeamsAndroidApp:
                 )
 
     def enable_video(self, timeout=60):
+        """Turn the camera on if it is off.
+
+        Returns without acting if the video control does not appear within
+        `timeout` seconds.
+        """
         xml = self.wait_for_text(
             ("Video is off", "Video is on"), timeout, "Video on/off button"
         )
@@ -366,6 +412,13 @@ class TeamsAndroidApp:
             return ""
 
     def join_meeting(self):
+        """Open the meeting link and join the call.
+
+        Fires the meeting intent up to three times, since Teams can drop it
+        and stay on its loading screen, then enters the name, enables the
+        requested media and taps Join now. Exits with status 1 if the
+        pre-join screen never appears.
+        """
         attempts = 3
         per_attempt = max(30, self.prejoin_timeout // attempts)
         for attempt in range(1, attempts + 1):
@@ -413,6 +466,11 @@ class TeamsAndroidApp:
             sys.exit(1)
 
     def enter_participant_name(self, timeout=60):
+        """Type this participant's name into the pre-join field.
+
+        Exits with status 1 if the field does not appear within `timeout`
+        seconds or cannot be filled.
+        """
         if not self.wait_for_text(("Enter name",), timeout, "participant name field"):
             sys.exit(1)
         name_input = self.d.xpath('//*[@text="Enter name"]')
