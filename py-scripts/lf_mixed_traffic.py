@@ -3325,8 +3325,11 @@ INCLUDE_IN_README: False
                             mixed_obj.ping_test_obj, mixed_obj.ping_test_status = recv_or_default(
                                 t1_parent, t1, ('', False), "Ping test")
                         if "2" in args.tests:
-                            mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = recv_or_default(
-                                t2_parent, t2, ('', '', '', '', False), "QoS test")
+                            qos_result = recv_or_default(t2_parent, t2, ('', '', '', '', False), "QoS test")
+                            if mixed_obj.virtual:
+                                mixed_obj.throughput_qos_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = qos_result
+                            else:
+                                mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = qos_result
                         if "3" in args.tests:
                             mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = recv_or_default(
                                 t3_parent, t3, ('', False), "FTP test")
@@ -3525,8 +3528,11 @@ INCLUDE_IN_README: False
                         mixed_obj.ping_test_obj, mixed_obj.ping_test_status = recv_or_default(
                             t1_parent, t1, ('', False), "Ping test")
                     if "2" in args.tests:
-                        mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = recv_or_default(
-                            t2_parent, t2, ('', '', '', '', False), "QoS test")
+                        qos_result = recv_or_default(t2_parent, t2, ('', '', '', '', False), "QoS test")
+                        if mixed_obj.virtual:
+                            mixed_obj.throughput_qos_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = qos_result
+                        else:
+                            mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = qos_result
                     if "3" in args.tests:
                         mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = recv_or_default(
                             t3_parent, t3, ('', False), "FTP test")
