@@ -3297,7 +3297,10 @@ INCLUDE_IN_README: False
                             mixed_obj.ping_test_obj, mixed_obj.ping_test_status = t1_parent.recv()
                             t1.join()
                         if "2" in args.tests:
-                            mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = t2_parent.recv()
+                            if mixed_obj.virtual:
+                                mixed_obj.throughput_qos_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = t2_parent.recv()
+                            else:
+                                mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = t2_parent.recv()
                             t2.join()
                         if "3" in args.tests:
                             mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = t3_parent.recv()
@@ -3496,7 +3499,10 @@ INCLUDE_IN_README: False
                         mixed_obj.ping_test_obj, mixed_obj.ping_test_status = t1_parent.recv()
                         t1.join()
                     if "2" in args.tests:
-                        mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = t2_parent.recv()
+                        if mixed_obj.virtual:
+                            mixed_obj.throughput_qos_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = t2_parent.recv()
+                        else:
+                            mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = t2_parent.recv()
                         t2.join()
                     if "3" in args.tests:
                         mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = t3_parent.recv()
