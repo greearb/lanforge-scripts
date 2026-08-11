@@ -10277,12 +10277,35 @@ def main():
 
     help_summary = '''\
 The Layer 3 Traffic Generation Test is designed to test the performance of the
-Access Point by running layer 3 TCP and/or UDP Traffic.  Layer-3 Cross-Connects represent a stream
+Access Point by running layer 3 TCP and/or UDP Traffic. Layer-3 Cross-Connects represent a stream
 of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints,
 each of which is associated with a particular Port (physical or virtual interface).
 
 The test will create stations, create CX traffic between upstream port and stations, run traffic
 and generate a report.
+
+Toolbox Mode (--toolbox):
+Executes standalone, atomic LANforge building-block actions and exits immediately with status code 0 on success or 1 on failure.
+
+Toolbox Actions:
+  --create_station       Create stations using specified --radio config
+  --build_cxs            Build Layer-3 cross-connections between --upstream_port and --ports (or --downstream_ports)
+  --cx_names             Specify custom cross-connection name or prefix (e.g. wlan0, toolbox)
+  --start_cx             Start specified cross-connection(s) by name or 'all'
+  --stop_cx              Stop specified cross-connection(s) by name or 'all'
+  --del_cx               Delete specified cross-connection(s) by name or 'all'
+  --del_stations         Delete specified Wi-Fi station ports by name or 'all'
+  --ports_up             Set specified ports Admin UP
+  --ports_down           Set specified ports Admin DOWN
+
+Examples:
+  # Create station & build cross-connection with custom name 'wlan0':
+  python3 py-scripts/test_l3.py --lfmgr 192.168.244.45 --toolbox --create_station --radio "radio==wiphy0 stations==1" --build_cxs --upstream_port 1.1.eth1 --cx_names wlan0
+
+  # Start, stop, or delete specific cross-connection by name:
+  python3 py-scripts/test_l3.py --lfmgr 192.168.244.45 --toolbox --start_cx wlan0
+  python3 py-scripts/test_l3.py --lfmgr 192.168.244.45 --toolbox --stop_cx wlan0
+  python3 py-scripts/test_l3.py --lfmgr 192.168.244.45 --toolbox --del_cx wlan0
 '''
     args = parse_args()
 
