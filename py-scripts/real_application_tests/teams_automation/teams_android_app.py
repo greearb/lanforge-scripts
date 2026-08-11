@@ -92,6 +92,58 @@ class TeamsAndroidApp:
             )
         return installed
 
+    def _adb(self, *args):
+        """Run an adb shell command on this device and return the result."""
+        return subprocess.run(
+            ["adb", "-s", self.serial, "shell", *args],
+            capture_output=True,
+            text=True,
+        )
+
+    def grant_permissions(self, package_name="com.microsoft.teams"):
+        """Pre-grant the app's runtime permissions so no dialog blocks the join.
+
+        Reads the permissions the package actually declares on this device, so
+        one call covers every API level in the fleet. Returns the number still
+        ungranted afterwards.
+        """
+        listing = self._adb("dumpsys", "package", package_name).stdout
+        wanted, in_runtime = [], False
+        for raw in listing.splitlines():
+            line = raw.strip()
+            if line.startswith("runtime permissions:"):
+                in_runtime = True
+            elif in_runtime:
+                if line.startswith("android.permission."):
+                    wanted.append(line.split(":", 1)[0])
+                elif line:
+                    break
+
+        granted = 0
+        for permission in wanted:
+            result = self._adb("pm", "grant", package_name, permission)
+            output = result.stdout + result.stderr
+            if "GRANT_RUNTIME_PERMISSIONS" in output:
+                self.logger.error(
+                    f"[{self.participant_name} ({self.serial})] This ROM blocks adb from "
+                    f"granting permissions. Accept the prompts manually once."
+                )
+                break
+            if not output.strip():
+                granted += 1
+
+        # Not a runtime permission — it is an appop, so pm grant cannot set it.
+        self._adb("appops", "set", package_name, "SYSTEM_ALERT_WINDOW", "allow")
+
+        remaining = self._adb("dumpsys", "package", package_name).stdout.count(
+            "granted=false"
+        )
+        self.logger.info(
+            f"[{self.participant_name} ({self.serial})] Permissions: granted {granted}"
+            f"/{len(wanted)}, {remaining} still ungranted."
+        )
+        return remaining
+
     def update_participation(self):
 
         endpoint_url = f"{self.base_url}/set_participants_joined"
@@ -427,6 +479,10 @@ if __name__ == "__main__":
             sys.exit(1)
         if not teams_android_app.is_app_installed("com.candela.wecan"):
             sys.exit(1)
+
+        # Before the join, so a first-launch permission dialog cannot sit on top
+        # of the pre-join screen the automation is waiting for.
+        teams_android_app.grant_permissions()
 
         teams_android_app.join_meeting()
         teams_android_app.update_participation()
