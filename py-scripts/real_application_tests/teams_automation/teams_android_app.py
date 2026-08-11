@@ -1,15 +1,16 @@
-import uiautomator2 as u2
-import time
-from ppadb.client import Client as AdbClient
-from datetime import datetime
 import argparse
-import pytz
-import requests
 import logging
 import os
-import sys
-import traceback
 import subprocess
+import sys
+import time
+import traceback
+from datetime import datetime
+
+import pytz
+import requests
+import uiautomator2 as u2
+from ppadb.client import Client as AdbClient
 
 
 class TeamsAndroidApp:
