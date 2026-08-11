@@ -640,6 +640,21 @@ class ZoomAutomator:
             self.logger.warning(
                 f"Could not fully enable audio/video after {max_retries} retries."
             )
+            self.logger.warning(
+                "Audio and video can only be toggled while Zoom's meeting "
+                "toolbar is on screen, and Zoom Auto hides it a few seconds after "
+                "each tap. Turn on 'Always show meeting controls' once on "
+                "this handset so the buttons stay readable — Zoom keeps the "
+                "setting across restarts:\n"
+                "    1. Open the Zoom app (no sign-in needed).\n"
+                "    2. Tap the gear icon at the top left.\n"
+                "    3. Tap 'Meetings'.\n"
+                "    4. Scroll down to 'IN MEETING CONTROLS'.\n"
+                "    5. Turn on 'Always show meeting controls'.\n"
+                "While on that screen, also leave 'Turn off my video' and "
+                "'Mute my microphone' off, so the client joins unmuted and "
+                "with video already on."
+            )
 
     def upload_ping_log(self):
         """POST this participant's ping log to the host as a file upload.
