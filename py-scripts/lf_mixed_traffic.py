@@ -2031,7 +2031,10 @@ class Mixed_Traffic(Realm):
                         if res:
                             self.data_set, self.load, res1 = qos_obj.generate_graph_data_set(res)
                             qos_obj.tos = tos
-                            qos_obj.generate_individual_graph(res1, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a, qos_obj.avg_drop_b)
+                            if self.virtual:
+                                qos_obj.generate_individual_graph(res1, self.lf_report_mt)
+                            else:
+                                qos_obj.generate_individual_graph(res1, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a, qos_obj.avg_drop_b)
                 else:
                     df_throughput = pd.DataFrame(self.res["throughput_table_df"])
                     self.lf_report_mt.set_table_dataframe(df_throughput)
@@ -2067,8 +2070,11 @@ class Mixed_Traffic(Realm):
                     self.lf_report_mt.build_graph()
                     # Helpful for testhouse when both QoS and multicast are checked, to avoid generating redundant RSSI heatmaps.
                     multicast_exists = "5" in self.tests and self.get_live_view
-                    qos_obj.generate_individual_graph(self.res, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a,
-                                                      qos_obj.avg_drop_b, self.total_floors, multicast_exists)
+                    if self.virtual:
+                        qos_obj.generate_individual_graph(self.res, self.lf_report_mt)
+                    else:
+                        qos_obj.generate_individual_graph(self.res, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a,
+                                                          qos_obj.avg_drop_b, self.total_floors, multicast_exists)
             if "3" in self.tests and self.ftp_test_status:
                 # 3.FTP test reporting in mixed traffic
                 self.lf_report_mt.set_obj_html(_obj_title="3. File Transfer Protocol (FTP) Test", _obj="")
