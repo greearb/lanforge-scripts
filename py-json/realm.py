@@ -388,35 +388,30 @@ class Realm(LFCliBase):
         return False
 
     def admin_up(self, port_eid):
-        # logger.info("186 admin_up port_eid: "+port_eid)
         eid = self.name_to_eid(port_eid)
         resource = eid[1]
         port = eid[2]
         request = LFUtils.port_up_request(resource_id=resource, port_name=port, debug_on=self.debug)
-        # logger.info("192.admin_up request: resource: %s port_name %s"%(resource, port))
         dbg_param = ""
         if logger.getEffectiveLevel() == logging.DEBUG:
-            # logger.info("enabling url debugging")
             dbg_param = "?__debug=1"
         collected_responses = list()
-        self.json_post("/cli-json/set_port%s" % dbg_param, request, debug_=self.debug,
-                       response_json_list_=collected_responses)
-        # TODO: when doing admin-up ath10k radios, want a LF complaint about a license exception
-        # if len(collected_responses) > 0: ...
+        return self.json_post("/cli-json/set_port%s" % dbg_param, request, debug_=self.debug,
+                              response_json_list_=collected_responses)
 
     def admin_down(self, port_eid):
         eid = self.name_to_eid(port_eid)
         resource = eid[1]
         port = eid[2]
         request = LFUtils.port_down_request(resource_id=resource, port_name=port)
-        self.json_post("/cli-json/set_port", request)
+        return self.json_post("/cli-json/set_port", request)
 
     def reset_port(self, port_eid):
         eid = self.name_to_eid(port_eid)
         resource = eid[1]
         port = eid[2]
         request = LFUtils.port_reset_request(resource_id=resource, port_name=port)
-        self.json_post("cli-json/reset_port", request)
+        return self.json_post("cli-json/reset_port", request)
 
     def rm_cx(self, cx_name):
         req_url = "cli-json/rm_cx"
@@ -424,14 +419,14 @@ class Realm(LFCliBase):
             "test_mgr": "ALL",
             "cx_name": cx_name
         }
-        self.json_post(req_url, data)
+        return self.json_post(req_url, data)
 
     def rm_endp(self, ename, debug_=False, suppress_related_commands_=True):
         req_url = "cli-json/rm_endp"
         data = {
             "endp_name": ename
         }
-        self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+        return self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
     def add_vrcx_(self, vr_name, local_dev, dhcp_min, dhcp_max, resource=1, debug_=False,
                   suppress_related_commands_=True):
@@ -444,16 +439,15 @@ class Realm(LFCliBase):
             "dhcp_min": dhcp_min,
             "dhcp_max": dhcp_max}
         logger.info("Modifying Connection...")
-        self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+        return self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
     def netsmith_apply(self, resource, debug_=False, suppress_related_commands_=True):
         data = {
             "shelf": 1,
             "resource": resource}
         logger.info("Applying the Netsmith Config")
-        self.json_post("/cli-json/apply_vr_cfg", data, debug_=debug_,
-                       suppress_related_commands_=suppress_related_commands_)
-        time.sleep(1)
+        return self.json_post("/cli-json/apply_vr_cfg", data, debug_=debug_,
+                               suppress_related_commands_=suppress_related_commands_)
 
     def set_endp_details(self, ename, pkt_to_send, debug_=False, suppress_related_commands_=True):
         req_url = "cli-json/set_endp_details"
@@ -463,7 +457,7 @@ class Realm(LFCliBase):
             "name": ename,
             "pkts_to_send": pkt_to_send
         }
-        self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+        return self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
     def set_endp_tos(self, ename, _tos, debug_=False, suppress_related_commands_=True):
         req_url = "cli-json/set_endp_tos"
@@ -485,17 +479,17 @@ class Realm(LFCliBase):
             "name": ename,
             "tos": tos
         }
-        self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
+        return self.json_post(req_url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
     def start_cx(self, cx_name):
-        self.json_post("/cli-json/set_cx_state", {
+        return self.json_post("/cli-json/set_cx_state", {
             "test_mgr": "ALL",
             "cx_name": cx_name,
             "cx_state": "RUNNING"
         }, debug_=self.debug)
 
     def stop_cx(self, cx_name):
-        self.json_post("/cli-json/set_cx_state", {
+        return self.json_post("/cli-json/set_cx_state", {
             "test_mgr": "ALL",
             "cx_name": cx_name,
             "cx_state": "STOPPED"
@@ -503,7 +497,7 @@ class Realm(LFCliBase):
 
     # def quiesce_cx(self, cx_name):
     def drain_stop_cx(self, cx_name):
-        self.json_post("/cli-json/set_cx_state", {
+        return self.json_post("/cli-json/set_cx_state", {
             "test_mgr": "ALL",
             "cx_name": cx_name,
             "cx_state": "QUIESCE"
@@ -515,35 +509,97 @@ class Realm(LFCliBase):
         ignore_keys = {'handler', 'uri', 'warnings'}
 
         cx_json = self.json_get("cx")
-        if cx_json and 'empty' not in cx_json and isinstance(cx_json, dict):
+        if cx_json is None:
+            return None
+
+        if 'empty' not in cx_json and isinstance(cx_json, dict):
             for key in cx_json.keys():
                 if key not in ignore_keys:
                     cx_names.append(key)
 
         return cx_names
 
-    def get_all_stations(self, prefix="sta"):
-        """Get all station names with a specific prefix.
+    def get_all_ports(self, port_type=None, prefix=None):
+        """Get all port names/EIDs on LANforge manager, optionally filtering by port type or prefix.
 
         Args:
-            prefix: Station prefix.
+            port_type: Optional port type filter (e.g., "station", "sta", "eth", "wlan", or None for all ports).
+            prefix: Optional port prefix to filter (e.g. "sta", "wlan", "eth").
 
         Returns:
-            List of station names with the specified prefix.
+            List of port EIDs/names or None if API error occurs.
+        """
+        port_names = []
+        try:
+            response = self.json_get("/port/?fields=alias,port+type")
+            if response is None:
+                return None
+            if 'interfaces' in response and isinstance(response['interfaces'], list):
+                for interface_item in response['interfaces']:
+                    if isinstance(interface_item, dict):
+                        for alias, details in interface_item.items():
+                            info = self.name_to_eid(alias)
+                            if len(info) >= 3:
+                                port_name = str(info[2])
+                                ptype = ""
+                                if isinstance(details, dict):
+                                    ptype = str(details.get('port type', details.get('type', ''))).upper()
+
+                                # Check port type filter if specified
+                                if port_type and str(port_type).lower() in {'station', 'sta', 'wifi-sta', 'wireless'}:
+                                    ptype_clean = ptype.replace(' ', '-').replace('_', '-')
+                                    is_station = (ptype_clean == 'WIFI-STA') or ('WIFI-STA' in ptype_clean) or (ptype_clean == 'WIFI-STATION') or (ptype_clean == 'STA')
+                                    if is_station:
+                                        port_names.append(alias)
+                                elif prefix and str(prefix).lower() != "all":
+                                    if port_name.startswith(str(prefix)) or (str(prefix) in port_name) or (str(prefix).upper() in ptype):
+                                        port_names.append(alias)
+                                else:
+                                    port_names.append(alias)
+                            else:
+                                port_names.append(alias)
+        except Exception as e:
+            logger.warning("Error querying ports from LANforge: %s", e)
+            return None
+
+        return port_names
+
+    def get_all_stations(self, prefix=None):
+        """Get all station port names based on LANforge port-type 'WIFI-STA' or 'STA' (not assuming 'sta' name prefix).
+
+        Args:
+            prefix: Optional prefix filter if user explicitly specifies a prefix. If None or 'sta' or 'all', matches all WIFI-STA ports.
+
+        Returns:
+            List of station port names or None if API error occurs.
         """
         sta_names = []
         try:
-            response = self.json_get("/port/?fields=alias")
-            if response and 'interfaces' in response and isinstance(response['interfaces'], list):
+            response = self.json_get("/port/?fields=alias,port+type")
+            if response is None:
+                return None
+            if 'interfaces' in response and isinstance(response['interfaces'], list):
                 for interface_item in response['interfaces']:
                     if isinstance(interface_item, dict):
-                        for alias in interface_item.keys():
+                        for alias, details in interface_item.items():
                             info = self.name_to_eid(alias)
-                            port_name = str(info[2])
-                            if port_name.startswith(prefix) or ('sta' in port_name):
+                            port_name = str(info[2]) if len(info) >= 3 else str(alias)
+                            ptype = ""
+                            if isinstance(details, dict):
+                                ptype = str(details.get('port type', details.get('type', ''))).strip().upper().replace(' ', '-').replace('_', '-')
+
+                            is_sta_type = ('WIFI-STA' in ptype) or (ptype == 'STA') or ('WIFI-STATION' in ptype)
+                            if is_sta_type:
+                                if prefix and str(prefix).lower() not in ("sta", "all"):
+                                    if port_name.startswith(str(prefix)) or str(prefix) in port_name:
+                                        sta_names.append(alias)
+                                else:
+                                    sta_names.append(alias)
+                            elif prefix and str(prefix).lower() not in ("sta", "all") and (port_name.startswith(str(prefix)) or str(prefix) in port_name):
                                 sta_names.append(alias)
         except Exception as e:
-            logger.warning("Error querying stations from LANforge: %s", e)
+            logger.warning("Error querying station ports from LANforge: %s", e)
+            return None
 
         return sta_names
 
