@@ -2122,6 +2122,10 @@ class L3VariableTime(Realm):
                             etype, self.side_b, tos=_tos, add_tos_to_name=True)
             self.mtx_endps = self.multicast_profile.get_mc_names()
             logger.info("Creating test station port(s)")
+            # For real + virtual or existing + virtual combinations, the first
+            # station profile represents the real/existing stations. Only the
+            # remaining profiles are used to create virtual stations, so skip
+            # station creation for i == 0 when using existing station lists.
             for i, station_profile in enumerate(self.station_profiles):
                 if not rebuild and (not self.use_existing_station_lists or self.use_existing_station_lists and i != 0):
                     station_profile.use_security(
