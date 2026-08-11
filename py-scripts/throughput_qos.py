@@ -65,6 +65,7 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 
 from datetime import datetime, timedelta
 import argparse
+import logging
 import time
 import sys
 import os
@@ -86,6 +87,8 @@ from LANforge import LFUtils
 
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+
+logger = logging.getLogger(__name__)
 
 
 class ThroughputQOS(Realm):
@@ -176,6 +179,7 @@ class ThroughputQOS(Realm):
         self.direction = direction
         self.traffic_type = traffic_type
         self.tos = tos.split(",")
+        self.cx_endpoint_lookup_failed_logged = set()
         self.bands = bands.split(",")
         self.test_case = test_case
         self.number_template = number_template
@@ -519,66 +523,110 @@ class ThroughputQOS(Realm):
                     temp = sta.rsplit('-', 1)
                     temp = int(temp[1])
                     if temp in range(0, num_stations):
-                        if int(self.cx_profile.side_b_min_bps) != 0:
-                            tos_download[self.tos[0]].append(connections_download[sta])
-                            tos_drop_dict['rx_drop_a'][self.tos[0]].append(drop_a_per[temp])
-                            tx_b_download[self.tos[0]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                            rx_a_download[self.tos[0]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
-                            delay[self.tos[0]].append(rx_endps_download['%s-A' % sta]['delay'])
-                        else:
-                            tos_download[self.tos[0]].append(float(0))
-                            tos_drop_dict['rx_drop_a'][self.tos[0]].append(float(0))
-                            tx_b_download[self.tos[0]].append(int(0))
-                            rx_a_download[self.tos[0]].append(int(0))
-                            delay[self.tos[0]].append(int(0))
+                        try:
+                            if int(self.cx_profile.side_b_min_bps) != 0:
+                                tos_download[self.tos[0]].append(connections_download[sta])
+                                tos_drop_dict['rx_drop_a'][self.tos[0]].append(drop_a_per[temp])
+                                tx_b_download[self.tos[0]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_download[self.tos[0]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                delay[self.tos[0]].append(rx_endps_download['%s-A' % sta]['delay'])
+                            else:
+                                tos_download[self.tos[0]].append(float(0))
+                                tos_drop_dict['rx_drop_a'][self.tos[0]].append(float(0))
+                                tx_b_download[self.tos[0]].append(int(0))
+                                rx_a_download[self.tos[0]].append(int(0))
+                                delay[self.tos[0]].append(int(0))
+                        # log "CX Not Found" once per occurrence instead of on every tick
+                        except Exception:
+                            if sta not in self.cx_endpoint_lookup_failed_logged:
+                                logger.warning(
+                                    "%s-A/B : Endpoint Not Found\n"
+                                    "Endpoint keys: %s",
+                                    sta,
+                                    [key for endpoint in endps if isinstance(endpoint, dict) for key in endpoint],
+                                )
+                                self.cx_endpoint_lookup_failed_logged.add(sta)
                     elif temp in range(num_stations, 2 * num_stations):
                         if len(self.tos) < 2:
                             break
                         else:
-                            if int(self.cx_profile.side_b_min_bps) != 0:
-                                tos_download[self.tos[1]].append(connections_download[sta])
-                                tos_drop_dict['rx_drop_a'][self.tos[1]].append(drop_a_per[temp])
-                                tx_b_download[self.tos[1]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_download[self.tos[1]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
-                                delay[self.tos[1]].append(rx_endps_download['%s-A' % sta]['delay'])
-                            else:
-                                tos_download[self.tos[1]].append(float(0))
-                                tos_drop_dict['rx_drop_a'][self.tos[1]].append(float(0))
-                                tx_b_download[self.tos[1]].append(int(0))
-                                rx_a_download[self.tos[1]].append(int(0))
-                                delay[self.tos[1]].append(int(0))
+                            try:
+                                if int(self.cx_profile.side_b_min_bps) != 0:
+                                    tos_download[self.tos[1]].append(connections_download[sta])
+                                    tos_drop_dict['rx_drop_a'][self.tos[1]].append(drop_a_per[temp])
+                                    tx_b_download[self.tos[1]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                    rx_a_download[self.tos[1]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                    delay[self.tos[1]].append(rx_endps_download['%s-A' % sta]['delay'])
+                                else:
+                                    tos_download[self.tos[1]].append(float(0))
+                                    tos_drop_dict['rx_drop_a'][self.tos[1]].append(float(0))
+                                    tx_b_download[self.tos[1]].append(int(0))
+                                    rx_a_download[self.tos[1]].append(int(0))
+                                    delay[self.tos[1]].append(int(0))
+                            # log "CX Not Found" once per occurrence instead of on every tick
+                            except Exception:
+                                if sta not in self.cx_endpoint_lookup_failed_logged:
+                                    logger.warning(
+                                        "%s-A/B : Endpoint Not Found\n"
+                                        "Endpoint keys: %s",
+                                        sta,
+                                        [key for endpoint in endps if isinstance(endpoint, dict) for key in endpoint],
+                                    )
+                                    self.cx_endpoint_lookup_failed_logged.add(sta)
                     elif temp in range(2 * num_stations, 3 * num_stations):
                         if len(self.tos) < 3:
                             break
                         else:
-                            if int(self.cx_profile.side_b_min_bps) != 0:
-                                tos_download[self.tos[2]].append(connections_download[sta])
-                                tos_drop_dict['rx_drop_a'][self.tos[2]].append(drop_a_per[temp])
-                                tx_b_download[self.tos[2]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_download[self.tos[2]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
-                                delay[self.tos[2]].append(rx_endps_download['%s-A' % sta]['delay'])
-                            else:
-                                tos_download[self.tos[2]].append(float(0))
-                                tos_drop_dict['rx_drop_a'][self.tos[2]].append(float(0))
-                                tx_b_download[self.tos[2]].append(int(0))
-                                rx_a_download[self.tos[2]].append(int(0))
-                                delay[self.tos[2]].append(int(0))
+                            try:
+                                if int(self.cx_profile.side_b_min_bps) != 0:
+                                    tos_download[self.tos[2]].append(connections_download[sta])
+                                    tos_drop_dict['rx_drop_a'][self.tos[2]].append(drop_a_per[temp])
+                                    tx_b_download[self.tos[2]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                    rx_a_download[self.tos[2]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                    delay[self.tos[2]].append(rx_endps_download['%s-A' % sta]['delay'])
+                                else:
+                                    tos_download[self.tos[2]].append(float(0))
+                                    tos_drop_dict['rx_drop_a'][self.tos[2]].append(float(0))
+                                    tx_b_download[self.tos[2]].append(int(0))
+                                    rx_a_download[self.tos[2]].append(int(0))
+                                    delay[self.tos[2]].append(int(0))
+                            # log "CX Not Found" once per occurrence instead of on every tick
+                            except Exception:
+                                if sta not in self.cx_endpoint_lookup_failed_logged:
+                                    logger.warning(
+                                        "%s-A/B : Endpoint Not Found\n"
+                                        "Endpoint keys: %s",
+                                        sta,
+                                        [key for endpoint in endps if isinstance(endpoint, dict) for key in endpoint],
+                                    )
+                                    self.cx_endpoint_lookup_failed_logged.add(sta)
                     elif temp in range(3 * num_stations, 4 * num_stations):
                         if len(self.tos) < 4:
                             break
                         else:
-                            if int(self.cx_profile.side_b_min_bps) != 0:
-                                tos_download[self.tos[3]].append(connections_download[sta])
-                                tos_drop_dict['rx_drop_a'][self.tos[3]].append(drop_a_per[temp])
-                                tx_b_download[self.tos[3]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_download[self.tos[3]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
-                                delay[self.tos[3]].append(rx_endps_download['%s-A' % sta]['delay'])
-                            else:
-                                tos_download[self.tos[3]].append(float(0))
-                                tos_drop_dict['rx_drop_a'][self.tos[3]].append(float(0))
-                                tx_b_download[self.tos[3]].append(int(0))
-                                rx_a_download[self.tos[3]].append(int(0))
-                                delay[self.tos[3]].append(int(0))
+                            try:
+                                if int(self.cx_profile.side_b_min_bps) != 0:
+                                    tos_download[self.tos[3]].append(connections_download[sta])
+                                    tos_drop_dict['rx_drop_a'][self.tos[3]].append(drop_a_per[temp])
+                                    tx_b_download[self.tos[3]].append(int(f"{tx_endps_download['%s-B' % sta]['tx pkts ll']}"))
+                                    rx_a_download[self.tos[3]].append(int(f"{rx_endps_download['%s-A' % sta]['rx pkts ll']}"))
+                                    delay[self.tos[3]].append(rx_endps_download['%s-A' % sta]['delay'])
+                                else:
+                                    tos_download[self.tos[3]].append(float(0))
+                                    tos_drop_dict['rx_drop_a'][self.tos[3]].append(float(0))
+                                    tx_b_download[self.tos[3]].append(int(0))
+                                    rx_a_download[self.tos[3]].append(int(0))
+                                    delay[self.tos[3]].append(int(0))
+                            # log "CX Not Found" once per occurrence instead of on every tick
+                            except Exception:
+                                if sta not in self.cx_endpoint_lookup_failed_logged:
+                                    logger.warning(
+                                        "%s-A/B : Endpoint Not Found\n"
+                                        "Endpoint keys: %s",
+                                        sta,
+                                        [key for endpoint in endps if isinstance(endpoint, dict) for key in endpoint],
+                                    )
+                                    self.cx_endpoint_lookup_failed_logged.add(sta)
                 tos_download.update({"bkQOS": float(f"{sum(tos_download['BK']):.2f}")})
                 tos_download.update({"beQOS": float(f"{sum(tos_download['BE']):.2f}")})
                 tos_download.update({"videoQOS": float(f"{sum(tos_download['VI']):.2f}")})
@@ -636,66 +684,110 @@ class ThroughputQOS(Realm):
                     temp = sta.rsplit('-', 1)
                     temp = int(temp[1])
                     if temp in range(0, num_stations):
-                        if int(self.cx_profile.side_a_min_bps) != 0:
-                            tos_upload[self.tos[0]].append(connections_upload[sta])
-                            tos_drop_dict['rx_drop_b'][self.tos[0]].append(drop_b_per[temp])
-                            tx_b_upload[self.tos[0]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
-                            rx_a_upload[self.tos[0]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
-                            delay[self.tos[0]].append(rx_endps_upload['%s-A' % sta]['delay'])
-                        else:
-                            tos_upload[self.tos[0]].append(float(0))
-                            tos_drop_dict['rx_drop_b'][self.tos[0]].append(float(0))
-                            tx_b_upload[self.tos[0]].append(int(0))
-                            rx_a_upload[self.tos[0]].append(int(0))
-                            delay[self.tos[0]].append(int(0))
+                        try:
+                            if int(self.cx_profile.side_a_min_bps) != 0:
+                                tos_upload[self.tos[0]].append(connections_upload[sta])
+                                tos_drop_dict['rx_drop_b'][self.tos[0]].append(drop_b_per[temp])
+                                tx_b_upload[self.tos[0]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                                rx_a_upload[self.tos[0]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                delay[self.tos[0]].append(rx_endps_upload['%s-A' % sta]['delay'])
+                            else:
+                                tos_upload[self.tos[0]].append(float(0))
+                                tos_drop_dict['rx_drop_b'][self.tos[0]].append(float(0))
+                                tx_b_upload[self.tos[0]].append(int(0))
+                                rx_a_upload[self.tos[0]].append(int(0))
+                                delay[self.tos[0]].append(int(0))
+                        # log "CX Not Found" once per occurrence instead of on every tick
+                        except Exception:
+                            if sta not in self.cx_endpoint_lookup_failed_logged:
+                                logger.warning(
+                                    "%s-A/B : Endpoint Not Found\n"
+                                    "Endpoint keys: %s",
+                                    sta,
+                                    [key for endpoint in endps if isinstance(endpoint, dict) for key in endpoint],
+                                )
+                                self.cx_endpoint_lookup_failed_logged.add(sta)
                     elif temp in range(num_stations, 2 * num_stations):
                         if len(self.tos) < 2:
                             break
                         else:
-                            if int(self.cx_profile.side_a_min_bps) != 0:
-                                tos_upload[self.tos[1]].append(connections_upload[sta])
-                                tos_drop_dict['rx_drop_b'][self.tos[1]].append(drop_b_per[temp])
-                                tx_b_upload[self.tos[1]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_upload[self.tos[1]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
-                                delay[self.tos[1]].append(rx_endps_upload['%s-A' % sta]['delay'])
-                            else:
-                                tos_upload[self.tos[1]].append(float(0))
-                                tos_drop_dict['rx_drop_b'][self.tos[1]].append(float(0))
-                                tx_b_upload[self.tos[1]].append(int(0))
-                                rx_a_upload[self.tos[1]].append(int(0))
-                                delay[self.tos[1]].append(int(0))
+                            try:
+                                if int(self.cx_profile.side_a_min_bps) != 0:
+                                    tos_upload[self.tos[1]].append(connections_upload[sta])
+                                    tos_drop_dict['rx_drop_b'][self.tos[1]].append(drop_b_per[temp])
+                                    tx_b_upload[self.tos[1]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                                    rx_a_upload[self.tos[1]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                    delay[self.tos[1]].append(rx_endps_upload['%s-A' % sta]['delay'])
+                                else:
+                                    tos_upload[self.tos[1]].append(float(0))
+                                    tos_drop_dict['rx_drop_b'][self.tos[1]].append(float(0))
+                                    tx_b_upload[self.tos[1]].append(int(0))
+                                    rx_a_upload[self.tos[1]].append(int(0))
+                                    delay[self.tos[1]].append(int(0))
+                            # log "CX Not Found" once per occurrence instead of on every tick
+                            except Exception:
+                                if sta not in self.cx_endpoint_lookup_failed_logged:
+                                    logger.warning(
+                                        "%s-A/B : Endpoint Not Found\n"
+                                        "Endpoint keys: %s",
+                                        sta,
+                                        [key for endpoint in endps if isinstance(endpoint, dict) for key in endpoint],
+                                    )
+                                    self.cx_endpoint_lookup_failed_logged.add(sta)
                     elif temp in range(2 * num_stations, 3 * num_stations):
                         if len(self.tos) < 3:
                             break
                         else:
-                            if int(self.cx_profile.side_a_min_bps) != 0:
-                                tos_upload[self.tos[2]].append(connections_upload[sta])
-                                tos_drop_dict['rx_drop_b'][self.tos[2]].append(drop_b_per[temp])
-                                tx_b_upload[self.tos[2]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_upload[self.tos[2]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
-                                delay[self.tos[2]].append(rx_endps_upload['%s-A' % sta]['delay'])
-                            else:
-                                tos_upload[self.tos[2]].append(float(0))
-                                tos_drop_dict['rx_drop_b'][self.tos[2]].append(float(0))
-                                tx_b_upload[self.tos[2]].append(int(0))
-                                rx_a_upload[self.tos[2]].append(int(0))
-                                delay[self.tos[2]].append(int(0))
+                            try:
+                                if int(self.cx_profile.side_a_min_bps) != 0:
+                                    tos_upload[self.tos[2]].append(connections_upload[sta])
+                                    tos_drop_dict['rx_drop_b'][self.tos[2]].append(drop_b_per[temp])
+                                    tx_b_upload[self.tos[2]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                                    rx_a_upload[self.tos[2]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                    delay[self.tos[2]].append(rx_endps_upload['%s-A' % sta]['delay'])
+                                else:
+                                    tos_upload[self.tos[2]].append(float(0))
+                                    tos_drop_dict['rx_drop_b'][self.tos[2]].append(float(0))
+                                    tx_b_upload[self.tos[2]].append(int(0))
+                                    rx_a_upload[self.tos[2]].append(int(0))
+                                    delay[self.tos[2]].append(int(0))
+                            # log "CX Not Found" once per occurrence instead of on every tick
+                            except Exception:
+                                if sta not in self.cx_endpoint_lookup_failed_logged:
+                                    logger.warning(
+                                        "%s-A/B : Endpoint Not Found\n"
+                                        "Endpoint keys: %s",
+                                        sta,
+                                        [key for endpoint in endps if isinstance(endpoint, dict) for key in endpoint],
+                                    )
+                                    self.cx_endpoint_lookup_failed_logged.add(sta)
                     elif temp in range(3 * num_stations, 4 * num_stations):
                         if len(self.tos) < 4:
                             break
                         else:
-                            if int(self.cx_profile.side_a_min_bps) != 0:
-                                tos_upload[self.tos[3]].append(connections_upload[sta])
-                                tos_drop_dict['rx_drop_b'][self.tos[3]].append(drop_b_per[temp])
-                                tx_b_upload[self.tos[3]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
-                                rx_a_upload[self.tos[3]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
-                                delay[self.tos[3]].append(rx_endps_upload['%s-A' % sta]['delay'])
-                            else:
-                                tos_upload[self.tos[3]].append(float(0))
-                                tos_drop_dict['rx_drop_b'][self.tos[3]].append(float(0))
-                                tx_b_upload[self.tos[3]].append(int(0))
-                                rx_a_upload[self.tos[3]].append(int(0))
-                                delay[self.tos[3]].append(int(0))
+                            try:
+                                if int(self.cx_profile.side_a_min_bps) != 0:
+                                    tos_upload[self.tos[3]].append(connections_upload[sta])
+                                    tos_drop_dict['rx_drop_b'][self.tos[3]].append(drop_b_per[temp])
+                                    tx_b_upload[self.tos[3]].append(int(f"{tx_endps_upload['%s-B' % sta]['tx pkts ll']}"))
+                                    rx_a_upload[self.tos[3]].append(int(f"{rx_endps_upload['%s-A' % sta]['rx pkts ll']}"))
+                                    delay[self.tos[3]].append(rx_endps_upload['%s-A' % sta]['delay'])
+                                else:
+                                    tos_upload[self.tos[3]].append(float(0))
+                                    tos_drop_dict['rx_drop_b'][self.tos[3]].append(float(0))
+                                    tx_b_upload[self.tos[3]].append(int(0))
+                                    rx_a_upload[self.tos[3]].append(int(0))
+                                    delay[self.tos[3]].append(int(0))
+                            # log "CX Not Found" once per occurrence instead of on every tick
+                            except Exception:
+                                if sta not in self.cx_endpoint_lookup_failed_logged:
+                                    logger.warning(
+                                        "%s-A/B : Endpoint Not Found\n"
+                                        "Endpoint keys: %s",
+                                        sta,
+                                        [key for endpoint in endps if isinstance(endpoint, dict) for key in endpoint],
+                                    )
+                                    self.cx_endpoint_lookup_failed_logged.add(sta)
                 tos_upload.update({"bkQOS": float(f"{sum(tos_upload['BK']):.2f}")})
                 tos_upload.update({"beQOS": float(f"{sum(tos_upload['BE']):.2f}")})
                 tos_upload.update({"videoQOS": float(f"{sum(tos_upload['VI']):.2f}")})
