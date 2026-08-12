@@ -534,8 +534,10 @@ class Realm(LFCliBase):
             response = self.json_get("/port/?fields=alias,port+type")
             if response is None:
                 return None
-            if 'interfaces' in response and isinstance(response['interfaces'], list):
-                for interface_item in response['interfaces']:
+            if 'interfaces' in response:
+                raw_interfaces = response['interfaces']
+                interfaces_list = raw_interfaces if isinstance(raw_interfaces, list) else [raw_interfaces] if isinstance(raw_interfaces, dict) else []
+                for interface_item in interfaces_list:
                     if isinstance(interface_item, dict):
                         for alias, details in interface_item.items():
                             info = self.name_to_eid(alias)
@@ -578,8 +580,10 @@ class Realm(LFCliBase):
             response = self.json_get("/port/?fields=alias,port+type")
             if response is None:
                 return None
-            if 'interfaces' in response and isinstance(response['interfaces'], list):
-                for interface_item in response['interfaces']:
+            if 'interfaces' in response:
+                raw_interfaces = response['interfaces']
+                interfaces_list = raw_interfaces if isinstance(raw_interfaces, list) else [raw_interfaces] if isinstance(raw_interfaces, dict) else []
+                for interface_item in interfaces_list:
                     if isinstance(interface_item, dict):
                         for alias, details in interface_item.items():
                             info = self.name_to_eid(alias)
