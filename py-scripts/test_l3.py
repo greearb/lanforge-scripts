@@ -9703,16 +9703,38 @@ def handle_toolbox(args):
                 security = radio_info_dict.get('security', 'open')
                 wifi_mode = radio_info_dict.get('mode', None)
 
-                # Reject station creation on non-wireless radios (e.g. 1.1.eth2, eth0, br0, macvlan0)
-                radio_clean = radio_name.split('.')[-1].lower() if '.' in radio_name else radio_name.lower()
-                invalid_prefixes = ('eth', 'br', 'macvlan', 'bond', 'vlan', 'lo', 'gre', 'tun', 'tap')
-                if any(radio_clean.startswith(p) for p in invalid_prefixes) or 'eth' in radio_clean:
-                    logger.error(
-                        "Toolbox: Invalid radio '%s' specified for station creation. Non-wireless interfaces (e.g., eth, bridge, macvlan) cannot be used as radios for station creation.",
-                        radio_name
-                    )
-                    action_success = False
-                    continue
+                # Validate radio interface via LANforge JSON API port-type
+                radio_clean = radio_name.split('.')[-1] if '.' in radio_name else radio_name
+                port_type = None
+                try:
+                    port_info = lf_realm.json_get("/port/1/1/%s?fields=alias,port+type" % radio_clean)
+                    if port_info and 'interface' in port_info:
+                        port_type = str(port_info['interface'].get('port type', port_info['interface'].get('type', ''))).strip().upper()
+                except Exception as p_err:
+                    logger.debug("Toolbox: Could not query port type for radio '%s': %s", radio_name, p_err)
+
+                if port_type:
+                    # Validate port type returned by LANforge JSON API
+                    is_radio_type = any(t in port_type for t in ('RADIO', 'WIFI', 'WIPHY', 'DEV', 'PHY'))
+                    is_non_radio = any(t in port_type for t in ('ETH', 'ETHERNET', 'BRIDGE', 'VLAN', 'MACVLAN', 'BOND', 'TUN', 'TAP', 'GRE'))
+                    if is_non_radio or not is_radio_type:
+                        logger.error(
+                            "Toolbox: Port '%s' has port-type '%s' and cannot be used for station creation. Radio interface must be a wireless radio (e.g., WIFI-RADIO).",
+                            radio_name, port_type
+                        )
+                        action_success = False
+                        continue
+                else:
+                    # Fallback to name check if port-type is not returned by JSON API
+                    radio_clean_lower = radio_clean.lower()
+                    invalid_prefixes = ('eth', 'br', 'macvlan', 'bond', 'vlan', 'lo', 'gre', 'tun', 'tap')
+                    if any(radio_clean_lower.startswith(p) for p in invalid_prefixes) or 'eth' in radio_clean_lower:
+                        logger.error(
+                            "Toolbox: Invalid radio '%s' specified for station creation. Non-wireless interfaces (e.g., eth, bridge, macvlan) cannot be used as radios for station creation.",
+                            radio_name
+                        )
+                        action_success = False
+                        continue
 
                 if num_stations <= 0:
                     logger.error("Toolbox: Invalid station count (%d) specified for radio '%s'. Count must be at least 1.", num_stations, radio_name)
@@ -9855,9 +9877,7 @@ def handle_toolbox(args):
                                     logger.info("Created Layer-3 cross-connections: %s", these_cx)
                             except Exception as cx_err:
                                 logger.error("Toolbox: Failed to create Layer-3 cross-connections: %s", cx_err)
-                                action_success = False
-
-    # Action 3: Stop Cross Connections (--stop_cx)
+                            # Action 3: Stop Cross Connections (--stop_cx)
     if args.stop_cx is not None:
         action_performed = True
         target_cxs = str(args.stop_cx).strip()
@@ -9872,12 +9892,19 @@ def handle_toolbox(args):
                 logger.warning("No cross-connections found on LANforge manager to stop.")
             else:
                 logger.info("Found %d cross-connection(s): %s", len(existing_cxs), existing_cxs)
+                success_count = 0
                 for cx_name in existing_cxs:
                     logger.info("Stopping cross-connection '%s'", cx_name)
                     res = lf_realm.stop_cx(cx_name)
                     if res is None or res is False:
+                        logger.error("Toolbox: Failed to stop cross-connection '%s'.", cx_name)
                         action_success = False
-                logger.info("Successfully stopped %d cross-connection(s).", len(existing_cxs))
+                    else:
+                        success_count += 1
+                if action_success:
+                    logger.info("Successfully stopped %d cross-connection(s).", success_count)
+                else:
+                    logger.error("Failed to stop some cross-connections (%d of %d succeeded).", success_count, len(existing_cxs))
         else:
             cx_list = parse_list(target_cxs)
             logger.info("Toolbox: Stopping specified cross-connections: %s", cx_list)
@@ -9888,8 +9915,10 @@ def handle_toolbox(args):
                     logger.info("Stopping cross-connection '%s'", matched_cx)
                     res = lf_realm.stop_cx(matched_cx)
                     if res is None or res is False:
+                        logger.error("Toolbox: Failed to stop cross-connection '%s'.", matched_cx)
                         action_success = False
-                    stopped_count += 1
+                    else:
+                        stopped_count += 1
                 else:
                     logger.error("Requested cross-connection '%s' not found on LANforge manager.", cx_name)
                     action_success = False
@@ -9897,34 +9926,10 @@ def handle_toolbox(args):
             if stopped_count == 0 and cx_list:
                 logger.error("Failed to stop any requested cross-connections.")
                 action_success = False
-            else:
+            elif action_success:
                 logger.info("Completed stopping %d cross-connection(s).", stopped_count)
-
-    # Helper function to check if cross-connection uses a disconnected Wi-Fi station
-    def check_cx_sta_connection(cx_name):
-        try:
-            all_ports = lf_realm.get_all_ports() or []
-            for port_eid in all_ports:
-                port_name = port_eid.split('.')[-1] if '.' in port_eid else port_eid
-                if port_name.startswith('sta') and port_name in cx_name:
-                    port_info = lf_realm.json_get("/port/1/1/%s?fields=alias,ip,port+type,flags" % port_name)
-                    if port_info and 'interface' in port_info:
-                        p_data = port_info['interface']
-                        ip_addr = p_data.get('ip', '0.0.0.0')
-                        if ip_addr in ('0.0.0.0', 'NA', '', '0.0.0.0/0'):
-                            logger.error(
-                                "Toolbox: Cannot start endpoint A because it is on a wifi STA ('%s') that is not connected.",
-                                port_name
-                            )
-                            return True
-                    logger.error(
-                        "Toolbox: Cannot start endpoint A because it is on a wifi STA ('%s') that is not connected.",
-                        port_name
-                    )
-                    return True
-        except Exception as err:
-            logger.debug("Toolbox: Station connection check error for '%s': %s", cx_name, err)
-        return False
+            else:
+                logger.error("Completed stopping cross-connections with errors (%d of %d succeeded).", stopped_count, len(cx_list))
 
     # Action 4: Start Cross Connections (--start_cx)
     if args.start_cx is not None:
@@ -9941,13 +9946,19 @@ def handle_toolbox(args):
                 logger.warning("No cross-connections found on LANforge manager to start.")
             else:
                 logger.info("Found %d cross-connection(s): %s", len(existing_cxs), existing_cxs)
+                success_count = 0
                 for cx_name in existing_cxs:
                     logger.info("Starting cross-connection '%s'", cx_name)
                     res = lf_realm.start_cx(cx_name)
                     if res is None or res is False:
+                        logger.error("Toolbox: Failed to start cross-connection '%s'.", cx_name)
                         action_success = False
-                        check_cx_sta_connection(cx_name)
-                logger.info("Successfully processed %d cross-connection(s).", len(existing_cxs))
+                    else:
+                        success_count += 1
+                if action_success:
+                    logger.info("Successfully started %d cross-connection(s).", success_count)
+                else:
+                    logger.error("Failed to start some cross-connections (%d of %d succeeded).", success_count, len(existing_cxs))
         else:
             cx_list = parse_list(target_cxs)
             logger.info("Toolbox: Starting specified cross-connections: %s", cx_list)
@@ -9958,9 +9969,10 @@ def handle_toolbox(args):
                     logger.info("Starting cross-connection '%s'", matched_cx)
                     res = lf_realm.start_cx(matched_cx)
                     if res is None or res is False:
+                        logger.error("Toolbox: Failed to start cross-connection '%s'.", matched_cx)
                         action_success = False
-                        check_cx_sta_connection(matched_cx)
-                    started_count += 1
+                    else:
+                        started_count += 1
                 else:
                     logger.error("Requested cross-connection '%s' not found on LANforge manager.", cx_name)
                     action_success = False
@@ -9968,8 +9980,10 @@ def handle_toolbox(args):
             if started_count == 0 and cx_list:
                 logger.error("Failed to start any requested cross-connections.")
                 action_success = False
-            else:
+            elif action_success:
                 logger.info("Completed starting %d cross-connection(s).", started_count)
+            else:
+                logger.error("Completed starting cross-connections with errors (%d of %d succeeded).", started_count, len(cx_list))
 
     # Action 5: Delete Cross Connections (--del_cx)
     if args.del_cx is not None:
@@ -9986,12 +10000,19 @@ def handle_toolbox(args):
                 logger.warning("No cross-connections found on LANforge manager to delete.")
             else:
                 logger.info("Found %d cross-connection(s) to delete: %s", len(existing_cxs), existing_cxs)
+                success_count = 0
                 for cx_name in existing_cxs:
                     logger.info("Deleting cross-connection '%s'", cx_name)
                     res1 = lf_realm.rm_cx(cx_name)
                     if res1 is None or res1 is False:
+                        logger.error("Toolbox: Failed to delete cross-connection '%s'.", cx_name)
                         action_success = False
-                logger.info("Successfully deleted %d cross-connection(s).", len(existing_cxs))
+                    else:
+                        success_count += 1
+                if action_success:
+                    logger.info("Successfully deleted %d cross-connection(s).", success_count)
+                else:
+                    logger.error("Failed to delete some cross-connections (%d of %d succeeded).", success_count, len(existing_cxs))
         else:
             cx_list = parse_list(target_cxs)
             logger.info("Toolbox: Deleting specified cross-connections: %s", cx_list)
@@ -10002,17 +10023,18 @@ def handle_toolbox(args):
                     logger.info("Deleting cross-connection '%s'", matched_cx)
                     res1 = lf_realm.rm_cx(matched_cx)
                     if res1 is None or res1 is False:
+                        logger.error("Toolbox: Failed to delete cross-connection '%s'.", matched_cx)
                         action_success = False
-                    deleted_count += 1
+                    else:
+                        deleted_count += 1
                 else:
-                    logger.error("Requested cross-connection '%s' not found on LANforge manager.", cx_name)
-                    action_success = False
+                    logger.info("Requested cross-connection '%s' not found on LANforge manager (already deleted).", cx_name)
+                    deleted_count += 1
 
-            if deleted_count == 0 and cx_list:
-                logger.error("Failed to delete any requested cross-connections.")
-                action_success = False
-            else:
+            if action_success:
                 logger.info("Completed deleting %d cross-connection(s).", deleted_count)
+            else:
+                logger.error("Completed deleting cross-connections with errors (%d of %d succeeded).", deleted_count, len(cx_list))
 
     # Action 6: Delete Stations (--del_stations)
     if getattr(args, 'del_stations', None) is not None:
@@ -10029,13 +10051,20 @@ def handle_toolbox(args):
                 logger.warning("No station ports found on LANforge manager to delete.")
             else:
                 logger.info("Found %d station port(s) to delete: %s", len(existing_stas), existing_stas)
+                success_count = 0
                 for sta_name in existing_stas:
                     logger.info("Deleting station '%s'", sta_name)
                     lf_realm.admin_down(sta_name)
                     res = lf_realm.rm_port(sta_name, check_exists=False)
                     if res is False or res is None:
+                        logger.error("Toolbox: Failed to delete station '%s'.", sta_name)
                         action_success = False
-                logger.info("Successfully deleted %d station port(s).", len(existing_stas))
+                    else:
+                        success_count += 1
+                if action_success:
+                    logger.info("Successfully deleted %d station port(s).", success_count)
+                else:
+                    logger.error("Failed to delete some station ports (%d of %d succeeded).", success_count, len(existing_stas))
         else:
             sta_list = parse_list(target_stas)
             logger.info("Toolbox: Deleting specified stations: %s", sta_list)
@@ -10048,17 +10077,18 @@ def handle_toolbox(args):
                     lf_realm.admin_down(matched_sta)
                     res = lf_realm.rm_port(matched_sta, check_exists=False)
                     if res is False or res is None:
+                        logger.error("Toolbox: Failed to delete station '%s'.", matched_sta)
                         action_success = False
-                    deleted_count += 1
+                    else:
+                        deleted_count += 1
                 else:
-                    logger.error("Error: Requested station '%s' not found on LANforge manager.", sta_name)
-                    action_success = False
+                    logger.info("Requested station '%s' not found on LANforge manager (already deleted).", sta_name)
+                    deleted_count += 1
 
-            if deleted_count == 0 and sta_list:
-                logger.error("Error: Failed to delete any requested stations: %s", sta_list)
-                action_success = False
-            else:
+            if action_success:
                 logger.info("Completed deleting %d station(s).", deleted_count)
+            else:
+                logger.error("Completed deleting stations with errors (%d of %d succeeded).", deleted_count, len(sta_list))
 
     # Action 7: Ports Admin UP (--ports_up)
     if args.ports_up is not None:
@@ -10076,12 +10106,19 @@ def handle_toolbox(args):
                 logger.warning("No ports found on LANforge manager to set admin UP.")
             else:
                 logger.info("Found %d station/wireless port(s) to set admin UP: %s", len(sta_ports), sta_ports)
+                success_count = 0
                 for sta_name in sta_ports:
                     logger.info("Setting port '%s' admin UP", sta_name)
                     res = lf_realm.admin_up(sta_name)
                     if res is False or res is None:
+                        logger.error("Toolbox: Failed to set port '%s' admin UP.", sta_name)
                         action_success = False
-                logger.info("Successfully set %d station/wireless port(s) admin UP.", len(sta_ports))
+                    else:
+                        success_count += 1
+                if action_success:
+                    logger.info("Successfully set %d station/wireless port(s) admin UP.", success_count)
+                else:
+                    logger.error("Failed to set some ports admin UP (%d of %d succeeded).", success_count, len(sta_ports))
         else:
             port_list = parse_list(target_ports)
             logger.info("Toolbox: Setting specified ports admin UP: %s", port_list)
@@ -10092,8 +10129,10 @@ def handle_toolbox(args):
                     logger.info("Setting port '%s' admin UP", matched_port)
                     res = lf_realm.admin_up(matched_port)
                     if res is False or res is None:
+                        logger.error("Toolbox: Failed to set port '%s' admin UP.", matched_port)
                         action_success = False
-                    up_count += 1
+                    else:
+                        up_count += 1
                 else:
                     logger.error("Requested port '%s' not found on LANforge manager.", port_name)
                     action_success = False
@@ -10101,8 +10140,10 @@ def handle_toolbox(args):
             if up_count == 0 and port_list:
                 logger.error("Failed to set any requested ports admin UP.")
                 action_success = False
-            else:
+            elif action_success:
                 logger.info("Completed setting %d port(s) admin UP.", up_count)
+            else:
+                logger.error("Completed setting ports admin UP with errors (%d of %d succeeded).", up_count, len(port_list))
 
     # Action 8: Ports Admin DOWN (--ports_down)
     if args.ports_down is not None:
@@ -10120,12 +10161,19 @@ def handle_toolbox(args):
                 logger.warning("No ports found on LANforge manager to set admin DOWN.")
             else:
                 logger.info("Found %d station/wireless port(s) to set admin DOWN: %s", len(sta_ports), sta_ports)
+                success_count = 0
                 for sta_name in sta_ports:
                     logger.info("Setting port '%s' admin DOWN", sta_name)
                     res = lf_realm.admin_down(sta_name)
                     if res is False or res is None:
+                        logger.error("Toolbox: Failed to set port '%s' admin DOWN.", sta_name)
                         action_success = False
-                logger.info("Successfully set %d station/wireless port(s) admin DOWN.", len(sta_ports))
+                    else:
+                        success_count += 1
+                if action_success:
+                    logger.info("Successfully set %d station/wireless port(s) admin DOWN.", success_count)
+                else:
+                    logger.error("Failed to set some ports admin DOWN (%d of %d succeeded).", success_count, len(sta_ports))
         else:
             port_list = parse_list(target_ports)
             logger.info("Toolbox: Setting specified ports admin DOWN: %s", port_list)
@@ -10136,8 +10184,10 @@ def handle_toolbox(args):
                     logger.info("Setting port '%s' admin DOWN", matched_port)
                     res = lf_realm.admin_down(matched_port)
                     if res is False or res is None:
+                        logger.error("Toolbox: Failed to set port '%s' admin DOWN.", matched_port)
                         action_success = False
-                    down_count += 1
+                    else:
+                        down_count += 1
                 else:
                     logger.error("Requested port '%s' not found on LANforge manager.", port_name)
                     action_success = False
@@ -10145,8 +10195,10 @@ def handle_toolbox(args):
             if down_count == 0 and port_list:
                 logger.error("Failed to set any requested ports admin DOWN.")
                 action_success = False
-            else:
+            elif action_success:
                 logger.info("Completed setting %d port(s) admin DOWN.", down_count)
+            else:
+                logger.error("Completed setting ports admin DOWN with errors (%d of %d succeeded).", down_count, len(port_list))
 
     # Final Result Evaluation
     if action_performed:
