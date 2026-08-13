@@ -33,11 +33,10 @@ EXAMPLE:    # Run 60 second default DL/UL-rate UDP IPv4 traffic-based test with
                     --batch_size    2
 
             # Run test using values and options as defined in pre-existing config
-            # Can use additional options like '--duration', '--batch_size', etc.
-            # to override those in config
                 ./lf_wifi_capacity_test.py \
                     --pull_report   \
-                    --config_name   existing_wct_config
+                    --config_name   existing_wct_config \
+                    --load_old_cfg
 
 SCRIPT_CLASSIFICATION:
             Test
@@ -325,11 +324,10 @@ EXAMPLE:    # Run 60 second default DL/UL-rate UDP IPv4 traffic-based test with
                     --batch_size    2
 
             # Run test using values and options as defined in pre-existing config
-            # Can use additional options like '--duration', '--batch_size', etc.
-            # to override those in config
                 ./lf_wifi_capacity_test.py \
                     --pull_report   \
-                    --config_name   existing_wct_config
+                    --config_name   existing_wct_config \
+                    --load_old_cfg
 
 SCRIPT_CLASSIFICATION:
             Test
