@@ -144,6 +144,11 @@ class ZoomAutomator:
         d.click(*tap_coords)
         time.sleep(1)
 
+    @staticmethod
+    def _control_label(node):
+        """Return a node's label from content-desc, or text when that is empty."""
+        return node.attrib.get("content-desc") or node.attrib.get("text") or ""
+
     def get_audio_control_info(self, d):
         """Return audio state and bounds by parsing the current hierarchy dump."""
         try:
@@ -155,11 +160,11 @@ class ZoomAutomator:
             return None, None, None
 
         for node in root.iter("node"):
-            content_desc = node.attrib.get("content-desc", "")
-            if content_desc == "Mute my audio, button":
-                return True, node.attrib.get("bounds"), content_desc
-            if content_desc == "Unmute my audio, button":
-                return False, node.attrib.get("bounds"), content_desc
+            label = self._control_label(node)
+            if label.startswith("Mute my audio"):
+                return True, node.attrib.get("bounds"), label
+            if label.startswith("Unmute my audio"):
+                return False, node.attrib.get("bounds"), label
 
         return None, None, None
 
@@ -174,11 +179,11 @@ class ZoomAutomator:
             return None, None, None
 
         for node in root.iter("node"):
-            content_desc = node.attrib.get("content-desc", "")
-            if content_desc == "Start my video, button":
-                return False, node.attrib.get("bounds"), content_desc
-            if content_desc == "Stop my video, button":
-                return True, node.attrib.get("bounds"), content_desc
+            label = self._control_label(node)
+            if label.startswith("Start my video"):
+                return False, node.attrib.get("bounds"), label
+            if label.startswith("Stop my video"):
+                return True, node.attrib.get("bounds"), label
 
         return None, None, None
 
@@ -193,9 +198,9 @@ class ZoomAutomator:
             return None, None
 
         for node in root.iter("node"):
-            content_desc = node.attrib.get("content-desc", "")
-            if content_desc == "Leave, button":
-                return node.attrib.get("bounds"), content_desc
+            label = self._control_label(node)
+            if label.startswith("Leave"):
+                return node.attrib.get("bounds"), label
 
         return None, None
 
@@ -366,7 +371,6 @@ class ZoomAutomator:
         self.logger.info(f"Starting {ZOOM_PACKAGE} and opening the meeting link.")
         d.app_start(ZOOM_PACKAGE, stop=True)
         time.sleep(2)
-        
         self.adb_device.shell(
             f'am start -a android.intent.action.VIEW -d "{meeting_url}" {ZOOM_PACKAGE}'
         )
