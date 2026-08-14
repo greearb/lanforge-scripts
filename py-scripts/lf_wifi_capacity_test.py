@@ -2,7 +2,7 @@
 """
 NAME:       lf_wifi_capacity_test.py
 
-PURPOSE:    This script runs LANforge GUI-based WiFi Capacity test.
+PURPOSE:    This script runs LANforge GUI-based Wi-Fi Capacity test.
 
 NOTES:      Upon successful termination, the test PDF and HTML reports are saved.
             The report is optionally copied to the current directory on the executing system
@@ -176,7 +176,7 @@ class WiFiCapacityTest(cv_test):
             self.station_profile.admin_up()
             self.wait_for_ip(station_list=sta_names)
             logger.info("Stations created and got the ips...")
-        elif self.create_stations and self.stations_list is not None:
+        elif self.create_stations and self.stations_list:
             sta_names = self.stations_list
             self.station_profile.cleanup(sta_names)
             self.station_profile.use_security(self.security, self.ssid, self.paswd)
@@ -393,7 +393,7 @@ INCLUDE_IN_README:
     parser.add_argument('--logger_no_file',
                         default=None,
                         action="store_true",
-                        help='Show loggingout without the trailing file name and line')
+                        help='Show logging out without the trailing file name and line')
 
     args = parser.parse_args()
 
@@ -410,7 +410,7 @@ INCLUDE_IN_README:
     if args.log_level:
         logger_config.set_level(level=args.log_level)
 
-    # lf_logger_config_json will take presidence to changing debug levels
+    # lf_logger_config_json will take presidency to changing debug levels
     if args.lf_logger_config_json:
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
@@ -439,12 +439,12 @@ INCLUDE_IN_README:
     else:
         station_list = []
 
-    # add addtional configuration to raw_line
-    if (args.per_station_upload_rate):
+    # add additional configuration to raw_line
+    if args.per_station_upload_rate:
         if "ul_rate_sel: Per-Station Upload Rate:" not in args.raw_line:
             args.raw_line.append("ul_rate_sel: Per-Station Upload Rate")
 
-    if (args.per_station_download_rate):
+    if args.per_station_download_rate:
         if "dl_rate_sel: Per-Station Download Rate:" not in args.raw_line:
             args.raw_line.append("dl_rate_sel: Per-Station Download Rate")
 
