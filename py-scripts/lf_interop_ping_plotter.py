@@ -431,9 +431,8 @@ class Ping(Realm):
         response = self.json_get("generic")
         if response is None:
             logger.error("GET /generic returned no response; Generic tab may not be available on the LANforge manager.")
-            return False
-        else:
-            return True
+            raise RuntimeError("Generic tab is not available on the LANforge manager.")
+        return True
 
     def create_generic_endp(self):
         # Virtual stations are tracked in same list as real stations, so need to separate them
@@ -3486,9 +3485,7 @@ connectivity problems.
         ping.buildstation()
 
     # check if generic tab is enabled or not
-    if not ping.check_tab_exists():
-        logging.error('Generic Tab is not available.\nAborting the test.')
-        exit(0)
+    ping.check_tab_exists()
 
     ping.sta_list += ping.real_sta_list
 
