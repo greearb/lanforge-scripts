@@ -9667,7 +9667,8 @@ def handle_toolbox(args):
             existing_all_ports = lf_realm.get_all_ports() or []
             existing_sta_indices = []
             for p in existing_all_ports:
-                p_name = p.split('.')[-1] if '.' in p else p
+                eid = lf_realm.name_to_eid(p)
+                p_name = str(eid[2]) if len(eid) >= 3 else str(p)
                 if p_name.startswith('sta'):
                     digits = ''.join(c for c in p_name[3:] if c.isdigit())
                     if digits:
@@ -9704,7 +9705,8 @@ def handle_toolbox(args):
                 wifi_mode = radio_info_dict.get('mode', None)
 
                 # Validate radio interface via LANforge JSON API port-type
-                radio_clean = radio_name.split('.')[-1] if '.' in radio_name else radio_name
+                r_eid = lf_realm.name_to_eid(radio_name)
+                radio_clean = str(r_eid[2]) if len(r_eid) >= 3 else str(radio_name)
                 port_type = None
                 try:
                     port_info = lf_realm.json_get("/port/1/1/%s?fields=alias,port+type" % radio_clean)
@@ -9797,10 +9799,14 @@ def handle_toolbox(args):
                 sta_offset += 1000
                 total_processed += num_stations
 
-            if total_processed > 0:
+            if total_processed > 0 and action_success:
                 logger.info("Toolbox: Successfully processed %d station(s).", total_processed)
             else:
                 action_success = False
+
+        if not action_success:
+            logger.error("Toolbox: Station creation action failed. Halting remaining actions.")
+            return False
 
     # Action 2: Layer-3 Cross-Connection Building (--build_cxs / --build_cx)
     if getattr(args, 'build_cxs', False) or getattr(args, 'build_cx', False):
@@ -9877,7 +9883,13 @@ def handle_toolbox(args):
                                     logger.info("Created Layer-3 cross-connections: %s", these_cx)
                             except Exception as cx_err:
                                 logger.error("Toolbox: Failed to create Layer-3 cross-connections: %s", cx_err)
-                            # Action 3: Stop Cross Connections (--stop_cx)
+                                action_success = False
+
+        if not action_success:
+            logger.error("Toolbox: Cross-connection building action failed. Halting remaining actions.")
+            return False
+
+    # Action 3: Stop Cross Connections (--stop_cx)
     if args.stop_cx is not None:
         action_performed = True
         target_cxs = str(args.stop_cx).strip()
@@ -9930,6 +9942,10 @@ def handle_toolbox(args):
                 logger.info("Completed stopping %d cross-connection(s).", stopped_count)
             else:
                 logger.error("Completed stopping cross-connections with errors (%d of %d succeeded).", stopped_count, len(cx_list))
+
+        if not action_success:
+            logger.error("Toolbox: Stop cross-connections action failed. Halting remaining actions.")
+            return False
 
     # Action 4: Start Cross Connections (--start_cx)
     if args.start_cx is not None:
@@ -9985,6 +10001,10 @@ def handle_toolbox(args):
             else:
                 logger.error("Completed starting cross-connections with errors (%d of %d succeeded).", started_count, len(cx_list))
 
+        if not action_success:
+            logger.error("Toolbox: Start cross-connections action failed. Halting remaining actions.")
+            return False
+
     # Action 5: Delete Cross Connections (--del_cx)
     if args.del_cx is not None:
         action_performed = True
@@ -10035,6 +10055,10 @@ def handle_toolbox(args):
                 logger.info("Completed deleting %d cross-connection(s).", deleted_count)
             else:
                 logger.error("Completed deleting cross-connections with errors (%d of %d succeeded).", deleted_count, len(cx_list))
+
+        if not action_success:
+            logger.error("Toolbox: Delete cross-connections action failed. Halting remaining actions.")
+            return False
 
     # Action 6: Delete Stations (--del_stations)
     if getattr(args, 'del_stations', None) is not None:
@@ -10090,6 +10114,10 @@ def handle_toolbox(args):
             else:
                 logger.error("Completed deleting stations with errors (%d of %d succeeded).", deleted_count, len(sta_list))
 
+        if not action_success:
+            logger.error("Toolbox: Delete stations action failed. Halting remaining actions.")
+            return False
+
     # Action 7: Ports Admin UP (--ports_up)
     if args.ports_up is not None:
         action_performed = True
@@ -10144,6 +10172,10 @@ def handle_toolbox(args):
                 logger.info("Completed setting %d port(s) admin UP.", up_count)
             else:
                 logger.error("Completed setting ports admin UP with errors (%d of %d succeeded).", up_count, len(port_list))
+
+        if not action_success:
+            logger.error("Toolbox: Ports admin UP action failed. Halting remaining actions.")
+            return False
 
     # Action 8: Ports Admin DOWN (--ports_down)
     if args.ports_down is not None:
