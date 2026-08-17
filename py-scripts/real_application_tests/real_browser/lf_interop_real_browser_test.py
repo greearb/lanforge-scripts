@@ -206,6 +206,7 @@ class RealBrowserTest(Realm):
                  current_angle=None,
                  rotations_enabled=False,
                  duration_to_skip=None,
+                 return_to_charge=False,
                  windows_dir=WINDOWS_REAL_BROWSER_DIR,
                  linux_dir=LINUX_REAL_BROWSER_DIR,
                  mac_dir=MACOS_REAL_BROWSER_DIR
@@ -330,6 +331,7 @@ class RealBrowserTest(Realm):
         self.serial_list = []
         self.do_robo = do_robo
         self.do_bandsteering = do_bandsteering
+        self.return_to_charge_enabled = return_to_charge
         if self.do_robo:
             self.robo_ip = robo_ip
             self.robo_obj = robo_base_class.RobotClass(robo_ip=self.robo_ip, angle_list=angles_list)
@@ -4013,6 +4015,11 @@ def main():
             default='',
             help='bssid values'
         )
+        robo.add_argument(
+            '--return_to_charge',
+            help="After the robot test finishes, send the robot back to its charging point",
+            action='store_true'
+        )
 
         args = parser.parse_args()
         if args.help_summary:
@@ -4089,6 +4096,7 @@ def main():
                               bssids=args.bssids,
                               rotations_enabled=rotations_enabled,
                               duration_to_skip=args.duration_to_skip,
+                              return_to_charge=args.return_to_charge,
                               windows_dir=args.windows_dir,
                               linux_dir=args.linux_dir,
                               mac_dir=args.mac_dir
@@ -4157,16 +4165,23 @@ def main():
     finally:
         if '--help' not in sys.argv and '-h' not in sys.argv:
             obj.stop()
-            if args.do_robo and args.do_bandsteering:
-                if args.dowebgui:
+            if args.do_robo and obj.return_to_charge_enabled and not obj.webui_stop_clicked:
+                try:
+                    logging.info(f"Test completed. Returning to charge point '{obj.robo_obj.charge_point_name}'")
+                    obj.robo_obj.return_to_charge()
+                except Exception as e:
+                    logging.error(f"Robot failed to return to charging station, error: {e}")
+            try:
+                if args.do_robo and args.do_bandsteering:
+                    obj.create_report(iot_summary=iot_summary)
+                elif args.do_robo:
+                    obj.create_robo_report()
+                else:
+                    obj.create_report(iot_summary=iot_summary)
+            finally:
+                # Signal WebUI completion last, even if report generation raised.
+                if args.do_robo and args.dowebgui:
                     obj.stop_webui_test()
-                obj.create_report(iot_summary=iot_summary)
-            elif args.do_robo:
-                if args.dowebgui:
-                    obj.stop_webui_test()
-                obj.create_robo_report()
-            else:
-                obj.create_report(iot_summary=iot_summary)
 
             if not args.no_postcleanup:
                 obj.postcleanup()
