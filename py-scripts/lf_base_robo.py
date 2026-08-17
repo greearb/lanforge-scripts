@@ -219,6 +219,7 @@ class RobotClass:
             tuple: (matched (bool), abort (bool))
         """
         abort = False
+        all_dataframes = None
         moverobo_url = 'http://' + self.robo_ip + '/cmd/nav_name'
         status_url = 'http://' + self.robo_ip + '/reeman/nav_status'
         try:
@@ -325,6 +326,29 @@ class RobotClass:
         if self.do_bandsteering:
             return matched, abort, all_dataframes
         return matched, abort
+
+    def return_to_charge(self):
+        """Send the robot back to its charge point.
+
+        Returns:
+            bool: True once the robot reached the charge point, False if
+                  there's no known charge point or it failed to arrive.
+        """
+        if not self.charge_point_name:
+            logging.warning("Failed to return to charge, no charge point found")
+            return False
+
+        try:
+            result = self.move_to_coordinate(self.charge_point_name)
+            matched = result[0]
+            if matched:
+                logging.info("Reached charge point '{}'".format(self.charge_point_name))
+            else:
+                logging.warning("Did not confirm arrival at charge point '{}'".format(self.charge_point_name))
+            return matched
+        except Exception as e:
+            logging.warning("Failed to return the charging. Error: {}".format(e))
+            return False
 
     def update_nav_data_for_all_cxs_stopped(self):
         """
