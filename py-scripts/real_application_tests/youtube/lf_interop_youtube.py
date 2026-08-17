@@ -228,6 +228,7 @@ class Youtube(Realm):
                  current_angle="NA",
                  rotations_enabled=False,
                  scoring=False,
+                 return_to_charge=False,
                  windows_dir=WINDOWS_REAL_APP_DIR,
                  linux_dir=LINUX_REAL_APP_DIR,
                  mac_dir=MACOS_REAL_APP_DIR
@@ -304,6 +305,7 @@ class Youtube(Realm):
         self.stats_api_response = {}
         self.upstream_port = upstream_port
         self.stop_signal = False
+        self.user_stop_requested = False
         self.config = config
         self.selected_groups = selected_groups
         self.selected_profiles = selected_profiles
@@ -341,6 +343,7 @@ class Youtube(Realm):
         self.rotations_enabled = rotations_enabled
         self.pause = False
         self.cycles = cycles
+        self.return_to_charge_enabled = return_to_charge
         if self.do_robo:
             self.robo_obj = robo_base_class.RobotClass(
                 robo_ip=self.robo_ip,
@@ -1033,9 +1036,12 @@ class Youtube(Realm):
     def finalize_test_run(self, args, iot_summary=None):
         """Stop clients, generate the report, then clean up the test."""
         self.stop()
-        # Stop collection before WebUI completion triggers the final live image.
-        if args.do_webUI:
-            self.stop_webui_test()
+        if args.do_robo and self.return_to_charge_enabled and not self.user_stop_requested:
+            try:
+                logger.info(f"Test completed. Returning to charge point '{self.robo_obj.charge_point_name}'")
+                self.robo_obj.return_to_charge()
+            except Exception as e:
+                logger.error(f"Robot failed to return to charging station, error: {e}")
         logger.info("Waiting 10 seconds for client cleanup and log uploads")
         time.sleep(10)
         try:
@@ -1058,6 +1064,9 @@ class Youtube(Realm):
                     self.generic_endps_profile.cleanup()
                 except Exception:
                     logger.exception("Unable to clean up all YouTube endpoints")
+            # Signal WebUI completion last, after reporting and cleanup have finished.
+            if args.do_webUI:
+                self.stop_webui_test()
 
     def get_youtube_lf_wifi_stats(self):
         """
@@ -1165,6 +1174,7 @@ class Youtube(Realm):
 
             logger.info("Stopping the test through WebUI")
             self.stop_signal = True
+            self.user_stop_requested = True
 
             return jsonify({"message": "YouTube test stop requested"}), 200
 
@@ -3354,6 +3364,7 @@ NOTES:
         robo.add_argument('--do_bandsteering', help='Specify this flag to perform Bandsteering Scenario', action='store_true')
         robo.add_argument('--bssids', type=str, help='Comma-separated list of BSSIDs for bandsteering test')
         robo.add_argument('--cycles', type=int, default=1, help='Number of cycles to perform bandsteering')
+        robo.add_argument('--return_to_charge', help='After the robot test finishes, send the robot back to its charging point', action='store_true')
 
         args = parser.parse_args()
 
@@ -3480,6 +3491,7 @@ NOTES:
                 bssids=bssids,
                 rotations_enabled=rotations_enabled,
                 scoring=args.scoring,
+                return_to_charge=args.return_to_charge,
                 windows_dir=args.windows_dir,
                 linux_dir=args.linux_dir,
                 mac_dir=args.mac_dir)
