@@ -345,6 +345,42 @@ class LFCliBase:
 
         return json_response
 
+    def change_port_to_ip(self, upstream_port, required=True):
+        """Resolve a LANforge port name such as "eth1" or "1.1.eth1" to its IP.
+
+        The port is returned unchanged when it already looks like an IP address.
+        A port that cannot be resolved, or that is down and so reports 0.0.0.0,
+        aborts the script unless `required` is False, in which case the original
+        port name is returned so the caller can carry on.
+        """
+        if upstream_port.count('.') == 3:
+            logger.info("Upstream port IP %s", upstream_port)
+            return upstream_port
+
+        shelf, resource, port, _ = LFUtils.name_to_eid(upstream_port)
+        response = self.json_get('/port/{}/{}/{}?fields=ip'.format(shelf, resource, port))
+
+        try:
+            resolved = response['interface']['ip']
+        except (TypeError, KeyError) as e:
+            logger.error(
+                "change_port_to_ip: /port/%s/%s/%s response is not in the expected "
+                "format (%s). Data received: %s", shelf, resource, port, e, response)
+            if required:
+                exit(1)
+            return upstream_port
+
+        if not resolved or resolved == "0.0.0.0":
+            logger.error(
+                "change_port_to_ip: port '%s' resolved to %s; the port is down or has "
+                "no IP assigned.", upstream_port, resolved)
+            if required:
+                exit(1)
+            return upstream_port
+
+        logger.info("Upstream port IP %s", resolved)
+        return resolved
+
     def json_delete(self, _req_url, debug_=False):
         debug_ |= self.debug
         if debug_:
