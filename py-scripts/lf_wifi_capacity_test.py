@@ -114,6 +114,8 @@ class WiFiCapacityTest(cv_test):
                  graph_groups=None,
                  test_rig="",
                  test_tag="",
+                 payload_size="",
+                 sock_buffer_size="",
                  local_lf_report_dir="",
                  sta_list=None,
                  verbosity="5",
@@ -165,6 +167,8 @@ class WiFiCapacityTest(cv_test):
         self.graph_groups = graph_groups
         self.test_rig = test_rig
         self.test_tag = test_tag
+        self.payload_size = payload_size
+        self.sock_buffer_size = sock_buffer_size
         self.local_lf_report_dir = local_lf_report_dir
         self.stations_list = sta_list
         self.verbosity = verbosity
@@ -244,6 +248,10 @@ class WiFiCapacityTest(cv_test):
             cfg_options.append("test_rig: " + self.test_rig)
         if self.test_tag != "":
             cfg_options.append("test_tag: " + self.test_tag)
+        if self.payload_size != "":
+            cfg_options.append("pdu_sz: " + self.payload_size)
+        if self.sock_buffer_size != "":
+            cfg_options.append("sock_buffer: " + self.sock_buffer_size)
 
         if not self.load_old_cfg:
             cfg_options.append("save_csv: 1")
@@ -368,6 +376,8 @@ INCLUDE_IN_README:
                         help="Protocol ex.TCP-IPv4")
     parser.add_argument("-d", "--duration", type=str, default="",
                         help="duration in ms. ex. 5000")
+    parser.add_argument("--payload_size", default="", help="Specify payload size for the test")
+    parser.add_argument("--sock_buffer_size", default="", help="Specify socket buffer size for the test")
     parser.add_argument("--verbosity", default="5", help="Specify verbosity of the report values 1 - 11 default 5")
     parser.add_argument("--download_rate", type=str, default="",
                         help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps")
