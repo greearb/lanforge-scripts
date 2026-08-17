@@ -177,7 +177,8 @@ class VideoStreamingTest(Realm):
                  coordinate=None,
                  rotation=None,
                  rotation_enabled=None,
-                 angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None, duration_to_skip=None):
+                 angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None, duration_to_skip=None,
+                 return_to_charge=False):
         super().__init__(lfclient_host=host, lfclient_port=8080)
         self.adb_device_list = None
         self.host = host
@@ -246,7 +247,9 @@ class VideoStreamingTest(Realm):
         self.robot_test = robot_test
         self.vs_data = {}
         self.test_stopped = False
+        self.stopped_by_user = False
         self.do_bandsteering = do_bandsteering
+        self.return_to_charge_enabled = return_to_charge
         if robot_test:
             self.robot_ip = robot_ip
             if self.do_bandsteering:
@@ -2799,6 +2802,12 @@ class VideoStreamingTest(Realm):
                     last_row_df.to_csv("video_streaming_realtime_data.csv", mode="a", header=False, index=False)
             #  stop cx's after completing all cycles in bandsteering mode or if test is stopped by user in between the test
             self.stop()
+            if self.return_to_charge_enabled and not self.stopped_by_user:
+                try:
+                    logging.info("Test completed. Returning to charge point '{}'".format(self.robot.charge_point_name))
+                    self.robot.return_to_charge()
+                except Exception as e:
+                    logger.error(f"Robot failed to return to charging station, error: {e}")
             test_setup_info = self.create_test_setup_info(media_source=self.media_source_name, media_quality=self.media_quality_name)
             date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
             self.generate_report(date, [0], test_setup_info=test_setup_info, realtime_dataset=individual_df, iot_summary=None)
@@ -2855,6 +2864,7 @@ class VideoStreamingTest(Realm):
                                     data = json.load(file)
                                     if data["status"] != "Running":
                                         self.test_stopped = True
+                                        self.stopped_by_user = True
                                         break
                             try:
                                 test_stopped_by_user = self.monitor_for_runtime_csv(args.duration, file_path, coordinate_df, i, actual_start_time, cx_order_list[i])
@@ -2942,6 +2952,7 @@ class VideoStreamingTest(Realm):
                                         data = json.load(file)
                                         if data["status"] != "Running":
                                             self.test_stopped = True
+                                            self.stopped_by_user = True
                                             break
                                 try:
                                     test_stopped_by_user = self.monitor_for_runtime_csv(
@@ -3000,6 +3011,16 @@ class VideoStreamingTest(Realm):
                                 self.vs_data[int(coordinate)] = {}
                             self.vs_data[int(coordinate)][self.rotation_list[angle]] = params
         test_setup_info = self.create_test_setup_info(media_source=self.media_source_name, media_quality=self.media_quality_name)
+        if self.return_to_charge_enabled and not self.stopped_by_user:
+            try:
+                logging.info("Test completed. Returning to charge point '{}'".format(self.robot.charge_point_name))
+                self.robot.return_to_charge()
+            except Exception as e:
+                logger.error(f"Robot failed to return to charging station, error: {e}")
+        try:
+            self.generate_report_for_robo(test_setup_info, passed_coordinates=passed_coord_list)
+        except Exception as e:
+            logger.error(f"Failed to generate report: {e}")
         if self.dowebgui:
             self.copy_reports_to_home_dir()
             with open(nav_data, 'r') as x:
@@ -3010,7 +3031,6 @@ class VideoStreamingTest(Realm):
                 navdata['Test_status'] = 'Completed'
             with open(nav_data, 'w') as x:
                 json.dump(navdata, x, indent=4)
-        self.generate_report_for_robo(test_setup_info, passed_coordinates=passed_coord_list)
 
     def build_iot_report_section(self, report, iot_summary):
         """
@@ -3421,6 +3441,7 @@ def main():
     parser.add_argument('--robot_ip', type=str, default='localhost', help='hostname for where Robot server is running')
     parser.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")
     parser.add_argument('--rotation', type=str, default='', help="The set of angles to rotate at a particular point")
+    parser.add_argument('--return_to_charge', help="After the robot test finishes, send the robot back to its charging point", action='store_true')
     # Arguments Related to Testhouse
     parser.add_argument('--get_live_view',
                         action="store_true",
@@ -3568,7 +3589,8 @@ def main():
                              do_bandsteering=args.do_bandsteering,
                              total_cycles=args.total_cycles,
                              bssids=args.bssids.split(",") if args.bssids else [],
-                             duration_to_skip=args.duration_to_skip
+                             duration_to_skip=args.duration_to_skip,
+                             return_to_charge=args.return_to_charge
                              )
     # preserve the human-readable names so the report shows e.g. "Hls" instead of the numeric code "3"
     obj.media_source_name = media_source
