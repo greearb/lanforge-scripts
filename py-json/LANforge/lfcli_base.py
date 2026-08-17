@@ -345,36 +345,47 @@ class LFCliBase:
 
         return json_response
 
-    def change_port_to_ip(self, upstream_port):
-        """Resolve a LANforge port name such as "eth1" or "1.1.eth1" to its IP.
+    def resolve_port_to_ip(self, port):
+        """Resolve a LANforge port to its IP address.
 
-        The port is returned unchanged when it already looks like an IP address.
-        A port that cannot be resolved, or that is down and so reports 0.0.0.0,
-        aborts the script: the tests cannot run without a usable upstream IP.
+        Accepts any of:
+          - a bare port name, e.g. "eth1"      (shelf and resource default to 1.1)
+          - a full port EID, e.g. "1.1.eth1"
+          - an IP address already, e.g. "192.168.1.101"
+
+        Returns the port's IP address as a string. An input that is already an IP
+        is returned unchanged, without querying LANforge.
+
+        Does not return when the port cannot be resolved, or resolves to 0.0.0.0
+        because the port is down or has no IP: it logs the reason and exits, since
+        the tests cannot run without a usable IP.
         """
-        if upstream_port.count('.') == 3:
-            logger.info("Upstream port IP %s", upstream_port)
-            return upstream_port
+        # when the port is already an IP address, return it unchanged
+        if port.count('.') == 3:
+            logger.info("Port IP %s", port)
+            if port == '0.0.0.0':
+                logger.warning("Port IP is 0.0.0.0 is not a valid IP")
+            return port
 
-        shelf, resource, port, _ = LFUtils.name_to_eid(upstream_port)
-        response = self.json_get('/port/{}/{}/{}?fields=ip'.format(shelf, resource, port))
+        shelf, resource, port_name, _ = LFUtils.name_to_eid(port)
+        response = self.json_get('/port/{}/{}/{}?fields=ip'.format(shelf, resource, port_name))
 
         try:
-            resolved = response['interface']['ip']
+            resolved_ip = response['interface']['ip']
         except (TypeError, KeyError) as e:
             logger.error(
-                "change_port_to_ip: /port/%s/%s/%s response is not in the expected "
-                "format (%s). Data received: %s", shelf, resource, port, e, response)
+                "resolve_port_to_ip: /port/%s/%s/%s response is not in the expected "
+                "format (%s). Data received: %s", shelf, resource, port_name, e, response)
             exit(1)
 
-        if not resolved or resolved == "0.0.0.0":
+        if not resolved_ip or resolved_ip == "0.0.0.0":
             logger.error(
-                "change_port_to_ip: port '%s' resolved to %s; the port is down or has "
-                "no IP assigned.", upstream_port, resolved)
+                "resolve_port_to_ip: port '%s' resolved to %s; the port is down or has "
+                "no IP assigned.", port, resolved_ip)
             exit(1)
 
-        logger.info("Upstream port IP %s", resolved)
-        return resolved
+        logger.info("Port IP %s", resolved_ip)
+        return resolved_ip
 
     def json_delete(self, _req_url, debug_=False):
         debug_ |= self.debug
