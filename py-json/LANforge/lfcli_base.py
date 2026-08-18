@@ -373,6 +373,47 @@ class LFCliBase:
         # print("----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
         return json_response
 
+    def resolve_port_to_ipv4(self, port):
+        """Resolve a LANforge port name or EID to its IPv4 address.
+
+        Returns the address as a string, or None when it cannot be resolved.
+        """
+        if not port:
+            logger.error("resolve_port_to_ipv4: please provide a valid port name")
+            return None
+
+        if not isinstance(port, str):
+            logger.error("resolve_port_to_ipv4: port must be a string, got %s",
+                         type(port).__name__)
+            return None
+
+        # when the port is already an IP address, return it unchanged
+        if port.count('.') == 3:
+            logger.info("Port IP %s", port)
+            if port == '0.0.0.0':
+                logger.warning("Port IP is 0.0.0.0 is not a valid IP")
+            return port
+
+        shelf, resource, port_name, _ = LFUtils.name_to_eid(port)
+        response = self.json_get('/port/{}/{}/{}?fields=ip'.format(shelf, resource, port_name))
+
+        try:
+            resolved_ip = response['interface']['ip']
+        except (TypeError, KeyError) as e:
+            logger.error(
+                "resolve_port_to_ipv4: /port/%s/%s/%s response is not in the expected "
+                "format (%s). Data received: %s", shelf, resource, port_name, e, response)
+            return None
+
+        if not resolved_ip or resolved_ip == "0.0.0.0":
+            logger.error(
+                "resolve_port_to_ipv4: port '%s' resolved to %s; the port is down or has "
+                "no IP assigned.", port, resolved_ip)
+            return None
+
+        logger.info("Port IP %s", resolved_ip)
+        return resolved_ip
+
     @staticmethod
     def response_list_to_map(json_list, key, debug_=False):
         reverse_map = {}
