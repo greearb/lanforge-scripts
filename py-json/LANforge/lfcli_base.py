@@ -708,12 +708,13 @@ class LFCliBase:
             parser = argparse.ArgumentParser()
         optional = parser.add_argument_group('arguments with PRE-DEFINED DEFAULTS, arguments & defaults defined by create_bare_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
         required = parser.add_argument_group('arguments with NO PRE-DEFINED DEFAULTS, arguments & defaults defined by create_bare_argparse found in  /lanforge-scripts/py-json/LANforge/lfcli_base.py')
-        optional.add_argument('--mgr',
+        optional.add_argument('--mgr', "--m", "--lfmgr", "--lanforge_ip", dest="mgr",
                               default='localhost',
-                              help='hostname for where LANforge GUI is running')
-        optional.add_argument('--mgr_port',
+                              help='Hostname or IP address of the LANforge GUI machine (localhost is default, use when running script on lanforge)')
+        optional.add_argument('--mgr_port', '--port', '--o', '--lanforge_port',
+                              dest='port',
                               default=8080,
-                              help='port LANforge GUI HTTP service is running on')
+                              help='IP Port the LANforge GUI is listening on (8080 is default)')
         optional.add_argument('--debug',
                               '-d',
                               default=False,
@@ -757,25 +758,34 @@ class LFCliBase:
         # Optional Args
         optional.add_argument('--mgr',
                               '--lfmgr',
+                              '--lanforge_ip',
+                              dest='mgr',
                               default='localhost',
                               help='Hostname or IP address of the LANforge GUI machine (localhost is default)')
         optional.add_argument('--mgr_port',
                               '--port',
+                              '--lanforge_port',
+                              dest='port',
                               default=8080,
                               help='IP Port the LANforge GUI is listening on (8080 is default)')
         optional.add_argument('-u',
                               '--upstream_port',
+                              '--upstream',
+                              dest='upstream',
                               default='1.eth1',
-                              help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1')
+                              help="""Upstream port used in test. Example: '1.1.eth2. This is the port of the A.P.
+                            that is connected to the LANforge system.  Default is eth1. All data being transmitted
+                            is done via this port.  This port is used to send and receive data
+                            to/from the A.P. that is being tested.
+                            Format: <shelf>.<resource>.<port>""")
         optional.add_argument('--num_stations',
                               type=int,
                               default=0,
-                              help='Number of stations to create')
+                              help='Number of stations to create. Default: 0. Dependency: used together with --radio, --ssid, --security and --paswd when creating stations')
         optional.add_argument('--test_id',
                               default="webconsole",
                               help='Test ID (intended to use for ws events)')
-        optional.add_argument('-d',
-                              '--debug',
+        optional.add_argument('--debug',
                               action="store_true",
                               help='Enable debugging')
         optional.add_argument('--log_level',
@@ -808,6 +818,19 @@ class LFCliBase:
                               default=None,
                               action="store_true",
                               help='Show summary of what this script does')
+        optional.add_argument('--radio',
+                              default='wiphy0',
+                              help='create stations in lanforge at this radio (by default: wiphy0)')
+        optional.add_argument('--security',
+                              default="open",
+                              help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
+        optional.add_argument('--paswd',
+                              '--passwd',
+                              '--password',
+                              '--key',
+                              dest='paswd',
+                              default="[BLANK]",
+                              help='WiFi passphrase/password/key for created stations. Default: [BLANK]. Dependency: REQUIRED when --security is not "open"')
         if more_optional is not None:
             for argument in more_optional:
                 if 'default' in argument.keys():
@@ -816,19 +839,9 @@ class LFCliBase:
                     optional.add_argument(argument['name'], help=argument['help'])
 
         # Required Args
-        required.add_argument('--radio',
-                              help='radio EID, e.g: 1.wiphy2')
         # Silently support capitalized security types
-        required.add_argument('--security',
-                              default="open",
-                              help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
         required.add_argument('--ssid',
-                              help='WiFi SSID for script objects to associate to')
-        required.add_argument('--passwd',
-                              '--password',
-                              '--key',
-                              default="[BLANK]",
-                              help='WiFi passphrase/password/key')
+                              help='REQUIRED. WiFi SSID for created stations to associate to')
         # please override this password argument using set_defaults(passwd='NA')
 
         if more_required is not None:
