@@ -2854,10 +2854,17 @@ class RealBrowserTest(Realm):
                 else:
                     raise ValueError("The 'total_urls' column was not found in the CSV file.")
 
+                if 'total_err' in data.columns:
+                    total_err_data = data['total_err'].tolist()
+                else:
+                    raise ValueError("The 'total_err' column was not found in the CSV file.")
+
+                successful_urls = [max(0, tu - te) for tu, te in zip(total_urls, total_err_data)]
+
                 x_fig_size = 18
                 y_fig_size = len(device_type_data) * 1 + 4
                 bar_graph_horizontal = lf_bar_graph_horizontal(
-                    _data_set=[total_urls],
+                    _data_set=[successful_urls],
                     _xaxis_name="URL",
                     _yaxis_name="Devices",
                     _yaxis_label=device_names,
@@ -2921,11 +2928,6 @@ class RealBrowserTest(Realm):
                     uc_avg_data = data['uc_avg'].tolist()
                 else:
                     raise ValueError("The 'uc_avg' column was not found in the CSV file.")
-
-                if 'total_err' in data.columns:
-                    total_err_data = data['total_err'].tolist()
-                else:
-                    raise ValueError("The 'total_err' column was not found in the CSV file.")
             # bandsteering bssid section
             if self.do_bandsteering:
                 self.add_bandsteering_bssid_section(report)
@@ -2983,7 +2985,7 @@ class RealBrowserTest(Realm):
                         "UC-MIN (ms)": uc_min_data,
                         "UC-MAX (ms)": uc_max_data,
                         "UC-AVG (ms)": uc_avg_data,
-                        "Total Successful URLs": total_urls,
+                        "Total Successful URLs": successful_urls,
                         "Expected URLS": test_input_list,
                         "Total Erros": total_err_data,
                         "RSSI": signal_data,
@@ -3002,7 +3004,7 @@ class RealBrowserTest(Realm):
                         "UC-MIN (ms)": uc_min_data,
                         "UC-MAX (ms)": uc_max_data,
                         "UC-AVG (ms)": uc_avg_data,
-                        "Total Successful URLs": total_urls,
+                        "Total Successful URLs": successful_urls,
                         "Total Erros": total_err_data,
                         "RSSI": signal_data,
                         "Link Speed": tx_rate_data,
@@ -3047,7 +3049,7 @@ class RealBrowserTest(Realm):
                         "UC-MIN (ms)": uc_min_data,
                         "UC-MAX (ms)": uc_max_data,
                         "UC-AVG (ms)": uc_avg_data,
-                        "Total Successful URLs": total_urls,
+                        "Total Successful URLs": successful_urls,
                         "Expected URLS": test_input_list,
                         "Total Erros": total_err_data,
                         "RSSI": signal_data,
@@ -3067,7 +3069,7 @@ class RealBrowserTest(Realm):
                         "UC-MIN (ms)": uc_min_data,
                         "UC-MAX (ms)": uc_max_data,
                         "UC-AVG (ms)": uc_avg_data,
-                        "Total Successful URLs": total_urls,
+                        "Total Successful URLs": successful_urls,
                         "Total Erros": total_err_data,
                         "RSSI": signal_data,
                         "Link Speed": tx_rate_data,
@@ -3583,10 +3585,17 @@ class RealBrowserTest(Realm):
             else:
                 raise ValueError("The 'total_urls' column was not found in the CSV file.")
 
+            if 'total_err' in data.columns:
+                total_err_data = data['total_err'].tolist()
+            else:
+                raise ValueError("The 'total_err' column was not found in the CSV file.")
+
+            successful_urls = [max(0, tu - te) for tu, te in zip(total_urls, total_err_data)]
+
             x_fig_size = 18
             y_fig_size = len(device_type_data) * 1 + 4
             bar_graph_horizontal = lf_bar_graph_horizontal(
-                _data_set=[total_urls],
+                _data_set=[successful_urls],
                 _xaxis_name="URL",
                 _yaxis_name="Devices",
                 _yaxis_label=device_names,
@@ -3653,11 +3662,6 @@ class RealBrowserTest(Realm):
             else:
                 raise ValueError("The 'uc_avg' column was not found in the CSV file.")
 
-            if 'total_err' in data.columns:
-                total_err_data = data['total_err'].tolist()
-            else:
-                raise ValueError("The 'total_err' column was not found in the CSV file.")
-
             if self.rotations_enabled:
                 self.report.set_table_title(f"Final Test Results at coordinate {coordinate} and angle {angle}:")
             else:
@@ -3682,7 +3686,7 @@ class RealBrowserTest(Realm):
                     "UC-MIN (ms)": uc_min_data,
                     "UC-MAX (ms)": uc_max_data,
                     "UC-AVG (ms)": uc_avg_data,
-                    "Total Successful URLs": total_urls,
+                    "Total Successful URLs": successful_urls,
                     "Expected URLS": test_input_list,
                     "Total Errors": total_err_data,
                     "RSSI": signal_data,
@@ -3701,7 +3705,7 @@ class RealBrowserTest(Realm):
                     "UC-MIN (ms)": uc_min_data,
                     "UC-MAX (ms)": uc_max_data,
                     "UC-AVG (ms)": uc_avg_data,
-                    "Total Successful URLs": total_urls,
+                    "Total Successful URLs": successful_urls,
                     "Total Errors": total_err_data,
                     "RSSI": signal_data,
                     "Link Speed": tx_rate_data,
