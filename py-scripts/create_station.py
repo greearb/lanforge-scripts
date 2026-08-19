@@ -111,7 +111,7 @@ EXAMPLE:    # Create a single station
                 --passwd    <password> \
                 --security  wpa2 \
                 --num_stations 10 \
-                --initial_band_pref 5G
+                --initial_band_pref 5GHz
 
             # Create multiple stations
             ./create_station.py \
@@ -336,7 +336,7 @@ class CreateStation(Realm):
 
     def __init__(self,
                  mgr,
-                 mgr_port,
+                 port,
                  proxy,
                  debug,
                  up,
@@ -366,9 +366,9 @@ class CreateStation(Realm):
                  initial_band_pref,
                  **kwargs):
         super().__init__(mgr,
-                         mgr_port)
+                         port)
         self.host = mgr
-        self.port = mgr_port
+        self.port = port
         self.debug = debug
         self.up = up
         self.ssid = ssid
@@ -855,7 +855,8 @@ INCLUDE_IN_README:
 """)
     parser.add_argument('--start_id',
                         type=int,
-                        help='Specify the station starting id \n e.g: --start_id <value> default 0',
+                        help='Specify the station starting id \n e.g: --start_id <value> default 0.\n'
+                        'All stations being created from --create_stations are named from this id, eg. sta<start_id>, sta<start_id + 1> ...',
                         default=0)
     parser.add_argument("--prefix",
                         type=str,
@@ -886,7 +887,6 @@ INCLUDE_IN_README:
                         default="xx:xx:xx:*:*:xx")
     parser.add_argument("--radio_antenna",
                         help='Number of spatial streams: \n'
-                        ' default = -1 \n'
                         ' 0 Diversity (All) \n'
                         ' 1 Fixed-A (1x1) \n'
                         ' 4 AB (2x2) \n'
@@ -906,10 +906,11 @@ INCLUDE_IN_README:
                         default='AUTO')
     parser.add_argument("--country_code",
                         help='Radio Country Code:\n'
-                             'e.g: \t--country_code 840')
+                             'e.g: \t--country_code 840\n'
+                             'Could either mention the code, or the country itself')
     parser.add_argument("--eap_method",
                         type=str,
-                        help='Enter EAP method e.g: TLS')
+                        help='Enter EAP method e.g: TLS. If specified, also mention --eap_identitiy, --key_mgmt')
     parser.add_argument("--eap_identity",
                         "--radius_identity",
                         dest="eap_identity",
@@ -917,13 +918,14 @@ INCLUDE_IN_README:
                         help="This is synonymous with the RADIUS username.")
     parser.add_argument("--eap_anonymous_identity",
                         type=str,
-                        help="",
+                        help="Anonymous identity used in outer EAP authentication (EAP-TTLS/PEAP). Default: [BLANK]. "
+                             "Dependency: used only when --eap_method is TTLS or PEAP",
                         default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
     parser.add_argument("--eap_password",
                         "--radius_passwd",
                         dest="eap_password",
                         type=str,
-                        help="This is synonymous with the RADIUS user's password.")
+                        help="This is synonymous with the RADIUS user's password. Need to be specified when --eap_method is not TLS.",)
     parser.add_argument("--eap_phase1",
                         type=str,
                         help="EAP Phase 1 (outer authentication, i.e. TLS tunnel) parameters.\n"
@@ -937,13 +939,13 @@ INCLUDE_IN_README:
                         default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
     parser.add_argument("--pk_passwd",
                         type=str,
-                        help='Enter the private key password')
+                        help='Enter the private key password. Need to be mentioned when --eap_method is TLS')
     parser.add_argument("--ca_cert",
                         type=str,
-                        help='Enter path for certificate e.g: /home/lanforge/ca.pem')
+                        help='Enter path for certificate e.g: /home/lanforge/ca.pem. Need to be mentioned when --eap_method is TLS')
     parser.add_argument("--private_key",
                         type=str,
-                        help='Enter private key path e.g: /home/lanforge/client.p12')
+                        help='Enter private key path e.g: /home/lanforge/client.p12. Need to be mentioned when --eap_method is TLS')
     parser.add_argument("--key_mgmt",
                         type=str,
                         help="Authentication key management. Combinations are supported.\n")
@@ -957,7 +959,8 @@ INCLUDE_IN_README:
                              'CCMP-256\n'
                              'GCMP\n'
                              'GCMP-256\n'
-                             'CCMP/GCMP-256',
+                             'CCMP/GCMP-256\n'
+                             'Need to be specified when security is WPA3',
                              default='[BLANK]')
     parser.add_argument("--groupwise_cipher",
                         help='Groupwise Ciphers\n'
@@ -970,7 +973,8 @@ INCLUDE_IN_README:
                              'GCMP-256\n'
                              'CCMP-256\n'
                              'GCMP/CCMP-256\n'
-                             'ALL',
+                             'ALL\n'
+                             'Need to be specified when security is WPA3',
                         default='[BLANK]')
     parser.add_argument("--no_pre_cleanup",
                         help='Add this flag to stop cleaning up before station creation',
@@ -1076,7 +1080,7 @@ def main():
     create_station = CreateStation(**vars(args),
                                    sta_list=station_list,
                                    up=(not args.create_admin_down),
-                                   password=args.passwd,
+                                   password=args.paswd,
                                    set_txo_data=None)
 
     if not args.no_pre_cleanup:
