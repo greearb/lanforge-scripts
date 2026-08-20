@@ -251,15 +251,41 @@ class Ping(Realm):
             print(self.target)
 
     def cleanup(self):
+        expected_endp_names = []
+        # setting the created_cx and created_endp to empty list and adding the existing endpoints to the list for cleanup
+        self.generic_endps_profile.created_cx = []
+        self.generic_endps_profile.created_endp = []
+        if (self.enable_virtual):
+            for station in self.sta_list:
+                expected_endp_names.append('generic-{}'.format(station.split('.')[2]))
+        if (self.enable_real):
+            for station in self.real_sta_list:
+                expected_endp_names.append('generic-{}'.format(station))
+
+        if expected_endp_names:
+            endp_url = "/generic/{}".format(','.join(expected_endp_names))
+            response = self.json_get(endp_url)
+            if not response:
+                logger.error("Failed to fetch endpoints for cleanup.\nRequested URL: '{}'\nResponse: {}".format(endp_url, response))
+                endpoint = []
+            else:
+                endpoint = response.get('endpoints', response.get('endpoint', []))
+                if isinstance(endpoint, dict):
+                    endpoint = [{endpoint['name']: endpoint}]
+
+            present_endp_names = set()
+            for endp_entry in endpoint:
+                present_endp_names.update(endp_entry.keys())
+
+            for endp_name in expected_endp_names:
+                if endp_name in present_endp_names:
+                    self.generic_endps_profile.created_endp.append(endp_name)
+                    self.generic_endps_profile.created_cx.append('CX_{}'.format(endp_name))
 
         if (self.enable_virtual):
             # removing virtual stations if existing
             for station in self.sta_list:
                 logging.info('Removing the station {} if exists'.format(station))
-                self.generic_endps_profile.created_cx.append(
-                    'CX_generic-{}'.format(station.split('.')[2]))
-                self.generic_endps_profile.created_endp.append(
-                    'generic-{}'.format(station.split('.')[2]))
                 self.rm_port(station, check_exists=True)
 
             if (not LFUtils.wait_until_ports_disappear(base_url=self.host, port_list=self.sta_list, debug=self.debug)):
@@ -267,15 +293,7 @@ class Ping(Realm):
                 logging.error('Aborting the test.')
                 exit(0)
 
-        if (self.enable_real):
-            # removing generic endpoints for real devices if existing
-            for station in self.real_sta_list:
-                self.generic_endps_profile.created_cx.append(
-                    'CX_generic-{}'.format(station))
-                self.generic_endps_profile.created_endp.append(
-                    'generic-{}'.format(station))
-
-        logging.info('Cleaning up generic endpoints if exists')
+        logging.info("Cleaning up generic endpoints if exists: cx={}, endp={}".format(self.generic_endps_profile.created_cx, self.generic_endps_profile.created_endp))
         self.generic_endps_profile.cleanup()
         self.generic_endps_profile.created_cx = []
         self.generic_endps_profile.created_endp = []
