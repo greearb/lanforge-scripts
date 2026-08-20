@@ -288,19 +288,19 @@ class Ping(Realm):
         if (self.enable_virtual):
             # removing virtual stations if existing
             for station in self.sta_list:
-                logging.info('Removing the station {} if exists'.format(station))
+                logger.info('Removing the station {} if exists'.format(station))
                 self.rm_port(station, check_exists=True)
 
             if (not LFUtils.wait_until_ports_disappear(base_url=self.host, port_list=self.sta_list, debug=self.debug)):
-                logging.info('All stations are not removed or a timeout occured.')
-                logging.error('Aborting the test.')
+                logger.info('All stations are not removed or a timeout occured.')
+                logger.error('Aborting the test.')
                 exit(0)
 
-        logging.info("Cleaning up generic endpoints if exists: cx={}, endp={}".format(self.generic_endps_profile.created_cx, self.generic_endps_profile.created_endp))
+        logger.info("Cleaning up generic endpoints if exists: cx={}, endp={}".format(self.generic_endps_profile.created_cx, self.generic_endps_profile.created_endp))
         self.generic_endps_profile.cleanup()
         self.generic_endps_profile.created_cx = []
         self.generic_endps_profile.created_endp = []
-        logging.info('Cleanup Successful')
+        logger.info('Cleanup Successful')
 
     # Args:
     #   devices: Connected RealDevice object which has already populated tracked real device
@@ -317,7 +317,7 @@ class Ping(Realm):
         if (len(self.real_sta_list) == 0):
             raise RuntimeError('There are no real devices in this testbed. Aborting test')
 
-        logging.info(self.real_sta_list)
+        logger.info(self.real_sta_list)
 
         for sta_name in self.real_sta_list:
             if sta_name not in real_devices.devices_data:
@@ -339,10 +339,10 @@ class Ping(Realm):
         return d_list
 
     def buildstation(self):
-        logging.info('Creating Stations {}'.format(self.sta_list))
+        logger.info('Creating Stations {}'.format(self.sta_list))
         for station_index in range(len(self.sta_list)):
             shelf, resource, port = self.sta_list[station_index].split('.')
-            logging.info('{} {} {}'.format(shelf, resource, port))
+            logger.info('{} {} {}'.format(shelf, resource, port))
             station_object = StationProfile(lfclient_url='http://{}:{}'.format(self.host, self.port), local_realm=self, ssid=self.ssid,
                                             ssid_pass=self.password, security=self.security, number_template_='00', up=True, resource=resource, shelf=shelf)
             station_object.use_security(
@@ -372,7 +372,7 @@ class Ping(Realm):
 
         if (self.enable_virtual):
             if (self.generic_endps_profile.create(ports=virtual_stations, sleep_time=.5)):
-                logging.info('Virtual client generic endpoint creation completed.')
+                logger.info('Virtual client generic endpoint creation completed.')
             else:
                 raise RuntimeError('Virtual client generic endpoint creation failed.')
 
@@ -380,7 +380,7 @@ class Ping(Realm):
             real_sta_os_types = [self.real_sta_data_dict[real_sta_name]['ostype'] for real_sta_name in self.real_sta_data_dict]
 
             if (self.generic_endps_profile.create(ports=self.real_sta_list, sleep_time=.5, real_client_os_types=real_sta_os_types)):
-                logging.info('Real client generic endpoint creation completed.')
+                logger.info('Real client generic endpoint creation completed.')
             else:
                 raise RuntimeError('Real client generic endpoint creation failed.')
 
@@ -608,10 +608,10 @@ class Ping(Realm):
                 target_port_ip = self.json_get(f'/port/{shelf}/{resource}/{port}?fields=ip')['interface']['ip']
                 upstream_port = target_port_ip
             except Exception:
-                logging.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
-            logging.info(f"Upstream port IP {upstream_port}")
+                logger.warning(f'The upstream port is not an ethernet port. Proceeding with the given upstream_port {upstream_port}.')
+            logger.info(f"Upstream port IP {upstream_port}")
         else:
-            logging.info(f"Upstream port IP {upstream_port}")
+            logger.info(f"Upstream port IP {upstream_port}")
         return upstream_port
 
     # Calculates pass/fail status for each client based on their result compared to the expected value.
@@ -658,7 +658,7 @@ class Ping(Realm):
                         found = True
                         break
                 if not found:
-                    logging.info(f"Ping result for device {device} not found in CSV. Using default packet loss = 10%")
+                    logger.info(f"Ping result for device {device} not found in CSV. Using default packet loss = 10%")
                     test_input_list.append(10)
             self.percent_pac_loss = []
             for i in range(len(self.packets_sent)):
@@ -730,7 +730,7 @@ class Ping(Realm):
     def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path='', config_devices='', group_device_map=None):
         if result_json is not None:
             self.result_json = result_json
-        logging.info('Generating Report')
+        logger.info('Generating Report')
 
         report = lf_report(_output_pdf='interop_ping.pdf',
                            _output_html='interop_ping.html',
@@ -741,8 +741,8 @@ class Ping(Realm):
 
         self.write_client_issue_csv(report_path_date_time)
 
-        logging.info('path: {}'.format(report_path))
-        logging.info('path_date_time: {}'.format(report_path_date_time))
+        logger.info('path: {}'.format(report_path))
+        logger.info('path_date_time: {}'.format(report_path_date_time))
 
         # setting report title
         report.set_title('Ping Test Report')
@@ -803,7 +803,7 @@ class Ping(Realm):
         # packet_count_data = {}
         os_type = []
         for device, device_data in self.result_json.items():
-            logging.info('Device data: {} {}'.format(device, device_data))
+            logger.info('Device data: {} {}'.format(device, device_data))
             os_type.append(device_data['os'])
             self.packets_sent.append(int(device_data['sent']))
             self.packets_received.append(int(device_data['recv']))
@@ -866,7 +866,7 @@ class Ping(Realm):
                                         _color_name=['lightgrey', 'orange', 'steelblue'])
 
         graph_png = graph.build_bar_graph_horizontal()
-        logging.info('graph name {}'.format(graph_png))
+        logger.info('graph name {}'.format(graph_png))
         report.set_graph_image(graph_png)
         # need to move the graph image to the results directory
         report.move_graph_image()
@@ -968,7 +968,7 @@ class Ping(Realm):
                                         _color_name=['lightgrey', 'orange', 'steelblue'])
 
         graph_png = graph.build_bar_graph_horizontal()
-        logging.info('graph name {}'.format(graph_png))
+        logger.info('graph name {}'.format(graph_png))
         report.set_graph_image(graph_png)
         # need to move the graph image to the results directory
         report.move_graph_image()
@@ -1436,12 +1436,12 @@ effectively over the network and pinpoint potential issues affecting connectivit
     # creating virtual stations if --virtual flag is specified
     if (args.virtual):
 
-        logging.info('Proceeding to create {} virtual stations on {}'.format(num_sta, radio))
+        logger.info('Proceeding to create {} virtual stations on {}'.format(num_sta, radio))
         station_list = LFUtils.portNameSeries(
             prefix_='sta', start_id_=0, end_id_=num_sta - 1, padding_number_=100000, radio=radio)
         ping.sta_list = station_list
         if (debug):
-            logging.info('Virtual Stations: {}'.format(station_list).replace(
+            logger.info('Virtual Stations: {}'.format(station_list).replace(
                 '[', '').replace(']', '').replace('\'', ''))
 
     # selecting real clients if --real flag is specified
@@ -1528,7 +1528,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
     ping.create_generic_endp()
 
     # run the test for the given duration
-    logging.info('Running the ping test for {} minutes'.format(duration))
+    logger.info('Running the ping test for {} minutes'.format(duration))
 
     # start generate endpoint
     ping.start_generic()
@@ -1540,7 +1540,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
             logger.error('All endpoints are not available. So exiting the monitor early.')
             break
         time.sleep(3)
-    logging.info('Stopping the test')
+    logger.info('Stopping the test')
     ping.stop_generic()
 
     result_data = ping.get_results()
