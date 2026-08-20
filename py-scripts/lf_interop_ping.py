@@ -631,15 +631,21 @@ class Ping(Realm):
                 if isinstance(interop_tab_data, dict):
                     interop_tab_data = [{interop_tab_data['name']: interop_tab_data}]
             for client in range(len(os_type)):
+                device_name = self.device_names[client].split(' ')[0:-1][0]
                 if os_type[client] != 'Android':
-                    # Example: From "DESKTOP-DDPI3HE Windows", extract "DESKTOP-DDPI3HE"
-                    res_list.append(self.device_names[client].split(' ')[0:-1][0])
+                    res_list.append(device_name)
                 else:
+                    matched_name = None
                     if interop_tab_data is not None:
                         for dev in interop_tab_data:
                             for item in dev.values():
-                                if item['user-name'] == self.device_names[client].split(' ')[0:-1][0]:
-                                    res_list.append(item['name'].split('.')[2])
+                                if item['user-name'] == device_name:
+                                    matched_name = item['name'].split('.')[2]
+                                    break
+                            if matched_name is not None:
+                                break
+                    # Always append one entry so res_list stays aligned with os_type/packets_sent.
+                    res_list.append(matched_name if matched_name is not None else device_name)
             with open(self.csv_name, mode='r') as file:
                 reader = csv.DictReader(file)
                 rows = list(reader)
