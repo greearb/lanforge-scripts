@@ -134,7 +134,7 @@ class RvR(Realm):
     def set_attenuation(self, serial, idx, value):
         logger.info("setting attenutor {} module {} to {}".format(serial, idx, value))
         self.attenuator_profile.atten_serno = serial
-        self.attenuator_profile.atten_idx = idx
+        self.attenuator_profile.atten_idx = str(idx)
         self.attenuator_profile.atten_val = str(int(value) * 10)
         self.attenuator_profile.create()
         # self.attenuator_profile.show()
@@ -306,9 +306,13 @@ class RvR(Realm):
         [(upload.append([]), download.append([])) for i in range(len(self.cx_profile.created_cx))]
         while datetime.now() < end_time:
             index += 1
-            response = list(
-                self.json_get('/cx/%s?fields=%s' % (
-                    ','.join(self.cx_profile.created_cx.keys()), ",".join(['bps rx a', 'bps rx b']))).values())[2:]
+            raw_response = self.json_get('/cx/%s?fields=%s' % (
+                ','.join(self.cx_profile.created_cx.keys()), ",".join(['bps rx a', 'bps rx b'])))
+            if raw_response is None:
+                logger.warning("GET /cx/... returned no response (manager unreachable?); skipping this sample.")
+                time.sleep(1)
+                continue
+            response = list(raw_response.values())[2:]
             throughput[index] = list(
                 map(lambda i: [x for x in i.values()], response))
             curr_time = datetime.now()
@@ -340,13 +344,20 @@ class RvR(Realm):
                 pd.DataFrame(self.overall_df, columns=["download", "upload", "timestamp", "status", "start_time", "end_time", "remaining_time"]).to_csv('{}/rvr_overalldata.csv'.format(self.result_dir), index=False)  # noqa: E501
 
                 # Check if test was stopped by the user
-                with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name),
-                          'r') as file:
-                    data = json.load(file)
+                running_json_path = self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name)
+                try:
+                    with open(running_json_path, 'r') as file:
+                        data = json.load(file)
                     if data["status"] != "Running":
                         logger.warning('Test is stopped by the user')
                         self.stop_test = True
                         break
+                except FileNotFoundError:
+                    logger.warning('Running-instance file missing (%s); treating test as stopped.', running_json_path)
+                    self.stop_test = True
+                    break
+                except (json.JSONDecodeError, KeyError) as e:
+                    logger.warning('Could not read running-instance status (%s); will retry next cycle.', e)
             time.sleep(1)
         # # rx_rate list is calculated
         for index, key in enumerate(throughput):
