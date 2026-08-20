@@ -199,6 +199,7 @@ class Ping(Realm):
         self.test_name = test_name
         self.missing_endp_logged = set()
         self.not_running_endp_logged = set()
+        self.client_issue_csv_name = "client_issue.csv"
         self.client_issue_data = []
         self.latest_results = {}
         self.eap_method = eap_method
@@ -416,6 +417,17 @@ class Ping(Realm):
             state,
             response
         ])
+
+    def write_client_issue_csv(self, report_path):
+        """Create the endpoint issue CSV in the report folder."""
+        if not self.client_issue_data:
+            return
+
+        csv_path = os.path.join(report_path, self.client_issue_csv_name)
+        with open(csv_path, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["TIMESTAMP", "ENDP_NAME", "STATE", "API RESPONSE"])
+            writer.writerows(self.client_issue_data)
 
     def check_endpoint_availability(self, expected_endps, present_endps):
         """Log endpoint missing/not-running/recovered transitions and update the tracking sets."""
@@ -692,6 +704,9 @@ class Ping(Realm):
                            _path=report_path)
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
+
+        self.write_client_issue_csv(report_path_date_time)
+
         logging.info('path: {}'.format(report_path))
         logging.info('path_date_time: {}'.format(report_path_date_time))
 
