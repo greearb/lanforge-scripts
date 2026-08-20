@@ -81,6 +81,8 @@ import argparse
 import time
 import sys
 import os
+import datetime
+import json
 import pandas as pd
 import importlib
 import logging
@@ -155,7 +157,9 @@ class Ping(Realm):
                  wait_time=60,
                  total_floors: int = None,
                  get_live_view: bool = None,
-                 result_dir: str = None):
+                 result_dir: str = None,
+                 dowebgui: bool = False,
+                 test_name: str = None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -191,6 +195,12 @@ class Ping(Realm):
         self.total_floors = total_floors
         self.get_live_view = get_live_view
         self.result_dir = result_dir
+        self.dowebgui = dowebgui
+        self.test_name = test_name
+        self.missing_endp_logged = set()
+        self.not_running_endp_logged = set()
+        self.client_issue_data = []
+        self.latest_results = {}
         self.eap_method = eap_method
         self.eap_identity = eap_identity
         self.ieee80211 = ieee80211
@@ -358,20 +368,162 @@ class Ping(Realm):
         self.generic_endps_profile.start_cx()
 
     def stop_generic(self):
+        if self.missing_endp_logged:
+            missing_cx_names = {'CX_{}'.format(endp) for endp in self.missing_endp_logged}
+            self.generic_endps_profile.created_endp = [
+                endp for endp in self.generic_endps_profile.created_endp
+                if endp not in self.missing_endp_logged
+            ]
+            self.generic_endps_profile.created_cx = [
+                cx for cx in self.generic_endps_profile.created_cx
+                if cx not in missing_cx_names
+            ]
         self.generic_endps_profile.stop_cx()
 
     def get_results(self):
-        logging.debug(self.generic_endps_profile.created_endp)
-        results = self.json_get(
-            "/generic/{}".format(','.join(self.generic_endps_profile.created_endp)))
-        if (len(self.generic_endps_profile.created_endp) > 1) and 'endpoints' in results.keys():
-            results = results['endpoints']
+        logger.debug(self.generic_endps_profile.created_endp)
+        endp_url = "/generic/{}".format(','.join(self.generic_endps_profile.created_endp))
+        response = self.json_get(endp_url)
+        if not response:
+            logger.error("Failed to fetch endpoint results.\nRequested URL: '{}'\nResponse: {}".format(endp_url, response))
         else:
-            try:
-                results = results['endpoint']
-            except Exception as e:
-                logger.error(f"Endpoint not found {e}")
-        return (results)
+            endpoint = response.get('endpoints', response.get('endpoint', []))
+            if isinstance(endpoint, dict):
+                endpoint = [{endpoint['name']: endpoint}]
+            present_endps = {}
+            for endp_entry in endpoint:
+                for endp_name, endp_response in endp_entry.items():
+                    # Use the second-last result when more than one is available.
+                    last_results = endp_response.get('last results')
+                    if last_results:
+                        result_lines = last_results.split('\n')
+                        if len(result_lines) > 1:
+                            endp_response['last results'] = result_lines[-2]
+                    present_endps[endp_name] = endp_response
+            self.latest_results.update(present_endps)
+
+        if not self.latest_results:
+            logger.error('No ping results were collected for any endpoint during the entire test.')
+            return []
+
+        return [{name: data} for name, data in self.latest_results.items()]
+
+    def append_endp_data(self, name, state, response):
+        """Save an endpoint state change for the report."""
+        self.client_issue_data.append([
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            name,
+            state,
+            response
+        ])
+
+    def check_endpoint_availability(self, expected_endps, present_endps):
+        """Log endpoint missing/not-running/recovered transitions and update the tracking sets."""
+        endp_url = "/generic/{}".format(','.join(expected_endps))
+        for endp_name in expected_endps:
+            if endp_name not in present_endps.keys():
+                if endp_name not in self.missing_endp_logged:
+                    present_endp_names = list(present_endps)
+                    logger.warning(
+                        "Endpoint '{}' is missing from the monitoring data.\n"
+                        "Requested URL: '{}'\n"
+                        "Response: {}".format(endp_name, endp_url, present_endp_names))
+                    self.append_endp_data(name=endp_name, state="MISSING", response=present_endp_names)
+                    self.missing_endp_logged.add(endp_name)
+                self.not_running_endp_logged.discard(endp_name)
+            elif present_endps[endp_name].get('status').lower() != "run":
+                if endp_name not in self.not_running_endp_logged:
+                    logger.warning(
+                        "Endpoint '{}' is not running in the monitoring data.\n"
+                        "Requested URL: '{}'\n"
+                        "Response: {}".format(endp_name, endp_url, present_endps[endp_name]))
+                    self.append_endp_data(name=endp_name, state=present_endps[endp_name].get('status'), response=present_endps[endp_name])
+                    self.not_running_endp_logged.add(endp_name)
+                self.missing_endp_logged.discard(endp_name)
+            else:
+                if endp_name in self.missing_endp_logged or endp_name in self.not_running_endp_logged:
+                    logger.info(
+                        "Endpoint '{}' is running in the monitoring data\n"
+                        "Requested URL: '{}'\n"
+                        "Response: {}".format(endp_name, endp_url, present_endps[endp_name]))
+                    self.append_endp_data(name=endp_name, state=present_endps[endp_name].get('status'), response=present_endps[endp_name])
+                self.missing_endp_logged.discard(endp_name)
+                self.not_running_endp_logged.discard(endp_name)
+
+    def is_test_stopped_by_webgui(self):
+        """Check the webgui running-instance file to see if the user stopped the test."""
+        if not self.dowebgui:
+            return False
+        running_file = f"{self.result_dir}/../../Running_instances/{self.host}_{self.test_name}_running.json"
+        try:
+            with open(running_file, "r") as file:
+                data = json.load(file)
+            if data.get("status") != "Running":
+                logger.warning("Test is stopped by the user")
+                return True
+        except FileNotFoundError:
+            logger.warning(f"Running instance file not found: {running_file}")
+            return True
+        except json.JSONDecodeError:
+            logger.warning(f"Running instance file corrupted or empty: {running_file}")
+            return True
+        except Exception as e:
+            logger.error(f"Unexpected error reading running.json: {e}")
+            return True
+        return False
+
+    def monitor_endp_availability(self, expected_endps, duration=40, interval=5):
+        """Retry for up to duration seconds until at least one expected endpoint is present and running."""
+        start_time = time.time()
+        end_time = start_time + duration
+        no_of_attempts = duration // interval
+        count = 0
+        while (start_time <= end_time):
+            count += 1
+            if self.is_test_stopped_by_webgui():
+                logger.info("Test stopped by user via WebGUI. Exiting monitoring.")
+                return False
+            if count > 1:
+                logger.info("Attempt {} of {} to check endpoints availability".format(count, no_of_attempts))
+            endp_url = "/generic/{}".format(','.join(expected_endps))
+            response = self.json_get(endp_url)
+            if not response:
+                logger.error(
+                    "Failed to fetch endpoints. Received empty response.\n"
+                    f"Requested URL: '{endp_url}'\n"
+                    f"Response: {response}")
+                response = {}
+            endpoint = response.get('endpoints', response.get('endpoint', []))
+            if isinstance(endpoint, dict):
+                endpoint = [{endpoint['name']: endpoint}]
+            present_endps = {}
+            for endp_entry in endpoint:
+                for endp_name, endp_response in endp_entry.items():
+                    # Use the second-last result when more than one is available.
+                    last_results = endp_response.get('last results')
+                    if last_results:
+                        result_lines = last_results.split('\n')
+                        if len(result_lines) > 1:
+                            endp_response['last results'] = result_lines[-2]
+                    present_endps[endp_name] = endp_response
+            self.latest_results.update(present_endps)
+            self.check_endpoint_availability(expected_endps, present_endps)
+            missed = len(self.missing_endp_logged)
+            not_run = len(self.not_running_endp_logged)
+            if missed == len(expected_endps):
+                logger.error("All expected endpoints ({}) are missing from the monitoring data. Retrying... Before giving up and stopping test".format(
+                    ", ".join(self.missing_endp_logged)))
+            elif not_run == len(expected_endps):
+                logger.error("All expected endpoints ({}) are present but not running. Retrying... Before giving up and stopping test".format(
+                    ", ".join(self.not_running_endp_logged)))
+            elif missed + not_run == len(expected_endps):
+                logger.error("Some expected endpoints ({}) are missing and some endpoints ({}) are not running. Retrying... Before giving up and stopping test".format(
+                    ", ".join(self.missing_endp_logged), ", ".join(self.not_running_endp_logged)))
+            else:
+                return True
+            time.sleep(interval)
+            start_time = time.time()
+        return False
 
     def generate_remarks(self, station_ping_data):
         remarks = []
