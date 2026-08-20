@@ -86,7 +86,6 @@ import json
 import pandas as pd
 import importlib
 import logging
-import traceback
 import asyncio
 import csv
 
@@ -238,17 +237,21 @@ class Ping(Realm):
             # checking if target is eth1 or 1.1.eth1
             target_port_list = self.name_to_eid(self.target)
             shelf, resource, port, _ = target_port_list
-            try:
-                target_port_ip = self.json_get('/port/{}/{}/{}?fields=ip'.format(shelf, resource, port))['interface']['ip']
-            except Exception:
-                tb_str = traceback.format_exc()  # capture traceback as string
-                logger.error("An exception occurred:\n%s", tb_str)
-                logging.error('The target port {} not found on the LANforge. Please change the target.'.format(self.target))
-                exit(0)
-            self.target = target_port_ip
-            print(self.target)
+            port_url = '/port/{}/{}/{}?fields=ip'.format(shelf, resource, port)
+            response = self.json_get(port_url)
+            if not response:
+                logger.error("Failed to fetch port info. Received empty response.\nRequested URL: '{}'\nResponse: {}".format(port_url, response))
+                raise RuntimeError('The target port {} not found on the LANforge. Please change the target.'.format(self.target))
+            if 'interface' not in response:
+                logger.error("'interface' key not found in response.\nRequested URL: '{}'\nResponse: {}".format(port_url, response))
+                raise RuntimeError('The target port {} not found on the LANforge. Please change the target.'.format(self.target))
+            if 'ip' not in response['interface']:
+                logger.error("'ip' key not found in response.\nRequested URL: '{}'\nResponse: {}".format(port_url, response))
+                raise RuntimeError('The target port {} not found on the LANforge. Please change the target.'.format(self.target))
+            self.target = response['interface']['ip']
+            logger.info(self.target)
         else:
-            print(self.target)
+            logger.info(self.target)
 
     def cleanup(self):
         expected_endp_names = []
@@ -312,14 +315,13 @@ class Ping(Realm):
 
         # Need real stations to run interop test
         if (len(self.real_sta_list) == 0):
-            logger.error('There are no real devices in this testbed. Aborting test')
-            exit(0)
+            raise RuntimeError('There are no real devices in this testbed. Aborting test')
 
         logging.info(self.real_sta_list)
 
         for sta_name in self.real_sta_list:
             if sta_name not in real_devices.devices_data:
-                logger.error('Real station not in devices data, ignoring it from testing')
+                logger.error('Real station {} not in devices data, ignoring it from testing'.format(sta_name))
                 continue
                 # raise ValueError('Real station not in devices data')
 
@@ -356,11 +358,12 @@ class Ping(Realm):
                 "Stations failed to get IPs", print_=True)
 
     def check_tab_exists(self):
-        response = self.json_get("generic")
-        if response is None:
+        generic_url = "generic"
+        response = self.json_get(generic_url)
+        if not response:
+            logger.error("Failed to fetch generic tab data.\nRequested URL: '{}'\nResponse: {}".format(generic_url, response))
             return False
-        else:
-            return True
+        return True
 
     def create_generic_endp(self):
         # Virtual stations are tracked in same list as real stations, so need to separate them
@@ -371,8 +374,7 @@ class Ping(Realm):
             if (self.generic_endps_profile.create(ports=virtual_stations, sleep_time=.5)):
                 logging.info('Virtual client generic endpoint creation completed.')
             else:
-                logging.error('Virtual client generic endpoint creation failed.')
-                exit(0)
+                raise RuntimeError('Virtual client generic endpoint creation failed.')
 
         if (self.enable_real):
             real_sta_os_types = [self.real_sta_data_dict[real_sta_name]['ostype'] for real_sta_name in self.real_sta_data_dict]
@@ -380,8 +382,7 @@ class Ping(Realm):
             if (self.generic_endps_profile.create(ports=self.real_sta_list, sleep_time=.5, real_client_os_types=real_sta_os_types)):
                 logging.info('Real client generic endpoint creation completed.')
             else:
-                logging.error('Real client generic endpoint creation failed.')
-                exit(0)
+                raise RuntimeError('Real client generic endpoint creation failed.')
 
     def start_generic(self):
         self.generic_endps_profile.start_cx()
@@ -620,16 +621,25 @@ class Ping(Realm):
             res_list = []
             test_input_list = []
             pass_fail_list = []
-            interop_tab_data = self.json_get('/adb/')["devices"]
+            adb_url = '/adb/'
+            response = self.json_get(adb_url)
+            if not response:
+                logger.error("Failed to fetch adb data.\nRequested URL: '{}'\nResponse: {}".format(adb_url, response))
+                interop_tab_data = None
+            else:
+                interop_tab_data = response['devices']
+                if isinstance(interop_tab_data, dict):
+                    interop_tab_data = [{interop_tab_data['name']: interop_tab_data}]
             for client in range(len(os_type)):
                 if os_type[client] != 'Android':
                     # Example: From "DESKTOP-DDPI3HE Windows", extract "DESKTOP-DDPI3HE"
                     res_list.append(self.device_names[client].split(' ')[0:-1][0])
                 else:
-                    for dev in interop_tab_data:
-                        for item in dev.values():
-                            if item['user-name'] == self.device_names[client].split(' ')[0:-1][0]:
-                                res_list.append(item['name'].split('.')[2])
+                    if interop_tab_data is not None:
+                        for dev in interop_tab_data:
+                            for item in dev.values():
+                                if item['user-name'] == self.device_names[client].split(' ')[0:-1][0]:
+                                    res_list.append(item['name'].split('.')[2])
             with open(self.csv_name, mode='r') as file:
                 reader = csv.DictReader(file)
                 rows = list(reader)
@@ -1012,7 +1022,15 @@ class Ping(Realm):
         pac_loss = []
         input_list = []
         pass_fail = []
-        interop_tab_data = self.json_get('/adb/')["devices"]
+        adb_url = '/adb/'
+        response = self.json_get(adb_url)
+        if not response:
+            logger.error("Failed to fetch adb data.\nRequested URL: '{}'\nResponse: {}".format(adb_url, response))
+            interop_tab_data = None
+        else:
+            interop_tab_data = response['devices']
+            if isinstance(interop_tab_data, dict):
+                interop_tab_data = [{interop_tab_data['name']: interop_tab_data}]
         for i in range(len(device_names)):
             for j in groupdevlist:
                 # For a string like "1.360 Lin test3":
@@ -1032,7 +1050,7 @@ class Ping(Realm):
                         pac_loss.append(percent_pac_loss[i])
                         input_list.append(test_input_list[i])
                         pass_fail.append(pass_fail_list[i])
-                else:
+                elif interop_tab_data is not None:
                     for dev in interop_tab_data:
                         for item in dev.values():
                             # For a string like 1.15 android samsungmob:
@@ -1527,7 +1545,15 @@ effectively over the network and pinpoint potential issues affecting connectivit
     # logging.info(result_data)
     logging.info(ping.result_json)
     if (args.virtual):
-        ports_data_dict = ping.json_get('/ports/all/')['interfaces']
+        ports_url = '/ports/all/'
+        response = ping.json_get(ports_url)
+        if not response:
+            logger.error("Failed to fetch ports. Received empty response.\nRequested URL: '{}'\nResponse: {}".format(ports_url, response))
+            raise RuntimeError('Failed to fetch port data from the LANforge.')
+        if 'interfaces' not in response:
+            logger.error("'interfaces' key not found in response.\nRequested URL: '{}'\nResponse: {}".format(ports_url, response))
+            raise RuntimeError('Failed to fetch port data from the LANforge.')
+        ports_data_dict = response['interfaces']
         ports_data = {}
         for ports in ports_data_dict:
             port, port_data = list(ports.keys())[0], list(ports.values())[0]
