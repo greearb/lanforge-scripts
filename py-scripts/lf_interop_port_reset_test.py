@@ -11,18 +11,18 @@ PURPOSE:
 EXAMPLE:
         # To run port-reset test on specified real devices (android, laptops)
 
-            ./lf_interop_port_reset_test.py --host 192.168.200.192 --mgr_ip 192.168.1.161 --dut TestDut --ssid OpenWifi
-            --passwd OpenWifi --encryp psk2 --reset 10 --time_int 5 --release 11
+            ./lf_interop_port_reset_test.py --lanforge_ip 192.168.200.192 --upstream_port 192.168.1.161 --dut TestDut --ssid OpenWifi
+            --passwd OpenWifi --encryp psk2 --iterations 10 --reset_interval 5 --android_releases 11
 
         # To run port-reset test on specified real devices with only coordinates
 
-            ./lf_interop_port_reset_test.py --host 192.168.207.78 --mgr_ip eth1 --dut AP --ssid "NETGEAR_2G_wpa2" --encryp psk2 --passwd Password@123
-            --reset 2 --time_int 5 --robot_test --coordinate 4,3  --robot_ip 192.168.200.169 --device_list ubuntu24
+            ./lf_interop_port_reset_test.py --lanforge_ip 192.168.207.78 --upstream_port eth1 --dut AP --ssid "NETGEAR_2G_wpa2" --encryp psk2 --passwd Password@123
+            --iterations 2 --reset_interval 5 --robot_test --coordinate 4,3  --robot_ip 192.168.200.169 --device_list ubuntu24
 
         # To run port-reset test on specified real devices with only coordinates and rotations
 
-            ./lf_interop_port_reset_test.py --host 192.168.207.78 --mgr_ip eth1 --dut AP --ssid "NETGEAR_2G_wpa2" --encryp psk2 --passwd Password@123
-            --reset 2 --time_int 5 --robot_test --coordinate 4,3 --rotation 30,45 --robot_ip 192.168.200.169 --device_list ubuntu24
+            ./lf_interop_port_reset_test.py --lanforge_ip 192.168.207.78 --upstream_port eth1 --dut AP --ssid "NETGEAR_2G_wpa2" --encryp psk2 --passwd Password@123
+            --iterations 2 --reset_interval 5 --robot_test --coordinate 4,3 --rotation 30,45 --robot_ip 192.168.200.169 --device_list ubuntu24
 
 SCRIPT_CLASSIFICATION:  Toggling, Report Generation, Each Reset Wi-Fi Messages
 
@@ -80,17 +80,17 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class InteropPortReset(Realm):
-    def __init__(self, host,
-                 port=8080,
+    def __init__(self, lanforge_ip,
+                 lanforge_port=8080,
                  dut=None,
                  ssid=None,
                  passwd=None,
                  encryption=None,
-                 reset_count=None,
-                 mgr_ip=None,
+                 iterations=None,
+                 upstream_port=None,
                  reset_interval_sec=None,
                  device_list=None,
-                 supported_release=None,
+                 android_releases=None,
                  forget_network=True,
                  dowebgui=False,
                  result_dir=None,
@@ -103,7 +103,7 @@ class InteropPortReset(Realm):
                  get_live_view=False,
                  total_floors=0,
                  ):
-        super().__init__(lfclient_host=host,
+        super().__init__(lfclient_host=lanforge_ip,
                          lfclient_port=8080)
         self.total_connects = []
         self.total_assoc_rejections = []
@@ -122,15 +122,15 @@ class InteropPortReset(Realm):
         self.linux_list = []
         self.mac_list = []
         self.encrypt_value = 0
-        self.host = host
-        self.port = port
+        self.lanforge_ip = lanforge_ip
+        self.lanforge_port = lanforge_port
         self.android_serials = []
         self.dut_name = dut
         self.ssid = ssid
         self.passwd = passwd
         self.encryption = encryption
-        self.mgr_ip = mgr_ip
-        self.reset_count = reset_count
+        self.upstream_port = upstream_port
+        self.iterations = iterations
         self.reset_interval_sec = reset_interval_sec
         self.device_list = device_list
         self.forget_network = forget_network
@@ -153,17 +153,17 @@ class InteropPortReset(Realm):
         self.rotation_list = rotation.split(',')
         self.current_coordinate = None
         self.current_angle = None
-        self.supported_release = supported_release
+        self.android_releases = android_releases
         self.android_user_names = []
         self.lf_report = lf_report_pdf.lf_report(_path="" if not self.dowebgui else self.result_dir, _results_dir_name="Interop_port_reset_test",
                                                  _output_html="port_reset_test.html",
                                                  _output_pdf="port_reset_test.pdf")
         self.report_path = self.lf_report.get_report_path()
 
-        self.base_interop_profile = base.RealDevice(manager_ip=self.host, server_ip=self.mgr_ip, ssid_5g=self.ssid,
+        self.base_interop_profile = base.RealDevice(manager_ip=self.lanforge_ip, server_ip=self.upstream_port, ssid_5g=self.ssid,
                                                     encryption_5g=self.encryption, passwd_5g=self.passwd, disconnect_devices=self.forget_network, reboot=False, selected_bands=["5g"])
 
-        self.utility = base.UtilityInteropWifi(host_ip=self.host)
+        self.utility = base.UtilityInteropWifi(host_ip=self.lanforge_ip)
         # logging.basicConfig(filename='port_reset.log', filemode='w', format='%(asctime)s - %(message)s',
         #                     level=logging.INFO, force=True)
 
@@ -189,7 +189,7 @@ class InteropPortReset(Realm):
 
     def change_port_to_ip(self, upstream_port):
         # Resolves an ethernet port name (e.g. "eth1") to its IP via LANforge, used
-        # for --mgr_ip. This is only called once, at test start, and we cannot
+        # for --upstream_port. This is only called once, at test start, and we cannot
         # proceed without a resolved manager IP, so retry for a while and then
         # abort instead of silently continuing with an unresolved port name.
         if upstream_port.count('.') != 3:
@@ -231,12 +231,12 @@ class InteropPortReset(Realm):
                 raise ValueError('Real station not in devices data')
         android_list = self.base_interop_profile.android_list
 
-        self.interop = base.BaseInteropWifi(manager_ip=self.host,
-                                            port=self.port,
+        self.interop = base.BaseInteropWifi(manager_ip=self.lanforge_ip,
+                                            port=self.lanforge_port,
                                             ssid=self.ssid,
                                             passwd=self.passwd,
                                             encryption=self.encryption,
-                                            release=self.supported_release,
+                                            release=self.android_releases,
                                             screen_size_prcnt=0.4,
                                             _debug_on=False,
                                             _exit_on_error=False)
@@ -703,7 +703,7 @@ class InteropPortReset(Realm):
 
     def performing_resets(self, test_start_time=None):
         reset_list = []
-        for i in range(self.reset_count):
+        for i in range(self.iterations):
             reset_list.append(i)
         logging.info(f"Given No.of iterations for Reset : {len(reset_list)}")
         logging.info("Reset list:" + str(reset_list))
@@ -712,7 +712,7 @@ class InteropPortReset(Realm):
         interval = 300
         test_stopped_by_user = False
         charge_check = time.time() + interval
-        for r, _ in zip(range(self.reset_count), reset_dict):
+        for r, _ in zip(range(self.iterations), reset_dict):
             if self.robot_test:
                 current_time = time.time()
                 if current_time >= charge_check:
@@ -737,7 +737,7 @@ class InteropPortReset(Realm):
                                 test_stopped_by_user = True
                                 break
                     charge_check = current_time + interval
-            logging.info(f"Waiting until given {self.reset_interval_sec} sec time intervel to finish...")
+            logging.info(f"Waiting until given {self.reset_interval_sec} sec time interval to finish...")
             time.sleep(int(self.reset_interval_sec))  # sleeping until time interval finish
             logging.info(f"Iteration :- {r}")
             logging.info("Reset -" + str(r))
@@ -798,7 +798,7 @@ class InteropPortReset(Realm):
                 else:
                     self.create_dict_csv(reset_dict)
                 if self.dowebgui:
-                    with open(self.result_dir + f"/../../Running_instances/{self.host}_{self.test_name}_running.json",
+                    with open(self.result_dir + f"/../../Running_instances/{self.lanforge_ip}_{self.test_name}_running.json",
                               'r') as file:
                         data = json.load(file)
                         if data["status"] != "Running":
@@ -818,7 +818,7 @@ class InteropPortReset(Realm):
                     'cx time (us)': 0
                 }
                 keys_to_delete = []
-                for i in range(self.reset_count):
+                for i in range(self.iterations):
                     if reset_dict.get(i) is None:
                         keys_to_delete.append(i)
                     else:
@@ -950,7 +950,7 @@ class InteropPortReset(Realm):
                 nav_data = os.path.join(base_dir, 'nav_data.json')  # To generate nav_data.json in webgui folder
                 self.robot_obj.nav_data_path = nav_data
                 self.robot_obj.create_waypointlist()
-                self.robot_obj.ip = self.host
+                self.robot_obj.ip = self.lanforge_ip
                 self.robot_obj.testname = self.test_name
                 self.robot_obj.runtime_dir = self.result_dir
                 test_stopped_by_user = False
@@ -1000,7 +1000,7 @@ class InteropPortReset(Realm):
                                _legend_fontsize=None, text_font=12, bar_text_rotation=45, graph_suffix=""):
         dict_ = ['Port Resets', 'Disconnected', 'Scans', 'Assoc Attempts', "Association Rejection", 'Connected']
         data = dict.fromkeys(dict_)
-        data['Port Resets'] = self.reset_count * len(self.all_selected_devices)
+        data['Port Resets'] = self.iterations * len(self.all_selected_devices)
 
         conected_list, laptop_conected_list = [], []
         disconnected_list, laptop_disconnected_list = [], []
@@ -1179,7 +1179,7 @@ class InteropPortReset(Realm):
             dict_ = ['Port Resets', 'Disconnects', 'Scans', 'Association Attempts', "Association Rejections",
                      'Connects']
             data = dict.fromkeys(dict_)
-            data['Port Resets'] = self.reset_count
+            data['Port Resets'] = self.iterations
 
             dis = 0
             for i in disconnected:
@@ -1209,7 +1209,7 @@ class InteropPortReset(Realm):
             # print(f"Final data for per client graph for {y}: {data}")
 
             # fetching the total dissconnects, connects, ass_attemsts, ass_rejections, scans
-            self.total_resets.append(self.reset_count)
+            self.total_resets.append(self.iterations)
             self.total_disconnects.append(sum(disconnected))
             self.total_scans.append(sum(scanning))
             self.total_assoc_attempts.append(sum(asso_attempts))
@@ -1239,7 +1239,7 @@ class InteropPortReset(Realm):
             dict_ = ['Port Resets', 'Disconnects', 'Scans', 'Association Attempts', "Association Rejections",
                      'Connects']
             data = dict.fromkeys(dict_)
-            data['Port Resets'] = self.reset_count
+            data['Port Resets'] = self.iterations
 
             dis = 0
             for i in disconnected:
@@ -1327,13 +1327,13 @@ class InteropPortReset(Realm):
                 security = "open"
             test_setup_info = {
                 "DUT Name": self.dut_name,
-                "LANforge ip": self.host,
+                "LANforge ip": self.lanforge_ip,
                 "SSID": self.ssid,
                 "Security": security,
-                "Total Reset Count": self.reset_count,
+                "Total Reset Count": self.iterations,
                 "No of Clients": f"{len(self.all_selected_devices)} (Windows: {len(self.windows_list)}, Linux: {len(self.linux_list)}, Mac: {len(self.mac_list)}, Android: {len(self.adb_device_list)})",  # noqa: E501
                 # "Wait Time": str(self.wait_time) + " sec",
-                "Time intervel between resets": str(self.reset_interval_sec) + " sec",
+                "Time interval between resets": str(self.reset_interval_sec) + " sec",
                 "Test Duration": test_dur,
             }
             self.lf_report.set_title("Port Reset Test")
@@ -1365,7 +1365,7 @@ class InteropPortReset(Realm):
                                         "4.  Association Attempts: Total number of association attempts (Associating state) made by all clients after WiFi is re-enabled in the full test.<br>"
                                         "4.  Association Rejections: Total number of association rejections made by all clients after WiFi is re-enabled in the full test.<br>"
                                         "6.  Connected: Total number of successful connections (Associated state) achieved by all clients during the test when WiFi is re-enabled.<br>"
-                                        # " Here real clients used is "+ str(self.clients) + "and number of resets provided is " + str(self.reset_count)
+                                        # " Here real clients used is "+ str(self.clients) + "and number of resets provided is " + str(self.iterations)
                                         )
             self.lf_report.build_objective()
             graph1 = self.generate_overall_graph(reset_dict=reset_dict, figsize=(13, 5), _alignmen=None, bar_width=0.5,
@@ -1472,13 +1472,13 @@ class InteropPortReset(Realm):
             security = "open"
         test_setup_info = {
             "DUT Name": self.dut_name,
-            "LANforge ip": self.host,
+            "LANforge ip": self.lanforge_ip,
             "SSID": self.ssid,
             "Security": security,
-            "Total Reset Count": self.reset_count,
+            "Total Reset Count": self.iterations,
             "No of Clients": f"{len(self.all_selected_devices)} (Windows: {len(self.windows_list)}, Linux: {len(self.linux_list)}, Mac: {len(self.mac_list)}, Android: {len(self.adb_device_list)})",  # noqa: E501
             # "Wait Time": str(self.wait_time) + " sec",
-            "Time intervel between resets": str(self.reset_interval_sec) + " sec",
+            "Time interval between resets": str(self.reset_interval_sec) + " sec",
         }
         test_setup_info["Selected Coordinates"] = self.coordinate
         if self.rotation_enabled:
@@ -1515,7 +1515,7 @@ class InteropPortReset(Realm):
                                     "4.  Association Attempts: Total number of association attempts (Associating state) made by all clients after WiFi is re-enabled in the full test.<br>"
                                     "4.  Association Rejections: Total number of association rejections made by all clients after WiFi is re-enabled in the full test.<br>"
                                     "6.  Connected: Total number of successful connections (Associated state) achieved by all clients during the test when WiFi is re-enabled.<br>"
-                                    # " Here real clients used is "+ str(self.clients) + "and number of resets provided is " + str(self.reset_count)
+                                    # " Here real clients used is "+ str(self.clients) + "and number of resets provided is " + str(self.iterations)
                                     )
         self.lf_report.build_objective()
         for coordinate in range(len(self.coordinate_list)):
@@ -1711,6 +1711,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
+        allow_abbrev=False,
         description='''
 NAME: lf_interop_port_reset_test.py
 
@@ -1723,18 +1724,18 @@ PURPOSE:
 EXAMPLE:
         # To run port-reset test on specified real devices (android, laptops)
 
-            python3 lf_interop_port_reset_test.py --host 192.168.200.63 --mgr_ip 192.168.1.61 --dut Test_Dut
-            --ssid RDT_wpa2 --passwd OpenWifi --encryp psk2 --reset 1 --time_int 5 --release 11
+            python3 lf_interop_port_reset_test.py --lanforge_ip 192.168.200.63 --upstream_port 192.168.1.61 --dut Test_Dut
+            --ssid RDT_wpa2 --passwd OpenWifi --encryp psk2 --iterations 1 --reset_interval 5 --android_releases 11
 
         # To run port-reset test on specified real devices with only coordinates
 
-            python3 lf_interop_port_reset_test.py --host 192.168.207.78 --mgr_ip eth1 --dut AP --ssid "NETGEAR_2G_wpa2" --encryp psk2 --passwd Password@123
-            --reset 2 --time_int 5 --robot_test --coordinate 4,3  --robot_ip 192.168.200.169 --device_list ubuntu24
+            python3 lf_interop_port_reset_test.py --lanforge_ip 192.168.207.78 --upstream_port eth1 --dut AP --ssid "NETGEAR_2G_wpa2" --encryp psk2 --passwd Password@123
+            --iterations 2 --reset_interval 5 --robot_test --coordinate 4,3  --robot_ip 192.168.200.169 --device_list ubuntu24
 
          # To run port-reset test on specified real devices with only coordinates and rotations
 
-            python3 lf_interop_port_reset_test.py --host 192.168.207.78 --mgr_ip eth1 --dut AP --ssid "NETGEAR_2G_wpa2" --encryp psk2 --passwd Password@123
-            --reset 2 --time_int 5 --robot_test --coordinate 4,3 --rotation 30,45 --robot_ip 192.168.200.169 --device_list ubuntu24
+            python3 lf_interop_port_reset_test.py --lanforge_ip 192.168.207.78 --upstream_port eth1 --dut AP --ssid "NETGEAR_2G_wpa2" --encryp psk2 --passwd Password@123
+            --iterations 2 --reset_interval 5 --robot_test --coordinate 4,3 --rotation 30,45 --robot_ip 192.168.200.169 --device_list ubuntu24
 
 SCRIPT_CLASSIFICATION:  Interop Port-Reset Test
 
@@ -1760,13 +1761,14 @@ LICENSE:
 INCLUDE_IN_README: False
 ''')
 
-    parser.add_argument("--host", default='192.168.1.31',
-                        help='Specify the GUI to connect to, assumes port 8080')
+    parser.add_argument("--lanforge_ip", default='192.168.1.31',
+                        help='Specify the LANforge GUI to connect to, assumes port 8080')
 
-    parser.add_argument("--port", default='8080', help='Specify the manager port')
+    parser.add_argument("--lanforge_port", default='8080', help='Specify the LANforge manager HTTP port')
 
-    parser.add_argument("--mgr_ip", default='192.168.1.31',
-                        help='Specify the interop manager ip')
+    parser.add_argument("--upstream_port", default='192.168.1.31',
+                        help='Specify the upstream port feeding the DUT, either as a port name '
+                             '(e.g. eth1) or as its IP')
 
     parser.add_argument("--dut", default="TestDut",
                         help='Specify DUT name on which the test will be running.')
@@ -1780,11 +1782,11 @@ INCLUDE_IN_README: False
     parser.add_argument("--encryp", default="psk2",
                         help='Specify the encryption type  on which the test will be running eg :open|psk|psk2|sae|psk2jsae')
 
-    parser.add_argument("--reset", type=int, default=2,
-                        help='Specify the number of time you want to reset. eg: 2')
+    parser.add_argument("--iterations", type=int, default=2,
+                        help='Specify how many reset iterations to run. eg: 2')
 
-    parser.add_argument("--time_int", type=int, default=5,
-                        help='Specify the time interval in seconds after which reset should happen.')
+    parser.add_argument("--reset_interval", type=int, default=5,
+                        help='Specify the time interval in seconds to wait between reset iterations.')
 
     parser.add_argument('--device_list', help='Enter the devices on which the test should be run', default=None)
 
@@ -1795,9 +1797,10 @@ INCLUDE_IN_README: False
     # parser.add_argument("--wait_time", type=int, default=20,
     #                     help='Specify the wait time in seconds for WIFI Supplicant Logs.')
 
-    parser.add_argument("--release", nargs='*', default=["12"],
-                        help='Specify the SDK release version (Android Version) of real clients to be supported in test.'
-                             'eg:- --release 11 12 13')
+    parser.add_argument("--android_releases", nargs='*', default=["12"],
+                        help='Specify which Android releases (SDK versions) may take part in the test; android '
+                             'devices on any other release are skipped. Laptops are unaffected. '
+                             'eg:- --android_releases 11 12 13')
     # logging configuration:
     parser.add_argument('--log_level', default=None,
                         help='Set logging level: debug | info | warning | error | critical')
@@ -1836,17 +1839,17 @@ INCLUDE_IN_README: False
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-    port_reset_test = InteropPortReset(host=args.host,
-                                       port=args.port,
+    port_reset_test = InteropPortReset(lanforge_ip=args.lanforge_ip,
+                                       lanforge_port=args.lanforge_port,
                                        dut=args.dut,
                                        ssid=args.ssid,
                                        passwd=args.passwd,
                                        encryption=args.encryp,
-                                       reset_count=args.reset,
+                                       iterations=args.iterations,
                                        # clients=args.clients,
-                                       reset_interval_sec=args.time_int,
-                                       supported_release=args.release,
-                                       mgr_ip=args.mgr_ip,
+                                       reset_interval_sec=args.reset_interval,
+                                       android_releases=args.android_releases,
+                                       upstream_port=args.upstream_port,
                                        device_list=args.device_list,
                                        forget_network=not args.no_forget_networks,
                                        dowebgui=args.dowebgui,
@@ -1861,9 +1864,9 @@ INCLUDE_IN_README: False
                                        total_floors=args.total_floors
                                        )
 
-    port_reset_test.mgr_ip = port_reset_test.change_port_to_ip(port_reset_test.mgr_ip)
-    port_reset_test.base_interop_profile.server_ip = port_reset_test.mgr_ip
-    print(port_reset_test.mgr_ip)
+    port_reset_test.upstream_port = port_reset_test.change_port_to_ip(port_reset_test.upstream_port)
+    port_reset_test.base_interop_profile.server_ip = port_reset_test.upstream_port
+    print(port_reset_test.upstream_port)
 
     port_reset_test.selecting_devices_from_available()
     if port_reset_test.robot_test:
