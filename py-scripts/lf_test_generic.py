@@ -106,7 +106,7 @@ class GenTest():
                  host="localhost", port=8080, create_report=False, use_existing_eid=None, monitor_interval="2s",
                  test_duration="20s", test_type="ping", target=None, cmd=None, spdtest_no_download=False, spdtest_no_upload=False, spdtest_single_connection=False,
                  spdtest_enable_debug=False, spdtest_enable_report=False, spdtest_ookla=False, interval=0.1, destination_url_lfcurl=None,
-                 radio=None, file_output_lfcurl=None, lf_logger_json=None, log_level="debug", loop_count=None,
+                 radio=None, file_output_lfcurl=None, lf_logger_json=None, log_level="debug", loop_count=None, port_wait_time=3000,
                  _debug_on=False, _exit_on_error=False, die_on_error=False, _exit_on_fail=False, endp_names=None):
         self.host = host
         self.port = port
@@ -627,10 +627,6 @@ class GenTest():
                                                   ssid=self.ssid,
                                                   sta_name=port_name,
                                                   debug=self.debug)
-                    # settle time before the next call touches this station, same as
-                    # station_profile.py's add_sta -> set_port sequence, to avoid a race
-                    # where set_port reaches the manager before add_sta has fully committed
-                    time.sleep(0.02)
                     # tell lanforge to show ports
                     self.command.post_nc_show_ports(port=port_name,
                                                     resource=port_resource,
@@ -657,8 +653,8 @@ class GenTest():
                                                interest=set_port_interest_rslt,
                                                report_timer=self.report_timer)
                     # wait for station to associate with AP
-                    self.wait_for_action("port", wfa_list, "up", 3000)
-                    self.wait_for_action("port", wfa_list, "ip", 3000)
+                    self.wait_for_action("port", wfa_list, "up", self.port_wait_time)
+                    self.wait_for_action("port", wfa_list, "ip", self.port_wait_time)
 
             else:
                 raise ValueError("security type given: %s : is invalid. Please set security type as wep, wpa, wpa2, wpa3, or open." % self.security)
@@ -673,12 +669,11 @@ class GenTest():
                     self.command.post_set_port(shelf=server_shelf,
                                                resource=server_resource,
                                                port=server_port_name,
-                                               netmask="255.255.255.0",  # sometimes the cli complains about the netmask being NA, so set it to a random netmask(netmask is overriden anyways with dhcp)
                                                current_flags=0,
                                                interest=set_port_interest_rslt,
                                                report_timer=self.report_timer)
-                    self.wait_for_action("port", [self.target], "up", 3000)
-                    self.wait_for_action("port", [self.target], "ip", 3000)
+                    self.wait_for_action("port", [self.target], "up", self.port_wait_time)
+                    self.wait_for_action("port", [self.target], "ip", self.port_wait_time)
 
         # create endpoints
         # create 1 endp for each eid.
@@ -723,7 +718,8 @@ class GenTest():
                 self.created_cx.append(endp_cx_name)
 
         # wait for cross-connects to appear
-        if self.wait_for_action("cx", self.created_endp, "appear", 30):
+        cx_wait_time = max(10, self.port_wait_time) if self.port_wait_time > 0 else 10
+        if self.wait_for_action("cx", self.created_endp, "appear", cx_wait_time):
             logger.info("Generic cx creation completed")
         else:
             logger.error("Generic cx creation was not completed")
@@ -860,7 +856,8 @@ class GenTest():
         self.created_endp.append(unique_alias)
 
         # did generic endp appear in port manager?
-        if self.wait_for_action("endp", self.created_endp, "appear", 30):
+        endp_wait_time = max(10, self.port_wait_time) if self.port_wait_time > 0 else 10
+        if self.wait_for_action("endp", self.created_endp, "appear", endp_wait_time):
             logger.info("Generic endpoint creation completed")
         else:
             logger.error("Generic endpoints were not created")
@@ -990,11 +987,12 @@ class GenTest():
         :param type_list: object list that needs to be iterated through to check for attributes.
                           E.g. : (station list, port list, cx list, etc.)
         :param action: what function is waiting for, example: IP, appear, disappear.
-        :param secs_to_wait: secs to wait until "wait" fails
+        :param secs_to_wait: secs to wait until "wait" fails (if <= 0, skips waiting)
         :return: no returns
 
         """
-        # TODO allow test config of secs_to_wait
+        if int(secs_to_wait) <= 0:
+            return
         if type(type_list) is not list:
             raise Exception("wait_for_action: type_list is not a list")
         else:
