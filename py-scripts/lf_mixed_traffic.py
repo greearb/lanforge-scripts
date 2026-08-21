@@ -741,66 +741,40 @@ class Mixed_Traffic(Realm):
             logger.info("Generic Cross-Connection List: {}".format(self.ping_test_obj.generic_endps_profile.created_cx))
             logger.info("Starting running the Ping Test for {} minutes".format(ping_test_duration))
             # start generate endpoint
-            time.sleep(20)
             self.ping_test_obj.start_generic()
-            ports_data_dict = self.ping_test_obj.json_get('/ports/all/')['interfaces']
-            ports_data = {}
-            for ports in ports_data_dict:
-                port, port_data = list(ports.keys())[0], list(ports.values())[0]
-                ports_data[port] = port_data
+            time.sleep(10)
             if self.dowebgui:
                 start_time = datetime.datetime.now()
                 end_time = start_time + datetime.timedelta(seconds=ping_test_duration * 60)
-                temp_json = []
                 while (datetime.datetime.now() < end_time):
                     success = self.ping_test_obj.monitor_endp_availability(self.ping_test_obj.generic_endps_profile.created_endp)
                     if not success:
                         logger.error('All endpoints are not available. So exiting the monitor early.')
                         break
                     temp_json = []
-                    temp_checked_sta = []
-                    temp_result_data = self.ping_test_obj.get_results()
-                    if isinstance(temp_result_data, dict):
-                        for station in self.ping_test_obj.real_sta_list:
-                            current_device_data = ports_data[station]
-                            if (station in temp_result_data['name']):
+                    for station in self.ping_test_obj.real_sta_list:
+                        for ping_endp, ping_data in self.ping_test_obj.latest_results.items():
+                            if ping_endp == 'generic-{}'.format(station):
                                 temp_json.append({
                                     'device': station,
-                                    'sent': temp_result_data['tx pkts'],
-                                    'recv': temp_result_data['rx pkts'],
-                                    'dropped': temp_result_data['dropped'],
+                                    'sent': ping_data['tx pkts'],
+                                    'recv': ping_data['rx pkts'],
+                                    'dropped': ping_data['dropped'],
                                     'status': "Running",
                                     'start_time': start_time.strftime("%d/%m %I:%M:%S %p"),
                                     'end_time': end_time.strftime("%d/%m %I:%M:%S %p"),
                                     "remaining_time": ""
                                 })
-                    else:
-                        for station in self.ping_test_obj.real_sta_list:
-                            current_device_data = ports_data[station]
-                            for ping_device in temp_result_data:
-                                ping_endp, ping_data = list(ping_device.keys())[0], list(ping_device.values())[0]
-                                if station.split('-')[-1] in ping_endp and station not in temp_checked_sta:
-                                    temp_checked_sta.append(station)
-                                    temp_json.append({
-                                        'device': station,
-                                        'sent': ping_data['tx pkts'],
-                                        'recv': ping_data['rx pkts'],
-                                        'dropped': ping_data['dropped'],
-                                        'status': "Running",
-                                        'start_time': start_time.strftime("%d/%m %I:%M:%S %p"),
-                                        'end_time': end_time.strftime("%d/%m %I:%M:%S %p"),
-                                        "remaining_time": ""
-                                    })
                     df1 = pd.DataFrame(temp_json)
                     df1.to_csv('{}/ping_datavalues.csv'.format(self.result_dir), index=False)
                     try:
                         with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name), 'r') as file:
                             data = json.load(file)
                             if data["status"] != "Running":
-                                logging.info('Test is stopped by the user')
+                                logger.info('Test is stopped by the user')
                                 break
-                    except Exception:
-                        logging.info("Exception while reading running json in ping")
+                    except Exception as e:
+                        logger.info("Error while checking running status during ping execution: {}".format(e))
                     time.sleep(3)
             else:
                 start_time = time.time()
