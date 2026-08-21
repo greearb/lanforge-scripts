@@ -287,209 +287,211 @@ class InteropPortReset(Realm):
         logging.info(f"Last WiFi Message Time Stamp: {last}")
         return last
 
-    def get_count(self, value=None, keys_list=None, device=None, filter=None):
-        count_ = []
-        device_split = device.split(".")
-        device = device_split[2]
-        resource_id = device_split[0] + "." + device_split[1]
-        for i, y in zip(keys_list, range(len(keys_list))):
-            wifi_msg_text = value[y][i]['text']
-            resource = value[y][i]['resource']
+    def count_wifi_msg_matches(self, wifi_messages=None, message_keys=None, device_eid=None, match_text=None):
+        matches = []
+        eid_parts = device_eid.split(".")
+        port_name = eid_parts[2]
+        resource_id = eid_parts[0] + "." + eid_parts[1]
+        for message_key, index in zip(message_keys, range(len(message_keys))):
+            wifi_msg_text = wifi_messages[index][message_key]['text']
+            message_resource = wifi_messages[index][message_key]['resource']
             if type(wifi_msg_text) is str:
-                wifi_msg_text_keyword_list = value[y][i]['text'].split(" ")
-                if device is None:
-                    logging.info(f"Device {device} is None device name not existed in wifi messages...")
+                message_tokens = wifi_messages[index][message_key]['text'].split(" ")
+                if port_name is None:
+                    logging.info(f"Device {port_name} is None device name not existed in wifi messages...")
                 else:
-                    if resource == resource_id:
-                        if device in wifi_msg_text_keyword_list:
-                            if filter in wifi_msg_text_keyword_list:
-                                # logging.info(f"The filter '{filter}' is present in the Wi-Fi message test list.")
-                                count_.append("YES")
+                    if message_resource == resource_id:
+                        if port_name in message_tokens:
+                            if match_text in message_tokens:
+                                # logging.info(f"The filter '{match_text}' is present in the Wi-Fi message test list.")
+                                matches.append("YES")
                             else:
-                                with_empty_filter = filter.split(" ")
-                                if all(item in wifi_msg_text_keyword_list for item in with_empty_filter):
-                                    # logging.info(f"The filter {with_empty_filter} sequence is present in Wi-Fi msg.")
-                                    count_.append("YES")
+                                match_tokens = match_text.split(" ")
+                                if all(token in message_tokens for token in match_tokens):
+                                    # logging.info(f"The filter {match_tokens} sequence is present in Wi-Fi msg.")
+                                    matches.append("YES")
                         else:
-                            if f"IFNAME={device}" in wifi_msg_text_keyword_list:  # for linux
-                                if filter in wifi_msg_text_keyword_list:
-                                    # logging.info(f"The filter '{filter}' is present in the Wi-Fi message test list.")
-                                    count_.append("YES")
+                            if f"IFNAME={port_name}" in message_tokens:  # for linux
+                                if match_text in message_tokens:
+                                    # logging.info(f"The filter '{match_text}' is present in the Wi-Fi message test list.")
+                                    matches.append("YES")
                                 else:
-                                    with_empty_filter = filter.split(" ")
-                                    if all(item in wifi_msg_text_keyword_list for item in with_empty_filter):
-                                        # logging.info(f"The filter {with_empty_filter} sequence is present in Wi-Fi msg.")
-                                        count_.append("YES")
-            else:  # if wifi_msg_test is list
-                for item in wifi_msg_text:
-                    wifi_msg_text_keyword_list = item.split(" ")
-                    # print("$Wifi Message Text list:", wifi_msg_text_keyword_list)
-                    if device is not None:
-                        if resource == resource_id:
-                            if device in wifi_msg_text_keyword_list:  # for android
-                                if filter in wifi_msg_text_keyword_list:
-                                    # logging.info(f"The filter '{filter}' is present in the Wi-Fi message test list.")
-                                    count_.append("YES")
+                                    match_tokens = match_text.split(" ")
+                                    if all(token in message_tokens for token in match_tokens):
+                                        # logging.info(f"The filter {match_tokens} sequence is present in Wi-Fi msg.")
+                                        matches.append("YES")
+            else:  # if wifi_msg_text is list
+                for message_line in wifi_msg_text:
+                    message_tokens = message_line.split(" ")
+                    # print("$Wifi Message Text list:", message_tokens)
+                    if port_name is not None:
+                        if message_resource == resource_id:
+                            if port_name in message_tokens:  # for android
+                                if match_text in message_tokens:
+                                    # logging.info(f"The filter '{match_text}' is present in the Wi-Fi message test list.")
+                                    matches.append("YES")
                                 else:
-                                    with_empty_filter = filter.split(" ")
-                                    if all(item in wifi_msg_text_keyword_list for item in with_empty_filter):
-                                        # logging.info(f"The filter {with_empty_filter} sequence is present in Wi-Fi msg.")
-                                        count_.append("YES")
+                                    match_tokens = match_text.split(" ")
+                                    if all(token in message_tokens for token in match_tokens):
+                                        # logging.info(f"The filter {match_tokens} sequence is present in Wi-Fi msg.")
+                                        matches.append("YES")
                             else:
-                                if f"IFNAME={device}" in wifi_msg_text_keyword_list:  # for linux
-                                    if filter in wifi_msg_text_keyword_list:
-                                        # logging.info(f"The filter '{filter}' is present in the Wi-Fi message test list.")
-                                        count_.append("YES")
+                                if f"IFNAME={port_name}" in message_tokens:  # for linux
+                                    if match_text in message_tokens:
+                                        # logging.info(f"The filter '{match_text}' is present in the Wi-Fi message test list.")
+                                        matches.append("YES")
                                     else:
-                                        with_empty_filter = filter.split(" ")
-                                        if all(item in wifi_msg_text_keyword_list for item in with_empty_filter):
-                                            # logging.info(f"The filter {with_empty_filter} sequence is present in Wi-Fi msg.")
-                                            count_.append("YES")
-        counting = count_.count("YES")
-        return counting
+                                        match_tokens = match_text.split(" ")
+                                        if all(token in message_tokens for token in match_tokens):
+                                            # logging.info(f"The filter {match_tokens} sequence is present in Wi-Fi msg.")
+                                            matches.append("YES")
+        match_count = matches.count("YES")
+        return match_count
 
-    def get_time_from_wifi_msgs(self, local_dict=None, phn_name=None, timee=None, file_name="dummy.json", reset_cnt=None):
+    def collect_device_metrics(self, device_metrics=None, device_eid=None, since_time=None, file_name="dummy.json", iteration=None):
         # print("Waiting for 20 sec to fetch the logs...")
         # time.sleep(20)
-        a = self.json_get_with_retry("/wifi-msgs/since=time/" + str(timee), debug_=True)
+        wifi_msgs_response = self.json_get_with_retry("/wifi-msgs/since=time/" + str(since_time), debug_=True)
         try:
-            values = a['wifi-messages']
+            wifi_messages = wifi_msgs_response['wifi-messages']
         except (TypeError, KeyError) as e:
             logging.error(
-                f"get_time_from_wifi_msgs: LANforge response is not in expected format ({e}) while fetching "
-                f"wifi-msgs for device {phn_name}. Data received: {a}")
-            logging.warning(f"Defaulting device {phn_name} stats to 0 for this reset and continuing.")
-            for key in ("ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected"):
-                local_dict[str(phn_name)][key] = 0
-            local_dict[str(phn_name)]["Remarks"] = "Data unavailable - LANforge API error, stats defaulted to 0"
-            local_dict[str(phn_name)]["cx time (us)"] = "NA"
-            self.write_reset_csvs(local_dict, reset_cnt)
-            return local_dict
-        # print("Wifi msgs Response : ", values)
+                f"collect_device_metrics: LANforge response is not in expected format ({e}) while fetching "
+                f"wifi-msgs for device {device_eid}. Data received: {wifi_msgs_response}")
+            logging.warning(f"Defaulting device {device_eid} stats to 0 for this reset and continuing.")
+            for metric_name in ("ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected"):
+                device_metrics[str(device_eid)][metric_name] = 0
+            device_metrics[str(device_eid)]["Remarks"] = "Data unavailable - LANforge API error, stats defaulted to 0"
+            device_metrics[str(device_eid)]["cx time (us)"] = "NA"
+            self.write_iteration_csvs(device_metrics, iteration)
+            return device_metrics
+        # print("Wifi msgs Response : ", wifi_messages)
         logging.info(
-            f"Counting the DISCONNECTIONS, SCANNING, ASSOC ATTEMPTS, ASSOC RECJECTIONS, CONNECTS for device {phn_name}")
-        if type(values) is not list:
-            logging.info(f"Device {phn_name} : Getting wifi messages for only single time-stamp. Converting into List.")
-            values = [{f"{values['resource']}.{values['time-stamp']}": values}]
-        # print("After Updating Wi-Fi msgs Response : ", values)
-        self.create_log_file(json_list=values, file_name=file_name)
+            f"Counting the DISCONNECTIONS, SCANNING, ASSOC ATTEMPTS, ASSOC RECJECTIONS, CONNECTS for device {device_eid}")
+        if type(wifi_messages) is not list:
+            logging.info(f"Device {device_eid} : Getting wifi messages for only single time-stamp. Converting into List.")
+            wifi_messages = [{f"{wifi_messages['resource']}.{wifi_messages['time-stamp']}": wifi_messages}]
+        # print("After Updating Wi-Fi msgs Response : ", wifi_messages)
+        self.create_log_file(json_list=wifi_messages, file_name=file_name)
         self.remove_files_with_duplicate_names(folder_path=f"{self.report_path}/Wifi_Messages/")
-        keys_list = []
+        message_keys = []
 
-        for i in range(len(values)):
-            keys_list.append(list(values[i].keys())[0])
-        # print("Key list", keys_list)
+        for index in range(len(wifi_messages)):
+            message_keys.append(list(wifi_messages[index].keys())[0])
+        # print("Key list", message_keys)
         # android (flag) check for clustered lanforge cases
-        android = False
+        is_android = False
         adb_response = self.json_get_with_retry('/adb/')
         try:
             adb_devices = adb_response['devices']
         except (TypeError, KeyError) as e:
             logging.error(
-                f"get_time_from_wifi_msgs: LANforge response is not in expected format ({e}) while fetching "
+                f"collect_device_metrics: LANforge response is not in expected format ({e}) while fetching "
                 f"/adb/ devices. Data received: {adb_response}")
             logging.warning(
-                f"Could not fetch adb device list; relying only on the '1.1.' prefix heuristic for {phn_name}.")
+                f"Could not fetch adb device list; relying only on the '1.1.' prefix heuristic for {device_eid}.")
             adb_devices = []
         for device_data in adb_devices:
             device_name, _ = list(device_data.keys())[0], list(device_data.values())[0]
-            if phn_name in device_name:
-                android = True
+            if device_eid in device_name:
+                is_android = True
                 break
-        if "1.1." in phn_name or android:
+        if "1.1." in device_eid or is_android:
             # disconnects
-            adb_disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                  filter="Terminating...")  # Todo: need to rename the method
-            if adb_disconnect_count > 1 or adb_disconnect_count == 0:
-                disconnection = self.utility.get_device_state(device=phn_name)
-                if disconnection == 'COMPLETED':
-                    logging.info("The Device %s is in connected state." % phn_name)
-                    adb_disconnect_count = 0
+            android_disconnect_count = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                   device_eid=device_eid, match_text="Terminating...")
+            if android_disconnect_count > 1 or android_disconnect_count == 0:
+                device_state = self.utility.get_device_state(device=device_eid)
+                if device_state == 'COMPLETED':
+                    logging.info("The Device %s is in connected state." % device_eid)
+                    android_disconnect_count = 0
                 else:
-                    logging.info("The Device %s is not in connected state." % phn_name)
-                    adb_disconnect_count = 1
-                logging.info(f"Disconnect Count For Android: {adb_disconnect_count}")
+                    logging.info("The Device %s is not in connected state." % device_eid)
+                    android_disconnect_count = 1
+                logging.info(f"Disconnect Count For Android: {android_disconnect_count}")
             # Updating the dict with disconnects for android
-            logging.info("Final Disconnect count for %s: %s" % (phn_name, adb_disconnect_count))
-            local_dict[phn_name]["Disconnected"] = adb_disconnect_count
+            logging.info("Final Disconnect count for %s: %s" % (device_eid, android_disconnect_count))
+            device_metrics[device_eid]["Disconnected"] = android_disconnect_count
             # scanning count
-            adb_scan_count = self.get_count(value=values, keys_list=keys_list, device=phn_name, filter="SCAN-STARTED")
-            logging.info("Final Scanning Count for %s: %s" % (phn_name, adb_scan_count))
-            local_dict[str(phn_name)]["Scanning"] = adb_scan_count
+            android_scan_count = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                             device_eid=device_eid, match_text="SCAN-STARTED")
+            logging.info("Final Scanning Count for %s: %s" % (device_eid, android_scan_count))
+            device_metrics[str(device_eid)]["Scanning"] = android_scan_count
             # association attempts
-            adb_association_attempt = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                     filter="ASSOCIATING")
-            logging.info("Final Association Attempts Count for %s: %s" % (phn_name, adb_association_attempt))
-            local_dict[str(phn_name)]["ConnectAttempt"] = adb_association_attempt
+            android_association_attempt = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                      device_eid=device_eid, match_text="ASSOCIATING")
+            logging.info("Final Association Attempts Count for %s: %s" % (device_eid, android_association_attempt))
+            device_metrics[str(device_eid)]["ConnectAttempt"] = android_association_attempt
             # association rejections
-            adb_association_rejection = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                       filter="ASSOC_REJECT")
-            logging.info("Final Association Rejection Count for %s: %s" % (phn_name, adb_association_rejection))
-            local_dict[str(phn_name)]["Association Rejection"] = adb_association_rejection
+            android_association_rejection = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                        device_eid=device_eid, match_text="ASSOC_REJECT")
+            logging.info("Final Association Rejection Count for %s: %s" % (device_eid, android_association_rejection))
+            device_metrics[str(device_eid)]["Association Rejection"] = android_association_rejection
             # connections
-            adb_connected_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                 filter="CTRL-EVENT-CONNECTED")
+            android_connected_count = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                  device_eid=device_eid, match_text="CTRL-EVENT-CONNECTED")
             # Double-checking & adding remarks if any
-            if adb_connected_count > 1 or adb_connected_count == 0:
-                ssid = self.utility.get_device_ssid(device=phn_name)
-                if ssid == self.ssid:
-                    logging.info("The Device %s is connected to expected ssid" % phn_name)
-                    adb_connected_count = 1
+            if android_connected_count > 1 or android_connected_count == 0:
+                device_ssid = self.utility.get_device_ssid(device=device_eid)
+                if device_ssid == self.ssid:
+                    logging.info("The Device %s is connected to expected ssid" % device_eid)
+                    android_connected_count = 1
                 else:
                     logging.info("**** The Device is not connected to the expected ssid ****")
-                    adb_connected_count = 0
-                logging.info(f"Connected Count for Android: {adb_connected_count}")
+                    android_connected_count = 0
+                logging.info(f"Connected Count for Android: {android_connected_count}")
             # Updating the dict with connects for android
-            logging.info("Final Connected Count for %s: %s" % (phn_name, adb_connected_count))
-            local_dict[str(phn_name)]["Connected"] = adb_connected_count
+            logging.info("Final Connected Count for %s: %s" % (device_eid, android_connected_count))
+            device_metrics[str(device_eid)]["Connected"] = android_connected_count
             # Adding remarks
             remarks = "NA"
-            local_dict[str(phn_name)]["Remarks"] = remarks
+            device_metrics[str(device_eid)]["Remarks"] = remarks
             # Updating the association-rejections
-            if adb_association_attempt > adb_connected_count:
-                adb_association_rejection = adb_association_attempt - adb_connected_count
-            local_dict[str(phn_name)]["Association Rejection"] = adb_association_rejection
-            if adb_connected_count > 0:
-                _, shelf, serial = phn_name.split('.')
-                resource_id_resp = self.json_get_with_retry('/adb/1/{}/{}?fields=resource-id'.format(shelf, serial))
-                port_ssid_query = None
+            if android_association_attempt > android_connected_count:
+                android_association_rejection = android_association_attempt - android_connected_count
+            device_metrics[str(device_eid)]["Association Rejection"] = android_association_rejection
+            if android_connected_count > 0:
+                _, resource, serial = device_eid.split('.')
+                resource_id_response = self.json_get_with_retry('/adb/1/{}/{}?fields=resource-id'.format(resource, serial))
+                port_response = None
                 try:
-                    resource_id = resource_id_resp['devices']['resource-id']
-                    port_ssid_query = self.json_get_with_retry('port/1/{}/wlan0?fields=cx time (us)'.format(resource_id.split('.')[1]))
-                    uptime = port_ssid_query['interface']['cx time (us)']
-                    local_dict[str(phn_name)]['cx time (us)'] = uptime
+                    resource_id = resource_id_response['devices']['resource-id']
+                    port_response = self.json_get_with_retry('port/1/{}/wlan0?fields=cx time (us)'.format(resource_id.split('.')[1]))
+                    cx_time_us = port_response['interface']['cx time (us)']
+                    device_metrics[str(device_eid)]['cx time (us)'] = cx_time_us
                 except (TypeError, KeyError) as e:
                     logging.error(
-                        f"get_time_from_wifi_msgs: could not fetch cx time (us) for device {phn_name}; LANforge "
-                        f"response is not in expected format ({e}). resource-id response: {resource_id_resp}, "
-                        f"port response: {port_ssid_query}")
-                    local_dict[str(phn_name)]['cx time (us)'] = 'NA'
+                        f"collect_device_metrics: could not fetch cx time (us) for device {device_eid}; LANforge "
+                        f"response is not in expected format ({e}). resource-id response: {resource_id_response}, "
+                        f"port response: {port_response}")
+                    device_metrics[str(device_eid)]['cx time (us)'] = 'NA'
             else:
-                local_dict[str(phn_name)]['cx time (us)'] = 'NA'
+                device_metrics[str(device_eid)]['cx time (us)'] = 'NA'
         else:
-            if phn_name in self.windows_list:  # for windows
-                win_disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                      filter="Wireless security stopped.")
+            if device_eid in self.windows_list:  # for windows
+                win_disconnect_count = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                   device_eid=device_eid, match_text="Wireless security stopped.")
                 # Double-checking the disconnect count with another key msg
                 if win_disconnect_count == 0:
-                    win_disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                          filter="WLAN AutoConfig service has successfully disconnected from a wireless network")
-                logging.info("Final Disconnect count for %s: %s" % (phn_name, win_disconnect_count))
-                local_dict[phn_name]["Disconnected"] = win_disconnect_count
-                win_scan_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                filter="service started")
-                logging.info("Final Scanning Count for %s: %s" % (phn_name, win_scan_count))
-                local_dict[str(phn_name)]["Scanning"] = win_scan_count
-                win_association_attempt = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                         filter="association started.")
-                logging.info("Final Association Attempts Count for %s: %s" % (phn_name, win_association_attempt))
-                local_dict[str(phn_name)]["ConnectAttempt"] = win_association_attempt
-                win_association_rejection = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                           filter="failed to connect")
-                logging.info("Final Association Rejection Count for %s: %s" % (phn_name, win_association_rejection))
-                local_dict[str(phn_name)]["Association Rejection"] = win_association_rejection
-                win_connected_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                     filter="connected")
+                    win_disconnect_count = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                       device_eid=device_eid,
+                                                                       match_text="WLAN AutoConfig service has successfully disconnected from a wireless network")
+                logging.info("Final Disconnect count for %s: %s" % (device_eid, win_disconnect_count))
+                device_metrics[device_eid]["Disconnected"] = win_disconnect_count
+                win_scan_count = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                             device_eid=device_eid, match_text="service started")
+                logging.info("Final Scanning Count for %s: %s" % (device_eid, win_scan_count))
+                device_metrics[str(device_eid)]["Scanning"] = win_scan_count
+                win_association_attempt = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                      device_eid=device_eid, match_text="association started.")
+                logging.info("Final Association Attempts Count for %s: %s" % (device_eid, win_association_attempt))
+                device_metrics[str(device_eid)]["ConnectAttempt"] = win_association_attempt
+                win_association_rejection = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                        device_eid=device_eid, match_text="failed to connect")
+                logging.info("Final Association Rejection Count for %s: %s" % (device_eid, win_association_rejection))
+                device_metrics[str(device_eid)]["Association Rejection"] = win_association_rejection
+                win_connected_count = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                  device_eid=device_eid, match_text="connected")
                 win_connection_state_unverified = False
                 # assoc-rejection based logic
                 if win_association_rejection:
@@ -505,26 +507,26 @@ class InteropPortReset(Realm):
                     else:
                         # Double-checking
                         if win_connected_count > 1 or win_connected_count == 0:
-                            port_name = phn_name.split(".")
-                            port_ssid_query = self.json_get_with_retry(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
+                            eid_parts = device_eid.split(".")
+                            port_response = self.json_get_with_retry(f"port/{eid_parts[0]}/{eid_parts[1]}/{eid_parts[2]}?fields=ssid,ip")
                             try:
-                                if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
+                                if port_response['interface']['ssid'] == self.ssid and port_response['interface']['ip'] != "0.0.0.0":
                                     win_connected_count = 1
                                 else:
                                     win_connected_count = 0
                             except (TypeError, KeyError) as e:
                                 logging.error(
-                                    f"get_time_from_wifi_msgs: could not verify connection state for device "
-                                    f"{phn_name}; LANforge response is not in expected format ({e}). Data "
-                                    f"received: {port_ssid_query}")
+                                    f"collect_device_metrics: could not verify connection state for device "
+                                    f"{device_eid}; LANforge response is not in expected format ({e}). Data "
+                                    f"received: {port_response}")
                                 win_connected_count = 0
                                 win_connection_state_unverified = True
-                logging.info("Final Connected Count for %s: %s" % (phn_name, win_connected_count))
-                local_dict[str(phn_name)]["Connected"] = win_connected_count
+                logging.info("Final Connected Count for %s: %s" % (device_eid, win_connected_count))
+                device_metrics[str(device_eid)]["Connected"] = win_connected_count
                 # Updating the association-rejections
                 if win_association_attempt > win_connected_count:
                     win_association_rejection = win_association_attempt - win_connected_count
-                local_dict[str(phn_name)]["Association Rejection"] = win_association_rejection
+                device_metrics[str(device_eid)]["Association Rejection"] = win_association_rejection
                 # Adding re-marks
                 remarks = "NA"
                 if win_disconnect_count == 0 and win_connected_count == 1:
@@ -533,111 +535,112 @@ class InteropPortReset(Realm):
                     remarks = "The Disconnections are seen but Client did not connected to user given SSID."
                 if win_connection_state_unverified:
                     remarks = "Connection state unverified - LANforge API error while double-checking connect count"
-                local_dict[str(phn_name)]["Remarks"] = remarks
+                device_metrics[str(device_eid)]["Remarks"] = remarks
                 if win_connected_count > 0:
-                    port_name = phn_name.split(".")
-                    port_ssid_query = self.json_get_with_retry(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=cx time (us)")
+                    eid_parts = device_eid.split(".")
+                    port_response = self.json_get_with_retry(f"port/{eid_parts[0]}/{eid_parts[1]}/{eid_parts[2]}?fields=cx time (us)")
                     try:
-                        uptime = port_ssid_query['interface']['cx time (us)']
-                        local_dict[str(phn_name)]['cx time (us)'] = uptime
+                        cx_time_us = port_response['interface']['cx time (us)']
+                        device_metrics[str(device_eid)]['cx time (us)'] = cx_time_us
                     except (TypeError, KeyError) as e:
                         logging.error(
-                            f"get_time_from_wifi_msgs: could not fetch cx time (us) for device {phn_name}; "
-                            f"LANforge response is not in expected format ({e}). Data received: {port_ssid_query}")
-                        local_dict[str(phn_name)]['cx time (us)'] = 'NA'
+                            f"collect_device_metrics: could not fetch cx time (us) for device {device_eid}; "
+                            f"LANforge response is not in expected format ({e}). Data received: {port_response}")
+                        device_metrics[str(device_eid)]['cx time (us)'] = 'NA'
                 else:
-                    local_dict[str(phn_name)]['cx time (us)'] = 'NA'
+                    device_metrics[str(device_eid)]['cx time (us)'] = 'NA'
             else:  # other means (for linux, mac)
-                other_disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                        filter="disconnected")
+                linux_mac_disconnect_count = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                         device_eid=device_eid, match_text="disconnected")
                 # Double-checking the disconnect count with another key msg
-                if other_disconnect_count == 0:
-                    other_disconnect_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                            filter="<3>CTRL-EVENT-DSCP-POLICY clear_all")
-                logging.info("Final Disconnect count for %s: %s" % (phn_name, other_disconnect_count))
-                local_dict[phn_name]["Disconnected"] = other_disconnect_count
-                other_scan_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                  filter="<3>CTRL-EVENT-SCAN-STARTED")
-                logging.info("Final Scanning Count for %s: %s" % (phn_name, other_scan_count))
-                local_dict[str(phn_name)]["Scanning"] = other_scan_count
-                other_association_attempt = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                           filter="<3>Trying to associate with")
-                logging.info("Final Association Attempts Count for %s: %s" % (phn_name, other_association_attempt))
-                local_dict[str(phn_name)]["ConnectAttempt"] = other_association_attempt
-                other_association_rejection = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                             filter="NoneValue")
-                logging.info("Final Association Rejection Count for %s: %s" % (phn_name, other_association_rejection))
-                local_dict[str(phn_name)]["Association Rejection"] = other_association_rejection
+                if linux_mac_disconnect_count == 0:
+                    linux_mac_disconnect_count = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                             device_eid=device_eid,
+                                                                             match_text="<3>CTRL-EVENT-DSCP-POLICY clear_all")
+                logging.info("Final Disconnect count for %s: %s" % (device_eid, linux_mac_disconnect_count))
+                device_metrics[device_eid]["Disconnected"] = linux_mac_disconnect_count
+                linux_mac_scan_count = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                   device_eid=device_eid, match_text="<3>CTRL-EVENT-SCAN-STARTED")
+                logging.info("Final Scanning Count for %s: %s" % (device_eid, linux_mac_scan_count))
+                device_metrics[str(device_eid)]["Scanning"] = linux_mac_scan_count
+                linux_mac_association_attempt = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                            device_eid=device_eid, match_text="<3>Trying to associate with")
+                logging.info("Final Association Attempts Count for %s: %s" % (device_eid, linux_mac_association_attempt))
+                device_metrics[str(device_eid)]["ConnectAttempt"] = linux_mac_association_attempt
+                linux_mac_association_rejection = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                              device_eid=device_eid, match_text="NoneValue")
+                logging.info("Final Association Rejection Count for %s: %s" % (device_eid, linux_mac_association_rejection))
+                device_metrics[str(device_eid)]["Association Rejection"] = linux_mac_association_rejection
 
-                other_connected_count = self.get_count(value=values, keys_list=keys_list, device=phn_name,
-                                                       filter="<3>CTRL-EVENT-CONNECTED")
-                other_connection_state_unverified = False
+                linux_mac_connected_count = self.count_wifi_msg_matches(wifi_messages=wifi_messages, message_keys=message_keys,
+                                                                        device_eid=device_eid, match_text="<3>CTRL-EVENT-CONNECTED")
+                linux_mac_connection_state_unverified = False
                 # assoc-rejection based logic
-                if other_association_rejection:
+                if linux_mac_association_rejection:
                     # Updating the connects
-                    actual_connects = other_association_attempt - other_association_rejection
-                    if actual_connects == other_connected_count:
-                        other_connected_count = other_connected_count
+                    actual_connects = linux_mac_association_attempt - linux_mac_association_rejection
+                    if actual_connects == linux_mac_connected_count:
+                        linux_mac_connected_count = linux_mac_connected_count
                     else:
-                        other_connected_count = actual_connects
+                        linux_mac_connected_count = actual_connects
                 else:
-                    if other_association_attempt == other_connected_count:
-                        other_connected_count = other_connected_count
+                    if linux_mac_association_attempt == linux_mac_connected_count:
+                        linux_mac_connected_count = linux_mac_connected_count
                     else:
                         # Double-checking & adding remarks if any
-                        if other_connected_count > 1 or other_connected_count == 0:
-                            port_name = phn_name.split(".")
-                            port_ssid_query = self.json_get_with_retry(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=ssid,ip")
+                        if linux_mac_connected_count > 1 or linux_mac_connected_count == 0:
+                            eid_parts = device_eid.split(".")
+                            port_response = self.json_get_with_retry(f"port/{eid_parts[0]}/{eid_parts[1]}/{eid_parts[2]}?fields=ssid,ip")
                             try:
-                                if port_ssid_query['interface']['ssid'] == self.ssid and port_ssid_query['interface']['ip'] != "0.0.0.0":
-                                    other_connected_count = 1
+                                if port_response['interface']['ssid'] == self.ssid and port_response['interface']['ip'] != "0.0.0.0":
+                                    linux_mac_connected_count = 1
                                 else:
-                                    other_connected_count = 0
+                                    linux_mac_connected_count = 0
                             except (TypeError, KeyError) as e:
                                 logging.error(
-                                    f"get_time_from_wifi_msgs: could not verify connection state for device "
-                                    f"{phn_name}; LANforge response is not in expected format ({e}). Data "
-                                    f"received: {port_ssid_query}")
-                                other_connected_count = 0
-                                other_connection_state_unverified = True
-                logging.info("Final Connected Count for %s: %s" % (phn_name, other_connected_count))
-                local_dict[str(phn_name)]["Connected"] = other_connected_count
+                                    f"collect_device_metrics: could not verify connection state for device "
+                                    f"{device_eid}; LANforge response is not in expected format ({e}). Data "
+                                    f"received: {port_response}")
+                                linux_mac_connected_count = 0
+                                linux_mac_connection_state_unverified = True
+                logging.info("Final Connected Count for %s: %s" % (device_eid, linux_mac_connected_count))
+                device_metrics[str(device_eid)]["Connected"] = linux_mac_connected_count
                 # Updating the association-rejections
-                if other_association_attempt > other_connected_count:
-                    other_association_rejection = other_association_attempt - other_connected_count
-                local_dict[str(phn_name)]["Association Rejection"] = other_association_rejection
+                if linux_mac_association_attempt > linux_mac_connected_count:
+                    linux_mac_association_rejection = linux_mac_association_attempt - linux_mac_connected_count
+                device_metrics[str(device_eid)]["Association Rejection"] = linux_mac_association_rejection
                 # Adding remarks
                 remarks = "NA"
-                if other_disconnect_count == 0 and other_connected_count == 1:
+                if linux_mac_disconnect_count == 0 and linux_mac_connected_count == 1:
                     remarks = "No Disconnections are seen but Client is UP and connected to user given SSID."
-                elif other_disconnect_count >= 1 and other_connected_count == 0:
+                elif linux_mac_disconnect_count >= 1 and linux_mac_connected_count == 0:
                     remarks = "The Disconnections are seen but Client did not connected to user given SSID."
-                if other_connection_state_unverified:
+                if linux_mac_connection_state_unverified:
                     remarks = "Connection state unverified - LANforge API error while double-checking connect count"
-                local_dict[str(phn_name)]["Remarks"] = remarks
-                if other_connected_count > 0:
-                    port_name = phn_name.split(".")
-                    port_ssid_query = self.json_get_with_retry(f"port/{port_name[0]}/{port_name[1]}/{port_name[2]}?fields=cx time (us)")
+                device_metrics[str(device_eid)]["Remarks"] = remarks
+                if linux_mac_connected_count > 0:
+                    eid_parts = device_eid.split(".")
+                    port_response = self.json_get_with_retry(f"port/{eid_parts[0]}/{eid_parts[1]}/{eid_parts[2]}?fields=cx time (us)")
                     try:
-                        uptime = port_ssid_query['interface']['cx time (us)']
-                        local_dict[str(phn_name)]['cx time (us)'] = uptime
+                        cx_time_us = port_response['interface']['cx time (us)']
+                        device_metrics[str(device_eid)]['cx time (us)'] = cx_time_us
                     except (TypeError, KeyError) as e:
                         logging.error(
-                            f"get_time_from_wifi_msgs: could not fetch cx time (us) for device {phn_name}; "
-                            f"LANforge response is not in expected format ({e}). Data received: {port_ssid_query}")
-                        local_dict[str(phn_name)]['cx time (us)'] = 'NA'
+                            f"collect_device_metrics: could not fetch cx time (us) for device {device_eid}; "
+                            f"LANforge response is not in expected format ({e}). Data received: {port_response}")
+                        device_metrics[str(device_eid)]['cx time (us)'] = 'NA'
                 else:
-                    local_dict[str(phn_name)]['cx time (us)'] = 'NA'
-        logging.info("local_dict " + str(local_dict))
-        self.write_reset_csvs(local_dict, reset_cnt)
+                    device_metrics[str(device_eid)]['cx time (us)'] = 'NA'
+        logging.info("device_metrics " + str(device_metrics))
+        self.write_iteration_csvs(device_metrics, iteration)
 
-        return local_dict
+        return device_metrics
 
-    def write_reset_csvs(self, local_dict, reset_cnt):
+    def write_iteration_csvs(self, device_metrics, iteration):
         # storing results in csv file for each reset
-        for interface_name, metrics in local_dict.items():
+        for device_eid, metrics in device_metrics.items():
             df = pd.DataFrame([metrics])
-            filename = f"{self.report_path}/{interface_name}_{reset_cnt}.csv"
+            filename = f"{self.report_path}/{device_eid}_{iteration}.csv"
             df.to_csv(filename, index=False)
 
     def aggregate_reset_dict(self, reset_dict):
@@ -791,10 +794,10 @@ class InteropPortReset(Realm):
                     logging.info("FAILED : MAY BE NOT ALL STATIONS ACQUIRED IP'S")
             time.sleep(30)
             for device_eid in self.all_selected_devices:
-                iteration_metrics = self.get_time_from_wifi_msgs(local_dict=device_metrics, phn_name=device_eid,
-                                                                 timee=since_time,
-                                                                 file_name=f"reset_{iteration}_log.json",
-                                                                 reset_cnt=iteration)
+                iteration_metrics = self.collect_device_metrics(device_metrics=device_metrics, device_eid=device_eid,
+                                                                since_time=since_time,
+                                                                file_name=f"reset_{iteration}_log.json",
+                                                                iteration=iteration)
                 per_iteration_results[iteration] = iteration_metrics
                 if self.robot_test:
                     self.generate_coordinate_csv(reset_dict=per_iteration_results, r=iteration)
