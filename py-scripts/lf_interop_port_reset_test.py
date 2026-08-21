@@ -212,21 +212,22 @@ class InteropPortReset(Realm):
     def selecting_devices_from_available(self):
         # If device list is not provided by user, then it shows the available devices to choose from
         if self.device_list is None:
-            devices = self.base_interop_profile.query_all_devices_to_configure_wifi()
+            configurable_devices = self.base_interop_profile.query_all_devices_to_configure_wifi()
         else:
-            devices = self.base_interop_profile.query_all_devices_to_configure_wifi(device_list=self.device_list.split(','))
-        asyncio.run(self.base_interop_profile.configure_wifi(devices[0] + devices[1] + devices[2]))
-        self.real_sta_list = self.base_interop_profile.station_list
-        logger.info(self.real_sta_list)
-        real_device_data = self.base_interop_profile.devices_data
-        if len(self.real_sta_list) == 0:
+            configurable_devices = self.base_interop_profile.query_all_devices_to_configure_wifi(device_list=self.device_list.split(','))
+        asyncio.run(self.base_interop_profile.configure_wifi(
+            configurable_devices[0] + configurable_devices[1] + configurable_devices[2]))
+        self.real_station_list = self.base_interop_profile.station_list
+        logger.info(self.real_station_list)
+        device_details = self.base_interop_profile.devices_data
+        if len(self.real_station_list) == 0:
             logging.error('There are no real devices in this testbed. Aborting the test.')
-            # Added for the purpose to stop webui test when there are no selected devices availble in lanforge.
-            raise RuntimeError("here are no real devices in this testbed. Aborting the test.")
-        logging.info(f"{self.real_sta_list}")
+            # Added for the purpose to stop webui test when there are no selected devices available in lanforge.
+            raise RuntimeError("There are no real devices in this testbed. Aborting the test.")
+        logging.info(f"{self.real_station_list}")
 
-        for sta_name in self.real_sta_list:
-            if sta_name not in real_device_data:
+        for station_name in self.real_station_list:
+            if station_name not in device_details:
                 logger.error('Real Station not in devices data')
                 raise ValueError('Real station not in devices data')
         android_list = self.base_interop_profile.android_list
@@ -240,13 +241,13 @@ class InteropPortReset(Realm):
                                             screen_size_prcnt=0.4,
                                             _debug_on=False,
                                             _exit_on_error=False)
-        supported_dict = self.interop.supported_devices_resource_id
-        print("Supported dict", supported_dict)
+        supported_resource_ids = self.interop.supported_devices_resource_id
+        print("Supported dict", supported_resource_ids)
         self.final_selected_android_list = []
-        for key in supported_dict.keys():
-            if key != "":
-                if any(key in item for item in android_list):
-                    self.final_selected_android_list.append(supported_dict[key])
+        for device_name in supported_resource_ids.keys():
+            if device_name != "":
+                if any(device_name in item for item in android_list):
+                    self.final_selected_android_list.append(supported_resource_ids[device_name])
         logging.info(f"Final Android Serial Numbers List: {self.final_selected_android_list}")
 
     def create_log_file(self, json_list, file_name="empty.json"):
@@ -702,26 +703,26 @@ class InteropPortReset(Realm):
             df.to_csv(f"{self.result_dir}/overall_reset_{self.current_coordinate}.csv", index=False)
 
     def performing_resets(self, test_start_time=None):
-        reset_list = []
-        for i in range(self.iterations):
-            reset_list.append(i)
-        logging.info(f"Given No.of iterations for Reset : {len(reset_list)}")
-        logging.info("Reset list:" + str(reset_list))
-        reset_dict = dict.fromkeys(reset_list)
+        iteration_indexes = []
+        for index in range(self.iterations):
+            iteration_indexes.append(index)
+        logging.info(f"Given No.of iterations for Reset : {len(iteration_indexes)}")
+        logging.info("Reset list:" + str(iteration_indexes))
+        per_iteration_results = dict.fromkeys(iteration_indexes)
         test_stopped = False
-        interval = 300
+        battery_check_interval_sec = 300
         test_stopped_by_user = False
-        charge_check = time.time() + interval
-        for r, _ in zip(range(self.iterations), reset_dict):
+        next_battery_check = time.time() + battery_check_interval_sec
+        for iteration, _ in zip(range(self.iterations), per_iteration_results):
             if self.robot_test:
                 current_time = time.time()
-                if current_time >= charge_check:
+                if current_time >= next_battery_check:
                     if test_stopped_by_user or self.robo_test_stopped:
                         break
-                    pause, test_stopped_by_user = self.robot_obj.wait_for_battery()
+                    paused, test_stopped_by_user = self.robot_obj.wait_for_battery()
                     if test_stopped_by_user:
                         break
-                    if pause:
+                    if paused:
                         # After charging, return to the last coordinate
                         reached, abort = self.robot_obj.move_to_coordinate(self.current_coordinate)
                         # If user stopped the test during movement
@@ -732,83 +733,85 @@ class InteropPortReset(Realm):
                             break
                         # Restore orientation if rotation is enabled
                         if self.rotation_enabled:
-                            rotation_moni = self.robot_obj.rotate_angle(self.current_angle)
-                            if not rotation_moni:
+                            rotated = self.robot_obj.rotate_angle(self.current_angle)
+                            if not rotated:
                                 test_stopped_by_user = True
                                 break
-                    charge_check = current_time + interval
+                    next_battery_check = current_time + battery_check_interval_sec
             logging.info(f"Waiting until given {self.reset_interval_sec} sec time interval to finish...")
             time.sleep(int(self.reset_interval_sec))  # sleeping until time interval finish
-            logging.info(f"Iteration :- {r}")
-            logging.info("Reset -" + str(r))
-            local_dict = dict.fromkeys(self.adb_device_list)
-            logging.info(f"local dict for android :{local_dict}")
-            laptop_local_dict = dict.fromkeys(self.all_laptops)
-            logging.info(f"local dict for laptops : {laptop_local_dict}")
-            local_dict.update(laptop_local_dict)
+            logging.info(f"Iteration :- {iteration}")
+            logging.info("Reset -" + str(iteration))
+            device_metrics = dict.fromkeys(self.adb_device_list)
+            logging.info(f"local dict for android :{device_metrics}")
+            laptop_metrics = dict.fromkeys(self.all_laptops)
+            logging.info(f"local dict for laptops : {laptop_metrics}")
+            device_metrics.update(laptop_metrics)
 
-            list_ = ["ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected"]
-            sec_dict = dict.fromkeys(list_)
+            metric_names = ["ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected"]
+            empty_metrics = dict.fromkeys(metric_names)
 
-            for i in self.adb_device_list:
-                local_dict[i] = sec_dict.copy()  # for android devices dict
-            for i in self.all_laptops:
-                laptop_local_dict[i] = sec_dict.copy()  # for laptop devices dict
-            logging.info(f"Final Outcome dict for android devices: {local_dict}")
-            logging.info(f"Final Outcome dict for laptop devices: {laptop_local_dict}")
-            logging.info(str(local_dict))
+            for device_eid in self.adb_device_list:
+                device_metrics[device_eid] = empty_metrics.copy()  # for android devices dict
+            for device_eid in self.all_laptops:
+                laptop_metrics[device_eid] = empty_metrics.copy()  # for laptop devices dict
+            logging.info(f"Final Outcome dict for android devices: {device_metrics}")
+            logging.info(f"Final Outcome dict for laptop devices: {laptop_metrics}")
+            logging.info(str(device_metrics))
 
-            local_dict.update(laptop_local_dict)
-            logging.info(f"Final dict: {local_dict}")
+            device_metrics.update(laptop_metrics)
+            logging.info(f"Final dict: {device_metrics}")
 
             # note last log time
-            timee = self.get_last_wifi_msg()
+            since_time = self.get_last_wifi_msg()
 
-            for i in self.adb_device_list:
-                self.interop.stop(device=i)
-            for i in self.all_laptops:  # laptop admin down
-                logging.info(f"**** Disable wifi for laptop {i}")
-                self.admin_down(port_eid=i)
-            for i in self.adb_device_list:
-                logging.info(f"**** Disable wifi for android {i}")
+            for device_eid in self.adb_device_list:
+                self.interop.stop(device=device_eid)
+            for device_eid in self.all_laptops:  # laptop admin down
+                logging.info(f"**** Disable wifi for laptop {device_eid}")
+                self.admin_down(port_eid=device_eid)
+            for device_eid in self.adb_device_list:
+                logging.info(f"**** Disable wifi for android {device_eid}")
                 logging.info("disable wifi")
-                self.interop.enable_or_disable_wifi(device=i, wifi="disable")
-            for i in self.all_laptops:  # laptop admin up
-                logging.info(f"**** Enable wifi for laptop {i}")
-                self.admin_up(port_eid=i)
-            for i in self.adb_device_list:
-                logging.info(f"*** Enable wifi for laptop {i}")
+                self.interop.enable_or_disable_wifi(device=device_eid, wifi="disable")
+            for device_eid in self.all_laptops:  # laptop admin up
+                logging.info(f"**** Enable wifi for laptop {device_eid}")
+                self.admin_up(port_eid=device_eid)
+            for device_eid in self.adb_device_list:
+                logging.info(f"*** Enable wifi for laptop {device_eid}")
                 logging.info("enable wifi")
-                self.interop.enable_or_disable_wifi(device=i, wifi="enable")
-            for i in self.adb_device_list:
-                logging.info(f"Starting APP for {i}")
-                self.interop.start(device=i)
+                self.interop.enable_or_disable_wifi(device=device_eid, wifi="enable")
+            for device_eid in self.adb_device_list:
+                logging.info(f"Starting APP for {device_eid}")
+                self.interop.start(device=device_eid)
             if self.all_laptops:
                 if self.wait_for_ip(station_list=self.all_laptops, timeout_sec=60):
                     logging.info("PASSED : ALL STATIONS GOT IP")
                 else:
                     logging.info("FAILED : MAY BE NOT ALL STATIONS ACQUIRED IP'S")
             time.sleep(30)
-            for i in self.all_selected_devices:
-                get_dicct = self.get_time_from_wifi_msgs(local_dict=local_dict, phn_name=i, timee=timee,
-                                                         file_name=f"reset_{r}_log.json", reset_cnt=r)
-                reset_dict[r] = get_dicct
+            for device_eid in self.all_selected_devices:
+                iteration_metrics = self.get_time_from_wifi_msgs(local_dict=device_metrics, phn_name=device_eid,
+                                                                 timee=since_time,
+                                                                 file_name=f"reset_{iteration}_log.json",
+                                                                 reset_cnt=iteration)
+                per_iteration_results[iteration] = iteration_metrics
                 if self.robot_test:
-                    self.generate_coordinate_csv(reset_dict=reset_dict, r=r)
+                    self.generate_coordinate_csv(reset_dict=per_iteration_results, r=iteration)
                 else:
-                    self.create_dict_csv(reset_dict)
+                    self.create_dict_csv(per_iteration_results)
                 if self.dowebgui:
                     with open(self.result_dir + f"/../../Running_instances/{self.lanforge_ip}_{self.test_name}_running.json",
                               'r') as file:
-                        data = json.load(file)
-                        if data["status"] != "Running":
+                        run_status = json.load(file)
+                        if run_status["status"] != "Running":
                             logging.info('Test is stopped by the user')
                             test_stopped = True
                             self.robo_test_stopped = True
                             break
-            logging.info('{}'.format(reset_dict))
+            logging.info('{}'.format(per_iteration_results))
             if test_stopped:
-                temp_data = {
+                stopped_metrics = {
                     'ConnectAttempt': 0,
                     'Disconnected': 0,
                     'Scanning': 0,
@@ -817,21 +820,21 @@ class InteropPortReset(Realm):
                     'Remarks': "Test stopped by user",
                     'cx time (us)': 0
                 }
-                keys_to_delete = []
-                for i in range(self.iterations):
-                    if reset_dict.get(i) is None:
-                        keys_to_delete.append(i)
+                empty_iterations = []
+                for iteration_index in range(self.iterations):
+                    if per_iteration_results.get(iteration_index) is None:
+                        empty_iterations.append(iteration_index)
                     else:
-                        for dev, data in reset_dict[i].items():
-                            if any(v is None for v in data.values()):
-                                reset_dict[i][dev] = temp_data.copy()
+                        for device_eid, metrics in per_iteration_results[iteration_index].items():
+                            if any(value is None for value in metrics.values()):
+                                per_iteration_results[iteration_index][device_eid] = stopped_metrics.copy()
 
-                for key in keys_to_delete:
-                    del reset_dict[key]
+                for iteration_index in empty_iterations:
+                    del per_iteration_results[iteration_index]
 
                 break
-        logging.info(f"Final Reset Count Dictionary for all clients: {reset_dict}")
-        logging.info("reset dict " + str(reset_dict))
+        logging.info(f"Final Reset Count Dictionary for all clients: {per_iteration_results}")
+        logging.info("reset dict " + str(per_iteration_results))
         test_end = datetime.now()
         test_end_time = test_end.strftime("%b %d %H:%M:%S")
         if self.robot_test:
@@ -842,10 +845,8 @@ class InteropPortReset(Realm):
         else:
             logging.info(f"Test Ended at {test_end}")
         # logging.info("Test ended at " + test_end_time)
-        s1 = test_start_time
-        s2 = test_end_time
-        FMT = '%b %d %H:%M:%S'
-        test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
+        time_format = '%b %d %H:%M:%S'
+        test_duration = datetime.strptime(test_end_time, time_format) - datetime.strptime(test_start_time, time_format)
         if self.robot_test:
             if self.rotation_enabled:
                 logging.info(f"Total Test Duration taken to complete port resets at coordinate {self.current_coordinate} on angle {self.current_angle}: {test_duration}")
@@ -854,15 +855,15 @@ class InteropPortReset(Realm):
         else:
             logging.info(f"Total Test Duration: {test_duration}")
 
-        return reset_dict, test_duration
+        return per_iteration_results, test_duration
 
     # @property
     def run(self):
         try:
             # start timer
-            present_time = datetime.now()
-            test_start_time = present_time.strftime("%b %d %H:%M:%S")
-            logging.info(f"Test Started at {present_time}")
+            test_start = datetime.now()
+            test_start_time = test_start.strftime("%b %d %H:%M:%S")
+            logging.info(f"Test Started at {test_start}")
             self.adb_device_list = self.interop.check_sdk_release(selected_android_devices=self.final_selected_android_list)
             self.windows_list = self.base_interop_profile.windows_list
             self.linux_list = self.base_interop_profile.linux_list
@@ -887,59 +888,58 @@ class InteropPortReset(Realm):
                 # Added for the purpose to stop webui test when there are no selected devices availble in lanforge.
                 raise RuntimeError("There is no active devices please check system.")
             else:
-                for i in range(len(self.adb_device_list)):
-                    self.android_serials.append(self.adb_device_list[i].split(".")[2])
+                for index in range(len(self.adb_device_list)):
+                    self.android_serials.append(self.adb_device_list[index].split(".")[2])
                 logging.info(f"Separated device names from the full name: {self.android_serials}")
 
             # check status of devices
-            phantom = []
-            for i in self.adb_device_list:
-                phantom.append(self.interop.get_device_details(device=i, query="phantom"))
+            phantom_states = []
+            for device_eid in self.adb_device_list:
+                phantom_states.append(self.interop.get_device_details(device=device_eid, query="phantom"))
             if self.adb_device_list or self.windows_list or self.linux_list or self.mac_list:
-                for i in self.adb_device_list:
-                    self.android_user_names.append(self.interop.get_device_details(device=i, query="user-name"))
+                for device_eid in self.adb_device_list:
+                    self.android_user_names.append(self.interop.get_device_details(device=device_eid, query="user-name"))
                 logging.info(f"ADB user-names for selected devices: {self.android_user_names}")
                 logging.info("Checking heath data...")
-                health = dict.fromkeys(self.adb_device_list)
-                logging.info(f"Initial Health Data For Android Clients: {health}")
-                health_for_laptops = dict.fromkeys(self.all_laptops)
-                logging.info(f"Initial Health Data For Laptops Clients: {health_for_laptops}")
+                android_health = dict.fromkeys(self.adb_device_list)
+                logging.info(f"Initial Health Data For Android Clients: {android_health}")
+                laptop_health = dict.fromkeys(self.all_laptops)
+                logging.info(f"Initial Health Data For Laptops Clients: {laptop_health}")
 
                 # pre-checking whether the adb device connected to given ssid or not
-                for i in self.adb_device_list:
-                    dev_state = self.utility.get_device_state(device=i)
-                    if dev_state == "COMPLETED,":
-                        logging.info("Phone %s is in connected state." % i)
-                        ssid = self.utility.get_device_ssid(device=i)
-                        if ssid == self.ssid:
-                            logging.info("The Device %s is connected to expected ssid (%s)" % (i, ssid))
-                            health[i] = self.utility.get_wifi_health_monitor(device=i, ssid=self.ssid)
+                for device_eid in self.adb_device_list:
+                    device_state = self.utility.get_device_state(device=device_eid)
+                    if device_state == "COMPLETED,":
+                        logging.info("Phone %s is in connected state." % device_eid)
+                        device_ssid = self.utility.get_device_ssid(device=device_eid)
+                        if device_ssid == self.ssid:
+                            logging.info("The Device %s is connected to expected ssid (%s)" % (device_eid, device_ssid))
+                            android_health[device_eid] = self.utility.get_wifi_health_monitor(device=device_eid, ssid=self.ssid)
                         else:
                             logging.info("**** The Device is not connected to the expected ssid ****")
                     else:
-                        # logging.info(f"Waiting for {self.wait_time} sec & Checking again the status of the device")
                         logging.info("Waiting for 30 sec & Checking again")
                         time.sleep(30)
-                        dev_state = self.utility.get_device_state(device=i)
-                        logging.info("Checking Device Status Again..." + str(dev_state))
-                        logging.info(f"Device state {dev_state}")
-                        if dev_state == "COMPLETED,":
+                        device_state = self.utility.get_device_state(device=device_eid)
+                        logging.info("Checking Device Status Again..." + str(device_state))
+                        logging.info(f"Device state {device_state}")
+                        if device_state == "COMPLETED,":
                             logging.info("Phone is in connected state")
-                            ssid = self.utility.get_device_ssid(device=i)
-                            if ssid == self.ssid:
-                                logging.info("The Device %s is connected to expected ssid (%s)" % (i, ssid))
-                                health[i] = self.utility.get_wifi_health_monitor(device=i, ssid=self.ssid)
+                            device_ssid = self.utility.get_device_ssid(device=device_eid)
+                            if device_ssid == self.ssid:
+                                logging.info("The Device %s is connected to expected ssid (%s)" % (device_eid, device_ssid))
+                                android_health[device_eid] = self.utility.get_wifi_health_monitor(device=device_eid, ssid=self.ssid)
                         else:
-                            logging.info(f"device state {dev_state}")
-                            health[i] = {'ConnectAttempt': '0', 'ConnectFailure': '0', 'AssocRej': '0',
-                                         'AssocTimeout': '0'}
-                logging.info(f"Health Status for the Android Devices: {health}")
+                            logging.info(f"device state {device_state}")
+                            android_health[device_eid] = {'ConnectAttempt': '0', 'ConnectFailure': '0', 'AssocRej': '0',
+                                                          'AssocTimeout': '0'}
+                logging.info(f"Health Status for the Android Devices: {android_health}")
 
-                logging.info(f"Health Status for the Laptop Devices: {health_for_laptops}")
+                logging.info(f"Health Status for the Laptop Devices: {laptop_health}")
                 # Resting Starts from here
                 if not self.robot_test:
-                    reset_dict, test_duration = self.performing_resets(test_start_time=test_start_time)
-                    return reset_dict, test_duration
+                    per_iteration_results, test_duration = self.performing_resets(test_start_time=test_start_time)
+                    return per_iteration_results, test_duration
 
                 # For robot Scenario
                 if (self.rotation_list[0] != ""):
@@ -954,38 +954,38 @@ class InteropPortReset(Realm):
                 self.robot_obj.testname = self.test_name
                 self.robot_obj.runtime_dir = self.result_dir
                 test_stopped_by_user = False
-                for coordinate in range(len(self.coordinate_list)):
+                for coordinate_index in range(len(self.coordinate_list)):
                     if test_stopped_by_user or self.robo_test_stopped:
                         break
                     # Check for battery status before moving to next coordinate
-                    if_paused, test_stopped_by_user = self.robot_obj.wait_for_battery()
+                    _, test_stopped_by_user = self.robot_obj.wait_for_battery()
                     # If test is stopped by user during battery wait
                     if test_stopped_by_user:
                         break
-                    robo_moved, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[coordinate])
+                    reached_coordinate, abort = self.robot_obj.move_to_coordinate(self.coordinate_list[coordinate_index])
                     # If robot failed to reach the coordinate
                     if abort:
                         break
-                    if robo_moved:
-                        self.current_coordinate = self.coordinate_list[coordinate]
+                    if reached_coordinate:
+                        self.current_coordinate = self.coordinate_list[coordinate_index]
                         if not self.rotation_enabled:
-                            reset_dict, test_duration = self.performing_resets(test_start_time=test_start_time)
-                            self.port_reset_data[self.coordinate_list[coordinate]] = {'reset_dict': reset_dict, 'test_duration': test_duration}
+                            per_iteration_results, test_duration = self.performing_resets(test_start_time=test_start_time)
+                            self.port_reset_data[self.coordinate_list[coordinate_index]] = {'reset_dict': per_iteration_results, 'test_duration': test_duration}
                             time.sleep(10)
                         else:
-                            for angle in range(len(self.rotation_list)):
+                            for angle_index in range(len(self.rotation_list)):
                                 # If test is stopped by user during battery wait
                                 if self.robo_test_stopped or test_stopped_by_user:
                                     break
                                 # Check for battery status before rotating to next angle
-                                is_paused, test_stopped_by_user = self.robot_obj.wait_for_battery()
-                                robo_rotated = self.robot_obj.rotate_angle(self.rotation_list[angle])
-                                if robo_rotated:
-                                    self.current_angle = self.rotation_list[angle]
-                                    reset_dict, test_duration = self.performing_resets(test_start_time=test_start_time)
-                                if self.coordinate_list[coordinate] not in self.port_reset_data:
-                                    self.port_reset_data[self.coordinate_list[coordinate]] = {}
-                                self.port_reset_data[self.coordinate_list[coordinate]][self.rotation_list[angle]] = {'reset_dict': reset_dict, 'test_duration': test_duration}
+                                _, test_stopped_by_user = self.robot_obj.wait_for_battery()
+                                rotated = self.robot_obj.rotate_angle(self.rotation_list[angle_index])
+                                if rotated:
+                                    self.current_angle = self.rotation_list[angle_index]
+                                    per_iteration_results, test_duration = self.performing_resets(test_start_time=test_start_time)
+                                if self.coordinate_list[coordinate_index] not in self.port_reset_data:
+                                    self.port_reset_data[self.coordinate_list[coordinate_index]] = {}
+                                self.port_reset_data[self.coordinate_list[coordinate_index]][self.rotation_list[angle_index]] = {'reset_dict': per_iteration_results, 'test_duration': test_duration}
 
                                 time.sleep(10)
                                 if test_stopped_by_user or self.robo_test_stopped:
