@@ -715,9 +715,10 @@ class Mixed_Traffic(Realm):
             self.ping_test_obj = ping_test.Ping(host=self.host, port=self.port, ssid=ssid, security=security,
                                                 password=password, lanforge_password="lanforge", target=self.target,
                                                 interval=self.interval, sta_list=[], virtual=self.virtual, real=self.real,
-                                                duration=ping_test_duration, result_dir=self.result_dir)
+                                                duration=ping_test_duration, result_dir=self.result_dir,
+                                                dowebgui=self.dowebgui, test_name=self.test_name)
             if not self.ping_test_obj.check_tab_exists():
-                print('Generic Tab is not available for Ping Test.\nAborting the test.')
+                logger.info('Generic Tab is not available for Ping Test.\nAborting the test.')
                 exit(0)
             if self.real:
                 self.ping_test_obj.select_real_devices(real_devices=self.base_interop_profile,
@@ -730,20 +731,11 @@ class Mixed_Traffic(Realm):
                     logger.info("No Device is available to run the test hence aborting the test")
                     exit(0)
                 self.ping_test_obj.cleanup()
-                self.ping_test_obj.sta_list = self.user_query[0]
+                self.ping_test_obj.sta_list = self.ping_test_obj.real_sta_list
             elif self.virtual:
                 self.ping_test_obj.sta_list = self.station_list
                 print('Virtual Stations: {}'.format(self.station_list).replace('[', '').replace(']', '').replace('\'', ''))
-                # #cleanup
-                for station in self.station_list:
-                    print('Removing the station {} if exists'.format(station))
-                    self.ping_test_obj.generic_endps_profile.created_cx.append(
-                        'CX_generic-{}'.format(station.split('.')[2]))
-                    self.ping_test_obj.generic_endps_profile.created_endp.append(
-                        'generic-{}'.format(station.split('.')[2]))
-                self.ping_test_obj.generic_endps_profile.cleanup()
-                self.ping_test_obj.generic_endps_profile.created_cx = []
-                self.ping_test_obj.generic_endps_profile.created_endp = []
+                self.ping_test_obj.cleanup()
             # creating generic endpoints
             self.ping_test_obj.create_generic_endp()
             logger.info("Generic Cross-Connection List: {}".format(self.ping_test_obj.generic_endps_profile.created_cx))
