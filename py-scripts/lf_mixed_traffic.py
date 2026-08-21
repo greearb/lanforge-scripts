@@ -753,6 +753,10 @@ class Mixed_Traffic(Realm):
                 end_time = start_time + datetime.timedelta(seconds=ping_test_duration * 60)
                 temp_json = []
                 while (datetime.datetime.now() < end_time):
+                    success = self.ping_test_obj.monitor_endp_availability(self.ping_test_obj.generic_endps_profile.created_endp)
+                    if not success:
+                        logger.error('All endpoints are not available. So exiting the monitor early.')
+                        break
                     temp_json = []
                     temp_checked_sta = []
                     temp_result_data = self.ping_test_obj.get_results()
@@ -799,7 +803,14 @@ class Mixed_Traffic(Realm):
                         logging.info("Exception while reading running json in ping")
                     time.sleep(3)
             else:
-                time.sleep(ping_test_duration * 60)
+                start_time = time.time()
+                end_time = start_time + (ping_test_duration * 60)
+                while time.time() < end_time:
+                    success = self.ping_test_obj.monitor_endp_availability(self.ping_test_obj.generic_endps_profile.created_endp)
+                    if not success:
+                        logger.error('All endpoints are not available. So exiting the monitor early.')
+                        break
+                    time.sleep(3)
             logger.info("Stopping the Ping Test")
             self.ping_test_obj.stop_generic()
             # getting result dict
