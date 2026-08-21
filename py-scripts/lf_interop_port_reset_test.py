@@ -643,62 +643,62 @@ class InteropPortReset(Realm):
             filename = f"{self.report_path}/{device_eid}_{iteration}.csv"
             df.to_csv(filename, index=False)
 
-    def aggregate_reset_dict(self, reset_dict):
-        aggregated = {}
-        for reset_id in sorted(reset_dict.keys()):
-            if reset_dict[reset_id] is None:
+    def aggregate_device_metrics(self, per_iteration_results):
+        aggregated_metrics = {}
+        for iteration in sorted(per_iteration_results.keys()):
+            if per_iteration_results[iteration] is None:
                 continue
-            devices = reset_dict[reset_id]
-            for device, stats in devices.items():
-                if device not in aggregated:
-                    aggregated[device] = {}
-                for key, value in stats.items():
-                    if key in ("Remarks", "cx time (us)"):
-                        aggregated[device][key] = value
+            iteration_metrics = per_iteration_results[iteration]
+            for device_eid, metrics in iteration_metrics.items():
+                if device_eid not in aggregated_metrics:
+                    aggregated_metrics[device_eid] = {}
+                for metric_name, value in metrics.items():
+                    if metric_name in ("Remarks", "cx time (us)"):
+                        aggregated_metrics[device_eid][metric_name] = value
                     else:
-                        if key not in aggregated[device]:
-                            aggregated[device][key] = 0
-                        aggregated[device][key] += int(value) if str(value).isdigit() else 0
-        return dict(aggregated)
+                        if metric_name not in aggregated_metrics[device_eid]:
+                            aggregated_metrics[device_eid][metric_name] = 0
+                        aggregated_metrics[device_eid][metric_name] += int(value) if str(value).isdigit() else 0
+        return dict(aggregated_metrics)
 
-    def generate_coordinate_csv(self, reset_dict, r):
-        cols = ['Client', 'ConnectAttempt', 'Disconnected', 'Scanning', 'Association Rejection', 'Connected', 'Iterations', 'Status', 'coordinate']
+    def write_coordinate_csv(self, per_iteration_results, iteration):
+        columns = ['Client', 'ConnectAttempt', 'Disconnected', 'Scanning', 'Association Rejection', 'Connected', 'Iterations', 'Status', 'coordinate']
         if self.rotation_enabled:
-            cols.append('angle')
+            columns.append('angle')
         if self.rotation_enabled:
-            suffix = f"_{self.current_coordinate}_{self.current_angle}"
+            client_suffix = f"_{self.current_coordinate}_{self.current_angle}"
         else:
-            suffix = f"_{self.current_coordinate}"
-        aggregated_dict = self.aggregate_reset_dict(reset_dict=reset_dict)
+            client_suffix = f"_{self.current_coordinate}"
+        aggregated_metrics = self.aggregate_device_metrics(per_iteration_results=per_iteration_results)
         if self.current_coordinate not in self.coordinate_df:
             self.coordinate_df[self.current_coordinate] = {}
-        df = pd.DataFrame(columns=cols)
-        for client, stats in aggregated_dict.items():
-            client_name = f"{client}{suffix}"
-            self.coordinate_df[self.current_coordinate][client_name] = stats.copy()
+        df = pd.DataFrame(columns=columns)
+        for device_eid, metrics in aggregated_metrics.items():
+            client_name = f"{device_eid}{client_suffix}"
+            self.coordinate_df[self.current_coordinate][client_name] = metrics.copy()
             self.coordinate_df[self.current_coordinate][client_name]["coordinate"] = self.current_coordinate
             self.coordinate_df[self.current_coordinate][client_name]["Status"] = "running"
 
             if self.rotation_enabled:
                 self.coordinate_df[self.current_coordinate][client_name]["angle"] = self.current_angle
         rows = []
-        for client, stats in self.coordinate_df[self.current_coordinate].items():
+        for client_name, metrics in self.coordinate_df[self.current_coordinate].items():
             row = {
-                'Client': client,
-                'ConnectAttempt': stats.get('ConnectAttempt', 0),
-                'Disconnected': stats.get('Disconnected', 0),
-                'Scanning': stats.get('Scanning', 0),
-                'Association Rejection': stats.get('Association Rejection', 0),
-                'Connected': stats.get('Connected', 0),
-                'Iterations': r + 1,
-                'Status': stats.get('Status', 'NA'),
-                'coordinate': stats.get('coordinate', 'NA')
+                'Client': client_name,
+                'ConnectAttempt': metrics.get('ConnectAttempt', 0),
+                'Disconnected': metrics.get('Disconnected', 0),
+                'Scanning': metrics.get('Scanning', 0),
+                'Association Rejection': metrics.get('Association Rejection', 0),
+                'Connected': metrics.get('Connected', 0),
+                'Iterations': iteration + 1,
+                'Status': metrics.get('Status', 'NA'),
+                'coordinate': metrics.get('coordinate', 'NA')
             }
             if self.rotation_enabled:
-                row['angle'] = stats.get('angle', 'NA')
+                row['angle'] = metrics.get('angle', 'NA')
             rows.append(row)
 
-        df = pd.DataFrame(rows, columns=cols)
+        df = pd.DataFrame(rows, columns=columns)
         self.result_df = df.copy()
 
         df.to_csv(f"{self.report_path}/overall_reset_{self.current_coordinate}.csv", index=False)
@@ -800,9 +800,9 @@ class InteropPortReset(Realm):
                                                                 iteration=iteration)
                 per_iteration_results[iteration] = iteration_metrics
                 if self.robot_test:
-                    self.generate_coordinate_csv(reset_dict=per_iteration_results, r=iteration)
+                    self.write_coordinate_csv(per_iteration_results=per_iteration_results, iteration=iteration)
                 else:
-                    self.create_dict_csv(per_iteration_results)
+                    self.write_overall_csv(per_iteration_results)
                 if self.dowebgui:
                     with open(self.result_dir + f"/../../Running_instances/{self.lanforge_ip}_{self.test_name}_running.json",
                               'r') as file:
@@ -1661,18 +1661,18 @@ class InteropPortReset(Realm):
         else:
             self.lf_report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
 
-    def create_dict_csv(self, port_reset_dict):
+    def write_overall_csv(self, per_iteration_results):
         """
         Aggregate client connection stats from all iterations and save a summary CSV (overall_reset.csv).
         """
-        i_df = {}
+        totals_per_device = {}
 
-        for _, devices in port_reset_dict.items():
-            if devices is None:
+        for _, iteration_metrics in per_iteration_results.items():
+            if iteration_metrics is None:
                 continue
-            for client, stats in devices.items():
-                if client not in i_df:
-                    i_df[client] = {
+            for device_eid, metrics in iteration_metrics.items():
+                if device_eid not in totals_per_device:
+                    totals_per_device[device_eid] = {
                         'ConnectAttempt': 0,
                         'Disconnected': 0,
                         'Scanning': 0,
@@ -1683,22 +1683,22 @@ class InteropPortReset(Realm):
                     }
 
                 # Use safe addition (handles None and missing keys)
-                i_df[client]['ConnectAttempt'] += stats.get('ConnectAttempt', 0) or 0
-                i_df[client]['Disconnected'] += stats.get('Disconnected', 0) or 0
-                i_df[client]['Scanning'] += stats.get('Scanning', 0) or 0
-                i_df[client]['Association Rejection'] += stats.get('Association Rejection', 0) or 0
-                i_df[client]['Connected'] += stats.get('Connected', 0) or 0
-                i_df[client]['Iterations'] += 1
+                totals_per_device[device_eid]['ConnectAttempt'] += metrics.get('ConnectAttempt', 0) or 0
+                totals_per_device[device_eid]['Disconnected'] += metrics.get('Disconnected', 0) or 0
+                totals_per_device[device_eid]['Scanning'] += metrics.get('Scanning', 0) or 0
+                totals_per_device[device_eid]['Association Rejection'] += metrics.get('Association Rejection', 0) or 0
+                totals_per_device[device_eid]['Connected'] += metrics.get('Connected', 0) or 0
+                totals_per_device[device_eid]['Iterations'] += 1
 
         # Create DataFrame
-        df_summary = pd.DataFrame.from_dict(i_df, orient='index').reset_index()
-        df_summary = df_summary.rename(columns={'index': 'Client'})
-        self.result_df = df_summary.copy()
+        summary_df = pd.DataFrame.from_dict(totals_per_device, orient='index').reset_index()
+        summary_df = summary_df.rename(columns={'index': 'Client'})
+        self.result_df = summary_df.copy()
         # Save and print
-        df_summary.to_csv(f"{self.report_path}/overall_reset.csv", index=False)
+        summary_df.to_csv(f"{self.report_path}/overall_reset.csv", index=False)
         if self.dowebgui:
-            df_summary.to_csv(f"{self.result_dir}/overall_reset.csv", index=False)
-        print(df_summary)
+            summary_df.to_csv(f"{self.result_dir}/overall_reset.csv", index=False)
+        print(summary_df)
 
 
 def main():
