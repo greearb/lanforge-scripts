@@ -997,108 +997,108 @@ class InteropPortReset(Realm):
         except Exception as e:
             logger.error(str(e))
 
-    def generate_overall_graph(self, reset_dict=None, figsize=(13, 5), _alignmen=None, remove_border=None,
+    def generate_overall_graph(self, per_iteration_results=None, figsize=(13, 5), _alignment=None, remove_border=None,
                                bar_width=0.7, _legend_handles=None, _legend_loc="best", _legend_box=None,
                                _legend_ncol=1,
                                _legend_fontsize=None, text_font=12, bar_text_rotation=45, graph_suffix=""):
-        dict_ = ['Port Resets', 'Disconnected', 'Scans', 'Assoc Attempts', "Association Rejection", 'Connected']
-        data = dict.fromkeys(dict_)
-        data['Port Resets'] = self.iterations * len(self.all_selected_devices)
+        metric_labels = ['Port Resets', 'Disconnected', 'Scans', 'Assoc Attempts', "Association Rejection", 'Connected']
+        metric_totals = dict.fromkeys(metric_labels)
+        metric_totals['Port Resets'] = self.iterations * len(self.all_selected_devices)
 
-        conected_list, laptop_conected_list = [], []
-        disconnected_list, laptop_disconnected_list = [], []
-        scan_state, laptop_scan_state = [], []
-        asso_attempt, laptop_asso_attempt = [], []
-        asso_rej, laptop_asso_rej = [], []
+        connected_counts, laptop_connected_counts = [], []
+        disconnected_counts, laptop_disconnected_counts = [], []
+        scan_counts, laptop_scan_counts = [], []
+        assoc_attempt_counts, laptop_assoc_attempt_counts = [], []
+        assoc_rejection_counts, laptop_assoc_rejection_counts = [], []
 
-        for j in self.adb_device_list:
-            local = []
-            local_2, local_3, local_4, local_5, local_6 = [], [], [], [], []
-            for i in reset_dict:
-                if j in list(reset_dict[i].keys()):
-                    local.append(reset_dict[i][j]['Connected'])
-                    local_2.append(reset_dict[i][j]['Disconnected'])
-                    local_3.append(reset_dict[i][j]['Scanning'])
-                    local_4.append(reset_dict[i][j]['ConnectAttempt'])
-                    local_5.append(reset_dict[i][j]["Association Rejection"])
+        for device_eid in self.adb_device_list:
+            connected = []
+            disconnected, scanning, assoc_attempts, assoc_rejections = [], [], [], []
+            for iteration in per_iteration_results:
+                if device_eid in list(per_iteration_results[iteration].keys()):
+                    connected.append(per_iteration_results[iteration][device_eid]['Connected'])
+                    disconnected.append(per_iteration_results[iteration][device_eid]['Disconnected'])
+                    scanning.append(per_iteration_results[iteration][device_eid]['Scanning'])
+                    assoc_attempts.append(per_iteration_results[iteration][device_eid]['ConnectAttempt'])
+                    assoc_rejections.append(per_iteration_results[iteration][device_eid]["Association Rejection"])
 
-            conected_list.append(local)
-            disconnected_list.append(local_2)
-            scan_state.append(local_3)
-            asso_attempt.append(local_4)
-            asso_rej.append(local_5)
+            connected_counts.append(connected)
+            disconnected_counts.append(disconnected)
+            scan_counts.append(scanning)
+            assoc_attempt_counts.append(assoc_attempts)
+            assoc_rejection_counts.append(assoc_rejections)
 
-        for j in self.all_laptops:
-            local = []
-            local_2, local_3, local_4, local_5, local_6 = [], [], [], [], []  # noqa: F841
-            for i in reset_dict:
-                if j in list(reset_dict[i].keys()):
-                    local.append(reset_dict[i][j]['Connected'])
-                    local_2.append(reset_dict[i][j]['Disconnected'])
-                    local_3.append(reset_dict[i][j]['Scanning'])
-                    local_4.append(reset_dict[i][j]['ConnectAttempt'])
-                    local_5.append(reset_dict[i][j]["Association Rejection"])
+        for device_eid in self.all_laptops:
+            connected = []
+            disconnected, scanning, assoc_attempts, assoc_rejections = [], [], [], []
+            for iteration in per_iteration_results:
+                if device_eid in list(per_iteration_results[iteration].keys()):
+                    connected.append(per_iteration_results[iteration][device_eid]['Connected'])
+                    disconnected.append(per_iteration_results[iteration][device_eid]['Disconnected'])
+                    scanning.append(per_iteration_results[iteration][device_eid]['Scanning'])
+                    assoc_attempts.append(per_iteration_results[iteration][device_eid]['ConnectAttempt'])
+                    assoc_rejections.append(per_iteration_results[iteration][device_eid]["Association Rejection"])
 
-            conected_list.append(local)
-            disconnected_list.append(local_2)
-            scan_state.append(local_3)
-            asso_attempt.append(local_4)
-            asso_rej.append(local_5)
-        conected_list = conected_list + laptop_conected_list
-        disconnected_list = disconnected_list + laptop_disconnected_list
-        scan_state = scan_state + laptop_scan_state
-        asso_attempt = asso_attempt + laptop_asso_attempt
-        asso_rej = asso_rej + laptop_asso_rej
+            connected_counts.append(connected)
+            disconnected_counts.append(disconnected)
+            scan_counts.append(scanning)
+            assoc_attempt_counts.append(assoc_attempts)
+            assoc_rejection_counts.append(assoc_rejections)
+        connected_counts = connected_counts + laptop_connected_counts
+        disconnected_counts = disconnected_counts + laptop_disconnected_counts
+        scan_counts = scan_counts + laptop_scan_counts
+        assoc_attempt_counts = assoc_attempt_counts + laptop_assoc_attempt_counts
+        assoc_rejection_counts = assoc_rejection_counts + laptop_assoc_rejection_counts
 
         # count connects and disconnects
-        scan, ass_atmpt = 0, 0
-        for i, _ in zip(range(len(scan_state)), range(len(asso_attempt))):
-            for m in scan_state[i]:
-                scan = scan + m
-            for n in asso_attempt[i]:
-                ass_atmpt = ass_atmpt + int(n)
+        scan_total, assoc_attempt_total = 0, 0
+        for index, _ in zip(range(len(scan_counts)), range(len(assoc_attempt_counts))):
+            for count in scan_counts[index]:
+                scan_total = scan_total + count
+            for count in assoc_attempt_counts[index]:
+                assoc_attempt_total = assoc_attempt_total + int(count)
 
-        conects, disconnects = 0, 0
-        for i, _ in zip(range(len(conected_list)), range(len(disconnected_list))):
-            for m in conected_list[i]:
-                conects = conects + m
-            for n in disconnected_list[i]:
-                disconnects = disconnects + n
+        connect_total, disconnect_total = 0, 0
+        for index, _ in zip(range(len(connected_counts)), range(len(disconnected_counts))):
+            for count in connected_counts[index]:
+                connect_total = connect_total + count
+            for count in disconnected_counts[index]:
+                disconnect_total = disconnect_total + count
 
-        assorej = 0
-        for i in (range(len(asso_rej))):
-            for m in asso_rej[i]:
-                assorej = assorej + m
+        assoc_rejection_total = 0
+        for index in (range(len(assoc_rejection_counts))):
+            for count in assoc_rejection_counts[index]:
+                assoc_rejection_total = assoc_rejection_total + count
 
-        data['Disconnected'] = disconnects
-        data['Scans'] = scan
-        data['Assoc Attempts'] = ass_atmpt
-        data['Connected'] = conects
-        data["Association Rejection"] = assorej
-        # print("Final data for overall graph: ", data)
+        metric_totals['Disconnected'] = disconnect_total
+        metric_totals['Scans'] = scan_total
+        metric_totals['Assoc Attempts'] = assoc_attempt_total
+        metric_totals['Connected'] = connect_total
+        metric_totals["Association Rejection"] = assoc_rejection_total
+        # print("Final data for overall graph: ", metric_totals)
 
         # creating the dataset
         self.graph_image_name = f"overall_graph{graph_suffix}"
-        courses = list(data.keys())
-        values = list(data.values())
+        bar_labels = list(metric_totals.keys())
+        bar_totals = list(metric_totals.values())
 
-        fig_size, ax = plt.subplots(figsize=figsize, gridspec_kw=_alignmen)
+        fig, ax = plt.subplots(figsize=figsize, gridspec_kw=_alignment)
         # to remove the borders
         if remove_border is not None:
             for border in remove_border:
                 ax.spines[border].set_color(None)
                 if 'left' in remove_border:  # to remove the y-axis labeling
-                    yaxis_visable = False
+                    yaxis_visible = False
                 else:
-                    yaxis_visable = True
-                ax.yaxis.set_visible(yaxis_visable)
+                    yaxis_visible = True
+                ax.yaxis.set_visible(yaxis_visible)
 
         # creating the bar plot
         colors = ('#f56122', '#00FF00', '#f5ea22', '#3D85C6', '#fa4d4d', "forestgreen")
-        for bar_values, color, i in zip(values, colors, range(len(courses))):
-            plt.bar(courses[i], bar_values, color=color, width=bar_width)
-        for item, value in enumerate(values):
-            plt.text(item, value, "{value}".format(value=value), ha='center', rotation=bar_text_rotation,
+        for bar_total, color, index in zip(bar_totals, colors, range(len(bar_labels))):
+            plt.bar(bar_labels[index], bar_total, color=color, width=bar_width)
+        for index, value in enumerate(bar_totals):
+            plt.text(index, value, "{value}".format(value=value), ha='center', rotation=bar_text_rotation,
                      fontsize=text_font)
 
         plt.xlabel("", fontweight='bold', fontsize=15)
@@ -1115,32 +1115,32 @@ class InteropPortReset(Realm):
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         return "%s.png" % self.graph_image_name
 
-    def per_client_graph(self, data=None, name=None, figsize=(13, 5), _alignmen=None, remove_border=None, bar_width=0.5,
+    def per_client_graph(self, metric_totals=None, image_name=None, figsize=(13, 5), _alignment=None, remove_border=None, bar_width=0.5,
                          _legend_loc="best", _legend_box=None, _legend_fontsize=None, text_font=12,
                          bar_text_rotation=45, xaxis_name="", yaxis_name="", graph_title_size=16,
                          graph_title="Client %s Performance Port Reset Totals"):
-        self.graph_image_name = name
-        courses = list(data.keys())
-        values = list(data.values())
+        self.graph_image_name = image_name
+        bar_labels = list(metric_totals.keys())
+        bar_totals = list(metric_totals.values())
 
         # fig = plt.figure(figsize=(12, 4))
-        fig_size, ax = plt.subplots(figsize=figsize, gridspec_kw=_alignmen)
+        fig, ax = plt.subplots(figsize=figsize, gridspec_kw=_alignment)
         # to remove the borders
         if remove_border is not None:
             for border in remove_border:
                 ax.spines[border].set_color(None)
                 if 'left' in remove_border:  # to remove the y-axis labeling
-                    yaxis_visable = False
+                    yaxis_visible = False
                 else:
-                    yaxis_visable = True
-                ax.yaxis.set_visible(yaxis_visable)
+                    yaxis_visible = True
+                ax.yaxis.set_visible(yaxis_visible)
 
         # creating the bar plot
         colors = ('#f56122', '#00FF00', '#f5ea22', '#3D85C6', '#fa4d4d', "forestgreen")
-        for bar_values, color, i in zip(values, colors, range(len(courses))):
-            plt.bar(courses[i], bar_values, color=color, width=bar_width)
-        for item, value in enumerate(values):
-            plt.text(item, value, "{value}".format(value=value), ha='center', va='bottom', rotation=bar_text_rotation,
+        for bar_total, color, index in zip(bar_totals, colors, range(len(bar_labels))):
+            plt.bar(bar_labels[index], bar_total, color=color, width=bar_width)
+        for index, value in enumerate(bar_totals):
+            plt.text(index, value, "{value}".format(value=value), ha='center', va='bottom', rotation=bar_text_rotation,
                      fontsize=text_font)
 
         plt.xlabel(xaxis_name, fontweight='bold', fontsize=15)
@@ -1154,69 +1154,69 @@ class InteropPortReset(Realm):
         plt.suptitle(graph_title, fontsize=graph_title_size)
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         # generate csv
-        print(data)
-        df = pd.DataFrame(data=data, index=[1])
+        print(metric_totals)
+        df = pd.DataFrame(data=metric_totals, index=[1])
         print(df)
-        df.to_csv('{}/{}.csv'.format(self.report_path, name))
+        df.to_csv('{}/{}.csv'.format(self.report_path, image_name))
         return "%s.png" % self.graph_image_name
 
-    def generate_overall_graph_table(self, reset_dict, device_list):
+    def generate_overall_graph_table(self, per_iteration_results, device_list):
         if self.robot_test:
             self.total_resets, self.total_disconnects, self.total_scans, self.total_assoc_attempts, self.total_assoc_rejections, self.total_connects = [], [], [], [], [], []
-        for y, _ in zip(device_list, range(len(device_list))):
-            reset_count_ = list(reset_dict.keys())
-            reset_count = []
-            for i in reset_count_:
-                reset_count.append(int(i) + 1)
-            asso_attempts, disconnected, scanning, connected, assorej, remarks = [], [], [], [], [], []
+        for device_eid, _ in zip(device_list, range(len(device_list))):
+            iteration_indexes = list(per_iteration_results.keys())
+            iteration_numbers = []
+            for iteration_index in iteration_indexes:
+                iteration_numbers.append(int(iteration_index) + 1)
+            assoc_attempts, disconnected, scanning, connected, assoc_rejections, remarks = [], [], [], [], [], []
 
-            for i in reset_dict:
-                asso_attempts.append(reset_dict[i][y]["ConnectAttempt"])
-                disconnected.append(reset_dict[i][y]["Disconnected"])
-                scanning.append(reset_dict[i][y]["Scanning"])
-                connected.append(reset_dict[i][y]["Connected"])
-                assorej.append(reset_dict[i][y]["Association Rejection"])
-                remarks.append(reset_dict[i][y]["Remarks"])
+            for iteration in per_iteration_results:
+                assoc_attempts.append(per_iteration_results[iteration][device_eid]["ConnectAttempt"])
+                disconnected.append(per_iteration_results[iteration][device_eid]["Disconnected"])
+                scanning.append(per_iteration_results[iteration][device_eid]["Scanning"])
+                connected.append(per_iteration_results[iteration][device_eid]["Connected"])
+                assoc_rejections.append(per_iteration_results[iteration][device_eid]["Association Rejection"])
+                remarks.append(per_iteration_results[iteration][device_eid]["Remarks"])
 
             # graph calculation
-            dict_ = ['Port Resets', 'Disconnects', 'Scans', 'Association Attempts', "Association Rejections",
-                     'Connects']
-            data = dict.fromkeys(dict_)
-            data['Port Resets'] = self.iterations
+            metric_labels = ['Port Resets', 'Disconnects', 'Scans', 'Association Attempts', "Association Rejections",
+                             'Connects']
+            metric_totals = dict.fromkeys(metric_labels)
+            metric_totals['Port Resets'] = self.iterations
 
-            dis = 0
-            for i in disconnected:
-                dis = dis + i
-            data['Disconnects'] = dis
+            disconnect_total = 0
+            for count in disconnected:
+                disconnect_total = disconnect_total + count
+            metric_totals['Disconnects'] = disconnect_total
 
-            scan = 0
-            for i in scanning:
-                scan = scan + i
-            data['Scans'] = scan
+            scan_total = 0
+            for count in scanning:
+                scan_total = scan_total + count
+            metric_totals['Scans'] = scan_total
 
-            asso = 0
-            for i in asso_attempts:
-                asso = asso + i
-            data['Association Attempts'] = asso
+            assoc_attempt_total = 0
+            for count in assoc_attempts:
+                assoc_attempt_total = assoc_attempt_total + count
+            metric_totals['Association Attempts'] = assoc_attempt_total
 
-            asso_rej = 0
-            for i in assorej:
-                asso_rej = asso_rej + i
-            data["Association Rejections"] = asso_rej
+            assoc_rejection_total = 0
+            for count in assoc_rejections:
+                assoc_rejection_total = assoc_rejection_total + count
+            metric_totals["Association Rejections"] = assoc_rejection_total
 
-            con = 0
-            for i in connected:
-                con = con + i
-            data['Connects'] = con
+            connect_total = 0
+            for count in connected:
+                connect_total = connect_total + count
+            metric_totals['Connects'] = connect_total
 
-            # print(f"Final data for per client graph for {y}: {data}")
+            # print(f"Final data for per client graph for {device_eid}: {metric_totals}")
 
             # fetching the total dissconnects, connects, ass_attemsts, ass_rejections, scans
             self.total_resets.append(self.iterations)
             self.total_disconnects.append(sum(disconnected))
             self.total_scans.append(sum(scanning))
-            self.total_assoc_attempts.append(sum(asso_attempts))
-            self.total_assoc_rejections.append(sum(assorej))
+            self.total_assoc_attempts.append(sum(assoc_attempts))
+            self.total_assoc_rejections.append(sum(assoc_rejections))
             self.total_connects.append(sum(connected))
 
     def individual_client_info(self, reset_dict, device_list):
@@ -1286,8 +1286,8 @@ class InteropPortReset(Realm):
                 self.lf_report.build_objective()
 
             # per client graph generation
-            graph2 = self.per_client_graph(data=data, name="per_client_" + str(z), figsize=(13, 5),
-                                           _alignmen={"left": 0.1}, remove_border=['top', 'right'],
+            graph2 = self.per_client_graph(metric_totals=data, image_name="per_client_" + str(z), figsize=(13, 5),
+                                           _alignment={"left": 0.1}, remove_border=['top', 'right'],
                                            _legend_loc="upper left", _legend_fontsize=9, _legend_box=(1, 1),
                                            yaxis_name="COUNT",
                                            graph_title="Client " + str(y) + " Total Reset Performance Graph")
@@ -1371,7 +1371,7 @@ class InteropPortReset(Realm):
                                         # " Here real clients used is "+ str(self.clients) + "and number of resets provided is " + str(self.iterations)
                                         )
             self.lf_report.build_objective()
-            graph1 = self.generate_overall_graph(reset_dict=reset_dict, figsize=(13, 5), _alignmen=None, bar_width=0.5,
+            graph1 = self.generate_overall_graph(per_iteration_results=reset_dict, figsize=(13, 5), _alignment=None, bar_width=0.5,
                                                  _legend_loc="upper center", _legend_ncol=6, _legend_fontsize=10,
                                                  _legend_box=(0.5, -0.06), text_font=12)
             # graph1 = self.generate_per_station_graph()
@@ -1381,7 +1381,7 @@ class InteropPortReset(Realm):
 
             all_devices = self.adb_device_list + self.all_laptops
 
-            self.generate_overall_graph_table(reset_dict=reset_dict, device_list=all_devices)
+            self.generate_overall_graph_table(per_iteration_results=reset_dict, device_list=all_devices)
 
             d_name, device_type, model, user_name, release = [], [], [], [], []  # noqa: F841
             for dev in self.adb_device_list:
@@ -1539,7 +1539,7 @@ class InteropPortReset(Realm):
                     self.lf_report.build_objective()
 
                     graph_suffix = f"{self.coordinate_list[coordinate]}_{self.rotation_list[angle]}"
-                    graph1 = self.generate_overall_graph(reset_dict=reset_dict, figsize=(13, 5), _alignmen=None, bar_width=0.5,
+                    graph1 = self.generate_overall_graph(per_iteration_results=reset_dict, figsize=(13, 5), _alignment=None, bar_width=0.5,
                                                          _legend_loc="upper center", _legend_ncol=6, _legend_fontsize=10,
                                                          _legend_box=(0.5, -0.06), text_font=12, graph_suffix=graph_suffix)
                     # graph1 = self.generate_per_station_graph()
@@ -1548,7 +1548,7 @@ class InteropPortReset(Realm):
                     self.lf_report.build_graph()
                     all_devices = self.adb_device_list + self.all_laptops
 
-                    self.generate_overall_graph_table(reset_dict=reset_dict, device_list=all_devices)
+                    self.generate_overall_graph_table(per_iteration_results=reset_dict, device_list=all_devices)
 
                     d_name, device_type, model, user_name, release = [], [], [], [], []  # noqa: F841
 
@@ -1603,7 +1603,7 @@ class InteropPortReset(Realm):
                                             _obj="")
                 self.lf_report.build_objective()
                 graph_suffix = f"{self.coordinate_list[coordinate]}"
-                graph1 = self.generate_overall_graph(reset_dict=reset_dict, figsize=(13, 5), _alignmen=None, bar_width=0.5,
+                graph1 = self.generate_overall_graph(per_iteration_results=reset_dict, figsize=(13, 5), _alignment=None, bar_width=0.5,
                                                      _legend_loc="upper center", _legend_ncol=6, _legend_fontsize=10,
                                                      _legend_box=(0.5, -0.06), text_font=12, graph_suffix=graph_suffix)
                 # graph1 = self.generate_per_station_graph()
@@ -1612,7 +1612,7 @@ class InteropPortReset(Realm):
                 self.lf_report.build_graph()
                 all_devices = self.adb_device_list + self.all_laptops
 
-                self.generate_overall_graph_table(reset_dict=reset_dict, device_list=all_devices)
+                self.generate_overall_graph_table(per_iteration_results=reset_dict, device_list=all_devices)
 
                 d_name, device_type, model, user_name, release = [], [], [], [], []  # noqa: F841
 
