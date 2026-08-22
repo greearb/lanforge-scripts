@@ -108,6 +108,9 @@ class InteropPortReset(Realm):
         get_live_view=False,
         total_floors=0,
     ):
+        """Build the test object from CLI settings and prepare the report helpers.
+
+        InteropPortReset("192.168.244.97", ssid="Authtesting", iterations=10)"""
         super().__init__(lfclient_host=lanforge_ip, lfclient_port=8080)
         self.total_connects = []
         self.total_assoc_rejections = []
@@ -183,10 +186,9 @@ class InteropPortReset(Realm):
         #                     level=logging.INFO, force=True)
 
     def json_get_with_retry(self, url, wait_time=40, poll_interval=5, debug_=False):
-        """
-        Calls self.json_get(url), retrying every poll_interval seconds for up
-        to wait_time seconds if LANforge returns no response.
-        """
+        """Take a LANforge URL and return its JSON response, or None on failure.
+
+        "/port/1/1/eth1?fields=ip" -> {"interface": {"ip": "192.168.1.1"}}"""
         start_time = time.time()
         response = self.json_get(url, debug_=debug_)
         while response is None and (time.time() - start_time) < wait_time:
@@ -209,6 +211,9 @@ class InteropPortReset(Realm):
         # for --upstream_port. This is only called once, at test start, and we cannot
         # proceed without a resolved manager IP, so retry for a while and then
         # abort instead of silently continuing with an unresolved port name.
+        """Take an upstream port name and return its IP address as a string.
+
+        "eth1" -> "192.168.1.1"; an IP passed in comes back unchanged"""
         if upstream_port.count(".") != 3:
             shelf, resource, port_name, _ = self.name_to_eid(upstream_port)
             response = self.json_get_with_retry(
@@ -233,6 +238,9 @@ class InteropPortReset(Realm):
 
     def selecting_devices_from_available(self):
         # If device list is not provided by user, then it shows the available devices to choose from
+        """Pick the devices to test and store the selection.
+
+        Fills self.final_selected_android_list, e.g. ["1.10", "1.12"]"""
         if self.device_list is None:
             configurable_devices = (
                 self.base_interop_profile.query_all_devices_to_configure_wifi()
@@ -295,6 +303,9 @@ class InteropPortReset(Realm):
 
     def create_log_file(self, json_list, file_name="empty.json"):
         # Convert the list of JSON values to a JSON-formatted string
+        """Write wifi messages as JSON under the report Wifi_Messages folder.
+
+        ([{...}], "reset_0_log.json") -> Wifi_Messages/reset_0_log.json"""
         json_string = json.dumps(json_list)
         new_folder = os.path.join(self.report_path, "Wifi_Messages")
         if not (os.path.exists(new_folder) and os.path.isdir(new_folder)):
@@ -305,6 +316,9 @@ class InteropPortReset(Realm):
             file.write(json_string)
 
     def remove_files_with_duplicate_names(self, folder_path):
+        """Delete every file in a folder whose name was already seen.
+
+        "<report>/Wifi_Messages/" -> keeps the first of each name"""
         file_names = {}
         for root, _, files in os.walk(folder_path):
             for file in files:
@@ -319,6 +333,9 @@ class InteropPortReset(Realm):
                     file_names[file_name] = file_path
 
     def get_last_wifi_msg_timestamp(self):
+        """Return the newest wifi message time-stamp, or "NA" if unreadable.
+
+        -> "1787389179894", epoch ms, the baseline for one reset"""
         response = self.json_get_with_retry("/wifi-msgs/last/1", debug_=True)
         try:
             last_timestamp = response["wifi-messages"]["time-stamp"]
@@ -347,6 +364,9 @@ class InteropPortReset(Realm):
     def count_wifi_msg_matches(
         self, wifi_messages=None, message_keys=None, device_eid=None, match_text=None
     ):
+        """Count one device wifi messages containing every word of match_text.
+
+        (msgs, keys, "1.29.en0", "STA is connected") -> 2"""
         matches = []
         eid_parts = device_eid.split(".")
         port_name = eid_parts[2]
@@ -434,6 +454,9 @@ class InteropPortReset(Realm):
     ):
         # print("Waiting for 20 sec to fetch the logs...")
         # time.sleep(20)
+        """Count one device wifi events since a time-stamp and return metrics.
+
+        -> {"1.29.en0": {"Connected": 1, "Disconnected": 1, ...}}"""
         wifi_msgs_response = self.json_get_with_retry(
             "/wifi-msgs/since=time/" + str(since_time), debug_=True
         )
@@ -918,12 +941,18 @@ class InteropPortReset(Realm):
 
     def write_iteration_csvs(self, device_metrics, iteration):
         # storing results in csv file for each reset
+        """Write one CSV per device with its metrics for a single iteration.
+
+        ({"1.29.en0": {...}}, 0) -> <report>/1.29.en0_0.csv"""
         for device_eid, metrics in device_metrics.items():
             df = pd.DataFrame([metrics])
             filename = f"{self.report_path}/{device_eid}_{iteration}.csv"
             df.to_csv(filename, index=False)
 
     def aggregate_device_metrics(self, per_iteration_results):
+        """Add up each device counts over all iterations, per device.
+
+        {0: {"eid": {"Connected": 1}}, 1: {...}} -> {"eid": {"Connected": 2}}"""
         aggregated_metrics = {}
         for iteration in sorted(per_iteration_results.keys()):
             if per_iteration_results[iteration] is None:
@@ -944,6 +973,9 @@ class InteropPortReset(Realm):
         return dict(aggregated_metrics)
 
     def write_coordinate_csv(self, per_iteration_results, iteration):
+        """Write the per-device totals for the current coordinate as a CSV.
+
+        -> <report>/overall_reset_<coordinate>.csv; also sets self.result_df"""
         columns = [
             "Client",
             "ConnectAttempt",
@@ -1012,6 +1044,9 @@ class InteropPortReset(Realm):
             )
 
     def performing_resets(self, test_start_time=None):
+        """Run every reset iteration and return its metrics with the duration.
+
+        -> ({0: {"1.29.en0": {...}}, 1: {...}}, timedelta 0:05:12)"""
         iteration_indexes = []
         for index in range(self.iterations):
             iteration_indexes.append(index)
@@ -1208,6 +1243,9 @@ class InteropPortReset(Realm):
 
     # @property
     def run(self):
+        """Connect the devices, run all resets, return results and duration.
+
+        -> ({0: {"1.29.en0": {...}}, ...}, timedelta 0:05:12)"""
         try:
             # start timer
             test_start = datetime.now()
@@ -1453,6 +1491,9 @@ class InteropPortReset(Realm):
         bar_text_rotation=45,
         graph_suffix="",
     ):
+        """Draw the all-device bar graph and return the image file name.
+
+        -> "overall_graph.png", saved in the report folder"""
         metric_labels = [
             "Port Resets",
             "Disconnected",
@@ -1632,6 +1673,9 @@ class InteropPortReset(Realm):
         graph_title_size=16,
         graph_title="Client %s Performance Port Reset Totals",
     ):
+        """Draw one device totals as a bar graph and return the file name.
+
+        ({"Connects": 5}, "per_client_0") -> "per_client_0.png" file"""
         self.graph_image_name = image_name
         bar_labels = list(metric_totals.keys())
         bar_totals = list(metric_totals.values())
@@ -1689,6 +1733,9 @@ class InteropPortReset(Realm):
         return "%s.png" % self.graph_image_name
 
     def generate_overall_graph_table(self, per_iteration_results, device_list):
+        """Total every device counts for the report summary table.
+
+        Fills self.total_connects, self.total_disconnects, one per device"""
         if self.robot_test:
             (
                 self.total_resets,
@@ -1782,6 +1829,9 @@ class InteropPortReset(Realm):
     def individual_client_info(self, per_iteration_results, device_list):
         # per client table and graphs
         # self.total_resets, self.total_disconnects, self.total_scans, self.total_assoc_attempts, self.total_assoc_rejections, self.total_connects = [], [], [], [], [], []
+        """Add a per-iteration graph and table for every device to the report.
+
+        (results, ["1.29.en0"]) -> a graph and table per device"""
         for device_eid, device_index in zip(device_list, range(len(device_list))):
             iteration_indexes = list(per_iteration_results.keys())
             iteration_numbers = []
@@ -1922,6 +1972,9 @@ class InteropPortReset(Realm):
             self.lf_report.save_csv("overall_report.csv", client_table_df)
 
     def generate_report(self, per_iteration_results=None, test_duration=None):
+        """Build the HTML and PDF report for a normal run.
+
+        (results, timedelta 0:05:12) -> report under self.report_path"""
         try:
             # print("per iteration results", per_iteration_results)
             # print("Test Duration", test_duration)
@@ -2088,12 +2141,9 @@ class InteropPortReset(Realm):
             logging.warning(str(e))
 
     def add_live_view_images_to_report(self):
-        """
-        This function looks for throughput and RSSI images for each floor
-        in the 'live_view_images' folder within `self.result_dir`.
-        It waits up to **60 seconds** for each image. If an image is found,
-        it's added to the `report` on a new page; otherwise, it's skipped.
-        """
+        """Add each floor live-view image to the report, skipping missing ones.
+
+        -> one page per image in <result_dir>/live_view_images/"""
         for floor in range(0, int(self.total_floors)):
             port_reset_image_path = os.path.join(
                 self.result_dir,
@@ -2119,6 +2169,9 @@ class InteropPortReset(Realm):
                 self.lf_report.build_custom()
 
     def generate_report_for_robo(self):
+        """Build the HTML and PDF report for a robot run.
+
+        -> report with coordinate results under self.report_path"""
         date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
         # self.lf_report.move_data(_file_name="overall_reset_test.log")
         security = ""
@@ -2403,9 +2456,9 @@ class InteropPortReset(Realm):
             )
 
     def write_overall_csv(self, per_iteration_results):
-        """
-        Aggregate client connection stats from all iterations and save a summary CSV (overall_reset.csv).
-        """
+        """Add up every device counts over all iterations into one CSV.
+
+        {0: {"1.29.en0": {...}}, ...} -> <report>/overall_reset.csv"""
         totals_per_device = {}
 
         for _, iteration_metrics in per_iteration_results.items():
@@ -2455,6 +2508,8 @@ class InteropPortReset(Realm):
 
 
 def main():
+    """Parse the command line, run the port reset test, and write its report."""
+    
     help_summary = """\
     The LANforge interop port reset test enables users to use real Wi-Fi stations and connect them to the Access Point
     being tested. It then disconnects and reconnects a given number of stations at different time intervals.
