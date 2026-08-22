@@ -182,8 +182,6 @@ class InteropPortReset(Realm):
         )
 
         self.utility = base.UtilityInteropWifi(host_ip=self.lanforge_ip)
-        # logging.basicConfig(filename='port_reset.log', filemode='w', format='%(asctime)s - %(message)s',
-        #                     level=logging.INFO, force=True)
 
     def json_get_with_retry(self, url, wait_time=40, poll_interval=5, debug_=False):
         """Take a LANforge URL and return its JSON response, or None on failure.
@@ -237,7 +235,6 @@ class InteropPortReset(Realm):
         return upstream_port
 
     def selecting_devices_from_available(self):
-        # If device list is not provided by user, then it shows the available devices to choose from
         """Pick the devices to test and store the selection.
 
         Fills self.final_selected_android_list, e.g. ["1.10", "1.12"]"""
@@ -301,7 +298,6 @@ class InteropPortReset(Realm):
         )
 
     def create_log_file(self, json_list, file_name="empty.json"):
-        # Convert the list of JSON values to a JSON-formatted string
         """Write wifi messages as JSON under the report Wifi_Messages folder.
 
         ([{...}], "reset_0_log.json") -> Wifi_Messages/reset_0_log.json"""
@@ -310,7 +306,6 @@ class InteropPortReset(Realm):
         if not (os.path.exists(new_folder) and os.path.isdir(new_folder)):
             os.makedirs(new_folder)
         file_path = f"{self.report_path}/Wifi_Messages/{file_name}"
-        # Write the JSON-formatted string to the .json file
         with open(file_path, "w") as file:
             file.write(json_string)
 
@@ -324,11 +319,9 @@ class InteropPortReset(Realm):
                 file_path = os.path.join(root, file)
                 file_name = os.path.basename(file_path)
                 if file_name in file_names:
-                    # Removing the duplicate file
                     os.remove(file_path)
                     logging.info(f"Removed duplicate file: {file_path}")
                 else:
-                    # Adding the file name to the dictionary
                     file_names[file_name] = file_path
 
     def get_last_wifi_msg_timestamp(self):
@@ -385,19 +378,16 @@ class InteropPortReset(Realm):
                     if message_resource == resource_id:
                         if port_name in message_tokens:
                             if match_text in message_tokens:
-                                # logging.info(f"The filter '{match_text}' is present in the Wi-Fi message test list.")
                                 matches.append("YES")
                             else:
                                 match_tokens = self.tokenize_wifi_msg(match_text)
                                 if all(
                                     token in message_tokens for token in match_tokens
                                 ):
-                                    # logging.info(f"The filter {match_tokens} sequence is present in Wi-Fi msg.")
                                     matches.append("YES")
                         else:
-                            if f"IFNAME={port_name}" in message_tokens:  # for linux
+                            if f"IFNAME={port_name}" in message_tokens:
                                 if match_text in message_tokens:
-                                    # logging.info(f"The filter '{match_text}' is present in the Wi-Fi message test list.")
                                     matches.append("YES")
                                 else:
                                     match_tokens = self.tokenize_wifi_msg(match_text)
@@ -405,16 +395,14 @@ class InteropPortReset(Realm):
                                         token in message_tokens
                                         for token in match_tokens
                                     ):
-                                        # logging.info(f"The filter {match_tokens} sequence is present in Wi-Fi msg.")
                                         matches.append("YES")
             else:  # if wifi_msg_text is list
                 for message_line in wifi_msg_text:
                     message_tokens = self.tokenize_wifi_msg(message_line)
                     if port_name is not None:
                         if message_resource == resource_id:
-                            if port_name in message_tokens:  # for android
+                            if port_name in message_tokens:
                                 if match_text in message_tokens:
-                                    # logging.info(f"The filter '{match_text}' is present in the Wi-Fi message test list.")
                                     matches.append("YES")
                                 else:
                                     match_tokens = self.tokenize_wifi_msg(match_text)
@@ -422,12 +410,10 @@ class InteropPortReset(Realm):
                                         token in message_tokens
                                         for token in match_tokens
                                     ):
-                                        # logging.info(f"The filter {match_tokens} sequence is present in Wi-Fi msg.")
                                         matches.append("YES")
                             else:
-                                if f"IFNAME={port_name}" in message_tokens:  # for linux
+                                if f"IFNAME={port_name}" in message_tokens:
                                     if match_text in message_tokens:
-                                        # logging.info(f"The filter '{match_text}' is present in the Wi-Fi message test list.")
                                         matches.append("YES")
                                     else:
                                         match_tokens = self.tokenize_wifi_msg(
@@ -437,7 +423,6 @@ class InteropPortReset(Realm):
                                             token in message_tokens
                                             for token in match_tokens
                                         ):
-                                            # logging.info(f"The filter {match_tokens} sequence is present in Wi-Fi msg.")
                                             matches.append("YES")
         match_count = matches.count("YES")
         return match_count
@@ -450,7 +435,6 @@ class InteropPortReset(Realm):
         file_name="dummy.json",
         iteration=None,
     ):
-        # time.sleep(20)
         """Count one device wifi events since a time-stamp and return metrics.
 
         -> {"1.29.en0": {"Connected": 1, "Disconnected": 1, ...}}"""
@@ -541,7 +525,6 @@ class InteropPortReset(Realm):
                 logging.info(
                     f"Disconnect Count For Android: {android_disconnect_count}"
                 )
-            # Updating the dict with disconnects for android
             logging.info(
                 "Final Disconnect count for %s: %s"
                 % (device_eid, android_disconnect_count)
@@ -607,16 +590,13 @@ class InteropPortReset(Realm):
                     )
                     android_connected_count = 0
                 logging.info(f"Connected Count for Android: {android_connected_count}")
-            # Updating the dict with connects for android
             logging.info(
                 "Final Connected Count for %s: %s"
                 % (device_eid, android_connected_count)
             )
             device_metrics[str(device_eid)]["Connected"] = android_connected_count
-            # Adding remarks
             remarks = "NA"
             device_metrics[str(device_eid)]["Remarks"] = remarks
-            # Updating the association-rejections
             if android_association_attempt > android_connected_count:
                 android_association_rejection = (
                     android_association_attempt - android_connected_count
@@ -714,7 +694,6 @@ class InteropPortReset(Realm):
                 win_connection_state_unverified = False
                 # assoc-rejection based logic
                 if win_association_rejection:
-                    # Updating the connects
                     actual_connects = (
                         win_association_attempt - win_association_rejection
                     )
@@ -753,7 +732,6 @@ class InteropPortReset(Realm):
                     % (device_eid, win_connected_count)
                 )
                 device_metrics[str(device_eid)]["Connected"] = win_connected_count
-                # Updating the association-rejections
                 if win_association_attempt > win_connected_count:
                     win_association_rejection = (
                         win_association_attempt - win_connected_count
@@ -761,7 +739,6 @@ class InteropPortReset(Realm):
                 device_metrics[str(device_eid)][
                     "Association Rejection"
                 ] = win_association_rejection
-                # Adding re-marks
                 remarks = "NA"
                 if win_disconnect_count == 0 and win_connected_count == 1:
                     remarks = "No Disconnections are seen but Client is UP and connected to user given SSID."
@@ -853,7 +830,6 @@ class InteropPortReset(Realm):
                 linux_mac_connection_state_unverified = False
                 # assoc-rejection based logic
                 if linux_mac_association_rejection:
-                    # Updating the connects
                     actual_connects = (
                         linux_mac_association_attempt - linux_mac_association_rejection
                     )
@@ -895,7 +871,6 @@ class InteropPortReset(Realm):
                     % (device_eid, linux_mac_connected_count)
                 )
                 device_metrics[str(device_eid)]["Connected"] = linux_mac_connected_count
-                # Updating the association-rejections
                 if linux_mac_association_attempt > linux_mac_connected_count:
                     linux_mac_association_rejection = (
                         linux_mac_association_attempt - linux_mac_connected_count
@@ -903,7 +878,6 @@ class InteropPortReset(Realm):
                 device_metrics[str(device_eid)][
                     "Association Rejection"
                 ] = linux_mac_association_rejection
-                # Adding remarks
                 remarks = "NA"
                 if linux_mac_disconnect_count == 0 and linux_mac_connected_count == 1:
                     remarks = "No Disconnections are seen but Client is UP and connected to user given SSID."
@@ -934,7 +908,6 @@ class InteropPortReset(Realm):
         return device_metrics
 
     def write_iteration_csvs(self, device_metrics, iteration):
-        # storing results in csv file for each reset
         """Write one CSV per device with its metrics for a single iteration.
 
         ({"1.29.en0": {...}}, 0) -> <report>/1.29.en0_0.csv"""
@@ -1102,13 +1075,9 @@ class InteropPortReset(Realm):
             empty_metrics = dict.fromkeys(metric_names)
 
             for device_eid in self.adb_device_list:
-                device_metrics[device_eid] = (
-                    empty_metrics.copy()
-                )  # for android devices dict
+                device_metrics[device_eid] = empty_metrics.copy()
             for device_eid in self.all_laptops:
-                laptop_metrics[device_eid] = (
-                    empty_metrics.copy()
-                )  # for laptop devices dict
+                laptop_metrics[device_eid] = empty_metrics.copy()
             logging.info(f"Final Outcome dict for android devices: {device_metrics}")
             logging.info(f"Final Outcome dict for laptop devices: {laptop_metrics}")
             logging.info(str(device_metrics))
@@ -1216,7 +1185,6 @@ class InteropPortReset(Realm):
                 )
         else:
             logging.info(f"Test Ended at {test_end}")
-        # logging.info("Test ended at " + test_end_time)
         time_format = "%b %d %H:%M:%S"
         test_duration = datetime.strptime(
             test_end_time, time_format
@@ -1235,13 +1203,11 @@ class InteropPortReset(Realm):
 
         return per_iteration_results, test_duration
 
-    # @property
     def run(self):
         """Connect the devices, run all resets, return results and duration.
 
         -> ({0: {"1.29.en0": {...}}, ...}, timedelta 0:05:12)"""
         try:
-            # start timer
             test_start = datetime.now()
             test_start_time = test_start.strftime("%b %d %H:%M:%S")
             logging.info(f"Test Started at {test_start}")
@@ -1295,7 +1261,6 @@ class InteropPortReset(Realm):
                     f"Separated device names from the full name: {self.android_serials}"
                 )
 
-            # check status of devices
             phantom_states = []
             for device_eid in self.adb_device_list:
                 phantom_states.append(
@@ -1380,7 +1345,6 @@ class InteropPortReset(Realm):
                 logging.info(f"Health Status for the Android Devices: {android_health}")
 
                 logging.info(f"Health Status for the Laptop Devices: {laptop_health}")
-                # Resting Starts from here
                 if not self.robot_test:
                     per_iteration_results, test_duration = self.performing_resets(
                         test_start_time=test_start_time
@@ -1568,7 +1532,6 @@ class InteropPortReset(Realm):
         assoc_attempt_counts = assoc_attempt_counts + laptop_assoc_attempt_counts
         assoc_rejection_counts = assoc_rejection_counts + laptop_assoc_rejection_counts
 
-        # count connects and disconnects
         scan_total, assoc_attempt_total = 0, 0
         for index, _ in zip(range(len(scan_counts)), range(len(assoc_attempt_counts))):
             for count in scan_counts[index]:
@@ -1596,7 +1559,6 @@ class InteropPortReset(Realm):
         metric_totals["Connected"] = connect_total
         metric_totals["Association Rejection"] = assoc_rejection_total
 
-        # creating the dataset
         self.graph_image_name = f"overall_graph{graph_suffix}"
         bar_labels = list(metric_totals.keys())
         bar_totals = list(metric_totals.values())
@@ -1612,7 +1574,6 @@ class InteropPortReset(Realm):
                     yaxis_visible = True
                 ax.yaxis.set_visible(yaxis_visible)
 
-        # creating the bar plot
         colors = ("#f56122", "#00FF00", "#f5ea22", "#3D85C6", "#fa4d4d", "forestgreen")
         for bar_total, color, index in zip(bar_totals, colors, range(len(bar_labels))):
             plt.bar(bar_labels[index], bar_total, color=color, width=bar_width)
@@ -1673,7 +1634,6 @@ class InteropPortReset(Realm):
         bar_labels = list(metric_totals.keys())
         bar_totals = list(metric_totals.values())
 
-        # fig = plt.figure(figsize=(12, 4))
         fig, ax = plt.subplots(figsize=figsize, gridspec_kw=_alignment)
         # to remove the borders
         if remove_border is not None:
@@ -1685,7 +1645,6 @@ class InteropPortReset(Realm):
                     yaxis_visible = True
                 ax.yaxis.set_visible(yaxis_visible)
 
-        # creating the bar plot
         colors = ("#f56122", "#00FF00", "#f5ea22", "#3D85C6", "#fa4d4d", "forestgreen")
         for bar_total, color, index in zip(bar_totals, colors, range(len(bar_labels))):
             plt.bar(bar_labels[index], bar_total, color=color, width=bar_width)
@@ -1718,7 +1677,6 @@ class InteropPortReset(Realm):
         )
         plt.suptitle(graph_title, fontsize=graph_title_size)
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
-        # generate csv
         df = pd.DataFrame(data=metric_totals, index=[1])
         df.to_csv("{}/{}.csv".format(self.report_path, image_name))
         return "%s.png" % self.graph_image_name
@@ -1770,7 +1728,6 @@ class InteropPortReset(Realm):
                 )
                 remarks.append(per_iteration_results[iteration][device_eid]["Remarks"])
 
-            # graph calculation
             metric_labels = [
                 "Port Resets",
                 "Disconnects",
@@ -1807,7 +1764,6 @@ class InteropPortReset(Realm):
                 connect_total = connect_total + count
             metric_totals["Connects"] = connect_total
 
-            # fetching the total dissconnects, connects, ass_attemsts, ass_rejections, scans
             self.total_resets.append(self.iterations)
             self.total_disconnects.append(sum(disconnected))
             self.total_scans.append(sum(scanning))
@@ -1816,8 +1772,6 @@ class InteropPortReset(Realm):
             self.total_connects.append(sum(connected))
 
     def individual_client_info(self, per_iteration_results, device_list):
-        # per client table and graphs
-        # self.total_resets, self.total_disconnects, self.total_scans, self.total_assoc_attempts, self.total_assoc_rejections, self.total_connects = [], [], [], [], [], []
         """Add a per-iteration graph and table for every device to the report.
 
         (results, ["1.29.en0"]) -> a graph and table per device"""
@@ -1859,7 +1813,6 @@ class InteropPortReset(Realm):
                     per_iteration_results[iteration][device_eid]["cx time (us)"]
                 )
 
-            # graph calculation
             metric_labels = [
                 "Port Resets",
                 "Disconnects",
@@ -1897,7 +1850,6 @@ class InteropPortReset(Realm):
             metric_totals["Connects"] = connect_total
 
             if "1.1." in device_eid:
-                # setting the title for per client graph and table represent title.
                 android_user_name = self.interop.get_device_details(
                     device=device_eid, query="user-name"
                 )
@@ -1913,7 +1865,6 @@ class InteropPortReset(Realm):
                 )
                 self.lf_report.build_objective()
             else:
-                # setting the title for per client graph and table represent title.
                 self.lf_report.set_obj_html(
                     "Port Resets for Client " + str(device_eid) + ".",
                     "The below table & graph displays details of "
@@ -1922,7 +1873,6 @@ class InteropPortReset(Realm):
                 )
                 self.lf_report.build_objective()
 
-            # per client graph generation
             client_graph = self.per_client_graph(
                 metric_totals=metric_totals,
                 image_name="per_client_" + str(device_index),
@@ -1937,12 +1887,10 @@ class InteropPortReset(Realm):
                 + str(device_eid)
                 + " Total Reset Performance Graph",
             )
-            # graph1 = self.generate_per_station_graph()
             self.lf_report.set_graph_image(client_graph)
             self.lf_report.move_graph_image()
             self.lf_report.build_graph()
 
-            # per client table data
             per_iteration_table = {
                 "Reset Count": iteration_numbers,
                 "Disconnected": disconnected,
@@ -1963,7 +1911,6 @@ class InteropPortReset(Realm):
 
         (results, timedelta 0:05:12) -> report under self.report_path"""
         try:
-            # logging.info("per iteration results " + str(per_iteration_results))
 
             date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
             security = ""
@@ -1982,7 +1929,6 @@ class InteropPortReset(Realm):
                 "Security": security,
                 "Total Reset Count": self.iterations,
                 "No of Clients": f"{len(self.all_selected_devices)} (Windows: {len(self.windows_list)}, Linux: {len(self.linux_list)}, Mac: {len(self.mac_list)}, Android: {len(self.adb_device_list)})",  # noqa: E501
-                # "Wait Time": str(self.wait_time) + " sec",
                 "Time interval between resets": str(self.reset_interval_sec) + " sec",
                 "Test Duration": test_duration,
             }
@@ -2019,7 +1965,6 @@ class InteropPortReset(Realm):
                 "4.  Association Attempts: Total number of association attempts (Associating state) made by all clients after WiFi is re-enabled in the full test.<br>"
                 "4.  Association Rejections: Total number of association rejections made by all clients after WiFi is re-enabled in the full test.<br>"
                 "6.  Connected: Total number of successful connections (Associated state) achieved by all clients during the test when WiFi is re-enabled.<br>",
-                # " Here real clients used is "+ str(self.clients) + "and number of resets provided is " + str(self.iterations)
             )
             self.lf_report.build_objective()
             overall_graph = self.generate_overall_graph(
@@ -2033,7 +1978,6 @@ class InteropPortReset(Realm):
                 _legend_box=(0.5, -0.06),
                 text_font=12,
             )
-            # graph1 = self.generate_per_station_graph()
             self.lf_report.set_graph_image(overall_graph)
             self.lf_report.move_graph_image()
             self.lf_report.build_graph()
@@ -2093,8 +2037,6 @@ class InteropPortReset(Realm):
                 "Name of the Devices": device_names,
                 "Hardware Version": user_names,
                 "Device Type": device_types,
-                # "Model": model,
-                # "SDK Release": release,
                 "Port Resets": self.total_resets,
                 "Disconnects": self.total_disconnects,
                 "Scans": self.total_scans,
@@ -2108,9 +2050,6 @@ class InteropPortReset(Realm):
             self.individual_client_info(
                 per_iteration_results=per_iteration_results, device_list=all_devices
             )
-            # self.lf_report.set_obj_html("Tested Clients Information:",
-            #                             "The table displays details of real clients which are involved in the test.")
-            # self.lf_report.build_objective()
 
             self.lf_report.build_footer()
             self.lf_report.write_html()
@@ -2121,7 +2060,6 @@ class InteropPortReset(Realm):
                     _page_size="A4", _orientation="Portrait"
                 )
 
-            # self.lf_report.move_data(directory="log", _file_name="port_reset.log")
         except Exception as e:
             logging.warning(str(e))
 
@@ -2158,7 +2096,6 @@ class InteropPortReset(Realm):
 
         -> report with coordinate results under self.report_path"""
         date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
-        # self.lf_report.move_data(_file_name="overall_reset_test.log")
         security = ""
         if self.encryption == "psk2":
             security = "wpa2"
@@ -2175,7 +2112,6 @@ class InteropPortReset(Realm):
             "Security": security,
             "Total Reset Count": self.iterations,
             "No of Clients": f"{len(self.all_selected_devices)} (Windows: {len(self.windows_list)}, Linux: {len(self.linux_list)}, Mac: {len(self.mac_list)}, Android: {len(self.adb_device_list)})",  # noqa: E501
-            # "Wait Time": str(self.wait_time) + " sec",
             "Time interval between resets": str(self.reset_interval_sec) + " sec",
         }
         test_setup_info["Selected Coordinates"] = self.coordinate
@@ -2217,7 +2153,6 @@ class InteropPortReset(Realm):
             "4.  Association Attempts: Total number of association attempts (Associating state) made by all clients after WiFi is re-enabled in the full test.<br>"
             "4.  Association Rejections: Total number of association rejections made by all clients after WiFi is re-enabled in the full test.<br>"
             "6.  Connected: Total number of successful connections (Associated state) achieved by all clients during the test when WiFi is re-enabled.<br>",
-            # " Here real clients used is "+ str(self.clients) + "and number of resets provided is " + str(self.iterations)
         )
         self.lf_report.build_objective()
         for coordinate_index in range(len(self.coordinate_list)):
@@ -2255,7 +2190,6 @@ class InteropPortReset(Realm):
                         text_font=12,
                         graph_suffix=graph_suffix,
                     )
-                    # graph1 = self.generate_per_station_graph()
                     self.lf_report.set_graph_image(overall_graph)
                     self.lf_report.move_graph_image()
                     self.lf_report.build_graph()
@@ -2318,8 +2252,6 @@ class InteropPortReset(Realm):
                         "Name of the Devices": device_names,
                         "Hardware Version": user_names,
                         "Device Type": device_types,
-                        # "Model": model,
-                        # "SDK Release": release,
                         "Port Resets": self.total_resets,
                         "Disconnects": self.total_disconnects,
                         "Scans": self.total_scans,
@@ -2359,7 +2291,6 @@ class InteropPortReset(Realm):
                     text_font=12,
                     graph_suffix=graph_suffix,
                 )
-                # graph1 = self.generate_per_station_graph()
                 self.lf_report.set_graph_image(overall_graph)
                 self.lf_report.move_graph_image()
                 self.lf_report.build_graph()
@@ -2419,8 +2350,6 @@ class InteropPortReset(Realm):
                     "Name of the Devices": device_names,
                     "Hardware Version": user_names,
                     "Device Type": device_types,
-                    # "Model": model,
-                    # "SDK Release": release,
                     "Port Resets": self.total_resets,
                     "Disconnects": self.total_disconnects,
                     "Scans": self.total_scans,
@@ -2479,13 +2408,11 @@ class InteropPortReset(Realm):
                 )
                 totals_per_device[device_eid]["Iterations"] += 1
 
-        # Create DataFrame
         summary_df = pd.DataFrame.from_dict(
             totals_per_device, orient="index"
         ).reset_index()
         summary_df = summary_df.rename(columns={"index": "Client"})
         self.result_df = summary_df.copy()
-        # Save
         summary_df.to_csv(f"{self.report_path}/overall_reset.csv", index=False)
         if self.dowebgui:
             summary_df.to_csv(f"{self.result_dir}/overall_reset.csv", index=False)
@@ -2493,7 +2420,7 @@ class InteropPortReset(Realm):
 
 def main():
     """Parse the command line, run the port reset test, and write its report."""
-    
+
     help_summary = """\
     The LANforge interop port reset test enables users to use real Wi-Fi stations and connect them to the Access Point
     being tested. It then disconnects and reconnects a given number of stations at different time intervals.
@@ -2625,8 +2552,6 @@ INCLUDE_IN_README: False
         default=None,
         action="store_true",
     )
-    # parser.add_argument("--wait_time", type=int, default=20,
-    #                     help='Specify the wait time in seconds for WIFI Supplicant Logs.')
 
     parser.add_argument(
         "--android_releases",
@@ -2636,7 +2561,6 @@ INCLUDE_IN_README: False
         "devices on any other release are skipped. Laptops are unaffected. "
         "eg:- --android_releases 11 12 13",
     )
-    # logging configuration:
     parser.add_argument(
         "--log_level",
         default=None,
@@ -2708,18 +2632,15 @@ INCLUDE_IN_README: False
     )
     args = parser.parse_args()
 
-    # help summary
     if args.help_summary:
         print(help_summary)
         exit(0)
 
-    # set the logger level to debug
     logger_config = lf_logger_config.lf_logger_config()
 
     if args.log_level:
         logger_config.set_level(level=args.log_level)
     if args.lf_logger_config_json:
-        # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
@@ -2731,7 +2652,6 @@ INCLUDE_IN_README: False
         passwd=args.passwd,
         encryption=args.encryp,
         iterations=args.iterations,
-        # clients=args.clients,
         reset_interval_sec=args.reset_interval,
         android_releases=args.android_releases,
         upstream_port=args.upstream_port,
