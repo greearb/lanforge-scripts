@@ -49,6 +49,7 @@ INCLUDE_IN_README: False
 """
 
 import json
+import re
 import sys
 import os
 import importlib
@@ -332,6 +333,17 @@ class InteropPortReset(Realm):
         logging.info(f"Last WiFi Message Time Stamp: {last_timestamp}")
         return last_timestamp
 
+    def tokenize_wifi_msg(self, text):
+        """Take a wifi message string and return its tokens as a list of strings.
+
+        "en0: STA is connected." -> ["en0", "STA", "is", "connected"]"""
+        tokens = []
+        for token in re.split(r"[\s:]+", text.strip()):
+            token = token.strip(".,;")
+            if token:
+                tokens.append(token)
+        return tokens
+
     def count_wifi_msg_matches(
         self, wifi_messages=None, message_keys=None, device_eid=None, match_text=None
     ):
@@ -343,7 +355,9 @@ class InteropPortReset(Realm):
             wifi_msg_text = wifi_messages[index][message_key]["text"]
             message_resource = wifi_messages[index][message_key]["resource"]
             if type(wifi_msg_text) is str:
-                message_tokens = wifi_messages[index][message_key]["text"].split(" ")
+                message_tokens = self.tokenize_wifi_msg(
+                    wifi_messages[index][message_key]["text"]
+                )
                 if port_name is None:
                     logging.info(
                         f"Device {port_name} is None device name not existed in wifi messages..."
@@ -355,7 +369,7 @@ class InteropPortReset(Realm):
                                 # logging.info(f"The filter '{match_text}' is present in the Wi-Fi message test list.")
                                 matches.append("YES")
                             else:
-                                match_tokens = match_text.split(" ")
+                                match_tokens = self.tokenize_wifi_msg(match_text)
                                 if all(
                                     token in message_tokens for token in match_tokens
                                 ):
@@ -367,7 +381,7 @@ class InteropPortReset(Realm):
                                     # logging.info(f"The filter '{match_text}' is present in the Wi-Fi message test list.")
                                     matches.append("YES")
                                 else:
-                                    match_tokens = match_text.split(" ")
+                                    match_tokens = self.tokenize_wifi_msg(match_text)
                                     if all(
                                         token in message_tokens
                                         for token in match_tokens
@@ -376,7 +390,7 @@ class InteropPortReset(Realm):
                                         matches.append("YES")
             else:  # if wifi_msg_text is list
                 for message_line in wifi_msg_text:
-                    message_tokens = message_line.split(" ")
+                    message_tokens = self.tokenize_wifi_msg(message_line)
                     # print("$Wifi Message Text list:", message_tokens)
                     if port_name is not None:
                         if message_resource == resource_id:
@@ -385,7 +399,7 @@ class InteropPortReset(Realm):
                                     # logging.info(f"The filter '{match_text}' is present in the Wi-Fi message test list.")
                                     matches.append("YES")
                                 else:
-                                    match_tokens = match_text.split(" ")
+                                    match_tokens = self.tokenize_wifi_msg(match_text)
                                     if all(
                                         token in message_tokens
                                         for token in match_tokens
@@ -398,7 +412,9 @@ class InteropPortReset(Realm):
                                         # logging.info(f"The filter '{match_text}' is present in the Wi-Fi message test list.")
                                         matches.append("YES")
                                     else:
-                                        match_tokens = match_text.split(" ")
+                                        match_tokens = self.tokenize_wifi_msg(
+                                            match_text
+                                        )
                                         if all(
                                             token in message_tokens
                                             for token in match_tokens
