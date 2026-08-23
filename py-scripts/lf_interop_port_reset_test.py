@@ -221,7 +221,7 @@ class InteropPortReset(Realm):
                 upstream_port = response["interface"]["ip"]
             except (TypeError, KeyError) as e:
                 logging.error(
-                    f"change_port_to_ip: could not resolve upstream port '{upstream_port}' to an IP; LANforge "
+                    f"Could not resolve upstream port '{upstream_port}' to an IP; LANforge "
                     f"response is not in expected format ({e}). Data received: {response}"
                 )
                 logging.critical(
@@ -333,7 +333,7 @@ class InteropPortReset(Realm):
             last_timestamp = response["wifi-messages"]["time-stamp"]
         except (TypeError, KeyError) as e:
             logging.error(
-                f"get_last_wifi_msg_timestamp: LANforge response is not in expected format ({e}). Data received: {response}"
+                f"LANforge response is not in expected format ({e}). Data received: {response}"
             )
             logging.warning(
                 "Could not establish a wifi-msgs baseline timestamp; falling back to 'NA' for this reset."
@@ -445,7 +445,7 @@ class InteropPortReset(Realm):
             wifi_messages = wifi_msgs_response["wifi-messages"]
         except (TypeError, KeyError) as e:
             logging.error(
-                f"collect_device_metrics: LANforge response is not in expected format ({e}) while fetching "
+                f"LANforge response is not in expected format ({e}) while fetching "
                 f"wifi-msgs for device {device_eid}. Data received: {wifi_msgs_response}"
             )
             logging.warning(
@@ -492,7 +492,7 @@ class InteropPortReset(Realm):
             adb_devices = adb_response["devices"]
         except (TypeError, KeyError) as e:
             logging.error(
-                f"collect_device_metrics: LANforge response is not in expected format ({e}) while fetching "
+                f"LANforge response is not in expected format ({e}) while fetching "
                 f"/adb/ devices. Data received: {adb_response}"
             )
             logging.warning(
@@ -621,7 +621,7 @@ class InteropPortReset(Realm):
                     device_metrics[str(device_eid)]["cx time (us)"] = cx_time_us
                 except (TypeError, KeyError) as e:
                     logging.error(
-                        f"collect_device_metrics: could not fetch cx time (us) for device {device_eid}; LANforge "
+                        f"Could not fetch cx time (us) for device {device_eid}; LANforge "
                         f"response is not in expected format ({e}). resource-id response: {resource_id_response}, "
                         f"port response: {port_response}"
                     )
@@ -721,7 +721,7 @@ class InteropPortReset(Realm):
                                     win_connected_count = 0
                             except (TypeError, KeyError) as e:
                                 logging.error(
-                                    f"collect_device_metrics: could not verify connection state for device "
+                                    f"Could not verify connection state for device "
                                     f"{device_eid}; LANforge response is not in expected format ({e}). Data "
                                     f"received: {port_response}"
                                 )
@@ -757,13 +757,64 @@ class InteropPortReset(Realm):
                         device_metrics[str(device_eid)]["cx time (us)"] = cx_time_us
                     except (TypeError, KeyError) as e:
                         logging.error(
-                            f"collect_device_metrics: could not fetch cx time (us) for device {device_eid}; "
+                            f"Could not fetch cx time (us) for device {device_eid}; "
                             f"LANforge response is not in expected format ({e}). Data received: {port_response}"
                         )
                         device_metrics[str(device_eid)]["cx time (us)"] = "NA"
                 else:
                     device_metrics[str(device_eid)]["cx time (us)"] = "NA"
-            else:  # other means (for linux, mac)
+            elif device_eid in self.mac_list:  # for macOS
+                mac_disconnect_count = self.count_wifi_msg_matches(
+                    wifi_messages=wifi_messages,
+                    message_keys=message_keys,
+                    device_eid=device_eid,
+                    match_text="disconnected",
+                )
+                logging.info(
+                    "Final Disconnect count for %s: %s"
+                    % (device_eid, mac_disconnect_count)
+                )
+                device_metrics[device_eid]["Disconnected"] = mac_disconnect_count
+
+                mac_connected_count = self.count_wifi_msg_matches(
+                    wifi_messages=wifi_messages,
+                    message_keys=message_keys,
+                    device_eid=device_eid,
+                    match_text="STA is connected",
+                )
+                logging.info(
+                    "Final Connected count for %s: %s"
+                    % (device_eid, mac_connected_count)
+                )
+                device_metrics[str(device_eid)]["Connected"] = mac_connected_count
+                device_metrics[str(device_eid)]["Scanning"] = 0
+                device_metrics[str(device_eid)]["ConnectAttempt"] = 0
+                device_metrics[str(device_eid)]["Association Rejection"] = 0
+
+                remarks = "NA"
+                if mac_disconnect_count == 0 and mac_connected_count >= 1:
+                    remarks = "No Disconnections are seen but Client is UP and connected to user given SSID."
+                elif mac_disconnect_count >= 1 and mac_connected_count == 0:
+                    remarks = "The Disconnections are seen but Client did not connected to user given SSID."
+                device_metrics[str(device_eid)]["Remarks"] = remarks
+
+                if mac_connected_count > 0:
+                    eid_parts = device_eid.split(".")
+                    port_response = self.json_get_with_retry(
+                        f"port/{eid_parts[0]}/{eid_parts[1]}/{eid_parts[2]}?fields=cx time (us)"
+                    )
+                    try:
+                        cx_time_us = port_response["interface"]["cx time (us)"]
+                        device_metrics[str(device_eid)]["cx time (us)"] = cx_time_us
+                    except (TypeError, KeyError) as e:
+                        logging.error(
+                            f"Could not fetch cx time (us) for device {device_eid}; "
+                            f"LANforge response is not in expected format ({e}). Data received: {port_response}"
+                        )
+                        device_metrics[str(device_eid)]["cx time (us)"] = "NA"
+                else:
+                    device_metrics[str(device_eid)]["cx time (us)"] = "NA"
+            else:  # other means (for linux)
                 linux_mac_disconnect_count = self.count_wifi_msg_matches(
                     wifi_messages=wifi_messages,
                     message_keys=message_keys,
@@ -860,7 +911,7 @@ class InteropPortReset(Realm):
                                     linux_mac_connected_count = 0
                             except (TypeError, KeyError) as e:
                                 logging.error(
-                                    f"collect_device_metrics: could not verify connection state for device "
+                                    f"Could not verify connection state for device "
                                     f"{device_eid}; LANforge response is not in expected format ({e}). Data "
                                     f"received: {port_response}"
                                 )
@@ -896,7 +947,7 @@ class InteropPortReset(Realm):
                         device_metrics[str(device_eid)]["cx time (us)"] = cx_time_us
                     except (TypeError, KeyError) as e:
                         logging.error(
-                            f"collect_device_metrics: could not fetch cx time (us) for device {device_eid}; "
+                            f"Could not fetch cx time (us) for device {device_eid}; "
                             f"LANforge response is not in expected format ({e}). Data received: {port_response}"
                         )
                         device_metrics[str(device_eid)]["cx time (us)"] = "NA"
