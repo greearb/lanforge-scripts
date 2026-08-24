@@ -379,7 +379,7 @@ class LFCliBase:
         Returns the address as a string, or None when it cannot be resolved.
         """
         if not port:
-            logger.error("resolve_port_to_ipv4: please provide a valid port name")
+            logger.error("resolve_port_to_ipv4: provided invalid port name, port: %s", port)
             return None
 
         if not isinstance(port, str):
