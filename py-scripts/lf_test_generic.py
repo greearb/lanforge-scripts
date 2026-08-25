@@ -106,8 +106,9 @@ class GenTest():
                  host="localhost", port=8080, create_report=False, use_existing_eid=None, monitor_interval="2s",
                  test_duration="20s", test_type="ping", target=None, cmd=None, spdtest_no_download=False, spdtest_no_upload=False, spdtest_single_connection=False,
                  spdtest_enable_debug=False, spdtest_enable_report=False, spdtest_ookla=False, interval=0.1, destination_url_lfcurl=None,
-                 radio=None, file_output_lfcurl=None, lf_logger_json=None, log_level="debug", loop_count=None, port_wait_time=3000,
+                 radio=None, file_output_lfcurl=None, lf_logger_json=None, log_level="debug", loop_count=None, port_wait_time=60,
                  _debug_on=False, _exit_on_error=False, die_on_error=False, _exit_on_fail=False, endp_names=None):
+        self.port_wait_time = port_wait_time
         self.host = host
         self.port = port
         self.lf_user = lf_user
@@ -238,7 +239,8 @@ class GenTest():
                             finally:
                                 lanforge_api.LOGGER.setLevel(prev_log_level)
                             self.iperf3_target_lanforge = port_resp is not None and ('interface' in port_resp or 'interfaces' in port_resp)
-                        except Exception:
+                        except Exception as err:
+                            logger.debug("Exception while checking iperf3 target port '%s': %s", self.target, err)
                             self.iperf3_target_lanforge = False
 
     def check_tab_exists(self):
@@ -497,24 +499,24 @@ class GenTest():
 
         # Check if created stations admin-up and have ips
         if (self.sta_list):
-            if self.wait_for_action("port", self.sta_list, "up", 3000):
+            if self.wait_for_action("port", self.sta_list, "up", self.port_wait_time):
                 print("All created stations went admin up.")
             else:
                 print("All creation stations  did not admin up.")
 
-            if self.wait_for_action("port", self.sta_list, "ip", 3000):
+            if self.wait_for_action("port", self.sta_list, "ip", self.port_wait_time):
                 logger.info("All creation stations got IPs")
             else:
                 self.print("Stations failed to get IPs")
 
         # Check if existing ports admin-up and got ips
         if (self.use_existing_eid):
-            if self.wait_for_action("port", self.use_existing_eid, "up", 3000):
+            if self.wait_for_action("port", self.use_existing_eid, "up", self.port_wait_time):
                 print("All exiting ports went admin up.")
             else:
                 print("All existing ports did not admin up.")
 
-            if self.wait_for_action("port", self.use_existing_eid, "ip", 3000):
+            if self.wait_for_action("port", self.use_existing_eid, "ip", self.port_wait_time):
                 print("All existing ports got IPs")
             else:
                 self.print("All existing ports failed to get IPs")
@@ -580,8 +582,6 @@ class GenTest():
                     # Check if station already exists on LANforge manager (ignore stale/phantom ports)
                     sta_exists = False
                     try:
-                        # a 404 here just means the station doesn't exist yet; silence the api
-                        # client's error-level diagnostics for this expected outcome
                         prev_log_level = lanforge_api.LOGGER.level
                         lanforge_api.LOGGER.setLevel(logging.CRITICAL)
                         try:
@@ -592,7 +592,8 @@ class GenTest():
                             iface = port_resp.get('interface', port_resp.get('interfaces'))
                             if iface is not None and str(iface.get('phantom')).lower() not in ("true", "1"):
                                 sta_exists = True
-                    except Exception:
+                    except Exception as err:
+                        logger.debug("Exception while checking if station '%s' exists: %s", sta_alias, err)
                         sta_exists = False
 
                     if sta_exists:
@@ -634,7 +635,7 @@ class GenTest():
 
                     # wait until port appears
                     wfa_list = [sta_alias]
-                    self.wait_for_action("port", wfa_list, "appear", 3000)
+                    self.wait_for_action("port", wfa_list, "appear", self.port_wait_time)
 
                     # set use_dhcp and rpt_timer
                     self.command.post_set_port(alias=port_name,
@@ -665,7 +666,7 @@ class GenTest():
                 server_shelf, server_resource, server_port_name, *nil = self.name_to_eid(self.target)
                 if server_port_name:
                     logger.info("Setting server port up: %s.%s.%s", server_shelf, server_resource, server_port_name)
-                    set_port_interest_rslt = self.command.set_flags(LFJsonCommand.SetPortInterest, starting_value=0, flag_names=['dhcp', 'ifdown', 'current_flags', 'ip_address'])
+                    set_port_interest_rslt = self.command.set_flags(LFJsonCommand.SetPortInterest, starting_value=0, flag_names=['ifdown'])
                     self.command.post_set_port(shelf=server_shelf,
                                                resource=server_resource,
                                                port=server_port_name,
@@ -926,7 +927,7 @@ class GenTest():
                                               shelf=port_shelf,
                                               debug=self.debug)
 
-        if self.wait_for_action("port", self.sta_list, "disappear", 3000):
+        if self.wait_for_action("port", self.sta_list, "disappear", self.port_wait_time):
             print("Ports successfully cleaned up.")
         else:
             print("Ports were not successfully cleaned up.")
@@ -1005,13 +1006,15 @@ class GenTest():
                     for sta_alias in type_list:
                         port_shelf, port_resource, port_name, *nil = self.name_to_eid(sta_alias)
                         if action == "appear":
-                            # http://192.168.102.211:8080/ports/1/1/sta0000?fields=device,down
-                            json_url = "%s/ports/%s/%s/%s?fields=device,down" % (self.lfclient_url, port_shelf, port_resource, port_name)
+                            # http://192.168.102.211:8080/ports/1/1/sta0000?fields=device,down,phantom
+                            json_url = "%s/ports/%s/%s/%s?fields=device,down,phantom" % (self.lfclient_url, port_shelf, port_resource, port_name)
                             json_response = self.query.json_get(url=json_url,
                                                                 debug=self.debug)
-                            # if sta is found in port manager
-                            if json_response is not None and ('interface' in json_response or 'interfaces' in json_response):
-                                passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
+                            # if sta is found in port manager and is not phantom
+                            if json_response is not None:
+                                iface = json_response.get('interface', json_response.get('interfaces'))
+                                if iface is not None and str(iface.get('phantom')).lower() not in ("true", "1"):
+                                    passed.add("%s.%s.%s" % (port_shelf, port_resource, port_name))
 
                         elif action == "up":
                             json_url = "%s/ports/%s/%s/%s?fields=device,down" % (self.lfclient_url, port_shelf, port_resource, port_name)
@@ -1178,15 +1181,15 @@ def handle_toolbox(args):
                     lanforge_api.LOGGER.setLevel(prev_log_level)
                 if resp:
                     return candidate
-            except Exception:
+            except Exception as err:
+                logger.debug("Exception while probing CX candidate '%s': %s", candidate, err)
                 continue
         return None
 
     def get_generic_endpoint_names():
-        """Query LANforge for the real generic-tab endpoint names currently on the manager.
-        Scoped to /generic/all (not /cx/all) so toolbox 'all' actions only ever touch this
-        script's own generic endpoints/cxs, never unrelated L3/other test-type cross-connections
-        that may also exist on the manager."""
+        """Query LANforge for all generic-tab endpoint names currently on the manager.
+        Scoped to the generic tab (/generic/all, not /cx/all), so 'all' actions touch all generic
+        endpoints/CXs on the manager, never unrelated L3/other test-type cross-connections."""
         try:
             gen_data = query.json_get(url=f"{lfclient_url}/generic/all?fields=name")
         except Exception as q_err:
@@ -1214,9 +1217,9 @@ def handle_toolbox(args):
         return names
 
     def get_generic_cx_names():
-        """Derive the cx names owned by this script's generic endpoints (build() always names
+        """Derive the CX names associated with generic endpoints on the manager (build() names
         them 'CX_<tx endpoint name>'), instead of querying manager-wide /cx/all which returns
-        every cx type (L3/WanLink/etc.) and would let 'all' actions touch unrelated tests."""
+        every CX type (L3/WanLink/etc.) and would let 'all' actions touch unrelated tests."""
         endp_names = get_generic_endpoint_names()
         if endp_names is None:
             return None
@@ -1296,6 +1299,7 @@ def handle_toolbox(args):
                 loop_count=args.loop_count,
                 client_port=args.client_port,
                 server_port=args.server_port,
+                port_wait_time=getattr(args, 'port_wait_time', 60),
                 endp_names=custom_endp_names,
                 _debug_on=args.debug,
                 log_level=args.log_level,
@@ -1593,7 +1597,7 @@ def main():
                 4. Delete Cross-Connections and Endpoints:
                     ./lf_test_generic.py --mgr 192.168.102.211 --toolbox --del_gen_cx CX_roam_ping_sta0
                     ./lf_test_generic.py --mgr 192.168.102.211 --toolbox --del_gen_cx all
-                NOTE: "all" only ever acts on this script's own generic endpoints/cxs, never other test types (e.g. L3) that may exist on the manager.
+                NOTE: "all" acts on all generic-tab endpoints/CXs on the manager, never touching other test types (e.g. L3).
         ''',
     )
     required = parser.add_argument_group('Arguments that must be defined by user:')
@@ -1626,27 +1630,24 @@ def main():
 
     optional.add_argument('--start_gen_cx',
                           dest='start_cx',
-                          nargs='?',
-                          const='all',
+                          nargs='+',
                           default=None,
-                          help='Toolbox action: Start specified generic endpoint cross-connection(s) (single name, or comma separated list, or "all" [default]). '
-                               '"all" is scoped to this script\'s own generic endpoints, never other test types.')
+                          help='Toolbox action: Start specified generic cross-connection(s) by name, or "all" to start all generic CXs on the manager. '
+                               'Scoped to generic-tab cross-connections, never other test types.')
 
     optional.add_argument('--stop_gen_cx',
                           dest='stop_cx',
-                          nargs='?',
-                          const='all',
+                          nargs='+',
                           default=None,
-                          help='Toolbox action: Stop specified generic endpoint cross-connection(s) (single name, or comma separated list, or "all" [default]). '
-                               '"all" is scoped to this script\'s own generic endpoints, never other test types.')
+                          help='Toolbox action: Stop specified generic cross-connection(s) by name, or "all" to stop all generic CXs on the manager. '
+                               'Scoped to generic-tab cross-connections, never other test types.')
 
     optional.add_argument('--del_gen_cx',
                           dest='del_cx',
-                          nargs='?',
-                          const='all',
+                          nargs='+',
                           default=None,
-                          help='Toolbox action: Delete specified generic endpoint cross-connection(s) and associated endpoints (single name, or comma separated list, or "all" [default]). '
-                               '"all" is scoped to this script\'s own generic endpoints, never other test types.')
+                          help='Toolbox action: Delete specified generic cross-connection(s) and endpoints by name, or "all" to delete all generic endpoints and CXs on the manager. '
+                               'Scoped to generic-tab endpoints/CXs, never other test types.')
 
     # generic endpoint configurations
     optional.add_argument('--spdtest_enable_debug', action="store_true", help='check enable debug box for speedtest cross connect(s)')
@@ -1701,6 +1702,7 @@ def main():
     # args for test duration & monitor interval
     optional.add_argument('--monitor_interval', help='frequency of monitors measurements;example: 250ms, 35s, 2h', default='2s')
     optional.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
+    optional.add_argument('--port_wait_time', type=int, default=60, help='Max timeout in seconds to wait for port actions (appear, up, ip). Default: 60s')
 
     # debug and logger
     optional.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
@@ -1807,6 +1809,7 @@ This script also *does not* use any other file except lanforge_api.py.
                               loop_count=args.loop_count,
                               client_port=args.client_port,
                               server_port=args.server_port,
+                              port_wait_time=args.port_wait_time,
                               _debug_on=args.debug,
                               log_level=args.log_level,
                               lf_logger_json=args.lf_logger_json)
