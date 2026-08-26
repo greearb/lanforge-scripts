@@ -955,6 +955,8 @@ class ThroughputQOS(Realm):
                     t_response[cx] = [0, 0, 0.0, 0.0]
                 matched_cx = set()
                 for cx in cx_list:
+                    # track which side (A/B) each tos actually got data for this round
+                    tos_sides_seen = {}
                     for i in l3_endp_data:
                         key, cx_data = next(iter(i.items()))
                         cx_name = key[0:-2]
@@ -962,6 +964,7 @@ class ThroughputQOS(Realm):
                             matched_cx.add(cx_name)
                             traffic_tos = key.split('_')[-1].split('-')[0]
                             endp = key[-1]
+                            tos_sides_seen.setdefault(traffic_tos, set()).add(endp)
 
                             if endp == 'A':
                                 self.real_time_data[cx_name][traffic_tos]['bps rx a'].append(cx_data['rx rate (last)'] / 1000000)
@@ -973,7 +976,16 @@ class ThroughputQOS(Realm):
                                 t_response[cx_name][1] = cx_data['rx rate (last)']
                                 self.real_time_data[cx_name][traffic_tos]['rx drop % b'].append(cx_data['rx drop %'])
                                 t_response[cx_name][3] = cx_data['rx drop %']
-                                self.real_time_data[cx_name][traffic_tos]['time'].append(datetime.now().strftime('%H:%M:%S'))
+                    # fill 0 for whichever side didn't report, so every list for this tos stays the same length
+                    for traffic_tos, sides in tos_sides_seen.items():
+                        tos_data = self.real_time_data[cx][traffic_tos]
+                        if 'A' not in sides:
+                            tos_data['bps rx a'].append(0.0)
+                            tos_data['rx drop % a'].append(0.0)
+                        if 'B' not in sides:
+                            tos_data['bps rx b'].append(0.0)
+                            tos_data['rx drop % b'].append(0.0)
+                        tos_data['time'].append(datetime.now().strftime('%H:%M:%S'))
                 # warn once when a CX drops out of this tick's data, and log once when it reappears
                 for cx in cx_list:
                     if cx not in matched_cx:
@@ -1985,9 +1997,6 @@ class ThroughputQOS(Realm):
                 res.pop("throughput_table_df")
             if "graph_df" in res:
                 res.pop("graph_df")
-                logger.info(res)
-                logger.info(load)
-                logger.info(data_set)
                 # If a CSV filename is provided, retrieve the expected values for each device from the CSV file
                 if not self.expected_passfail_val and self.csv_name:
                     test_input_list = self.get_csv_expected_val()
@@ -2526,9 +2535,9 @@ class ThroughputQOS(Realm):
                     try:
                         cx_df = pd.DataFrame(self.real_time_data[cx][tos])
                         cx_df.to_csv('{}/{}_{}_realtime_data{}.csv'.format(report.path_date_time, cx, tos, graph_no), index=False)
-                    except Exception:
-                        logger.info(f'failed cx {cx} tos {tos}')
-                        logger.info(f"overall Data {self.real_time_data}")
+                    except Exception as e:
+                        column_lengths = {key: len(val) for key, val in self.real_time_data[cx][tos].items()}
+                        logger.warning(f'Failed to write real-time CSV for cx {cx} tos {tos}: {e} (column lengths: {column_lengths})')
 
     def get_pass_fail_list(self, test_input_list, individual_avgupload_list, individual_avgdownload_list):
         pass_fail_list = []
