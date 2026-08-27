@@ -1767,7 +1767,6 @@ class RealDevice(Realm):
     # querying the user the required mobiles to test
     # flag parameter to include ios for layer3 testcases in mixed traffic test
     def query_user(self, dowebgui=False, device_list="", flag=0):
-        logging.info('The available real devices are:')
         # print('Port\t\thw version\t\t\tMAC')
         t_devices = {}
         all_devices_list = []
@@ -1787,9 +1786,11 @@ class RealDevice(Realm):
             }
             all_devices_list.append(device_details['eid'])
             # print('{}\t{}\t\t\t{}'.format(device, device_details['hw version'], device_details['mac']))
-        pd.set_option('display.max_rows', None)
-        df = pd.DataFrame(data=t_devices).transpose()
-        print(df)
+        if not dowebgui:
+            logging.info('The available real devices are:')
+            pd.set_option('display.max_rows', None)
+            df = pd.DataFrame(data=t_devices).transpose()
+            print(df)
 
         if dowebgui:
             self.selected_device_eids = device_list.split(",")
@@ -1801,7 +1802,6 @@ class RealDevice(Realm):
         # if all is selected making the list as empty string so that it would consider all devices
         if (self.selected_device_eids == ['all']):
             self.selected_device_eids = all_devices_list
-        print('You have selected the below devices for testing')
         # print('Port\t\thw version\t\t\tMAC')
         selected_t_devices = {}
         for selected_device in self.selected_device_eids:
@@ -1843,8 +1843,10 @@ class RealDevice(Realm):
                     else:
                         self.android += 1
                         self.android_list.append(device)
-        df = pd.DataFrame(data=selected_t_devices).transpose()
-        print(df)
+        if not dowebgui:
+            logging.info('The selected real devices are:')
+            df = pd.DataFrame(data=selected_t_devices).transpose()
+            print(df)
         return [self.selected_devices, self.report_labels, self.selected_macs]
 
 
