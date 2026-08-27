@@ -815,15 +815,15 @@ class InteropPortReset(Realm):
                 else:
                     device_metrics[str(device_eid)]["cx time (us)"] = "NA"
             else:  # other means (for linux)
-                linux_mac_disconnect_count = self.count_wifi_msg_matches(
+                linux_disconnect_count = self.count_wifi_msg_matches(
                     wifi_messages=wifi_messages,
                     message_keys=message_keys,
                     device_eid=device_eid,
                     match_text="disconnected",
                 )
                 # Double-checking the disconnect count with another key msg
-                if linux_mac_disconnect_count == 0:
-                    linux_mac_disconnect_count = self.count_wifi_msg_matches(
+                if linux_disconnect_count == 0:
+                    linux_disconnect_count = self.count_wifi_msg_matches(
                         wifi_messages=wifi_messages,
                         message_keys=message_keys,
                         device_eid=device_eid,
@@ -831,21 +831,27 @@ class InteropPortReset(Realm):
                     )
                 logging.info(
                     "Final Disconnect count for %s: %s"
-                    % (device_eid, linux_mac_disconnect_count)
+                    % (device_eid, linux_disconnect_count)
                 )
-                device_metrics[device_eid]["Disconnected"] = linux_mac_disconnect_count
-                linux_mac_scan_count = self.count_wifi_msg_matches(
+                device_metrics[device_eid]["Disconnected"] = linux_disconnect_count
+                linux_scan_count = self.count_wifi_msg_matches(
                     wifi_messages=wifi_messages,
                     message_keys=message_keys,
                     device_eid=device_eid,
                     match_text="<3>CTRL-EVENT-SCAN-STARTED",
                 )
+                if linux_scan_count == 0:
+                    linux_scan_count = self.count_wifi_msg_matches(
+                        wifi_messages=wifi_messages,
+                        message_keys=message_keys,
+                        device_eid=device_eid,
+                        match_text="scan started",
+                    )
                 logging.info(
-                    "Final Scanning Count for %s: %s"
-                    % (device_eid, linux_mac_scan_count)
+                    "Final Scanning Count for %s: %s" % (device_eid, linux_scan_count)
                 )
-                device_metrics[str(device_eid)]["Scanning"] = linux_mac_scan_count
-                linux_mac_association_attempt = self.count_wifi_msg_matches(
+                device_metrics[str(device_eid)]["Scanning"] = linux_scan_count
+                linux_association_attempt = self.count_wifi_msg_matches(
                     wifi_messages=wifi_messages,
                     message_keys=message_keys,
                     device_eid=device_eid,
@@ -853,12 +859,12 @@ class InteropPortReset(Realm):
                 )
                 logging.info(
                     "Final Association Attempts Count for %s: %s"
-                    % (device_eid, linux_mac_association_attempt)
+                    % (device_eid, linux_association_attempt)
                 )
                 device_metrics[str(device_eid)][
                     "ConnectAttempt"
-                ] = linux_mac_association_attempt
-                linux_mac_association_rejection = self.count_wifi_msg_matches(
+                ] = linux_association_attempt
+                linux_association_rejection = self.count_wifi_msg_matches(
                     wifi_messages=wifi_messages,
                     message_keys=message_keys,
                     device_eid=device_eid,
@@ -866,37 +872,34 @@ class InteropPortReset(Realm):
                 )
                 logging.info(
                     "Final Association Rejection Count for %s: %s"
-                    % (device_eid, linux_mac_association_rejection)
+                    % (device_eid, linux_association_rejection)
                 )
                 device_metrics[str(device_eid)][
                     "Association Rejection"
-                ] = linux_mac_association_rejection
+                ] = linux_association_rejection
 
-                linux_mac_connected_count = self.count_wifi_msg_matches(
+                linux_connected_count = self.count_wifi_msg_matches(
                     wifi_messages=wifi_messages,
                     message_keys=message_keys,
                     device_eid=device_eid,
                     match_text="<3>CTRL-EVENT-CONNECTED",
                 )
-                linux_mac_connection_state_unverified = False
+                linux_connection_state_unverified = False
                 # assoc-rejection based logic
-                if linux_mac_association_rejection:
+                if linux_association_rejection:
                     actual_connects = (
-                        linux_mac_association_attempt - linux_mac_association_rejection
+                        linux_association_attempt - linux_association_rejection
                     )
-                    if actual_connects == linux_mac_connected_count:
-                        linux_mac_connected_count = linux_mac_connected_count
+                    if actual_connects == linux_connected_count:
+                        linux_connected_count = linux_connected_count
                     else:
-                        linux_mac_connected_count = actual_connects
+                        linux_connected_count = actual_connects
                 else:
-                    if linux_mac_association_attempt == linux_mac_connected_count:
-                        linux_mac_connected_count = linux_mac_connected_count
+                    if linux_association_attempt == linux_connected_count:
+                        linux_connected_count = linux_connected_count
                     else:
                         # Double-checking & adding remarks if any
-                        if (
-                            linux_mac_connected_count > 1
-                            or linux_mac_connected_count == 0
-                        ):
+                        if linux_connected_count > 1 or linux_connected_count == 0:
                             eid_parts = device_eid.split(".")
                             port_response = self.json_get_with_retry(
                                 f"port/{eid_parts[0]}/{eid_parts[1]}/{eid_parts[2]}?fields=ssid,ip"
@@ -906,38 +909,38 @@ class InteropPortReset(Realm):
                                     port_response["interface"]["ssid"] == self.ssid
                                     and port_response["interface"]["ip"] != "0.0.0.0"
                                 ):
-                                    linux_mac_connected_count = 1
+                                    linux_connected_count = 1
                                 else:
-                                    linux_mac_connected_count = 0
+                                    linux_connected_count = 0
                             except (TypeError, KeyError) as e:
                                 logging.error(
                                     f"Could not verify connection state for device "
                                     f"{device_eid}; LANforge response is not in expected format ({e}). Data "
                                     f"received: {port_response}"
                                 )
-                                linux_mac_connected_count = 0
-                                linux_mac_connection_state_unverified = True
+                                linux_connected_count = 0
+                                linux_connection_state_unverified = True
                 logging.info(
                     "Final Connected Count for %s: %s"
-                    % (device_eid, linux_mac_connected_count)
+                    % (device_eid, linux_connected_count)
                 )
-                device_metrics[str(device_eid)]["Connected"] = linux_mac_connected_count
-                if linux_mac_association_attempt > linux_mac_connected_count:
-                    linux_mac_association_rejection = (
-                        linux_mac_association_attempt - linux_mac_connected_count
+                device_metrics[str(device_eid)]["Connected"] = linux_connected_count
+                if linux_association_attempt > linux_connected_count:
+                    linux_association_rejection = (
+                        linux_association_attempt - linux_connected_count
                     )
                 device_metrics[str(device_eid)][
                     "Association Rejection"
-                ] = linux_mac_association_rejection
+                ] = linux_association_rejection
                 remarks = "NA"
-                if linux_mac_disconnect_count == 0 and linux_mac_connected_count == 1:
+                if linux_disconnect_count == 0 and linux_connected_count == 1:
                     remarks = "No Disconnections are seen but Client is UP and connected to user given SSID."
-                elif linux_mac_disconnect_count >= 1 and linux_mac_connected_count == 0:
+                elif linux_disconnect_count >= 1 and linux_connected_count == 0:
                     remarks = "The Disconnections are seen but Client did not connected to user given SSID."
-                if linux_mac_connection_state_unverified:
+                if linux_connection_state_unverified:
                     remarks = "Connection state unverified - LANforge API error while double-checking connect count"
                 device_metrics[str(device_eid)]["Remarks"] = remarks
-                if linux_mac_connected_count > 0:
+                if linux_connected_count > 0:
                     eid_parts = device_eid.split(".")
                     port_response = self.json_get_with_retry(
                         f"port/{eid_parts[0]}/{eid_parts[1]}/{eid_parts[2]}?fields=cx time (us)"
