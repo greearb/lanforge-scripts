@@ -3739,12 +3739,13 @@ class L3VariableTime(Realm):
             logger.info("endpoint is a dict, converting to list")
             self.endp_data['endpoint'] = [{endpoint['name']: endpoint}]
         for endp_data in self.endp_data.get('endpoint', []):
-            logger.info("endp_data type {endp_type} endp_data {endp_data}".format(
-                endp_type=type(endp_data), endp_data=endp_data))
             # The dictionary only has one key
             endp_data_key = list(endp_data.keys())[0]
-            logger.info("endpoint_data key: {key}  name: {name} a/b {ab} rx rate {rx_rate}".format(
-                key=endp_data_key, name=endp_data[endp_data_key]['name'], ab=endp_data[endp_data_key]['a/b'], rx_rate=endp_data[endp_data_key]['rx rate']))
+            if not self.dowebgui:
+                logger.info("endp_data type {endp_type} endp_data {endp_data}".format(
+                    endp_type=type(endp_data), endp_data=endp_data))
+                logger.info("endpoint_data key: {key}  name: {name} a/b {ab} rx rate {rx_rate}".format(
+                    key=endp_data_key, name=endp_data[endp_data_key]['name'], ab=endp_data[endp_data_key]['a/b'], rx_rate=endp_data[endp_data_key]['rx rate']))
 
             # Gather data for upload , download for the four data types BK, BE, VI, VO, place the
             # the data_set will be the upload and download rates for each client
