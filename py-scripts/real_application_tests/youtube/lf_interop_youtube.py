@@ -2579,7 +2579,12 @@ class Youtube(Realm):
                 for port_name, port_data in matched_ports:
                     if port_data.get("parent dev") == 'wiphy0' and not port_data.get('down') and port_data.get('ip') != '0.0.0.0':
                         mac = port_data.get("mac") or "NA"
-                        rssi = port_data.get("signal") if port_data.get("signal") is not None else "NA"
+                        rssi = port_data.get("signal")
+                        if rssi is None or str(rssi).strip().upper() in ("", "NA"):
+                            rssi = "NA"
+                        else:
+                            rssi_text = str(rssi).strip()
+                            rssi = rssi_text if "dbm" in rssi_text.lower() else f"{rssi_text} dBm"
                         link_rate = port_data.get("rx-rate") if port_data.get("rx-rate") is not None else "NA"
                         ssid = port_data.get("ssid") or "NA"
                         port_parts = port_name.split('.')
