@@ -1619,7 +1619,7 @@ class ThroughputQOS(Realm):
                 "Number of Stations": "Total" + f"({self.num_stations})" + total_devices,
                 "AP Model": self.ap_name,
                 "SSID": self.ssid,
-                "Traffic Duration in hours": round(int(self.test_duration) / 3600, 2),
+                "Traffic Duration in minutes": round(int(self.test_duration) / 60, 2),
                 "Security": self.security,
                 "Protocol": (self.traffic_type.strip("lf_")).upper(),
                 "Traffic Direction": self.direction,
@@ -1634,7 +1634,7 @@ class ThroughputQOS(Realm):
             test_setup_info = {
                 "AP Model": self.ap_name,
                 'Configuration': configmap,
-                "Traffic Duration in hours": round(int(self.test_duration) / 3600, 2),
+                "Traffic Duration in minutes": round(int(self.test_duration) / 60, 2),
                 "Security": self.security,
                 "Protocol": (self.traffic_type.strip("lf_")).upper(),
                 "Traffic Direction": self.direction,
@@ -1643,7 +1643,7 @@ class ThroughputQOS(Realm):
             }
         print(res["throughput_table_df"])
         if self.do_bandsteering:
-            del test_setup_info["Traffic Duration in hours"]
+            del test_setup_info["Traffic Duration in minutes"]
             test_setup_info["Robot IP"] = self.robot_ip
             test_setup_info["Selected Coordinates"] = self.coordinate_list
             test_setup_info["no of cycles"] = self.cycles
@@ -2743,7 +2743,7 @@ class ThroughputQOS(Realm):
                 "Number of Stations": "Total" + f"({self.num_stations})" + total_devices,
                 "AP Model": self.ap_name,
                 "SSID": self.ssid,
-                "Traffic Duration in hours": round(int(self.test_duration) / 3600, 2),
+                "Traffic Duration in minutes": round(int(self.test_duration) / 60, 2),
                 "Security": self.security,
                 "Protocol": (self.traffic_type.strip("lf_")).upper(),
                 "Traffic Direction": self.direction,
@@ -2761,7 +2761,7 @@ class ThroughputQOS(Realm):
             test_setup_info = {
                 "AP Model": self.ap_name,
                 'Configuration': configmap,
-                "Traffic Duration in hours": round(int(self.test_duration) / 3600, 2),
+                "Traffic Duration in minutes": round(int(self.test_duration) / 60, 2),
                 "Security": self.security,
                 "Protocol": (self.traffic_type.strip("lf_")).upper(),
                 "Traffic Direction": self.direction,
