@@ -154,9 +154,7 @@ class ZoomAutomator:
         try:
             root = fromstring(d.dump_hierarchy())
         except Exception as e:
-            self.logger.error(
-                f"Failed to parse audio hierarchy: {e}"
-            )
+            self.logger.error(f"Failed to parse audio hierarchy: {e}")
             return None, None, None
 
         for node in root.iter("node"):
@@ -173,9 +171,7 @@ class ZoomAutomator:
         try:
             root = fromstring(d.dump_hierarchy())
         except Exception as e:
-            self.logger.error(
-                f"Failed to parse video hierarchy: {e}"
-            )
+            self.logger.error(f"Failed to parse video hierarchy: {e}")
             return None, None, None
 
         for node in root.iter("node"):
@@ -192,9 +188,7 @@ class ZoomAutomator:
         try:
             root = fromstring(d.dump_hierarchy())
         except Exception as e:
-            self.logger.error(
-                f"Failed to parse leave hierarchy: {e}"
-            )
+            self.logger.error(f"Failed to parse leave hierarchy: {e}")
             return None, None
 
         for node in root.iter("node"):
@@ -370,7 +364,12 @@ class ZoomAutomator:
 
         self.logger.info(f"Starting {ZOOM_PACKAGE} and opening the meeting link.")
         d.app_start(ZOOM_PACKAGE, stop=True)
-        time.sleep(2)
+        pid = d.app_wait(ZOOM_PACKAGE, front=True, timeout=30)
+        if not pid:
+            raise RuntimeError(
+                f"{ZOOM_PACKAGE} did not come to foreground within 30s of cold start — "
+                "device may be slow/overloaded. Aborting this participant."
+            )
         self.adb_device.shell(
             f'am start -a android.intent.action.VIEW -d "{meeting_url}" {ZOOM_PACKAGE}'
         )
@@ -383,9 +382,7 @@ class ZoomAutomator:
 
             name_input = d(className="android.widget.EditText")
             if name_input.wait(timeout=10):
-                self.logger.info(
-                    f"Entering participant name: {participant_name}"
-                )
+                self.logger.info(f"Entering participant name: {participant_name}")
                 name_input.set_text(participant_name)
                 time.sleep(1)
                 ok_btn = d(text="OK")
@@ -393,7 +390,9 @@ class ZoomAutomator:
                     ok_btn.click()
                     self.logger.info("Clicked 'OK' on preview screen.")
                 else:
-                    raise RuntimeError("'OK' button not found within 10 seconds on preview screen.")
+                    raise RuntimeError(
+                        "'OK' button not found within 10 seconds on preview screen."
+                    )
             else:
                 self.logger.error(
                     "Name input screen not found "
@@ -410,15 +409,15 @@ class ZoomAutomator:
                 join_btn.click()
                 self.logger.info("Clicked 'Join' on preview screen.")
             else:
-                raise RuntimeError("'Join' button not found within 10 seconds on preview screen.")
+                raise RuntimeError(
+                    "'Join' button not found within 10 seconds on preview screen."
+                )
 
         else:
             # Old flow: check for name input screen
             name_input = d(resourceId="us.zoom.videomeetings:id/edtScreenName")
             if name_input.wait(timeout=15):
-                self.logger.info(
-                    f"Entering participant name: {participant_name}"
-                )
+                self.logger.info(f"Entering participant name: {participant_name}")
                 name_input.set_text(participant_name)
                 time.sleep(1)
                 ok_btn = d(text="OK", className="android.widget.Button")
@@ -445,17 +444,11 @@ class ZoomAutomator:
 
         leave_bounds, _leave_status = self.get_leave_control_info(d)
         if leave_bounds:
-            self.logger.info(
-                f"Successfully joined the meeting as {participant_name}."
-            )
+            self.logger.info(f"Successfully joined the meeting as {participant_name}.")
         else:
-            self.logger.warning(
-                "Leave button not found. Checking toolbar..."
-            )
+            self.logger.warning("Leave button not found. Checking toolbar...")
             if d(resourceId="us.zoom.videomeetings:id/panelMeetingToolbar").exists:
-                self.logger.info(
-                    "Found meeting toolbar - likely in meeting."
-                )
+                self.logger.info("Found meeting toolbar - likely in meeting.")
 
         time.sleep(2)
         self.enable_audio_video(d, tap_coords=(width // 2, height // 2))
@@ -474,9 +467,7 @@ class ZoomAutomator:
             except Exception as e:
                 self.logger.error(f"Error fetching start/end time: {e}")
                 time.sleep(5)
-        self.logger.info(
-            f"Meeting scheduled from {self.start_time} to {self.end_time}"
-        )
+        self.logger.info(f"Meeting scheduled from {self.start_time} to {self.end_time}")
         try:
             end_dt = datetime.fromisoformat(self.end_time.replace("Z", "+00:00"))
             if end_dt.tzinfo is None:
@@ -490,9 +481,7 @@ class ZoomAutomator:
         # self.ping_monitor.start_ping(self.device_serial)
         while datetime.now(self.tz) < meeting_end_dt:
             if self.check_stop_signal():
-                self.logger.info(
-                    "Stop signal received. Leaving meeting early."
-                )
+                self.logger.info("Stop signal received. Leaving meeting early.")
                 break
             time.sleep(2)
 
@@ -508,9 +497,7 @@ class ZoomAutomator:
                     leave_confirm.click()
                     self.logger.info("Confirmed leaving meeting.")
             else:
-                self.logger.warning(
-                    "Leave button not found. Pressing back..."
-                )
+                self.logger.warning("Leave button not found. Pressing back...")
                 d.press("back")
                 time.sleep(1)
                 d.press("back")
@@ -571,9 +558,7 @@ class ZoomAutomator:
                                 _audio_bounds,
                                 audio_status,
                             ) = self.get_audio_control_info(d)
-                            self.logger.info(
-                                f"Audio status after tap: {audio_status}"
-                            )
+                            self.logger.info(f"Audio status after tap: {audio_status}")
                             if audio_enabled_state is True:
                                 self.logger.info("Audio enabled")
                                 audio_enabled = True
@@ -584,9 +569,7 @@ class ZoomAutomator:
                     else:
                         join_audio = d(text="Join Audio")
                         if join_audio.exists:
-                            self.logger.info(
-                                "Audio prompt found. Joining audio..."
-                            )
+                            self.logger.info("Audio prompt found. Joining audio...")
                             join_audio.click()
                             time.sleep(1)
                         else:
@@ -613,9 +596,7 @@ class ZoomAutomator:
                                 _video_bounds,
                                 video_status,
                             ) = self.get_video_control_info(d)
-                            self.logger.info(
-                                f"Video status after tap: {video_status}"
-                            )
+                            self.logger.info(f"Video status after tap: {video_status}")
                             if video_enabled_state is True:
                                 self.logger.info("Video enabled")
                                 video_enabled = True
@@ -626,9 +607,7 @@ class ZoomAutomator:
                     else:
                         join_video = d(text="Join Video")
                         if join_video.exists:
-                            self.logger.info(
-                                "Video prompt found. Joining video..."
-                            )
+                            self.logger.info("Video prompt found. Joining video...")
                             join_video.click()
                             time.sleep(1)
                         else:
@@ -679,9 +658,7 @@ class ZoomAutomator:
                 resp = requests.post(endpoint_url, files=files, data=data, timeout=30)
 
             if resp.status_code == 200:
-                self.logger.info(
-                    "Ping log uploaded successfully"
-                )
+                self.logger.info("Ping log uploaded successfully")
             else:
                 self.logger.error(
                     f"Ping log upload failed: {resp.status_code} {resp.text}"
@@ -716,9 +693,7 @@ class ZoomAutomator:
             if resp.status_code == 200:
                 self.logger.info("Log uploaded successfully")
             else:
-                self.logger.error(
-                    f"Log upload failed: {resp.status_code} {resp.text}"
-                )
+                self.logger.error(f"Log upload failed: {resp.status_code} {resp.text}")
         except Exception as e:
             self.logger.error(f"Error uploading log: {e}")
 
