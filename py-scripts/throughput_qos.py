@@ -875,7 +875,7 @@ class ThroughputQOS(Realm):
             "SSID_2.4GHz": self.ssid_2g,
             "SSID_5GHz": self.ssid_5g,
             "SSID_6GHz": self.ssid_6g,
-            "Traffic Duration in hours": round(int(self.test_duration) / 3600, 2),
+            "Traffic Duration in minutes": round(int(self.test_duration) / 60, 2),
             "Security_2.4GHz": self.security_2g,
             "Security_5GHz": self.security_5g,
             "Security_6GHz": self.security_6g,
