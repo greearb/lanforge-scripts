@@ -1186,7 +1186,7 @@ class Mixed_Traffic(Realm):
                                                          traffic_duration=self.ftp_test_duration,
                                                          ssh_port=22,
                                                          clients_type=client_type,
-                                                         dowebgui=True if self.dowebgui else False,
+                                                         dowebgui="True" if self.dowebgui else False,
                                                          result_dir=self.result_dir,
                                                          test_name=self.test_name)
                     interation_num = interation_num + 1
@@ -1313,7 +1313,7 @@ class Mixed_Traffic(Realm):
                                                    ap_name=self.dut_model, ssid=ssid, password=password, security=security,
                                                    target_per_ten=target_per_ten, file_size=http_file_size, bands=self.band,
                                                    client_type=client_type, lf_username=self.lf_username,
-                                                   lf_password=self.lf_password, dowebgui=True if self.dowebgui else False,
+                                                   lf_password=self.lf_password, dowebgui="True" if self.dowebgui else False,
                                                    result_dir=self.result_dir,
                                                    test_name=self.test_name)
             self.http_obj.data = {}
