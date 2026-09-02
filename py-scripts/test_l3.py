@@ -3397,6 +3397,22 @@ class L3VariableTime(Realm):
                 return data
         return total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps
 
+    @staticmethod
+    def normalize_signal_channel(port_data):
+        # Normalize RSSI / Channel so the port CSV columns keep a single dtype.
+        sig_str = str(port_data.get('signal', '')).strip()
+        signal_val = sig_str.split(" ")[0] if "dBm" in sig_str else sig_str
+
+        chan_str = str(port_data.get('channel', '')).strip()
+        if chan_str in ('', '0', '-1'):
+            channel_val = 'NA'
+        elif '[channel:' in chan_str:
+            channel_val = chan_str.split(':')[1].replace(']', '').strip()
+        else:
+            channel_val = chan_str
+
+        return signal_val, channel_val
+
     def write_dl_port_csv(
             self,
             sta_count,
@@ -3424,17 +3440,7 @@ class L3VariableTime(Realm):
                atten, port_eid
                ]
 
-        # Normalize RSSI / Channel so the port CSV columns keep a single dtype.
-        sig_str = str(port_data.get('signal', '')).strip()
-        signal_val = sig_str.split(" ")[0] if "dBm" in sig_str else sig_str
-
-        chan_str = str(port_data.get('channel', '')).strip()
-        if chan_str in ('', '0', '-1'):
-            channel_val = 'NA'
-        elif '[channel:' in chan_str:
-            channel_val = chan_str.split(':')[1].replace(']', '').strip()
-        else:
-            channel_val = chan_str
+        signal_val, channel_val = self.normalize_signal_channel(port_data)
 
         row = row + [port_data['bps rx'],
                      port_data['bps tx'],
@@ -3498,17 +3504,7 @@ class L3VariableTime(Realm):
                atten, port_eid
                ]
 
-        # Normalize RSSI / Channel so the port CSV columns keep a single dtype.
-        sig_str = str(port_data.get('signal', '')).strip()
-        signal_val = sig_str.split(" ")[0] if "dBm" in sig_str else sig_str
-
-        chan_str = str(port_data.get('channel', '')).strip()
-        if chan_str in ('', '0', '-1'):
-            channel_val = 'NA'
-        elif '[channel:' in chan_str:
-            channel_val = chan_str.split(':')[1].replace(']', '').strip()
-        else:
-            channel_val = chan_str
+        signal_val, channel_val = self.normalize_signal_channel(port_data)
 
         row = row + [port_data['bps rx'],
                      port_data['bps tx'],
