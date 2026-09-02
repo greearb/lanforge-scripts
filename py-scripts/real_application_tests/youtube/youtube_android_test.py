@@ -14,7 +14,10 @@ import pytesseract
 import cv2
 import subprocess
 import os
+from pathlib import Path
+
 LOG_FILE_PATH = os.path.abspath("youtube_test.log")
+XML_OUTPUT_DIR = Path(__file__).resolve().parent
 
 logging.basicConfig(
     filename=LOG_FILE_PATH,
@@ -38,6 +41,29 @@ class Adb:
         self.upstream_port = upstream_port
         self.test_serials = []
         self.stop_signal = False
+
+    def save_ui_xml(self, serial, stage, xml_content=None):
+        """Save the latest failed UI for a device."""
+        safe_serial = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(serial))
+        output_path = XML_OUTPUT_DIR / f"stats_for_nerds_{safe_serial}.xml"
+
+        try:
+            if xml_content is None:
+                xml_content = self.u2_sessions[serial].dump_hierarchy(
+                    compressed=False
+                )
+            output_path.write_text(xml_content, encoding="utf-8")
+            logger.info(
+                "[%s] Saved %s UI XML: %s", serial, stage, output_path
+            )
+            return output_path
+        except Exception:
+            logger.exception(
+                "[%s] Failed to save diagnostic UI XML for stage %s",
+                serial,
+                stage,
+            )
+            return None
 
     def upload_test_log(self):
         """Upload one combined log for all Android devices in this test."""
@@ -134,9 +160,10 @@ class Adb:
         d = self.u2_sessions[serial]
         d.click(0.2, 0.2)
 
-        def find_and_click_stats():
-            """Find and select the Stats for nerds menu option."""
-            for _ in range(6):
+        def find_and_click_stats(allow_scroll=True):
+            """Find and select Stats for nerds."""
+            attempts = 6 if allow_scroll else 1
+            for attempt in range(attempts):
                 # Try text match
                 stats_btn = d(textMatches="(?i).*stats.*nerds.*")
                 if stats_btn.exists:
@@ -149,9 +176,10 @@ class Adb:
                     stats_btn_desc.click()
                     return True
 
-                # Scroll if possible
-                d.swipe_ext("up", scale=0.7)
-                time.sleep(0.8)
+                # Scroll only inside submenus.
+                if allow_scroll and attempt < attempts - 1:
+                    d.swipe_ext("up", scale=0.7)
+                    time.sleep(0.8)
 
             return False
 
@@ -171,25 +199,30 @@ class Adb:
             logger.debug("[%s] Opening player settings", serial)
             settings_icon.click()
         else:
+            logger.warning("[%s] Player menu button not found", serial)
+            self.save_ui_xml(serial, "player_menu_button_not_found")
             return False
 
         # Step 2: Try finding Stats immediately (some versions show it directly)
-        if find_and_click_stats():
+        if find_and_click_stats(allow_scroll=False):
             logger.info("[%s] Stats for nerds enabled (direct path)", serial)
             return True
 
         # Step 3: Try clicking "More" if present (bottom sheet case)
-        more_btn = d(text="More")
+        more_btn = d(textMatches=r"(?i)^\s*more\s*$")
         if not more_btn.exists:
-            more_btn = d(descriptionMatches="(?i).*more.*")
+            # Avoid matching "More options".
+            more_btn = d(descriptionMatches=r"(?i)^\s*more\s*$")
 
         if more_btn.exists:
             more_btn.click()
-            time.sleep(1)
-
-            if find_and_click_stats():
-                logger.info("[%s] Stats for nerds enabled (More path)", serial)
-                return True
+            # Confirm that the submenu opened.
+            if more_btn.wait_gone(timeout=3):
+                if find_and_click_stats(allow_scroll=True):
+                    logger.info("[%s] Stats for nerds enabled (More path)", serial)
+                    return True
+            else:
+                logger.warning("[%s] More menu did not open", serial)
 
         # Step 4: Try clicking "Settings"
         settings_btn = d(textMatches="(?i).*settings.*")
@@ -197,7 +230,7 @@ class Adb:
             settings_btn.click()
             time.sleep(1)
 
-            if find_and_click_stats():
+            if find_and_click_stats(allow_scroll=True):
                 logger.info("[%s] Stats for nerds enabled (Settings path)", serial)
                 return True
 
@@ -207,11 +240,12 @@ class Adb:
             advanced_btn.click()
             time.sleep(1)
 
-            if find_and_click_stats():
+            if find_and_click_stats(allow_scroll=True):
                 logger.info("[%s] Stats for nerds enabled (Advanced path)", serial)
                 return True
 
         logger.warning("[%s] Stats for nerds option not found", serial)
+        self.save_ui_xml(serial, "option_not_found")
         return False
 
     def wait_for_video_ui(self, serial, timeout=40):
@@ -278,7 +312,11 @@ class Adb:
         xml_content = d.dump_hierarchy(compressed=True)
 
         # Parse XML
-        root = ET.fromstring(xml_content)
+        try:
+            root = ET.fromstring(xml_content)
+        except ET.ParseError:
+            self.save_ui_xml(device_serial, "xml_parse_failed", xml_content)
+            raise
 
         raw_stats = ""
         for node in root.iter("node"):
@@ -405,6 +443,10 @@ class Adb:
 
     def run_on_device(self, serial, video_url, delay, duration, resolution):
         """Run YouTube playback and statistics collection on one device."""
+        safe_serial = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(serial))
+        diagnostic_xml = XML_OUTPUT_DIR / f"stats_for_nerds_{safe_serial}.xml"
+        diagnostic_xml.unlink(missing_ok=True)
+
         try:
             logger.info(
                 "[%s] Test started (delay=%ss, duration=%ss, resolution=%s)",
@@ -448,7 +490,12 @@ class Adb:
             if self.check_stop_signal():
                 return
 
-            self.enable_stats_for_nerds(serial)
+            stats_enabled = self.enable_stats_for_nerds(serial)
+            if not stats_enabled:
+                logger.warning(
+                    "[%s] Continuing playback without confirmed Stats for nerds",
+                    serial,
+                )
             if self.check_stop_signal():
                 return
 
@@ -459,6 +506,7 @@ class Adb:
                     break
         except Exception:
             logger.exception("[%s] Test failed with an unexpected error", serial)
+            self.save_ui_xml(serial, "test_failed")
             raise
         finally:
             try:
@@ -511,7 +559,10 @@ class Adb:
             if (
                 "bottom_sheet" in res_id
                 or "recycler" in res_id
-                or cls == "androidx.recyclerview.widget.RecyclerView"
+                or cls in (
+                    "android.support.v7.widget.RecyclerView",
+                    "androidx.recyclerview.widget.RecyclerView",
+                )
             ):
 
                 container_found = True
