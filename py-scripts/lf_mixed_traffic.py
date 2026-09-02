@@ -1570,6 +1570,11 @@ class Mixed_Traffic(Realm):
                                             _kpi_dut_serial_num=dut_serial_num,
                                             _kpi_test_id=test_id)
 
+            current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+            csv_outfile = "_{}-test_l3.csv".format(current_time)
+            csv_outfile = report.file_add_path(csv_outfile)
+            logger.info("csv output file : {}".format(csv_outfile))
+
             # TODO: Add try/except if fails
             self.multicast_test_obj = multicast_test.L3VariableTime(endp_types=self.endp_types,
                                                                     args="",
@@ -1585,7 +1590,7 @@ class Mixed_Traffic(Realm):
                                                                     enable_flags_list=[],
                                                                     station_lists=self.station_lists,
                                                                     name_prefix="LT-",
-                                                                    outfile="",
+                                                                    outfile=csv_outfile,
                                                                     reset_port_enable_list=[],
                                                                     reset_port_time_min_list=[],
                                                                     reset_port_time_max_list=[],
