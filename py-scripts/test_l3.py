@@ -3424,15 +3424,27 @@ class L3VariableTime(Realm):
                atten, port_eid
                ]
 
+        # Normalize RSSI / Channel so the port CSV columns keep a single dtype.
+        sig_str = str(port_data.get('signal', '')).strip()
+        signal_val = sig_str.split(" ")[0] if "dBm" in sig_str else sig_str
+
+        chan_str = str(port_data.get('channel', '')).strip()
+        if chan_str in ('', '0', '-1'):
+            channel_val = 'NA'
+        elif '[channel:' in chan_str:
+            channel_val = chan_str.split(':')[1].replace(']', '').strip()
+        else:
+            channel_val = chan_str
+
         row = row + [port_data['bps rx'],
                      port_data['bps tx'],
                      port_data['rx-rate'],
                      port_data['tx-rate'],
-                     port_data['signal'],
+                     signal_val,
                      port_data['ap'],
                      port_data['mode'],
                      port_data['mac'],
-                     port_data['channel'],
+                     channel_val,
                      latency,
                      jitter,
                      total_ul_rate,
@@ -3486,15 +3498,27 @@ class L3VariableTime(Realm):
                atten, port_eid
                ]
 
+        # Normalize RSSI / Channel so the port CSV columns keep a single dtype.
+        sig_str = str(port_data.get('signal', '')).strip()
+        signal_val = sig_str.split(" ")[0] if "dBm" in sig_str else sig_str
+
+        chan_str = str(port_data.get('channel', '')).strip()
+        if chan_str in ('', '0', '-1'):
+            channel_val = 'NA'
+        elif '[channel:' in chan_str:
+            channel_val = chan_str.split(':')[1].replace(']', '').strip()
+        else:
+            channel_val = chan_str
+
         row = row + [port_data['bps rx'],
                      port_data['bps tx'],
                      port_data['rx-rate'],
                      port_data['tx-rate'],
-                     port_data['signal'],
+                     signal_val,
                      port_data['ap'],
                      port_data['mode'],
                      port_data['mac'],
-                     port_data['channel'],
+                     channel_val,
                      latency,
                      jitter,
                      total_ul_rate,
