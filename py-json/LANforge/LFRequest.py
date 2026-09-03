@@ -7,6 +7,8 @@
 import logging
 import sys
 import os
+import time
+from datetime import datetime
 from pprint import pformat, PrettyPrinter
 import urllib
 from urllib import request
@@ -41,6 +43,10 @@ class LFRequest:
         self.debug = debug_
         self.die_on_error = die_on_error_
         self.error_list = []
+        self.last_response_code = None
+        self.last_diagnostics = None
+        self.last_sent_at = None
+        self.last_elapsed_ms = None
 
         # please see this discussion on ProxyHandlers:
         # https://docs.python.org/3/library/urllib.request.html#urllib.request.ProxyHandler
@@ -183,8 +189,12 @@ class LFRequest:
 
         # https://stackoverflow.com/a/59635684/11014343
 
+        self.last_sent_at = datetime.now()
+        _t0 = time.perf_counter()
         try:
             resp = urllib.request.urlopen(myrequest)
+            self.last_elapsed_ms = (time.perf_counter() - _t0) * 1000
+            self.last_response_code = getattr(resp, 'status', None)
             resp_data = resp.read().decode('utf-8')
             if debug or die_on_error_:
                 self.logger.debug("----- LFRequest::json_post:128 debug: --------------------------------------------")
@@ -208,18 +218,21 @@ class LFRequest:
             return responses[0]
 
         except urllib.error.HTTPError as error:
-            print_diagnostics(url_=self.requested_url,
-                              request_=myrequest,
-                              responses_=responses,
-                              error_=error,
-                              debug_=debug)
+            self.last_elapsed_ms = (time.perf_counter() - _t0) * 1000
+            self.last_response_code = error.code
+            self.last_diagnostics = print_diagnostics(url_=self.requested_url,
+                                                      request_=myrequest,
+                                                      responses_=responses,
+                                                      error_=error,
+                                                      debug_=debug)
 
         except urllib.error.URLError as uerror:
-            print_diagnostics(url_=self.requested_url,
-                              request_=myrequest,
-                              responses_=responses,
-                              error_=uerror,
-                              debug_=debug)
+            self.last_elapsed_ms = (time.perf_counter() - _t0) * 1000
+            self.last_diagnostics = print_diagnostics(url_=self.requested_url,
+                                                      request_=myrequest,
+                                                      responses_=responses,
+                                                      error_=uerror,
+                                                      debug_=debug)
 
         if die_on_error_:
             exit(1)
@@ -249,25 +262,31 @@ class LFRequest:
                                     headers=self.default_headers,
                                     method=method_)
         myresponses = []
+        self.last_sent_at = datetime.now()
+        _t0 = time.perf_counter()
         try:
             myresponses.append(request.urlopen(myrequest))
+            self.last_elapsed_ms = (time.perf_counter() - _t0) * 1000
             return myresponses[0]
 
         except urllib.error.HTTPError as error:
-            print_diagnostics(url_=self.requested_url,
-                              request_=myrequest,
-                              responses_=myresponses,
-                              error_=error,
-                              error_list_=self.error_list,
-                              debug_=self.debug)
+            self.last_elapsed_ms = (time.perf_counter() - _t0) * 1000
+            self.last_response_code = error.code
+            self.last_diagnostics = print_diagnostics(url_=self.requested_url,
+                                                      request_=myrequest,
+                                                      responses_=myresponses,
+                                                      error_=error,
+                                                      error_list_=self.error_list,
+                                                      debug_=self.debug)
 
         except urllib.error.URLError as uerror:
-            print_diagnostics(url_=self.requested_url,
-                              request_=myrequest,
-                              responses_=myresponses,
-                              error_=uerror,
-                              error_list_=self.error_list,
-                              debug_=self.debug)
+            self.last_elapsed_ms = (time.perf_counter() - _t0) * 1000
+            self.last_diagnostics = print_diagnostics(url_=self.requested_url,
+                                                      request_=myrequest,
+                                                      responses_=myresponses,
+                                                      error_=uerror,
+                                                      error_list_=self.error_list,
+                                                      debug_=self.debug)
 
         if self.die_on_error:
             exit(1)
@@ -279,6 +298,10 @@ class LFRequest:
     def get_as_json(self, method_='GET'):
         responses = list()
         responses.append(self.get(method_=method_))
+        # get() already stashes last_response_code from error.code on HTTPError;
+        # only overwrite it here when we actually have a response to read a status from
+        if responses[0]:
+            self.last_response_code = getattr(responses[0], 'status', None)
         if len(responses) < 1:
             if self.debug and self.has_errors():
                 self.print_errors()
@@ -350,6 +373,21 @@ def plain_get(url_=None, debug_=False, die_on_error_=False, proxies_=None):
 
 
 def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, error_list_=None, debug_=False):
+    """
+    Log a diagnostic report for a failed request and return a one-line summary of it.
+
+    Args:
+        url_: Requested url.
+        request_: The urllib Request object that was sent.
+        responses_: Responses collected so far for this request, if any.
+        error_: The caught urllib.error.HTTPError or URLError.
+        error_list_: Optional list to append LANforge X-Error-* messages to.
+        debug_: When True, log at debug level; error level otherwise.
+
+    Returns:
+        A short one-line summary of the error (code/reason/X-Error-* headers), for callers
+        (like LFRequest._log_api_call plumbing) that want it in a lightweight log.
+    """
     logger = logging.getLogger(__name__)
     # logger.error("LFRequest::print_diagnostics: error_.__class__: %s"%error_.__class__)
     # logger.error(pformat(error_))
@@ -395,6 +433,10 @@ def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, er
             errors_list.append(" = = = = = = = = = = = = = = = =")
             logger.error("\n".join(errors_list))
 
+    summary = "%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason)
+    if xerrors and err_code != 404:
+        summary += " | " + "; ".join(xerrors)
+
     if error_.__class__ is urllib.error.HTTPError:
         debug_list = []
         debug_list.append("\n----- LFRequest: HTTPError: --------------------------------------------")
@@ -425,11 +467,13 @@ def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, er
 
         debug_list.append("------------------------------------------------------------------------")
         logger.debug("\n".join(debug_list))
-        return
+        return summary
 
     if error_.__class__ is urllib.error.URLError:
         errors_list.append("\n----- LFRequest: URLError: ---------------------------------------------")
         errors_list.append("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
         errors_list.append("------------------------------------------------------------------------")
         logger.error("\n".join(errors_list))
+
+    return summary
 # ~LFRequest
