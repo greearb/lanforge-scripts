@@ -4,12 +4,13 @@ NAME: lf_wifi_msgs.py
 
 PURPOSE:
     Fetch LANforge Wi-Fi messages from the GUI REST API (/wifi-msgs): the last or
-    first N messages, everything since a time-stamp, everything from the last
-    <duration>, everything between two stamps, or keep printing new messages as
-    they arrive.
+    first N messages, every buffered message, everything since a time-stamp,
+    everything from the last <duration>, everything between two stamps, or keep
+    printing new messages as they arrive.
 
 EXAMPLE:
     python3 lf_wifi_msgs.py --mgr 192.168.1.31 --last 50
+    python3 lf_wifi_msgs.py --mgr 192.168.1.31 --all
     python3 lf_wifi_msgs.py --mgr 192.168.1.31 --duration 5m --output json --outfile msgs.json
     python3 lf_wifi_msgs.py --mgr 192.168.1.31 --since 1699999999999 --output json
     python3 lf_wifi_msgs.py --mgr 192.168.1.31 --between 1788159332090 1788161286054
@@ -159,6 +160,14 @@ class WifiMessages(Realm):
             logger.error("GET %s returned nothing after %ss", uri, self.retry_timeout)
         return self.normalize_messages(response)
 
+    def all_messages(self) -> List[dict]:
+        """Every message currently buffered by LANforge - using first message as reference."""
+        oldest = self.first(1)
+        base_ms = self.timestamp_ms(oldest[0]) if oldest else None
+        if base_ms is None:
+            return oldest
+        return self.since(base_ms)
+
     def last(self, count: int = 1) -> List[dict]:
         """The most recent buffered messages.
 
@@ -291,8 +300,8 @@ class WifiMessages(Realm):
 
 
 def main() -> None:
-    help_summary = ("Fetch LANforge Wi-Fi messages from the /wifi-msgs REST API: last/first N, since a "
-                    "time-stamp, from the last <duration>, between two stamps, or poll for new ones. "
+    help_summary = ("Fetch LANforge Wi-Fi messages from the /wifi-msgs REST API: last/first N, all buffered, "
+                    "since a time-stamp, from the last <duration>, between two stamps, or poll for new ones. "
                     "Importable as WifiMessages.")
 
     parser = LFCliBase.create_basic_argparse(
@@ -304,6 +313,7 @@ def main() -> None:
     mode = wifi_msgs_args.add_mutually_exclusive_group()
     mode.add_argument('--last', type=int, metavar='N', help='the most recent N messages (default: 25)')
     mode.add_argument('--first', type=int, metavar='N', help='the oldest N messages still buffered')
+    mode.add_argument('--all', action='store_true', help='every message currently buffered')
     mode.add_argument('--since', metavar='TIMESTAMP', help='every message since a LANforge epoch-ms time-stamp')
     mode.add_argument('--duration', metavar='WINDOW', help='every message from the last WINDOW (e.g. 30s, 5m, 2h)')
     mode.add_argument('--between', nargs=2, type=int, metavar=('START', 'END'),
@@ -344,7 +354,9 @@ def main() -> None:
                 wifi_msgs.stop_polling()
                 print("Polling stopped", file=sys.stderr)
         else:
-            if args.since is not None:
+            if args.all:
+                entries = wifi_msgs.all_messages()
+            elif args.since is not None:
                 entries = wifi_msgs.since(args.since)
             elif duration is not None:
                 entries = wifi_msgs.duration(duration)
