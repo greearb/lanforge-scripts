@@ -1818,31 +1818,30 @@ class RealDevice(Realm):
                     }
                     self.selected_devices.append(device)
                     self.selected_macs.append(self.devices_data[device]['mac'])
-                    self.report_labels.append('{} {} {}'.format(selected_device, [
-                        'Win' if 'Win' in self.devices_data[device]['hw version'] else 'Lin' if 'Lin' in
-                                                                                                self.devices_data[
-                                                                                                    device][
-                                                                                                    'hw version'] else 'Mac' if 'Mac' in
-                                                                                                                                self.devices_data[
-                                                                                                                                    device][
-                                                                                                                                    'hw version'] else 'android'][
-                        0], [self.devices_data[device]['user'] if self.devices_data[device]['user'] != '' else
-                             self.devices_data[device]['hostname']][0])[:25])
-                    if ('Win' in 'Win' in self.devices_data[device]['hw version']):
+                    hw_version = self.devices_data[device]['hw version']
+                    kernel = self.devices_data[device]['kernel']
+                    if 'Win' in hw_version:
+                        os_label = 'Win'
                         self.windows += 1
                         self.windows_list.append(device)
-                    elif ('Lin' in 'Lin' in self.devices_data[device]['hw version']):
+                    elif 'Lin' in hw_version:
+                        os_label = 'Lin'
                         self.linux += 1
                         self.linux_list.append(device)
-                    elif ('Apple' in self.devices_data[device]['hw version']) and (self.devices_data[device]['kernel'] != ''):
+                    elif 'Apple' in hw_version and kernel != '':
+                        os_label = 'Mac'
                         self.mac += 1
                         self.mac_list.append(device)
-                    elif ('Apple' in self.devices_data[device]['hw version']) and (self.devices_data[device]['kernel'] == ''):
+                    elif 'Apple' in hw_version and kernel == '':
+                        os_label = 'iOS'
                         self.ios += 1
                         self.ios_list.append(device)
                     else:
+                        os_label = 'android'
                         self.android += 1
                         self.android_list.append(device)
+                    hostname = self.devices_data[device]['user'] if self.devices_data[device]['user'] != '' else self.devices_data[device]['hostname']
+                    self.report_labels.append('{} {} {}'.format(selected_device, os_label, hostname)[:25])
         if not dowebgui:
             logging.info('The selected real devices are:')
             df = pd.DataFrame(data=selected_t_devices).transpose()
