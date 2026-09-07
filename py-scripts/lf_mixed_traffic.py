@@ -1215,8 +1215,7 @@ class Mixed_Traffic(Realm):
                         self.ftp_test_obj.num_sta = self.num_staions
                         self.ftp_test_obj.count = 0
                         self.ftp_test_obj.set_values()
-                        # pre cleanup layer-4 endpoints
-                        self.cleanup.layer4_endp_clean()
+                        # no L4 pre cleanup: global sweep breaks parallel HTTP test
                         self.ftp_test_obj.build()
                     if not self.ftp_test_obj.passes():
                         logger.info(self.ftp_test_obj.get_fail_message())
@@ -1344,7 +1343,7 @@ class Mixed_Traffic(Realm):
                 # self.http_obj.set_values()
                 # print(self.station_list)
                 # self.http_obj.station_list = [[self.station_list]]
-                self.cleanup.layer4_endp_clean()
+                # no L4 pre cleanup: global sweep breaks parallel FTP test
                 self.station_profile.admin_up()
                 logger.info("Waiting for all station ports to come up (maximum wait: 300 seconds)")
                 if not LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
@@ -1513,7 +1512,8 @@ class Mixed_Traffic(Realm):
                                           test_id="", test_input_infor="", csv_outfile="",
                                           _results_dir_name=f'Webpage_Test_Report{band}',
                                           report_path=self.report_path)
-            self.cleanup.layer4_endp_clean()
+            # post cleanup this test's own layer-4 endpoints only
+            self.http_obj.http_profile.cleanup()
             self.http_test_status = True
             if (conn):
                 conn.send([self.http_obj, self.dataset, self.dataset1, self.dataset2, self.bytes_rd, self.rx_rate, self.lis, True])
@@ -1664,14 +1664,7 @@ class Mixed_Traffic(Realm):
                                                                     dowebgui=self.dowebgui,
                                                                     ip=self.host,
                                                                     result_dir=self.result_dir)
-            if self.real:
-                if self.user_query[0]:
-                    logger.info("No station pre clean up on any existing cxs on LANforge")
-                else:
-                    logger.info("Cleaning up any existing cxs on LANforge")
-                    self.multicast_test_obj.pre_cleanup()
-            # cleaning the existing layer4 endpoints
-            self.cleanup.layer3_endp_clean()
+            # no L3 pre cleanup: global sweep breaks parallel QoS test
 
             logger.info("Create stations or use the provided station list to build the multicast cross connections")
             # building the endpoints
@@ -1705,7 +1698,8 @@ class Mixed_Traffic(Realm):
             if not self.multicast_test_obj.passes():
                 logger.warning("Multicast test completed with failures")
                 logger.warning(self.multicast_test_obj.get_fail_message())
-            self.cleanup.layer3_endp_clean()
+            # post cleanup this test's own multicast endpoints only
+            self.multicast_test_obj.multicast_profile.cleanup()
             if self.multicast_test_obj.passes():
                 logger.info("Multicast Test passed. All connections showed an increase in received bytes")
             tos_list = ['VI', 'VO', 'BK', 'BE']
