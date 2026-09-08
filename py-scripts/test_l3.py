@@ -1869,8 +1869,6 @@ class L3VariableTime(Realm):
     # as an array of objects.
     def __get_rx_values(self):
 
-        endp_rx_drop_map = {}
-        endp_rx_map = {}
         our_endps = {}
         endps = []
 
@@ -1882,15 +1880,15 @@ class L3VariableTime(Realm):
         if self.mtx_endps:
             available = self.monitor_endp_availability(self.mtx_endps)
             if not available:
-                return False, endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
+                return False, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
             endpoint = self.monitor_endp_availability(self.mrx_endps, return_endpoint_data=True)
             if not endpoint:
-                return False, endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
+                return False, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
         # Checking atleast one cx is there if not exiting
         else:
             available = self.monitor_cx_availability(self.cx_profile.get_cx_names())
             if not available:
-                return False, endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
+                return False, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
             endp_url = "endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll,run"
             endp_list = self.json_get(endp_url, debug_=True)
             if not endp_list:
@@ -1898,7 +1896,7 @@ class L3VariableTime(Realm):
                     "Failed to fetch endpoints. Received empty response.\n"
                     f"Requested URL: '{endp_url}'\n"
                     f"Response: {endp_list}")
-                return False, endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
+                return False, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
             endpoint = endp_list.get('endpoint', [])
             if isinstance(endpoint, dict):
                 endpoint = [{endpoint['name']: endpoint}]
@@ -1942,16 +1940,6 @@ class L3VariableTime(Realm):
                     logger.debug(endp_value)
 
                     for value_name, value in endp_value.items():
-                        if value_name == 'rx bytes':
-                            endp_rx_map[item] = value
-                        if value_name == 'rx rate':
-                            endp_rx_map[item] = value
-                        if value_name == 'rx rate ll':
-                            endp_rx_map[item] = value
-                        if value_name == 'rx pkts ll':
-                            endp_rx_map[item] = value
-                        if value_name == 'rx drop %':
-                            endp_rx_drop_map[item] = value
                         if value_name == 'rx rate':
                             if isinstance(value, str) and not value.isnumeric():
                                 logging.debug(
@@ -1971,7 +1959,7 @@ class L3VariableTime(Realm):
                             elif item.endswith("-B"):
                                 total_ul_ll += int(value)
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
-        return True, endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
+        return True, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
     # This script supports resetting ports, allowing one to test AP/controller under data load
     # while bouncing wifi stations.  Check here to see if we should reset
     # ports.
@@ -3085,7 +3073,7 @@ class L3VariableTime(Realm):
                     self.reset_port_check()
 
             self.epoch_time = int(time.time())
-            available, endp_rx_map, endp_rx_drop_map, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
+            available, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
             if not available:
                 logger.warning("Endpoint data not available, exiting monitoring loop early.")
                 self.actual_test_duration_display = self.format_duration(cur_time - start_time)
@@ -3145,10 +3133,8 @@ class L3VariableTime(Realm):
                 remaining_time = [
                     str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
                         total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0]
-                total = 0
-                for k, v in endp_rx_map.items():
-                    if 'MLT-' in k:
-                        total += v
+                # total_dl_ll_bps contains the combined 'rx rate ll' from all '-mrx-' endpoints.
+                total = total_dl_ll_bps
 
                 if rssi_values:
                     avg_rssi = sum(rssi_values) / len(rssi_values)
