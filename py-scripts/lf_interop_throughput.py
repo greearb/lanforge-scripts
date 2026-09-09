@@ -213,6 +213,25 @@ if os.path.exists(iot_scripts_path):
     from test_automation import Automation  # noqa: E402
 
 
+_last_appended_rows = {}
+
+
+def append_latest_row(dataframe, csv_path):
+    """Append a new last row once, without rewriting the CSV."""
+    if dataframe.empty:
+        return
+
+    latest_row = dataframe.tail(1)
+    row_signature = latest_row.to_csv(index=False, header=False)
+    csv_path = os.path.abspath(csv_path)
+    if _last_appended_rows.get(csv_path) == row_signature:
+        return
+
+    write_header = not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0
+    latest_row.to_csv(csv_path, mode='a', header=write_header, index=False)
+    _last_appended_rows[csv_path] = row_signature
+
+
 class Throughput(Realm):
     def __init__(self,
                  tos,
@@ -1714,7 +1733,10 @@ class Throughput(Realm):
                 # Appending the data according to the time gap (for webgui)
                 if (current_time - previous_time).total_seconds() >= time_break:
                     individual_df_for_webui.loc[len(individual_df_for_webui)] = individual_df_data
-                    if self.group_name is None:
+                    if self.do_interopability and self.group_name is None:
+                        latest_row = pd.DataFrame([individual_df_data], columns=individual_df.columns)
+                        append_latest_row(latest_row, '{}/throughput_data.csv'.format(runtime_dir))
+                    elif self.group_name is None:
                         individual_df.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
                     else:
                         individual_df.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
@@ -1917,7 +1939,10 @@ class Throughput(Realm):
                 individual_df_for_webui.to_csv('{}/overall_throughput.csv'.format(runtime_dir), index=False)
                 individual_df.to_csv('overall_throughput.csv', index=False)
             else:
-                individual_df.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
+                if self.do_interopability:
+                    append_latest_row(individual_df, '{}/throughput_data.csv'.format(runtime_dir))
+                else:
+                    individual_df.to_csv('{}/throughput_data.csv'.format(runtime_dir), index=False)
                 individual_df.to_csv('throughput_data.csv', index=False)
         else:
             individual_df.to_csv('throughput_data.csv', index=False)
