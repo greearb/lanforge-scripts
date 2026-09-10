@@ -556,6 +556,26 @@ class Ping(Realm):
             start_time = time.time()
         return False
 
+    @staticmethod
+    def validate_rtt(min_rtt, avg_rtt, max_rtt):
+        """Check whether min/avg/max RTT values represent a real ping result.
+
+        A ping that never got a reply shows up differently per OS: Linux/Mac
+        report a negative min and/or max (e.g. min=1000000, max=-1000000,
+        avg=0), while Windows reports a flat 0.000/0.000/0.000. Either
+        signature means the ping did not succeed, so all three values are
+        normalized to 'NA'.
+        """
+        try:
+            min_val = float(str(min_rtt).replace(',', ''))
+            avg_val = float(str(avg_rtt).replace(',', ''))
+            max_val = float(str(max_rtt).replace(',', ''))
+        except (TypeError, ValueError):
+            return 'NA', 'NA', 'NA'
+        if min_val < 0 or avg_val < 0 or max_val < 0 or (min_val == 0 and avg_val == 0 and max_val == 0):
+            return 'NA', 'NA', 'NA'
+        return min_rtt, avg_rtt, max_rtt
+
     def generate_remarks(self, station_ping_data):
         remarks = []
 
@@ -582,20 +602,28 @@ class Ping(Realm):
         if ('ping: sendmsg: No buffer space available' in station_ping_data['last_result']):
             remarks.append('Network buffer overlow')
 
-        # checking for no ping states
-        if (float(station_ping_data['min_rtt']) == 0 and float(station_ping_data['max_rtt']) == 0 and float(station_ping_data['avg_rtt']) == 0):
+        # checking for no ping states (min/avg/max were normalized to 'NA' by validate_rtt)
+        if (station_ping_data['min_rtt'] == 'NA'):
 
             # Destination Host Unreachable state
             if ('Destination Host Unreachable' in station_ping_data['last_result']):
                 remarks.append('Destination Host Unrechable')
 
+            # Destination Net Unreachable state
+            if ('Destination Net Unreachable' in station_ping_data['last_result']):
+                remarks.append('Destination Net Unreachable')
+
             # Name or service not known state
             if ('Name or service not known' in station_ping_data['last_result']):
                 remarks.append('Name or service not known')
 
-            # network buffer overflow
-            if ('ping: sendmsg: No buffer space available' in station_ping_data['last_result']):
-                remarks.append('Network buffer overlow')
+            # Temporary failure in name resolution (e.g. no network/DNS reachable)
+            if ('Temporary failure in name resolution' in station_ping_data['last_result']):
+                remarks.append('Temporary failure in name resolution')
+
+            # fall back so an invalid/NA ping result is never left unexplained
+            if (not remarks):
+                remarks.append('Ping failed - invalid RTT statistics (min/avg/max: NA)')
 
         return (remarks)
 
@@ -813,9 +841,11 @@ class Ping(Realm):
             self.device_channels.append(device_data['channel'])
             self.device_mac.append(device_data['mac'])
             self.device_ssid.append(device_data['ssid'])
-            self.device_min.append(float(device_data['min_rtt'].replace(',', '')))
-            self.device_max.append(float(device_data['max_rtt'].replace(',', '')))
-            self.device_avg.append(float(device_data['avg_rtt'].replace(',', '')))
+            # NA (failed ping) is kept as text here for the Latency table; the bar
+            # graph below converts NA to 0 right before it's plotted.
+            self.device_min.append(device_data['min_rtt'] if device_data['min_rtt'] == 'NA' else float(device_data['min_rtt'].replace(',', '')))
+            self.device_max.append(device_data['max_rtt'] if device_data['max_rtt'] == 'NA' else float(device_data['max_rtt'].replace(',', '')))
+            self.device_avg.append(device_data['avg_rtt'] if device_data['avg_rtt'] == 'NA' else float(device_data['avg_rtt'].replace(',', '')))
             if (device_data['os'] == 'Virtual'):
                 self.report_names.append('{} {}'.format(device, device_data['os'])[0:25])
             else:
@@ -943,7 +973,13 @@ class Ping(Realm):
         report.set_table_title('Ping Latency Graph')
         report.build_table_title()
 
-        graph = lf_bar_graph_horizontal(_data_set=[self.device_min, self.device_avg, self.device_max],
+        # the graph can't plot the text 'NA', so failed-ping devices show as 0 here;
+        # the Latency table below (and the Notes table) keep 'NA' for those devices
+        plot_min = [0.0 if min_val == 'NA' else min_val for min_val in self.device_min]
+        plot_avg = [0.0 if avg_val == 'NA' else avg_val for avg_val in self.device_avg]
+        plot_max = [0.0 if max_val == 'NA' else max_val for max_val in self.device_max]
+
+        graph = lf_bar_graph_horizontal(_data_set=[plot_min, plot_avg, plot_max],
                                         _xaxis_name='Time (ms)',
                                         _yaxis_name='Wireless Clients',
                                         _label=[
@@ -1578,13 +1614,9 @@ effectively over the network and pinpoint potential issues affecting connectivit
 
                             if 'min/avg/max' in last_result:
                                 rtt_values = last_result.split('min/avg/max:', 1)[1].strip().split()[0].split('/')
-                                min_rtt = rtt_values[0]
-                                avg_rtt = rtt_values[1]
-                                max_rtt = rtt_values[2]
+                                min_rtt, avg_rtt, max_rtt = ping.validate_rtt(rtt_values[0], rtt_values[1], rtt_values[2])
                             else:
-                                min_rtt = '0'
-                                avg_rtt = '0'
-                                max_rtt = '0'
+                                min_rtt, avg_rtt, max_rtt = 'NA', 'NA', 'NA'
 
                             ping.result_json[station] = {
                                 'command': ping_data['command'],
@@ -1628,13 +1660,9 @@ effectively over the network and pinpoint potential issues affecting connectivit
 
                         if 'min/avg/max' in last_result:
                             rtt_values = last_result.split('min/avg/max:', 1)[1].strip().split()[0].split('/')
-                            min_rtt = rtt_values[0]
-                            avg_rtt = rtt_values[1]
-                            max_rtt = rtt_values[2]
+                            min_rtt, avg_rtt, max_rtt = ping.validate_rtt(rtt_values[0], rtt_values[1], rtt_values[2])
                         else:
-                            min_rtt = '0'
-                            avg_rtt = '0'
-                            max_rtt = '0'
+                            min_rtt, avg_rtt, max_rtt = 'NA', 'NA', 'NA'
 
                         ping.result_json[station] = {
                             'command': ping_data['command'],
