@@ -20,6 +20,7 @@ from ppadb.client import Client as AdbClient
 
 ZOOM_PACKAGE = "us.zoom.videomeetings"
 NAME_SCREEN_ATTEMPTS = 3
+FOREGROUND_TIMEOUT = 30  # seconds to wait for Zoom to reach the foreground after a cold start
 
 
 class ZoomAutomator:
@@ -338,26 +339,22 @@ class ZoomAutomator:
 
     def open_meeting_link(self, d, meeting_url, attempt):
         """Cold-start Zoom and hand it the meeting link.
-
-        Called once per join attempt, so a retry gets a genuinely fresh app
-        rather than whatever screen the last one stalled on.
+        Input: d (uiautomator2 device), meeting_url (Zoom join link), attempt (attempt number, used in the log).
+        Output: True once the link is handed to Zoom; False if Zoom did not reach the foreground within FOREGROUND_TIMEOUT seconds.
         """
         self.logger.info(
             f"Starting {ZOOM_PACKAGE} and opening the meeting link "
             f"(attempt {attempt}/{NAME_SCREEN_ATTEMPTS})."
         )
         d.app_start(ZOOM_PACKAGE, stop=True)
-        pid = d.app_wait(ZOOM_PACKAGE, front=True, timeout=30)
-        if not pid:
-            raise RuntimeError(
-                f"{ZOOM_PACKAGE} did not come to foreground within 30s of cold start — "
-                "device may be slow/overloaded. Aborting this participant."
-            )
+        if not d.app_wait(ZOOM_PACKAGE, front=True, timeout=FOREGROUND_TIMEOUT):
+            return False
         self.adb_device.shell(
             f'am start -a android.intent.action.VIEW -d "{meeting_url}" {ZOOM_PACKAGE}'
         )
         self.logger.info(f"Meeting link handed to Zoom: {meeting_url}")
         time.sleep(8)
+        return True
 
     def enter_participant_name(self, d, participant_name):
         """Type the display name into whichever join screen this Zoom build shows.
@@ -449,16 +446,38 @@ class ZoomAutomator:
         self.logger.info(f"Starting Zoom automation for {participant_name}.")
         self.logger.info(f"Screen {width}x{height}, centre tap at {tap_coords}.")
 
+        foreground_failures = 0
         for attempt in range(1, NAME_SCREEN_ATTEMPTS + 1):
-            self.open_meeting_link(d, meeting_url, attempt)
+            if not self.open_meeting_link(d, meeting_url, attempt):
+                foreground_failures += 1
+                self.logger.warning(
+                    f"{ZOOM_PACKAGE} did not come to foreground within "
+                    f"{FOREGROUND_TIMEOUT}s on attempt {attempt}/{NAME_SCREEN_ATTEMPTS}."
+                )
+                continue
             if self.enter_participant_name(d, participant_name):
                 break
             self.logger.warning(
                 f"No join screen on attempt {attempt}/{NAME_SCREEN_ATTEMPTS}."
             )
         else:
+            if foreground_failures == NAME_SCREEN_ATTEMPTS:
+                self.logger.error(
+                    f"{ZOOM_PACKAGE} did not come to foreground in "
+                    f"{NAME_SCREEN_ATTEMPTS} attempts. Aborting automation."
+                )
+                raise RuntimeError(
+                    f"{ZOOM_PACKAGE} did not come to foreground within "
+                    f"{FOREGROUND_TIMEOUT}s of cold start in {NAME_SCREEN_ATTEMPTS} "
+                    "attempts — device may be slow/overloaded. Aborting this participant."
+                )
+            detail = (
+                f" ({foreground_failures} of them never brought {ZOOM_PACKAGE} to the foreground)"
+                if foreground_failures
+                else ""
+            )
             self.logger.error(
-                f"Name input screen not found in {NAME_SCREEN_ATTEMPTS} attempts. "
+                f"Name input screen not found in {NAME_SCREEN_ATTEMPTS} attempts{detail}. "
                 "Aborting automation."
             )
             raise RuntimeError(
