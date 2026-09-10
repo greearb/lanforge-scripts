@@ -718,8 +718,10 @@ class Mixed_Traffic(Realm):
                                                 duration=ping_test_duration, result_dir=self.result_dir,
                                                 dowebgui=self.dowebgui, test_name=self.test_name)
             if not self.ping_test_obj.check_tab_exists():
-                logger.info('Generic Tab is not available for Ping Test.\nAborting the test.')
-                exit(0)
+                logger.error('Generic Tab is not available for Ping Test. Skipping the Ping Test.')
+                if (conn):
+                    conn.send(['', False])
+                return
             if self.real:
                 self.ping_test_obj.select_real_devices(real_devices=self.base_interop_profile,
                                                        real_sta_list=self.user_query[0],
@@ -728,8 +730,10 @@ class Mixed_Traffic(Realm):
                 self.ping_test_obj.real_sta_list, _, _ = self.filter_iOS_devices(self.user_query[0], self.user_query[1], self.user_query[2])
                 # removing the existing generic endpoints & cxs
                 if (len(self.ping_test_obj.real_sta_list) == 0):
-                    logger.info("No Device is available to run the test hence aborting the test")
-                    exit(0)
+                    logger.error("No device available to run the Ping Test. Skipping the Ping Test.")
+                    if (conn):
+                        conn.send(['', False])
+                    return
                 self.ping_test_obj.cleanup()
                 self.ping_test_obj.sta_list = self.ping_test_obj.real_sta_list
             elif self.virtual:
@@ -1201,8 +1205,10 @@ class Mixed_Traffic(Realm):
                             self.ftp_test_obj.input_devices_list, self.ftp_test_obj.real_client_list1, self.ftp_test_obj.mac_id_list)
                         self.ftp_device = self.ftp_test_obj.real_client_list1
                         if (len(self.ftp_test_obj.input_devices_list) == 0):
-                            logger.info("No Device is available to run the test hence aborting the test")
-                            exit(0)
+                            logger.error("No device available to run the FTP Test. Skipping the FTP Test.")
+                            if (conn):
+                                conn.send(['', False])
+                            return
                         self.ftp_test_obj.windows_ports = self.windows_ports
                         self.ftp_test_obj.set_values()
                         self.ftp_test_obj.precleanup()
@@ -1325,8 +1331,10 @@ class Mixed_Traffic(Realm):
                 self.http_dev = self.http_obj.devices_list
                 self.http_mac = self.http_obj.macid_list
                 if (len(self.http_obj.port_list) == 0):
-                    logger.info("No device is available to run the test hence aborting the test")
-                    exit(0)
+                    logger.error("No device available to run the HTTP Test. Skipping the HTTP Test.")
+                    if (conn):
+                        conn.send([[], [], {}, {}, '', '', '', False])
+                    return
                 self.http_obj.user_query = self.user_query
                 self.http_obj.windows_ports = self.windows_ports
                 num_stations = len(self.user_query[0])
@@ -1673,7 +1681,9 @@ class Mixed_Traffic(Realm):
             if not self.multicast_test_obj.passes():
                 logger.critical("build step failed")
                 logger.critical(self.multicast_test_obj.get_fail_message())
-                exit(1)
+                if (conn):
+                    conn.send([[], [], False])
+                return
             logger.info("Start the Multicast test")
             # TODO: Check return value of start()
             self.multicast_test_obj.start(False)
