@@ -469,12 +469,19 @@ class Mixed_Traffic(Realm):
     def pre_cleanup(self):  # cleaning pre-existing stations and cross connections
         if not self.real:
             self.cleanup.sta_clean()
-        resp = self.json_get('/generic?fields=name')
-        if 'endpoints' in resp:
-            for i in resp['endpoints']:
-                if list(i.values())[0]['name']:
-                    self.generic_endps_profile.created_cx.append('CX_' + list(i.values())[0]['name'])
-                    self.generic_endps_profile.created_endp.append(list(i.values())[0]['name'])
+        generic_url = '/generic?fields=name'
+        resp = self.json_get(generic_url)
+        if not resp:
+            logger.error("Failed to fetch generic endpoints for cleanup.\nRequested URL: '{}'\nResponse: {}".format(generic_url, resp))
+            endpoints = []
+        else:
+            endpoints = resp.get('endpoints', resp.get('endpoint', []))
+            if isinstance(endpoints, dict):
+                endpoints = [{endpoints['name']: endpoints}]
+        for i in endpoints:
+            if list(i.values())[0]['name']:
+                self.generic_endps_profile.created_cx.append('CX_' + list(i.values())[0]['name'])
+                self.generic_endps_profile.created_endp.append(list(i.values())[0]['name'])
         self.generic_endps_profile.cleanup()
         self.cleanup.cxs_clean()
         self.cleanup.layer3_endp_clean()
@@ -925,6 +932,8 @@ class Mixed_Traffic(Realm):
                 band = '_' + self.band
             self.ping_test_obj.generate_report(result_json=result_json, result_dir=f'Ping_Test_Report{band}',
                                                report_path=self.report_path)
+            # post cleanup this test's own generic endpoints only
+            self.ping_test_obj.generic_endps_profile.cleanup()
             self.ping_test_status = True
             if (conn):
                 conn.send([self.ping_test_obj, True])
