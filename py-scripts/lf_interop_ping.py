@@ -831,7 +831,7 @@ class Ping(Realm):
         # packet_count_data = {}
         os_type = []
         for device, device_data in self.result_json.items():
-            logger.info('Device data: {} {}'.format(device, device_data))
+            logger.debug('Device data: {} {}'.format(device, device_data))
             os_type.append(device_data['os'])
             self.packets_sent.append(int(device_data['sent']))
             self.packets_received.append(int(device_data['recv']))
@@ -1024,6 +1024,12 @@ class Ping(Realm):
         })
         report.set_table_dataframe(dataframe2)
         report.build_table()
+
+        # only show the NA caveat when at least one device actually has NA latency
+        if ('NA' in self.device_min):
+            report.set_text("Note: Stations which are not reachable to the internet, and the ping failed to receive any packets, "
+                            "resulting in 100% packet loss. Hence, the latency is reported as NA.")
+            report.build_text_simple()
 
         # check if there are remarks for any device. If there are remarks, build table else don't
         if (self.remarks != []):
