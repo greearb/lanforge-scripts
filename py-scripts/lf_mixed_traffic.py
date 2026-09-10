@@ -833,13 +833,9 @@ class Mixed_Traffic(Realm):
 
                                     if 'min/avg/max' in last_result:
                                         rtt_values = last_result.split('min/avg/max:', 1)[1].strip().split()[0].split('/')
-                                        min_rtt = rtt_values[0]
-                                        avg_rtt = rtt_values[1]
-                                        max_rtt = rtt_values[2]
+                                        min_rtt, avg_rtt, max_rtt = self.ping_test_obj.validate_rtt(rtt_values[0], rtt_values[1], rtt_values[2])
                                     else:
-                                        min_rtt = '0'
-                                        avg_rtt = '0'
-                                        max_rtt = '0'
+                                        min_rtt, avg_rtt, max_rtt = 'NA', 'NA', 'NA'
 
                                     result_json[station] = {
                                         'command': ping_data['command'],
@@ -881,13 +877,9 @@ class Mixed_Traffic(Realm):
 
                                 if 'min/avg/max' in last_result:
                                     rtt_values = last_result.split('min/avg/max:', 1)[1].strip().split()[0].split('/')
-                                    min_rtt = rtt_values[0]
-                                    avg_rtt = rtt_values[1]
-                                    max_rtt = rtt_values[2]
+                                    min_rtt, avg_rtt, max_rtt = self.ping_test_obj.validate_rtt(rtt_values[0], rtt_values[1], rtt_values[2])
                                 else:
-                                    min_rtt = '0'
-                                    avg_rtt = '0'
-                                    max_rtt = '0'
+                                    min_rtt, avg_rtt, max_rtt = 'NA', 'NA', 'NA'
 
                                 result_json[station] = {
                                     'command': ping_data['command'],
@@ -1971,9 +1963,13 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.build_table()
                 self.lf_report_mt.set_table_title('Ping Latency Graph')
                 self.lf_report_mt.build_table_title()
+                # the graph can't plot the text 'NA', so failed-ping devices show as 0 here;
+                # the Latency table below keeps 'NA' for those devices
+                plot_min = [0.0 if min_val == 'NA' else min_val for min_val in self.ping_test_obj.device_min]
+                plot_avg = [0.0 if avg_val == 'NA' else avg_val for avg_val in self.ping_test_obj.device_avg]
+                plot_max = [0.0 if max_val == 'NA' else max_val for max_val in self.ping_test_obj.device_max]
                 graph = lf_graph.lf_bar_graph_horizontal(
-                    _data_set=[self.ping_test_obj.device_min, self.ping_test_obj.device_avg,
-                               self.ping_test_obj.device_max],
+                    _data_set=[plot_min, plot_avg, plot_max],
                     _xaxis_name='Time (ms)',
                     _yaxis_name='Wireless Clients',
                     _label=['Min Latency (ms)', 'Average Latency (ms)', 'Max Latency (ms)'],
@@ -2012,6 +2008,13 @@ class Mixed_Traffic(Realm):
                     'Max Latency (ms)': self.ping_test_obj.device_max})
                 self.lf_report_mt.set_table_dataframe(dataframe2)
                 self.lf_report_mt.build_table()
+
+                # only show the NA caveat when at least one device actually has NA latency
+                if ('NA' in self.ping_test_obj.device_min):
+                    self.lf_report_mt.set_text(
+                        "Note: Stations which are not reachable to the internet, and the ping failed to receive any packets, "
+                        "resulting in 100% packet loss. Hence, the latency is reported as NA.")
+                    self.lf_report_mt.build_text_simple()
             if "2" in self.tests and self.qos_test_status:
                 # 2.QOS test reporting in mixed traffic
                 self.lf_report_mt.set_obj_html(_obj_title="2. Quality Of Service(QOS) Test", _obj="")
