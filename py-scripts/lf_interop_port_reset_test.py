@@ -63,6 +63,7 @@ import datetime
 from datetime import datetime  # noqa: F811
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import logging
 from lf_base_robo import RobotClass
 import asyncio
@@ -956,10 +957,48 @@ class InteropPortReset(Realm):
                         device_metrics[str(device_eid)]["cx time (us)"] = "NA"
                 else:
                     device_metrics[str(device_eid)]["cx time (us)"] = "NA"
+        self.normalize_reset_metrics(device_metrics[str(device_eid)])
         logging.info("device_metrics " + str(device_metrics))
         self.write_iteration_csvs(device_metrics, iteration)
 
         return device_metrics
+
+    @staticmethod
+    def normalize_reset_metrics(metrics):
+        """Report one disconnect/reconnect outcome per commanded reset.
+
+        Multiple OS messages may describe the same transition. Scan and
+        association counters remain event counts, including retries.
+        """
+        for key in ("Connected", "Disconnected"):
+            metrics[key] = int((metrics.get(key) or 0) > 0)
+        previous_remark = metrics.get("Remarks") or ""
+        if "unverified" in previous_remark.lower() or "unavailable" in previous_remark.lower():
+            return
+        if metrics["Connected"]:
+            remark = "Client reconnected after reset."
+            if not metrics["Disconnected"]:
+                remark += " No disconnect message was observed."
+        elif metrics["Disconnected"]:
+            remark = "Disconnect observed; no successful reconnection was confirmed."
+        else:
+            remark = "No disconnect or successful reconnection was confirmed."
+        if metrics.get("Association Rejection", 0):
+            remark += " Association failures were reported."
+        metrics["Remarks"] = remark
+
+    def report_client_names(self, device_names, user_names):
+        """Pair laptop resource IDs with host names and use Android client names."""
+        names = []
+        for eid, device_name, user_name in zip(
+            self.adb_device_list + self.all_laptops, device_names, user_names
+        ):
+            if eid in self.all_laptops:
+                resource = ".".join(eid.split(".")[:2])
+                names.append(f"{resource} {user_name}" if user_name else eid)
+            else:
+                names.append(user_name or device_name or eid)
+        return names
 
     def write_iteration_csvs(self, device_metrics, iteration):
         """Write one CSV per device with its metrics for a single iteration.
@@ -1515,7 +1554,9 @@ class InteropPortReset(Realm):
             "Connected",
         ]
         metric_totals = dict.fromkeys(metric_labels)
-        metric_totals["Port Resets"] = self.iterations * len(self.all_selected_devices)
+        metric_totals["Port Resets"] = sum(
+            len(results) for results in per_iteration_results.values() if results is not None
+        )
 
         connected_counts, laptop_connected_counts = [], []
         disconnected_counts, laptop_disconnected_counts = [], []
@@ -1618,6 +1659,8 @@ class InteropPortReset(Realm):
         bar_totals = list(metric_totals.values())
 
         fig, ax = plt.subplots(figsize=figsize, gridspec_kw=_alignment)
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        ax.set_ylim(bottom=0, top=max(1, max(bar_totals, default=0) * 1.15))
         # to remove the borders
         if remove_border is not None:
             for border in remove_border:
@@ -1689,6 +1732,8 @@ class InteropPortReset(Realm):
         bar_totals = list(metric_totals.values())
 
         fig, ax = plt.subplots(figsize=figsize, gridspec_kw=_alignment)
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        ax.set_ylim(bottom=0, top=max(1, max(bar_totals, default=0) * 1.15))
         # to remove the borders
         if remove_border is not None:
             for border in remove_border:
@@ -1791,7 +1836,7 @@ class InteropPortReset(Realm):
                 "Connects",
             ]
             metric_totals = dict.fromkeys(metric_labels)
-            metric_totals["Port Resets"] = self.iterations
+            metric_totals["Port Resets"] = len(iteration_numbers)
 
             disconnect_total = 0
             for count in disconnected:
@@ -1818,7 +1863,7 @@ class InteropPortReset(Realm):
                 connect_total = connect_total + count
             metric_totals["Connects"] = connect_total
 
-            self.total_resets.append(self.iterations)
+            self.total_resets.append(len(iteration_numbers))
             self.total_disconnects.append(sum(disconnected))
             self.total_scans.append(sum(scanning))
             self.total_assoc_attempts.append(sum(assoc_attempts))
@@ -1863,9 +1908,12 @@ class InteropPortReset(Realm):
                     ]
                 )
                 remarks.append(per_iteration_results[iteration][device_eid]["Remarks"])
-                cx_times.append(
-                    per_iteration_results[iteration][device_eid]["cx time (us)"]
-                )
+                try:
+                    cx_times.append(
+                        float(per_iteration_results[iteration][device_eid]["cx time (us)"]) / 1000
+                    )
+                except (TypeError, ValueError):
+                    cx_times.append("NA")
 
             metric_labels = [
                 "Port Resets",
@@ -1876,7 +1924,7 @@ class InteropPortReset(Realm):
                 "Connects",
             ]
             metric_totals = dict.fromkeys(metric_labels)
-            metric_totals["Port Resets"] = self.iterations
+            metric_totals["Port Resets"] = len(iteration_numbers)
 
             disconnect_total = 0
             for count in disconnected:
@@ -1952,7 +2000,7 @@ class InteropPortReset(Realm):
                 "Association attempts": assoc_attempts,
                 "Association Rejection": assoc_rejections,
                 "Connected": connected,
-                "Connection Time (us)": cx_times,
+                "Connection Time (ms)": cx_times,
                 "Remarks": remarks,
             }
             client_table_df = pd.DataFrame(per_iteration_table)
@@ -2014,11 +2062,11 @@ class InteropPortReset(Realm):
                 "including Port Resets, Disconnects, Scans, Association Attempts, Association Rejections and Connections. "
                 "Each category represents the total count achieved by all clients.<br><br>"
                 "1.  Port Resets: Total number of reset occurrences provided as test input.<br>"
-                "2.  Disconnects: Total number of disconnects that happened for all clients during the test when WiFi was disabled.<br>"
+                "2.  Disconnects: Number of client resets with an observed disconnect, counted at most once per client per reset.<br>"
                 "3.  Scans: Total number of scanning states achieved by all clients during the test when the network is re-enabled.<br>"
                 "4.  Association Attempts: Total number of association attempts (Associating state) made by all clients after WiFi is re-enabled in the full test.<br>"
                 "4.  Association Rejections: Total number of association rejections made by all clients after WiFi is re-enabled in the full test.<br>"
-                "6.  Connected: Total number of successful connections (Associated state) achieved by all clients during the test when WiFi is re-enabled.<br>",
+                "6.  Connected: Number of client resets with a successful reconnection, counted at most once per client per reset.<br>",
             )
             self.lf_report.build_objective()
             overall_graph = self.generate_overall_graph(
@@ -2053,11 +2101,7 @@ class InteropPortReset(Realm):
                 device_names.append(
                     self.interop.get_device_details(device=device_eid, query="name")
                 )
-                device_types.append(
-                    self.interop.get_device_details(
-                        device=device_eid, query="device-type"
-                    )
-                )
+                device_types.append("Android")
                 user_names.append(
                     self.interop.get_device_details(
                         device=device_eid, query="user-name"
@@ -2088,15 +2132,14 @@ class InteropPortReset(Realm):
 
             device_summary_table = {
                 "S.No": serial_numbers,
-                "Name of the Devices": device_names,
-                "Hardware Version": user_names,
-                "Device Type": device_types,
+                "Client Name": self.report_client_names(device_names, user_names),
+                "OS": device_types,
                 "Port Resets": self.total_resets,
                 "Disconnects": self.total_disconnects,
                 "Scans": self.total_scans,
-                "Assoc Attemts": self.total_assoc_attempts,
+                "Assoc Attempts": self.total_assoc_attempts,
                 "Assoc Rejects": self.total_assoc_rejections,
-                "Connects": self.total_connects,
+                "Connections": self.total_connects,
             }
             device_summary_df = pd.DataFrame(device_summary_table)
             self.lf_report.set_table_dataframe(device_summary_df)
@@ -2202,11 +2245,11 @@ class InteropPortReset(Realm):
             "including Port Resets, Disconnects, Scans, Association Attempts, Association Rejections and Connections. "
             "Each category represents the total count achieved by all clients.<br><br>"
             "1.  Port Resets: Total number of reset occurrences provided as test input.<br>"
-            "2.  Disconnects: Total number of disconnects that happened for all clients during the test when WiFi was disabled.<br>"
+            "2.  Disconnects: Number of client resets with an observed disconnect, counted at most once per client per reset.<br>"
             "3.  Scans: Total number of scanning states achieved by all clients during the test when the network is re-enabled.<br>"
             "4.  Association Attempts: Total number of association attempts (Associating state) made by all clients after WiFi is re-enabled in the full test.<br>"
             "4.  Association Rejections: Total number of association rejections made by all clients after WiFi is re-enabled in the full test.<br>"
-            "6.  Connected: Total number of successful connections (Associated state) achieved by all clients during the test when WiFi is re-enabled.<br>",
+            "6.  Connected: Number of client resets with a successful reconnection, counted at most once per client per reset.<br>",
         )
         self.lf_report.build_objective()
         for coordinate_index in range(len(self.coordinate_list)):
@@ -2268,11 +2311,7 @@ class InteropPortReset(Realm):
                                 device=device_eid, query="name"
                             )
                         )
-                        device_types.append(
-                            self.interop.get_device_details(
-                                device=device_eid, query="device-type"
-                            )
-                        )
+                        device_types.append("Android")
                         user_names.append(
                             self.interop.get_device_details(
                                 device=device_eid, query="user-name"
@@ -2303,15 +2342,14 @@ class InteropPortReset(Realm):
 
                     device_summary_table = {
                         "S.No": serial_numbers,
-                        "Name of the Devices": device_names,
-                        "Hardware Version": user_names,
-                        "Device Type": device_types,
+                        "Client Name": self.report_client_names(device_names, user_names),
+                        "OS": device_types,
                         "Port Resets": self.total_resets,
                         "Disconnects": self.total_disconnects,
                         "Scans": self.total_scans,
-                        "Assoc Attemts": self.total_assoc_attempts,
+                        "Assoc Attempts": self.total_assoc_attempts,
                         "Assoc Rejects": self.total_assoc_rejections,
-                        "Connects": self.total_connects,
+                        "Connections": self.total_connects,
                     }
                     device_summary_df = pd.DataFrame(device_summary_table)
                     self.lf_report.set_table_dataframe(device_summary_df)
@@ -2366,11 +2404,7 @@ class InteropPortReset(Realm):
                     device_names.append(
                         self.interop.get_device_details(device=device_eid, query="name")
                     )
-                    device_types.append(
-                        self.interop.get_device_details(
-                            device=device_eid, query="device-type"
-                        )
-                    )
+                    device_types.append("Android")
                     user_names.append(
                         self.interop.get_device_details(
                             device=device_eid, query="user-name"
@@ -2401,15 +2435,14 @@ class InteropPortReset(Realm):
 
                 device_summary_table = {
                     "S.No": serial_numbers,
-                    "Name of the Devices": device_names,
-                    "Hardware Version": user_names,
-                    "Device Type": device_types,
+                    "Client Name": self.report_client_names(device_names, user_names),
+                    "OS": device_types,
                     "Port Resets": self.total_resets,
                     "Disconnects": self.total_disconnects,
                     "Scans": self.total_scans,
-                    "Assoc Attemts": self.total_assoc_attempts,
+                    "Assoc Attempts": self.total_assoc_attempts,
                     "Assoc Rejects": self.total_assoc_rejections,
-                    "Connects": self.total_connects,
+                    "Connections": self.total_connects,
                 }
                 device_summary_df = pd.DataFrame(device_summary_table)
                 self.lf_report.set_table_dataframe(device_summary_df)
