@@ -469,12 +469,19 @@ class Mixed_Traffic(Realm):
     def pre_cleanup(self):  # cleaning pre-existing stations and cross connections
         if not self.real:
             self.cleanup.sta_clean()
-        resp = self.json_get('/generic?fields=name')
-        if 'endpoints' in resp:
-            for i in resp['endpoints']:
-                if list(i.values())[0]['name']:
-                    self.generic_endps_profile.created_cx.append('CX_' + list(i.values())[0]['name'])
-                    self.generic_endps_profile.created_endp.append(list(i.values())[0]['name'])
+        generic_url = '/generic?fields=name'
+        resp = self.json_get(generic_url)
+        if not resp:
+            logger.error("Failed to fetch generic endpoints for cleanup.\nRequested URL: '{}'\nResponse: {}".format(generic_url, resp))
+            endpoints = []
+        else:
+            endpoints = resp.get('endpoints', resp.get('endpoint', []))
+            if isinstance(endpoints, dict):
+                endpoints = [{endpoints['name']: endpoints}]
+        for i in endpoints:
+            if list(i.values())[0]['name']:
+                self.generic_endps_profile.created_cx.append('CX_' + list(i.values())[0]['name'])
+                self.generic_endps_profile.created_endp.append(list(i.values())[0]['name'])
         self.generic_endps_profile.cleanup()
         self.cleanup.cxs_clean()
         self.cleanup.layer3_endp_clean()
@@ -718,8 +725,10 @@ class Mixed_Traffic(Realm):
                                                 duration=ping_test_duration, result_dir=self.result_dir,
                                                 dowebgui=self.dowebgui, test_name=self.test_name)
             if not self.ping_test_obj.check_tab_exists():
-                logger.info('Generic Tab is not available for Ping Test.\nAborting the test.')
-                exit(0)
+                logger.error('Generic Tab is not available for Ping Test. Skipping the Ping Test.')
+                if (conn):
+                    conn.send(['', False])
+                return
             if self.real:
                 self.ping_test_obj.select_real_devices(real_devices=self.base_interop_profile,
                                                        real_sta_list=self.user_query[0],
@@ -728,8 +737,10 @@ class Mixed_Traffic(Realm):
                 self.ping_test_obj.real_sta_list, _, _ = self.filter_iOS_devices(self.user_query[0], self.user_query[1], self.user_query[2])
                 # removing the existing generic endpoints & cxs
                 if (len(self.ping_test_obj.real_sta_list) == 0):
-                    logger.info("No Device is available to run the test hence aborting the test")
-                    exit(0)
+                    logger.error("No device available to run the Ping Test. Skipping the Ping Test.")
+                    if (conn):
+                        conn.send(['', False])
+                    return
                 self.ping_test_obj.cleanup()
                 self.ping_test_obj.sta_list = self.ping_test_obj.real_sta_list
             elif self.virtual:
@@ -822,13 +833,9 @@ class Mixed_Traffic(Realm):
 
                                     if 'min/avg/max' in last_result:
                                         rtt_values = last_result.split('min/avg/max:', 1)[1].strip().split()[0].split('/')
-                                        min_rtt = rtt_values[0]
-                                        avg_rtt = rtt_values[1]
-                                        max_rtt = rtt_values[2]
+                                        min_rtt, avg_rtt, max_rtt = self.ping_test_obj.validate_rtt(rtt_values[0], rtt_values[1], rtt_values[2])
                                     else:
-                                        min_rtt = '0'
-                                        avg_rtt = '0'
-                                        max_rtt = '0'
+                                        min_rtt, avg_rtt, max_rtt = 'NA', 'NA', 'NA'
 
                                     result_json[station] = {
                                         'command': ping_data['command'],
@@ -870,13 +877,9 @@ class Mixed_Traffic(Realm):
 
                                 if 'min/avg/max' in last_result:
                                     rtt_values = last_result.split('min/avg/max:', 1)[1].strip().split()[0].split('/')
-                                    min_rtt = rtt_values[0]
-                                    avg_rtt = rtt_values[1]
-                                    max_rtt = rtt_values[2]
+                                    min_rtt, avg_rtt, max_rtt = self.ping_test_obj.validate_rtt(rtt_values[0], rtt_values[1], rtt_values[2])
                                 else:
-                                    min_rtt = '0'
-                                    avg_rtt = '0'
-                                    max_rtt = '0'
+                                    min_rtt, avg_rtt, max_rtt = 'NA', 'NA', 'NA'
 
                                 result_json[station] = {
                                     'command': ping_data['command'],
@@ -921,6 +924,8 @@ class Mixed_Traffic(Realm):
                 band = '_' + self.band
             self.ping_test_obj.generate_report(result_json=result_json, result_dir=f'Ping_Test_Report{band}',
                                                report_path=self.report_path)
+            # post cleanup this test's own generic endpoints only
+            self.ping_test_obj.generic_endps_profile.cleanup()
             self.ping_test_status = True
             if (conn):
                 conn.send([self.ping_test_obj, True])
@@ -1201,8 +1206,10 @@ class Mixed_Traffic(Realm):
                             self.ftp_test_obj.input_devices_list, self.ftp_test_obj.real_client_list1, self.ftp_test_obj.mac_id_list)
                         self.ftp_device = self.ftp_test_obj.real_client_list1
                         if (len(self.ftp_test_obj.input_devices_list) == 0):
-                            logger.info("No Device is available to run the test hence aborting the test")
-                            exit(0)
+                            logger.error("No device available to run the FTP Test. Skipping the FTP Test.")
+                            if (conn):
+                                conn.send(['', False])
+                            return
                         self.ftp_test_obj.windows_ports = self.windows_ports
                         self.ftp_test_obj.set_values()
                         self.ftp_test_obj.precleanup()
@@ -1215,8 +1222,7 @@ class Mixed_Traffic(Realm):
                         self.ftp_test_obj.num_sta = self.num_staions
                         self.ftp_test_obj.count = 0
                         self.ftp_test_obj.set_values()
-                        # pre cleanup layer-4 endpoints
-                        self.cleanup.layer4_endp_clean()
+                        # no L4 pre cleanup: global sweep breaks parallel HTTP test
                         self.ftp_test_obj.build()
                     if not self.ftp_test_obj.passes():
                         logger.info(self.ftp_test_obj.get_fail_message())
@@ -1326,8 +1332,10 @@ class Mixed_Traffic(Realm):
                 self.http_dev = self.http_obj.devices_list
                 self.http_mac = self.http_obj.macid_list
                 if (len(self.http_obj.port_list) == 0):
-                    logger.info("No device is available to run the test hence aborting the test")
-                    exit(0)
+                    logger.error("No device available to run the HTTP Test. Skipping the HTTP Test.")
+                    if (conn):
+                        conn.send([[], [], {}, {}, '', '', '', False])
+                    return
                 self.http_obj.user_query = self.user_query
                 self.http_obj.windows_ports = self.windows_ports
                 num_stations = len(self.user_query[0])
@@ -1344,7 +1352,7 @@ class Mixed_Traffic(Realm):
                 # self.http_obj.set_values()
                 # print(self.station_list)
                 # self.http_obj.station_list = [[self.station_list]]
-                self.cleanup.layer4_endp_clean()
+                # no L4 pre cleanup: global sweep breaks parallel FTP test
                 self.station_profile.admin_up()
                 logger.info("Waiting for all station ports to come up (maximum wait: 300 seconds)")
                 if not LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
@@ -1513,7 +1521,8 @@ class Mixed_Traffic(Realm):
                                           test_id="", test_input_infor="", csv_outfile="",
                                           _results_dir_name=f'Webpage_Test_Report{band}',
                                           report_path=self.report_path)
-            self.cleanup.layer4_endp_clean()
+            # post cleanup this test's own layer-4 endpoints only
+            self.http_obj.http_profile.cleanup()
             self.http_test_status = True
             if (conn):
                 conn.send([self.http_obj, self.dataset, self.dataset1, self.dataset2, self.bytes_rd, self.rx_rate, self.lis, True])
@@ -1664,14 +1673,7 @@ class Mixed_Traffic(Realm):
                                                                     dowebgui=self.dowebgui,
                                                                     ip=self.host,
                                                                     result_dir=self.result_dir)
-            if self.real:
-                if self.user_query[0]:
-                    logger.info("No station pre clean up on any existing cxs on LANforge")
-                else:
-                    logger.info("Cleaning up any existing cxs on LANforge")
-                    self.multicast_test_obj.pre_cleanup()
-            # cleaning the existing layer4 endpoints
-            self.cleanup.layer3_endp_clean()
+            # no L3 pre cleanup: global sweep breaks parallel QoS test
 
             logger.info("Create stations or use the provided station list to build the multicast cross connections")
             # building the endpoints
@@ -1680,7 +1682,9 @@ class Mixed_Traffic(Realm):
             if not self.multicast_test_obj.passes():
                 logger.critical("build step failed")
                 logger.critical(self.multicast_test_obj.get_fail_message())
-                exit(1)
+                if (conn):
+                    conn.send([[], [], False])
+                return
             logger.info("Start the Multicast test")
             # TODO: Check return value of start()
             self.multicast_test_obj.start(False)
@@ -1705,7 +1709,8 @@ class Mixed_Traffic(Realm):
             if not self.multicast_test_obj.passes():
                 logger.warning("Multicast test completed with failures")
                 logger.warning(self.multicast_test_obj.get_fail_message())
-            self.cleanup.layer3_endp_clean()
+            # post cleanup this test's own multicast endpoints only
+            self.multicast_test_obj.multicast_profile.cleanup()
             if self.multicast_test_obj.passes():
                 logger.info("Multicast Test passed. All connections showed an increase in received bytes")
             tos_list = ['VI', 'VO', 'BK', 'BE']
@@ -1958,9 +1963,13 @@ class Mixed_Traffic(Realm):
                 self.lf_report_mt.build_table()
                 self.lf_report_mt.set_table_title('Ping Latency Graph')
                 self.lf_report_mt.build_table_title()
+                # the graph can't plot the text 'NA', so failed-ping devices show as 0 here;
+                # the Latency table below keeps 'NA' for those devices
+                plot_min = [0.0 if min_val == 'NA' else min_val for min_val in self.ping_test_obj.device_min]
+                plot_avg = [0.0 if avg_val == 'NA' else avg_val for avg_val in self.ping_test_obj.device_avg]
+                plot_max = [0.0 if max_val == 'NA' else max_val for max_val in self.ping_test_obj.device_max]
                 graph = lf_graph.lf_bar_graph_horizontal(
-                    _data_set=[self.ping_test_obj.device_min, self.ping_test_obj.device_avg,
-                               self.ping_test_obj.device_max],
+                    _data_set=[plot_min, plot_avg, plot_max],
                     _xaxis_name='Time (ms)',
                     _yaxis_name='Wireless Clients',
                     _label=['Min Latency (ms)', 'Average Latency (ms)', 'Max Latency (ms)'],
@@ -1999,6 +2008,13 @@ class Mixed_Traffic(Realm):
                     'Max Latency (ms)': self.ping_test_obj.device_max})
                 self.lf_report_mt.set_table_dataframe(dataframe2)
                 self.lf_report_mt.build_table()
+
+                # only show the NA caveat when at least one device actually has NA latency
+                if ('NA' in self.ping_test_obj.device_min):
+                    self.lf_report_mt.set_text(
+                        "Note: Stations which are not reachable to the internet, and the ping failed to receive any packets, "
+                        "resulting in 100% packet loss. Hence, the latency is reported as NA.")
+                    self.lf_report_mt.build_text_simple()
             if "2" in self.tests and self.qos_test_status:
                 # 2.QOS test reporting in mixed traffic
                 self.lf_report_mt.set_obj_html(_obj_title="2. Quality Of Service(QOS) Test", _obj="")
@@ -2635,6 +2651,24 @@ async def run_iot(ip: str = '127.0.0.1',
     await automation.session.close()
 
     logger.info("Iot Test Completed")
+
+
+def recv_or_default(pipe, proc, default, label):
+    """Read a parallel test's result from its pipe, falling back to a default if the
+    worker process ended without sending (so the overall report is still generated).
+
+    Read before join(): a worker sending a result larger than the pipe buffer stays
+    blocked in send() until the parent reads, so join()-first could deadlock.
+    """
+    while proc.is_alive() and not pipe.poll(1):  # wait for a result, but stop if the worker dies
+        pass
+    if pipe.poll():                              # result available -> read it (drains the pipe)
+        result = pipe.recv()
+    else:                                        # worker ended without sending anything
+        logger.error("%s process ended without returning results; marking it as Not Executed.", label)
+        result = default
+    proc.join()
+    return result
 
 
 def main():
@@ -3286,26 +3320,27 @@ INCLUDE_IN_README: False
                             #                         side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu)
 
                         if "1" in args.tests:
-                            mixed_obj.ping_test_obj, mixed_obj.ping_test_status = t1_parent.recv()
-                            t1.join()
+                            mixed_obj.ping_test_obj, mixed_obj.ping_test_status = recv_or_default(
+                                t1_parent, t1, ('', False), "Ping test")
                         if "2" in args.tests:
-                            mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = t2_parent.recv()
-                            t2.join()
+                            mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = recv_or_default(
+                                t2_parent, t2, ('', '', '', '', False), "QoS test")
                         if "3" in args.tests:
-                            mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = t3_parent.recv()
-                            t3.join()
+                            mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = recv_or_default(
+                                t3_parent, t3, ('', False), "FTP test")
                         if "4" in args.tests:
-                            mixed_obj.http_obj, mixed_obj.dataset, mixed_obj.dataset1, mixed_obj.dataset2, mixed_obj.bytes_rd, mixed_obj.rx_rate, mixed_obj.lis, mixed_obj.http_test_status = t4_parent.recv()  # noqa: E501
-                            t4.join()
+                            (mixed_obj.http_obj, mixed_obj.dataset, mixed_obj.dataset1, mixed_obj.dataset2,
+                             mixed_obj.bytes_rd, mixed_obj.rx_rate, mixed_obj.lis, mixed_obj.http_test_status) = recv_or_default(
+                                t4_parent, t4, ([], [], {}, {}, '', '', '', False), "HTTP test")
                         if "5" in args.tests:
                             class temp_multi_cast_obj():
                                 def __init__(self, client_dict_A, client_dict_B):
                                     self.client_dict_A = client_dict_A
                                     self.client_dict_B = client_dict_B
 
-                            client_dict_A, client_dict_B, mixed_obj.multicast_test_status = t5_parent.recv()
+                            client_dict_A, client_dict_B, mixed_obj.multicast_test_status = recv_or_default(
+                                t5_parent, t5, ([], [], False), "Multicast test")
                             mixed_obj.multicast_test_obj = temp_multi_cast_obj(client_dict_A, client_dict_B)
-                            t5.join()
                     else:
                         if "1" in args.tests:
                             mixed_obj.ping_test(ssid=ssid, password=password, security=security, target=args.target,
@@ -3485,26 +3520,27 @@ INCLUDE_IN_README: False
                     #     t1.start()
 
                     if "1" in args.tests:
-                        mixed_obj.ping_test_obj, mixed_obj.ping_test_status = t1_parent.recv()
-                        t1.join()
+                        mixed_obj.ping_test_obj, mixed_obj.ping_test_status = recv_or_default(
+                            t1_parent, t1, ('', False), "Ping test")
                     if "2" in args.tests:
-                        mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = t2_parent.recv()
-                        t2.join()
+                        mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = recv_or_default(
+                            t2_parent, t2, ('', '', '', '', False), "QoS test")
                     if "3" in args.tests:
-                        mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = t3_parent.recv()
-                        t3.join()
+                        mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = recv_or_default(
+                            t3_parent, t3, ('', False), "FTP test")
                     if "4" in args.tests:
-                        mixed_obj.http_obj, mixed_obj.dataset, mixed_obj.dataset1, mixed_obj.dataset2, mixed_obj.bytes_rd, mixed_obj.rx_rate, mixed_obj.lis, mixed_obj.http_test_status = t4_parent.recv()  # noqa: E501
-                        t4.join()
+                        (mixed_obj.http_obj, mixed_obj.dataset, mixed_obj.dataset1, mixed_obj.dataset2,
+                         mixed_obj.bytes_rd, mixed_obj.rx_rate, mixed_obj.lis, mixed_obj.http_test_status) = recv_or_default(
+                            t4_parent, t4, ([], [], {}, {}, '', '', '', False), "HTTP test")
                     if "5" in args.tests:
                         class temp_multi_cast_obj():
                             def __init__(self, client_dict_A, client_dict_B):
                                 self.client_dict_A = client_dict_A
                                 self.client_dict_B = client_dict_B
 
-                        client_dict_A, client_dict_B, mixed_obj.multicast_test_status = t5_parent.recv()
+                        client_dict_A, client_dict_B, mixed_obj.multicast_test_status = recv_or_default(
+                            t5_parent, t5, ([], [], False), "Multicast test")
                         mixed_obj.multicast_test_obj = temp_multi_cast_obj(client_dict_A, client_dict_B)
-                        t5.join()
                 else:
                     if "1" in args.tests:
                         if mixed_obj.dowebgui:
