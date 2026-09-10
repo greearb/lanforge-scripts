@@ -2631,6 +2631,24 @@ async def run_iot(ip: str = '127.0.0.1',
     logger.info("Iot Test Completed")
 
 
+def recv_or_default(pipe, proc, default, label):
+    """Read a parallel test's result from its pipe, falling back to a default if the
+    worker process ended without sending (so the overall report is still generated).
+
+    Read before join(): a worker sending a result larger than the pipe buffer stays
+    blocked in send() until the parent reads, so join()-first could deadlock.
+    """
+    while proc.is_alive() and not pipe.poll(1):  # wait for a result, but stop if the worker dies
+        pass
+    if pipe.poll():                              # result available -> read it (drains the pipe)
+        result = pipe.recv()
+    else:                                        # worker ended without sending anything
+        logger.error("%s process ended without returning results; marking it as Not Executed.", label)
+        result = default
+    proc.join()
+    return result
+
+
 def main():
     help_summary = '''\
     Mixed traffic test is designed to measure the access point performance and stability by running multiple traffic
@@ -3280,26 +3298,27 @@ INCLUDE_IN_README: False
                             #                         side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu)
 
                         if "1" in args.tests:
-                            mixed_obj.ping_test_obj, mixed_obj.ping_test_status = t1_parent.recv()
-                            t1.join()
+                            mixed_obj.ping_test_obj, mixed_obj.ping_test_status = recv_or_default(
+                                t1_parent, t1, ('', False), "Ping test")
                         if "2" in args.tests:
-                            mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = t2_parent.recv()
-                            t2.join()
+                            mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = recv_or_default(
+                                t2_parent, t2, ('', '', '', '', False), "QoS test")
                         if "3" in args.tests:
-                            mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = t3_parent.recv()
-                            t3.join()
+                            mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = recv_or_default(
+                                t3_parent, t3, ('', False), "FTP test")
                         if "4" in args.tests:
-                            mixed_obj.http_obj, mixed_obj.dataset, mixed_obj.dataset1, mixed_obj.dataset2, mixed_obj.bytes_rd, mixed_obj.rx_rate, mixed_obj.lis, mixed_obj.http_test_status = t4_parent.recv()  # noqa: E501
-                            t4.join()
+                            (mixed_obj.http_obj, mixed_obj.dataset, mixed_obj.dataset1, mixed_obj.dataset2,
+                             mixed_obj.bytes_rd, mixed_obj.rx_rate, mixed_obj.lis, mixed_obj.http_test_status) = recv_or_default(
+                                t4_parent, t4, ([], [], {}, {}, '', '', '', False), "HTTP test")
                         if "5" in args.tests:
                             class temp_multi_cast_obj():
                                 def __init__(self, client_dict_A, client_dict_B):
                                     self.client_dict_A = client_dict_A
                                     self.client_dict_B = client_dict_B
 
-                            client_dict_A, client_dict_B, mixed_obj.multicast_test_status = t5_parent.recv()
+                            client_dict_A, client_dict_B, mixed_obj.multicast_test_status = recv_or_default(
+                                t5_parent, t5, ([], [], False), "Multicast test")
                             mixed_obj.multicast_test_obj = temp_multi_cast_obj(client_dict_A, client_dict_B)
-                            t5.join()
                     else:
                         if "1" in args.tests:
                             mixed_obj.ping_test(ssid=ssid, password=password, security=security, target=args.target,
@@ -3479,26 +3498,27 @@ INCLUDE_IN_README: False
                     #     t1.start()
 
                     if "1" in args.tests:
-                        mixed_obj.ping_test_obj, mixed_obj.ping_test_status = t1_parent.recv()
-                        t1.join()
+                        mixed_obj.ping_test_obj, mixed_obj.ping_test_status = recv_or_default(
+                            t1_parent, t1, ('', False), "Ping test")
                     if "2" in args.tests:
-                        mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = t2_parent.recv()
-                        t2.join()
+                        mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = recv_or_default(
+                            t2_parent, t2, ('', '', '', '', False), "QoS test")
                     if "3" in args.tests:
-                        mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = t3_parent.recv()
-                        t3.join()
+                        mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = recv_or_default(
+                            t3_parent, t3, ('', False), "FTP test")
                     if "4" in args.tests:
-                        mixed_obj.http_obj, mixed_obj.dataset, mixed_obj.dataset1, mixed_obj.dataset2, mixed_obj.bytes_rd, mixed_obj.rx_rate, mixed_obj.lis, mixed_obj.http_test_status = t4_parent.recv()  # noqa: E501
-                        t4.join()
+                        (mixed_obj.http_obj, mixed_obj.dataset, mixed_obj.dataset1, mixed_obj.dataset2,
+                         mixed_obj.bytes_rd, mixed_obj.rx_rate, mixed_obj.lis, mixed_obj.http_test_status) = recv_or_default(
+                            t4_parent, t4, ([], [], {}, {}, '', '', '', False), "HTTP test")
                     if "5" in args.tests:
                         class temp_multi_cast_obj():
                             def __init__(self, client_dict_A, client_dict_B):
                                 self.client_dict_A = client_dict_A
                                 self.client_dict_B = client_dict_B
 
-                        client_dict_A, client_dict_B, mixed_obj.multicast_test_status = t5_parent.recv()
+                        client_dict_A, client_dict_B, mixed_obj.multicast_test_status = recv_or_default(
+                            t5_parent, t5, ([], [], False), "Multicast test")
                         mixed_obj.multicast_test_obj = temp_multi_cast_obj(client_dict_A, client_dict_B)
-                        t5.join()
                 else:
                     if "1" in args.tests:
                         if mixed_obj.dowebgui:
