@@ -19,6 +19,8 @@ from ppadb.client import Client as AdbClient
 # from ping_monitor import PingMonitor
 
 ZOOM_PACKAGE = "us.zoom.videomeetings"
+NAME_SCREEN_ATTEMPTS = 3
+FOREGROUND_TIMEOUT = 30  # seconds to wait for Zoom to reach the foreground after a cold start
 
 
 class ZoomAutomator:
@@ -335,6 +337,88 @@ class ZoomAutomator:
             self.logger.error(f"Error checking stop signal: {e}")
             return self.stop_signal
 
+    def open_meeting_link(self, d, meeting_url, attempt):
+        """Cold-start Zoom and hand it the meeting link.
+        Input: d (uiautomator2 device), meeting_url (Zoom join link), attempt (attempt number, used in the log).
+        Output: True once the link is handed to Zoom; False if Zoom did not reach the foreground within FOREGROUND_TIMEOUT seconds.
+        """
+        self.logger.info(
+            f"Starting {ZOOM_PACKAGE} and opening the meeting link "
+            f"(attempt {attempt}/{NAME_SCREEN_ATTEMPTS})."
+        )
+        d.app_start(ZOOM_PACKAGE, stop=True)
+        if not d.app_wait(ZOOM_PACKAGE, front=True, timeout=FOREGROUND_TIMEOUT):
+            return False
+        self.adb_device.shell(
+            f'am start -a android.intent.action.VIEW -d "{meeting_url}" {ZOOM_PACKAGE}'
+        )
+        self.logger.info(f"Meeting link handed to Zoom: {meeting_url}")
+        time.sleep(8)
+        return True
+
+    def enter_participant_name(self, d, participant_name):
+        """Type the display name into whichever join screen this Zoom build shows.
+
+        Returns True once the name is in and the join is under way, False if
+        neither the preview screen nor the older name dialog ever appeared —
+        that one is worth another launch, so the caller retries it. A screen
+        that does appear but cannot be driven still raises, since relaunching
+        would not help.
+        """
+        preview_join = d(text="Editing display name")
+        if preview_join.wait(timeout=30):
+            self.logger.info("Preview screen detected.")
+
+            name_input = d(className="android.widget.EditText")
+            if not name_input.wait(timeout=10):
+                self.logger.warning(
+                    "Preview screen had no name field "
+                    "(className='android.widget.EditText')."
+                )
+                return False
+
+            self.logger.info(f"Entering participant name: {participant_name}")
+            name_input.set_text(participant_name)
+            time.sleep(1)
+            ok_btn = d(text="OK")
+            if ok_btn.wait(timeout=10):
+                ok_btn.click()
+                self.logger.info("Clicked 'OK' on preview screen.")
+            else:
+                raise RuntimeError(
+                    "'OK' button not found within 10 seconds on preview screen."
+                )
+
+            join_btn = d(text="Join")
+            if join_btn.wait(timeout=10):
+                join_btn.click()
+                self.logger.info("Clicked 'Join' on preview screen.")
+            else:
+                raise RuntimeError(
+                    "'Join' button not found within 10 seconds on preview screen."
+                )
+            return True
+
+        # Old flow: check for name input screen
+        name_input = d(resourceId="us.zoom.videomeetings:id/edtScreenName")
+        if not name_input.wait(timeout=15):
+            self.logger.warning(
+                "Neither the preview screen nor the name dialog "
+                "(resourceId='us.zoom.videomeetings:id/edtScreenName') appeared."
+            )
+            return False
+
+        self.logger.info(f"Entering participant name: {participant_name}")
+        name_input.set_text(participant_name)
+        time.sleep(1)
+        ok_btn = d(text="OK", className="android.widget.Button")
+        if ok_btn.wait(timeout=10):
+            ok_btn.click()
+        else:
+            d(resourceId="us.zoom.videomeetings:id/button1").click()
+        self.logger.info("Clicked 'Ok Button'")
+        return True
+
     def join_zoom_meeting(self, meeting_url, participant_name):
         """Drive one device through a full Zoom call, start to finish.
 
@@ -362,80 +446,45 @@ class ZoomAutomator:
         self.logger.info(f"Starting Zoom automation for {participant_name}.")
         self.logger.info(f"Screen {width}x{height}, centre tap at {tap_coords}.")
 
-        self.logger.info(f"Starting {ZOOM_PACKAGE} and opening the meeting link.")
-        d.app_start(ZOOM_PACKAGE, stop=True)
-        pid = d.app_wait(ZOOM_PACKAGE, front=True, timeout=30)
-        if not pid:
-            raise RuntimeError(
-                f"{ZOOM_PACKAGE} did not come to foreground within 30s of cold start — "
-                "device may be slow/overloaded. Aborting this participant."
+        foreground_failures = 0
+        for attempt in range(1, NAME_SCREEN_ATTEMPTS + 1):
+            if not self.open_meeting_link(d, meeting_url, attempt):
+                foreground_failures += 1
+                self.logger.warning(
+                    f"{ZOOM_PACKAGE} did not come to foreground within "
+                    f"{FOREGROUND_TIMEOUT}s on attempt {attempt}/{NAME_SCREEN_ATTEMPTS}."
+                )
+                continue
+            if self.enter_participant_name(d, participant_name):
+                break
+            self.logger.warning(
+                f"No join screen on attempt {attempt}/{NAME_SCREEN_ATTEMPTS}."
             )
-        self.adb_device.shell(
-            f'am start -a android.intent.action.VIEW -d "{meeting_url}" {ZOOM_PACKAGE}'
-        )
-        self.logger.info(f"Meeting link handed to Zoom: {meeting_url}")
-        time.sleep(8)
-
-        preview_join = d(text="Editing display name")
-        if preview_join.wait(timeout=30):
-            self.logger.info("Preview screen detected.")
-
-            name_input = d(className="android.widget.EditText")
-            if name_input.wait(timeout=10):
-                self.logger.info(f"Entering participant name: {participant_name}")
-                name_input.set_text(participant_name)
-                time.sleep(1)
-                ok_btn = d(text="OK")
-                if ok_btn.wait(timeout=10):
-                    ok_btn.click()
-                    self.logger.info("Clicked 'OK' on preview screen.")
-                else:
-                    raise RuntimeError(
-                        "'OK' button not found within 10 seconds on preview screen."
-                    )
-            else:
-                self.logger.error(
-                    "Name input screen not found "
-                    "(className='android.widget.EditText'). "
-                    "Aborting automation."
-                )
-                raise RuntimeError(
-                    "Could not find name input screen. "
-                    "Zoom may not have launched correctly or the UI flow changed."
-                )
-
-            join_btn = d(text="Join")
-            if join_btn.wait(timeout=10):
-                join_btn.click()
-                self.logger.info("Clicked 'Join' on preview screen.")
-            else:
-                raise RuntimeError(
-                    "'Join' button not found within 10 seconds on preview screen."
-                )
-
         else:
-            # Old flow: check for name input screen
-            name_input = d(resourceId="us.zoom.videomeetings:id/edtScreenName")
-            if name_input.wait(timeout=15):
-                self.logger.info(f"Entering participant name: {participant_name}")
-                name_input.set_text(participant_name)
-                time.sleep(1)
-                ok_btn = d(text="OK", className="android.widget.Button")
-                if ok_btn.wait(timeout=10):
-                    ok_btn.click()
-                else:
-                    d(resourceId="us.zoom.videomeetings:id/button1").click()
-                self.logger.info("Clicked 'Ok Button'")
-            else:
+            if foreground_failures == NAME_SCREEN_ATTEMPTS:
                 self.logger.error(
-                    "Name input screen not found "
-                    "(resourceId='us.zoom.videomeetings:id/edtScreenName'). "
-                    "Aborting automation."
+                    f"{ZOOM_PACKAGE} did not come to foreground in "
+                    f"{NAME_SCREEN_ATTEMPTS} attempts. Aborting automation."
                 )
                 raise RuntimeError(
-                    "Could not find name input screen. "
-                    "Zoom may not have launched correctly or the UI flow changed."
+                    f"{ZOOM_PACKAGE} did not come to foreground within "
+                    f"{FOREGROUND_TIMEOUT}s of cold start in {NAME_SCREEN_ATTEMPTS} "
+                    "attempts — device may be slow/overloaded. Aborting this participant."
                 )
+            detail = (
+                f" ({foreground_failures} of them never brought {ZOOM_PACKAGE} to the foreground)"
+                if foreground_failures
+                else ""
+            )
+            self.logger.error(
+                f"Name input screen not found in {NAME_SCREEN_ATTEMPTS} attempts{detail}. "
+                "Aborting automation."
+            )
+            raise RuntimeError(
+                f"Could not find name input screen in {NAME_SCREEN_ATTEMPTS} "
+                "attempts. Zoom may not have launched correctly or the UI flow "
+                "changed."
+            )
 
         self.logger.info("Waiting to join meeting...")
         time.sleep(10)
