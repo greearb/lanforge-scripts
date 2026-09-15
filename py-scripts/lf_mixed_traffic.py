@@ -746,7 +746,9 @@ class Mixed_Traffic(Realm):
             elif self.virtual:
                 self.ping_test_obj.sta_list = self.station_list
                 print('Virtual Stations: {}'.format(self.station_list).replace('[', '').replace(']', '').replace('\'', ''))
-                self.ping_test_obj.cleanup()
+                # stations are already created and shared with the other parallel tests (qos/ftp/http/multicast) in
+                # this mixed-traffic run, so only clear stale generic endpoints here, don't remove the stations
+                self.ping_test_obj.cleanup(clean_stations=False)
             # creating generic endpoints
             self.ping_test_obj.create_generic_endp()
             logger.info("Generic Cross-Connection List: {}".format(self.ping_test_obj.generic_endps_profile.created_cx))
