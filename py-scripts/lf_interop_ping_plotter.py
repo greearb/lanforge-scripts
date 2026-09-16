@@ -712,6 +712,18 @@ class Ping(Realm):
 
         return (remarks)
 
+    @staticmethod
+    def rtt_stats(real_rtts):
+        """Return (min, avg, max) as floats over real_rtts values; 'NA' when there are none.
+
+        A failed ping can still log time=0 on Windows, so non-positive values are
+        dropped here - a genuine reply is never 0 ms or negative.
+        """
+        vals = [v for v in real_rtts.values() if v > 0]
+        if not vals:
+            return 'NA', 'NA', 'NA'
+        return min(vals), sum(vals) / len(vals), max(vals)
+
     def generate_uptime_graph(self, coordinate=None, angle=None):
         json_data = {}
         for station in self.result_json:
