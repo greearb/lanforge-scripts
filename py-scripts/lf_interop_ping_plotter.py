@@ -1570,6 +1570,12 @@ class Ping(Realm):
         report.set_table_dataframe(dataframe2)
         report.build_table()
 
+        # only show the NA caveat when at least one device actually has NA RTT
+        if 'NA' in self.device_min:
+            report.set_text("Note: Stations which are not reachable to the internet, and the ping failed to receive any packets, "
+                            "resulting in 100% packet loss. Hence, the RTT is reported as NA.")
+            report.build_text_simple()
+
         # realtime ping graphs
         report.set_table_title('Individual RTT vs Time Plots:')
         report.build_table_title()
@@ -2804,6 +2810,12 @@ class Ping(Realm):
                 })
                 report.set_table_dataframe(dataframe2)
                 report.build_table()
+
+                # only show the NA caveat when at least one device actually has NA RTT
+                if 'NA' in self.device_min:
+                    report.set_text("Note: Stations which are not reachable to the internet, and the ping failed to receive any packets, "
+                                    "resulting in 100% packet loss. Hence, the RTT is reported as NA.")
+                    report.build_text_simple()
 
                 # realtime ping graphs
                 report.set_table_title('Individual RTT vs Time Plots:')
