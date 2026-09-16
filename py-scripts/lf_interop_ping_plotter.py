@@ -727,7 +727,7 @@ class Ping(Realm):
         A failed ping can still log time=0 on Windows, so non-positive values are
         dropped here - a genuine reply is never 0 ms or negative.
         """
-        vals = [v for v in real_rtts.values() if v > 0]
+        vals = [rtt for rtt in real_rtts.values() if rtt > 0]
         if not vals:
             return 'NA', 'NA', 'NA'
         return min(vals), sum(vals) / len(vals), max(vals)
@@ -1521,9 +1521,9 @@ class Ping(Realm):
 
         # the graph can't plot the text 'NA', so failed-ping devices show as 0 here;
         # the RTT table below keeps 'NA' for those devices
-        plot_min = [0.0 if v == 'NA' else v for v in self.device_min]
-        plot_avg = [0.0 if v == 'NA' else v for v in self.device_avg]
-        plot_max = [0.0 if v == 'NA' else v for v in self.device_max]
+        plot_min = [0.0 if min_val == 'NA' else min_val for min_val in self.device_min]
+        plot_avg = [0.0 if avg_val == 'NA' else avg_val for avg_val in self.device_avg]
+        plot_max = [0.0 if max_val == 'NA' else max_val for max_val in self.device_max]
 
         graph = lf_bar_graph_horizontal(_data_set=[plot_min, plot_avg, plot_max],
                                         _xaxis_name='Time (ms)',
@@ -2757,9 +2757,9 @@ class Ping(Realm):
 
                 # the graph can't plot the text 'NA', so failed-ping devices show as 0 here;
                 # the RTT table below keeps 'NA' for those devices
-                plot_min = [0.0 if v == 'NA' else v for v in self.device_min]
-                plot_avg = [0.0 if v == 'NA' else v for v in self.device_avg]
-                plot_max = [0.0 if v == 'NA' else v for v in self.device_max]
+                plot_min = [0.0 if min_val == 'NA' else min_val for min_val in self.device_min]
+                plot_avg = [0.0 if avg_val == 'NA' else avg_val for avg_val in self.device_avg]
+                plot_max = [0.0 if max_val == 'NA' else max_val for max_val in self.device_max]
 
                 graph = lf_bar_graph_horizontal(_data_set=[plot_min, plot_avg, plot_max],
                                                 _xaxis_name='Time (ms)',
