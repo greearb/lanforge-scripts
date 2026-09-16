@@ -695,20 +695,28 @@ class Ping(Realm):
         if 'ping: sendmsg: No buffer space available' in station_ping_data['last_result']:
             remarks.append('Network buffer overlow')
 
-        # checking for no ping states
-        if float(station_ping_data['min_rtt'].replace(',', '')) == 0 and float(station_ping_data['max_rtt'].replace(',', '')) == 0 and float(station_ping_data['avg_rtt'].replace(',', '')) == 0:
+        # checking for no ping states (min/avg/max are 'NA' when no successful reply was parsed)
+        if station_ping_data['min_rtt'] == 'NA':
 
             # Destination Host Unreachable state
             if 'Destination Host Unreachable' in station_ping_data['last_result']:
                 remarks.append('Destination Host Unrechable')
 
+            # Destination Net Unreachable state
+            if 'Destination Net Unreachable' in station_ping_data['last_result']:
+                remarks.append('Destination Net Unreachable')
+
             # Name or service not known state
             if 'Name or service not known' in station_ping_data['last_result']:
                 remarks.append('Name or service not known')
 
-            # network buffer overflow
-            if 'ping: sendmsg: No buffer space available' in station_ping_data['last_result']:
-                remarks.append('Network buffer overlow')
+            # Temporary failure in name resolution (e.g. no network/DNS reachable)
+            if 'Temporary failure in name resolution' in station_ping_data['last_result']:
+                remarks.append('Temporary failure in name resolution')
+
+            # fall back so an invalid/NA ping result is never left unexplained
+            if not remarks:
+                remarks.append('Ping failed - invalid RTT statistics (min/avg/max: NA)')
 
         return (remarks)
 
