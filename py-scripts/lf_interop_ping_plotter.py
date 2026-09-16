@@ -1833,10 +1833,11 @@ class Ping(Realm):
         loop_timer = 0
         # logging.info(self.result_json)
         rtts = {}
-        rtts_list = []
+        real_rtts = {}          # per-station {seq: rtt}, real replies only (no 0 / 0.11 markers)
         ping_stats = {}
         for station in self.sta_list:
             rtts[station] = {}
+            real_rtts[station] = {}
             ping_stats[station] = {
                 'sent': [],
                 'received': [],
@@ -1965,7 +1966,7 @@ class Ping(Realm):
                                         logger.error(f"missing  keys | t_result: {t_result} | full result: {result}")
                                         continue
                                     rtts[station][seq_number] = rtt
-                                    rtts_list.append(rtt)
+                                    real_rtts[station][seq_number] = rtt
 
                                     # finding dropped packets
                                     t_fail = t_fail.split()  # [' drop:', '0', '(0, 0.000)', 'rx:', '28', 'fail:', '0', 'bytes:', '1792', 'min/avg/max:', '2.160/3.422/5.190']
@@ -1977,11 +1978,7 @@ class Ping(Realm):
                                         for drop_packet in range(1, current_drop_packets + 1):
                                             dropped_packets.append(seq_number - drop_packet)
 
-                            if rtts_list == []:
-                                rtts_list = [0]
-                            min_rtt = str(min(rtts_list))
-                            avg_rtt = str(sum(rtts_list) / len(rtts_list))
-                            max_rtt = str(max(rtts_list))
+                            min_rtt, avg_rtt, max_rtt = self.rtt_stats(real_rtts[station])
                             self.result_json[station]['min_rtt'] = min_rtt
                             self.result_json[station]['avg_rtt'] = avg_rtt
                             self.result_json[station]['max_rtt'] = max_rtt
@@ -2079,7 +2076,7 @@ class Ping(Realm):
                                             t_result = t_result.split()
                                             seq_number = None
                                             rtt = None
-                                            if 'icmp_seq=' not in result and 'time=' not in result:
+                                            if 'icmp_seq=' not in result or 'time=' not in result:
                                                 continue
                                             for t_data in t_result:
                                                 if 'icmp_seq=' in t_data:
@@ -2090,7 +2087,7 @@ class Ping(Realm):
                                                 logger.error(f"missing variables | t_result: {t_result} | full result: {result}")
                                                 continue
                                             rtts[station][seq_number] = rtt
-                                            rtts_list.append(rtt)
+                                            real_rtts[station][seq_number] = rtt
 
                                             # finding dropped packets
                                             t_fail = t_fail.split()  # [' drop:', '0', '(0, 0.000)', 'rx:', '28', 'fail:', '0', 'bytes:', '1792', 'min/avg/max:', '2.160/3.422/5.190']
@@ -2102,11 +2099,7 @@ class Ping(Realm):
                                                 for drop_packet in range(1, current_drop_packets + 1):
                                                     dropped_packets.append(seq_number - drop_packet)
 
-                                if rtts_list == []:
-                                    rtts_list = [0]
-                                min_rtt = str(min(rtts_list))
-                                avg_rtt = str(sum(rtts_list) / len(rtts_list))
-                                max_rtt = str(max(rtts_list))
+                                min_rtt, avg_rtt, max_rtt = self.rtt_stats(real_rtts[station])
                                 self.result_json[station]['min_rtt'] = min_rtt
                                 self.result_json[station]['avg_rtt'] = avg_rtt
                                 self.result_json[station]['max_rtt'] = max_rtt
@@ -3530,10 +3523,11 @@ connectivity problems.
     loop_timer = 0
     logging.info(ping.result_json)
     rtts = {}
-    rtts_list = []
+    real_rtts = {}          # per-station {seq: rtt}, real replies only (no 0 / 0.11 markers)
     ping_stats = {}
     for station in ping.sta_list:
         rtts[station] = {}
+        real_rtts[station] = {}
         ping_stats[station] = {
             'sent': [],
             'received': [],
@@ -3612,15 +3606,19 @@ connectivity problems.
                                     except Exception:
                                         continue
                                     t_result = t_result.split()
-                                    if 'icmp_seq=' not in result and 'time=' not in result:
+                                    seq_number = None
+                                    rtt = None
+                                    if 'icmp_seq=' not in result or 'time=' not in result:
                                         continue
                                     for t_data in t_result:
                                         if 'icmp_seq=' in t_data:
                                             seq_number = int(t_data.strip('icmp_seq='))
                                         if 'time=' in t_data:
                                             rtt = float(t_data.strip('time='))
+                                    if seq_number is None or rtt is None:
+                                        continue
                                     rtts[station][seq_number] = rtt
-                                    rtts_list.append(rtt)
+                                    real_rtts[station][seq_number] = rtt
 
                                     # finding dropped packets
                                     t_fail = t_fail.split()  # [' drop:', '0', '(0, 0.000)', 'rx:', '28', 'fail:', '0', 'bytes:', '1792', 'min/avg/max:', '2.160/3.422/5.190']
@@ -3632,11 +3630,7 @@ connectivity problems.
                                         for drop_packet in range(1, current_drop_packets + 1):
                                             dropped_packets.append(seq_number - drop_packet)
 
-                            if rtts_list == []:
-                                rtts_list = [0]
-                            min_rtt = str(min(rtts_list))
-                            avg_rtt = str(sum(rtts_list) / len(rtts_list))
-                            max_rtt = str(max(rtts_list))
+                            min_rtt, avg_rtt, max_rtt = ping.rtt_stats(real_rtts[station])
                             ping.result_json[station]['min_rtt'] = min_rtt
                             ping.result_json[station]['avg_rtt'] = avg_rtt
                             ping.result_json[station]['max_rtt'] = max_rtt
@@ -3694,15 +3688,19 @@ connectivity problems.
                                         except Exception:
                                             continue  # first line of ping result
                                         t_result = t_result.split()
-                                        if 'icmp_seq=' not in result and 'time=' not in result:
+                                        seq_number = None
+                                        rtt = None
+                                        if 'icmp_seq=' not in result or 'time=' not in result:
                                             continue
                                         for t_data in t_result:
                                             if 'icmp_seq=' in t_data:
                                                 seq_number = int(t_data.strip('icmp_seq='))
                                             if 'time=' in t_data:
                                                 rtt = float(t_data.strip('time='))
+                                        if seq_number is None or rtt is None:
+                                            continue
                                         rtts[station][seq_number] = rtt
-                                        rtts_list.append(rtt)
+                                        real_rtts[station][seq_number] = rtt
 
                                         # finding dropped packets
                                         t_fail = t_fail.split()  # [' drop:', '0', '(0, 0.000)', 'rx:', '28', 'fail:', '0', 'bytes:', '1792', 'min/avg/max:', '2.160/3.422/5.190']
@@ -3714,11 +3712,7 @@ connectivity problems.
                                             for drop_packet in range(1, current_drop_packets + 1):
                                                 dropped_packets.append(seq_number - drop_packet)
 
-                                if rtts_list == []:
-                                    rtts_list = [0]
-                                min_rtt = str(min(rtts_list))
-                                avg_rtt = str(sum(rtts_list) / len(rtts_list))
-                                max_rtt = str(max(rtts_list))
+                                min_rtt, avg_rtt, max_rtt = ping.rtt_stats(real_rtts[station])
                                 ping.result_json[station]['min_rtt'] = min_rtt
                                 ping.result_json[station]['avg_rtt'] = avg_rtt
                                 ping.result_json[station]['max_rtt'] = max_rtt
@@ -3794,15 +3788,19 @@ connectivity problems.
                                 except Exception:
                                     continue
                                 t_result = t_result.split()
-                                if 'icmp_seq=' not in result and 'time=' not in result:
+                                seq_number = None
+                                rtt = None
+                                if 'icmp_seq=' not in result or 'time=' not in result:
                                     continue
                                 for t_data in t_result:
                                     if 'icmp_seq=' in t_data:
                                         seq_number = int(t_data.strip('icmp_seq='))
                                     if 'time=' in t_data:
                                         rtt = float(t_data.strip('time='))
+                                if seq_number is None or rtt is None:
+                                    continue
                                 rtts[station][seq_number] = rtt
-                                rtts_list.append(rtt)
+                                real_rtts[station][seq_number] = rtt
 
                                 # finding dropped packets
                                 t_fail = t_fail.split()  # [' drop:', '0', '(0, 0.000)', 'rx:', '28', 'fail:', '0', 'bytes:', '1792', 'min/avg/max:', '2.160/3.422/5.190']
@@ -3814,11 +3812,7 @@ connectivity problems.
                                     for drop_packet in range(1, current_drop_packets + 1):
                                         dropped_packets.append(seq_number - drop_packet)
 
-                        if rtts_list == []:
-                            rtts_list = [0]
-                        min_rtt = str(min(rtts_list))
-                        avg_rtt = str(sum(rtts_list) / len(rtts_list))
-                        max_rtt = str(max(rtts_list))
+                        min_rtt, avg_rtt, max_rtt = ping.rtt_stats(real_rtts[station])
                         ping.result_json[station]['min_rtt'] = min_rtt
                         ping.result_json[station]['avg_rtt'] = avg_rtt
                         ping.result_json[station]['max_rtt'] = max_rtt
@@ -3913,15 +3907,19 @@ connectivity problems.
                                         except Exception:
                                             continue
                                         t_result = t_result.split()
-                                        if 'icmp_seq=' not in result and 'time=' not in result:
+                                        seq_number = None
+                                        rtt = None
+                                        if 'icmp_seq=' not in result or 'time=' not in result:
                                             continue
                                         for t_data in t_result:
                                             if 'icmp_seq=' in t_data:
                                                 seq_number = int(t_data.strip('icmp_seq='))
                                             if 'time=' in t_data:
                                                 rtt = float(t_data.strip('time='))
+                                        if seq_number is None or rtt is None:
+                                            continue
                                         rtts[station][seq_number] = rtt
-                                        rtts_list.append(rtt)
+                                        real_rtts[station][seq_number] = rtt
 
                                         # finding dropped packets
                                         t_fail = t_fail.split()  # [' drop:', '0', '(0, 0.000)', 'rx:', '28', 'fail:', '0', 'bytes:', '1792', 'min/avg/max:', '2.160/3.422/5.190']
@@ -3933,11 +3931,7 @@ connectivity problems.
                                             for drop_packet in range(1, current_drop_packets + 1):
                                                 dropped_packets.append(seq_number - drop_packet)
 
-                            if rtts_list == []:
-                                rtts_list = [0]
-                            min_rtt = str(min(rtts_list))
-                            avg_rtt = str(sum(rtts_list) / len(rtts_list))
-                            max_rtt = str(max(rtts_list))
+                            min_rtt, avg_rtt, max_rtt = ping.rtt_stats(real_rtts[station])
                             ping.result_json[station]['min_rtt'] = min_rtt
                             ping.result_json[station]['avg_rtt'] = avg_rtt
                             ping.result_json[station]['max_rtt'] = max_rtt
