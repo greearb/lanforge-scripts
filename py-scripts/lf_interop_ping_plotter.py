@@ -1177,16 +1177,12 @@ class Ping(Realm):
             except (IndexError, TypeError, ValueError):
                 packet_loss_percent = 0
 
-        try:
-            t_rtt_values = sorted(v for v in (device_data.get('rtts') or {}).values() if v != 0.11)
-        except TypeError:
-            t_rtt_values = []
-        if t_rtt_values:
-            device_avg = float(sum(t_rtt_values) / len(t_rtt_values))
-            device_min = float(min(t_rtt_values))
-            device_max = float(max(t_rtt_values))
-        else:
-            device_avg = device_min = device_max = 0
+        # min_rtt/avg_rtt/max_rtt were already computed by rtt_stats() when the
+        # result was parsed (genuine replies only, Windows time=0 failures
+        # excluded) - reuse them instead of recomputing from real_rtts.
+        device_min = device_data.get('min_rtt', 'NA')
+        device_avg = device_data.get('avg_rtt', 'NA')
+        device_max = device_data.get('max_rtt', 'NA')
 
         device_name = device_data.get('name', device)
         device_os = device_data.get('os', 'Unknown')
@@ -1523,7 +1519,13 @@ class Ping(Realm):
         report.set_table_title('Ping RTT Graph')
         report.build_table_title()
 
-        graph = lf_bar_graph_horizontal(_data_set=[self.device_min, self.device_avg, self.device_max],
+        # the graph can't plot the text 'NA', so failed-ping devices show as 0 here;
+        # the RTT table below keeps 'NA' for those devices
+        plot_min = [0.0 if v == 'NA' else v for v in self.device_min]
+        plot_avg = [0.0 if v == 'NA' else v for v in self.device_avg]
+        plot_max = [0.0 if v == 'NA' else v for v in self.device_max]
+
+        graph = lf_bar_graph_horizontal(_data_set=[plot_min, plot_avg, plot_max],
                                         _xaxis_name='Time (ms)',
                                         _yaxis_name='Wireless Clients',
                                         _label=[
@@ -2747,7 +2749,13 @@ class Ping(Realm):
                 report.set_table_title('Ping RTT Graph')
                 report.build_table_title()
 
-                graph = lf_bar_graph_horizontal(_data_set=[self.device_min, self.device_avg, self.device_max],
+                # the graph can't plot the text 'NA', so failed-ping devices show as 0 here;
+                # the RTT table below keeps 'NA' for those devices
+                plot_min = [0.0 if v == 'NA' else v for v in self.device_min]
+                plot_avg = [0.0 if v == 'NA' else v for v in self.device_avg]
+                plot_max = [0.0 if v == 'NA' else v for v in self.device_max]
+
+                graph = lf_bar_graph_horizontal(_data_set=[plot_min, plot_avg, plot_max],
                                                 _xaxis_name='Time (ms)',
                                                 _yaxis_name='Wireless Clients',
                                                 _label=[
