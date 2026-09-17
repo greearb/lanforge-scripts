@@ -150,6 +150,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 # Import realm module
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 # Import base interop profile module
 base = importlib.import_module('py-scripts.lf_base_interop_profile')
@@ -230,7 +231,13 @@ class Youtube(Realm):
                  scoring=False,
                  windows_dir=WINDOWS_REAL_APP_DIR,
                  linux_dir=LINUX_REAL_APP_DIR,
-                 mac_dir=MACOS_REAL_APP_DIR
+                 mac_dir=MACOS_REAL_APP_DIR,
+                 clients_type="real",
+                 num_sta=0,
+                 radio="wiphy0",
+                 existing_sta_list="",
+                 use_existing_sta_list=False,
+                 passwd=None,
                  ):
         """
         Initialize the YouTube streaming test parameters.
@@ -263,7 +270,18 @@ class Youtube(Realm):
         self.windows_dir = windows_dir
         self.linux_dir = linux_dir
         self.mac_dir = mac_dir
-        self.sta_list = sta_list
+        self.clients_type = clients_type
+        self.virtual = clients_type == "virtual"
+        self.real = not self.virtual
+        self.num_sta = num_sta
+        self.radio = radio
+        self.passwd = passwd
+        self.use_existing_sta_list = use_existing_sta_list
+        self.existing_sta_list = existing_sta_list
+        self.sta_list = sta_list or []
+        self.virtual_ip_map = {}
+        self.http_profile = self.new_http_profile() if self.virtual else None
+        self.station_profile = self.new_station_profile() if self.virtual else None
         self.real_sta_list = []
         self.real_sta_data_dict = {}
         self.linux = 0
@@ -325,6 +343,11 @@ class Youtube(Realm):
             "VideoCodec", "AudioCodec", "ConnectionSpeedKbps",
             "NetworkActivityKB", "LiveLatency(sec)", "bandwidth (kbps)"
         ]
+        if self.virtual:
+            self.csv_headers.extend([
+                "MAC", "BSSID", "RSSI", "Channel", "Mode", "SSID",
+                "Link Rate"
+            ])
         if do_robo and not do_bandsteering:
             self.csv_headers.append("Angle")
         if do_bandsteering:
@@ -349,6 +372,175 @@ class Youtube(Realm):
 
     def stop(self):
         self.stop_signal = True
+
+    def configure_virtual_stations(self, cleanup_existing=True):
+        """Create or validate stations for a standalone virtual-client test."""
+        if self.use_existing_sta_list:
+            requested = [
+                station.strip() for station in self.existing_sta_list.split(',')
+                if station.strip()
+            ]
+            valid_stations = []
+            for station in requested:
+                try:
+                    shelf, resource, port = self.name_to_eid(station)[:3]
+                    response = self.json_get(
+                        f"/port/{shelf}/{resource}/{port}?fields=ip,down,phantom,parent+dev"
+                    )
+                    interface = (response or {}).get("interface") or {}
+                    is_down = str(interface.get("down", True)).lower() == "true"
+                    is_phantom = str(interface.get("phantom", True)).lower() == "true"
+                    if (interface.get("ip") != "0.0.0.0"
+                            and not is_down
+                            and not is_phantom
+                            and interface.get("parent dev")):
+                        valid_stations.append(f"{shelf}.{resource}.{port}")
+                    else:
+                        logger.warning("Ignoring unavailable virtual station %s", station)
+                except (IndexError, TypeError, ValueError, KeyError):
+                    logger.warning("Ignoring invalid virtual station %s", station)
+            if not valid_stations:
+                raise RuntimeError("No usable stations were found in --existing_sta_list")
+            self.sta_list = valid_stations
+            logger.info("Using %d existing virtual station(s)", len(self.sta_list))
+            return
+
+        self.sta_list = LFUtils.portNameSeries(
+            prefix_="sta",
+            start_id_=0,
+            end_id_=self.num_sta - 1,
+            padding_number_=100000,
+            radio=self.radio,
+        )
+        logger.info("Creating %d virtual station(s) on %s", len(self.sta_list), self.radio)
+        if cleanup_existing:
+            for station in self.sta_list:
+                self.rm_port(station, check_exists=True)
+            if not LFUtils.wait_until_ports_disappear(
+                    base_url=self.lfclient_url,
+                    port_list=self.sta_list,
+                    debug=self.debug):
+                raise RuntimeError("Timed out while removing stale virtual stations")
+        security_aliases = {
+            "psk": "wpa",
+            "psk2": "wpa2",
+            "sae": "wpa3",
+            "psk2jsae": "wpa2,wpa3",
+        }
+        station_security = security_aliases.get(
+            self.security.lower(), self.security.lower()
+        )
+        supported_security = {
+            "open", "owe", "wep", "wpa", "wpa2", "wpa3", "wpa2,wpa3"
+        }
+        if station_security not in supported_security:
+            raise ValueError(
+                f"Unsupported virtual-station security type: {self.security}"
+            )
+        station_password = self.passwd
+        if station_security in {"open", "owe"} and not station_password:
+            station_password = "[BLANK]"
+        self.station_profile.use_security(
+            security_type=station_security,
+            ssid=self.ssid,
+            passwd=station_password,
+        )
+        self.station_profile.set_number_template("00000")
+        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_param("set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+        self.station_profile.create(
+            radio=self.radio,
+            sta_names_=self.sta_list,
+            debug=self.debug,
+        )
+        self.station_profile.admin_up()
+        if not self.wait_for_ip(self.sta_list):
+            raise RuntimeError("One or more virtual stations failed to obtain an IP address")
+
+    def build_virtual_l4(self):
+        """Create the YouTube L4 endpoints used by virtual stations."""
+        url = self.url.strip()
+        if url.startswith("https://"):
+            endpoint_url = f"dl https://{url[len('https://'):]} /dev/null"
+        else:
+            endpoint_url = f"dl http://{url.removeprefix('http://')} /dev/null"
+
+        logger.info("Creating YouTube L4 endpoints for %d virtual station(s)", len(self.sta_list))
+        created_cx = {}
+        cx_requests = []
+        for station in self.sta_list:
+            shelf, resource, port = self.name_to_eid(station)[:3]
+            self.http_profile.port_util.set_http(
+                port_name=port,
+                resource=resource,
+                on=True,
+            )
+            endpoint_name = f"yt_{port}_http{resource}_l4"
+            cx_name = f"CX_{endpoint_name}"
+            self.json_post(
+                "cli-json/add_l4_endp",
+                {
+                    "alias": endpoint_name,
+                    "shelf": shelf,
+                    "resource": resource,
+                    "port": port,
+                    "type": "l4_generic",
+                    "timeout": 1000,
+                    "url_rate": 100,
+                    "url": endpoint_url,
+                    "proxy_auth_type": 0x12200,
+                    "quiesce_after": 0,
+                    "max_speed": 0,
+                },
+                debug_=self.debug,
+            )
+            time.sleep(.5)
+            self.json_post(
+                "cli-json/set_l4_endp",
+                {
+                    "alias": endpoint_name,
+                    "media_source": "1",
+                    "media_quality": "0",
+                },
+                debug_=self.debug,
+            )
+            cx_requests.append({
+                "alias": cx_name,
+                "test_mgr": "default_tm",
+                "tx_endp": endpoint_name,
+                "rx_endp": "NA",
+            })
+            created_cx[endpoint_name] = cx_name
+
+        for cx_request in cx_requests:
+            self.json_post("/cli-json/add_cx", cx_request, debug_=self.debug)
+            time.sleep(.5)
+        self.http_profile.created_cx = created_cx
+        logger.info("Created %d virtual YouTube CX(s)", len(created_cx))
+
+    def start_virtual_l4(self):
+        """Start virtual YouTube CXs using the working media startup timing."""
+        if not self.http_profile.created_cx:
+            raise RuntimeError("No virtual YouTube CXs were created")
+        logger.info("Waiting 5 seconds before starting virtual YouTube CXs")
+        self.wait_stop_aware(5, "before virtual YouTube CX startup")
+        self.http_profile.start_cx()
+        logger.info("Waiting 20 seconds for virtual YouTube playback to initialize")
+        self.wait_stop_aware(20, "for virtual YouTube playback initialization")
+
+    def map_virtual_station_ips(self):
+        """Map stats-source IP addresses to stable station aliases."""
+        self.virtual_ip_map = {}
+        for station in self.sta_list:
+            shelf, resource, port = self.name_to_eid(station)[:3]
+            response = self.json_get(f"/port/{shelf}/{resource}/{port}?fields=ip,alias")
+            interface = (response or {}).get("interface") or {}
+            ip_address = interface.get("ip")
+            if not ip_address or ip_address == "0.0.0.0":
+                raise RuntimeError(f"Virtual station {station} does not have an IP address")
+            self.virtual_ip_map[ip_address] = interface.get("alias") or port
+        logger.info("Mapped statistics for %d virtual station(s)", len(self.virtual_ip_map))
 
     def cleanup(self):
         """
