@@ -1231,6 +1231,8 @@ class Youtube(Realm):
         logger.info("Waiting 10 seconds for client cleanup and log uploads")
         time.sleep(10)
         try:
+            if self.virtual:
+                self.prepare_virtual_report_data()
             if args.do_robo and not args.do_bandsteering:
                 self.create_robo_report()
             else:
@@ -1241,15 +1243,41 @@ class Youtube(Realm):
                 )
             logger.info("YouTube report generated: %s", self.report_path_date_time)
         finally:
+            profile = self.http_profile if self.virtual else self.generic_endps_profile
             try:
-                self.generic_endps_profile.stop_cx()
+                profile.stop_cx()
             except Exception:
                 logger.exception("Unable to stop all YouTube CXs during cleanup")
             if not args.no_post_cleanup:
                 try:
-                    self.generic_endps_profile.cleanup()
+                    profile.cleanup()
                 except Exception:
                     logger.exception("Unable to clean up all YouTube endpoints")
+                if self.virtual and not self.use_existing_sta_list:
+                    try:
+                        self.station_profile.cleanup()
+                    except Exception:
+                        logger.exception("Unable to clean up virtual stations")
+
+    def prepare_virtual_report_data(self):
+        """Populate the existing report model from virtual-station results."""
+        wifi_stats = self.get_youtube_lf_wifi_stats()
+        self.real_sta_hostname = [station.split('.')[-1] for station in self.sta_list]
+        self.real_sta_os_types = ["virtual"] * len(self.sta_list)
+        self.device_names = list(self.real_sta_hostname)
+        self.hostname_os_combination = ", ".join(
+            f"{name} (virtual)" for name in self.real_sta_hostname
+        )
+        self.mac_list = []
+        self.rssi_list = []
+        self.link_rate_list = []
+        self.ssid_list = []
+        for station in self.sta_list:
+            stats = wifi_stats.get(station, {})
+            self.mac_list.append(stats.get("MAC", "NA"))
+            self.rssi_list.append(stats.get("RSSI", "NA"))
+            self.link_rate_list.append(stats.get("RxRate", "NA"))
+            self.ssid_list.append(stats.get("SSID", "NA"))
 
     def get_youtube_lf_wifi_stats(self):
         """
@@ -1266,7 +1294,8 @@ class Youtube(Realm):
             logger.error(f"Error fetching port data: {e}")
             return lf_stats_map
 
-        for sta in self.real_sta_list:
+        clients = self.sta_list if self.virtual else self.real_sta_list
+        for sta in clients:
             lf_stats_map[sta] = {
                 "BSSID": "NA",
                 "RSSI": "NA",
@@ -1274,6 +1303,8 @@ class Youtube(Realm):
                 "Mode": "NA",
                 "TxRate": "NA",
                 "RxRate": "NA",
+                "SSID": "NA",
+                "MAC": "NA",
             }
 
             if sta in interfaces_dict:
@@ -1290,6 +1321,8 @@ class Youtube(Realm):
                 lf_stats_map[sta]["TxRate"] = data.get("tx-rate", "NA")
                 lf_stats_map[sta]["RxRate"] = data.get("rx-rate", "NA")
                 lf_stats_map[sta]["BSSID"] = data.get("ap", "NA")
+                lf_stats_map[sta]["SSID"] = data.get("ssid", "NA")
+                lf_stats_map[sta]["MAC"] = data.get("mac", "NA")
 
         return lf_stats_map
 
@@ -1375,11 +1408,30 @@ class Youtube(Realm):
                     self.stats_api_response = {}
                     return jsonify({"message": "Data cleared"}), 200
 
+                virtual_wifi_stats = (
+                    self.get_youtube_lf_wifi_stats() if self.virtual else {}
+                )
                 for key, value in data.items():
                     if key == "stop":
                         continue
-                    device_name = key
+                    device_name = self.virtual_ip_map.get(key, key) if self.virtual else key
                     stats = value
+                    if self.virtual:
+                        station_eid = next(
+                            (station for station in self.sta_list
+                             if station.split('.')[-1] == device_name),
+                            device_name,
+                        )
+                        wifi_stats = virtual_wifi_stats.get(station_eid, {})
+                        stats.update({
+                            "MAC": wifi_stats.get("MAC", "NA"),
+                            "BSSID": wifi_stats.get("BSSID", "NA"),
+                            "RSSI": wifi_stats.get("RSSI", "NA"),
+                            "Channel": wifi_stats.get("Channel", "NA"),
+                            "Mode": wifi_stats.get("Mode", "NA"),
+                            "SSID": wifi_stats.get("SSID", "NA"),
+                            "Link Rate": wifi_stats.get("RxRate", "NA"),
+                        })
                     buffer_val = stats.get("BufferHealth")
                     if buffer_val not in [None, "", "NA"]:
                         try:
