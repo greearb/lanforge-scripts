@@ -3578,6 +3578,16 @@ NOTES:
         parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
         parser.add_argument('--scoring', action='store_true', help='Generate per-device YouTube scoring CSV files')
         parser.add_argument("--wait_time", type=int, help="Specify the time for configuration", default=60)
+        parser.add_argument('--clients_type', choices=['real', 'virtual'], default='real',
+                            help='Client type for the standalone test (default: real)')
+        parser.add_argument('--num_sta', type=int,
+                            help='Number of virtual stations to create')
+        parser.add_argument('--radio', default='wiphy0',
+                            help='Radio used to create virtual stations')
+        parser.add_argument('--existing_sta_list', default='',
+                            help='Comma-separated existing virtual station EIDs')
+        parser.add_argument('--use_existing_sta_list', action='store_true',
+                            help='Use --existing_sta_list instead of creating stations')
         # IOT ARGS
         parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
 
@@ -3680,9 +3690,93 @@ NOTES:
             elif args.file_name is not None and (args.group_name is None or args.profile_name is None):
                 logging.error("Please enter the correct set of arguments")
                 exit(0)
-            elif args.config and ((args.ssid is None or (args.passwd is None and args.security.lower() != 'open') or (args.passwd is None and args.security is None))):
+            elif args.config and (
+                    args.ssid is None
+                    or args.encryp is None
+                    or (
+                        args.passwd is None
+                        and args.encryp.lower() != 'open'
+                        and not (
+                            args.clients_type == 'virtual'
+                            and args.encryp.lower() == 'owe'
+                        )
+                    )):
                 logging.error("Please provide ssid password and security for configuration of devices")
                 exit(0)
+
+            if args.clients_type == 'virtual':
+                if args.do_robo or args.do_bandsteering:
+                    parser.error(
+                        "virtual clients are supported only by the standalone YouTube test; "
+                        "Robot and band-steering modes remain real-device only"
+                    )
+                if args.iot_test:
+                    parser.error("--iot_test is not supported with virtual YouTube clients")
+                if args.use_existing_sta_list:
+                    if not args.existing_sta_list.strip():
+                        parser.error(
+                            "--existing_sta_list is required with --use_existing_sta_list"
+                        )
+                else:
+                    if not args.num_sta or args.num_sta < 1:
+                        parser.error("--num_sta must be greater than zero for virtual clients")
+                    if not args.ssid or not args.encryp:
+                        parser.error(
+                            "--ssid and --encryp are required when creating virtual stations"
+                        )
+                    if args.encryp.lower() not in {'open', 'owe'} and not args.passwd:
+                        parser.error(
+                            "--passwd is required unless virtual-station security is open or OWE"
+                        )
+
+                youtube = Youtube(
+                    host=mgr_ip,
+                    port=mgr_port,
+                    url=url,
+                    duration=args.duration,
+                    lanforge_password='lanforge',
+                    do_webUI=args.do_webUI,
+                    ui_report_dir=ui_report_dir,
+                    debug=debug,
+                    resolution=args.res,
+                    ap_name=args.ap_name,
+                    ssid=args.ssid,
+                    security=args.encryp,
+                    passwd=args.passwd,
+                    band=args.band,
+                    test_name=args.test_name,
+                    upstream_port=args.upstream_port,
+                    config=args.config,
+                    selected_groups=[],
+                    selected_profiles=[],
+                    scoring=args.scoring,
+                    clients_type='virtual',
+                    num_sta=args.num_sta or 0,
+                    radio=args.radio,
+                    existing_sta_list=args.existing_sta_list,
+                    use_existing_sta_list=args.use_existing_sta_list,
+                )
+                youtube.handle_flask_server()
+                youtube.configure_virtual_stations(
+                    cleanup_existing=not args.no_pre_cleanup
+                )
+                youtube.map_virtual_station_ips()
+                if args.do_webUI:
+                    youtube.prepare_virtual_report_data()
+                    youtube.update_webui()
+                youtube.build_virtual_l4()
+                youtube.start_time = datetime.now()
+                youtube.start_virtual_l4()
+                logger.info(
+                    "Virtual YouTube streaming started for %d station(s); duration %d minute(s)",
+                    len(youtube.sta_list),
+                    args.duration,
+                )
+                end_time = datetime.now() + timedelta(minutes=args.duration)
+                while datetime.now() < end_time and not youtube.stop_signal:
+                    time.sleep(1)
+                logger.info("Virtual YouTube streaming duration completed")
+                return
 
             Devices = RealDevice(manager_ip=mgr_ip,
                                  server_ip='192.168.1.61',
