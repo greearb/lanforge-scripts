@@ -97,6 +97,33 @@
     --do_robo --robo_ip 192.168.200.101 --coordinates 3,2,1 --rotations "" --robot_wait_duration 1 --do_bandsteering --cycles 2
     --bssids 94:A6:7E:74:26:22,94:A6:7E:74:26:31
 
+    EXAMPLE-10:
+    Command Line Interface to run YouTube with existing virtual stations:
+    python3 lf_interop_youtube.py \
+    --mgr 192.168.207.75 \
+    --url "https://youtu.be/08tDJtvpZTY?si=BRQNVvfSITgKD7HJ" \
+    --duration 2 \
+    --res 1080p \
+    --upstream_port 1.1.eth1 \
+    --clients_type virtual \
+    --use_existing_sta_list \
+    --existing_sta_list 1.1.sta0001,1.1.sta0002
+
+    EXAMPLE-11:
+    Command Line Interface to create virtual stations and run YouTube:
+    python3 lf_interop_youtube.py \
+    --mgr 192.168.207.75 \
+    --url "https://youtu.be/08tDJtvpZTY?si=BRQNVvfSITgKD7HJ" \
+    --duration 2 \
+    --res 1080p \
+    --upstream_port 1.1.eth1 \
+    --clients_type virtual \
+    --num_sta 2 \
+    --radio wiphy0 \
+    --ssid NETGEAR_2G_wpa2 \
+    --passwd Password@123 \
+    --encryp wpa2
+
 
 
     SCRIPT CLASSIFICATION: Test
@@ -3492,6 +3519,35 @@ python3 py-scripts/real_application_tests/youtube/lf_interop_youtube.py \
 --robo_ip 192.168.50.10 \
 --coordinates c1,c2,c3 \
 --rotations 0,90,180,270
+
+EXAMPLE-8:
+Command Line Interface to run YouTube with existing virtual stations:
+
+python3 lf_interop_youtube.py \
+--mgr 192.168.207.75 \
+--url "https://youtu.be/08tDJtvpZTY?si=BRQNVvfSITgKD7HJ" \
+--duration 2 \
+--res 1080p \
+--upstream_port 1.1.eth1 \
+--clients_type virtual \
+--use_existing_sta_list \
+--existing_sta_list 1.1.sta0001,1.1.sta0002
+
+EXAMPLE-9:
+Command Line Interface to create virtual stations and run YouTube:
+
+python3 lf_interop_youtube.py \
+--mgr 192.168.207.75 \
+--url "https://youtu.be/08tDJtvpZTY?si=BRQNVvfSITgKD7HJ" \
+--duration 2 \
+--res 1080p \
+--upstream_port 1.1.eth1 \
+--clients_type virtual \
+--num_sta 2 \
+--radio wiphy0 \
+--ssid NETGEAR_2G_wpa2 \
+--passwd Password@123 \
+--encryp wpa2
 
 
 SCRIPT CLASSIFICATION: Test
