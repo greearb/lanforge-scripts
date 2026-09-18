@@ -1572,7 +1572,7 @@ class FtpTest(LFCliBase):
 
     def my_monitor(self):
         dataset = []
-        self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd = [], [], [], [], [], [], [], []
+        self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd, self.rx_rate = [], [], [], [], [], [], [], [], []
         if self.clients_type == "Virtual":
             response_port = self.json_get("/port/all")
             for interface in response_port['interfaces']:
@@ -1606,6 +1606,7 @@ class FtpTest(LFCliBase):
         uc_min_data = self.json_get("layer4/list?fields=uc-min")
         total_url_data = self.json_get("layer4/list?fields=total-urls")
         bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
+        rx_rate_data = self.json_get("layer4/list?fields=rx rate (1m)")
         print(uc_avg_data)
         print(total_url_data)
         self.data_for_webui = {}
@@ -1620,6 +1621,7 @@ class FtpTest(LFCliBase):
                 # reading uc-avg data in json format
                 self.url_data.append(total_url_data['endpoint']['total-urls'])
                 dataset.append(bytes_rd['endpoint']['bytes-rd'])
+                self.rx_rate.append(rx_rate_data['endpoint']['rx rate (1m)'])
                 if self.dowebgui == "True":
                     self.data_for_webui["url_data"] = self.url_data
                     self.data_for_webui["start_time"] = self.data["start_time"]
@@ -1654,6 +1656,11 @@ class FtpTest(LFCliBase):
                             if CX == created_cx:
                                 dataset.append(cx[CX]['bytes-rd'])
                                 self.bytes_rd = [float(f"{(i / 1000000): .4f}") for i in dataset]
+                for cx in rx_rate_data['endpoint']:
+                    for CX in cx:
+                        for created_cx in self.cx_list:
+                            if CX == created_cx:
+                                self.rx_rate.append(cx[CX]['rx rate (1m)'])
                 if self.dowebgui == "True":
                     # FOR WEB-UI // storing values in self which is used to update the csv at the end.
                     self.data_for_webui["url_data"] = self.url_data
