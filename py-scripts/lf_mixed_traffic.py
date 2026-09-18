@@ -746,7 +746,9 @@ class Mixed_Traffic(Realm):
             elif self.virtual:
                 self.ping_test_obj.sta_list = self.station_list
                 print('Virtual Stations: {}'.format(self.station_list).replace('[', '').replace(']', '').replace('\'', ''))
-                self.ping_test_obj.cleanup()
+                # stations are already created and shared with the other parallel tests (qos/ftp/http/multicast) in
+                # this mixed-traffic run, so only clear stale generic endpoints here, don't remove the stations
+                self.ping_test_obj.cleanup(clean_stations=False)
             # creating generic endpoints
             self.ping_test_obj.create_generic_endp()
             logger.info("Generic Cross-Connection List: {}".format(self.ping_test_obj.generic_endps_profile.created_cx))
@@ -1038,7 +1040,9 @@ class Mixed_Traffic(Realm):
                                                                          port=self.port,
                                                                          number_template="0000",
                                                                          ap_name=ap_name,
-                                                                         num_stations=self.num_staions,
+                                                                         num_stations_2g=self.num_staions if "2.4G" in self.band else 0,
+                                                                         num_stations_5g=self.num_staions if "5G" in self.band else 0,
+                                                                         num_stations_6g=self.num_staions if "6G" in self.band else 0,
                                                                          sta_list=self.station_list,
                                                                          create_sta=False,
                                                                          name_prefix="TOS-",
@@ -2039,7 +2043,10 @@ class Mixed_Traffic(Realm):
                         if res:
                             self.data_set, self.load, res1 = qos_obj.generate_graph_data_set(res)
                             qos_obj.tos = tos
-                            qos_obj.generate_individual_graph(res1, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a, qos_obj.avg_drop_b)
+                            if self.virtual:
+                                qos_obj.generate_individual_graph(res1, self.lf_report_mt)
+                            else:
+                                qos_obj.generate_individual_graph(res1, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a, qos_obj.avg_drop_b)
                 else:
                     df_throughput = pd.DataFrame(self.res["throughput_table_df"])
                     self.lf_report_mt.set_table_dataframe(df_throughput)
@@ -2075,8 +2082,11 @@ class Mixed_Traffic(Realm):
                     self.lf_report_mt.build_graph()
                     # Helpful for testhouse when both QoS and multicast are checked, to avoid generating redundant RSSI heatmaps.
                     multicast_exists = "5" in self.tests and self.get_live_view
-                    qos_obj.generate_individual_graph(self.res, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a,
-                                                      qos_obj.avg_drop_b, self.total_floors, multicast_exists)
+                    if self.virtual:
+                        qos_obj.generate_individual_graph(self.res, self.lf_report_mt)
+                    else:
+                        qos_obj.generate_individual_graph(self.res, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a,
+                                                          qos_obj.avg_drop_b, self.total_floors, multicast_exists)
             if "3" in self.tests and self.ftp_test_status:
                 # 3.FTP test reporting in mixed traffic
                 self.lf_report_mt.set_obj_html(_obj_title="3. File Transfer Protocol (FTP) Test", _obj="")
@@ -3323,8 +3333,11 @@ INCLUDE_IN_README: False
                             mixed_obj.ping_test_obj, mixed_obj.ping_test_status = recv_or_default(
                                 t1_parent, t1, ('', False), "Ping test")
                         if "2" in args.tests:
-                            mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = recv_or_default(
-                                t2_parent, t2, ('', '', '', '', False), "QoS test")
+                            qos_result = recv_or_default(t2_parent, t2, ('', '', '', '', False), "QoS test")
+                            if mixed_obj.virtual:
+                                mixed_obj.throughput_qos_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = qos_result
+                            else:
+                                mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = qos_result
                         if "3" in args.tests:
                             mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = recv_or_default(
                                 t3_parent, t3, ('', False), "FTP test")
@@ -3401,7 +3414,7 @@ INCLUDE_IN_README: False
                                                                     start_id=args.sixg_start_id, all_sta=True)
                 # updating num stations and station list
                 virtual_station_list = sta_list_2g + sta_list_5g + sta_list_6g
-                logger.info("List of selected virtual stations:", virtual_station_list)
+                logger.info("List of selected virtual stations: {}".format(virtual_station_list))
                 mixed_obj.station_list = virtual_station_list
                 mixed_obj.num_staions = args.twog_num_stations + args.fiveg_num_stations + args.sixg_num_stations
             if (args.use_default_config):
@@ -3523,8 +3536,11 @@ INCLUDE_IN_README: False
                         mixed_obj.ping_test_obj, mixed_obj.ping_test_status = recv_or_default(
                             t1_parent, t1, ('', False), "Ping test")
                     if "2" in args.tests:
-                        mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = recv_or_default(
-                            t2_parent, t2, ('', '', '', '', False), "QoS test")
+                        qos_result = recv_or_default(t2_parent, t2, ('', '', '', '', False), "QoS test")
+                        if mixed_obj.virtual:
+                            mixed_obj.throughput_qos_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = qos_result
+                        else:
+                            mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = qos_result
                     if "3" in args.tests:
                         mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = recv_or_default(
                             t3_parent, t3, ('', False), "FTP test")
