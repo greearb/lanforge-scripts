@@ -1456,16 +1456,23 @@ class HttpDownload(Realm):
         self.channel_list, self.mode_list, self.ssid_list = [], [], []
         if self.client_type == "Real":
             self.devices = self.devices_list
+            interfaces_dict = dict()
             for interface in self.response_port['interfaces']:
-                for port, port_data in interface.items():
-                    if port in self.port_list:
-                        channel_value = str(port_data.get('channel', ''))
-                        if channel_value in ('', '0', '-1'):
-                            self.channel_list.append('NA')
-                        else:
-                            self.channel_list.append(channel_value)
-                        self.mode_list.append(str(port_data['mode']))
-                        self.ssid_list.append(str(port_data['ssid']))
+                interfaces_dict.update(interface)
+            for port in self.port_list:
+                if port in interfaces_dict:
+                    port_data = interfaces_dict[port]
+                    channel_value = str(port_data.get('channel', ''))
+                    if channel_value in ('', '0', '-1'):
+                        self.channel_list.append('NA')
+                    else:
+                        self.channel_list.append(channel_value)
+                    self.mode_list.append(str(port_data['mode']))
+                    self.ssid_list.append(str(port_data['ssid']))
+                else:
+                    self.channel_list.append('NA')
+                    self.mode_list.append('-')
+                    self.ssid_list.append('-')
 
     def add_live_view_images_to_report(self, report):
         for floor in range(0, int(self.total_floors)):
