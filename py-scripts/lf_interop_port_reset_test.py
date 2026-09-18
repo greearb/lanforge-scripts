@@ -975,29 +975,43 @@ class InteropPortReset(Realm):
         previous_remark = metrics.get("Remarks") or ""
         if "unverified" in previous_remark.lower() or "unavailable" in previous_remark.lower():
             return
-        if metrics["Connected"]:
+        connect_attempts = metrics.get("ConnectAttempt", 0) or 0
+        if metrics["Connected"] and connect_attempts in (1, 2):
+            remark = "Client reconnected after reset. Association attempt(s) were observed."
+        elif metrics["Connected"]:
             remark = "Client reconnected after reset."
             if not metrics["Disconnected"]:
                 remark += " No disconnect message was observed."
+            if metrics.get("Association Rejection", 0):
+                remark += " Association failures were reported."
         elif metrics["Disconnected"]:
             remark = "Disconnect observed; no successful reconnection was confirmed."
+            if metrics.get("Association Rejection", 0):
+                remark += " Association failures were reported."
         else:
             remark = "No disconnect or successful reconnection was confirmed."
-        if metrics.get("Association Rejection", 0):
-            remark += " Association failures were reported."
+            if metrics.get("Association Rejection", 0):
+                remark += " Association failures were reported."
         metrics["Remarks"] = remark
 
     def report_client_names(self, device_names, user_names):
-        """Pair laptop resource IDs with host names and use Android client names."""
+        """Pair each client's resource ID with its host/user name.
+
+        Android eids use the Interop tab's own resource (e.g. "1.1"), not the
+        station's actual resource, so the real resource ID is looked up via ADB.
+        """
         names = []
         for eid, device_name, user_name in zip(
             self.adb_device_list + self.all_laptops, device_names, user_names
         ):
-            if eid in self.all_laptops:
-                resource = ".".join(eid.split(".")[:2])
-                names.append(f"{resource} {user_name}" if user_name else eid)
+            if eid in self.adb_device_list:
+                resource = self.interop.get_device_details(
+                    device=eid, query="resource-id"
+                ) or ".".join(eid.split(".")[:2])
             else:
-                names.append(user_name or device_name or eid)
+                resource = ".".join(eid.split(".")[:2])
+            name = user_name or device_name
+            names.append(f"{resource} {name}" if name else eid)
         return names
 
     def write_iteration_csvs(self, device_metrics, iteration):
