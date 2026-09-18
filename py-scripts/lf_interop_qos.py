@@ -635,6 +635,13 @@ class ThroughputQOS(Realm):
             "API Response": api_response if api_response is not None else '',
         })
 
+    @staticmethod
+    def _parse_float(value):
+        """Converts value to float, returning 0.0 when it is blank or non-numeric."""
+        if (isinstance(value, str) and not value.replace('.', '', 1).isdigit()) or value is None:
+            return 0.0
+        return float(value)
+
     def format_monitoring_duration(self):
         """Formats the actual time spent monitoring as "Xm Ys"."""
         total_seconds = int(self.actual_monitoring_duration_seconds)
@@ -967,15 +974,19 @@ class ThroughputQOS(Realm):
                             tos_sides_seen.setdefault(traffic_tos, set()).add(endp)
 
                             if endp == 'A':
-                                self.real_time_data[cx_name][traffic_tos]['bps rx a'].append(cx_data['rx rate (last)'] / 1000000)
-                                t_response[cx_name][0] = cx_data['rx rate (last)']
-                                self.real_time_data[cx_name][traffic_tos]['rx drop % a'].append(cx_data['rx drop %'])
-                                t_response[cx_name][2] = cx_data['rx drop %']
+                                rx_rate_a = self._parse_float(cx_data['rx rate (last)'])
+                                self.real_time_data[cx_name][traffic_tos]['bps rx a'].append(rx_rate_a / 1000000)
+                                t_response[cx_name][0] = rx_rate_a
+                                rx_drop_a = self._parse_float(cx_data['rx drop %'])
+                                self.real_time_data[cx_name][traffic_tos]['rx drop % a'].append(rx_drop_a)
+                                t_response[cx_name][2] = rx_drop_a
                             elif endp == 'B':
-                                self.real_time_data[cx_name][traffic_tos]['bps rx b'].append(cx_data['rx rate (last)'] / 1000000)
-                                t_response[cx_name][1] = cx_data['rx rate (last)']
-                                self.real_time_data[cx_name][traffic_tos]['rx drop % b'].append(cx_data['rx drop %'])
-                                t_response[cx_name][3] = cx_data['rx drop %']
+                                rx_rate_b = self._parse_float(cx_data['rx rate (last)'])
+                                self.real_time_data[cx_name][traffic_tos]['bps rx b'].append(rx_rate_b / 1000000)
+                                t_response[cx_name][1] = rx_rate_b
+                                rx_drop_b = self._parse_float(cx_data['rx drop %'])
+                                self.real_time_data[cx_name][traffic_tos]['rx drop % b'].append(rx_drop_b)
+                                t_response[cx_name][3] = rx_drop_b
                     # fill 0 for whichever side didn't report, so every list for this tos stays the same length
                     for traffic_tos, sides in tos_sides_seen.items():
                         tos_data = self.real_time_data[cx][traffic_tos]
