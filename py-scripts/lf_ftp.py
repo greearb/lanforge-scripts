@@ -1486,6 +1486,7 @@ class FtpTest(LFCliBase):
     def get_device_details(self):
         dataset = []
         self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd, self.rx_rate, self.bssid_list = [], [], [], [], [], [], [], [], [], []
+        self.rssi_list, self.tx_rate, self.port_rx_rate = [], [], []
         self.total_err = []
         if self.clients_type == "Real":
             self.get_port_data()
@@ -1677,18 +1678,6 @@ class FtpTest(LFCliBase):
             exit()
 
     def my_monitor_for_real_devices(self):
-        self.channel_list, self.mode_list, self.ssid_list = [], [], []
-        response_port = self.json_get("/port/all")
-        for interface in response_port['interfaces']:
-            for port, port_data in interface.items():
-                if port in self.input_devices_list:
-                    channel_value = str(port_data.get('channel', ''))
-                    if channel_value in ('', '0', '-1'):
-                        self.channel_list.append('NA')
-                    else:
-                        self.channel_list.append(channel_value)
-                    self.mode_list.append(str(port_data['mode']))
-                    self.ssid_list.append(str(port_data['ssid']))
         if self.dowebgui:
             client_id_list = []
             for port in self.input_devices_list:
