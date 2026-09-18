@@ -984,10 +984,11 @@ class Mixed_Traffic(Realm):
                 self.qos_test_obj.avg_drop_a = []
                 self.qos_test_obj.avg_drop_b = []
                 time.sleep(10)
+                connections_download, connections_upload, drop_a_per, drop_b_per = {}, {}, [], []
                 try:
                     connections_download, connections_upload, drop_a_per, drop_b_per, self.qos_test_obj.connections_download_avg, self.qos_test_obj.connections_upload_avg, self.qos_test_obj.avg_drop_a, self.qos_test_obj.avg_drop_b = self.qos_test_obj.monitor()  # noqa: E501
-                except Exception as e:
-                    print(f"Failed at Monitoring the CX... {e}")
+                except Exception:
+                    logger.exception("Failed at Monitoring the CX")
                 self.qos_test_obj.stop()
                 time.sleep(5)
                 test_results['test_results'].append(
@@ -3450,7 +3451,7 @@ INCLUDE_IN_README: False
                                          'side_a_min': args.side_a_min,
                                          'side_b_min': args.side_b_min,
                                          'side_a_max': args.side_a_max,
-                                         'side_b_max': args.side_b_min,
+                                         'side_b_max': args.side_b_max,
                                          'conn': t2_child,
                                          'all_bands': True
                                      }
