@@ -446,12 +446,14 @@ class Mixed_Traffic(Realm):
                     self.multicast_test_duration = int(self.multicast_test_duration[:-1]) * multiplier
                 else:
                     logger.error("Mixed traffic run requires a duration for at least one test scenario")
-                if self.qos_serial_run:
-                    self.total_all_test_duration = int(self.ping_test_duration + (self.qos_test_duration * len(
-                        self.qos_tos_list)) + self.ftp_test_duration + self.http_test_duration + self.multicast_test_duration)
-                else:
-                    self.total_all_test_duration = int(
-                        self.ping_test_duration + self.qos_test_duration + self.ftp_test_duration + self.http_test_duration + self.multicast_test_duration)
+                duration_by_test = {
+                    '1': self.ping_test_duration,
+                    '2': self.qos_test_duration * len(self.qos_tos_list) if self.qos_serial_run else self.qos_test_duration,
+                    '3': self.ftp_test_duration,
+                    '4': self.http_test_duration,
+                    '5': self.multicast_test_duration,
+                }
+                self.total_all_test_duration = int(sum(duration_by_test[test_option] for test_option in self.tests))
                 self.time_formate = self.format_duration_hms(self.total_all_test_duration)
 
     def report_obj(self, band, path):
