@@ -403,8 +403,7 @@ class Mixed_Traffic(Realm):
                 self.test_duration = int(self.test_duration)
 
             self.total_all_test_duration = self.test_duration
-            time_obj = time.gmtime(self.total_all_test_duration)
-            self.time_formate = time.strftime("%H:%M:%S", time_obj)
+            self.time_formate = self.format_duration_hms(self.total_all_test_duration)
         else:
             if self.test_duration:
                 if self.test_duration.endswith(tuple(duration_suffixes.keys())):
@@ -418,8 +417,7 @@ class Mixed_Traffic(Realm):
                     self.total_all_test_duration = int(self.test_duration * (len(self.tests) - 1 + len(self.qos_tos_list)))
                 else:
                     self.total_all_test_duration = int(self.test_duration * len(self.tests))
-                time_obj = time.gmtime(self.total_all_test_duration)
-                self.time_formate = time.strftime("%H:%M:%S", time_obj)
+                self.time_formate = self.format_duration_hms(self.total_all_test_duration)
             elif self.ping_test_duration or self.qos_test_duration or self.ftp_test_duration or self.http_test_duration or self.multicast_test_duration:
                 if self.ping_test_duration.endswith(tuple(duration_suffixes.keys())) or self.qos_test_duration.endswith(
                         tuple(duration_suffixes.keys())) or self.ftp_test_duration.endswith(
@@ -454,8 +452,7 @@ class Mixed_Traffic(Realm):
                 else:
                     self.total_all_test_duration = int(
                         self.ping_test_duration + self.qos_test_duration + self.ftp_test_duration + self.http_test_duration + self.multicast_test_duration)
-                time_obj = time.gmtime(self.total_all_test_duration)
-                self.time_formate = time.strftime("%H:%M:%S", time_obj)
+                self.time_formate = self.format_duration_hms(self.total_all_test_duration)
 
     def report_obj(self, band, path):
         if band is None:
@@ -595,6 +592,11 @@ class Mixed_Traffic(Realm):
             self._fail("Station build failed", print_=True)
             logger.error("Please re-check the configuration applied")
         return station_list
+
+    def format_duration_hms(self, total_seconds):
+        hours, remainder = divmod(int(total_seconds), 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
     def convert_seconds(self, seconds):
         if seconds < 60:
