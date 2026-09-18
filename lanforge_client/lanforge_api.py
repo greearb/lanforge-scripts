@@ -10622,7 +10622,8 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(ResetPortResetFlags, 0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        PCI_RESET = 0x1      # Remove from and rescan the pci bus. This is disruptive but may work around
+        DHCP_RESET = 0x2      # Restart DHCP client.
+        PCI_RESET = 0x1       # Remove from and rescan the pci bus. This is disruptive but may work around
         # +hardware hangs.
 
         # use to get in value of flag
@@ -21262,18 +21263,18 @@ class LFJsonQuery(JsonQuery):
         'pps rx':                        # Packets-per-second received over the last 30 seconds.
         'pps tx':                        # Packets-per-second transmitted over the last 30 seconds.
         'req bps':                       # Requested bits-per-second transmit rate.
-        'run':                           # Is the Endpoint is Running or not.
-        'rx bytes':                      # Total bytes received sofar.
+        'run':                           # Is the Endpoint Running or not.
+        'rx bytes':                      # Total bytes received so far.
         'rx drop %':                     # Percentage of packets dropped (based on sequence number gaps).
         'rx dup %':                      # Percentage of duplicate packets, as detected by sequence numbers.
         'rx ooo %':                      # Percentage of packets received out of order, as detected by sequence
                                          # numbers.
-        'rx pkts':                       # Total packets received sofar.
+        'rx pkts':                       # Total packets received so far.
         'rx rate (last)':                # Bits-per-second received over the last reporting interval.
         'script':                        # Endpoint script state.
         'thread-id':                     # The thread on which this endpoint is running.
-        'tx bytes':                      # Total bytes transmitted sofar.
-        'tx pkts':                       # Total packets transmitted sofar.
+        'tx bytes':                      # Total bytes transmitted so far.
+        'tx pkts':                       # Total packets transmitted so far.
         'tx rate (last)':                # Bits-per-second transmitted over the last reporting interval.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -21372,7 +21373,7 @@ class LFJsonQuery(JsonQuery):
         'notes':       # User specified notes for this attenuator.
         'script':      # Attenuator script state.
         'state':       # Attenuator state.
-        'temperature': # Temperature in degres Farenheight reported in Attenuator unit.
+        'temperature': # Temperature in degrees Fahrenheit reported in Attenuator unit.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -21644,8 +21645,8 @@ class LFJsonQuery(JsonQuery):
         'endpoints (a&nbsp;&#x2194;&nbsp;b)': # Endpoints that make up this Cross Connect.
         'entity id':                          # Cross Connect's Name.
         'name':                               # Cross Connect's Name.
-        'pkt rx a':                           # Endpoint A's Packets Recieved.
-        'pkt rx b':                           # Endpoint B's Packets Recieved.
+        'pkt rx a':                           # Endpoint A's Packets Received.
+        'pkt rx b':                           # Endpoint B's Packets Received.
         'rpt timer':                          # Cross Connect's Report Timer (milliseconds).This is how often the GUI
                                               # will ask for updates from the LANforge processes.If the GUI is sluggish,
                                               # increasing the report timers may help.
@@ -21834,7 +21835,7 @@ class LFJsonQuery(JsonQuery):
         'hw info':         # DUT Hardware Info
         'image file':      # Image file name. Relative paths assume directory /home/lanforge. Fully
                            # qualified pathnames begin with a slash (eg
-                           # /usr/lib/share/icons/icon.png).File format should be PNG, JPG or BMP.
+                           # /usr/lib/share/icons/icon.png). File format should be PNG, JPG or BMP.
         'lan':             # IP/Mask for LAN port (192.168.2.1/24).You may also set a port
                            # (192.168.2.1/24:48080).This will be respected in some test
                            # configurations (iperf).
@@ -21968,7 +21969,7 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        '1st rx':               # Miliseconds between starting the endpoint and receiving the first
+        '1st rx':               # Milliseconds between starting the endpoint and receiving the first
                                 # packet.Note that LANforge UDP connections (not including multicast) will
                                 # wait 20msbefore sending first frame to make sure receiver has adequate
                                 # time to start.
@@ -21979,7 +21980,7 @@ class LFJsonQuery(JsonQuery):
         'cx active':            # Total number of active connections for this endpoint.
         'cx estab':             # Total times the connection between the endpoints has been established.
         'cx estab/s':           # Connections established per second, averaged over the last 30 seconds.
-        'cx to':                # Number of TCP connection attemtps timed out by LANforge.
+        'cx to':                # Number of TCP connection attempts timed out by LANforge.
         'delay':                # Average latency in milliseconds for packets received by this endpoint.
         'destination addr':     # Destination Address (MAC, ip/port, VoIP destination).
         'dropped':              # Total dropped packets, as identified by gaps in packet sequence numbers.
@@ -22028,7 +22029,7 @@ class LFJsonQuery(JsonQuery):
                                 # on normal networks.
         'rcv buf':              # Configured/Actual values for receiving buffer size (bytes).
         'replays':              # Total number of files replayed.
-        'run':                  # Is the Endpoint is Running or not.
+        'run':                  # Is the Endpoint Running or not.
         'rx ber':               # Received bit-errors.  These are only calculated in the LANforge payload
                                 # portion starting 28 bytes into the UDP or TCP payload.  In addition, the
                                 # bit-errors are only checked when LANforge CRCis enabled and detected to
@@ -22340,7 +22341,7 @@ class LFJsonQuery(JsonQuery):
         'files #':     # Number of files to write.
         'files-read':  # Files read.
         'files-wr':    # Files written.
-        'io fail':     # Amount of time in miliseconds this test has been experiencing IO
+        'io fail':     # Amount of time in milliseconds this test has been experiencing IO
                        # failures.
         'max-file-sz': # Maximum configured file size (bytes).
         'max-rd-bps':  # Maximum configured read rate (bps).
@@ -22485,7 +22486,7 @@ class LFJsonQuery(JsonQuery):
                                # report, others will produce continuous reports.)
         'rx audio delay':      # Audio Receive Delay (milliseconds). Conference Call endpoints only.
         'rx audio jitter':     # Audio Receive Jitter (milliseconds). Conference Call endpoints only.
-        'rx audio pkt drop %': # Audio Receive Pakcets Dropped %. Conference Call endpoints only.
+        'rx audio pkt drop %': # Audio Receive Packets Dropped %. Conference Call endpoints only.
         'rx bytes':            # Received bytes reported by this endpoint.
         'rx pkts':             # Received PDUs reported by this endpoint.
         'rx video delay':      # Video Receive Delay (milliseconds). Conference Call endpoints only.
@@ -22663,8 +22664,8 @@ class LFJsonQuery(JsonQuery):
     The record returned will have these members: 
     {
         '!conn':                # Could not establish connection.
-        'acc. denied':          # Access Access Denied Error.This could be password, user-name,
-                                # file-permissions or other error.
+        'acc. denied':          # Access Denied Error.This could be password, user-name, file-permissions
+                                # or other error.
         'audio-format-bitrate': # Audio Format BitRate which is reported by video player.It can be
                                 # converted to Audio Quality depending upon Video Server Manifest file
                                 # configuration.
@@ -22728,7 +22729,7 @@ class LFJsonQuery(JsonQuery):
         'total-err':            # Total Errors. This is also total failed URLs.
         'total-rebuffers':      # Amount of Rebuffer events reported by video player.
         'total-urls':           # URLs processed and in process. This includes passed and failed URLs.
-        'total-wait-time':      # Amount of time taken by video playback in miliseconds due to Initial
+        'total-wait-time':      # Amount of time taken by video playback in milliseconds due to Initial
                                 # Playback during Join Time and playback Buffering in Video Resume State.
         'tx rate':              # Payload transmit rate (bps).
         'tx rate (1&nbsp;min)': # Payload transmit rate over the last minute (bps).
@@ -23034,7 +23035,7 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        '4way time (us)':   # TIme (in micro-seconds) it took to complete the last WiFi 4-way
+        '4way time (us)':   # Time (in micro-seconds) it took to complete the last WiFi 4-way
                             # authentication.
         'activity':         # Percent of the channel that is utilized over the last minute.This
                             # includes locally generated traffic as well as anyother systems active on
@@ -23113,7 +23114,7 @@ class LFJsonQuery(JsonQuery):
                             # toincrease calibration accuracy.
         'rx bytes':         # Total number of bytes received by this Interface.
         'rx crc':           # Total number of packets dropped because of a bad CRC/FCS.
-        'rx drop':          # Total number of dropped packets on recieve.  Usually means driver/kernel
+        'rx drop':          # Total number of dropped packets on receive.  Usually means driver/kernel
                             # is being over-worked.
         'rx errors':        # Total number of all types of Receive Errors.
         'rx fifo':          # Total number of packets dropped because driver/kernel queues are full.
@@ -23128,8 +23129,8 @@ class LFJsonQuery(JsonQuery):
         'sec':              # Number of secondary IP addresses configured or detected.
         'security':         # WiFi Security Protocol Configured
         'signal':           # Wireless signal strength (RSSI).
-        'ssid':             # WiFi SSID identifier.Use [BLANK] for empty SSID, which means use any
-                            # available SSID when associating.
+        'ssid':             # WiFi SSID identifier. Use [BLANK] for empty SSID. A [BLANK] SSID will
+                            # use any available SSID with open security. 
         'status':           # Wireless link status.
         'time-stamp':       # Time-Stamp
         'tx abort':         # Total packets dropped on transmit because of driver abort.
@@ -23676,7 +23677,7 @@ class LFJsonQuery(JsonQuery):
                        # IOS, or Unknown.
         'df-boot':     # Free-space (MB) in /boot file system.If actual value is greater than
                        # 65535, 65535 will be shown.
-        'df-home':     # Free-space (MB) in /home file sysytem.If actual value is greater than
+        'df-home':     # Free-space (MB) in /home file system.If actual value is greater than
                        # 65535, 65535 will be shown.
         'df-root':     # Free-space (MB) in / file system.If actual value is greater than 65535,
                        # 65535 will be shown.
@@ -23979,7 +23980,7 @@ class LFJsonQuery(JsonQuery):
         'capabilities':  # Station's negotiated capabilities.
         'chain rssi':    # Chain RSSI
         'entity id':     # Entity ID
-        'idle':          # Miliseconds since this station last received a frame from the peer.
+        'idle':          # Milliseconds since this station last received a frame from the peer.
         'ip':            # The IP Address of this port/interface, ex: 192.168.1.5
         'roam-duration': # The difference between the authenticate-time on the new APand the last
                          # frame received on old AP, in milliseconds.It is not always possible to
@@ -24519,7 +24520,7 @@ class LFJsonQuery(JsonQuery):
         'audio length':     # Length of the recorded/degraded audio file. Unit: sec
         'avg delay':        # Average delay values between reference and degraded/test audio file from
                             # POLQA/PESQ report (unit: ms)
-        'calls answered':   # Number of calls that where the remote answered
+        'calls answered':   # Number of calls that the remote answered
         'calls attempted':  # Number of calls that have been attempted
         'calls completed':  # Number of calls that have been successfully completed
         'calls failed':     # Number of calls that did not succeed for any reason.
@@ -24563,7 +24564,7 @@ class LFJsonQuery(JsonQuery):
         'rst':              # How many times has the endpoint been restarted due to abnormal
                             # termination.
         'rtp rtt':          # Round trip latency as reported by RTCP
-        'run':              # Is the Endpoint is Running or not.
+        'run':              # Is the Endpoint Running or not.
         'rx bytes':         # Total received bytes count.
         'rx pkts':          # Total received packet count.
         'scoring bklg':     # POLQA/PESQ server call processing backlog.
@@ -25367,7 +25368,7 @@ class LFJsonQuery(JsonQuery):
         'qdisc':        # Queueing discipline (FIFO, WRR, etc).
         'reordfrq %':   # Frequency out of 1,000,000 to re-order a received packet.Select a preset
                         # value or enter your own.
-        'run':          # Is the Endpoint is Running or not.
+        'run':          # Is the Endpoint Running or not.
         'rx bytes':     # Total received bytes count.
         'rx pkts':      # Total received packet count.
         'rx rate (3s)': # The average speed at which we are receiving over the last 3 seconds.
