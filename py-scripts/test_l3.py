@@ -1750,14 +1750,14 @@ class L3VariableTime(Realm):
             # Note: the endp eid is shelf.resource.port.endp-id, the eid can be treated somewhat as
             # child class of port-eid , and look up the port the eid is using.
             if eid[0] == eid_endp[0] and eid[1] == eid_endp[1] and eid[2] == eid_endp[2]:
-                if ((endp['delay'] is str and not endp['delay'].isnumeric()) or endp['delay'] is None):
+                if ((isinstance(endp['delay'], str) and not endp['delay'].isnumeric()) or endp['delay'] is None):
                     logging.debug(
                         'Expected integer response for delay, received non-numeric string instead. Replacing with 0')
                     lat += 0
                 else:
                     lat += int(endp['delay'])
 
-                if ((endp['jitter'] is str and not endp['jitter'].isnumeric()) or endp['jitter'] is None):
+                if ((isinstance(endp['jitter'], str) and not endp['jitter'].isnumeric()) or endp['jitter'] is None):
                     logging.debug(
                         'Expected integer response for jitter, received non-numeric string instead. Replacing with 0')
                     jit += 0
