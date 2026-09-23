@@ -13,7 +13,7 @@ PURPOSE:    A collection of comparators extended from a base endpoint Comparator
 import traceback
 from abc import ABC, abstractmethod
 
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, List, Tuple, Dict, Any, Optional, Union
 if TYPE_CHECKING:
     from http_regression import Response
 
@@ -55,7 +55,7 @@ class Warning(Result):
 class Failure(Result):
     def __init__(self, message: Optional[str] = None):
         super().__init__()
-        self.key = 1
+        self.key = 2
 
         if message is not None:
             self._messages.append(f"(failure) {message}")
@@ -108,7 +108,6 @@ class Comparator(ABC):
         """Returns a list of endpoints that the current comparator class is
         capable of handling. Used for dispatching comparison tasks to the
         correct Comparator class"""
-
         pass
 
     def compare(self, response: 'Response', reference: 'Response') -> Result:
@@ -151,9 +150,9 @@ def _zip_list(a: list, b: list) -> list:
     """Helper for zip_json that handles list elements"""
 
     if len(a) < len(b):
-        a += [None] - (len(b) - len(a))
+        a = a + [None] * (len(b) - len(a))
     if len(b) < len(b):
-        b += [None] - (len(a) - len(b))
+        b = b + [None] * (len(a) - len(b))
 
     return [
         zip_json(a_val, b_val)
@@ -175,23 +174,35 @@ def check_tolerance(value1, value2, tol=0.2) -> bool:
     return value2*(1-tol) <= value1 <= value2*(1+tol)
 
 
-def mismatch_message(name, value1, value2):
-    return f"Value of '{name}' ({value1}) does not match expected value ({value2})."
+def mismatch_message(name, value1, value2) -> str:
+    return f"Value of '{name}', '{value1}' does not match expected value: '{value2}'."
 
 
-def tolerance_message(name, value1, value2):
-    return f"Value of '{name}' ({value1}) is not within the expected tolerances of {value2}."
+def tolerance_message(name, value1, value2) -> str:
+    return f"Value of '{name}', '{value1}' is not within the expected tolerances of expected value:'{value2}'."
 
 
-def mismatch_type_message(name, value1, value2):
-    return f"Type of '{name}' ({value1}: {type(value1)}) does not match expected type ({value2}: {type(value2)})."
+def mismatch_type_message(name, value1, value2) -> str:
+    return f"Type of '{name}' ({value1}: {type(value1)}) does not match expected type: ({value2}: {type(value2)})."
 
+
+def validate_compare_values(response: 'Response', reference: 'Response') -> Optional[Result]:
+    if response is None:
+        if reference is not None:
+            return Failure("Response has no value")
+        else:
+            return Success()
+
+    if response.content is None:
+        if reference.content is not None:
+            return Failure("Response missing content.")
+        else:
+            return Success()
 
 #
 # Concrete Comparator Implementations
 #
 
-# The NotImplemented classes that
 
 class DatabaseComparator(Comparator):
     @staticmethod
