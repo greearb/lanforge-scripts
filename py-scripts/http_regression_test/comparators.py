@@ -575,13 +575,39 @@ class TextBlobsComparator(Comparator):
 
 
 class PortComparator(Comparator):
+    exact_match_keys = [
+        "alias", "channel", "device", "eid", "entity id", "gateway ip", "hardware", "ip", "ipv6 address",
+        "ipv6 gateway", "key/phrase", "mac", "mode", "parent dev", "port", "sec", "ssid", "wifi_config",
+        "wifi_config.*", "wifi_config.*.hex", "wifi_config.*.set_flags",
+    ]
+
     @staticmethod
     def handles_endpoints() -> List[str]:
         return ["port", "ports"]
 
     def _compare(self, response: 'Response', reference: 'Response') -> Result:
-        # TODO: Implement
-        raise NotImplementedError()
+        validation_result = validate_comparison(response, reference)
+        if validation_result is not None:
+            return validation_result
+
+        result = Success()
+        if response.status != reference.status:
+            result |= Failure(mismatch_message("status code", response.status, reference.status))
+
+        ports = zip_json(
+            self._get_port_list(response.content),
+            self._get_port_list(reference.content)
+        )
+        for port in ports:
+            result |= compare_zipped_values(port, self.exact_match_keys)
+
+        return result
+
+    def _get_port_list(self, content: dict):
+        if "interfaces" in content.keys():
+            return list(map(lambda r: next(iter(r.values())), content["interfaces"]))
+        else:
+            return [content["interface"]]
 
 
 class EndpComparator(Comparator):
@@ -607,7 +633,7 @@ class ResourceComparator(Comparator):
     def _compare(self, response: 'Response', reference: 'Response') -> Result:
         result = Success()
 
-        validation_result = validate_compare_values(response, reference)
+        validation_result = validate_comparison(response, reference)
         if validation_result is not None:
             return validation_result
 
