@@ -186,7 +186,7 @@ def mismatch_type_message(name, value1, value2) -> str:
     return f"Type of '{name}' ({value1}: {type(value1)}) does not match expected type: ({value2}: {type(value2)})."
 
 
-def validate_compare_values(response: 'Response', reference: 'Response') -> Optional[Result]:
+def validate_comparison(response: 'Response', reference: 'Response') -> Optional[Result]:
     if response is None:
         if reference is not None:
             return Failure("Response has no value")
@@ -198,6 +198,85 @@ def validate_compare_values(response: 'Response', reference: 'Response') -> Opti
             return Failure("Response missing content.")
         else:
             return Success()
+
+
+def compare_zipped_values(data: Dict[str, Union[Tuple[Any, Any], Dict]], exact_match_keys: Optional[List[str]]) -> Result:
+    """
+    Given a nested dictionaries/lists with 2-tuple leaf values, compare the values in each leaf tuple,
+    treating index 1 of the tuple as ground truth.
+
+    A None value in either tuple position indicates that value is missing.
+    - A missing ground truth value results in a warning when the compared value is present.
+    - A missing compared value results in an error when the ground truth is present.
+
+    Values will be compared by their type unless the key is present in exact_match_keys.
+    For nested dictionaries, keys in exact_match_keys can be provided using dot notation as in
+    `key.subKey.subSubKey`. An asterisk (*) will be treated as a wildcard key. Integers can be used
+    as keys for list indices.
+
+    For exact match, values will be compared by equality (==).
+    """
+
+    exact_match_keys = ["content." + key for key in exact_match_keys]
+    return _compare_zipped_values(data, "content", exact_match_keys)
+
+
+def _compare_zipped_values(data: Union[Tuple, Dict], key: str, exact_match_keys: List[str]) -> Result:
+    """
+    Recursively compare nested dictionaries and listsaccording to compare_zipped_values().
+
+    key is a string list representing the nested key chain to reach the current point of the nested
+    dictionary used to determine comparison type for leaves and error/failure messages.
+
+    Each 0-index element of exact_match_keys will be treated as the current-level subkey, and the
+    following elements as sub-keys.
+    """
+
+    def compare_keys(key1, key2):
+        key1 = key1.split(".")
+        key2 = key2.split(".")
+        if len(key1) != len(key2):
+            return False
+        for k1, k2 in zip(key1, key2):
+            if k1 != k2 and "*" != k1 and "*" != k2:
+                return False
+        return True
+
+    result = Success()
+
+    if isinstance(data, tuple) and len(data) == 2:
+        response_val, reference_val = data
+        if response_val is None is not reference_val:
+            # Missing value
+            key = key if key != "" else "content"
+            result |= Failure(f"'{key}' is missing from the response.")
+        elif response_val is not None is reference_val:
+            # Extra value
+            key = key if key != "" else "content"
+            result |= Warning(f"(warning) '{key}' is present in the response but not the reference.")
+        elif any((compare_keys(key, match_key) for match_key in exact_match_keys)):
+            # Exact match
+            if response_val != reference_val:
+                result |= Failure(mismatch_message(key, response_val, reference_val))
+        elif type(response_val) is not type(reference_val):
+            # Type Match
+            result |= Failure(mismatch_type_message(key, response_val, reference_val))
+
+    elif isinstance(data, dict) or isinstance(data, list):
+        pairs = data.items() if isinstance(data, dict) else enumerate(data)
+
+        for subkey, value in pairs:
+            subkey = str(subkey)
+            result |= _compare_zipped_values(
+                data=value,
+                key=subkey if (key == "") else (key + "." + subkey),
+                exact_match_keys=exact_match_keys,
+            )
+
+    else:
+        raise ValueError(f"Unexpected zipped comparison data: {data}")
+
+    return result
 
 #
 # Concrete Comparator Implementations
@@ -516,19 +595,9 @@ class EndpComparator(Comparator):
 
 
 class ResourceComparator(Comparator):
-
-    all_known_keys = [
-        "app-id", "bps-rx-3s", "bps-tx-3s", "build date", "cli-port", "cpu", "ct-kernel", "ctrl-ip",
-        "ctrl-port", "device type", "df-boot", "df-home", "df-root", "eid", "entity id", "free mem",
-        "free swap", "gps", "hostname", "hw version", "kernel", "load", "max if-up", "max staged",
-        "mem", "phantom", "ports", "rf-path", "rx bytes", "shelf", "sta up", "swap", "sw version",
-        "tx bytes", "user", "_links",
-    ]
-
     exact_match_keys = [
-        "app-id", "cli-port", "cpu", "ct-kernel", "ctrl-ip", "ctrl-port", "device type", "eid", "entity id",
-        "gps", "hostname", "hw version", "max if-up", "max staged", "phantom", "ports", "rf-path", "shelf",
-        "user", "_links",
+        "app-id", "cli-port", "ctrl-ip", "ctrl-port", "device type", "eid", "entity id", "gps", "hostname",
+        "hw version", "max if-up", "max staged", "phantom", "ports", "rf-path", "shelf", "user", "_links",
     ]
 
     @staticmethod
@@ -538,71 +607,32 @@ class ResourceComparator(Comparator):
     def _compare(self, response: 'Response', reference: 'Response') -> Result:
         result = Success()
 
-        if response is None:
-            if reference is not None:
-                return Failure("Response has no value")
-            else:
-                return Success()
+        validation_result = validate_compare_values(response, reference)
+        if validation_result is not None:
+            return validation_result
 
         if response.status != reference.status:
             result |= Failure(mismatch_message("status code", response.status, reference.status))
 
-        if response.content is None:
-            if reference.content is not None:
-                return Failure("Response missing content.")
-            else:
-                return result
-
         # Some resource requests redirect to ports
-        if "HttpPort" in response.content["handler"]:
+        if response and response.content and "HttpPort" in response.content["handler"]:
             port_comparator = PortComparator(self.host, self.response_ver, self.baseline_ver)
             return port_comparator.compare(response, reference)
 
-        if response.status != reference.status:
-            result |= Failure(mismatch_message("status code", response.status, reference.status))
-
         resources = zip_json(
-            self.get_resource_list(response.content),
-            self.get_resource_list(reference.content)
+            self._get_resource_list(response.content),
+            self._get_resource_list(reference.content)
         )
         for resource in resources:
-            new_result = self._compare_single_resource(resource)
-            result |= new_result
+            result |= compare_zipped_values(resource, self.exact_match_keys)
 
         return result
 
-    def get_resource_list(self, content: dict):
+    def _get_resource_list(self, content: dict):
         if "resources" in content.keys():
-            return content["resources"]
+            return list(map(lambda r: next(iter(r.values())), content["resources"]))
         else:
-            fields = content["resource"]
-            return [{"resource": fields}]
-
-    def _compare_single_resource(self, resource: dict) -> Result:
-        result = Success()
-
-        zipped_content = list(resource.values())[0]
-        for key, (response_val, reference_val) in zipped_content.items():
-            if response_val is None is not reference_val:
-                # Missing value
-                result |= Failure(f"'{key}' is missing from the reference.")
-
-            elif response_val is not None is reference_val:
-                # Extra value
-                result |= Warning(f"(warning) '{key}' is present in the response but not the reference.")
-
-            elif key in self.exact_match_keys:
-                # Exact match
-                if response_val != reference_val:
-                    result |= Failure(mismatch_message(key, response_val, reference_val))
-
-            elif type(response_val) is not type(reference_val):
-                result |= Failure(mismatch_type_message(key, response_val, reference_val))
-
-        if key not in self.all_known_keys:
-            result |= Warning(f"(warning) '{key}' is a new field unrecognized by the comparator.")
-
-        return result
+            return [content["resource"]]
 
 
 class CliComparator(Comparator):
