@@ -2108,7 +2108,7 @@ class L3VariableTime(Realm):
                             etype=etype, tos=_tos))
                         self.multicast_profile.create_mc_tx(
                             etype, self.side_b, tos=_tos, add_tos_to_name=True)
-            self.mtx_endps = self.multicast_profile.get_mc_names()
+            self.mtx_endps = set(self.multicast_profile.get_mc_names())
             logger.info("Creating test station port(s)")
             # For real + virtual or existing + virtual combinations, the first
             # station profile represents the real/existing stations. Only the
@@ -2559,17 +2559,31 @@ class L3VariableTime(Realm):
         if isinstance(endpoint, dict):
             endp_data['endpoint'] = [{endpoint['name']: endpoint}]
 
+        # Only take endpoints created by this test, so we skip other tests' endpoints (e.g. QoS).
+        owned_endp_names = set(self.tcp_endps) | set(self.udp_endps) | self.mtx_endps | self.mrx_endps
+
         for endp in endp_data.get('endpoint', []):
             endp_key = list(endp.keys())[0]
             endp_info = endp[endp_key]
+
+            if endp_info.get('name') not in owned_endp_names:
+                continue
 
             # Process only if TOS matches or name contains TOS for non-Mcast types
             if (endp_type_present and endp_info['type'] == 'Mcast' and endp_info['tos'] == tos) or \
                 (endp_type_present and endp_info['type'] in ['LF/TCP', 'LF/UDP'] and endp_info['tos'] == tos) or \
                     (not endp_type_present and tos in endp_info['name']):
 
+                eid_value = endp_info.get('eid')
+                if not eid_value:
+                    logger.warning(
+                        "Endpoint '%s' has eid=%r in the API response (port likely down/reconnecting); skipping this endpoint.",
+                        endp_info.get('name', endp_key), eid_value)
+                    continue
+
                 # Resource lookup (for alias)
-                eid_tmp_resource = f"{self.name_to_eid(endp_info['eid'])[0]}.{self.name_to_eid(endp_info['eid'])[1]}"
+                eid_shelf, eid_resource = self.name_to_eid(eid_value)[:2]
+                eid_tmp_resource = f"{eid_shelf}.{eid_resource}"
                 alias = 'NA'
                 for res in resource_data.get('resources', []):
                     res_key = list(res.keys())[0]
