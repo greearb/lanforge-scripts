@@ -247,10 +247,11 @@ class VideoStreamingTest(Realm):
         self.vs_data = {}
         self.test_stopped = False
         self.do_bandsteering = do_bandsteering
+        # set for non-robot runs too - add_buffer_and_wait_time_images reads it for webGUI live view
+        self.total_cycles = total_cycles
         if robot_test:
             self.robot_ip = robot_ip
             if self.do_bandsteering:
-                self.total_cycles = total_cycles
                 self.bssids = bssids if bssids else []
             self.coordinate = coordinate
             self.rotation = rotation
@@ -2140,26 +2141,76 @@ class VideoStreamingTest(Realm):
         Waits for image generation and inserts them into the report if available.
         """
         if self.dowebgui and self.get_live_view:
-            report.set_custom_html("<h2>No of Buffers and Wait Time %</h2>")
-            report.build_custom()
+            section_title = "No of Buffers and Wait Time %"
+            total_cycles = int(self.total_cycles) if self.total_cycles else 1
+            multi_cycle = self.robot_test and total_cycles > 1
+            # Multi-cycle robot runs title each cycle's images instead ("Cycle N | ...").
+            if not multi_cycle:
+                report.set_custom_html(f"<h2>{section_title}</h2>")
+                report.build_custom()
 
-            for floor in range(int(self.floors)):
-                vs_buffer_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_vs_buffer_{floor + 1}.png")
-                vs_wait_time_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_vs_wait_time_{floor + 1}.png")
+            if not self.robot_test:
+                for floor in range(int(self.floors)):
+                    vs_buffer_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_vs_buffer_{floor + 1}.png")
+                    vs_wait_time_image = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_vs_wait_time_{floor + 1}.png")
 
-                timeout = 60  # seconds
+                    timeout = 60  # seconds
+                    start_time = time.time()
+
+                    while not (os.path.exists(vs_buffer_image) and os.path.exists(vs_wait_time_image)):
+                        if time.time() - start_time > timeout:
+                            print(f"Timeout: Heatmap images for floor {floor + 1} not found within {timeout} seconds.")
+                            break
+                        time.sleep(1)
+
+                    for image_path in [vs_buffer_image, vs_wait_time_image]:
+                        if os.path.exists(image_path):
+                            report.set_custom_html(f'<img src="file://{image_path}"  style="width:1200px; height:800px;"></img>')
+                            report.build_custom()
+                return
+
+            timeout = 60  # seconds
+            have_data = bool(self.vs_data)
+            completed_cycles = {cycle for coord_data in self.vs_data.values() if isinstance(coord_data, dict) for cycle in coord_data}
+
+            def embed_or_placeholder(label, image_path, cycle_ran):
+                if os.path.exists(image_path):
+                    report.set_custom_html(f'<img src="file://{image_path}"  style="width:1200px; height:800px;"></img>')
+                elif not have_data:
+                    report.set_custom_html(f'<p><i>{label} is not available - the test did not complete coordinate measurements.</i></p>')
+                elif not cycle_ran:
+                    report.set_custom_html(f'<p><i>{label} is not available - the test was stopped before this cycle ran.</i></p>')
+                else:
+                    report.set_custom_html(f'<p><i>{label} is not available - the capture may have failed or the browser was closed before it was uploaded.</i></p>')
+                report.build_custom()
+
+            def image_paths(floor, cycle):
+                suffix = f"_cycle{cycle}" if cycle else ""
+                return (os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_vs_buffer_{floor + 1}{suffix}.png"),
+                        os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_vs_wait_time_{floor + 1}{suffix}.png"))
+
+            if have_data:
+                last_cycle = max(completed_cycles) if multi_cycle and completed_cycles else None
+                pending = [p for floor in range(int(self.floors)) for p in image_paths(floor, last_cycle)]
                 start_time = time.time()
-
-                while not (os.path.exists(vs_buffer_image) and os.path.exists(vs_wait_time_image)):
+                while not all(os.path.exists(p) for p in pending):
                     if time.time() - start_time > timeout:
-                        print(f"Timeout: Heatmap images for floor {floor + 1} not found within {timeout} seconds.")
+                        print(f"Timeout: heatmap images not found within {timeout} seconds: {[p for p in pending if not os.path.exists(p)]}")
                         break
                     time.sleep(1)
+            else:
+                print("No coordinate data - skipping heatmap wait, nothing was ever captured")
 
-                for image_path in [vs_buffer_image, vs_wait_time_image]:
-                    if os.path.exists(image_path):
-                        report.set_custom_html(f'<img src="file://{image_path}"  style="width:1200px; height:800px;"></img>')
+            for floor in range(int(self.floors)):
+                for cycle in (range(1, total_cycles + 1) if multi_cycle else [None]):
+                    vs_buffer_image, vs_wait_time_image = image_paths(floor, cycle)
+
+                    if multi_cycle:
+                        report.set_custom_html(f"<h2>Cycle {cycle} | {section_title}</h2>")
                         report.build_custom()
+                    cycle_ran = cycle is None or cycle in completed_cycles
+                    embed_or_placeholder("Buffer count", vs_buffer_image, cycle_ran)
+                    embed_or_placeholder("Wait time %", vs_wait_time_image, cycle_ran)
 
     def handle_groups_profiles_config(self):
         config_devices = {}
@@ -2290,9 +2341,9 @@ class VideoStreamingTest(Realm):
             if self.robot_test:
                 test_setup_info["Robot Ip"] = self.robot_ip
                 test_setup_info["Coordinates"] = self.coordinate
-                if self.do_bandsteering:
+                if self.do_bandsteering or int(self.total_cycles) > 1:
                     test_setup_info["Total Cycles"] = self.total_cycles
-                else:
+                if not self.do_bandsteering:
                     test_setup_info["Duration (min)"] = self.duration
             else:
                 test_setup_info["Duration (min)"] = self.duration
@@ -2445,6 +2496,7 @@ class VideoStreamingTest(Realm):
                         tx_rate.append(alias[i]['tx-rate'])
 
         self.add_buffer_and_wait_time_images(report=report)
+        total_cycles = int(self.total_cycles) if self.total_cycles else 1
         for coordinate in range(len(self.coordinate_list)):
             if (not self.rotation_enabled and self.coordinate_list[coordinate] not in self.vs_data):
                 continue
@@ -2452,20 +2504,26 @@ class VideoStreamingTest(Realm):
                 continue
             self.current_coordinate = self.coordinate_list[coordinate]
             csv_suffix = "_{}".format(self.current_coordinate)
-            if self.rotation_enabled:
-                for angle in range(len(self.rotation_list)):
-                    self.current_angle = self.rotation_list[angle]
-                    coord, ang = self.coordinate_list[coordinate], self.rotation_list[angle]
-                    # a stopped test may not have reached every configured angle, so skip missing ones
-                    if ang not in self.vs_data[int(coord)]:
+            for cycle in range(1, total_cycles + 1):
+                self.current_cycle = cycle
+                if self.rotation_enabled:
+                    if cycle not in self.vs_data[int(self.current_coordinate)]:
                         continue
-                    self.data = self.vs_data[int(coord)][ang]["self_data"]
+                    for angle in range(len(self.rotation_list)):
+                        self.current_angle = self.rotation_list[angle]
+                        coord, ang = self.coordinate_list[coordinate], self.rotation_list[angle]
+                        # a stopped test may not have reached every configured angle, so skip missing ones
+                        if ang not in self.vs_data[int(coord)][cycle]:
+                            continue
+                        self.data = self.vs_data[int(coord)][cycle][ang]["self_data"]
+                        self.generate_individual_coordinate(report, device_type, username, ssid, mac, channel, mode, rssi, tx_rate, created_incremental_values, keys)
+                else:
+                    if cycle not in self.vs_data[self.coordinate_list[coordinate]]:
+                        continue
+                    self.data = self.vs_data[self.coordinate_list[coordinate]][cycle]["self_data"]
                     self.generate_individual_coordinate(report, device_type, username, ssid, mac, channel, mode, rssi, tx_rate, created_incremental_values, keys)
-                shutil.move('video_streaming_realtime_data{}.csv'.format(csv_suffix), report_path_date_time)
-            else:
-                self.data = self.vs_data[self.coordinate_list[coordinate]]["self_data"]
-                shutil.move('video_streaming_realtime_data{}.csv'.format(csv_suffix), report_path_date_time)
-                self.generate_individual_coordinate(report, device_type, username, ssid, mac, channel, mode, rssi, tx_rate, created_incremental_values, keys)
+
+            shutil.move('video_streaming_realtime_data{}.csv'.format(csv_suffix), report_path_date_time)
         if self.device_issue_log:
             issues_df = pd.DataFrame(self.device_issue_log)
             issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
@@ -2482,14 +2540,23 @@ class VideoStreamingTest(Realm):
         Returns:
             None
         """
+        total_cycles = int(self.total_cycles) if self.total_cycles else 1
+        multi_cycle = total_cycles > 1
         if self.rotation_enabled:
-            data_dict = self.vs_data[int(self.current_coordinate)][self.current_angle].copy()
+            data_dict = self.vs_data[int(self.current_coordinate)][self.current_cycle][self.current_angle].copy()
         else:
-            data_dict = self.vs_data[self.current_coordinate].copy()
+            data_dict = self.vs_data[self.current_coordinate][self.current_cycle].copy()
         if self.rotation_enabled:
             graph_suffix = "_{}_{}".format(self.current_coordinate, self.current_angle)
         else:
             graph_suffix = "_{}".format(self.current_coordinate)
+        if multi_cycle:
+            graph_suffix += "_cycle{}".format(self.current_cycle)
+            visit_heading = f"Coordinate {self.current_coordinate} - Cycle {self.current_cycle}"
+            if self.rotation_enabled:
+                visit_heading += f" - Angle {self.current_angle}°"
+            report.set_custom_html(f"<h2><u>{visit_heading}</u></h2>")
+            report.build_custom()
 
         iterations_before_test_stopped_by_user = data_dict["iterations_before_test_stopped_by_user"]
         realtime_dataset = data_dict["realtime_dataset"]
@@ -2571,10 +2638,13 @@ class VideoStreamingTest(Realm):
             if len(created_incremental_values) > 1:
                 report.set_custom_html(f"<h2><u>Iteration-{iter + 1}</u></h2>")
                 report.build_custom()
+            # Each cycle revisits the same coordinates, so label which cycle a section belongs to.
+            cycle_text = f" | Cycle: {self.current_cycle}" if multi_cycle else ""
             if self.rotation_enabled:
-                obj_title = f"Realtime Video Rate on Coordinate: {self.current_coordinate} | Rotation Angle: {self.current_angle}°: Number of devices running: {len(device_names_on_running)}"
+                obj_title = (f"Realtime Video Rate on Coordinate: {self.current_coordinate}{cycle_text} | Rotation Angle: {self.current_angle}°: "
+                             f"Number of devices running: {len(device_names_on_running)}")
             else:
-                obj_title = f"Realtime Video Rate on Coordinate: {self.current_coordinate} : Number of devices running: {len(device_names_on_running)}"
+                obj_title = f"Realtime Video Rate on Coordinate: {self.current_coordinate}{cycle_text} : Number of devices running: {len(device_names_on_running)}"
 
             report.set_obj_html(
                 _obj_title=obj_title,
@@ -2678,7 +2748,7 @@ class VideoStreamingTest(Realm):
                 self.add_buffer_and_wait_time_images(report=report)
 
             # Table 1
-            report.set_obj_html("Overall - Detailed Result Table", "The below tables provides detailed information for the Video Streaming test.")
+            report.set_obj_html(f"Overall - Detailed Result Table{cycle_text}", "The below tables provides detailed information for the Video Streaming test.")
             report.build_objective()
             test_data = {
                 "iter": iter,
@@ -2808,7 +2878,12 @@ class VideoStreamingTest(Realm):
             if args.dowebgui:
                 self.copy_reports_to_home_dir()
             exit()
-        for coordinate in coord_list:
+        # 0/negative would skip every visit and the report's per-cycle loops - run at least one cycle
+        self.total_cycles = max(1, int(self.total_cycles))
+        self.robot.total_cycles = self.total_cycles
+        for visit_index, coordinate in enumerate(coord_list * self.total_cycles):
+            self.current_cycle = (visit_index // len(coord_list)) + 1
+            self.robot.current_cycle = self.current_cycle
             if self.test_stopped:
                 break
             if self.robot_ip:
@@ -2827,6 +2902,10 @@ class VideoStreamingTest(Realm):
                 if not matched:
                     continue
                 passed_coord_list.append(coordinate)
+
+                if int(self.total_cycles) > 1 and self.dowebgui:
+                    webgui_csv = '{}/video_streaming_realtime_data_{}.csv'.format(self.result_dir, coordinate)
+                    open(webgui_csv, 'w').close()
                 coordinate_df = pd.DataFrame(columns=individual_dataframe_columns)
                 if matched:
                     self.current_coordinate = coordinate
@@ -2882,12 +2961,12 @@ class VideoStreamingTest(Realm):
                             iterations_before_test_stopped_by_user.append(i)
                             params = self.build_report_params_for_robo(args, cx_order_list, coordinate_df, iterations_before_test_stopped_by_user)
                             params["self_data"] = self.data.copy()
-                            self.vs_data[self.current_coordinate] = params
+                            self.vs_data.setdefault(self.current_coordinate, {})[self.current_cycle] = params
                             break
                         self.stop()
                         params = self.build_report_params_for_robo(args, cx_order_list, coordinate_df, iterations_before_test_stopped_by_user)
                         params["self_data"] = self.data.copy()
-                        self.vs_data[self.current_coordinate] = params
+                        self.vs_data.setdefault(self.current_coordinate, {})[self.current_cycle] = params
 
                     # if rotation mode
                     else:
@@ -2989,28 +3068,48 @@ class VideoStreamingTest(Realm):
                                 iterations_before_test_stopped_by_user.append(i)
                                 params = self.build_report_params_for_robo(args, cx_order_list, individual_df, iterations_before_test_stopped_by_user)
                                 params["self_data"] = self.data.copy()
-                                if int(coordinate) not in self.vs_data:
-                                    self.vs_data[int(coordinate)] = {}
-                                self.vs_data[int(coordinate)][self.rotation_list[angle]] = params
+                                self.vs_data.setdefault(int(coordinate), {}).setdefault(self.current_cycle, {})[self.rotation_list[angle]] = params
                                 break
                             self.stop()
                             params = self.build_report_params_for_robo(args, cx_order_list, individual_df, iterations_before_test_stopped_by_user)
                             params["self_data"] = self.data.copy()
-                            if int(coordinate) not in self.vs_data:
-                                self.vs_data[int(coordinate)] = {}
-                            self.vs_data[int(coordinate)][self.rotation_list[angle]] = params
+                            self.vs_data.setdefault(int(coordinate), {}).setdefault(self.current_cycle, {})[self.rotation_list[angle]] = params
+        # A user stop breaks out of the visit before its self.stop(), so stop here too, and clean up
+        # before Test_status=Completed so the devices really are free once the webGUI releases them.
+        self.stop()
+        if self.postCleanUp:
+            self.postcleanup()
         test_setup_info = self.create_test_setup_info(media_source=self.media_source_name, media_quality=self.media_quality_name)
         if self.dowebgui:
-            self.copy_reports_to_home_dir()
             with open(nav_data, 'r') as x:
                 navdata = json.load(x)
                 navdata['status'] = ''
                 navdata['Canbee_location'] = ''
                 navdata['Canbee_angle'] = ''
                 navdata['Test_status'] = 'Completed'
+                # the loop bumps current_cycle before its stop checks, so a stop at a cycle boundary must not report the cycle that never started.
+                navdata['current_cycle'] = max((cycle for coord_data in self.vs_data.values() for cycle in coord_data), default=1)
+                navdata['total_cycles'] = self.total_cycles
             with open(nav_data, 'w') as x:
                 json.dump(navdata, x, indent=4)
-        self.generate_report_for_robo(test_setup_info, passed_coordinates=passed_coord_list)
+        # Test_status=Completed above only means "measurements done" - the webGUI still has to
+        # upload the final heatmap screenshots that generate_report_for_robo waits for. report_generated
+        # tells the webGUI when the report is actually on disk, so it doesn't release the devices
+        # or enable Generate Report while this process is still building it.
+        report_generated = False
+        try:
+            self.generate_report_for_robo(test_setup_info, passed_coordinates=passed_coord_list)
+            if self.dowebgui:
+                # copying to home directory i.e home/user_name
+                self.copy_reports_to_home_dir()
+            report_generated = True
+        finally:
+            if self.dowebgui:
+                with open(nav_data, 'r') as x:
+                    navdata = json.load(x)
+                navdata['report_generated'] = report_generated
+                with open(nav_data, 'w') as x:
+                    json.dump(navdata, x, indent=4)
 
     def build_iot_report_section(self, report, iot_summary):
         """
