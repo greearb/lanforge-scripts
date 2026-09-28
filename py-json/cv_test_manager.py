@@ -5,6 +5,7 @@ import importlib
 import time
 import json
 import logging
+import paramiko
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -550,22 +551,31 @@ class cv_test(Realm):
         kpi_csv_data_present = False
         kpi_csv = ''
 
-        if self.pull_report and (self.local_lf_report_dir is None or self.local_lf_report_dir == ""):
-            logger.info("Local report directory not specified. Defaulting to current working directory.")
-            self.local_lf_report_dir = os.getcwd()
-        elif not self.pull_report:
-            return False
-        kpi_location = self.local_lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
-        # the lf_report_dir is the parent directory,  need to get the directory name
-        kpi_csv = "{kpi_location}/kpi.csv".format(kpi_location=kpi_location)
+        if not self.pull_report:
+            with paramiko.SSHClient() as ssh:
+                ssh.load_system_host_keys()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh.connect(hostname=self.lfclient_host, username=self.lf_user, password=self.lf_password, port=self.ssh_port, allow_agent=False, look_for_keys=False)
+                kpi_csv = f"{self.lf_report_dir}/kpi.csv"
+                with ssh.open_sftp() as sftp:
+                    try:
+                        kpi_size = sftp.stat(kpi_csv).st_size
+                    except FileNotFoundError:
+                        kpi_size = 0
+        else:
+            if not self.local_lf_report_dir:
+                logger.warning("No report directory specified; using the current working directory")
+                self.local_lf_report_dir = os.getcwd()
+            kpi_location = self.local_lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
+            # the lf_report_dir is the parent directory,  need to get the directory name
+            kpi_csv = "{kpi_location}/kpi.csv".format(kpi_location=kpi_location)
+            kpi_size = os.path.getsize(kpi_csv) if os.path.isfile(kpi_csv) else 0
 
-        if os.path.isfile(kpi_csv):
-            kpi_size = os.path.getsize(kpi_csv)
-            if kpi_size < 210:
-                logger.error(f"kpi_csv file may only have column headers size: {kpi_size} file: {kpi_csv}")
-            else:
-                logger.info(f"kpi_csv file not empty size: {kpi_size} {kpi_csv}")
-                kpi_csv_data_present = True
+        if kpi_size < 210:
+            logger.error(f"kpi_csv file may only have column headers size: {kpi_size} file: {kpi_csv}")
+        else:
+            logger.info(f"kpi_csv file not empty size: {kpi_size} {kpi_csv}")
+            kpi_csv_data_present = True
 
         return kpi_csv_data_present
 
