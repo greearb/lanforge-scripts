@@ -40,6 +40,8 @@ class RobotClass:
         # max time to reach a point in seconds
         self.time_to_reach = 60
         self.total_cycles = 1
+        # 1-based index of the cycle currently in progress
+        self.current_cycle = 1
         self.coordinate_list = []
         self.total_cycles = 1
 
@@ -320,6 +322,9 @@ class RobotClass:
                 navdata['Canbee_location'] = coord
                 navdata['Canbee_angle'] = ''
                 navdata['Test_status'] = 'Running'
+            # Cycle progress for the webGUI's "Cycle X of Y" indicator and its per-cycle heatmap capture
+            navdata['current_cycle'] = int(getattr(self, 'current_cycle', 1) or 1)
+            navdata['total_cycles'] = int(self.total_cycles) if self.total_cycles else 1
             with open(self.nav_data_path, 'w') as x:
                 json.dump(navdata, x, indent=4)
         if self.do_bandsteering:

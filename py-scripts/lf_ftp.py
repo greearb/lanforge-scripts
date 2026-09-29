@@ -340,6 +340,8 @@ class FtpTest(LFCliBase):
             self.rotation_list = rotation.split(',')
         self.current_coordinate = ""
         self.current_angle = ""
+        # robot_data is keyed coordinate -> cycle (-> angle)
+        self.current_cycle = 1
         self.robot_data = {}
         self.robot_obj = {}
         self.rx_rate_val = []
@@ -875,9 +877,9 @@ class FtpTest(LFCliBase):
             df1 = pd.DataFrame(self.data)
             df1.to_csv("ftp_datavalues.csv", index=False)
             if self.robot_test:
-                # Storing data in robot_data dictionary for each coordinate and angle
+                # Storing data in robot_data dictionary for each coordinate, cycle and angle
                 if self.rotation_enabled:
-                    self.robot_data.setdefault(self.current_coordinate, {})[self.current_angle] = {
+                    self.robot_data.setdefault(self.current_coordinate, {}).setdefault(self.current_cycle, {})[self.current_angle] = {
                         "mac_id_list": self.mac_id_list,
                         "channel_list": self.channel_list,
                         "ssid_list": self.ssid_list,
@@ -891,7 +893,7 @@ class FtpTest(LFCliBase):
                         "uc_max": self.uc_max,
                     }
                 else:
-                    self.robot_data[self.current_coordinate] = {
+                    self.robot_data.setdefault(self.current_coordinate, {})[self.current_cycle] = {
                         "mac_id_list": self.mac_id_list,
                         "channel_list": self.channel_list,
                         "ssid_list": self.ssid_list,
@@ -2113,28 +2115,55 @@ class FtpTest(LFCliBase):
 
     def add_live_view_images_to_report(self):
         """
-        This function looks for throughput and RSSI images for each floor
-        in the 'live_view_images' folder within `self.result_dir`.
-        It waits up to **60 seconds** for each image. If an image is found,
-        it's added to the `report` on a new page; otherwise, it's skipped.
+        Adds the FTP live view heatmaps uploaded by the webGUI to the report, one per floor and, on a
+        multi-cycle robot run, one per cycle (ftp_<test>_<floor>[_cycle<N>].png in 'live_view_images').
+        Waits up to 60 seconds for the images still being captured; a missing one gets a note instead.
         """
-        for floor in range(0, int(self.total_floors)):
-            ftp_img_path = os.path.join(self.result_dir, "live_view_images", f"ftp_{self.test_name}_{floor + 1}.png")
-            timeout = 60  # seconds
-            start_time = time.time()
+        images_dir = os.path.join(self.result_dir, "live_view_images")
+        # On band steering, --cycles counts band steering cycles, not per-cycle heatmaps
+        total_cycles = int(self.cycles or 1) if self.robot_test and not self.do_bandsteering else 1
+        multi_cycle = total_cycles > 1
+        # Cycles that measured something, and the one whose heatmap is captured last (after the run ends).
+        ran_cycles = {cycle for cycles in self.robot_data.values() for cycle in cycles} if self.robot_test else {None}
+        have_data = bool(ran_cycles)
+        last_cycle = max(ran_cycles) if multi_cycle and have_data else None
 
-            while not (os.path.exists(ftp_img_path)):
-                if time.time() - start_time > timeout:
-                    print("Timeout: Images not found within 60 seconds.")
-                    break
-                time.sleep(1)
-            while not os.path.exists(ftp_img_path):
-                if os.path.exists(ftp_img_path):
-                    break
-            if os.path.exists(ftp_img_path):
-                self.report.set_custom_html('<div style="page-break-before: always;"></div>')
-                self.report.build_custom()
-                self.report.set_custom_html(f'<img style="width:1200px" src="file://{ftp_img_path}"></img>')
+        def image_path(floor, cycle):
+            suffix = f"_cycle{cycle}" if cycle else ""
+            return os.path.join(images_dir, f"ftp_{self.test_name}_{floor + 1}{suffix}.png")
+
+        pending = [image_path(floor, last_cycle) for floor in range(int(self.total_floors))]
+        timeout = 60  # seconds
+        start_time = time.time()
+        while have_data and not all(os.path.exists(p) for p in pending):
+            if time.time() - start_time > timeout:
+                print(f"Timeout: heatmap images not found within {timeout} seconds: {[p for p in pending if not os.path.exists(p)]}")
+                break
+            time.sleep(1)
+
+        for floor in range(int(self.total_floors)):
+            for cycle in (range(1, total_cycles + 1) if multi_cycle else [None]):
+                img_path = image_path(floor, cycle)
+                label = f"FTP heatmap{f' - Cycle {cycle}' if cycle else ''}"
+                if not self.robot_test:
+                    label += f" (Floor {floor + 1})"
+                # Only a real heatmap gets its own page, as before cycles - a missing one's note stays inline
+                if have_data and (cycle is None or cycle in ran_cycles) and os.path.exists(img_path):
+                    self.report.set_custom_html('<div style="page-break-before: always;"></div>')
+                    self.report.build_custom()
+                if multi_cycle:
+                    self.report.set_custom_html(f"<h2>Cycle {cycle} | Real Time FTP files {self.direction}</h2>")
+                    self.report.build_custom()
+                # A cycle with no measurements gets a note instead of the webGUI's empty-heatmap screenshot.
+                if not have_data:
+                    self.report.set_custom_html(f'<p><i>{label} is not available - the test did not complete any coordinate measurements.</i></p>')
+                elif cycle is not None and cycle not in ran_cycles:
+                    self.report.set_custom_html(f'<p><i>{label} is not available - no coordinate was measured in this cycle '
+                                                '(the test was stopped before it, or the robot could not reach its points).</i></p>')
+                elif os.path.exists(img_path):
+                    self.report.set_custom_html(f'<img style="width:1200px" src="file://{img_path}"></img>')
+                else:
+                    self.report.set_custom_html(f'<p><i>{label} is not available - the capture may have failed or the browser was closed before it was uploaded.</i></p>')
                 self.report.build_custom()
 
     def build_single_graph(self, client_list, data, graph_name, title, x_label, color, direction):
@@ -2189,7 +2218,7 @@ class FtpTest(LFCliBase):
         self.report.move_csv_file()
         self.report.build_graph()
 
-    def build_graphs_and_table(self, coord, rotation, robot_info, client_list):
+    def build_graphs_and_table(self, coord, rotation, robot_info, client_list, cycle=None):
         """Build graphs (URL + Avg Time) and table for one coordinate/rotation.
         Parameters
         coord : str
@@ -2202,6 +2231,8 @@ class FtpTest(LFCliBase):
             Dictionary containing per-client test data collected by the robot.
         client_list : list
             Ordered list of client names corresponding to the values in `robot_info`.
+        cycle : int or None
+            Cycle the visit belongs to on a multi-cycle run; shown in the header and keeps graph names unique.
         """
         url_data_robo = robot_info['url_data']
         uc_avg_robo = robot_info['uc_avg']
@@ -2216,9 +2247,11 @@ class FtpTest(LFCliBase):
         total_err_robo = robot_info['total_err']
 
         rotation_suffix = f"_{rotation}" if rotation else ""
-        coord_label = f"<h2>Coordinate: {coord}</h2>"
+        name_suffix = rotation_suffix + (f"_cycle{cycle}" if cycle else "")
+        cycle_text = f" | Cycle: {cycle}" if cycle else ""
+        coord_label = f"<h2>Coordinate: {coord}{cycle_text}</h2>"
         if self.rotation_enabled:
-            coord_label = f"<h2>Coordinate: {coord}{', Rotation: ' + str(rotation) if rotation else ''}</h2>"
+            coord_label = f"<h2>Coordinate: {coord}{cycle_text}{', Rotation: ' + str(rotation) if rotation else ''}</h2>"
         self.report.set_custom_html(coord_label)
         self.report.build_custom()
 
@@ -2232,7 +2265,7 @@ class FtpTest(LFCliBase):
         self.build_single_graph(
             client_list=client_list,
             data=url_data_robo,
-            graph_name=f"Total-url_ftp_{coord}{rotation_suffix}",
+            graph_name=f"Total-url_ftp_{coord}{name_suffix}",
             title=f"No of times file {self.direction} (Count)",
             x_label=f"No of times file {self.direction}",
             color="orange",
@@ -2249,7 +2282,7 @@ class FtpTest(LFCliBase):
         self.build_single_graph(
             client_list=client_list,
             data=uc_avg_robo,
-            graph_name=f"Avg-time_ftp_{coord}{rotation_suffix}",
+            graph_name=f"Avg-time_ftp_{coord}{name_suffix}",
             title=f"Average time taken to {self.direction} file",
             x_label=f"Average time taken to {self.direction} file in ms",
             color="steelblue",
@@ -2500,7 +2533,9 @@ class FtpTest(LFCliBase):
         # To move ftp_datavalues.csv in report folder
         report_path_date_time = self.report.get_path_date_time()
         if self.clients_type == "Real":
-            shutil.move('ftp_datavalues.csv', report_path_date_time)
+            # Not written when a robot run never measured a point (e.g. the robot could not reach any)
+            if os.path.exists('ftp_datavalues.csv'):
+                shutil.move('ftp_datavalues.csv', report_path_date_time)
             try:
                 shutil.move('all_l4_data.csv', report_path_date_time)
             except Exception:
@@ -2565,6 +2600,8 @@ class FtpTest(LFCliBase):
             if not self.do_bandsteering:
                 if self.rotation_enabled:
                     test_setup_info["Rotations"] = self.rotation
+                if int(self.cycles or 1) > 1:
+                    test_setup_info["Total Cycles"] = self.cycles
             else:
                 del test_setup_info["Traffic Duration "]
                 test_setup_info["Total Cycles"] = self.cycles
@@ -2597,14 +2634,16 @@ class FtpTest(LFCliBase):
                 # To store heatmap images in report
                 self.add_live_view_images_to_report()
 
-            # Unified iteration for rotation and non-rotation
-            if self.rotation_enabled:
-                for coord, rotation_dict in self.robot_data.items():
-                    for rotation, robot_info in rotation_dict.items():
-                        self.build_graphs_and_table(coord, rotation, robot_info, client_list)
-            else:
-                for coord, robot_info in self.robot_data.items():
-                    self.build_graphs_and_table(coord, None, robot_info, client_list)
+            # Unified iteration for rotation and non-rotation; every cycle's visit to a coordinate gets its own section
+            multi_cycle = int(self.cycles or 1) > 1
+            for coord, cycle_dict in self.robot_data.items():
+                for cycle, visit in cycle_dict.items():
+                    cycle_label = cycle if multi_cycle else None
+                    if self.rotation_enabled:
+                        for rotation, robot_info in visit.items():
+                            self.build_graphs_and_table(coord, rotation, robot_info, client_list, cycle_label)
+                    else:
+                        self.build_graphs_and_table(coord, None, visit, client_list, cycle_label)
             # Finalizing the report after robot test graphs and tables
             if self.device_issue_log:
                 issues_df = pd.DataFrame(self.device_issue_log)
@@ -3364,11 +3403,18 @@ class FtpTest(LFCliBase):
             self.stop()
             return
 
-        for coordinate in range(len(self.coordinate_list)):
+        # 0/negative would skip every visit - run at least one cycle
+        total_cycles = max(1, int(self.cycles)) if self.cycles else 1
+        for visit_index, coordinate_name in enumerate(self.coordinate_list * total_cycles):
             if test_stopped_by_user or self.all_devices_stopped:
                 if self.all_devices_stopped:
                     logger.warning("Robot test stopped because no devices recovered within 40 seconds.")
                 break
+            coordinate = visit_index % len(self.coordinate_list)
+            self.current_cycle = (visit_index // len(self.coordinate_list)) + 1
+            self.robot_obj.current_cycle = self.current_cycle
+            if total_cycles > 1 and coordinate == 0:
+                logger.info("Starting cycle {} of {}".format(self.current_cycle, total_cycles))
             # Check for battery status before moving to next coordinate
             if_paused, test_stopped_by_user = self.robot_obj.wait_for_battery()
             # If test is stopped by user during battery wait
@@ -3381,6 +3427,9 @@ class FtpTest(LFCliBase):
             # If robot reached the coordinate
             if robo_moved:
                 self.current_coordinate = self.coordinate_list[coordinate]
+                # Clear the previous cycle's rows from the CSV the webGUI charts
+                if self.current_cycle > 1 and self.dowebgui:
+                    open(f"{self.result_dir}/{coordinate_name}_ftp_datavalues.csv", 'w').close()
                 # if no rotation mode
                 if not self.rotation_enabled:
                     # Start the test
@@ -3412,6 +3461,19 @@ class FtpTest(LFCliBase):
                         # If test is stopped by user
                         if test_stopped_by_user:
                             break
+        if self.dowebgui:
+            with open(self.robot_obj.nav_data_path, 'r') as x:
+                navdata = json.load(x)
+                navdata['status'] = ''
+                navdata['Canbee_location'] = ''
+                navdata['Canbee_angle'] = ''
+                navdata['Test_status'] = 'Completed'
+                # Last cycle with measured data (same set the report uses) - a stop during the battery wait or an
+                # unreachable cycle must not report a cycle that never measured anything.
+                navdata['current_cycle'] = max((cycle for cycles in self.robot_data.values() for cycle in cycles), default=1)
+                navdata['total_cycles'] = total_cycles
+            with open(self.robot_obj.nav_data_path, 'w') as x:
+                json.dump(navdata, x, indent=4)
 
 
 def validate_args(args):
@@ -3818,7 +3880,7 @@ INCLUDE_IN_README: False
     optional.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")
     optional.add_argument('--rotation', type=str, default='', help="The set of angles to rotate at a particular point")
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
-    optional.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
+    optional.add_argument('--cycles', type=int, default=1, help='No of cycles: how many times a robot test repeats the coordinate list')
     optional.add_argument('--bssids', type=str, default='', help='hostname for where Robot server is running')
     optional.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
 
@@ -4153,6 +4215,14 @@ some amount of file data from the FTP server while measuring the time taken by c
 
     if args.dowebgui:
         obj.copy_reports_to_home_dir()
+
+    # Test_status=Completed only means the robot is done - report_generated tells the webGUI when the report is on disk.
+    if args.robot_test and args.dowebgui and not args.do_bandsteering:
+        with open(obj.robot_obj.nav_data_path, 'r') as x:
+            navdata = json.load(x)
+        navdata['report_generated'] = True
+        with open(obj.robot_obj.nav_data_path, 'w') as x:
+            json.dump(navdata, x, indent=4)
 
 
 if __name__ == '__main__':
