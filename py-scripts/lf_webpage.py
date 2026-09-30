@@ -1207,7 +1207,10 @@ class HttpDownload(Realm):
         port = ssh_port
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
-        ssh.connect(ip, port=port, username=user, password=pswd, banner_timeout=600)
+        # allow_agent/look_for_keys disabled: some hosts run a desktop SSH agent (e.g. GNOME Keyring)
+        # that fails to sign with modern algorithms, crashing the connection before password auth is tried
+        ssh.connect(ip, port=port, username=user, password=pswd, banner_timeout=600,
+                    allow_agent=False, look_for_keys=False)
         cmd = '[ -f /usr/local/lanforge/nginx/html/webpage.html ] && echo "True" || echo "False"'
         stdin, stdout, stderr = ssh.exec_command(str(cmd))
         output = stdout.readlines()
