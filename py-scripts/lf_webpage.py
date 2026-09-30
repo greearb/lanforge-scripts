@@ -1454,14 +1454,21 @@ class HttpDownload(Realm):
     # This function is called to get details of devices during runtime
 
     def get_device_port_details(self):
-        self.response_port = self.local_realm.json_get("/port/all")
+        url = "/port/all"
+        response_port = self.local_realm.json_get(url)
+        if response_port is None:
+            logger.error(
+                "Failed to fetch port data. Received empty response.\n"
+                f"Requested URL: '{url}'\n"
+                f"Response: {response_port}")
+            response_port = {}
         # Initialize lists to store channel, mode, and SSID information
         self.channel_list, self.mode_list, self.ssid_list = [], [], []
+        interfaces_dict = dict()
+        for interface in response_port.get('interfaces', []):
+            interfaces_dict.update(interface)
         if self.client_type == "Real":
             self.devices = self.devices_list
-            interfaces_dict = dict()
-            for interface in self.response_port['interfaces']:
-                interfaces_dict.update(interface)
             for port in self.port_list:
                 if port in interfaces_dict:
                     port_data = interfaces_dict[port]
@@ -1475,6 +1482,25 @@ class HttpDownload(Realm):
                 else:
                     self.channel_list.append('NA')
                     self.mode_list.append('-')
+                    self.ssid_list.append('-')
+        elif self.client_type == "Virtual":
+            self.devices = self.station_list[0]
+            self.macid_list = []
+            for port in self.station_list[0]:
+                if port in interfaces_dict:
+                    port_data = interfaces_dict[port]
+                    channel_value = str(port_data.get('channel', ''))
+                    if channel_value in ('', '0', '-1'):
+                        self.channel_list.append('NA')
+                    else:
+                        self.channel_list.append(channel_value)
+                    self.mode_list.append(str(port_data['mode']))
+                    self.macid_list.append(str(port_data['mac']))
+                    self.ssid_list.append(str(port_data['ssid']))
+                else:
+                    self.channel_list.append('NA')
+                    self.mode_list.append('-')
+                    self.macid_list.append('-')
                     self.ssid_list.append('-')
 
     def add_live_view_images_to_report(self, report):
@@ -1767,36 +1793,8 @@ class HttpDownload(Realm):
                             "minimum, maximum and the average time taken by clients to download a webpage in seconds")
 
         report.build_objective()
-        self.response_port = self.local_realm.json_get("/port/all")
-        # print(response_port)
-        # print("port list",self.port_list)
-        # To set channel_list,mode_list,port_list to append once again
-        self.channel_list, self.mode_list, self.ssid_list = [], [], []
-        if self.client_type == "Real":
-            self.devices = self.devices_list
-            for interface in self.response_port['interfaces']:
-                for port, port_data in interface.items():
-                    if port in self.port_list:
-                        channel_value = str(port_data.get('channel', ''))
-                        if channel_value in ('', '0', '-1'):
-                            self.channel_list.append('NA')
-                        else:
-                            self.channel_list.append(channel_value)
-                        self.mode_list.append(str(port_data['mode']))
-                        self.ssid_list.append(str(port_data['ssid']))
-        elif self.client_type == "Virtual":
-            self.devices = self.station_list[0]
-            for interface in self.response_port['interfaces']:
-                for port, port_data in interface.items():
-                    if port in self.station_list[0]:
-                        channel_value = str(port_data.get('channel', ''))
-                        if channel_value in ('', '0', '-1'):
-                            self.channel_list.append('NA')
-                        else:
-                            self.channel_list.append(channel_value)
-                        self.mode_list.append(str(port_data['mode']))
-                        self.macid_list.append(str(port_data['mac']))
-                        self.ssid_list.append(str(port_data['ssid']))
+        # Keep channel/mode/ssid/mac index-aligned with self.devices
+        self.get_device_port_details()
 
         x = []
         for fcc in list(result_data.keys()):
