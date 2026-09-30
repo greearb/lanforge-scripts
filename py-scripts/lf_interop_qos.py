@@ -1291,22 +1291,14 @@ class ThroughputQOS(Realm):
             df1 = pd.DataFrame(self.df_for_webui)
             df1.to_csv('{}/overall_throughput_{}.csv'.format(runtime_dir, curr_coordinate), index=False)
 
-        # # rx_rate list is calculated
-        for index, _key in enumerate(throughput):
-            upload[index].append(throughput[index][1])
-            download[index].append(throughput[index][0])
-            drop_a[index].append(throughput[index][2])
-            drop_b[index].append(throughput[index][3])
         # Rounding of the results upto 2 decimals. A list is empty if the loop ended before any
         # data was collected (e.g. all devices stopped) - treat that as 0, not divide-by-zero.
-        upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in upload]
-        download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in download]
-        drop_a_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in drop_a]
-        drop_b_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in drop_b]
         avg_upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in avg_upload]
         avg_download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in avg_download]
         avg_drop_a_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in avg_drop_a]
         avg_drop_b_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in avg_drop_b]
+        upload_throughput, download_throughput = avg_upload_throughput, avg_download_throughput
+        drop_a_per, drop_b_per = avg_drop_a_per, avg_drop_b_per
         keys = list(connections_upload.keys())
         keys = list(connections_download.keys())
         # Updated the calculated values to the respective connections in dictionary
@@ -1471,11 +1463,11 @@ class ThroughputQOS(Realm):
             upload_throughput_df[2].append(res['test_results'][0][1][rate_up]['videoQOS'])
             upload_throughput_df[3].append(res['test_results'][0][1][rate_up]['voiceQOS'])
             table_df.update({"No of Stations": []})
-            table_df.update({"Throughput for Load {}".format(rate_up + "-upload"): []})
+            table_df.update({"Observed average throughput for load {}".format(rate_up + "-upload"): []})
             graph_df.update({rate_up: upload_throughput_df})
 
             table_df.update({"No of Stations": str(len(self.input_devices_list))})
-            table_df["Throughput for Load {}".format(rate_up + "-upload")].append(upload_throughput[0])
+            table_df["Observed average throughput for load {}".format(rate_up + "-upload")].append(upload_throughput[0])
             res_copy = copy.copy(res)
             res_copy.update({"throughput_table_df": table_df})
             res_copy.update({"graph_df": graph_df})
@@ -1493,11 +1485,11 @@ class ThroughputQOS(Realm):
             download_throughput_df[2].append(res['test_results'][0][0][rate_down]['videoQOS'])
             download_throughput_df[3].append(res['test_results'][0][0][rate_down]['voiceQOS'])
             table_df.update({"No of Stations": []})
-            table_df.update({"Throughput for Load {}".format(rate_down + "-download"): []})
+            table_df.update({"Observed average throughput for load {}".format(rate_down + "-download"): []})
             graph_df.update({rate_down + "download": download_throughput_df})
             # print("...........graph_df",graph_df)
             table_df.update({"No of Stations": str(len(self.input_devices_list))})
-            table_df["Throughput for Load {}".format(rate_down + "-download")].append(download_throughput[0])
+            table_df["Observed average throughput for load {}".format(rate_down + "-download")].append(download_throughput[0])
             res_copy = copy.copy(res)
             res_copy.update({"throughput_table_df": table_df})
             res_copy.update({"graph_df": graph_df})
@@ -1663,15 +1655,15 @@ class ThroughputQOS(Realm):
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
         report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
         report.set_table_title(
-            f"Overall {self.direction} Throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO)")
+            f"Overall observed average {self.direction.lower()} throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO)")
         report.build_table_title()
         df_throughput = pd.DataFrame(res["throughput_table_df"])
         report.set_table_dataframe(df_throughput)
         report.build_table()
         for _key in res["graph_df"]:
             report.set_obj_html(
-                _obj_title=f"Overall {self.direction} throughput for {len(self.input_devices_list)} clients with different TOS.",
-                _obj=f"The below graph represents overall {self.direction} throughput for all "
+                _obj_title=f"Overall observed average {self.direction.lower()} throughput for {len(self.input_devices_list)} clients with different TOS.",
+                _obj=f"The below graph represents overall observed average {self.direction.lower()} throughput (averaged over the test duration) for all "
                 "connected stations running BK, BE, VO, VI traffic with different "
                 f"intended loads{load} per tos")
         report.build_objective()
@@ -1683,7 +1675,7 @@ class ThroughputQOS(Realm):
                              _graph_image_name=f"tos_download_{_key}Hz",
                              _label=["BK", "BE", "VI", "VO"],
                              _xaxis_step=1,
-                             _graph_title=f"Overall {self.direction} throughput – BK,BE,VO,VI traffic streams",
+                             _graph_title=f"Overall observed average {self.direction.lower()} throughput – BK,BE,VO,VI traffic streams",
                              _title_size=16,
                              _color=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
                              _color_edge='black',
@@ -1819,15 +1811,15 @@ class ThroughputQOS(Realm):
 
             }
             if self.direction == "Bi-direction":
-                bk_dataframe[" Observed Upload Drop (%)"] = individual_b_drop
-                bk_dataframe[" Observed Download Drop (%)"] = individual_a_drop
+                bk_dataframe[" Observed average upload drop (%)"] = individual_b_drop
+                bk_dataframe[" Observed average download drop (%)"] = individual_a_drop
             else:
                 if self.direction == "Upload":
-                    bk_dataframe[" Observed Upload Drop (%)"] = individual_b_drop
-                    bk_dataframe[" Observed Download Drop (%)"] = [0.0] * len(individual_b_drop)
+                    bk_dataframe[" Observed average upload drop (%)"] = individual_b_drop
+                    bk_dataframe[" Observed average download drop (%)"] = [0.0] * len(individual_b_drop)
                 elif self.direction == "Download":
-                    bk_dataframe[" Observed Upload Drop (%)"] = [0.0] * len(individual_a_drop)
-                    bk_dataframe[" Observed Download Drop (%)"] = individual_a_drop
+                    bk_dataframe[" Observed average upload drop (%)"] = [0.0] * len(individual_a_drop)
+                    bk_dataframe[" Observed average download drop (%)"] = individual_a_drop
 
             if self.expected_passfail_val or self.csv_name:
                 bk_dataframe[" Expected " + self.direction + " rate(Mbps)"] = input_list
@@ -2031,9 +2023,9 @@ class ThroughputQOS(Realm):
                             individual_download_list = avg_res['Download']['BK']
                             individual_drop_a_list = drop_res['drop_a']['BK']
                     report.set_obj_html(
-                        _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic BK(WiFi).",
-                        _obj=f"The below graph represents individual throughput for {len(self.input_devices_list)} clients running BK "
-                        f"(WiFi) traffic.  X- axis shows “Throughput in Mbps” and Y-axis shows “number of clients”.")
+                        _obj_title=f"Individual observed average {self.direction.lower()} throughput with intended load {load}/station for traffic BK(WiFi).",
+                        _obj=f"The below graph represents individual observed average throughput (averaged over the test duration) for {len(self.input_devices_list)} clients running BK "
+                        f"(WiFi) traffic.  X- axis shows “Throughput in Mbps” and Y-axis shows “Client names”.")
                     report.build_objective()
                     # print(upload_list, download_list, individual_download_list, individual_upload_list)
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _xaxis_name="Throughput in Mbps",
@@ -2044,7 +2036,7 @@ class ThroughputQOS(Realm):
                                                     _yaxis_step=1,
                                                     _yticks_font=8,
                                                     _yticks_rotation=None,
-                                                    _graph_title=f"Individual {self.direction} throughput for BK(WIFI) traffic",
+                                                    _graph_title=f"Individual observed average {self.direction.lower()} throughput for BK(WIFI) traffic",
                                                     _title_size=16,
                                                     _figsize=(x_fig_size, y_fig_size),
                                                     _legend_loc="best",
@@ -2131,8 +2123,8 @@ class ThroughputQOS(Realm):
                             " Observed average upload rate ": individual_avgupload_list,
                             " Observed average download rate": individual_avgdownload_list,
                         }
-                        bk_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                        bk_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                        bk_dataframe[" Observed average upload drop (%)"] = individual_drop_b_list
+                        bk_dataframe[" Observed average download drop (%)"] = individual_drop_a_list
                         if self.expected_passfail_val or self.csv_name:
                             bk_dataframe[" Expected " + self.direction + " rate(Mbps)"] = test_input_list
                             bk_dataframe[" Status "] = pass_fail_list
@@ -2160,10 +2152,10 @@ class ThroughputQOS(Realm):
                             individual_download_list = avg_res['Download']['BE']
                             individual_drop_a_list = drop_res['drop_a']['BE']
                     report.set_obj_html(
-                        _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic BE(WiFi).",
-                        _obj=f"The below graph represents individual throughput for {len(self.input_devices_list)} clients running BE "
-                        f"(WiFi) traffic.  X- axis shows “number of clients” and Y-axis shows "
-                        f"“Throughput in Mbps”.")
+                        _obj_title=f"Individual observed average {self.direction.lower()} throughput with intended load {load}/station for traffic BE(WiFi).",
+                        _obj=f"The below graph represents individual observed average throughput (averaged over the test duration) for {len(self.input_devices_list)} clients running BE "
+                        f"(WiFi) traffic.  X- axis shows “Throughput in Mbps” and Y-axis shows "
+                        f"“Client names”.")
                     # print("individual set",individual_set)
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
@@ -2174,7 +2166,7 @@ class ThroughputQOS(Realm):
                                                     _yaxis_step=1,
                                                     _yticks_font=8,
                                                     _yticks_rotation=None,
-                                                    _graph_title=f"Individual {self.direction} throughput for BE(WIFI) traffic",
+                                                    _graph_title=f"Individual observed average {self.direction.lower()} throughput for BE(WIFI) traffic",
                                                     _title_size=16,
                                                     _figsize=(x_fig_size, y_fig_size),
                                                     _legend_loc="best",
@@ -2259,8 +2251,8 @@ class ThroughputQOS(Realm):
                             " Observed average upload rate ": individual_avgupload_list,
                             " Observed average download rate": individual_avgdownload_list,
                         }
-                        be_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                        be_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                        be_dataframe[" Observed average upload drop (%)"] = individual_drop_b_list
+                        be_dataframe[" Observed average download drop (%)"] = individual_drop_a_list
                         if self.expected_passfail_val or self.csv_name:
                             be_dataframe[" Expected " + self.direction + " rate(Mbps)"] = test_input_list
                             be_dataframe[" Status "] = pass_fail_list
@@ -2288,10 +2280,10 @@ class ThroughputQOS(Realm):
                             individual_download_list = avg_res['Download']['VI']
                             individual_drop_a_list = drop_res['drop_a']['VI']
                     report.set_obj_html(
-                        _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic VI(WiFi).",
-                        _obj=f"The below graph represents individual throughput for {len(self.input_devices_list)} clients running VI "
-                        f"(WiFi) traffic.  X- axis shows “number of clients” and Y-axis shows "
-                        f"“Throughput in Mbps”.")
+                        _obj_title=f"Individual observed average {self.direction.lower()} throughput with intended load {load}/station for traffic VI(WiFi).",
+                        _obj=f"The below graph represents individual observed average throughput (averaged over the test duration) for {len(self.input_devices_list)} clients running VI "
+                        f"(WiFi) traffic.  X- axis shows “Throughput in Mbps” and Y-axis shows "
+                        f"“Client names”.")
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
                                                     _xaxis_name="Throughput in Mbps",
@@ -2301,7 +2293,7 @@ class ThroughputQOS(Realm):
                                                     _yaxis_step=1,
                                                     _yticks_font=8,
                                                     _yticks_rotation=None,
-                                                    _graph_title=f"Individual {self.direction} throughput for VI(WIFI) traffic",
+                                                    _graph_title=f"Individual observed average {self.direction.lower()} throughput for VI(WIFI) traffic",
                                                     _title_size=16,
                                                     _figsize=(x_fig_size, y_fig_size),
                                                     _legend_loc="best",
@@ -2387,8 +2379,8 @@ class ThroughputQOS(Realm):
                             " Observed average upload rate ": individual_avgupload_list,
                             " Observed average download rate": individual_avgdownload_list,
                         }
-                        vi_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                        vi_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                        vi_dataframe[" Observed average upload drop (%)"] = individual_drop_b_list
+                        vi_dataframe[" Observed average download drop (%)"] = individual_drop_a_list
                         if self.expected_passfail_val or self.csv_name:
                             vi_dataframe[" Expected " + self.direction + " rate(Mbps)"] = test_input_list
                             vi_dataframe[" Status "] = pass_fail_list
@@ -2416,10 +2408,10 @@ class ThroughputQOS(Realm):
                             individual_download_list = avg_res['Download']['VO']
                             individual_drop_a_list = drop_res['drop_a']['VO']
                     report.set_obj_html(
-                        _obj_title=f"Individual {self.direction} throughput with intended load {load}/station for traffic VO(WiFi).",
-                        _obj=f"The below graph represents individual throughput for {len(self.input_devices_list)} clients running VO "
-                        f"(WiFi) traffic.  X- axis shows “number of clients” and Y-axis shows "
-                        f"“Throughput in Mbps”.")
+                        _obj_title=f"Individual observed average {self.direction.lower()} throughput with intended load {load}/station for traffic VO(WiFi).",
+                        _obj=f"The below graph represents individual observed average throughput (averaged over the test duration) for {len(self.input_devices_list)} clients running VO "
+                        f"(WiFi) traffic.  X- axis shows “Throughput in Mbps” and Y-axis shows "
+                        f"“Client names”.")
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
                                                     _xaxis_name="Throughput in Mbps",
@@ -2428,7 +2420,7 @@ class ThroughputQOS(Realm):
                                                     _label=labels,
                                                     _yaxis_step=1,
                                                     _yticks_font=8,
-                                                    _graph_title=f"Individual {self.direction} throughput for VO(WIFI) traffic",
+                                                    _graph_title=f"Individual observed average {self.direction.lower()} throughput for VO(WIFI) traffic",
                                                     _title_size=16,
                                                     _figsize=(x_fig_size, y_fig_size),
                                                     _yticks_rotation=None,
@@ -2516,8 +2508,8 @@ class ThroughputQOS(Realm):
                             " Observed average upload rate ": individual_avgupload_list,
                             " Observed average download rate": individual_avgdownload_list
                         }
-                        vo_dataframe[" Observed Upload Drop (%)"] = individual_drop_b_list
-                        vo_dataframe[" Observed Download Drop (%)"] = individual_drop_a_list
+                        vo_dataframe[" Observed average upload drop (%)"] = individual_drop_b_list
+                        vo_dataframe[" Observed average download drop (%)"] = individual_drop_a_list
                         if self.expected_passfail_val or self.csv_name:
                             vo_dataframe[" Expected " + self.direction + " rate(Mbps)"] = test_input_list
                             vo_dataframe[" Status "] = pass_fail_list
@@ -2621,25 +2613,26 @@ class ThroughputQOS(Realm):
         res = self.set_report_data(data)
         data_set, load, res = self.generate_graph_data_set(data)
         report.set_table_title(
-            f"Overall {self.direction} Throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO)")
+            f"Overall observed average {self.direction.lower()} throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO)")
         report.build_table_title()
         df_throughput = pd.DataFrame(res["throughput_table_df"])
         report.set_table_dataframe(df_throughput)
         report.build_table()
         for _key in res["graph_df"]:
             report.set_obj_html(
-                _obj_title=f"Overall {self.direction} throughput for {len(self.input_devices_list)} clients with different TOS.",
-                _obj=f"The below graph represents overall {self.direction} throughput for all "
+                _obj_title=f"Overall observed average {self.direction.lower()} throughput for {len(self.input_devices_list)} clients with different TOS.",
+                _obj=f"The below graph represents overall observed average {self.direction.lower()} throughput (averaged over the test duration) for all "
                 "connected stations running BK, BE, VO, VI traffic with different "
                 f"intended loads{load} per tos")
         report.build_objective()
         if self.rotation_enabled:
             graph_image_name = f"tos_{_key}_coord{self.coordinate_list[coordinate]}_angle{self.rotation_list[angle]}Hz"
-            graph_title = f"Overall {self.direction} throughput – BK,BE,VO,VI traffic streams at Coordinate: {self.coordinate_list[coordinate]} | Rotation Angle: {self.rotation_list[angle]}°"
+            graph_title = (f"Overall observed average {self.direction.lower()} throughput – BK,BE,VO,VI traffic streams at "
+                           f"Coordinate: {self.coordinate_list[coordinate]} | Rotation Angle: {self.rotation_list[angle]}°")
             graph_no = "_{}_{}".format(self.coordinate_list[coordinate], self.rotation_list[angle])
         else:
             graph_image_name = f"tos_{_key}_coord{self.coordinate_list[coordinate]}Hz"
-            graph_title = f"Overall {self.direction} throughput – BK,BE,VO,VI traffic streams at Coordinate: {self.coordinate_list[coordinate]}"
+            graph_title = f"Overall observed average {self.direction.lower()} throughput – BK,BE,VO,VI traffic streams at Coordinate: {self.coordinate_list[coordinate]}"
             graph_no = "_{}".format(self.coordinate_list[coordinate])
         graph = lf_bar_graph(_data_set=data_set,
                              _xaxis_name="Load per Type of Service",
