@@ -383,12 +383,23 @@ class ThroughputQOS(Realm):
                 self._pass("PASS: Station build finished")
             self.create_cx()
             print("cx build finished")
-        response_port = self.json_get("/port/all")
-        for interface in response_port['interfaces']:
-            for port, port_data in interface.items():
-                if port in self.sta_list:
-                    self.mac_list.append(port_data['mac'])
-                    self.channel_list.append(port_data['channel'])
+        # Iterate self.sta_list in order so mac/channel stay index-aligned with it,
+        # instead of following /port/all's own order.
+        url = "/port/all"
+        response_port = self.json_get(url)
+        if response_port is None:
+            print(
+                "Failed to fetch port data. Received empty response.\n"
+                f"Requested URL: '{url}'\n"
+                f"Response: {response_port}")
+            response_port = {}
+        interfaces_dict = dict()
+        for interface in response_port.get('interfaces', []):
+            interfaces_dict.update(interface)
+        for sta in self.sta_list:
+            port_data = interfaces_dict.get(sta, {})
+            self.mac_list.append(port_data.get('mac', '-'))
+            self.channel_list.append(port_data.get('channel', '-'))
 
     def create_cx(self):
         direction = ''
