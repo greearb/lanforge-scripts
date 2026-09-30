@@ -510,7 +510,7 @@ class Mixed_Traffic(Realm):
             modified_device_list = device_list.split(',')
         filtered_list = []
         real_list = []
-        mac_lists = []
+        selected_macs = dict(zip(modified_device_list, mac_list))
         for device in modified_device_list:
             if device.count('.') == 1:
                 shelf, resource = device.split('.')
@@ -531,14 +531,26 @@ class Mixed_Traffic(Realm):
             for one_Dev in filtered_list:
                 if (j.split(' ')[0] == one_Dev.split('.')[0] + '.' + one_Dev.split('.')[1]):
                     real_list.append(j)
+        url = "/port/all"
+        response_port = self.json_get(url)
+        if response_port is None:
+            logger.error(
+                "Failed to fetch port data. Received empty response.\n"
+                f"Requested URL: '{url}'\n"
+                f"Response: {response_port}")
+            response_port = {}
+        mac_by_port = {}
+        for interface in response_port.get('interfaces', []):
+            for port, port_data in interface.items():
+                if port in filtered_list:
+                    mac_by_port[port] = port_data['mac']
+        # Keep MACs in the selected device order, independent of API response order.
+        # Retain the selected MAC if a port disappears while the test is running.
+        mac_lists = [mac_by_port.get(device, selected_macs.get(device, 'NA'))
+                     for device in filtered_list]
         if isinstance(device_list, str):
             filtered_list = ','.join(filtered_list)
         self.device_list = filtered_list
-        response_port = self.json_get("/port/all")
-        for interface in response_port['interfaces']:
-            for port, port_data in interface.items():
-                if port in filtered_list:
-                    mac_lists.append(port_data['mac'])
         return filtered_list, real_list, mac_lists
 
     def virtual_client_creation(self, ssid, password, security, band, radio, num_stations, start_id, all_sta=False):
@@ -1121,13 +1133,24 @@ class Mixed_Traffic(Realm):
                 test_end_time = datetime.datetime.now().strftime("%b %d %H:%M:%S")
                 print("Test ended at: ", test_end_time)
 
-                response_port = self.json_get("/port/all")
+                # Iterate self.station_list in order so mac/channel stay index-aligned
+                # with it, instead of following /port/all's own order.
+                url = "/port/all"
+                response_port = self.json_get(url)
+                if response_port is None:
+                    logger.error(
+                        "Failed to fetch port data. Received empty response.\n"
+                        f"Requested URL: '{url}'\n"
+                        f"Response: {response_port}")
+                    response_port = {}
+                interfaces_dict = dict()
+                for interface in response_port.get('interfaces', []):
+                    interfaces_dict.update(interface)
                 self.virtual_mac_list, self.virtual_channel_list = [], []
-                for interface in response_port['interfaces']:
-                    for port, port_data in interface.items():
-                        if port in self.station_list:
-                            self.virtual_mac_list.append(port_data['mac'])
-                            self.virtual_channel_list.append(port_data['channel'])
+                for station in self.station_list:
+                    port_data = interfaces_dict.get(station, {})
+                    self.virtual_mac_list.append(port_data.get('mac', '-'))
+                    self.virtual_channel_list.append(port_data.get('channel', '-'))
                 self.throughput_qos_obj.mac_list = self.virtual_mac_list
                 self.throughput_qos_obj.channel_list = self.virtual_channel_list
                 if all_bands:
