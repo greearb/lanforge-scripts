@@ -1577,31 +1577,41 @@ class FtpTest(LFCliBase):
     def my_monitor(self):
         dataset = []
         self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd = [], [], [], [], [], [], [], []
+        # Iterate station_list/input_devices_list in order so channel/mode/ssid/mac
+        # stay index-aligned with them, instead of following /port/all's own order.
+        url = "/port/all"
+        response_port = self.json_get(url)
+        if response_port is None:
+            logger.error(
+                "Failed to fetch port data. Received empty response.\n"
+                f"Requested URL: '{url}'\n"
+                f"Response: {response_port}")
+            response_port = {}
+        interfaces_dict = dict()
+        for interface in response_port.get('interfaces', []):
+            interfaces_dict.update(interface)
         if self.clients_type == "Virtual":
-            response_port = self.json_get("/port/all")
-            for interface in response_port['interfaces']:
-                for port, port_data in interface.items():
-                    if port in self.station_list:
-                        channel_value = str(port_data.get('channel', ''))
-                        if channel_value in ('', '0', '-1'):
-                            self.channel_list.append('NA')
-                        else:
-                            self.channel_list.append(channel_value)
-                        self.mode_list.append(str(port_data['mode']))
-                        self.mac_id_list.append(str(port_data['mac']))
-                        self.ssid_list.append(str(port_data['ssid']))
+            self.mac_id_list = []
+            for port in self.station_list:
+                port_data = interfaces_dict.get(port, {})
+                channel_value = str(port_data.get('channel', ''))
+                if channel_value in ('', '0', '-1'):
+                    self.channel_list.append('NA')
+                else:
+                    self.channel_list.append(channel_value)
+                self.mode_list.append(str(port_data.get('mode', '-')))
+                self.mac_id_list.append(str(port_data.get('mac', '-')))
+                self.ssid_list.append(str(port_data.get('ssid', '-')))
         elif self.clients_type == "Real":
-            response_port = self.json_get("/port/all")
-            for interface in response_port['interfaces']:
-                for port, port_data in interface.items():
-                    if port in self.input_devices_list:
-                        channel_value = str(port_data.get('channel', ''))
-                        if channel_value in ('', '0', '-1'):
-                            self.channel_list.append('NA')
-                        else:
-                            self.channel_list.append(channel_value)
-                        self.mode_list.append(str(port_data['mode']))
-                        self.ssid_list.append(str(port_data['ssid']))
+            for port in self.input_devices_list:
+                port_data = interfaces_dict.get(port, {})
+                channel_value = str(port_data.get('channel', ''))
+                if channel_value in ('', '0', '-1'):
+                    self.channel_list.append('NA')
+                else:
+                    self.channel_list.append(channel_value)
+                self.mode_list.append(str(port_data.get('mode', '-')))
+                self.ssid_list.append(str(port_data.get('ssid', '-')))
 
         # data in json format
         # data = self.json_get("layer4/list?fields=bytes-rd")
