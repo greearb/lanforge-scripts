@@ -2072,7 +2072,7 @@ class Mixed_Traffic(Realm):
                     df_throughput = pd.DataFrame(self.res["throughput_table_df"])
                     self.lf_report_mt.set_table_dataframe(df_throughput)
                     self.lf_report_mt.set_table_title(
-                        f"Overall {qos_obj.direction} Throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO)")
+                        f"Overall observed average {qos_obj.direction.lower()} throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO)")
                     self.lf_report_mt.build_table_title()
                     graph = lf_graph.lf_bar_graph(_data_set=self.data_set,
                                                   _xaxis_name="Load per Type of Service",
@@ -2082,7 +2082,7 @@ class Mixed_Traffic(Realm):
                                                   _graph_image_name="tos_",
                                                   _label=["BK", "BE", "VI", "VO"],
                                                   _xaxis_step=1,
-                                                  _graph_title=f"Overall {qos_obj.direction} throughput – BK,BE,VO,VI traffic streams",
+                                                  _graph_title=f"Overall observed average {qos_obj.direction.lower()} throughput – BK,BE,VO,VI traffic streams",
                                                   _title_size=16,
                                                   _color=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
                                                   _color_edge='black',
