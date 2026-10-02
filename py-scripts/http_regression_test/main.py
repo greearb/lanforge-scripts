@@ -236,20 +236,38 @@ def run_baseline(args: Namespace):
 LOG_WIDTH = 80
 
 
-def pretty_log(msg: str, indent=0, level: str = "info", stacklevel=2):
-    log = {"debug": logger.debug, "info": logger.info, "warning": logger.warning,
-           "error": logger.error, "critical": logger.critical}
-    log = log[level]
+def log(msg: str, level: int, stacklevel: int, *args):
+    """
+    Uses the logger to log with the given level, copying functionality fromn
+    logger._log in order to mimic the stacklevel parameter of Python 3.8's logger.
+    """
+    if not logger.isEnabledFor(level):
+        return
 
+    frame = sys._getframe(stacklevel)
+    record = logger.makeRecord(
+        name=logger.name,
+        level=level,
+        fn=frame.f_code.co_filename,
+        lno=frame.f_lineno,
+        msg=msg,
+        args=args,
+        exc_info=None,
+        func=frame.f_code.co_name
+
+    )
+    logger.handle(record)
+
+
+def pretty_log(msg: str, indent=0, level: int = logging.INFO, stacklevel=2):
     if "\n" in msg:
         for line in msg.split("\n"):
             pretty_log(line, indent=indent, level=level, stacklevel=stacklevel+1)
     else:
         lines = textwrap.wrap(msg, LOG_WIDTH-(4*indent))
         for line in lines:
-            def test(s):
-                print(len(s), " : ", s)
-            log(("    "*indent + line).ljust(LOG_WIDTH), stacklevel=stacklevel)
+            line_msg = ("    "*indent + line).ljust(LOG_WIDTH)
+            log(line_msg, level, stacklevel)
 
 
 def log_exchange_preview(request: Request, base_version: str, version: str):
@@ -264,18 +282,18 @@ def add_newline_indent(s):
 
 
 def log_exchange_response(comparator, base_response: Response, response: Response):
-    pretty_log("Baseline   :", level="debug")
+    pretty_log("Baseline   :", level=logging.DEBUG)
 
-    pretty_log(f"{base_response.status} - {base_response.reason}", indent=1, level="debug")
-    pretty_log(f"{add_newline_indent(json.dumps(base_response.content, indent=4))}", indent=1, level="debug")
+    pretty_log(f"{base_response.status} - {base_response.reason}", indent=1, level=logging.DEBUG)
+    pretty_log(f"{add_newline_indent(json.dumps(base_response.content, indent=4))}", indent=1, level=logging.DEBUG)
 
-    pretty_log("Result     :", level="debug")
+    pretty_log("Result     :", level=logging.DEBUG)
 
     if response is None:
-        pretty_log("None", indent=1, level="debug")
+        pretty_log("None", indent=1, level=logging.DEBUG)
     else:
-        pretty_log(f"{response.status} - {response.reason}", indent=1, level="debug")
-        pretty_log(f"{add_newline_indent(json.dumps(response.content, indent=4))}", indent=1, level="debug")
+        pretty_log(f"{response.status} - {response.reason}", indent=1, level=logging.DEBUG)
+        pretty_log(f"{add_newline_indent(json.dumps(response.content, indent=4))}", indent=1, level=logging.DEBUG)
 
     pretty_log(f"Comparator : {type(comparator).__name__}")
 
