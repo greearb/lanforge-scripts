@@ -1408,6 +1408,9 @@ class L3VariableTime(Realm):
         self.total_dl_ll_bps = None
         self.total_ul_ll_bps = None
         self.individual_device_data = {}
+        # per-client rx rate history collected over the run, for averaging
+        self.client_dl_rates_A = {}
+        self.client_dl_rates_B = {}
 
         # AP information import the module
         if self.ap_read and self.ap_module is not None:
@@ -2245,10 +2248,11 @@ class L3VariableTime(Realm):
 
         for name, info in endpoints.items():
             if "MLT-mrx-" in name:
-                rx_rate = info.get("rx rate", 0)
+                last_reported_rate = info.get("rx rate", 0)
+                rx_rate = self._average_client_download_rate(self.client_dl_rates_A, name, last_reported_rate)
                 rx_bytes = info.get("rx bytes", 0)
                 drop_percent = info.get("rx drop %", 0.0)
-                sta_rx_total += rx_rate if isinstance(rx_rate, int) else 0
+                sta_rx_total += rx_rate if isinstance(rx_rate, (int, float)) else 0
                 stations_data.append({
                     "station": name,
                     "rx_rate_bps": rx_rate,
@@ -2258,10 +2262,11 @@ class L3VariableTime(Realm):
                     "rotation": rotation,
                 })
             elif "MLT-mtx-" in name:
-                tx_rate = info.get("tx rate", 0)
+                last_reported_rate = info.get("tx rate", 0)
+                tx_rate = self._average_client_download_rate(self.client_dl_rates_B, name, last_reported_rate)
                 tx_bytes = info.get("tx bytes", 0)
                 drop_percent = info.get("tx drop %", 0.0)
-                eth_tx_total += tx_rate if isinstance(tx_rate, int) else 0
+                eth_tx_total += tx_rate if isinstance(tx_rate, (int, float)) else 0
                 upstream_data = {
                     "endpoint": name,
                     "tx_rate_bps": tx_rate,
@@ -3001,6 +3006,8 @@ class L3VariableTime(Realm):
                     logger.info("Getting initial values.")
                     available = self.__get_rx_values()[0]
                     self.overall = []
+                    self.client_dl_rates_A = {}
+                    self.client_dl_rates_B = {}
                     # monitor stats
                     if self.do_bandsteering:
                         return available, ul, dl, ul_pdu_str, dl_pdu_str, atten_val, ul_pdu, dl_pdu, passes, expected_passes, coordinate, rotation
@@ -3108,11 +3115,19 @@ class L3VariableTime(Realm):
 
             log_msg = "main loop, total-dl: {total_dl_bps} total-ul: {total_ul_bps} total-dl-ll: {total_dl_ll_bps}".format(
                 total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total_dl_ll_bps=total_dl_ll_bps)
+            # Fetch L3 endpoint and port data for the given ToS
+            real_client_endpoint_data = self.l3_endp_port_data(self.tos[0])
+            l3_port_data = real_client_endpoint_data[self.tos[0]]
+
+            for name, dl_rate in zip(l3_port_data['clients_A'], l3_port_data['dl_A']):
+                if isinstance(dl_rate, (int, float)):
+                    self.client_dl_rates_A.setdefault(name, []).append(dl_rate)
+            for name, dl_rate in zip(l3_port_data['clients_B'], l3_port_data['dl_B']):
+                if isinstance(dl_rate, (int, float)):
+                    self.client_dl_rates_B.setdefault(name, []).append(dl_rate)
+
             # Added logic creating a csv file for webGUI to get runtime data
             if self.dowebgui:
-                # Fetch L3 endpoint and port data for the given ToS
-                real_client_endpoint_data = self.l3_endp_port_data(self.tos[0])
-                l3_port_data = real_client_endpoint_data[self.tos[0]]
                 # Initialize empty DataFrames for each device (based on resource alias)
                 for name in l3_port_data['resource_alias_A']:
                     # Extract device/resource ID from alias
@@ -3667,6 +3682,12 @@ class L3VariableTime(Realm):
 
         return alias
 
+    def _average_client_download_rate(self, client_dl_rates, client_name, last_reported_rate):
+        dl_rates = client_dl_rates.get(client_name)
+        if dl_rates:
+            return sum(dl_rates) / len(dl_rates)
+        return last_reported_rate
+
     def evaluate_qos(self):
         # for port:
         # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.0.104:8080/port/all | json_pp
@@ -3785,7 +3806,8 @@ class L3VariableTime(Realm):
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.bk_clients_A.append(endp_data[endp_data_key]['name'])
                             self.bk_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
-                            self.bk_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            self.bk_tos_dl_A.append(self._average_client_download_rate(
+                                self.client_dl_rates_A, endp_data[endp_data_key]['name'], endp_data[endp_data_key]["rx rate"]))
                             self.bk_port_protocol_A.append(endp_data[endp_data_key]['type'])
                             self.bk_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
 
@@ -3850,7 +3872,8 @@ class L3VariableTime(Realm):
                         # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.bk_clients_B.append(endp_data[endp_data_key]['name'])
-                            self.bk_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
+                            self.bk_tos_dl_B.append(self._average_client_download_rate(
+                                self.client_dl_rates_B, endp_data[endp_data_key]['name'], endp_data[endp_data_key]["tx rate"]))
                             self.bk_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.bk_port_protocol_B.append(endp_data[endp_data_key]['type'])
                             self.bk_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
@@ -3920,7 +3943,8 @@ class L3VariableTime(Realm):
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.be_clients_A.append(endp_data[endp_data_key]['name'])
                             self.be_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
-                            self.be_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            self.be_tos_dl_A.append(self._average_client_download_rate(
+                                self.client_dl_rates_A, endp_data[endp_data_key]['name'], endp_data[endp_data_key]["rx rate"]))
                             self.be_port_protocol_A.append(endp_data[endp_data_key]['type'])
                             self.be_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
 
@@ -3986,7 +4010,8 @@ class L3VariableTime(Realm):
                         # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.be_clients_B.append(endp_data[endp_data_key]['name'])
-                            self.be_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
+                            self.be_tos_dl_B.append(self._average_client_download_rate(
+                                self.client_dl_rates_B, endp_data[endp_data_key]['name'], endp_data[endp_data_key]["tx rate"]))
                             self.be_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.be_port_protocol_B.append(endp_data[endp_data_key]['type'])
                             self.be_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
@@ -4056,7 +4081,8 @@ class L3VariableTime(Realm):
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.vi_clients_A.append(endp_data[endp_data_key]['name'])
                             self.vi_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
-                            self.vi_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            self.vi_tos_dl_A.append(self._average_client_download_rate(
+                                self.client_dl_rates_A, endp_data[endp_data_key]['name'], endp_data[endp_data_key]["rx rate"]))
                             self.vi_port_protocol_A.append(endp_data[endp_data_key]['type'])
                             self.vi_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
 
@@ -4122,7 +4148,8 @@ class L3VariableTime(Realm):
                         # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.vi_clients_B.append(endp_data[endp_data_key]['name'])
-                            self.vi_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
+                            self.vi_tos_dl_B.append(self._average_client_download_rate(
+                                self.client_dl_rates_B, endp_data[endp_data_key]['name'], endp_data[endp_data_key]["tx rate"]))
                             self.vi_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.vi_port_protocol_B.append(endp_data[endp_data_key]['type'])
                             self.vi_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
@@ -4192,7 +4219,8 @@ class L3VariableTime(Realm):
                         if endp_data[endp_data_key]['a/b'] == "B":
                             self.vo_clients_A.append(endp_data[endp_data_key]['name'])
                             self.vo_tos_ul_A.append(endp_data[endp_data_key]["tx rate"])
-                            self.vo_tos_dl_A.append(endp_data[endp_data_key]["rx rate"])
+                            self.vo_tos_dl_A.append(self._average_client_download_rate(
+                                self.client_dl_rates_A, endp_data[endp_data_key]['name'], endp_data[endp_data_key]["rx rate"]))
                             self.vo_port_protocol_A.append(endp_data[endp_data_key]['type'])
                             self.vo_rx_drop_percent_A.append(endp_data[endp_data_key]["rx drop %"])
 
@@ -4258,7 +4286,8 @@ class L3VariableTime(Realm):
                         # downstream for multicast
                         if endp_data[endp_data_key]['a/b'] == "A":
                             self.vo_clients_B.append(endp_data[endp_data_key]['name'])
-                            self.vo_tos_dl_B.append(endp_data[endp_data_key]["tx rate"])
+                            self.vo_tos_dl_B.append(self._average_client_download_rate(
+                                self.client_dl_rates_B, endp_data[endp_data_key]['name'], endp_data[endp_data_key]["tx rate"]))
                             self.vo_tos_ul_B.append(endp_data[endp_data_key]["rx rate"])
                             self.vo_port_protocol_B.append(endp_data[endp_data_key]['type'])
                             self.vo_rx_drop_percent_B.append(endp_data[endp_data_key]["rx drop %"])
