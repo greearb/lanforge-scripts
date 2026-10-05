@@ -2255,7 +2255,7 @@ class L3VariableTime(Realm):
                 sta_rx_total += rx_rate if isinstance(rx_rate, (int, float)) else 0
                 stations_data.append({
                     "station": name,
-                    "rx_rate_bps": rx_rate,
+                    "rx_rate_mbps": self._bps_to_mbps(rx_rate),
                     "rx_bytes": rx_bytes,
                     "drop_percent": drop_percent,
                     "coordinate": coordinate,
@@ -2269,7 +2269,7 @@ class L3VariableTime(Realm):
                 eth_tx_total += tx_rate if isinstance(tx_rate, (int, float)) else 0
                 upstream_data = {
                     "endpoint": name,
-                    "tx_rate_bps": tx_rate,
+                    "tx_rate_mbps": self._bps_to_mbps(tx_rate),
                     "tx_bytes": tx_bytes,
                     "drop_percent": drop_percent,
                     "coordinate": coordinate,
@@ -2277,8 +2277,8 @@ class L3VariableTime(Realm):
                 }
                 self.multicast_robot_results[position_key]["upstream"] = upstream_data
 
-        total_tx_rate = eth_tx_total
-        total_rx_rate = sta_rx_total
+        total_tx_rate_mbps = self._bps_to_mbps(eth_tx_total)
+        total_rx_rate_mbps = self._bps_to_mbps(sta_rx_total)
         avg_drop = (
             sum([s["drop_percent"] for s in stations_data]) / len(stations_data)
             if stations_data else 0.0
@@ -2287,9 +2287,8 @@ class L3VariableTime(Realm):
         summary = {
             "coordinate": coordinate,
             "rotation": rotation,
-            "total_tx_rate_bps": total_tx_rate,
-            "total_rx_rate_bps": total_rx_rate,
-            "throughput_mbps": round(total_rx_rate / 1e6, 2),
+            "total_tx_rate_mbps": total_tx_rate_mbps,
+            "total_rx_rate_mbps": total_rx_rate_mbps,
             "average_drop_percent": round(avg_drop, 2),
             "endpoint_count": len(stations_data),
             "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -2311,16 +2310,16 @@ class L3VariableTime(Realm):
         with open(coord_csv, "a") as f:
             if write_header:
                 f.write(
-                    "coordinate,rotation,total_tx_rate_bps,total_rx_rate_bps,throughput_mbps,average_drop_percent,endpoint_count,timestamp\n"
+                    "coordinate,rotation,total_tx_rate_mbps,total_rx_rate_mbps,average_drop_percent,endpoint_count,timestamp\n"
                 )
             f.write(
-                f"{coordinate},{rotation},{total_tx_rate},{total_rx_rate},{total_rx_rate / 1e6:.2f},{avg_drop:.2f},{len(stations_data)},{summary['timestamp']}\n"
+                f"{coordinate},{rotation},{total_tx_rate_mbps},{total_rx_rate_mbps},{avg_drop:.2f},{len(stations_data)},{summary['timestamp']}\n"
             )
 
         self._write_robot_station_csv(stations_data, summary["timestamp"])
 
         logger.info(
-            f"[RobotTest] Coord={coordinate}, Rot={rotation}, Stations={len(stations_data)}, Avg Throughput={total_rx_rate / 1e6:.2f} Mbps"
+            f"[RobotTest] Coord={coordinate}, Rot={rotation}, Stations={len(stations_data)}, Avg Throughput={total_rx_rate_mbps} Mbps"
         )
 
     def _write_robot_station_csv(self, stations_data, timestamp):
@@ -2335,11 +2334,11 @@ class L3VariableTime(Realm):
         # Append station data to CSV
         with open(station_csv, "a") as f:
             if write_header:
-                f.write("coordinate,rotation,station,rx_rate_bps,rx_bytes,drop_percent,timestamp\n")
+                f.write("coordinate,rotation,station,rx_rate_mbps,rx_bytes,drop_percent,timestamp\n")
             for st in stations_data:
                 f.write(
                     f"{st['coordinate']},{st['rotation']},{st['station']},"
-                    f"{st['rx_rate_bps']},{st['rx_bytes']},{st['drop_percent']},{timestamp}\n"
+                    f"{st['rx_rate_mbps']},{st['rx_bytes']},{st['drop_percent']},{timestamp}\n"
                 )
 
     def perform_robo(self):
@@ -2406,7 +2405,7 @@ class L3VariableTime(Realm):
         with open(csv_filename, 'w', newline='') as csvfile:
             fieldnames = [
                 'position_key', 'coordinate', 'rotation',
-                'total_tx_rate_bps', 'total_rx_rate_bps', 'throughput_mbps',
+                'total_tx_rate_mbps', 'total_rx_rate_mbps',
                 'average_drop_percent', 'endpoint_count'
             ]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -2418,9 +2417,8 @@ class L3VariableTime(Realm):
                     'position_key': position_key,
                     'coordinate': test_data.get('coordinate', ''),
                     'rotation': test_data.get('rotation', ''),
-                    'total_tx_rate_bps': test_data.get('total_tx_rate_bps', 0),
-                    'total_rx_rate_bps': test_data.get('total_rx_rate_bps', 0),
-                    'throughput_mbps': test_data.get('throughput_mbps', 0),
+                    'total_tx_rate_mbps': test_data.get('total_tx_rate_mbps', 0),
+                    'total_rx_rate_mbps': test_data.get('total_rx_rate_mbps', 0),
                     'average_drop_percent': test_data.get('average_drop_percent', 0),
                     'endpoint_count': test_data.get('endpoint_count', 0),
                 })
@@ -2731,9 +2729,9 @@ class L3VariableTime(Realm):
         # we should be able to add the values for each eid
         # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
         # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
-        all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
-                                                                                         'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll',
-                                                                                         'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
+        all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Mbps', 'Tx-Mbps', 'Rx-Latency', 'Rx-Jitter',
+                                                                                         'Ul-Rx-Goodput-Mbps', 'Ul-Rx-Rate-ll-Mbps', 'Ul-Rx-Pkts-ll',
+                                                                                         'Dl-Rx-Goodput-Mbps', 'Dl-Rx-Rate-ll-Mbps', 'Dl-Rx-Pkts-ll']].sum()
         all_dl_ports_stations_sum_file_name = self.outfile[:-4]
         all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + \
             "-dl-all-eids-sum-per-interval.csv"
@@ -2749,15 +2747,15 @@ class L3VariableTime(Realm):
             warnings += 1
 
         else:
-            all_dl_ports_stations_sum_df['Rx-Bps-Diff'] = all_dl_ports_stations_sum_df['Rx-Bps'].diff()
-            all_dl_ports_stations_sum_df['Tx-Bps-Diff'] = all_dl_ports_stations_sum_df['Tx-Bps'].diff()
+            all_dl_ports_stations_sum_df['Rx-Mbps-Diff'] = all_dl_ports_stations_sum_df['Rx-Mbps'].diff()
+            all_dl_ports_stations_sum_df['Tx-Mbps-Diff'] = all_dl_ports_stations_sum_df['Tx-Mbps'].diff()
             all_dl_ports_stations_sum_df['Rx-Latency-Diff'] = all_dl_ports_stations_sum_df['Rx-Latency'].diff()
             all_dl_ports_stations_sum_df['Rx-Jitter-Diff'] = all_dl_ports_stations_sum_df['Rx-Jitter'].diff()
-            all_dl_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff()
-            all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff()
+            all_dl_ports_stations_sum_df['Ul-Rx-Goodput-Mbps-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Goodput-Mbps'].diff()
+            all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll-Mbps'].diff()
             all_dl_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff()
-            all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff()
-            all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff()
+            all_dl_ports_stations_sum_df['Dl-Rx-Goodput-Mbps-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Goodput-Mbps'].diff()
+            all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll-Mbps'].diff()
             all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff()
 
         # write out the data
@@ -2804,9 +2802,9 @@ class L3VariableTime(Realm):
             # we add all the values based on the epoch time
             # FutureWarning: Indexing with multiple keys need to make single [] to double [[]]
             # https://stackoverflow.com/questions/60999753/pandas-future-warning-indexing-with-multiple-keys
-            all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
-                                                                                             'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll',
-                                                                                             'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll']].sum()
+            all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])[['Rx-Mbps', 'Tx-Mbps', 'Rx-Latency', 'Rx-Jitter',
+                                                                                             'Ul-Rx-Goodput-Mbps', 'Ul-Rx-Rate-ll-Mbps', 'Ul-Rx-Pkts-ll',
+                                                                                             'Dl-Rx-Goodput-Mbps', 'Dl-Rx-Rate-ll-Mbps', 'Dl-Rx-Pkts-ll']].sum()
             all_ul_ports_stations_sum_file_name = self.outfile[:-4]
             all_ul_port_stations_sum_file_name = all_ul_ports_stations_sum_file_name + \
                 "-ul-all-eids-sum-per-interval.csv"
@@ -2817,23 +2815,23 @@ class L3VariableTime(Realm):
                     "The ul (upload) has no data check the AP connection or configuration")
                 warnings += 1
             else:
-                all_ul_ports_stations_sum_df['Rx-Bps-Diff'] = all_ul_ports_stations_sum_df['Rx-Bps'].diff(
+                all_ul_ports_stations_sum_df['Rx-Mbps-Diff'] = all_ul_ports_stations_sum_df['Rx-Mbps'].diff(
                 )
-                all_ul_ports_stations_sum_df['Tx-Bps-Diff'] = all_ul_ports_stations_sum_df['Tx-Bps'].diff(
+                all_ul_ports_stations_sum_df['Tx-Mbps-Diff'] = all_ul_ports_stations_sum_df['Tx-Mbps'].diff(
                 )
                 all_ul_ports_stations_sum_df['Rx-Latency-Diff'] = all_ul_ports_stations_sum_df['Rx-Latency'].diff(
                 )
                 all_ul_ports_stations_sum_df['Rx-Jitter-Diff'] = all_ul_ports_stations_sum_df['Rx-Jitter'].diff(
                 )
-                all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff(
+                all_ul_ports_stations_sum_df['Ul-Rx-Goodput-Mbps-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Goodput-Mbps'].diff(
                 )
-                all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff(
+                all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll-Mbps'].diff(
                 )
                 all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff(
                 )
-                all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff(
+                all_ul_ports_stations_sum_df['Dl-Rx-Goodput-Mbps-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Goodput-Mbps'].diff(
                 )
-                all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff(
+                all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll-Mbps'].diff(
                 )
                 all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff(
                 )
@@ -3163,7 +3161,7 @@ class L3VariableTime(Realm):
                     str(int(total_hours)) + " hr and " + str(int(remaining_minutes)) + " min" if int(
                         total_hours) != 0 or int(remaining_minutes) != 0 else '<1 min'][0]
                 # total_dl_ll_bps contains the combined 'rx rate ll' from all '-mrx-' endpoints.
-                total = total_dl_ll_bps
+                total = self._bps_to_mbps(total_dl_ll_bps)
 
                 if rssi_values:
                     avg_rssi = sum(rssi_values) / len(rssi_values)
@@ -3450,6 +3448,8 @@ class L3VariableTime(Realm):
             dl_rx_drop_percent,
             ap_row_tx_dl='',
             bandsteering_data=None):
+        ul = self._bps_to_mbps(ul)
+        dl = self._bps_to_mbps(dl)
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, port_eid
@@ -3457,8 +3457,8 @@ class L3VariableTime(Realm):
 
         signal_val, channel_val = self.normalize_signal_channel(port_data)
 
-        row = row + [port_data['bps rx'],
-                     port_data['bps tx'],
+        row = row + [self._bps_to_mbps(port_data['bps rx']),
+                     self._bps_to_mbps(port_data['bps tx']),
                      port_data['rx-rate'],
                      port_data['tx-rate'],
                      signal_val,
@@ -3468,12 +3468,12 @@ class L3VariableTime(Realm):
                      channel_val,
                      latency,
                      jitter,
-                     total_ul_rate,
-                     total_ul_rate_ll,
+                     self._bps_to_mbps(total_ul_rate),
+                     self._bps_to_mbps(total_ul_rate_ll),
                      total_ul_pkts_ll,
                      ul_rx_drop_percent,
-                     total_dl_rate,
-                     total_dl_rate_ll,
+                     self._bps_to_mbps(total_dl_rate),
+                     self._bps_to_mbps(total_dl_rate_ll),
                      total_dl_pkts_ll,
                      dl_rx_drop_percent]
 
@@ -3514,6 +3514,8 @@ class L3VariableTime(Realm):
             total_dl_pkts_ll,
             dl_tx_drop_percent,
             ap_row_rx_ul):
+        ul = self._bps_to_mbps(ul)
+        dl = self._bps_to_mbps(dl)
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, port_eid
@@ -3521,8 +3523,8 @@ class L3VariableTime(Realm):
 
         signal_val, channel_val = self.normalize_signal_channel(port_data)
 
-        row = row + [port_data['bps rx'],
-                     port_data['bps tx'],
+        row = row + [self._bps_to_mbps(port_data['bps rx']),
+                     self._bps_to_mbps(port_data['bps tx']),
                      port_data['rx-rate'],
                      port_data['tx-rate'],
                      signal_val,
@@ -3532,12 +3534,12 @@ class L3VariableTime(Realm):
                      channel_val,
                      latency,
                      jitter,
-                     total_ul_rate,
-                     total_ul_rate_ll,
+                     self._bps_to_mbps(total_ul_rate),
+                     self._bps_to_mbps(total_ul_rate_ll),
                      total_ul_pkts_ll,
                      ul_rx_drop_percent,
-                     total_dl_rate,
-                     total_dl_rate_ll,
+                     self._bps_to_mbps(total_dl_rate),
+                     self._bps_to_mbps(total_dl_rate_ll),
                      total_dl_pkts_ll,
                      dl_tx_drop_percent]
 
@@ -3652,12 +3654,15 @@ class L3VariableTime(Realm):
             tags[k[0]] = k[1]
 
         if self.csv_results_file:
+            ul = self._bps_to_mbps(ul)
+            dl = self._bps_to_mbps(dl)
             row = [self.epoch_time, self.time_stamp(), sta_count,
                    ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                    atten,
-                   total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps),
-                   total_dl_ll_bps, total_ul_ll_bps, (
-                       total_ul_ll_bps + total_dl_ll_bps)
+                   self._bps_to_mbps(total_dl_bps), self._bps_to_mbps(total_ul_bps),
+                   self._bps_to_mbps(total_ul_bps + total_dl_bps),
+                   self._bps_to_mbps(total_dl_ll_bps), self._bps_to_mbps(total_ul_ll_bps),
+                   self._bps_to_mbps(total_ul_ll_bps + total_dl_ll_bps)
                    ]
             # Add values for any user specified tags
             for k in self.user_tags:
@@ -3681,6 +3686,17 @@ class L3VariableTime(Realm):
         alias = eid + "_" + host + "_" + hardware
 
         return alias
+
+    def _bps_values_to_mbps(self, values):
+        return [self._bps_to_mbps(value) for value in values]
+
+    @staticmethod
+    def _bps_to_mbps(value):
+        """Convert a raw bps value to Mbps, rounded to 2 decimals."""
+        try:
+            return round(float(value) / 1000000, 2)
+        except (TypeError, ValueError):
+            return value
 
     def _average_client_download_rate(self, client_dl_rates, client_name, last_reported_rate):
         dl_rates = client_dl_rates.get(client_name)
@@ -6412,18 +6428,18 @@ class L3VariableTime(Realm):
             'Time epoch',
             'Time',
             'Total-Station-Count',
-            'UL-Min-Requested',
-            'UL-Max-Requested',
-            'DL-Min-Requested',
-            'DL-Max-Requested',
+            'UL-Min-Requested (Mbps)',
+            'UL-Max-Requested (Mbps)',
+            'DL-Min-Requested (Mbps)',
+            'DL-Max-Requested (Mbps)',
             'UL-Min-PDU',
             'UL-Max-PDU',
             'DL-Min-PDU',
             'DL-Max-PDU',
             'Attenuation',
             'Name',
-            'Rx-Bps',
-            'Tx-Bps',
+            'Rx-Mbps',
+            'Tx-Mbps',
             'Rx-Link-Rate',
             'Tx-Link-Rate',
             'RSSI',
@@ -6433,12 +6449,12 @@ class L3VariableTime(Realm):
             'Channel',
             'Rx-Latency',
             'Rx-Jitter',
-            'Ul-Rx-Goodput-bps',
-            'Ul-Rx-Rate-ll',
+            'Ul-Rx-Goodput-Mbps',
+            'Ul-Rx-Rate-ll-Mbps',
             'Ul-Rx-Pkts-ll',
             'Ul-Rx-Drop_Percent',
-            'Dl-Rx-Goodput-bps',
-            'Dl-Rx-Rate-ll',
+            'Dl-Rx-Goodput-Mbps',
+            'Dl-Rx-Rate-ll-Mbps',
             'Dl-Rx-Pkts-ll',
             'DL-Rx-Drop-Percent']
 
@@ -6467,18 +6483,18 @@ class L3VariableTime(Realm):
             'Time epoch',
             'Time',
             'Total-Station-Count',
-            'UL-Min-Requested',
-            'UL-Max-Requested',
-            'DL-Min-Requested',
-            'DL-Max-Requested',
+            'UL-Min-Requested (Mbps)',
+            'UL-Max-Requested (Mbps)',
+            'DL-Min-Requested (Mbps)',
+            'DL-Max-Requested (Mbps)',
             'UL-Min-PDU',
             'UL-Max-PDU',
             'DL-Min-PDU',
             'DL-Max-PDU',
             'Attenuation',
             'Name',
-            'Rx-Bps',
-            'Tx-Bps',
+            'Rx-Mbps',
+            'Tx-Mbps',
             'Rx-Link-Rate',
             'Tx-Link-Rate',
             'RSSI',
@@ -6488,12 +6504,12 @@ class L3VariableTime(Realm):
             'Channel',
             'Rx-Latency',
             'Rx-Jitter',
-            'Ul-Rx-Goodput-bps',
-            'Ul-Rx-Rate-ll',
+            'Ul-Rx-Goodput-Mbps',
+            'Ul-Rx-Rate-ll-Mbps',
             'Ul-Rx-Pkts-ll',
             'Ul-Rx-Drop_Percent',
-            'Dl-Rx-Goodput-bps',
-            'Dl-Rx-Rate-ll',
+            'Dl-Rx-Goodput-Mbps',
+            'Dl-Rx-Rate-ll-Mbps',
             'Dl-Rx-Pkts-ll',
             'Dl-Rx-Drop-Percent']
         # Add in columns we are going to query from the AP
@@ -6511,21 +6527,21 @@ class L3VariableTime(Realm):
             'Time epoch',
             'Time',
             'Station-Count',
-            'UL-Min-Requested',
-            'UL-Max-Requested',
-            'DL-Min-Requested',
-            'DL-Max-Requested',
+            'UL-Min-Requested (Mbps)',
+            'UL-Max-Requested (Mbps)',
+            'DL-Min-Requested (Mbps)',
+            'DL-Max-Requested (Mbps)',
             'UL-Min-PDU',
             'UL-Max-PDU',
             'DL-Min-PDU',
             'DL-Max-PDU',
             'Attenuation',
-            'Total-Download-Bps',
-            'Total-Upload-Bps',
-            'Total-UL/DL-Bps',
-            'Total-Download-LL-Bps',
-            'Total-Upload-LL-Bps',
-            'Total-UL/DL-LL-Bps']
+            'Total-Download-Mbps',
+            'Total-Upload-Mbps',
+            'Total-UL/DL-Mbps',
+            'Total-Download-LL-Mbps',
+            'Total-Upload-LL-Mbps',
+            'Total-UL/DL-LL-Mbps']
         for k in self.user_tags:
             csv_rx_headers.append(k[0])
 
@@ -7076,14 +7092,14 @@ class L3VariableTime(Realm):
                     self.report.build_custom()
 
                     if upstream:
-                        tx_rate = upstream.get("tx_rate_bps", 0)
+                        tx_rate = upstream.get("tx_rate_mbps", 0)
                         dataset_list = [[tx_rate]]
-                        labels = ["TX (bps)"]
+                        labels = ["TX (Mbps)"]
                         yaxis_categories = [upstream.get("endpoint", "eth-unknown")]
 
                         graph = lf_graph.lf_bar_graph_horizontal(
                             _data_set=dataset_list,
-                            _xaxis_name="TX Throughput (bps)",
+                            _xaxis_name="TX Throughput (Mbps)",
                             _yaxis_name="Upstream Endpoint",
                             _yaxis_categories=yaxis_categories,
                             _graph_image_name=f"robot_coord_{coord}_rot_{rot}_upstream_tx",
@@ -7115,13 +7131,13 @@ class L3VariableTime(Realm):
                     if stations:
                         df_stations = pd.DataFrame(stations)
 
-                        dataset_list = [df_stations["rx_rate_bps"].tolist()]
-                        labels = ["RX (bps)"]
+                        dataset_list = [df_stations["rx_rate_mbps"].tolist()]
+                        labels = ["RX (Mbps)"]
                         yaxis_categories = df_stations["station"].tolist()
 
                         graph = lf_graph.lf_bar_graph_horizontal(
                             _data_set=dataset_list,
-                            _xaxis_name="RX Throughput (bps)",
+                            _xaxis_name="RX Throughput (Mbps)",
                             _yaxis_name="Stations",
                             _yaxis_categories=yaxis_categories,
                             _graph_image_name=f"robot_coord_{coord}_rot_{rot}_station_rx",
@@ -7144,10 +7160,10 @@ class L3VariableTime(Realm):
                         self.report.set_csv_filename(graph_png)
                         self.report.move_csv_file()
 
-                        avg_rx = df_stations["rx_rate_bps"].mean()
+                        avg_rx = df_stations["rx_rate_mbps"].mean()
                         avg_drop = df_stations["drop_percent"].mean()
                         self.report.set_custom_html(
-                            f"<p style='font-size:12px;'>Average RX Throughput: <b>{avg_rx / 1e6:.2f} Mbps</b><br>"
+                            f"<p style='font-size:12px;'>Average RX Throughput: <b>{avg_rx:.2f} Mbps</b><br>"
                             f"Average Drop Rate: <b>{avg_drop:.2f}%</b><br>"
                             f"Total Stations: <b>{len(df_stations)}</b></p>"
                         )
@@ -7178,21 +7194,22 @@ class L3VariableTime(Realm):
                     df_all = pd.DataFrame(all_summary)
                     try:
                         rot_summary = (
-                            df_all.groupby("rotation")[["total_rx_rate_bps", "total_tx_rate_bps"]]
+                            df_all.groupby("rotation")[["total_rx_rate_mbps", "total_tx_rate_mbps"]]
                             .mean()
+                            .round(2)
                             .reset_index()
                             .sort_values(by="rotation")
                         )
                         dataset = [
-                            rot_summary["total_rx_rate_bps"].tolist(),
-                            rot_summary["total_tx_rate_bps"].tolist()
+                            rot_summary["total_rx_rate_mbps"].tolist(),
+                            rot_summary["total_tx_rate_mbps"].tolist()
                         ]
-                        labels = ["Avg RX (bps)", "Avg TX (bps)"]
+                        labels = ["Avg RX (Mbps)", "Avg TX (Mbps)"]
                         rotations = rot_summary["rotation"].astype(str).tolist()
 
                         graph = lf_graph.lf_bar_graph_horizontal(
                             _data_set=dataset,
-                            _xaxis_name="Average Throughput (bps)",
+                            _xaxis_name="Average Throughput (Mbps)",
                             _yaxis_name="Rotation (°)",
                             _yaxis_categories=rotations,
                             _graph_image_name="robot_avg_rotation_summary",
@@ -7228,10 +7245,8 @@ class L3VariableTime(Realm):
                 if (self.real or self.dowebgui) and tos not in self.tos:
                     continue
                 if (self.client_dict_A[tos]["ul_A"] and self.client_dict_A[tos]["dl_A"]):
-                    min_bps_a = self.client_dict_A["min_bps_a"]
-                    min_bps_b = self.client_dict_A["min_bps_b"]
-
-                    dataset_list = [self.client_dict_A[tos]["ul_A"], self.client_dict_A[tos]["dl_A"]]
+                    dataset_list = [self._bps_values_to_mbps(self.client_dict_A[tos]["ul_A"]),
+                                    self._bps_values_to_mbps(self.client_dict_A[tos]["dl_A"])]
                     # TODO possibly explain the wording for upload and download
                     dataset_length = len(self.client_dict_A[tos]["ul_A"])
                     x_fig_size = 20
@@ -7241,15 +7256,17 @@ class L3VariableTime(Realm):
                     logger.debug("clients_A {clients}".format(clients=self.client_dict_A[tos]["clients_A"]))
                     logger.debug("resource_alias_A {alias_A}".format(alias_A=self.client_dict_A[tos]["resource_alias_A"]))
 
-                    if int(min_bps_a) != 0:
+                    min_mbps_a = self._bps_to_mbps(self.client_dict_A["min_bps_a"])
+                    min_mbps_b = self._bps_to_mbps(self.client_dict_A["min_bps_b"])
+                    if min_mbps_a != 0:
                         self.report.set_obj_html(
-                            _obj_title=f"Individual throughput measured  upload tcp or udp bps: {min_bps_a},  download tcp, udp, or mcast  bps: {min_bps_b} station for traffic {tos} (WiFi).",
+                            _obj_title=f"Individual throughput measured  upload tcp or udp Mbps: {min_mbps_a},  download tcp, udp, or mcast  Mbps: {min_mbps_b} station for traffic {tos} (WiFi).",
                             _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
                             f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
                             f"Throughput in Mbps”.")
                     else:
                         self.report.set_obj_html(
-                            _obj_title=f"Individual throughput mcast download bps: {min_bps_b} traffic {tos} (WiFi).",
+                            _obj_title=f"Individual throughput mcast download Mbps: {min_mbps_b} traffic {tos} (WiFi).",
                             _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
                             f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
                             f"Throughput in Mbps”.")
@@ -7257,7 +7274,7 @@ class L3VariableTime(Realm):
                     self.report.build_objective()
 
                     graph = lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
-                                                             _xaxis_name="Throughput in bps",
+                                                             _xaxis_name="Throughput in Mbps",
                                                              _yaxis_name="Client names",
                                                              # _yaxis_categories=self.client_dict_A[tos]["clients_A"],
                                                              _yaxis_categories=self.client_dict_A[tos]["resource_alias_A"],
@@ -7370,15 +7387,15 @@ class L3VariableTime(Realm):
                                 " Channel ": self.client_dict_A[tos]['channel_A'],
                                 " Type of traffic ": self.client_dict_A[tos]['traffic_type_A'],
                                 " Traffic Protocol ": self.client_dict_A[tos]['traffic_protocol_A'],
-                                " Offered Upload Rate Per Client": self.client_dict_A[tos]['offered_upload_rate_A'],
-                                " Offered Download Rate Per Client": self.client_dict_A[tos]['offered_download_rate_A'],
-                                " Upload Rate Per Client": self.client_dict_A[tos]['ul_A'],
-                                " Download Rate Per Client": self.client_dict_A[tos]['dl_A'],
+                                " Offered Upload Rate Per Client (Mbps)": self._bps_values_to_mbps(self.client_dict_A[tos]['offered_upload_rate_A']),
+                                " Offered Download Rate Per Client (Mbps)": self._bps_values_to_mbps(self.client_dict_A[tos]['offered_download_rate_A']),
+                                " Upload Rate Per Client (Mbps)": self._bps_values_to_mbps(self.client_dict_A[tos]['ul_A']),
+                                " Download Rate Per Client (Mbps)": self._bps_values_to_mbps(self.client_dict_A[tos]['dl_A']),
                                 " Drop Percentage (%)": self.client_dict_A[tos]['download_rx_drop_percent_A'],
                             }
                             # When pass_Fail criteria specified
                             if self.expected_passfail_value or self.device_csv_name:
-                                tos_dataframe_A[" Expected " + 'Download' + " Rate"] = [float(x) * 10**6 for x in test_input_list]
+                                tos_dataframe_A[" Expected Download Rate (Mbps)"] = [round(float(x), 2) for x in test_input_list]
                                 tos_dataframe_A[" Status "] = pass_fail_list
 
                             dataframe3 = pd.DataFrame(tos_dataframe_A)
@@ -7400,10 +7417,10 @@ class L3VariableTime(Realm):
                             " Channel ": self.client_dict_A[tos]['channel_A'],
                             " Type of traffic ": self.client_dict_A[tos]['traffic_type_A'],
                             " Traffic Protocol ": self.client_dict_A[tos]['traffic_protocol_A'],
-                            " Offered Upload Rate Per Client": self.client_dict_A[tos]['offered_upload_rate_A'],
-                            " Offered Download Rate Per Client": self.client_dict_A[tos]['offered_download_rate_A'],
-                            " Upload Rate Per Client": self.client_dict_A[tos]['ul_A'],
-                            " Download Rate Per Client": self.client_dict_A[tos]['dl_A'],
+                            " Offered Upload Rate Per Client (Mbps)": self._bps_values_to_mbps(self.client_dict_A[tos]['offered_upload_rate_A']),
+                            " Offered Download Rate Per Client (Mbps)": self._bps_values_to_mbps(self.client_dict_A[tos]['offered_download_rate_A']),
+                            " Upload Rate Per Client (Mbps)": self._bps_values_to_mbps(self.client_dict_A[tos]['ul_A']),
+                            " Download Rate Per Client (Mbps)": self._bps_values_to_mbps(self.client_dict_A[tos]['dl_A']),
                             " Drop Percentage (%)": self.client_dict_A[tos]['download_rx_drop_percent_A'],
                         }
                         dataframe3 = pd.DataFrame(tos_dataframe_A)
@@ -7413,24 +7430,25 @@ class L3VariableTime(Realm):
             # TODO both client_dict_A and client_dict_B contains the same information
             for tos in tos_list:
                 if (self.client_dict_B[tos]["ul_B"] and self.client_dict_B[tos]["dl_B"]):
-                    min_bps_a = self.client_dict_B["min_bps_a"]
-                    min_bps_b = self.client_dict_B["min_bps_b"]
+                    min_mbps_a = self._bps_to_mbps(self.client_dict_B["min_bps_a"])
+                    min_mbps_b = self._bps_to_mbps(self.client_dict_B["min_bps_b"])
 
-                    dataset_list = [self.client_dict_B[tos]["ul_B"], self.client_dict_B[tos]["dl_B"]]
+                    dataset_list = [self._bps_values_to_mbps(self.client_dict_B[tos]["ul_B"]),
+                                    self._bps_values_to_mbps(self.client_dict_B[tos]["dl_B"])]
                     dataset_length = len(self.client_dict_B[tos]["ul_B"])
 
                     x_fig_size = 20
                     y_fig_size = len(self.client_dict_B[tos]["clients_B"]) * .4 + 5
 
                     self.report.set_obj_html(
-                        _obj_title=f"Individual throughput upstream endp,  offered upload bps: {min_bps_a} offered download bps: {min_bps_b} /station for traffic {tos} (WiFi).",
+                        _obj_title=f"Individual throughput upstream endp,  offered upload Mbps: {min_mbps_a} offered download Mbps: {min_mbps_b} /station for traffic {tos} (WiFi).",
                         _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
                         f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “"
                         f"Throughput in Mbps”.")
                     self.report.build_objective()
 
                     graph = lf_graph.lf_bar_graph_horizontal(_data_set=dataset_list,
-                                                             _xaxis_name="Throughput in bps",
+                                                             _xaxis_name="Throughput in Mbps",
                                                              _yaxis_name="Client names",
                                                              # _yaxis_categories=self.client_dict_B[tos]["clients_B"],
                                                              _yaxis_categories=self.client_dict_B[tos]["resource_alias_B"],
@@ -7468,10 +7486,10 @@ class L3VariableTime(Realm):
                         " Channel ": self.client_dict_B[tos]['channel_B'],
                         " Type of traffic ": self.client_dict_B[tos]['traffic_type_B'],
                         " Traffic Protocol ": self.client_dict_B[tos]['traffic_protocol_B'],
-                        " Offered Upload Rate Per Client": self.client_dict_B[tos]['offered_upload_rate_B'],
-                        " Offered Download Rate Per Client": self.client_dict_B[tos]['offered_download_rate_B'],
-                        " Upload Rate Per Client": self.client_dict_B[tos]['ul_B'],
-                        " Download Rate Per Client": self.client_dict_B[tos]['dl_B'],
+                        " Offered Upload Rate Per Client (Mbps)": self._bps_values_to_mbps(self.client_dict_B[tos]['offered_upload_rate_B']),
+                        " Offered Download Rate Per Client (Mbps)": self._bps_values_to_mbps(self.client_dict_B[tos]['offered_download_rate_B']),
+                        " Upload Rate Per Client (Mbps)": self._bps_values_to_mbps(self.client_dict_B[tos]['ul_B']),
+                        " Download Rate Per Client (Mbps)": self._bps_values_to_mbps(self.client_dict_B[tos]['dl_B']),
                         " Drop Percentage (%)": self.client_dict_B[tos]['download_rx_drop_percent_B']
                     }
 
@@ -7493,15 +7511,15 @@ class L3VariableTime(Realm):
 
             if bool(self.dl_port_csv_files):
                 for key, value in self.dl_port_csv_files.items():
+                    df = pd.read_csv(value.name)
                     if self.csv_data_to_report:
                         # read the csv file
                         self.report.set_table_title("Layer 3 Cx Traffic  {key}".format(key=key))
                         self.report.build_table_title()
-                        self.report.set_table_dataframe_from_csv(value.name)
+                        self.report.set_table_dataframe(df)
                         self.report.build_table()
 
                     # read in column heading and last line
-                    df = pd.read_csv(value.name)
                     last_row = df.tail(1)
                     self.report.set_table_title(
                         "Layer 3 Cx Traffic Last Reporting Interval {key}".format(key=key))
@@ -7630,14 +7648,14 @@ class L3VariableTime(Realm):
                 " Channel ": channel,
                 " Type of traffic ": typeoftraffic,
                 " Traffic Protocol ": protocol,
-                " Offered Upload Rate(bps) Per Client": [float(x) * 1000000 for x in offupload],
-                " Offered Download Rate (bps) Per Client": [float(x) * 1000000 for x in offdownload],
-                " Upload Rate (bps) Per Client": [float(x) * 1000000 for x in obsupload],
-                " Download Rate (bps) Per Client": [float(x) * 1000000 for x in obsdownload],
+                " Offered Upload Rate (Mbps) Per Client": [round(float(x), 2) for x in offupload],
+                " Offered Download Rate (Mbps) Per Client": [round(float(x), 2) for x in offdownload],
+                " Upload Rate (Mbps) Per Client": [round(float(x), 2) for x in obsupload],
+                " Download Rate (Mbps) Per Client": [round(float(x), 2) for x in obsdownload],
                 " Drop Percentage (%)": drop
             }
             if self.expected_passfail_value or self.device_csv_name:
-                dataframe[" Expected " + 'Download' + " Rate (bps)"] = [float(x) * 1000000 for x in input_list]
+                dataframe[" Expected Download Rate (Mbps)"] = [round(float(x), 2) for x in input_list]
                 dataframe[" Status "] = statuslist
             return dataframe
         # if neither device in the group is configured returns 0
@@ -9663,7 +9681,6 @@ INCLUDE_IN_README: False
                           const='all',
                           default=None,
                           help='Toolbox action: Set specified stations/ports admin DOWN (comma-separated list, e.g. "sta0000,sta0001" or default: all stations with "sta" prefix).')
-
 
     return parser.parse_args()
 
