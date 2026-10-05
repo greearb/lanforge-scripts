@@ -2306,7 +2306,7 @@ class Mixed_Traffic(Realm):
                 multicast_test_config_df = {"Protocol": protocol,
                                             "Type of Service (TOS)": self.multicast_tos,
                                             "Upstream Port": self.upstream_port,
-                                            "Offered Load (Mbps)": int(self.client_dict_A['min_bps_b']) / 1000000}
+                                            "Offered Load (Mbps)": round(int(self.client_dict_A['min_bps_b']) / 1000000, 2)}
                 self.lf_report_mt.test_setup_table(test_setup_data=multicast_test_config_df, value="Test Setup Information")
                 for tos in tos_list:
                     if self.client_dict_A[tos]["ul_A"] and self.client_dict_A[tos]["dl_A"]:
@@ -2352,14 +2352,14 @@ class Mixed_Traffic(Realm):
 
                         dataset_list = [client_ul_A_data, client_dl_A_data]
                         bps_to_mbps_converter = 1000000
-                        dataset_list = [[value / bps_to_mbps_converter for value in sublist] for sublist in dataset_list]
+                        dataset_list = [[round(value / bps_to_mbps_converter, 2) for value in sublist] for sublist in dataset_list]
                         print("Report Dataset", dataset_list)
                         dataset_length = total_clients
                         x_fig_size = 15
                         y_fig_size = total_clients * .5 + 4
 
                         self.lf_report_mt.set_obj_html(
-                            _obj_title=f"Individual throughput with intended load {int(min_bps_b) / 1000000} Mbps station for traffic {tos} (WiFi).",
+                            _obj_title=f"Individual throughput with intended load {round(int(min_bps_b) / 1000000, 2)} Mbps station for traffic {tos} (WiFi).",
                             _obj=f"The below graph represents individual throughput for {dataset_length} clients running {tos} "
                             f"(WiFi) traffic.  Y- axis shows “Client names“ and X-axis shows “Throughput in Mbps”.")
                         self.lf_report_mt.build_objective()
@@ -2422,9 +2422,9 @@ class Mixed_Traffic(Realm):
                             " Type of traffic ": traffic_types,
                             " Traffic Protocol ": traffic_protocols,
                             # " Offered Upload Rate Per Client": self.client_dict_A['min_bps_a'],
-                            " Offered Download Rate Per Client (Mbps)": int(self.client_dict_A['min_bps_b']) / 1000000,
+                            " Offered Download Rate Per Client (Mbps)": round(int(self.client_dict_A['min_bps_b']) / 1000000, 2),
                             # " Upload Rate Per Client": self.client_dict_A[tos]['ul_A'],
-                            " Download Rate Per Client (Mbps)": [value / 1000000 for value in per_client_download_rate],
+                            " Download Rate Per Client (Mbps)": [round(value / 1000000, 2) for value in per_client_download_rate],
                             " Download Drop Percentage (%)": download_rx_drop_percentages
                         }
                         print(tos_dataframe_A)
