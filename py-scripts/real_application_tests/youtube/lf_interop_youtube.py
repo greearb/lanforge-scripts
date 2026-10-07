@@ -27,7 +27,7 @@
     --duration 2 \
     --res 1080p \
     --upstream_port 1.1.eth1 \
-    --resources 1.13,1.14...
+    --resources 1.13,1.14
 
 
     EXAMPLE-3:
@@ -38,7 +38,7 @@
     --duration 2 \
     --res 1080p \
     --upstream_port 1.1.eth1 \
-    --resources 1.13,1.14... \
+    --resources 1.13,1.14 \
     --no_post_cleanup
 
     EXAMPLE-4:
@@ -3201,13 +3201,13 @@ python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHAC
 
 EXAMPLE-2:
 Command Line Interface to run YouTube on multiple devices:
-python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 2 --res 1080p --upstream_port 1.1.eth1 --resources 1.13,1.14...
+python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 2 --res 1080p --upstream_port 1.1.eth1 --resources 1.13,1.14
 
 
 EXAMPLE-3:
 Command Line Interface to run YouTube without post-cleanup of cross-connections:
 python3 lf_interop_youtube.py --mgr 192.168.214.219 --url "https://youtu.be/BHACKCNDMW8?si=psTEUzrc77p38aU1" --duration 2 --res 1080p
---upstream_port 1.1.eth1 --resources 1.13,1.14... --no_post_cleanup
+--upstream_port 1.1.eth1 --resources 1.13,1.14 --no_post_cleanup
 
 EXAMPLE-4:
 Command Line Interface to run YouTube with multiple groups and profiles:
