@@ -1207,7 +1207,10 @@ class HttpDownload(Realm):
         port = ssh_port
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
-        ssh.connect(ip, port=port, username=user, password=pswd, banner_timeout=600)
+        # allow_agent/look_for_keys disabled: some hosts run a desktop SSH agent (e.g. GNOME Keyring)
+        # that fails to sign with modern algorithms, crashing the connection before password auth is tried
+        ssh.connect(ip, port=port, username=user, password=pswd, banner_timeout=600,
+                    allow_agent=False, look_for_keys=False)
         cmd = '[ -f /usr/local/lanforge/nginx/html/webpage.html ] && echo "True" || echo "False"'
         stdin, stdout, stderr = ssh.exec_command(str(cmd))
         output = stdout.readlines()
@@ -1451,14 +1454,21 @@ class HttpDownload(Realm):
     # This function is called to get details of devices during runtime
 
     def get_device_port_details(self):
-        self.response_port = self.local_realm.json_get("/port/all")
+        url = "/port/all"
+        response_port = self.local_realm.json_get(url)
+        if response_port is None:
+            logger.error(
+                "Failed to fetch port data. Received empty response.\n"
+                f"Requested URL: '{url}'\n"
+                f"Response: {response_port}")
+            response_port = {}
         # Initialize lists to store channel, mode, and SSID information
         self.channel_list, self.mode_list, self.ssid_list = [], [], []
+        interfaces_dict = dict()
+        for interface in response_port.get('interfaces', []):
+            interfaces_dict.update(interface)
         if self.client_type == "Real":
             self.devices = self.devices_list
-            interfaces_dict = dict()
-            for interface in self.response_port['interfaces']:
-                interfaces_dict.update(interface)
             for port in self.port_list:
                 if port in interfaces_dict:
                     port_data = interfaces_dict[port]
@@ -1472,6 +1482,25 @@ class HttpDownload(Realm):
                 else:
                     self.channel_list.append('NA')
                     self.mode_list.append('-')
+                    self.ssid_list.append('-')
+        elif self.client_type == "Virtual":
+            self.devices = self.station_list[0]
+            self.macid_list = []
+            for port in self.station_list[0]:
+                if port in interfaces_dict:
+                    port_data = interfaces_dict[port]
+                    channel_value = str(port_data.get('channel', ''))
+                    if channel_value in ('', '0', '-1'):
+                        self.channel_list.append('NA')
+                    else:
+                        self.channel_list.append(channel_value)
+                    self.mode_list.append(str(port_data['mode']))
+                    self.macid_list.append(str(port_data['mac']))
+                    self.ssid_list.append(str(port_data['ssid']))
+                else:
+                    self.channel_list.append('NA')
+                    self.mode_list.append('-')
+                    self.macid_list.append('-')
                     self.ssid_list.append('-')
 
     def add_live_view_images_to_report(self, report):
@@ -1678,6 +1707,8 @@ class HttpDownload(Realm):
             else:
                 del test_setup_info["Traffic Duration "]
                 test_setup_info["No of Cycles"] = self.cycles
+        if self.test_name:
+            test_setup_info["Test Name"] = self.test_name
         if iot_summary:
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
             report.set_obj_html(
@@ -1696,6 +1727,11 @@ class HttpDownload(Realm):
                                 "download some amount of file from HTTP server and measures the "
                                 "time taken by the client to Download the file.")
 
+        for key in ("AP Name", "SSID", "Security"):
+            if not test_setup_info.get(key):
+                test_setup_info.pop(key, None)
+        if "Test Name" in test_setup_info:
+            test_setup_info = {"Test Name": test_setup_info.pop("Test Name"), **test_setup_info}
         report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
         report.build_objective()
@@ -1764,36 +1800,8 @@ class HttpDownload(Realm):
                             "minimum, maximum and the average time taken by clients to download a webpage in seconds")
 
         report.build_objective()
-        self.response_port = self.local_realm.json_get("/port/all")
-        # print(response_port)
-        # print("port list",self.port_list)
-        # To set channel_list,mode_list,port_list to append once again
-        self.channel_list, self.mode_list, self.ssid_list = [], [], []
-        if self.client_type == "Real":
-            self.devices = self.devices_list
-            for interface in self.response_port['interfaces']:
-                for port, port_data in interface.items():
-                    if port in self.port_list:
-                        channel_value = str(port_data.get('channel', ''))
-                        if channel_value in ('', '0', '-1'):
-                            self.channel_list.append('NA')
-                        else:
-                            self.channel_list.append(channel_value)
-                        self.mode_list.append(str(port_data['mode']))
-                        self.ssid_list.append(str(port_data['ssid']))
-        elif self.client_type == "Virtual":
-            self.devices = self.station_list[0]
-            for interface in self.response_port['interfaces']:
-                for port, port_data in interface.items():
-                    if port in self.station_list[0]:
-                        channel_value = str(port_data.get('channel', ''))
-                        if channel_value in ('', '0', '-1'):
-                            self.channel_list.append('NA')
-                        else:
-                            self.channel_list.append(channel_value)
-                        self.mode_list.append(str(port_data['mode']))
-                        self.macid_list.append(str(port_data['mac']))
-                        self.ssid_list.append(str(port_data['ssid']))
+        # Keep channel/mode/ssid/mac index-aligned with self.devices
+        self.get_device_port_details()
 
         x = []
         for fcc in list(result_data.keys()):
@@ -2829,7 +2837,7 @@ def main():
     optional.add_argument('--threshold_5g', help="Enter the threshold value for 5G Pass/Fail criteria", default="60")
     optional.add_argument('--threshold_2g', help="Enter the threshold value for 2.4G Pass/Fail criteria", default="90")
     optional.add_argument('--threshold_both', help="Enter the threshold value for Both Pass/Fail criteria", default="50")
-    required.add_argument('--ap_name', help="specify the ap model ", default="TestAP")
+    required.add_argument('--ap_name', help="specify the ap model ", default=None)
     optional.add_argument('--lf_username', help="Enter the lanforge user name. Example : 'lanforge' ", default="lanforge")
     optional.add_argument('--lf_password', help="Enter the lanforge password. Example : 'lanforge' ", default="lanforge")
     optional.add_argument('--ssh_port', type=int, help="specify the ssh port eg 22", default=22)
@@ -3337,7 +3345,7 @@ times the file is downloaded.
             profile_names = ', '.join(configuration.values())
             configmap = "Groups:" + group_names + " -> Profiles:" + profile_names
             test_setup_info = {
-                "AP name": args.ap_name,
+                "AP Name": args.ap_name,
                 "Configuration": configmap,
                 "Configured Devices": ", ".join(all_devices_names),
                 "No of Devices": "Total" + f"({len(all_devices_names)})" + total_devices,

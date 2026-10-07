@@ -973,7 +973,10 @@ class FtpTest(LFCliBase):
             ftp_server_ip = ftp_resource_url["interface"]["ip"]
             ip = ftp_server_ip
 
-        ssh.connect(ip, port=port, username=user, password=pswd, banner_timeout=600)
+        # allow_agent/look_for_keys disabled: some hosts run a desktop SSH agent (e.g. GNOME Keyring)
+        # that fails to sign with modern algorithms, crashing the connection before password auth is tried
+        ssh.connect(ip, port=port, username=user, password=pswd, banner_timeout=600,
+                    allow_agent=False, look_for_keys=False)
         cmd = '[ -f /home/lanforge/ftp_test.txt ] && echo "True" || echo "False"'
         stdin, stdout, stderr = ssh.exec_command(str(cmd))
         output = stdout.readlines()
@@ -1574,31 +1577,41 @@ class FtpTest(LFCliBase):
     def my_monitor(self):
         dataset = []
         self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd = [], [], [], [], [], [], [], []
+        # Iterate station_list/input_devices_list in order so channel/mode/ssid/mac
+        # stay index-aligned with them, instead of following /port/all's own order.
+        url = "/port/all"
+        response_port = self.json_get(url)
+        if response_port is None:
+            logger.error(
+                "Failed to fetch port data. Received empty response.\n"
+                f"Requested URL: '{url}'\n"
+                f"Response: {response_port}")
+            response_port = {}
+        interfaces_dict = dict()
+        for interface in response_port.get('interfaces', []):
+            interfaces_dict.update(interface)
         if self.clients_type == "Virtual":
-            response_port = self.json_get("/port/all")
-            for interface in response_port['interfaces']:
-                for port, port_data in interface.items():
-                    if port in self.station_list:
-                        channel_value = str(port_data.get('channel', ''))
-                        if channel_value in ('', '0', '-1'):
-                            self.channel_list.append('NA')
-                        else:
-                            self.channel_list.append(channel_value)
-                        self.mode_list.append(str(port_data['mode']))
-                        self.mac_id_list.append(str(port_data['mac']))
-                        self.ssid_list.append(str(port_data['ssid']))
+            self.mac_id_list = []
+            for port in self.station_list:
+                port_data = interfaces_dict.get(port, {})
+                channel_value = str(port_data.get('channel', ''))
+                if channel_value in ('', '0', '-1'):
+                    self.channel_list.append('NA')
+                else:
+                    self.channel_list.append(channel_value)
+                self.mode_list.append(str(port_data.get('mode', '-')))
+                self.mac_id_list.append(str(port_data.get('mac', '-')))
+                self.ssid_list.append(str(port_data.get('ssid', '-')))
         elif self.clients_type == "Real":
-            response_port = self.json_get("/port/all")
-            for interface in response_port['interfaces']:
-                for port, port_data in interface.items():
-                    if port in self.input_devices_list:
-                        channel_value = str(port_data.get('channel', ''))
-                        if channel_value in ('', '0', '-1'):
-                            self.channel_list.append('NA')
-                        else:
-                            self.channel_list.append(channel_value)
-                        self.mode_list.append(str(port_data['mode']))
-                        self.ssid_list.append(str(port_data['ssid']))
+            for port in self.input_devices_list:
+                port_data = interfaces_dict.get(port, {})
+                channel_value = str(port_data.get('channel', ''))
+                if channel_value in ('', '0', '-1'):
+                    self.channel_list.append('NA')
+                else:
+                    self.channel_list.append(channel_value)
+                self.mode_list.append(str(port_data.get('mode', '-')))
+                self.ssid_list.append(str(port_data.get('ssid', '-')))
 
         # data in json format
         # data = self.json_get("layer4/list?fields=bytes-rd")
@@ -2569,6 +2582,9 @@ class FtpTest(LFCliBase):
                 del test_setup_info["Traffic Duration "]
                 test_setup_info["Total Cycles"] = self.cycles
 
+        if self.test_name:
+            test_setup_info["Test Name"] = self.test_name
+
         if iot_summary:
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
             self.report.set_obj_html(
@@ -2590,6 +2606,11 @@ class FtpTest(LFCliBase):
                 "simultaneously download some amount of file from FTP server and measuring the "
                 "time taken by client to Download the file."
             )
+        for key in ("AP Name", "SSID", "Security"):
+            if not test_setup_info.get(key):
+                test_setup_info.pop(key, None)
+        if "Test Name" in test_setup_info:
+            test_setup_info = {"Test Name": test_setup_info.pop("Test Name"), **test_setup_info}
         self.report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
         self.report.build_objective()
         if not self.do_bandsteering and self.robot_test:
