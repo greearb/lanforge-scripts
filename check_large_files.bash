@@ -395,26 +395,56 @@ clean_lflogs() {
 clean_old_kernels() {
     note "Cleaning old CT kernels..."
     local f
-    if declare -p removable_packages[] &>/dev/null; then
+    if declare -p kernel_sort_names &>/dev/null; then
+        if (( ${#kernel_sort_names[@]} > 0 )); then
+            debug "     clean_old_kernels: entries in kernel_sort_names!"
+            for f in "${kernel_sort_names[@]}"; do
+                debug "      c_o_k: k sort name:  $f : $kernel_sort_names[$f]"
+            done
+        else
+            debug "     c_o_k: kernel_sort_names is empty"
+        fi
+    else
+        debug "     clean old kernels: kernel_sort_names is undef"
+    fi
+
+    if declare -p removable_packages &>/dev/null; then
         if (( ${#removable_packages[@]} > 0 )); then
             for f in "${removable_packages[@]}"; do
                 echo "$f\*"
             done | xargs /usr/bin/rpm --nodeps -hve
+        else
+            debug "     clean_old_kernels: removable packages is empty"
         fi
+    else
+        debug "     clean_old_kernels: removable packages is undef"
+    fi
+
+    if declare -p removable_kernels &>/dev/null; then
         if (( ${#removable_kernels[@]} > 0 )); then
             for f in "${removable_kernels[@]}"; do
                 echo "$f"
             done | xargs rm -f
+        else
+            debug "     clean_old_kernels: removable_kernels is empty"
         fi
+    else
+        debug "     clean_old_kernels: removable_kernels is undef"
     fi
-    if declare -p removable_libmod_dirs; then
+
+    if declare -p removable_libmod_dirs &>/dev/null; then
         if (( ${#removable_libmod_dirs[@]} > 0 )); then
             printf "        removable_libmod_dirs[/lib/modules/%s]\n" "${removable_libmod_dirs[@]}"
             for f in "${removable_libmod_dirs[@]}"; do
                 echo "/lib/modules/$f"
             done | xargs rm -rf
+        else
+            debug "    removable_libmod_dirs is empty"
         fi
+    else
+        debug "    removable_libmod_dirs is undef"
     fi
+
     # check to see if there are 50_candela-x files that
     # lack a /lib/modules directory
     if [[ -d /etc/grub.d ]]; then
@@ -435,9 +465,10 @@ clean_old_kernels() {
     if [[ -d "/boot2" ]]; then
         rm -rf /boot2/*
         rsync -a /boot/. /boot2/
-        local dev2=`df /boot2/ |awk '/dev/{print $1}'`
+        local dev2=$(lsblk -no pkname $(df /boot2/ | awk '/dev/{print $1}'))
+        dev2="/dev/$dev2"
         if [[ ! -z "$dev2" ]]; then
-            /usr/sbin/grub2-install $dev2 ||:
+            /usr/sbin/grub2-install --target=i386-pc $dev2 ||:
         fi
     fi
 }
@@ -711,18 +742,22 @@ clean_var_tmp() {
 }
 
 survey_kernel_files() {
-    unset removable_kernels
-    unset removable_libmod_dirs
-    unset removable_packages
-    unset lib_module_dirs
-    unset kernel_sort_names
-    unset kernel_sort_serial
-    unset pkg_sort_names
-    unset libmod_sort_names
-    declare -A kernel_sort_serial=()
-    declare -A kernel_sort_names=()
-    declare -A pkg_sort_names=()
-    declare -A libmod_sort_names=()
+#    unset kernel_sort_names
+#    unset kernel_sort_serial
+#    unset lib_module_dirs
+#    unset libmod_sort_names
+#    unset pkg_sort_names
+#    unset removable_kernels
+#    unset removable_libmod_dirs
+#    unset removable_packages
+    kernel_sort_names=()
+    kernel_sort_serial=()
+    lib_module_dirs=()
+    libmod_sort_names=()
+    pkg_sort_names=()
+    removable_kernels=()
+    removable_libmod_dirs=()
+    removable_packages=()
     local ser
     local file
     debug "Surveying Kernel files"
@@ -761,8 +796,10 @@ survey_kernel_files() {
         -iname "System*" -o -iname "init*img" -o -iname "vm*" -o -iname "ct*" \) \
         > $temp_fn 2>/dev/null
     if [[ -s "$temp_fn" ]]; then
-        echo 'Listing of kernel files:'
-        cat $temp_fn
+        if (( verbose > 0 )); then
+            echo 'Listing of kernel files ($temp_fn):'
+            cat $temp_fn
+        fi
         # temp list of files
         kernel_files=()
         if [[ -z "$grep_args" ]]; then
@@ -770,6 +807,9 @@ survey_kernel_files() {
             mapfile -t kernel_files < <( sort < $temp_fn )
         else
             mapfile -t kernel_files < <( grep -Fv $grep_args $temp_fn | sort)
+        fi
+        if (( verbose > 0 )) ; then
+            printf "    skn: kernel_file: %s\n" "${kernel_files}"
         fi
     else
         echo 'No kernel files present. You might be on AT7 or Rpi hardware.'
@@ -781,27 +821,44 @@ survey_kernel_files() {
 
     local file
     local fiile
-    for file in "${kernel_files[@]}"; do
-        debug "kernel_file [$file]"
-        [[ $file = /boot/initramfs* ]] && continue
-        [[ $file = *.fc*.x86_64 ]] && continue
-        [[ $file = *initrd-plymouth.img ]] && continue
-        fiile=$( basename "$file" )
-        fiile=${fiile%.img}
-
-        if [[ $fiile =~ $booted ]]; then
-            debug "    ignoring booted CT kernel $file"
-            # sleep 2
-            continue
-        else
-            # there is a condition on a debug kernel where we get a bad subscript here: ser is out of range
-            ser=$( kernel_to_relnum ${fiile#*ct} )
-            kernel_sort_serial[$ser]=1
-            # debug "file[$file] ser[$ser]"
-            kernel_sort_names["$file"]="$ser"
-            removable_kernels+=($file)
+    if (( ${#kernel_files[@]} > 0 )); then
+        if (( $verbose > 0 )); then
+            printf "    survey_kernel_files: kernel_to_relnum: %s\n" "${kernel_to_relnum[@]}"
         fi
-    done
+        for file in "${kernel_files[@]}"; do
+            debug "   evaluating kernel_file [$file]"
+            [[ $file = /boot/initramfs* ]]      && debug "        x initramfs file" && continue
+            [[ $file = *.fc*.x86_64 ]]          && debug "        x fedora file"    && continue
+            [[ $file = *initrd-plymouth.img ]]  && debug "        x plymouth "      && continue
+            fiile=$( basename "$file" )
+            fiile=${fiile%.img}
+
+            if [[ $fiile =~ $booted ]]; then
+                debug "    ignoring booted CT kernel $file"
+                # sleep 2
+                continue
+            else
+                # there is a condition on a debug kernel where we get a bad subscript here: ser is out of range
+                set -x
+                ser=$( kernel_to_relnum ${fiile#*ct} )
+                set +x
+                if [[ -s "$ser" ]]; then
+                    kernel_sort_serial[$ser]=1
+                    debug "     + kernel_files + file[$file] ser[$ser]"
+                    kernel_sort_names["$file"]="$ser"
+                else
+                    debug "    - kern [${fiile#*ct}] did not produce a serial number"
+                fi
+                set -x
+                kernel_sort_names["$file"]="$ser"
+                set +x
+                removable_kernels+=($file)
+                debug "     + removable_kernels + $file, kernel_sort_names + $file : $ser"
+            fi
+        done
+    else
+        debug "     survey_kernel_files: kernel_files[] is empty"
+    fi
     # sleep 2
     local booted_ser=$( kernel_to_relnum "$booted" )
     if (( ${#kernel_sort_names[@]} > 0 )); then
@@ -809,17 +866,33 @@ survey_kernel_files() {
         for file in "${!kernel_sort_names[@]}"; do
             ser="${kernel_sort_names[$file]}"
         done
-        debug "Removable CT kernels:"
-        while read ser; do
-            (( $verbose > 0 )) && printf "    kernel file [%s]\n" "${kernel_sort_names[$ser]}"
-            removable_kernels+=(${kernel_sort_names["$ser"]})
-        done < <(echo  "${!kernel_sort_names[@]}" | sort | head -n -1)
+        debug " survey_kernel_files: Removable CT kernels:"
+        debug "     k_s_n: "
+        printf "     ksn: %s\n" "${!kernel_sort_names[@]}"
+
+        # we cannot pass an array into a subshell because it does not inherit scope,
+        # but we can mapfile a sorted array
+        local -a sorted_k=()
+        mapfile -t sorted_k < <(printf "%s\n" "${!kernel_sort_names[@]}" | sort | uniq)
+        printf "        sorted_k: %s\n" "${sorted_k[@]}"
+        for ser in "${sorted_k[@]}"; do
+            (( $verbose > 0 )) && printf "    kernel_sort_names[$ser]: [%s]\n" "${kernel_sort_names[$ser]}"
+            # removable_kernels+=("${kernel_sort_names[$ser]}")
+        done
+        #  < <(echo  "${!kernel_sort_names[@]}" | sort | head -n -1)
+        printf "     rm_k_f: %s\n" "${removable_kernels[@]}"
+    else
+        debug "     kernel_sort_names is empty"
     fi
 
-    debug "Module directories eligible for removal: "
+    debug "Module directories considered for removal: "
+    if (( $verbose > 0 )); then
+        printf "    lib_module_dirs: %s\n" "${lib_module_dirs[@]}"
+    fi
+
     for file in "${lib_module_dirs[@]}"; do
         file=${file#/lib/modules/}
-        # debug "/lib/modules/ ... $file"
+        debug "     /lib/modules/ ... $file"
         if [[ $file =~ $booted ]]; then
             debug "     Ignoring booted module directory $file"
             continue
@@ -828,10 +901,13 @@ survey_kernel_files() {
             continue
         else
             ser=$( kernel_to_relnum $file )
-            # debug "     eligible [$ser] -> $file"
+            debug "     eligible [$ser] -> $file"
             libmod_sort_names[$ser]="$file"
         fi
     done
+    if (( $verbose > 0 )); then
+        printf "     libmod_sort_names: %s\n" "${libmod_sort_names[@]}"
+    fi
 
     if (( ${#libmod_sort_names[@]} > 0 )); then
         # debug "Removable libmod dirs: "
@@ -846,10 +922,13 @@ survey_kernel_files() {
             # echo "    [$ser][${libmod_sort_names[$ser]}] -> $file"
         done < <( printf "%s\n" "${!libmod_sort_names[@]}" | sort | uniq)
         # we don't need to sort these ^^^ because they were picked out near line 419
+    else
+        debug "    skf: libmod_sort_names EMPTY"
     fi
-    #if (( $verbose > 0 )); then
-    #    printf " removable_libmod_dirs: %s\n" "${removable_libmod_dirs[@]}"
-    #fi
+
+    if (( verbose > 0 )); then
+        printf " removable_libmod_dirs: %s\n" "${removable_libmod_dirs[@]}"
+    fi
     # set +veux
 
     local boot_image_sz=0
