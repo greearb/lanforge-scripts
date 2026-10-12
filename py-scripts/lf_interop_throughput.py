@@ -89,9 +89,31 @@
         --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 1000 --client_type virtual
 
         EXAMPLE-18:
+        Command Line Interface to run download scenario with Existing stations
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
+        --use_existing_station_list --existing_station_list '1.1.sta1000,1.1.sta1001'
+
+        EXAMPLE-19:
         Command Line Interface to run download scenario with Real + Virtual clients
         python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
         --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 1000 --client_type both
+
+        EXAMPLE-20:
+        Command Line Interface to run download scenario with Real clients + Existing stations
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --client_type real --use_existing_station_list --existing_station_list '1.1.sta1000,1.1.sta1001'
+
+        EXAMPLE-21:
+        Command Line Interface to run download scenario with Virtual clients + Existing stations
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
+        --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 2000 --client_type virtual
+        --use_existing_station_list --existing_station_list '1.1.sta1000,1.1.sta1001'
+
+        EXAMPLE-22:
+        Command Line Interface to run download scenario with Real + Existing + Virtual clients
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
+        --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 2000 --client_type both
+        --use_existing_station_list --existing_station_list '1.1.sta1000,1.1.sta1001'
 
     TO PERFORM INTEROPABILITY TEST:
 
@@ -143,9 +165,31 @@
         --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 1000 --client_type virtual --do_interopability
 
         EXAMPLE-11:
+        Command Line Interface to run download scenario with Existing stations
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --use_existing_station_list --existing_station_list '1.1.sta1000,1.1.sta1001' --do_interopability
+
+        EXAMPLE-12:
         Command Line Interface to run download scenario with Real + Virtual clients
         python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
         --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 1000 --client_type both --do_interopability
+
+        EXAMPLE-13:
+        Command Line Interface to run download scenario with Real clients + Existing stations
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --client_type real --use_existing_station_list --existing_station_list '1.1.sta1000,1.1.sta1001' --do_interopability
+
+        EXAMPLE-14:
+        Command Line Interface to run download scenario with Virtual clients + Existing stations
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
+        --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 2000 --client_type virtual
+        --use_existing_station_list --existing_station_list '1.1.sta1000,1.1.sta1001' --do_interopability
+
+        EXAMPLE-15:
+        Command Line Interface to run download scenario with Real + Existing + Virtual clients
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
+        --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 2000 --client_type both
+        --use_existing_station_list --existing_station_list '1.1.sta1000,1.1.sta1001' --do_interopability
 
     TO PERFORM TEST WITH IOT:
         EXAMPLE-1:
@@ -315,7 +359,7 @@ class Throughput(Realm):
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None,
                  coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None, duration_to_skip=None,
-                 # Virtual station configuration
+                 # Virtual and existing station configuration
                  client_type="real",
                  radio_name_list=None,
                  number_of_stations_per_radio_list=None,
@@ -328,6 +372,8 @@ class Throughput(Realm):
                  reset_port_enable_list=None,
                  reset_port_time_min_list=None,
                  reset_port_time_max_list=None,
+                 use_existing_station_list=False,
+                 existing_station_list=None,
                  wait_for_ip_sec="120s",
                  exit_on_ip_acquired=False,
                  interopt_mode=False,
@@ -472,7 +518,7 @@ class Throughput(Realm):
         self.do_bandsteering = do_bandsteering
         self.total_cycles = total_cycles
         self.bssids = bssids if bssids else []
-        # Virtual station configuration
+        # Virtual and existing station configuration
         self.client_type = client_type
         self.radio_name_list = radio_name_list if radio_name_list else []
         self.number_of_stations_per_radio_list = number_of_stations_per_radio_list if number_of_stations_per_radio_list else []
@@ -485,6 +531,8 @@ class Throughput(Realm):
         self.reset_port_enable_list = reset_port_enable_list if reset_port_enable_list else []
         self.reset_port_time_min_list = reset_port_time_min_list if reset_port_time_min_list else []
         self.reset_port_time_max_list = reset_port_time_max_list if reset_port_time_max_list else []
+        self.use_existing_station_list = use_existing_station_list
+        self.existing_station_list = existing_station_list if existing_station_list else []
         self.wait_for_ip_sec = self.duration_time_to_seconds(wait_for_ip_sec)
         self.exit_on_ip_acquired = exit_on_ip_acquired
         self.interopt_mode = interopt_mode
@@ -536,7 +584,7 @@ class Throughput(Realm):
         self.last_monitor_present_keys = []
         self.current_iteration_cxs = []
         self.monitor_start_time = None
-        # Real ports (from phantom_check) followed by virtual stations, in CX creation order
+        # Real ports (from phantom_check) followed by virtual/existing stations, in CX creation order
         self.station_names_list = []
         self.virtual_clients = []
         self.virtual_cx_list = []
@@ -570,6 +618,9 @@ class Throughput(Realm):
             self.robot.coordinate_list = self.coordinate_list
             self.robot.total_cycles = self.total_cycles
 
+        # Existing stations are used as-is; they are listed ahead of the stations created in build()
+        if self.use_existing_station_list:
+            self.virtual_clients.extend(self.existing_station_list)
         if self.client_type in ('virtual', 'both'):
             self.setup_station_profiles()
 
@@ -644,13 +695,14 @@ class Throughput(Realm):
             self.station_profiles.append(station_profile)
 
     def get_virtual_station_count(self):
-        """Number of virtual stations to be created, usable before build()."""
+        """Number of existing + to-be-created virtual stations, usable before build()."""
+        count = len(self.existing_station_list) if self.use_existing_station_list else 0
         if self.client_type in ('virtual', 'both'):
-            return sum(len(station_list) for station_list in self.station_lists)
-        return 0
+            count += sum(len(station_list) for station_list in self.station_lists)
+        return count
 
     def set_virtual_ports_up(self):
-        """Admin up the upstream port and the virtual station ports.
+        """Admin up the upstream port and the virtual/existing station ports.
 
         Real device ports are intentionally left untouched; they are managed by the device itself
         (and by DeviceConfig when --config / --interopability_config is used).
@@ -662,7 +714,7 @@ class Throughput(Realm):
             self.admin_up(sta)
 
     def wait_virtual_ports_connected(self):
-        """Wait for the upstream and virtual station ports to get an IPv4 address.
+        """Wait for the upstream and virtual/existing station ports to get an IPv4 address.
 
         Returns:
             int: 0 on success, -1 on failure
@@ -1505,7 +1557,7 @@ class Throughput(Realm):
                 self.updating_webui_runningjson(obj)
 
         # Check if incremental_capacity is provided and ensure selected devices are sufficient.
-        # Virtual stations also count towards the incremental capacity.
+        # Virtual/existing stations also count towards the incremental capacity.
         total_clients = len(self.mac_id_list) + self.get_virtual_station_count()
         if (len(self.incremental_capacity) > 0 and int(self.incremental_capacity.split(',')[-1]) > total_clients):
             if not self.config and not self.interopability_config:
@@ -1793,7 +1845,7 @@ class Throughput(Realm):
         self.cx_profile.cleanup()
 
     def remove_virtual_stations(self):
-        """Remove the virtual stations created by this script."""
+        """Remove the virtual stations created by this script (existing stations are left untouched)."""
         if not self.station_profiles:
             return
         stations = [sta for station_list in self.station_lists for sta in station_list]
@@ -2893,7 +2945,7 @@ class Throughput(Realm):
 
         cx_incremental_capacity_lists = []
         incremental_capacity_list_values = []
-        # Real devices plus the virtual stations (this runs before build(), so count them from the config)
+        # Real devices plus the virtual/existing stations (this runs before build(), so count them from the config)
         virtual_station_count = self.get_virtual_station_count()
         device_list_length = len(self.mac_id_list) + virtual_station_count
 
@@ -5276,7 +5328,7 @@ class Throughput(Realm):
                 report.build_custom()
 
     def add_virtual_clients_to_device_lists(self, all_devices_names, device_type, type_of_client):
-        """Append the virtual stations to the report device lists. Returns the number added."""
+        """Append the virtual/existing stations to the report device lists. Returns the number added."""
         for sta in self.virtual_clients:
             all_devices_names.append(sta + "(Virtual)")
             device_type.append("Virtual Station")
@@ -5460,15 +5512,30 @@ def parse_radio_args(radios, sta_start_offset=0):
     return radio_config
 
 
+def parse_existing_station_list(existing_station_args):
+    """Flatten the (repeatable) --existing_station_list values into a list of station EIDs."""
+    existing_stations = []
+    for existing_sta_list in existing_station_args or []:
+        existing_stations.extend(str(existing_sta_list).replace('"', '').replace('[', '').replace(']', '').replace("'", "").replace(",", " ").split())
+    logger.info("existing_station_lists: {}".format(existing_stations))
+    return existing_stations
+
+
 def validate_args(args):
-    # Validate virtual station configuration
+    # Validate virtual / existing station configuration
+    if not args.use_existing_station_list and args.existing_station_list:
+        logger.error("Existing stations specified, but argument '--use_existing_station_list' not specified")
+        exit(1)
+    elif args.use_existing_station_list and not args.existing_station_list:
+        logger.error("Argument '--use_existing_station_list' specified, but no existing stations provided. See '--existing_station_list'")
+        exit(1)
     if args.client_type in ('virtual', 'both') and not args.radio:
         logger.error("--client_type {} requires at least one --radio to create virtual stations".format(args.client_type))
         exit(1)
     if args.radio and args.client_type not in ('virtual', 'both'):
         logger.error("--radio is only used with --client_type virtual or both")
         exit(1)
-    if args.robot_ip and args.client_type in ('virtual', 'both'):
+    if args.robot_ip and (args.client_type in ('virtual', 'both') or args.use_existing_station_list):
         logger.error("Robot based testing (--robot_ip) is supported only for real clients")
         exit(1)
     if args.group_name:
@@ -5832,15 +5899,20 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
     optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
 
-    # Arguments related to virtual stations
-    optional.add_argument('--client_type', choices=['real', 'virtual', 'both'], default='real',
-                          help='Type of clients to run the test on: real (default), virtual or both (real + virtual).')
+    # Arguments related to virtual and existing stations
+    optional.add_argument('--client_type', choices=['real', 'virtual', 'both'], default=None,
+                          help='Type of clients to run the test on: real (default), virtual or both (real + virtual).\n'
+                               'Defaults to real, or to only the existing stations when --use_existing_station_list is given.')
     optional.add_argument('-r', '--radio', action='append', nargs=1, default=[],
                           help='Radio configuration for creating virtual stations, can be repeated:\n'
                                '--radio "radio==<radio> stations==<number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>'
                                ' wifi_settings==True wifi_mode==<wifi_mode> enable_flags==<enable_flags>'
                                ' reset_port_enable==True reset_port_time_min==<min>s reset_port_time_max==<max>s"')
     optional.add_argument('--sta_start_offset', default='0', help='Station start offset for building virtual stations')
+    optional.add_argument('--use_existing_station_list', action='store_true',
+                          help='Use the already existing stations given in --existing_station_list (full EIDs), no configuration is done on them')
+    optional.add_argument('--existing_station_list', action='append', nargs=1,
+                          help='Comma separated list of existing stations to use, e.g. 1.1.sta1000,1.1.sta1001. Can be repeated')
     optional.add_argument('--wait_for_ip_sec', default="120s", help='Time to wait for the virtual stations to get an IP, default: 120s')
     optional.add_argument('--exit_on_ip_acquired', action='store_true', help='Exit once the virtual stations get an IP')
     optional.add_argument('--interopt_mode', action='store_true', help='Continue the test even if some virtual stations do not get an IP')
@@ -5895,6 +5967,9 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
         csv_direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_DL'
 
     validate_args(args)
+    # Default to real clients, unless only existing stations are given
+    if args.client_type is None:
+        args.client_type = '' if args.use_existing_station_list else 'real'
     if args.incremental_capacity == 'no_increment' and args.dowebgui:
         args.incremental_capacity = str(len(args.device_list.split(",")))
         gave_incremental = True
@@ -5940,11 +6015,19 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
         iot_testname = args.iot_testname
         iot_increment = args.iot_increment
 
-    # Virtual station configuration
+    # Virtual and existing station configuration
     radio_config = parse_radio_args(args.radio, args.sta_start_offset) if args.client_type in ('virtual', 'both') else {}
+    existing_station_list = parse_existing_station_list(args.existing_station_list) if args.use_existing_station_list else []
+    # Stations to be created are removed first, so they must not overlap with the existing stations
+    overlapping_stations = set(existing_station_list).intersection(
+        sta for station_list in radio_config.get('station_lists', []) for sta in station_list)
+    if overlapping_stations:
+        logger.error("Station(s) {} are in --existing_station_list and would also be created by --radio, use a different --sta_start_offset".format(
+            sorted(overlapping_stations)))
+        exit(1)
     # For the Web-GUI 'no_increment' case, run all virtual stations along with the real devices in a single iteration
     if gave_incremental and not args.do_interopability:
-        virtual_station_count = sum(len(station_list) for station_list in radio_config.get('station_lists', []))
+        virtual_station_count = len(existing_station_list) + sum(len(station_list) for station_list in radio_config.get('station_lists', []))
         args.incremental_capacity = str(int(args.incremental_capacity) + virtual_station_count)
 
     # Per-port CSV file name prefix
@@ -6016,6 +6099,8 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                                 bssids=args.bssids.split(",") if args.bssids else [],
                                 duration_to_skip=args.duration_to_skip,
                                 client_type=args.client_type,
+                                use_existing_station_list=args.use_existing_station_list,
+                                existing_station_list=existing_station_list,
                                 wait_for_ip_sec=args.wait_for_ip_sec,
                                 exit_on_ip_acquired=args.exit_on_ip_acquired,
                                 interopt_mode=args.interopt_mode,
@@ -6074,7 +6159,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
             throughput.perform_robo(args, clients_to_run)
             exit(1)
 
-        # Bring up the virtual stations and wait for them to get an IP
+        # Bring up the virtual/existing stations and wait for them to get an IP
         if throughput.virtual_clients:
             throughput.set_virtual_ports_up()
             throughput.wait_virtual_ports_connected()
