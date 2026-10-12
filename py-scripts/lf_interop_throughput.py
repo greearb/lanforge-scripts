@@ -5305,6 +5305,139 @@ class Throughput(Realm):
 # To validate the input args
 
 
+MAX_NUMBER_OF_STATIONS = 1000
+
+# wifi_extra key in --radio -> (Throughput kwarg, default value)
+WIFI_EXTRA_KEYS = {
+    'key_mgmt': ('key_mgmt_list', '[BLANK]'),
+    'pairwise': ('pairwise_list', '[BLANK]'),
+    'group': ('group_list', '[BLANK]'),
+    'psk': ('psk_list', '[BLANK]'),
+    'wep_key': ('wep_key_list', '[BLANK]'),
+    'ca_cert': ('ca_cert_list', '[BLANK]'),
+    'eap': ('eap_list', '[BLANK]'),
+    'identity': ('identity_list', '[BLANK]'),
+    'anonymous': ('anonymous_identity_list', '[BLANK]'),
+    'phase1': ('phase1_list', '[BLANK]'),
+    'phase2': ('phase2_list', '[BLANK]'),
+    'passwd': ('passwd_list', '[BLANK]'),
+    'pin': ('pin_list', '[BLANK]'),
+    'pac_file': ('pac_file_list', '[BLANK]'),
+    'private_key': ('private_key_list', '[BLANK]'),
+    'pk_password': ('pk_password_list', '[BLANK]'),
+    'hessid': ('hessid_list', '00:00:00:00:00:00'),
+    'realm': ('realm_list', '[BLANK]'),
+    'client_cert': ('client_cert_list', '[BLANK]'),
+    'imsi': ('imsi_list', '[BLANK]'),
+    'milenage': ('milenage_list', '[BLANK]'),
+    'domain': ('domain_list', '[BLANK]'),
+    'roaming_consortium': ('roaming_consortium_list', '[BLANK]'),
+    'venue_group': ('venue_group_list', '[BLANK]'),
+    'network_type': ('network_type_list', '[BLANK]'),
+    'ipaddr_type_avail': ('ipaddr_type_avail_list', '[BLANK]'),
+    'network_auth_type': ('network_auth_type_list', '[BLANK]'),
+    'anqp_3gpp_cell_net': ('anqp_3gpp_cell_net_list', '[BLANK]'),
+    'ieee80211w': ('ieee80211w_list', 'Optional'),
+}
+
+
+def parse_radio_args(radios, sta_start_offset=0):
+    """
+    Parse the --radio arguments (same format as test_l3.py) used for virtual station creation.
+
+    Example: --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2'
+    Optional keys: wifi_settings==True wifi_mode==<mode> enable_flags==<flags>,
+                   reset_port_enable==True reset_port_time_min==<min>s reset_port_time_max==<max>s,
+                   wifi_extra==key_mgmt&&WPA-EAP!!eap&&TTLS!!...
+
+    Returns:
+        dict: Throughput keyword arguments -> per-radio lists
+    """
+    radio_config = {
+        'radio_name_list': [],
+        'number_of_stations_per_radio_list': [],
+        'radio_ssid_list': [],
+        'ssid_password_list': [],
+        'ssid_security_list': [],
+        'wifi_mode_list': [],
+        'enable_flags_list': [],
+        'station_lists': [],
+        'reset_port_enable_list': [],
+        'reset_port_time_min_list': [],
+        'reset_port_time_max_list': [],
+    }
+    for kwarg, _ in WIFI_EXTRA_KEYS.values():
+        radio_config[kwarg] = []
+
+    radio_keys = ['radio', 'stations', 'ssid', 'ssid_pw', 'security']
+    for index, radio_ in enumerate(radios or []):
+        logger.info("radio_dict before format {}".format(radio_))
+        radio_info_dict = dict(
+            map(lambda x: x.split('=='),
+                str(radio_).replace('"', '').replace('[', '').replace(']', '').replace("'", "").replace(",", " ").split()))
+        logger.debug("radio_dict {}".format(radio_info_dict))
+
+        for key in radio_keys:
+            if key not in radio_info_dict:
+                logger.critical("missing config, for the {}, all of the following need to be present {} ".format(key, radio_keys))
+                exit(1)
+
+        radio_config['radio_name_list'].append(radio_info_dict['radio'])
+        radio_config['number_of_stations_per_radio_list'].append(radio_info_dict['stations'])
+        radio_config['radio_ssid_list'].append(radio_info_dict['ssid'])
+        radio_config['ssid_password_list'].append(radio_info_dict['ssid_pw'])
+        radio_config['ssid_security_list'].append(radio_info_dict['security'])
+
+        # wifi_extra (enterprise / hotspot 2.0 settings), '!!' separated key&&value pairs
+        wifi_extra_dict = {}
+        if 'wifi_extra' in radio_info_dict:
+            logger.debug("wifi_extra: {}".format(radio_info_dict['wifi_extra']))
+            wifi_extra_dict = dict(
+                map(lambda x: x.split('&&'),
+                    str(radio_info_dict['wifi_extra']).replace('"', '').replace('[', '').replace(']', '').replace("'", "")
+                    .replace(",", " ").replace("!!", " ").split()))
+            logger.info("wifi_extra_dict: {}".format(wifi_extra_dict))
+        for extra_key, (kwarg, default) in WIFI_EXTRA_KEYS.items():
+            radio_config[kwarg].append(wifi_extra_dict.get(extra_key, default))
+
+        # wifi_settings (wifi mode and station flags)
+        if 'wifi_settings' in radio_info_dict:
+            if not {'wifi_mode', 'enable_flags'}.issubset(radio_info_dict.keys()):
+                logger.critical("wifi_settings is present wifi_mode, enable_flags need to be set "
+                                "or remove the wifi_settings or set wifi_settings==False flag on "
+                                "the radio for defaults")
+                exit(1)
+            radio_config['wifi_mode_list'].append(radio_info_dict['wifi_mode'])
+            enable_flags_str = radio_info_dict['enable_flags'].replace('(', '').replace(')', '').replace('|', ',').replace('&&', ',')
+            radio_config['enable_flags_list'].append(list(enable_flags_str.split(",")))
+        else:
+            radio_config['wifi_mode_list'].append(0)
+            radio_config['enable_flags_list'].append(["wpa2_enable", "80211u_enable", "create_admin_down"])
+
+        # optional port reset
+        if 'reset_port_enable' in radio_info_dict:
+            radio_config['reset_port_enable_list'].append(radio_info_dict['reset_port_enable'])
+            radio_config['reset_port_time_min_list'].append(radio_info_dict['reset_port_time_min'])
+            radio_config['reset_port_time_max_list'].append(radio_info_dict['reset_port_time_max'])
+        else:
+            radio_config['reset_port_enable_list'].append(False)
+            radio_config['reset_port_time_min_list'].append('0s')
+            radio_config['reset_port_time_max_list'].append('0s')
+
+        # station names: each radio gets its own block of 1000 starting at sta_start_offset
+        number_of_stations = int(radio_info_dict['stations'])
+        if number_of_stations > MAX_NUMBER_OF_STATIONS:
+            logger.critical("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
+            exit(1)
+        radio_config['station_lists'].append(LFUtils.portNameSeries(
+            prefix_="sta",
+            start_id_=index * 1000 + int(sta_start_offset),
+            end_id_=number_of_stations - 1 + index * 1000 + int(sta_start_offset),
+            padding_number_=10000,
+            radio=radio_info_dict['radio']))
+    return radio_config
+
+
 def validate_args(args):
     if args.group_name:
         selected_groups = args.group_name.split(',')
