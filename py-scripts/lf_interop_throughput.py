@@ -240,7 +240,7 @@ class Throughput(Realm):
                  password=None,
                  name_prefix=None,
                  upstream=None,
-                 num_stations=10,
+                 num_stations=0,
                  host="localhost",
                  port=8080,
                  test_name=None,
@@ -423,6 +423,8 @@ class Throughput(Realm):
         self.last_monitor_present_keys = []
         self.current_iteration_cxs = []
         self.monitor_start_time = None
+        # Ports used in the test, in CX creation order
+        self.station_names_list = []
         # Variables related to Robo
         self.robo_ip = robo_ip
         self.angle_list = angle_list if angle_list else [0]
@@ -1194,6 +1196,7 @@ class Throughput(Realm):
                 if eid in ports_m:
                     self.input_devices_list.append(ports_m)
         logger.info("INPUT DEVICES LIST {}".format(self.input_devices_list))
+        self.station_names_list.extend(self.input_devices_list)
 
         for i in resource_eid_list2:
             for j in range(len(self.user_list)):
@@ -1377,19 +1380,11 @@ class Throughput(Realm):
                 self.direction = "Upload"
                 direction = 'UL'
         traffic_type = (self.traffic_type.strip("lf_")).upper()
-        traffic_direction_list, cx_list, traffic_type_list = [], [], []
-        for _ in range(len(self.real_client_list)):
-            traffic_direction_list.append(direction)
-            traffic_type_list.append(traffic_type)
+        cx_list = []
 
-        # Construct connection names
-        for _ in self.tos:
-            for i in self.real_client_list1:
-                for j in traffic_direction_list:
-                    for k in traffic_type_list:
-                        cxs = "%s_%s_%s" % (i, k, j)
-                        cx_names = cxs.replace(" ", "")
-                cx_list.append(cx_names)
+        # Construct connection names, one per port in station_names_list order
+        for i in self.real_client_list1:
+            cx_list.append(("%s_%s_%s" % (i, traffic_type, direction)).replace(" ", ""))
         logger.info('cx_list{}'.format(cx_list))
         count = 0
 
@@ -1398,11 +1393,10 @@ class Throughput(Realm):
             self.cx_profile.created_cx = {k: [k + '-A', k + '-B'] for k in cx_list}
             self.pre_cleanup()
 
-        # for ip_tos in range(len(self.tos)):
-        for device in range(len(self.input_devices_list)):
+        for device in range(len(self.station_names_list)):
             logger.info("Creating connections for endpoint type: %s cx-count: %s" % (
                 self.traffic_type, self.cx_profile.get_cx_count()))
-            self.cx_profile.create(endp_type=self.traffic_type, side_a=[self.input_devices_list[device]],
+            self.cx_profile.create(endp_type=self.traffic_type, side_a=[self.station_names_list[device]],
                                    side_b=self.upstream, sleep_time=0, cx_name="%s" % (cx_list[count]))
             count += 1
         logger.info("cross connections with created")
@@ -1693,7 +1687,7 @@ class Throughput(Realm):
                 return individual_df, True
             index += 1
             current_time = datetime.now()
-            signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
+            signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.station_names_list)
             signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
             if self.stop_test:
                 logger.info("Stop already requested; ending monitoring interval.")
@@ -1943,7 +1937,7 @@ class Throughput(Realm):
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
         drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
         drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
-        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
+        signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.station_names_list)
         signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
 
         # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe after test stopped
@@ -2921,8 +2915,8 @@ class Throughput(Realm):
         if self.do_interopability:
             result_dir_name = "Interopability_Test_report"
 
-        self.ssid_list = self.get_ssid_list(self.input_devices_list)
-        self.signal_list, self.channel_list, self.mode_list, self.link_speed_list, rx_rate_list, self.bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
+        self.ssid_list = self.get_ssid_list(self.station_names_list)
+        self.signal_list, self.channel_list, self.mode_list, self.link_speed_list, rx_rate_list, self.bssid_list = self.get_signal_and_channel_data(self.station_names_list)
 
         if selected_real_clients_names is not None:
             self.num_stations = selected_real_clients_names
@@ -5361,7 +5355,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     elif args.report_timer.endswith('h') or args.report_timer.endswith('H'):
         args.report_timer = int(args.report_timer[0:-1]) * 60 * 60
 
-    elif args.test_duration.endswith(''):
+    elif args.report_timer.endswith(''):
         args.report_timer = int(args.report_timer)
 
     if (int(args.packet_size) < 16 or int(args.packet_size) > 65507) and int(args.packet_size) != -1:
