@@ -295,6 +295,49 @@ class Throughput(Realm):
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None,
                  coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None, duration_to_skip=None,
+                 # Virtual station configuration
+                 client_type="real",
+                 radio_name_list=None,
+                 number_of_stations_per_radio_list=None,
+                 radio_ssid_list=None,
+                 ssid_password_list=None,
+                 ssid_security_list=None,
+                 wifi_mode_list=None,
+                 enable_flags_list=None,
+                 station_lists=None,
+                 reset_port_enable_list=None,
+                 reset_port_time_min_list=None,
+                 reset_port_time_max_list=None,
+                 # wifi extra configuration
+                 key_mgmt_list=None,
+                 pairwise_list=None,
+                 group_list=None,
+                 psk_list=None,
+                 wep_key_list=None,
+                 ca_cert_list=None,
+                 eap_list=None,
+                 identity_list=None,
+                 anonymous_identity_list=None,
+                 phase1_list=None,
+                 phase2_list=None,
+                 passwd_list=None,
+                 pin_list=None,
+                 pac_file_list=None,
+                 private_key_list=None,
+                 pk_password_list=None,
+                 hessid_list=None,
+                 realm_list=None,
+                 client_cert_list=None,
+                 imsi_list=None,
+                 milenage_list=None,
+                 domain_list=None,
+                 roaming_consortium_list=None,
+                 venue_group_list=None,
+                 network_type_list=None,
+                 ipaddr_type_avail_list=None,
+                 network_auth_type_list=None,
+                 anqp_3gpp_cell_net_list=None,
+                 ieee80211w_list=None,
                  outfile=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
@@ -406,6 +449,49 @@ class Throughput(Realm):
         self.do_bandsteering = do_bandsteering
         self.total_cycles = total_cycles
         self.bssids = bssids if bssids else []
+        # Virtual station configuration
+        self.client_type = client_type
+        self.radio_name_list = radio_name_list if radio_name_list else []
+        self.number_of_stations_per_radio_list = number_of_stations_per_radio_list if number_of_stations_per_radio_list else []
+        self.radio_ssid_list = radio_ssid_list if radio_ssid_list else []
+        self.ssid_password_list = ssid_password_list if ssid_password_list else []
+        self.ssid_security_list = ssid_security_list if ssid_security_list else []
+        self.wifi_mode_list = wifi_mode_list if wifi_mode_list else []
+        self.enable_flags_list = enable_flags_list if enable_flags_list else []
+        self.station_lists = station_lists if station_lists else []
+        self.reset_port_enable_list = reset_port_enable_list if reset_port_enable_list else []
+        self.reset_port_time_min_list = reset_port_time_min_list if reset_port_time_min_list else []
+        self.reset_port_time_max_list = reset_port_time_max_list if reset_port_time_max_list else []
+        # wifi extra configuration
+        self.key_mgmt_list = key_mgmt_list if key_mgmt_list else []
+        self.pairwise_list = pairwise_list if pairwise_list else []
+        self.group_list = group_list if group_list else []
+        self.psk_list = psk_list if psk_list else []
+        self.wep_key_list = wep_key_list if wep_key_list else []
+        self.ca_cert_list = ca_cert_list if ca_cert_list else []
+        self.eap_list = eap_list if eap_list else []
+        self.identity_list = identity_list if identity_list else []
+        self.anonymous_identity_list = anonymous_identity_list if anonymous_identity_list else []
+        self.phase1_list = phase1_list if phase1_list else []
+        self.phase2_list = phase2_list if phase2_list else []
+        self.passwd_list = passwd_list if passwd_list else []
+        self.pin_list = pin_list if pin_list else []
+        self.pac_file_list = pac_file_list if pac_file_list else []
+        self.private_key_list = private_key_list if private_key_list else []
+        self.pk_password_list = pk_password_list if pk_password_list else []
+        self.hessid_list = hessid_list if hessid_list else []
+        self.realm_list = realm_list if realm_list else []
+        self.client_cert_list = client_cert_list if client_cert_list else []
+        self.imsi_list = imsi_list if imsi_list else []
+        self.milenage_list = milenage_list if milenage_list else []
+        self.domain_list = domain_list if domain_list else []
+        self.roaming_consortium_list = roaming_consortium_list if roaming_consortium_list else []
+        self.venue_group_list = venue_group_list if venue_group_list else []
+        self.network_type_list = network_type_list if network_type_list else []
+        self.ipaddr_type_avail_list = ipaddr_type_avail_list if ipaddr_type_avail_list else []
+        self.network_auth_type_list = network_auth_type_list if network_auth_type_list else []
+        self.anqp_3gpp_cell_net_list = anqp_3gpp_cell_net_list if anqp_3gpp_cell_net_list else []
+        self.ieee80211w_list = ieee80211w_list if ieee80211w_list else []
         # Keep monitoring output stable when a client disconnects or temporarily disappears
         # from LANforge.  Reports still retain one row per configured client.
         # Track CX availability and state changes across monitoring iterations.
@@ -426,6 +512,8 @@ class Throughput(Realm):
         self.monitor_start_time = None
         # Ports used in the test, in CX creation order
         self.station_names_list = []
+        # Station profiles used to create virtual stations (one per --radio)
+        self.station_profiles = []
         # Per-port CSV files, keyed by '<port_eid>_iter-<iteration>'
         self.outfile = outfile
         self.epoch_time = int(time.time())
@@ -453,6 +541,79 @@ class Throughput(Realm):
             self.robot.time_to_reach = int(duration_to_skip) * 60
             self.robot.coordinate_list = self.coordinate_list
             self.robot.total_cycles = self.total_cycles
+
+        if self.client_type == 'virtual':
+            self.setup_station_profiles()
+
+    def setup_station_profiles(self):
+        """Create one station profile per --radio, to be used by build() for creating virtual stations."""
+        for (ssid_, ssid_password_, ssid_security_, mode_, enable_flags_,
+             reset_port_enable_, reset_port_time_min_, reset_port_time_max_,
+             key_mgmt_, pairwise_, group_, psk_, wep_key_, ca_cert_, eap_, identity_,
+             anonymous_identity_, phase1_, phase2_, passwd_, pin_, pac_file_,
+             private_key_, pk_password_, hessid_, realm_, client_cert_, imsi_,
+             milenage_, domain_, roaming_consortium_, venue_group_, network_type_,
+             ipaddr_type_avail_, network_auth_type_, anqp_3gpp_cell_net_, ieee80211w_) in zip(
+                self.radio_ssid_list, self.ssid_password_list, self.ssid_security_list, self.wifi_mode_list, self.enable_flags_list,
+                self.reset_port_enable_list, self.reset_port_time_min_list, self.reset_port_time_max_list,
+                self.key_mgmt_list, self.pairwise_list, self.group_list, self.psk_list, self.wep_key_list, self.ca_cert_list, self.eap_list, self.identity_list,
+                self.anonymous_identity_list, self.phase1_list, self.phase2_list, self.passwd_list, self.pin_list, self.pac_file_list,
+                self.private_key_list, self.pk_password_list, self.hessid_list, self.realm_list, self.client_cert_list, self.imsi_list,
+                self.milenage_list, self.domain_list, self.roaming_consortium_list, self.venue_group_list, self.network_type_list,
+                self.ipaddr_type_avail_list, self.network_auth_type_list, self.anqp_3gpp_cell_net_list, self.ieee80211w_list):
+            station_profile = self.new_station_profile()
+            station_profile.lfclient_url = self.lfclient_url
+            station_profile.ssid = ssid_
+            station_profile.ssid_pass = ssid_password_
+            station_profile.security = ssid_security_
+            station_profile.number_template = self.number_template
+            station_profile.mode = mode_
+            station_profile.desired_add_sta_flags = enable_flags_.copy()
+            station_profile.desired_add_sta_flags_mask = enable_flags_.copy()
+
+            if key_mgmt_ != '[BLANK]':
+                station_profile.set_wifi_extra(key_mgmt=key_mgmt_,
+                                               pairwise=pairwise_,
+                                               group=group_,
+                                               psk=psk_,
+                                               wep_key=wep_key_,
+                                               ca_cert=ca_cert_,
+                                               eap=eap_,
+                                               identity=identity_,
+                                               anonymous_identity=anonymous_identity_,
+                                               phase1=phase1_,
+                                               phase2=phase2_,
+                                               passwd=passwd_,
+                                               pin=pin_,
+                                               pac_file=pac_file_,
+                                               private_key=private_key_,
+                                               pk_password=pk_password_,
+                                               hessid=hessid_,
+                                               realm=realm_,
+                                               client_cert=client_cert_,
+                                               imsi=imsi_,
+                                               milenage=milenage_,
+                                               domain=domain_,
+                                               roaming_consortium=roaming_consortium_,
+                                               venue_group=venue_group_,
+                                               network_type=network_type_,
+                                               ipaddr_type_avail=ipaddr_type_avail_,
+                                               network_auth_type=network_auth_type_,
+                                               anqp_3gpp_cell_net=anqp_3gpp_cell_net_)
+
+                # Configure protected management frames (PMF), defaulting to optional
+                if ieee80211w_.lower() == 'disabled':
+                    station_profile.set_command_param("add_sta", "ieee80211w", 0)
+                elif ieee80211w_.lower() == 'required':
+                    station_profile.set_command_param("add_sta", "ieee80211w", 2)
+                else:
+                    station_profile.set_command_param("add_sta", "ieee80211w", 1)
+
+            station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,
+                                            test_duration=self.test_duration,
+                                            reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),
+                                            reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
+            self.station_profiles.append(station_profile)
 
     def time_stamp(self):
         """Timestamp used in the per-port CSV rows."""
