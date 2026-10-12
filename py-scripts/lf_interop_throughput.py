@@ -83,6 +83,11 @@
         python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
         --robot_ip 192.168.204.144 --coordinate 3,4 --do_bandsteering --total_cycles 2 --bssids 94:A6:7E:74:26:33,94:A6:7E:74:26:22
 
+        EXAMPLE-17:
+        Command Line Interface to run download scenario with Virtual clients
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
+        --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 1000 --client_type virtual
+
     TO PERFORM INTEROPABILITY TEST:
 
         EXAMPLE-1:
@@ -126,6 +131,11 @@
         Command Line Interface to run the test with individual configuration
         python3 lf_interop_throughput.py --mgr 192.168.204.74 --mgr_port 8080 --upstream_port eth0 --test_duration 30s --traffic_type lf_udp --ssid NETGEAR_2G_wpa2
         --passwd Password@123 --security wpa2 --do_interopability --device_list 1.15,1.400 --download 10000000 --interopability_config
+
+        EXAMPLE-10:
+        Command Line Interface to run download scenario with Virtual clients
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
+        --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 1000 --client_type virtual --do_interopability
 
     TO PERFORM TEST WITH IOT:
         EXAMPLE-1:
@@ -5439,6 +5449,16 @@ def parse_radio_args(radios, sta_start_offset=0):
 
 
 def validate_args(args):
+    # Validate virtual station configuration
+    if args.client_type == 'virtual' and not args.radio:
+        logger.error("--client_type virtual requires at least one --radio to create virtual stations")
+        exit(1)
+    if args.radio and args.client_type != 'virtual':
+        logger.error("--radio is only used with --client_type virtual")
+        exit(1)
+    if args.robot_ip and args.client_type == 'virtual':
+        logger.error("Robot based testing (--robot_ip) is supported only for real clients")
+        exit(1)
     if args.group_name:
         selected_groups = args.group_name.split(',')
     else:
@@ -5800,6 +5820,19 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
     optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
 
+    # Arguments related to virtual stations
+    optional.add_argument('--client_type', choices=['real', 'virtual'], default='real',
+                          help='Type of clients to run the test on: real (default) or virtual.')
+    optional.add_argument('-r', '--radio', action='append', nargs=1, default=[],
+                          help='Radio configuration for creating virtual stations, can be repeated:\n'
+                               '--radio "radio==<radio> stations==<number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>'
+                               ' wifi_settings==True wifi_mode==<wifi_mode> enable_flags==<enable_flags>'
+                               ' reset_port_enable==True reset_port_time_min==<min>s reset_port_time_max==<max>s"')
+    optional.add_argument('--sta_start_offset', default='0', help='Station start offset for building virtual stations')
+    optional.add_argument('--wait_for_ip_sec', default="120s", help='Time to wait for the virtual stations to get an IP, default: 120s')
+    optional.add_argument('--exit_on_ip_acquired', action='store_true', help='Exit once the virtual stations get an IP')
+    optional.add_argument('--interopt_mode', action='store_true', help='Continue the test even if some virtual stations do not get an IP')
+
     args = parser.parse_args()
 
     if args.help_summary:
@@ -5895,6 +5928,13 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
         iot_testname = args.iot_testname
         iot_increment = args.iot_increment
 
+    # Virtual station configuration
+    radio_config = parse_radio_args(args.radio, args.sta_start_offset) if args.client_type == 'virtual' else {}
+    # For the Web-GUI 'no_increment' case, run all virtual stations along with the real devices in a single iteration
+    if gave_incremental and not args.do_interopability:
+        virtual_station_count = sum(len(station_list) for station_list in radio_config.get('station_lists', []))
+        args.incremental_capacity = str(int(args.incremental_capacity) + virtual_station_count)
+
     # Per-port CSV file name prefix
     outfile = "{}-throughput.csv".format(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
 
@@ -5963,14 +6003,22 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                                 total_cycles=args.total_cycles,
                                 bssids=args.bssids.split(",") if args.bssids else [],
                                 duration_to_skip=args.duration_to_skip,
-                                outfile=outfile
+                                client_type=args.client_type,
+                                wait_for_ip_sec=args.wait_for_ip_sec,
+                                exit_on_ip_acquired=args.exit_on_ip_acquired,
+                                interopt_mode=args.interopt_mode,
+                                outfile=outfile,
+                                **radio_config
                                 )
 
         if gave_incremental:
             throughput.gave_incremental = True
         throughput.os_type()
 
-        check_condition, clients_to_run = throughput.phantom_check()
+        # Real devices are only looked up when they are part of the test
+        check_condition, clients_to_run = True, []
+        if args.client_type == 'real':
+            check_condition, clients_to_run = throughput.phantom_check()
         if args.iot_test:
             if args.iot_iterations > 1:
                 thread = threading.Thread(target=trigger_iot, args=(iot_ip, iot_port, iot_iterations, iot_delay, iot_device_list, iot_testname, iot_increment))
@@ -6027,12 +6075,14 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
 
         to_run_cxs, to_run_cxs_len, created_cx_lists_keys, incremental_capacity_list = throughput.get_incremental_capacity_list()
 
-        for i in range(len(clients_to_run)):
+        # Column order matches the CX order: real clients first, then virtual clients
+        all_clients = clients_to_run + throughput.virtual_clients
+        for i in range(len(all_clients)):
 
             # Extend individual_dataframe_column with dynamically generated column names
-            individual_dataframe_column.extend([f'Download{clients_to_run[i]}', f'Upload{clients_to_run[i]}', f'Rx % Drop  {clients_to_run[i]}',
-                                                f'Tx % Drop{clients_to_run[i]}', f'Average RTT {clients_to_run[i]}', f'RSSI {clients_to_run[i]}',
-                                                f'Tx-Rate {clients_to_run[i]} ', f'Rx-Rate {clients_to_run[i]}', f'BSSID {clients_to_run[i]}', f'Channel {clients_to_run[i]}'])
+            individual_dataframe_column.extend([f'Download{all_clients[i]}', f'Upload{all_clients[i]}', f'Rx % Drop  {all_clients[i]}',
+                                                f'Tx % Drop{all_clients[i]}', f'Average RTT {all_clients[i]}', f'RSSI {all_clients[i]}',
+                                                f'Tx-Rate {all_clients[i]} ', f'Rx-Rate {all_clients[i]}', f'BSSID {all_clients[i]}', f'Channel {all_clients[i]}'])
 
         individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop ', 'Overall Tx % Drop', 'Iteration',
                                            'TIMESTAMP', 'Start_time', 'End_time', 'Remaining_Time', 'Incremental_list', 'status'])
@@ -6043,6 +6093,8 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
 
         for i in range(len(to_run_cxs)):
             is_device_configured = True
+            # Virtual stations are not configured through DeviceConfig
+            is_virtual_cx = to_run_cxs[i][0] in throughput.virtual_cx_list
             if args.do_interopability:
                 # To get resource of device under test in interopability
                 device_to_run_resource = throughput.extract_digits_until_alpha(to_run_cxs[i][0])
@@ -6065,7 +6117,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                 elif not args.do_interopability and i != 0:
                     # Reset the previous cumulative CX set before the next capacity.
                     throughput.stop_specific(created_cx_lists_keys[:incremental_capacity_list[i - 1]])
-                if args.interopability_config:
+                if args.interopability_config and not is_virtual_cx:
                     if args.do_interopability and i == 0:
                         # To disconnect all the selected devices at the starting selected
                         throughput.disconnect_all_devices()
@@ -6088,7 +6140,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
 
             # Monitor throughput and capture all dataframes and test stop status
             all_dataframes, test_stopped_by_user = throughput.monitor(i, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured)
-            if args.do_interopability and "iOS" not in to_run_cxs[i][0] and args.interopability_config:
+            if args.do_interopability and "iOS" not in to_run_cxs[i][0] and args.interopability_config and not is_virtual_cx:
                 # Disconnecting device after running the test
                 throughput.disconnect_all_devices([device_to_run_resource])
             # Check if the test was stopped by the user
