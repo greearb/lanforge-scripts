@@ -308,6 +308,9 @@ class Throughput(Realm):
                  reset_port_enable_list=None,
                  reset_port_time_min_list=None,
                  reset_port_time_max_list=None,
+                 wait_for_ip_sec="120s",
+                 exit_on_ip_acquired=False,
+                 interopt_mode=False,
                  # wifi extra configuration
                  key_mgmt_list=None,
                  pairwise_list=None,
@@ -462,6 +465,9 @@ class Throughput(Realm):
         self.reset_port_enable_list = reset_port_enable_list if reset_port_enable_list else []
         self.reset_port_time_min_list = reset_port_time_min_list if reset_port_time_min_list else []
         self.reset_port_time_max_list = reset_port_time_max_list if reset_port_time_max_list else []
+        self.wait_for_ip_sec = self.duration_time_to_seconds(wait_for_ip_sec)
+        self.exit_on_ip_acquired = exit_on_ip_acquired
+        self.interopt_mode = interopt_mode
         # wifi extra configuration
         self.key_mgmt_list = key_mgmt_list if key_mgmt_list else []
         self.pairwise_list = pairwise_list if pairwise_list else []
@@ -510,8 +516,10 @@ class Throughput(Realm):
         self.last_monitor_present_keys = []
         self.current_iteration_cxs = []
         self.monitor_start_time = None
-        # Ports used in the test, in CX creation order
+        # Real ports (from phantom_check) followed by virtual stations, in CX creation order
         self.station_names_list = []
+        self.virtual_clients = []
+        self.virtual_cx_list = []
         # Station profiles used to create virtual stations (one per --radio)
         self.station_profiles = []
         # Per-port CSV files, keyed by '<port_eid>_iter-<iteration>'
@@ -614,6 +622,42 @@ class Throughput(Realm):
                                             reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),
                                             reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
             self.station_profiles.append(station_profile)
+
+    def get_virtual_station_count(self):
+        """Number of virtual stations to be created, usable before build()."""
+        if self.client_type == 'virtual':
+            return sum(len(station_list) for station_list in self.station_lists)
+        return 0
+
+    def set_virtual_ports_up(self):
+        """Admin up the upstream port and the virtual station ports.
+
+        Real device ports are intentionally left untouched; they are managed by the device itself
+        (and by DeviceConfig when --config / --interopability_config is used).
+        """
+        logger.info("Admin up upstream port and virtual station port(s): %s", [self.upstream] + self.virtual_clients)
+        self.admin_up(self.upstream)
+        for sta in self.virtual_clients:
+            logger.debug("Admin up station %s", sta)
+            self.admin_up(sta)
+
+    def wait_virtual_ports_connected(self):
+        """Wait for the upstream and virtual station ports to get an IPv4 address.
+
+        Returns:
+            int: 0 on success, -1 on failure
+        """
+        success = self.wait_for_ip([self.upstream] + self.virtual_clients, timeout_sec=self.wait_for_ip_sec)
+        if success:
+            logger.info("All virtual station ports connected successfully")
+            if self.exit_on_ip_acquired:
+                logger.info("Configured to exit on successful IPv4 configuration")
+                exit(1)
+        elif self.interopt_mode:
+            logger.warning("Running in InterOp mode, ignoring IPv4 configuration failure and continuing")
+        else:
+            logger.critical("One or more virtual station ports did not receive an IPv4 address in %s seconds", self.wait_for_ip_sec)
+        return 0 if success else -1
 
     def time_stamp(self):
         """Timestamp used in the per-port CSV rows."""
@@ -1568,9 +1612,19 @@ class Throughput(Realm):
 
     def build(self):
         """
-        Builds and creates the connection profile.
+        Creates the virtual stations (if any) and the connection profile.
 
         """
+        # Stations left over from a previous run cannot be re-added with a new MAC, so always
+        # remove the stations about to be created (same as test_l3.py's default pre-cleanup)
+        self.remove_virtual_stations()
+        for radio, station_list, station_profile in zip(self.radio_name_list, self.station_lists, self.station_profiles):
+            station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
+            station_profile.set_number_template(station_profile.number_template)
+            logger.info("Creating station port(s) %s on radio %s", station_list, radio)
+            station_profile.create(radio=radio, sta_names_=station_list, debug=self.debug, sleep_time=0)
+            self.virtual_clients.extend(station_profile.station_names)
+        self.station_names_list.extend(self.virtual_clients)
         self.create_cx()
         logger.info("cx build finished")
         return self.cx_profile.created_cx
@@ -1592,9 +1646,14 @@ class Throughput(Realm):
         traffic_type = (self.traffic_type.strip("lf_")).upper()
         cx_list = []
 
-        # Construct connection names, one per port in station_names_list order
+        # Construct connection names, one per port in station_names_list order: real clients first, then virtual clients.
+        # Virtual CX names are tracked separately so interopability config can skip them.
         for i in self.real_client_list1:
             cx_list.append(("%s_%s_%s" % (i, traffic_type, direction)).replace(" ", ""))
+        for sta in self.virtual_clients:
+            cx_name = ("%s_%s_%s" % (sta, traffic_type, direction)).replace(" ", "")
+            cx_list.append(cx_name)
+            self.virtual_cx_list.append(cx_name)
         logger.info('cx_list{}'.format(cx_list))
         count = 0
 
@@ -1711,11 +1770,22 @@ class Throughput(Realm):
     def pre_cleanup(self):
         self.cx_profile.cleanup()
 
+    def remove_virtual_stations(self):
+        """Remove the virtual stations created by this script."""
+        if not self.station_profiles:
+            return
+        stations = [sta for station_list in self.station_lists for sta in station_list]
+        for sta in stations:
+            self.rm_port(sta, check_exists=True)
+        if not LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=stations, timeout_sec=60):
+            logger.warning("Virtual station(s) %s did not disappear within 60 seconds", stations)
+
     def cleanup(self):
         if self.robo_ip:
             self.remove_missing_cx()
         logger.info("cleanup done")
         self.cx_profile.cleanup()
+        self.remove_virtual_stations()
 
     def get_layer3_endp_data(self, active_cxs=None):
         """
@@ -2801,7 +2871,20 @@ class Throughput(Realm):
 
         cx_incremental_capacity_lists = []
         incremental_capacity_list_values = []
-        device_list_length = len(self.mac_id_list)
+        # Real devices plus the virtual stations (this runs before build(), so count them from the config)
+        virtual_station_count = self.get_virtual_station_count()
+        device_list_length = len(self.mac_id_list) + virtual_station_count
+
+        # Drop the incremental values larger than the number of clients when virtual stations are used
+        if virtual_station_count and len(self.incremental_capacity) > 0 and int(self.incremental_capacity.split(',')[-1]) > device_list_length:
+            given_capacity = list(map(int, self.incremental_capacity.split(",")))
+            supported = [cap for cap in given_capacity if cap <= device_list_length]
+            not_supported = [cap for cap in given_capacity if cap > device_list_length]
+            if device_list_length not in supported:
+                supported.append(device_list_length)
+            logger.warning("Incremental capacity {} is more than the number of clients ({}), running with: {}".format(
+                ",".join(map(str, not_supported)), device_list_length, ",".join(map(str, supported))))
+            self.incremental_capacity = ",".join(map(str, supported))
 
         # Check if 'incremental_capacity' is not specified
 
@@ -2809,7 +2892,6 @@ class Throughput(Realm):
             incremental_capacity_1 = [device_list_length]
 
         elif device_list_length != 0 and len(self.incremental_capacity.split(",")) > 0:
-            device_list_length = len(self.mac_id_list)
             incremental_capacity_length = len(self.incremental_capacity.split(","))
 
             # Handle single incremental capacity specification
@@ -5714,6 +5796,11 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
             # Execute Robo test execution when robot IP is provided
             throughput.perform_robo(args, clients_to_run)
             exit(1)
+
+        # Bring up the virtual stations and wait for them to get an IP
+        if throughput.virtual_clients:
+            throughput.set_virtual_ports_up()
+            throughput.wait_virtual_ports_connected()
 
         if not throughput.precheck_all_created_cx_endpoints():
             throughput.stop()
