@@ -294,7 +294,8 @@ class Throughput(Realm):
                  user_list=None, real_client_list=None, real_client_list1=None, hw_list=None, laptop_list=None, android_list=None, mac_list=None, windows_list=None, linux_list=None,
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None,
-                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None, duration_to_skip=None):
+                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None, duration_to_skip=None,
+                 outfile=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -425,6 +426,11 @@ class Throughput(Realm):
         self.monitor_start_time = None
         # Ports used in the test, in CX creation order
         self.station_names_list = []
+        # Per-port CSV files, keyed by '<port_eid>_iter-<iteration>'
+        self.outfile = outfile
+        self.epoch_time = int(time.time())
+        self.dl_port_csv_files = {}
+        self.dl_port_csv_writers = {}
         # Variables related to Robo
         self.robo_ip = robo_ip
         self.angle_list = angle_list if angle_list else [0]
@@ -447,6 +453,49 @@ class Throughput(Realm):
             self.robot.time_to_reach = int(duration_to_skip) * 60
             self.robot.coordinate_list = self.coordinate_list
             self.robot.total_cycles = self.total_cycles
+
+    def time_stamp(self):
+        """Timestamp used in the per-port CSV rows."""
+        return time.strftime('%m_%d_%Y_%H_%M_%S', time.localtime(self.epoch_time))
+
+    def csv_generate_dl_port_column_headers(self):
+        return ['Time epoch', 'Time', 'Name', 'Download', 'Upload', 'Rx % Drop', 'Tx % Drop', 'Average RTT',
+                'RSSI', 'Tx-Link-Rate', 'Rx-Link-Rate', 'AP', 'Mode', 'Channel']
+
+    def csv_add_port_column_headers(self, port_eid, headers, iteration=0):
+        """Open the per-port CSV for this iteration (once) and write its header row."""
+        key = f"{port_eid}_iter-{iteration}"
+        if key in self.dl_port_csv_files:
+            return
+        direction = self.csv_direction.split("_")[2]
+        fname = f"{self.outfile[:-4]}_{direction}_{port_eid}_iteration-{iteration}.csv"
+        pfile = open(fname, "w")
+        port_csv_writer = csv.writer(pfile, delimiter=",")
+        self.dl_port_csv_files[key] = pfile
+        self.dl_port_csv_writers[key] = port_csv_writer
+        port_csv_writer.writerow(headers)
+        pfile.flush()
+
+    def write_dl_port_csv(self, port_eid, download, upload, rx_drop, tx_drop, avg_rtt, rssi, tx_rate, rx_rate, ap, mode, channel, iteration):
+        key = f"{port_eid}_iter-{iteration}"
+        self.epoch_time = int(time.time())
+        row = [self.epoch_time, self.time_stamp(), port_eid, download, upload, rx_drop, tx_drop, avg_rtt, rssi, tx_rate, rx_rate, ap, mode, channel]
+        self.dl_port_csv_writers[key].writerow(row)
+        self.dl_port_csv_files[key].flush()
+
+    def get_port_csv_indexes(self, iteration, incremental_capacity_list):
+        """Indexes (into station_names_list) of the ports running in this iteration."""
+        if self.do_interopability:
+            return range(incremental_capacity_list[iteration] - 1, incremental_capacity_list[iteration])
+        return range(incremental_capacity_list[iteration])
+
+    def move_port_csv_files(self, report_path_date_time):
+        """Close the per-port CSV files and move them into the report directory."""
+        for file_obj in self.dl_port_csv_files.values():
+            file_obj.close()
+            shutil.move(file_obj.name, report_path_date_time)
+        self.dl_port_csv_files = {}
+        self.dl_port_csv_writers = {}
 
     def record_device_issue(self, device, issue, api_response=""):
         """Append a timestamped device/issue entry, later written out as clients_issue.csv."""
@@ -1680,6 +1729,14 @@ class Throughput(Realm):
             runtime_dir = self.result_dir
         previous_time = datetime.now()
         time_break = 0
+
+        # Per-port CSV files for the ports running in this iteration
+        port_csv_indexes = []
+        if self.outfile:
+            port_csv_indexes = [i for i in self.get_port_csv_indexes(iteration, incremental_capacity_list) if i < len(self.station_names_list)]
+            for i in port_csv_indexes:
+                self.csv_add_port_column_headers(self.station_names_list[i], self.csv_generate_dl_port_column_headers(), iteration)
+
         # Continuously collect data until end time is reached
         while datetime.now() < end_time:
             if self.all_devices_stopped and self.do_bandsteering:
@@ -1904,6 +1961,12 @@ class Throughput(Realm):
                 if self.do_bandsteering:
                     self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
                     return individual_df, test_stopped_by_user
+                # Per-port CSV rows for the ports running in this iteration
+                for i in port_csv_indexes:
+                    if i < len(download_throughput):
+                        self.write_dl_port_csv(self.station_names_list[i], download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i],
+                                               avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i], bssid_list[i],
+                                               mode_list[i], channel_list[i], iteration)
 
             if self.stop_test:
                 test_stopped_by_user = True
@@ -2937,6 +3000,7 @@ class Throughput(Realm):
                 shutil.move('throughput_data.csv', report_path_date_time)
             logger.info("path: {}".format(report_path))
             logger.info("path_date_time: {}".format(report_path_date_time))
+            self.move_port_csv_files(report_path_date_time)
             report.set_title("Throughput Test")
             report.build_banner()
 
@@ -3468,6 +3532,7 @@ class Throughput(Realm):
 
             logger.info("path: {}".format(report_path))
             logger.info("path_date_time: {}".format(report_path_date_time))
+            self.move_port_csv_files(report_path_date_time)
             report.set_title("Interoperability Test")
             report.build_banner()
             # objective title and description
@@ -5369,6 +5434,10 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
         iot_device_list = args.iot_device_list
         iot_testname = args.iot_testname
         iot_increment = args.iot_increment
+
+    # Per-port CSV file name prefix
+    outfile = "{}-throughput.csv".format(time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
+
     for index in range(len(loads_data)):
         throughput = Throughput(host=args.mgr,
                                 ip=args.mgr,
@@ -5433,7 +5502,8 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                                 do_bandsteering=args.do_bandsteering,
                                 total_cycles=args.total_cycles,
                                 bssids=args.bssids.split(",") if args.bssids else [],
-                                duration_to_skip=args.duration_to_skip
+                                duration_to_skip=args.duration_to_skip,
+                                outfile=outfile
                                 )
 
         if gave_incremental:
