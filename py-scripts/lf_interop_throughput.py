@@ -3226,6 +3226,8 @@ class Throughput(Realm):
 
         if selected_real_clients_names is not None:
             self.num_stations = selected_real_clients_names
+        # Real client MACs come from phantom_check(); append the virtual station MACs in the same order
+        self.add_mac_id(self.virtual_clients)
 
         # Initialize the report object
         if self.do_interopability is False:
@@ -3279,6 +3281,7 @@ class Throughput(Realm):
             android_devices, windows_devices, linux_devices, mac_devices, ios_devices = 0, 0, 0, 0, 0
             all_devices_names = []
             device_type = []
+            type_of_client = []
             packet_size_text = ''
             total_devices = ""
             if self.cx_profile.side_a_min_pdu == -1:
@@ -3292,6 +3295,7 @@ class Throughput(Realm):
                 load_type_name = "Per Client Load"
             for i in self.real_client_list:
                 split_device_name = i.split(" ")
+                type_of_client.append("Real")
                 if 'android' in split_device_name:
                     all_devices_names.append(split_device_name[2] + ("(Android)"))
                     device_type.append("Android")
@@ -3312,6 +3316,7 @@ class Throughput(Realm):
                     all_devices_names.append(split_device_name[2] + ("(iOS)"))
                     device_type.append("iOS")
                     ios_devices += 1
+            virtual_devices = self.add_virtual_clients_to_device_lists(all_devices_names, device_type, type_of_client)
 
             # Build total_devices string based on counts
             if android_devices > 0:
@@ -3324,6 +3329,9 @@ class Throughput(Realm):
                 total_devices += f" Mac({mac_devices})"
             if ios_devices > 0:
                 total_devices += f" iOS({ios_devices})"
+            if virtual_devices > 0:
+                total_devices += f" Virtual({virtual_devices})"
+                self.num_stations += virtual_devices
 
             # Determine incremental_capacity_data based on self.incremental_capacity
             if self.gave_incremental:
@@ -3381,6 +3389,7 @@ class Throughput(Realm):
             if iot_summary:
                 test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
             report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
+            self.build_radio_config_table(report)
 
             # Loop through iterations and build graphs, tables for each iteration
             for i in range(len(iterations_before_test_stopped_by_user)):
@@ -3407,9 +3416,10 @@ class Throughput(Realm):
                 #     signal_data.append(int(sig)*(-1))
                 # rssi_signal_data.append(signal_data)
 
-                # Fetch devices_on_running from real_client_list
+                # Fetch devices_on_running from real_client_list followed by virtual clients
+                all_devices = self.real_client_list + self.virtual_clients
                 for j in range(data1[i][-1]):
-                    devices_on_running.append(self.real_client_list[j].split(" ")[-1])
+                    devices_on_running.append(all_devices[j].split(" ")[-1])
 
                 # Fetch download_data and upload_data based on load_type and direction
                 for k in devices_on_running:
@@ -3694,7 +3704,8 @@ class Throughput(Realm):
                                                                 [str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]],
                                                                 pass_fail_list,
                                                                 upload_drop,
-                                                                download_drop)
+                                                                download_drop,
+                                                                typeofclient=type_of_client[0:int(incremental_capacity_list[i])])
                         # Generating Dataframe for groups when pass_fail case is not specified
                         else:
                             dataframe = self.generate_dataframe(val,
@@ -3716,7 +3727,8 @@ class Throughput(Realm):
                                                                 [str(n) for n in packet_size_in_table[0:int(incremental_capacity_list[i])]],
                                                                 [],
                                                                 upload_drop,
-                                                                download_drop)
+                                                                download_drop,
+                                                                typeofclient=type_of_client[0:int(incremental_capacity_list[i])])
                         if dataframe:
                             report.set_obj_html("", "Group: {}".format(key))
                             report.build_objective()
@@ -3727,6 +3739,7 @@ class Throughput(Realm):
                     bk_dataframe = {
                         " Device Type ": device_type[0:int(incremental_capacity_list[i])],
                         " Username": devices_on_running[0:int(incremental_capacity_list[i])],
+                        " Client Type ": type_of_client[0:int(incremental_capacity_list[i])],
                         " SSID ": self.ssid_list[0:int(incremental_capacity_list[i])],
                         " MAC ": self.mac_id_list[0:int(incremental_capacity_list[i])],
                         " Channel ": self.channel_list[0:int(incremental_capacity_list[i])],
@@ -3795,10 +3808,12 @@ class Throughput(Realm):
             android_devices, windows_devices, linux_devices, mac_devices, ios_devices = 0, 0, 0, 0, 0
             all_devices_names = []
             device_type = []
+            type_of_client = []
             total_devices = ""
 
             for i in self.real_client_list:
                 split_device_name = i.split(" ")
+                type_of_client.append("Real")
                 if 'android' in split_device_name:
                     all_devices_names.append(split_device_name[2] + ("(Android)"))
                     device_type.append("Android")
@@ -3819,6 +3834,7 @@ class Throughput(Realm):
                     all_devices_names.append(split_device_name[2] + ("(iOS)"))
                     device_type.append("iOS")
                     ios_devices += 1
+            virtual_devices = self.add_virtual_clients_to_device_lists(all_devices_names, device_type, type_of_client)
 
             # Build total_devices string based on counts
             if android_devices > 0:
@@ -3831,6 +3847,9 @@ class Throughput(Realm):
                 total_devices += f" Mac({mac_devices})"
             if ios_devices > 0:
                 total_devices += f" iOS({ios_devices})"
+            if virtual_devices > 0:
+                total_devices += f" Virtual({virtual_devices})"
+                self.num_stations += virtual_devices
 
             # Construct test_setup_info dictionary for test setup table
             test_setup_info = {
@@ -3856,6 +3875,7 @@ class Throughput(Realm):
                 dataframe1 = pd.DataFrame(configured_dataframe)
                 report.set_table_dataframe(dataframe1)
                 report.build_table()
+            self.build_radio_config_table(report)
 
             # Loop through iterations and build graphs, tables for each device
             for i in range(len(iterations_before_test_stopped_by_user)):
@@ -3878,8 +3898,9 @@ class Throughput(Realm):
                     logger.warning("Skipping report section for iteration %s because no monitoring data was collected.", i + 1)
                     continue
 
-                # Fetch devices_on_running from real_client_list
-                devices_on_running.append(self.real_client_list[data1[i][-1] - 1].split(" ")[-1])
+                # Fetch devices_on_running from real_client_list followed by virtual clients
+                all_devices = self.real_client_list + self.virtual_clients
+                devices_on_running.append(all_devices[data1[i][-1] - 1].split(" ")[-1])
                 # If the device fails to configure, skip its data in the report
                 if self.interopability_config and devices_on_running[0] in self.configured_devices_check and not self.configured_devices_check[devices_on_running[0]]:
                     continue
@@ -4081,6 +4102,7 @@ class Throughput(Realm):
 
                 bk_dataframe[" Device Type "] = device_type[int(incremental_capacity_list[i]) - 1]
                 bk_dataframe[" Username"] = devices_on_running[-1]
+                bk_dataframe[" Client Type "] = type_of_client[int(incremental_capacity_list[i]) - 1]
                 bk_dataframe[" SSID "] = self.ssid_list[int(incremental_capacity_list[i]) - 1]
                 bk_dataframe[" MAC "] = self.mac_id_list[int(incremental_capacity_list[i]) - 1]
                 bk_dataframe[" Channel "] = self.channel_list[int(incremental_capacity_list[i]) - 1]
@@ -4188,6 +4210,7 @@ class Throughput(Realm):
             android_devices, windows_devices, linux_devices, mac_devices, ios_devices = 0, 0, 0, 0, 0
             all_devices_names = []
             device_type = []
+            type_of_client = []
             packet_size_text = ''
             total_devices = ""
             if self.cx_profile.side_a_min_pdu == -1:
@@ -4201,6 +4224,7 @@ class Throughput(Realm):
                 load_type_name = "Per Client Load"
             for i in self.real_client_list:
                 split_device_name = i.split(" ")
+                type_of_client.append("Real")
                 if 'android' in split_device_name:
                     all_devices_names.append(split_device_name[2] + ("(Android)"))
                     device_type.append("Android")
@@ -4221,6 +4245,7 @@ class Throughput(Realm):
                     all_devices_names.append(split_device_name[2] + ("(iOS)"))
                     device_type.append("iOS")
                     ios_devices += 1
+            virtual_devices = self.add_virtual_clients_to_device_lists(all_devices_names, device_type, type_of_client)
 
             # Build total_devices string based on counts
             if android_devices > 0:
@@ -4233,6 +4258,9 @@ class Throughput(Realm):
                 total_devices += f" Mac({mac_devices})"
             if ios_devices > 0:
                 total_devices += f" iOS({ios_devices})"
+            if virtual_devices > 0:
+                total_devices += f" Virtual({virtual_devices})"
+                self.num_stations += virtual_devices
 
             # Determine incremental_capacity_data based on self.incremental_capacity
             if self.gave_incremental:
@@ -4781,7 +4809,7 @@ class Throughput(Realm):
     # Creates a separate DataFrame for each group of devices.
 
     def generate_dataframe(self, groupdevlist, typeofdevice, devusername, devssid, devmac, devchannel, devmode, devdirection, devofdownload, devrtt, devobsdownload,
-                           devoffupload, devobsupload, devrssi, devExpected, devlinkspeed, devpacketsize, devstatus, upload_drop, download_drop):
+                           devoffupload, devobsupload, devrssi, devExpected, devlinkspeed, devpacketsize, devstatus, upload_drop, download_drop, typeofclient=None):
         """
         Creates a separate DataFrame for each group of devices.
 
@@ -4792,6 +4820,7 @@ class Throughput(Realm):
 
         device_type = []
         username = []
+        type_of_client = []
         ssid = []
         mac = []
         channel = []
@@ -4815,6 +4844,8 @@ class Throughput(Realm):
                 if j == devusername[i] and typeofdevice[i] != 'Android':
                     device_type.append(typeofdevice[i])
                     username.append(devusername[i])
+                    if typeofclient is not None:
+                        type_of_client.append(typeofclient[i])
                     ssid.append(devssid[i])
                     mac.append(devmac[i])
                     channel.append(devchannel[i])
@@ -4843,6 +4874,8 @@ class Throughput(Realm):
                             if item['user-name'] == devusername[i] and j == item['name'].split('.')[2]:
                                 device_type.append(typeofdevice[i])
                                 username.append(devusername[i])
+                                if typeofclient is not None:
+                                    type_of_client.append(typeofclient[i])
                                 ssid.append(devssid[i])
                                 mac.append(devmac[i])
                                 channel.append(devchannel[i])
@@ -4869,6 +4902,7 @@ class Throughput(Realm):
                 dataframe = {
                     " Device Type ": device_type,
                     " Username": username,
+                    **({" Client Type ": type_of_client} if typeofclient is not None else {}),
                     " SSID ": ssid,
                     " MAC ": mac,
                     " Channel ": channel,
@@ -4906,6 +4940,7 @@ class Throughput(Realm):
                 dataframe = {
                     " Device Type ": device_type,
                     " Username": username,
+                    **({" Client Type ": type_of_client} if typeofclient is not None else {}),
                     " SSID ": ssid,
                     " MAC ": mac,
                     " Channel ": channel,
@@ -5217,6 +5252,55 @@ class Throughput(Realm):
 
                 report.set_custom_html('<hr>')
                 report.build_custom()
+
+    def add_virtual_clients_to_device_lists(self, all_devices_names, device_type, type_of_client):
+        """Append the virtual stations to the report device lists. Returns the number added."""
+        for sta in self.virtual_clients:
+            all_devices_names.append(sta + "(Virtual)")
+            device_type.append("Virtual Station")
+            type_of_client.append("Virtual")
+        return len(self.virtual_clients)
+
+    # LANforge add_sta 'mode' values
+    WIFI_MODE_NAMES = {
+        0: 'AUTO', 1: '802.11a', 2: '802.11b', 3: '802.11g', 4: '802.11abg', 5: '802.11abgn',
+        6: '802.11bgn', 7: '802.11bg', 8: '802.11abgnAC', 9: '802.11anAC', 10: '802.11an',
+        11: '802.11bgnAC', 12: '802.11abgnAX', 13: '802.11bgnAX', 14: '802.11anAX', 15: '802.11aAX',
+        16: '802.11abgnEHT', 17: '802.11bgnEHT', 18: '802.11anEHT', 19: '802.11aBE',
+    }
+
+    def build_radio_config_table(self, report):
+        """Add one table per --radio describing the virtual stations created on it."""
+        if not self.station_profiles:
+            return
+        report.set_table_title("Radio Configuration")
+        report.build_table_title()
+        for radio_, ssid_, ssid_security_, mode_, enable_flags_ in zip(
+                self.radio_name_list, self.radio_ssid_list, self.ssid_security_list, self.wifi_mode_list, self.enable_flags_list):
+            radio_info = {
+                "SSID": ssid_,
+                "Security": ssid_security_,
+                "Wifi mode set": self.WIFI_MODE_NAMES.get(int(mode_), mode_),
+                "Wifi Enable Flags": enable_flags_,
+            }
+            report.test_setup_table(value=radio_, test_setup_data=radio_info)
+
+    def add_mac_id(self, devices):
+        """Append the MAC address of each given port to mac_id_list ('-' when the port is not found)."""
+        if not devices:
+            return
+        response_port = self.json_get("/port/all")
+        if not response_port or "interfaces" not in response_port:
+            logger.error("Error: 'interfaces' key not found in port data")
+            self.mac_id_list.extend(["-"] * len(devices))
+            return
+        mac_by_port = {}
+        for interface in response_port['interfaces']:
+            for port, port_data in interface.items():
+                mac_by_port[port] = port_data.get('mac', '-')
+        for device in devices:
+            self.mac_id_list.append(mac_by_port.get(device, "-"))
+
 
 # To validate the input args
 
