@@ -88,6 +88,11 @@
         python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
         --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 1000 --client_type virtual
 
+        EXAMPLE-18:
+        Command Line Interface to run download scenario with Real + Virtual clients
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
+        --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 1000 --client_type both
+
     TO PERFORM INTEROPABILITY TEST:
 
         EXAMPLE-1:
@@ -136,6 +141,11 @@
         Command Line Interface to run download scenario with Virtual clients
         python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
         --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 1000 --client_type virtual --do_interopability
+
+        EXAMPLE-11:
+        Command Line Interface to run download scenario with Real + Virtual clients
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
+        --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 1000 --client_type both --do_interopability
 
     TO PERFORM TEST WITH IOT:
         EXAMPLE-1:
@@ -560,7 +570,7 @@ class Throughput(Realm):
             self.robot.coordinate_list = self.coordinate_list
             self.robot.total_cycles = self.total_cycles
 
-        if self.client_type == 'virtual':
+        if self.client_type in ('virtual', 'both'):
             self.setup_station_profiles()
 
     def setup_station_profiles(self):
@@ -635,7 +645,7 @@ class Throughput(Realm):
 
     def get_virtual_station_count(self):
         """Number of virtual stations to be created, usable before build()."""
-        if self.client_type == 'virtual':
+        if self.client_type in ('virtual', 'both'):
             return sum(len(station_list) for station_list in self.station_lists)
         return 0
 
@@ -1494,13 +1504,15 @@ class Throughput(Realm):
                 }
                 self.updating_webui_runningjson(obj)
 
-        # Check if incremental_capacity is provided and ensure selected devices are sufficient
-        if (len(self.incremental_capacity) > 0 and int(self.incremental_capacity.split(',')[-1]) > len(self.mac_id_list)):
+        # Check if incremental_capacity is provided and ensure selected devices are sufficient.
+        # Virtual stations also count towards the incremental capacity.
+        total_clients = len(self.mac_id_list) + self.get_virtual_station_count()
+        if (len(self.incremental_capacity) > 0 and int(self.incremental_capacity.split(',')[-1]) > total_clients):
             if not self.config and not self.interopability_config:
                 if len(self.mac_id_list) == 0:
                     logger.error("Devices selected is less than given incremental capacity")
                     raise RuntimeError("Devices selected (0) is less than given incremental capacity ({})".format(self.incremental_capacity))
-                configured_devices = len(self.mac_id_list)
+                configured_devices = total_clients
                 given_capacity = list(map(int, self.incremental_capacity.split(",")))
                 adjusted_capacity = [cap for cap in given_capacity if cap <= configured_devices]
                 if configured_devices not in adjusted_capacity:
@@ -1510,7 +1522,7 @@ class Throughput(Realm):
                 self.incremental_capacity = ",".join(map(str, adjusted_capacity))
                 return True, self.real_client_list
             elif (self.config and not self.do_interopability):
-                configured_devices = len(self.mac_id_list)
+                configured_devices = total_clients
                 given_capacity = list(map(int, self.incremental_capacity.split(",")))
                 adjusted_capacity = [cap for cap in given_capacity if cap <= configured_devices]
                 if configured_devices not in adjusted_capacity:
@@ -5450,13 +5462,13 @@ def parse_radio_args(radios, sta_start_offset=0):
 
 def validate_args(args):
     # Validate virtual station configuration
-    if args.client_type == 'virtual' and not args.radio:
-        logger.error("--client_type virtual requires at least one --radio to create virtual stations")
+    if args.client_type in ('virtual', 'both') and not args.radio:
+        logger.error("--client_type {} requires at least one --radio to create virtual stations".format(args.client_type))
         exit(1)
-    if args.radio and args.client_type != 'virtual':
-        logger.error("--radio is only used with --client_type virtual")
+    if args.radio and args.client_type not in ('virtual', 'both'):
+        logger.error("--radio is only used with --client_type virtual or both")
         exit(1)
-    if args.robot_ip and args.client_type == 'virtual':
+    if args.robot_ip and args.client_type in ('virtual', 'both'):
         logger.error("Robot based testing (--robot_ip) is supported only for real clients")
         exit(1)
     if args.group_name:
@@ -5821,8 +5833,8 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
 
     # Arguments related to virtual stations
-    optional.add_argument('--client_type', choices=['real', 'virtual'], default='real',
-                          help='Type of clients to run the test on: real (default) or virtual.')
+    optional.add_argument('--client_type', choices=['real', 'virtual', 'both'], default='real',
+                          help='Type of clients to run the test on: real (default), virtual or both (real + virtual).')
     optional.add_argument('-r', '--radio', action='append', nargs=1, default=[],
                           help='Radio configuration for creating virtual stations, can be repeated:\n'
                                '--radio "radio==<radio> stations==<number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>'
@@ -5929,7 +5941,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
         iot_increment = args.iot_increment
 
     # Virtual station configuration
-    radio_config = parse_radio_args(args.radio, args.sta_start_offset) if args.client_type == 'virtual' else {}
+    radio_config = parse_radio_args(args.radio, args.sta_start_offset) if args.client_type in ('virtual', 'both') else {}
     # For the Web-GUI 'no_increment' case, run all virtual stations along with the real devices in a single iteration
     if gave_incremental and not args.do_interopability:
         virtual_station_count = sum(len(station_list) for station_list in radio_config.get('station_lists', []))
@@ -6017,7 +6029,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
 
         # Real devices are only looked up when they are part of the test
         check_condition, clients_to_run = True, []
-        if args.client_type == 'real':
+        if args.client_type in ('real', 'both'):
             check_condition, clients_to_run = throughput.phantom_check()
         if args.iot_test:
             if args.iot_iterations > 1:
