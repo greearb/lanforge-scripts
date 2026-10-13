@@ -115,6 +115,12 @@
         --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 2000 --client_type both
         --use_existing_station_list --existing_station_list '1.1.sta1000,1.1.sta1001'
 
+        EXAMPLE-23:
+        Command Line Interface to run download scenario with Virtual clients on multiple radios (1.1.sta1000-1001 on wiphy0, 1.1.sta2000-2001 on wiphy1)
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
+        --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2'
+        --radio 'radio==wiphy1 stations==2 ssid==NETGEAR_5G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 1000 --client_type virtual
+
     TO PERFORM INTEROPABILITY TEST:
 
         EXAMPLE-1:
@@ -190,6 +196,12 @@
         python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
         --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 2000 --client_type both
         --use_existing_station_list --existing_station_list '1.1.sta1000,1.1.sta1001' --do_interopability
+
+        EXAMPLE-16:
+        Command Line Interface to run download scenario with Virtual clients on multiple radios (1.1.sta1000-1001 on wiphy0, 1.1.sta2000-2001 on wiphy1)
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 30s --download 1000000 --traffic_type lf_udp
+        --radio 'radio==wiphy0 stations==2 ssid==NETGEAR_2G_wpa2 ssid_pw==Password@123 security==wpa2'
+        --radio 'radio==wiphy1 stations==2 ssid==NETGEAR_5G_wpa2 ssid_pw==Password@123 security==wpa2' --sta_start_offset 1000 --client_type virtual --do_interopability
 
     TO PERFORM TEST WITH IOT:
         EXAMPLE-1:
@@ -1846,13 +1858,8 @@ class Throughput(Realm):
 
     def remove_virtual_stations(self):
         """Remove the virtual stations created by this script (existing stations are left untouched)."""
-        if not self.station_profiles:
-            return
-        stations = [sta for station_list in self.station_lists for sta in station_list]
-        for sta in stations:
-            self.rm_port(sta, check_exists=True)
-        if not LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=stations, timeout_sec=60):
-            logger.warning("Virtual station(s) %s did not disappear within 60 seconds", stations)
+        for station_profile, station_list in zip(self.station_profiles, self.station_lists):
+            station_profile.cleanup(desired_stations=station_list)
 
     def cleanup(self):
         if self.robo_ip:
@@ -5379,6 +5386,8 @@ class Throughput(Realm):
 # To validate the input args
 
 
+# Maximum number of virtual stations per --radio. Each radio gets its own range of this many
+# station names (e.g. sta1000-sta1999, sta2000-sta2999), so the names of two radios never overlap.
 MAX_NUMBER_OF_STATIONS = 1000
 
 # wifi_extra key in --radio -> (Throughput kwarg, default value)
@@ -5498,15 +5507,16 @@ def parse_radio_args(radios, sta_start_offset=0):
             radio_config['reset_port_time_min_list'].append('0s')
             radio_config['reset_port_time_max_list'].append('0s')
 
-        # station names: each radio gets its own block of 1000 starting at sta_start_offset
+        # station names: each radio gets its own range of MAX_NUMBER_OF_STATIONS names starting at sta_start_offset
         number_of_stations = int(radio_info_dict['stations'])
         if number_of_stations > MAX_NUMBER_OF_STATIONS:
             logger.critical("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
             exit(1)
+        start_id = index * MAX_NUMBER_OF_STATIONS + int(sta_start_offset)
         radio_config['station_lists'].append(LFUtils.portNameSeries(
             prefix_="sta",
-            start_id_=index * 1000 + int(sta_start_offset),
-            end_id_=number_of_stations - 1 + index * 1000 + int(sta_start_offset),
+            start_id_=start_id,
+            end_id_=start_id + number_of_stations - 1,
             padding_number_=10000,
             radio=radio_info_dict['radio']))
     return radio_config
@@ -5821,7 +5831,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
 
     # optional.add_argument('--no_postcleanup', help="Cleanup the cross connections after test is stopped", action = 'store_true')
     # optional.add_argument('--no_precleanup', help="Cleanup the cross connections before test is started", action = 'store_true')
-    optional.add_argument('--postcleanup', help="Cleanup the cross connections after test is stopped", action='store_true')
+    optional.add_argument('--postcleanup', help="Remove the cross connections and the virtual stations created by the test after it is stopped", action='store_true')
     optional.add_argument('--precleanup', help="Cleanup the cross connections before test is started", action='store_true')
     optional.add_argument('--incremental', help='gives an option to the user to enter incremental values', action='store_true')
     optional.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default="open")
@@ -6255,19 +6265,23 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     #     logger.info("connections upload {}".format(connections_upload))
     throughput.remove_missing_cx()
     throughput.stop()
-    if args.postcleanup:
-        throughput.cleanup()
-    throughput.ensure_monitoring_data_collected()
-    iot_summary = None
-    if args.iot_test and args.iot_testname:
-        # Load IoT summary data from the specified JSON file
-        base = os.path.join("results", args.iot_testname)
-        p = os.path.join(base, "iot_summary.json")
-        if os.path.exists(p):
-            with open(p) as f:
-                iot_summary = json.load(f)
-    throughput.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=throughput.result_dir,
-                               iot_summary=iot_summary)
+    # The report reads the SSID, MAC, channel and mode of each station from LANforge,
+    # so the virtual stations are removed (--postcleanup) only after the report is generated
+    try:
+        throughput.ensure_monitoring_data_collected()
+        iot_summary = None
+        if args.iot_test and args.iot_testname:
+            # Load IoT summary data from the specified JSON file
+            base = os.path.join("results", args.iot_testname)
+            p = os.path.join(base, "iot_summary.json")
+            if os.path.exists(p):
+                with open(p) as f:
+                    iot_summary = json.load(f)
+        throughput.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len,
+                                   report_path=throughput.result_dir, iot_summary=iot_summary)
+    finally:
+        if args.postcleanup:
+            throughput.cleanup()
     if throughput.dowebgui:
         # copying to home directory i.e home/user_name
         throughput.copy_reports_to_home_dir()
