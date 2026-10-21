@@ -83,6 +83,11 @@
         python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
         --robot_ip 192.168.204.144 --coordinate 3,4 --do_bandsteering --total_cycles 2 --bssids 94:A6:7E:74:26:33,94:A6:7E:74:26:22
 
+        EXAMPLE-17:
+        Command Line Interface to run download scenario with a background ping on the real clients
+        python3 lf_interop_throughput.py --mgr 192.168.207.75 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_tcp
+        --device_list 1.20,1.59,1.65 --enable_bg_ping --bg_ping_target 1.1.eth1
+
     TO PERFORM INTEROPABILITY TEST:
 
         EXAMPLE-1:
@@ -205,6 +210,7 @@ from lf_graph import lf_bar_graph_horizontal, lf_bar_graph  # noqa: E402
 from datetime import datetime, timedelta  # noqa: E402
 
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
+lf_interop_ping = importlib.import_module("py-scripts.lf_interop_ping")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
@@ -423,6 +429,8 @@ class Throughput(Realm):
         self.last_monitor_present_keys = []
         self.current_iteration_cxs = []
         self.monitor_start_time = None
+        self.monitor_end_time = None
+        self.background_ping = None
         # Variables related to Robo
         self.robo_ip = robo_ip
         self.angle_list = angle_list if angle_list else [0]
@@ -692,7 +700,12 @@ class Throughput(Realm):
                 self.cleanup()
             self.ensure_monitoring_data_collected()
             iterations_before_test_stopped_by_user.append(0)
+            if self.background_ping:
+                self.monitor_end_time = datetime.now()
+                self.background_ping.stop_background_ping()
             self.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
+            if self.background_ping:
+                self.background_ping.cleanup()
             if self.dowebgui:
                 # copying to home directory i.e home/user_name
                 self.copy_reports_to_home_dir()
@@ -854,6 +867,9 @@ class Throughput(Realm):
                 navdata['total_cycles'] = total_cycles
             with open(nav_data, 'w') as x:
                 json.dump(navdata, x, indent=4)
+        if self.background_ping:
+            self.monitor_end_time = datetime.now()
+            self.background_ping.stop_background_ping()
         # Test_status=Completed above only means "measurements done" - the webGUI still has to
         # upload the final heatmap screenshots. report_generated tells the webGUI when the report is actually on disk.
         report_generated = False
@@ -864,6 +880,8 @@ class Throughput(Realm):
                 self.copy_reports_to_home_dir()
             report_generated = True
         finally:
+            if self.background_ping:
+                self.background_ping.cleanup()
             if args.dowebgui:
                 with open(nav_data, 'r') as x:
                     navdata = json.load(x)
@@ -3813,6 +3831,13 @@ class Throughput(Realm):
                 self.add_live_view_images_to_report(report)
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
+        if self.background_ping:
+            self.background_ping.set_monitor_window(self.monitor_start_time, self.monitor_end_time)
+            self.background_ping.add_background_ping_to_report(report, device_info={
+                port_name: {"mac": mac, "channel": channel, "rssi": rssi}
+                for port_name, mac, channel, rssi in zip(
+                    self.input_devices_list, self.mac_id_list, self.channel_list, self.signal_list)
+            })
         if self.device_issue_log:
             pd.DataFrame(self.device_issue_log).to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         # report.build_custom()
@@ -4468,6 +4493,13 @@ class Throughput(Realm):
                         report.set_custom_html('<hr>')
                         report.build_custom()
 
+        if self.background_ping:
+            self.background_ping.set_monitor_window(self.monitor_start_time, self.monitor_end_time)
+            self.background_ping.add_background_ping_to_report(report, device_info={
+                port_name: {"mac": mac, "channel": channel, "rssi": rssi}
+                for port_name, mac, channel, rssi in zip(
+                    self.input_devices_list, self.mac_id_list, self.channel_list, self.signal_list)
+            })
         if self.device_issue_log:
             pd.DataFrame(self.device_issue_log).to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         # report.build_custom()
@@ -5125,6 +5157,11 @@ EXAMPLE-9:
 Command Line Interface to run the test with incremental_capacity by raising incremental flag
 python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080  --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp --incremental
 
+EXAMPLE-10:
+Command Line Interface to run download scenario with a background ping on the real clients
+python3 lf_interop_throughput.py --mgr 192.168.207.75 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_tcp
+--device_list 1.20,1.59,1.65 --enable_bg_ping --bg_ping_target 1.1.eth1
+
 TO PERFORM INTEROPABILITY TEST:
 
 EXAMPLE-1:
@@ -5280,6 +5317,8 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     optional.add_argument('--coordinate', help="Points at which the robot pauses")
     optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
     optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
+
+    lf_interop_ping.add_bg_ping_arguments(parser)
 
     args = parser.parse_args()
 
@@ -5487,12 +5526,28 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
 
         if args.robot_ip:
             # Execute Robo test execution when robot IP is provided
+            throughput.background_ping = lf_interop_ping.bg_ping_from_args(
+                args,
+                host=args.mgr,
+                port=args.mgr_port,
+                device_list=throughput.input_devices_list,
+                default_target=args.upstream_port)
             throughput.perform_robo(args, clients_to_run)
+            if throughput.background_ping:
+                throughput.background_ping.stop_background_ping()
+                throughput.background_ping.cleanup()
             exit(1)
 
         if not throughput.precheck_all_created_cx_endpoints():
             throughput.stop()
             return
+
+        throughput.background_ping = lf_interop_ping.bg_ping_from_args(
+            args,
+            host=args.mgr,
+            port=args.mgr_port,
+            device_list=throughput.input_devices_list,
+            default_target=args.upstream_port)
 
         individual_dataframe_column = []
 
@@ -5577,6 +5632,9 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     #     logger.info("connections upload {}".format(connections_upload))
     throughput.remove_missing_cx()
     throughput.stop()
+    if throughput.background_ping:
+        throughput.monitor_end_time = datetime.now()
+        throughput.background_ping.stop_background_ping()
     if args.postcleanup:
         throughput.cleanup()
     throughput.ensure_monitoring_data_collected()
@@ -5590,6 +5648,8 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                 iot_summary = json.load(f)
     throughput.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=throughput.result_dir,
                                iot_summary=iot_summary)
+    if throughput.background_ping:
+        throughput.background_ping.cleanup()
     if throughput.dowebgui:
         # copying to home directory i.e home/user_name
         throughput.copy_reports_to_home_dir()
