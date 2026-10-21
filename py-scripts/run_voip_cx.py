@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-This script will start a named set of voip connections and report their data to a csv file
+This script will start a named set of voip connections and report their data to a csv file.
+The run_voip_cx.py script does not support creation of new voip/mobile CX and run.
 
 Example usage:
 - Configure two VoIP CXs, TEST1 and TEST2.
@@ -22,6 +23,16 @@ Example usage:
         --side_b_phone_nums         8765              4321 \
         --side_a_mobile_bt_macs     11:11:11:11:11:11 22:22:22:22:22:22 \
         --side_b_mobile_bt_macs     33:33:33:33:33:33 44:44:44:44:44:44
+
+- Configure simple VoIP-VoIP CX, voip_test
+    + voip_test:
+        * 3 looped voip-voip phone calls
+
+    ./run_voip_cx.py \
+        --mgr 192.168.100.110 \
+        --csv_file /home/lanforge/report-data/my_test_report.csv \
+        --cx_names voip_test \
+        --num_calls 3
 """
 
 
@@ -174,6 +185,7 @@ class VoipReport():
             "avg delay",
             "snr ref",
             "snr deg",
+            "audio length",
             "pingpong",
             "audio band",
             "tx file",
@@ -435,9 +447,10 @@ class VoipReport():
                 pprint(['exception:', e, "cx:", cx_name, e_w_list])
 
     def write_rows(self):
-        if self.last_written_row >= (len(self.csv_data) - 1):
-            print(f"write_row: row[{self.last_written_row}] already written, rows: {len(self.csv_data)} rows")
-            return
+        if (len(self.csv_data) != 0):
+            if self.last_written_row >= (len(self.csv_data) - 1):
+                print(f"write_row: row[{self.last_written_row}] already written, rows: {len(self.csv_data)} rows")
+                return
         for i in range(self.last_written_row, len(self.csv_data)):
             # pprint(["i:", i, "csv:", self.csv_data[i]])
             row_strs: list = map(str, self.csv_data[i])
@@ -542,7 +555,14 @@ class VoipReport():
                             self.append_to_csv(ep_name=name, ep_record=record)
                             old_mos_value_B = int(record['mos-lqo#'])
 
+                    if (int(record['mos-lqo#']) == 0) and (float(record['mos-lqo']) == 0):
+                        self.append_to_csv(ep_name=name, ep_record=record)  # check record
+
                     if int(record['calls completed']) + int(record['calls failed']) == int(record['mos-lqo#']):
+                        if "Stopped" == record['state']:
+                            num_running_ep -= 1
+
+                    if int(record['calls completed']) + int(record['calls failed']) == int(record['calls attempted']) + int(record['calls answered']):
                         if "Stopped" == record['state']:
                             num_running_ep -= 1
 
