@@ -83,6 +83,11 @@
         python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
         --robot_ip 192.168.204.144 --coordinate 3,4 --do_bandsteering --total_cycles 2 --bssids 94:A6:7E:74:26:33,94:A6:7E:74:26:22
 
+        EXAMPLE-17:
+        Command Line Interface to run download scenario with a background ping on the real clients
+        python3 lf_interop_throughput.py --mgr 192.168.207.75 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_tcp
+        --device_list 1.20,1.59,1.65 --enable_bg_ping --bg_ping_target 1.1.eth1
+
     TO PERFORM INTEROPABILITY TEST:
 
         EXAMPLE-1:
@@ -205,6 +210,7 @@ from lf_graph import lf_bar_graph_horizontal, lf_bar_graph  # noqa: E402
 from datetime import datetime, timedelta  # noqa: E402
 
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
+lf_interop_ping = importlib.import_module("py-scripts.lf_interop_ping")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
@@ -423,6 +429,7 @@ class Throughput(Realm):
         self.last_monitor_present_keys = []
         self.current_iteration_cxs = []
         self.monitor_start_time = None
+        self.background_ping = None
         # Variables related to Robo
         self.robo_ip = robo_ip
         self.angle_list = angle_list if angle_list else [0]
@@ -1693,6 +1700,8 @@ class Throughput(Realm):
                 return individual_df, True
             index += 1
             current_time = datetime.now()
+            if self.background_ping and index > 0 and index % 10 == 0:
+                self.background_ping.monitor_endp_availability(self.background_ping.generic_endps_profile.created_endp, duration=0, interval=1)
             signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
             signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
             if self.stop_test:
@@ -3813,6 +3822,8 @@ class Throughput(Realm):
                 self.add_live_view_images_to_report(report)
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
+        if self.background_ping:
+            self.background_ping.add_background_ping_to_report(report)
         if self.device_issue_log:
             pd.DataFrame(self.device_issue_log).to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         # report.build_custom()
@@ -5125,6 +5136,11 @@ EXAMPLE-9:
 Command Line Interface to run the test with incremental_capacity by raising incremental flag
 python3 lf_interop_throughput.py --mgr 192.168.214.219 --mgr_port 8080  --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp --incremental
 
+EXAMPLE-10:
+Command Line Interface to run download scenario with a background ping on the real clients
+python3 lf_interop_throughput.py --mgr 192.168.207.75 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_tcp
+--device_list 1.20,1.59,1.65 --enable_bg_ping --bg_ping_target 1.1.eth1
+
 TO PERFORM INTEROPABILITY TEST:
 
 EXAMPLE-1:
@@ -5280,6 +5296,8 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     optional.add_argument('--coordinate', help="Points at which the robot pauses")
     optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
     optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
+
+    lf_interop_ping.add_bg_ping_arguments(parser)
 
     args = parser.parse_args()
 
@@ -5494,6 +5512,13 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
             throughput.stop()
             return
 
+        throughput.background_ping = lf_interop_ping.bg_ping_from_args(
+            args,
+            host=args.mgr,
+            port=args.mgr_port,
+            device_list=throughput.input_devices_list,
+            default_target=args.upstream_port)
+
         individual_dataframe_column = []
 
         to_run_cxs, to_run_cxs_len, created_cx_lists_keys, incremental_capacity_list = throughput.get_incremental_capacity_list()
@@ -5577,6 +5602,8 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     #     logger.info("connections upload {}".format(connections_upload))
     throughput.remove_missing_cx()
     throughput.stop()
+    if throughput.background_ping:
+        throughput.background_ping.stop_background_ping()
     if args.postcleanup:
         throughput.cleanup()
     throughput.ensure_monitoring_data_collected()
@@ -5590,6 +5617,8 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                 iot_summary = json.load(f)
     throughput.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=throughput.result_dir,
                                iot_summary=iot_summary)
+    if throughput.background_ping:
+        throughput.background_ping.cleanup()
     if throughput.dowebgui:
         # copying to home directory i.e home/user_name
         throughput.copy_reports_to_home_dir()
