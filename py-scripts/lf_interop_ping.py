@@ -253,7 +253,7 @@ class Ping(Realm):
         else:
             logger.info(self.target)
 
-    def cleanup(self):
+    def cleanup(self, clean_stations=True):
         expected_endp_names = []
         # setting the created_cx and created_endp to empty list and adding the existing endpoints to the list for cleanup
         self.generic_endps_profile.created_cx = []
@@ -285,7 +285,7 @@ class Ping(Realm):
                     self.generic_endps_profile.created_endp.append(endp_name)
                     self.generic_endps_profile.created_cx.append('CX_{}'.format(endp_name))
 
-        if (self.enable_virtual):
+        if (self.enable_virtual and clean_stations):
             # removing virtual stations if existing
             for station in self.sta_list:
                 logger.info('Removing the station {} if exists'.format(station))
