@@ -233,6 +233,7 @@ class Ping(Realm):
         self.percent_pac_loss = []
         self.wait_time = wait_time
         self.bg_stats = {}
+        self.bg_packet_results = {}
         self.bg_start_time = None
         self.bg_stop_time = None
 
@@ -423,6 +424,7 @@ class Ping(Realm):
                     # Use the second-last result when more than one is available.
                     last_results = endp_response.get('last results')
                     if last_results:
+                        self.record_packet_results(endp_name, last_results)
                         result_lines = last_results.split('\n')
                         if len(result_lines) > 1:
                             endp_response['last results'] = result_lines[-2]
@@ -540,6 +542,7 @@ class Ping(Realm):
                     # Use the second-last result when more than one is available.
                     last_results = endp_response.get('last results')
                     if last_results:
+                        self.record_packet_results(endp_name, last_results)
                         result_lines = last_results.split('\n')
                         if len(result_lines) > 1:
                             endp_response['last results'] = result_lines[-2]
@@ -1162,12 +1165,10 @@ class Ping(Realm):
         self.generic_endps_profile.dest = self.target
         self.generic_endps_profile.interval = self.interval
 
-        resources = self.json_get('/resource/all')
-        if not resources or 'resources' not in resources:
-            logger.error("Background ping could not read the resource list, skipping it")
-            return False
+        resources = self.json_get('/resource/all') or {}
+        resource_entries = resources.get('resources') or ([{resources['resource']['eid']: resources['resource']}] if 'resource' in resources else [])
         resource_data = {}
-        for resource_entry in resources['resources']:
+        for resource_entry in resource_entries:
             resource_id, data = list(resource_entry.items())[0]
             if isinstance(data, dict) and 'hw version' in data and not data.get('ct-kernel'):
                 resource_data[resource_id] = data
@@ -1188,6 +1189,7 @@ class Ping(Realm):
             self.real_sta_list.append(port)
             self.real_sta_data_dict[port] = {'ostype': ostype, 'name': data.get('user', '') or data.get('hostname', '') or port}
         self.sta_list = list(self.real_sta_list)
+        self.bg_packet_results = {device: {} for device in self.real_sta_list}
 
         if not self.real_sta_list:
             logger.error("No real devices were found for the background ping, skipping it")
@@ -1206,6 +1208,30 @@ class Ping(Realm):
         self.bg_start_time = time.time()
         logger.info("Background ping started on {} towards {}".format(self.real_sta_list, self.target))
         return True
+
+    def record_packet_results(self, endpoint, last_results):
+        """Records the RTT of each ping reply in an endpoint's output, and marks a sequence lost where the running drop count rises across a gap."""
+        sequences = self.bg_packet_results.get(endpoint[len(self.BG_NAME_PREFIX) + 1:])
+        if sequences is None:
+            return
+        previous = None
+        for line in last_results.split('\n'):
+            seq_match = re.search(r'icmp_seq=(\d+)', line)
+            rtt_match = re.search(r'time[=<]\s*([0-9.]+)\s*ms', line, re.IGNORECASE)
+            drop_match = re.search(r'drop:\s*(\d+)', line)
+            if not seq_match or not rtt_match:
+                continue
+            sequence = int(seq_match.group(1))
+            sequences[sequence] = float(rtt_match.group(1))
+            if not drop_match:
+                continue
+            drops = int(drop_match.group(1))
+            if previous is not None and sequence > previous[0]:
+                new_drops = min(sequence - previous[0] - 1, drops - previous[1])
+                for lost in range(previous[0] + 1, previous[0] + 1 + new_drops):
+                    sequences.setdefault(lost, 0.0)
+            if previous is None or sequence > previous[0]:
+                previous = (sequence, drops)
 
     @staticmethod
     def get_packet_counts(data):
@@ -1229,9 +1255,9 @@ class Ping(Realm):
             for endpoint, data in entry.items():
                 before_stop[endpoint] = dict(data)
 
+        self.bg_stop_time = time.time()
         self.stop_generic()
         time.sleep(3)
-        self.bg_stop_time = time.time()
 
         after_stop = {}
         for entry in self.get_results():
@@ -1271,10 +1297,11 @@ class Ping(Realm):
                 'command': data.get('command', ''),
                 'sent': sent,
                 'recv': received,
+                'dropped': dropped,
                 'loss_percent': round(((sent - received) / sent) * 100, 2) if sent else 0,
-                'min_rtt': min_rtt,
-                'avg_rtt': avg_rtt,
-                'max_rtt': max_rtt,
+                'min_rtt': min_rtt if min_rtt == 'NA' else float(str(min_rtt).replace(',', '')),
+                'avg_rtt': avg_rtt if avg_rtt == 'NA' else float(str(avg_rtt).replace(',', '')),
+                'max_rtt': max_rtt if max_rtt == 'NA' else float(str(max_rtt).replace(',', '')),
                 'last_result': last_result,
             }
             entry['remarks'] = self.generate_remarks(entry)
@@ -1305,10 +1332,47 @@ class Ping(Realm):
             'Packets Sent': [row['sent'] for row in rows],
             'Packets Received': [row['recv'] for row in rows],
             'Packet Loss %': [row['loss_percent'] for row in rows],
-            'AVG RTT (ms)': [row['avg_rtt'] if row['avg_rtt'] == 'NA' else float(str(row['avg_rtt']).replace(',', '')) for row in rows],
+            'AVG RTT (ms)': [row['avg_rtt'] for row in rows],
         })
-        duration = str(datetime.timedelta(seconds=int(self.bg_stop_time - self.bg_start_time)))
+        test_seconds = self.bg_stop_time - self.bg_start_time
+        duration = str(datetime.timedelta(seconds=int(test_seconds)))
+        clients, stations, segments = [], [], []
+        for device in self.real_sta_list:
+            sequences = self.bg_packet_results.get(device)
+            if not sequences:
+                continue
+            spans = []
+            covered_until = 0.0
+            for sequence in sorted(sequences):
+                start, end = (sequence - 1) * self.interval, min(test_seconds, sequence * self.interval)
+                if end <= start:
+                    continue
+                if start > covered_until:
+                    spans.append(['up', covered_until, start])
+                spans.append(['drop' if sequences[sequence] == 0 else 'up', start, end])
+                covered_until = max(covered_until, end)
+            merged = []
+            for span in spans:
+                if merged and merged[-1][0] == span[0]:
+                    merged[-1][2] = span[2]
+                else:
+                    merged.append(span)
+            segments.extend({'clientIndex': len(clients), 'start': round(start, 3), 'end': round(end, 3), 'status': status} for status, start, end in merged)
+            clients.append(self.bg_stats[device]['name'])
+            stations.append(device)
         try:
+            if segments and hasattr(report, 'build_echarts_chart'):
+                report.set_obj_html(
+                    _obj_title="Client Connectivity Results Throughout the Test Duration",
+                    _obj=("The graph illustrates the connectivity status of all wireless clients during the test based on connectivity monitoring during the test execution. "
+                          "Green segments represent successful responses, while red segments indicate packet loss or connectivity drops observed during the test."))
+                report.build_objective()
+                report.build_echarts_chart(
+                    chart_id="background-ping-connectivity-timeline",
+                    chart_type="connectivity_timeline",
+                    payload={'clients': clients, 'stations': stations, 'segments': segments, 'duration': round(test_seconds, 3),
+                             'emptyMessage': "No time-series ping samples were collected"},
+                    title="Wireless Client Connectivity Status vs Time")
             report.set_table_title("Ping statistics collected for all wireless clients during the test (target {}, duration {}, {}s interval)".format(
                 self.target, duration, self.interval))
             report.build_table_title()
