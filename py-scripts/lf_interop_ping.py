@@ -89,7 +89,6 @@ import logging
 import asyncio
 import csv
 import re
-import threading
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
@@ -115,20 +114,6 @@ if sys.version_info[0] != 3:
 
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-
-BG_CUMULATIVE_PATTERN = re.compile(r'min/avg/max:?\s*([0-9]+\.?[0-9]*)/([0-9]+\.?[0-9]*)/([0-9]+\.?[0-9]*)')
-BG_DROP_PATTERN = re.compile(r'drop:\s*([0-9]+)')
-BG_RX_PATTERN = re.compile(r'rx:\s*([0-9]+)')
-BG_RTT_PATTERN = re.compile(r'time[=<]\s*([0-9]+\.?[0-9]*)\s*ms', re.IGNORECASE)
-BG_SEQ_PATTERN = re.compile(r'icmp_seq=([0-9]+)')
-BG_DROPPED_DETECTED_PATTERN = re.compile(r'Dropped packets detected:\s*sq\[(\d+)\]\s*last_sq\+1\[(\d+)\]')
-
-BG_OS_TYPE_LABELS = {
-    'android': 'Android',
-    'windows': 'Windows',
-    'linux': 'Linux',
-    'macos': 'Mac',
-}
 
 
 class Ping(Realm):
@@ -247,25 +232,9 @@ class Ping(Realm):
         self.test_input_list = []
         self.percent_pac_loss = []
         self.wait_time = wait_time
-        self.bg_sample_interval = 10
-        self.bg_sequence_poll_interval = 0.25
-        self.bg_requested_devices = []
-        self.bg_device_os = {}
-        self.bg_device_data = {}
-        self.bg_samples = {}
-        self.bg_timeline_samples = {}
-        self.bg_sequence_rtts = {}
-        self.bg_sequence_dropped_total = {}
-        self.bg_previous_lines = {}
         self.bg_stats = {}
-        self.bg_started = False
         self.bg_start_time = None
         self.bg_stop_time = None
-        self.bg_monitor_window_start = None
-        self.bg_monitor_window_end = None
-        self.bg_stop_event = threading.Event()
-        self.bg_sampler_thread = None
-        self.bg_sequence_sampler_thread = None
 
     def change_target_to_ip(self):
 
@@ -1174,129 +1143,12 @@ class Ping(Realm):
         else:
             return None
 
-    def filter_pingable_devices(self):
-        """Builds the ping capable subset of the devices the calling test was given."""
-        requested_ports = set()
-        requested_resources = set()
-        for device in self.bg_requested_devices:
-            device = str(device).strip()
-            if not device:
-                continue
-            parts = device.split('.')
-            if len(parts) == 1:
-                requested_resources.add('1.' + parts[0])
-            elif len(parts) == 2:
-                requested_resources.add(device)
-            else:
-                requested_ports.add('.'.join(parts[:3]))
-
-        if not requested_ports and not requested_resources:
-            logger.error("The background ping was given no devices to run on, skipping it")
-            return []
-
-        ports_named_for = {'.'.join(port.split('.')[:2]) for port in requested_ports}
-        requested_resources -= ports_named_for
-
-        resources = self.json_get('/resource/all')
-        if not resources or 'resources' not in resources:
-            logger.warning("Background ping could not read the resource list")
-            return []
-
-        resource_os = {}
-        resource_name = {}
-        ios_resources = set()
-        for resource_entry in resources['resources']:
-            resource_id = list(resource_entry.keys())[0]
-            resource_data = resource_entry[resource_id]
-            if not isinstance(resource_data, dict) or 'hw version' not in resource_data:
-                continue
-
-            if resource_data.get('ct-kernel'):
-                continue
-
-            resource_name[resource_id] = resource_data.get('user', '') or resource_data.get('hostname', '')
-
-            hw_version = resource_data.get('hw version', '')
-            app_id = resource_data.get('app-id', '')
-            kernel = resource_data.get('kernel', '')
-
-            if 'Apple' in hw_version and app_id != '' and (app_id != '0' or kernel == ''):
-                ios_resources.add(resource_id)
-                continue
-
-            if 'Win/x86' in hw_version:
-                resource_os[resource_id] = 'windows'
-            elif 'Apple/x86' in hw_version:
-                resource_os[resource_id] = 'macos'
-            elif 'Linux/x86' in hw_version:
-                resource_os[resource_id] = 'linux'
-            else:
-                resource_os[resource_id] = 'android'
-
-        ports = self.json_get('/ports/all')
-        if not ports or 'interfaces' not in ports:
-            logger.warning("Background ping could not read the port list")
-            return []
-
-        selected = []
-        matched_requests = set()
-        for port_entry in ports['interfaces']:
-            port_id = list(port_entry.keys())[0]
-            port_data = port_entry[port_id]
-            parts = port_id.split('.')
-            if len(parts) != 3:
-                continue
-            resource_id = parts[0] + '.' + parts[1]
-
-            if port_id in requested_ports:
-                request = port_id
-            elif resource_id in requested_resources and port_data.get('parent dev') == 'wiphy0':
-                request = resource_id
-            else:
-                continue
-
-            matched_requests.add(request)
-
-            if resource_id in ios_resources:
-                logger.info("Skipping the iOS device {} for the background ping, a ping cannot be run on it".format(resource_id))
-                continue
-
-            if resource_id not in resource_os:
-                logger.info("Skipping {} for the background ping, it is not a real client".format(port_id))
-                continue
-
-            if port_data.get('phantom') or port_data.get('down'):
-                logger.info("Skipping {} for the background ping, the port is down or phantom".format(port_id))
-                continue
-
-            port_ip = port_data.get('ip')
-            if not port_ip or port_ip == '0.0.0.0':
-                logger.info("Skipping {} for the background ping, the client has no IP".format(port_id))
-                continue
-
-            selected.append(port_id)
-            self.bg_device_os[port_id] = resource_os[resource_id]
-            device_data = dict(port_data)
-            device_data.setdefault('user', resource_name.get(resource_id, ''))
-            self.bg_device_data[port_id] = device_data
-
-        unmatched = sorted((requested_ports | requested_resources) - matched_requests)
-        if unmatched:
-            logger.warning("Background ping could not find the devices {} on the LANforge".format(unmatched))
-
-        logger.info("The background ping will run on {} of the {} devices the test was given".format(selected, len(self.bg_requested_devices)))
-
-        return selected
-
-    def start_background_ping(self, device_list=None, sample_interval=10):
-        """Starts the background ping on the real clients of the calling test. Returns True when it is running."""
-        self.bg_requested_devices = list(device_list) if device_list else []
-        self.bg_sample_interval = sample_interval
-        self.bg_sequence_poll_interval = max(0.25, self.interval / 2)
+    def start_background_ping(self, device_list):
+        """Starts a ping on the real clients of the calling test. Returns True when it is running."""
         self.generic_endps_profile.name_prefix = self.BG_NAME_PREFIX
 
         if not self.target:
-            logger.error("No background  ping target was given, the background ping is disabled")
+            logger.error("No background ping target was given, the background ping is disabled")
             return False
 
         if not self.check_tab_exists():
@@ -1310,22 +1162,36 @@ class Ping(Realm):
         self.generic_endps_profile.dest = self.target
         self.generic_endps_profile.interval = self.interval
 
-        devices = self.filter_pingable_devices()
-        if not devices:
-            logger.error("No ping capable real devices were found, skipping the background ping")
+        resources = self.json_get('/resource/all')
+        if not resources or 'resources' not in resources:
+            logger.error("Background ping could not read the resource list, skipping it")
             return False
+        resource_data = {}
+        for resource_entry in resources['resources']:
+            resource_id, data = list(resource_entry.items())[0]
+            if isinstance(data, dict) and 'hw version' in data and not data.get('ct-kernel'):
+                resource_data[resource_id] = data
 
-        self.real_sta_list = devices
-        self.sta_list = list(devices)
-        self.real_sta_data_dict = {device: {'ostype': self.bg_device_os[device]} for device in devices}
-        self.bg_samples = {device: self.empty_sample() for device in devices}
-        self.bg_timeline_samples = {
-            device: [{'time': 0.0, 'sent': 0, 'received': 0, 'dropped': 0}]
-            for device in devices
-        }
-        self.bg_sequence_rtts = {device: {} for device in devices}
-        self.bg_sequence_dropped_total = {device: 0 for device in devices}
-        self.bg_previous_lines = {device: [] for device in devices}
+        self.real_sta_list = []
+        self.real_sta_data_dict = {}
+        for port in device_list or []:
+            data = resource_data.get('.'.join(str(port).split('.')[:2]))
+            if data is None:
+                logger.warning("Skipping {} for the background ping, it is not a real client on the LANforge".format(port))
+                continue
+            hw_version = data['hw version']
+            app_id = data.get('app-id', '')
+            if 'Apple' in hw_version and app_id != '' and (app_id != '0' or data.get('kernel', '') == ''):
+                logger.info("Skipping the iOS device {} for the background ping, a ping cannot be run on it".format(port))
+                continue
+            ostype = 'windows' if 'Win/x86' in hw_version else 'macos' if 'Apple/x86' in hw_version else 'linux' if 'Linux/x86' in hw_version else 'android'
+            self.real_sta_list.append(port)
+            self.real_sta_data_dict[port] = {'ostype': ostype, 'name': data.get('user', '') or data.get('hostname', '') or port}
+        self.sta_list = list(self.real_sta_list)
+
+        if not self.real_sta_list:
+            logger.error("No real devices were found for the background ping, skipping it")
+            return False
 
         try:
             self.cleanup()
@@ -1337,421 +1203,106 @@ class Ping(Realm):
             logger.error("Background ping could not be started: {}".format(e))
             return False
 
-        self.bg_started = True
         self.bg_start_time = time.time()
-        logger.info("Background ping started on {} devices towards {}".format(len(devices), self.target))
-
-        if self.bg_sample_interval:
-            self.bg_stop_event.clear()
-            self.bg_sampler_thread = threading.Thread(target=self.run_sampler, daemon=True)
-            self.bg_sampler_thread.start()
-            self.bg_sequence_sampler_thread = threading.Thread(target=self.run_sequence_sampler, daemon=True)
-            self.bg_sequence_sampler_thread.start()
-
+        logger.info("Background ping started on {} towards {}".format(self.real_sta_list, self.target))
         return True
 
-    def run_sampler(self):
-        """Background thread loop that periodically updates the per-device ping statistics until the ping is stopped."""
-        while not self.bg_stop_event.is_set():
-            if self.bg_stop_event.wait(self.bg_sample_interval):
-                break
-            try:
-                self.sample_endpoints()
-            except Exception as e:
-                logger.warning("Background ping sampling failed: {}".format(e))
-
-    def run_sequence_sampler(self):
-        """Background thread loop that records the per-packet results until the ping is stopped."""
-        while not self.bg_stop_event.is_set():
-            if self.bg_stop_event.wait(self.bg_sequence_poll_interval):
-                break
-            try:
-                self.sample_sequences()
-            except Exception as e:
-                logger.warning("Background ping per-packet sampling failed: {}".format(e))
-
-    def endpoint_results_by_device(self):
-        """Returns the raw endpoint data of every background ping endpoint, keyed by device."""
-        results = self.get_results()
-        by_device = {}
-
-        if isinstance(results, dict):
-            if 'name' in results:
-                results = [{results['name']: results}]
-            else:
-                results = [results]
-
-        if not isinstance(results, list):
-            return by_device
-
-        for entry in results:
-            if not isinstance(entry, dict):
-                continue
-            for key, value in entry.items():
-                if not isinstance(value, dict):
-                    continue
-                name = value.get('name', key)
-                if not name.startswith(self.BG_NAME_PREFIX + '-'):
-                    continue
-                by_device[name[len(self.BG_NAME_PREFIX) + 1:]] = value
-
-        return by_device
-
     @staticmethod
-    def empty_sample():
-        """Returns a blank statistics record for one device."""
-        return {'min': None, 'avg': None, 'max': None, 'rx': None, 'drop': None,
-                'count': 0, 'total': 0.0, 'observed_min': None, 'observed_max': None,
-                'last_line': ''}
-
-    def sample_endpoints(self, record_timeline=True):
-        """Reads the endpoint output once and updates the per-device ping statistics."""
-        sample_time = time.time()
-        for device, endpoint_data in self.endpoint_results_by_device().items():
-            if device not in self.bg_samples:
-                continue
-
-            if record_timeline:
-                self.record_counter_sample(device, endpoint_data, sample_time)
-
-            last_results = endpoint_data.get('last results', '') or ''
-            lines = [line for line in last_results.split('\n') if line.strip()]
-            if not lines:
-                continue
-
-            stats = self.bg_samples[device]
-            stats['last_line'] = lines[-1]
-
-            cumulative_found = False
-            for line in reversed(lines):
-                match = BG_CUMULATIVE_PATTERN.search(line)
-                if not match:
-                    continue
-                stats['min'] = float(match.group(1))
-                stats['avg'] = float(match.group(2))
-                stats['max'] = float(match.group(3))
-
-                drop_match = BG_DROP_PATTERN.search(line)
-                if drop_match:
-                    stats['drop'] = int(drop_match.group(1))
-                rx_match = BG_RX_PATTERN.search(line)
-                if rx_match:
-                    stats['rx'] = int(rx_match.group(1))
-
-                cumulative_found = True
-                break
-
-            new_lines = self.new_lines(self.bg_previous_lines.get(device, []), lines)
-            self.bg_previous_lines[device] = lines
-
-            if cumulative_found:
-                continue
-
-            for line in new_lines:
-                match = BG_RTT_PATTERN.search(line)
-                if not match:
-                    continue
-                rtt = float(match.group(1))
-                stats['count'] += 1
-                stats['total'] += rtt
-                if stats['observed_min'] is None or rtt < stats['observed_min']:
-                    stats['observed_min'] = rtt
-                if stats['observed_max'] is None or rtt > stats['observed_max']:
-                    stats['observed_max'] = rtt
-
-    def sample_sequences(self):
-        """Reads the endpoint replies and records the per-packet result of each ping."""
-        for device, endpoint_data in self.endpoint_results_by_device().items():
-            if device not in self.bg_sequence_rtts:
-                continue
-
-            last_results = endpoint_data.get('last results', '') or ''
-            lines = [line for line in last_results.split('\n') if line.strip()]
-            if not lines:
-                continue
-
-            authoritative_dropped = self.as_int(endpoint_data.get('dropped'))
-            self.record_sequence_samples(device, lines, authoritative_dropped)
-
-    def record_sequence_samples(self, device, lines, authoritative_dropped):
-        """Records the per-packet result of each reply for the connectivity timeline."""
-        sequence_rtts = self.bg_sequence_rtts.setdefault(device, {})
-        previous_drop_total = self.bg_sequence_dropped_total.get(device, 0)
-        latest_seq = None
-
-        for line in lines:
-            detected_match = BG_DROPPED_DETECTED_PATTERN.search(line)
-            if detected_match:
-                arrived_seq, expected_seq = int(detected_match.group(1)), int(detected_match.group(2))
-                for lost_seq in range(expected_seq, arrived_seq):
-                    sequence_rtts.setdefault(lost_seq, 0.0)
-
-            seq_match = BG_SEQ_PATTERN.search(line)
-            rtt_match = BG_RTT_PATTERN.search(line)
-            if not seq_match or not rtt_match:
-                continue
-
-            seq_number = int(seq_match.group(1))
-            sequence_rtts[seq_number] = float(rtt_match.group(1))
-            latest_seq = seq_number
-
-        if latest_seq is not None and authoritative_dropped > previous_drop_total:
-            for offset in range(1, authoritative_dropped - previous_drop_total + 1):
-                sequence_rtts.setdefault(latest_seq - offset, 0.0)
-            previous_drop_total = authoritative_dropped
-
-        self.bg_sequence_dropped_total[device] = previous_drop_total
-
-    def record_counter_sample(self, device, endpoint_data, sample_time):
-        """Records the packet counters of an endpoint for the connectivity timeline."""
-        if self.bg_start_time is None:
-            return
-
-        sent = self.as_int(endpoint_data.get('tx pkts'))
-        received = self.as_int(endpoint_data.get('rx pkts'))
-        dropped = self.as_int(endpoint_data.get('dropped'))
-        if not sent:
+    def get_packet_counts(data):
+        """Returns (sent, received, dropped) of an endpoint reading, from its counters or the totals on its last ping line, whichever shows more."""
+        sent = int(data.get('tx pkts') or 0)
+        received = int(data.get('rx pkts') or 0)
+        dropped = int(data.get('dropped') or 0)
+        rx_match = re.search(r'rx:\s*(\d+)', data.get('last results') or '')
+        drop_match = re.search(r'drop:\s*(\d+)', data.get('last results') or '')
+        if rx_match and drop_match and int(rx_match.group(1)) + int(drop_match.group(1)) > sent:
+            received, dropped = int(rx_match.group(1)), int(drop_match.group(1))
             sent = received + dropped
-
-        self.bg_timeline_samples.setdefault(device, []).append({
-            'time': max(0.0, sample_time - self.bg_start_time),
-            'sent': sent,
-            'received': received,
-            'dropped': dropped,
-        })
-
-    def connectivity_timeline_payload(self):
-        """Converts the per-packet ping results into up/drop time spans for the connectivity timeline graph."""
-        if not self.bg_sequence_rtts or not self.bg_start_time:
-            return None
-
-        if self.bg_monitor_window_start is not None and self.bg_monitor_window_end is not None:
-            window_start = self.bg_monitor_window_start
-            window_end = self.bg_monitor_window_end
-        else:
-            window_start = self.bg_start_time
-            window_end = self.bg_stop_time if self.bg_stop_time else time.time()
-        duration = max(0.1, window_end - window_start)
-        offset = window_start - self.bg_start_time
-        clients = []
-        stations = []
-        segments = []
-
-        for device in self.real_sta_list:
-            seq_rtts = self.bg_sequence_rtts.get(device) or {}
-            if not seq_rtts:
-                continue
-
-            device_data = self.bg_device_data.get(device, {})
-            label = device_data.get('user', '') or device_data.get('hostname', '') or device
-            client_index = len(clients)
-            clients.append(label)
-            stations.append(device)
-
-            client_segments = []
-
-            def append_segment(status, start, end, client_segments=client_segments, client_index=client_index):
-                """Adds a status span for the client, merging it into the previous span when the status is unchanged."""
-                if client_segments and client_segments[-1]['status'] == status:
-                    client_segments[-1]['end'] = round(end, 3)
-                else:
-                    client_segments.append({
-                        'clientIndex': client_index,
-                        'start': round(start, 3),
-                        'end': round(end, 3),
-                        'status': status,
-                    })
-
-            covered_until = 0.0
-            for seq in sorted(seq_rtts):
-                status = 'drop' if seq_rtts[seq] == 0 else 'up'
-                start = max(0.0, (seq - 1) * self.interval - offset)
-                end = min(duration, seq * self.interval - offset)
-                if end <= start:
-                    continue
-
-                if start > covered_until:
-                    append_segment('up', covered_until, start)
-
-                append_segment(status, start, end)
-                covered_until = max(covered_until, end)
-
-            segments.extend(client_segments)
-
-        if not clients or not segments:
-            return None
-
-        return {
-            'clients': clients,
-            'stations': stations,
-            'segments': segments,
-            'duration': round(duration, 3),
-            'emptyMessage': 'No time-series ping samples were collected',
-        }
-
-    @staticmethod
-    def new_lines(previous_lines, current_lines):
-        """Returns the lines of current_lines that were not already present in previous_lines."""
-        if not previous_lines:
-            return current_lines
-
-        overlap = min(len(previous_lines), len(current_lines))
-        while overlap > 0:
-            if previous_lines[-overlap:] == current_lines[:overlap]:
-                return current_lines[overlap:]
-            overlap -= 1
-
-        return current_lines
+        return sent, received, dropped
 
     def stop_background_ping(self):
-        """Stops the background ping and builds the final per device statistics."""
-        if not self.bg_started:
-            return {}
+        """Stops the background ping and collects its results from the generic endpoints.
 
-        self.bg_stop_event.set()
-        if self.bg_sampler_thread:
-            self.bg_sampler_thread.join(timeout=self.bg_sample_interval + 5)
-        if self.bg_sequence_sampler_thread:
-            self.bg_sequence_sampler_thread.join(timeout=self.bg_sequence_poll_interval + 5)
+        The totals are cumulative, so for each client the fullest of the readings taken during the test, just before the stop and after the stop is used.
+        Logs a warning for every client that returned no ping data, with the phantom, down and IP state from the port manager.
+        """
+        during_test = dict(self.latest_results)
 
-        try:
-            self.sample_sequences()
-            self.sample_endpoints()
-        except Exception as e:
-            logger.warning("Final live background ping sample could not be collected: {}".format(e))
+        before_stop = {}
+        for entry in self.get_results():
+            for endpoint, data in entry.items():
+                before_stop[endpoint] = dict(data)
 
+        self.stop_generic()
+        time.sleep(3)
         self.bg_stop_time = time.time()
 
-        try:
-            self.stop_generic()
-        except Exception as e:
-            logger.warning("Background ping could not be stopped cleanly: {}".format(e))
+        after_stop = {}
+        for entry in self.get_results():
+            for endpoint, data in entry.items():
+                after_stop[endpoint] = data
 
-        time.sleep(2)
-        try:
-            self.sample_sequences()
-            self.sample_endpoints(record_timeline=False)
-            self.bg_stats = self.build_background_stats()
-        except Exception as e:
-            logger.warning("Background ping results could not be collected: {}".format(e))
-            self.bg_stats = {}
-
-        self.bg_started = False
-        return self.bg_stats
-
-    def build_background_stats(self):
-        """Builds the final per-device ping results, including loss, RTT and remarks."""
-        stats = {}
-        results = self.endpoint_results_by_device()
-
+        self.bg_stats = {}
         for device in self.real_sta_list:
-            endpoint_data = results.get(device, {})
-            sampled = self.bg_samples.get(device, self.empty_sample())
+            endpoint = self.BG_NAME_PREFIX + '-' + device
+            readings = [snapshot[endpoint] for snapshot in (during_test, before_stop, after_stop) if snapshot.get(endpoint)]
+            readings.sort(key=lambda reading: self.get_packet_counts(reading)[0], reverse=True)
+            data = readings[0] if readings else {}
+            sent, received, dropped = self.get_packet_counts(data) if data else (0, 0, 0)
+            final_sent = self.get_packet_counts(after_stop[endpoint])[0] if after_stop.get(endpoint) else 0
+            if sent > final_sent:
+                logger.info("Background ping endpoint for {} showed {} sent after the stop but {} sent earlier, using the fuller earlier reading".format(
+                    device, final_sent, sent))
+            last_result = data.get('last results') or ''
+            rtt_line = next((reading['last results'] for reading in readings if 'min/avg/max' in (reading.get('last results') or '')), '')
+            min_rtt, avg_rtt, max_rtt = 'NA', 'NA', 'NA'
+            if rtt_line:
+                rtt_values = rtt_line.split('min/avg/max:', 1)[1].strip().split()[0].split('/')
+                if len(rtt_values) == 3:
+                    min_rtt, avg_rtt, max_rtt = self.validate_rtt(rtt_values[0], rtt_values[1], rtt_values[2])
 
-            last_point = (self.bg_timeline_samples.get(device) or [None])[-1]
-            if last_point:
-                sent, received, dropped = last_point['sent'], last_point['received'], last_point['dropped']
-            else:
-                sent = self.as_int(endpoint_data.get('tx pkts'))
-                received = self.as_int(endpoint_data.get('rx pkts'))
-                dropped = self.as_int(endpoint_data.get('dropped'))
-
-            if not received and sampled.get('rx') is not None:
-                received = sampled['rx']
-            if not dropped and sampled.get('drop') is not None:
-                dropped = sampled['drop']
-            if not sent:
-                sent = received + dropped
-
-            seq_rtts = self.bg_sequence_rtts.get(device)
-            if seq_rtts and len(seq_rtts) > sent:
-                sent = len(seq_rtts)
-                dropped = sum(1 for rtt in seq_rtts.values() if rtt == 0)
-                received = sent - dropped
-
-            minimum = sampled.get('min')
-            average = sampled.get('avg')
-            maximum = sampled.get('max')
-            if minimum is None and sampled.get('count'):
-                minimum = sampled['observed_min']
-                maximum = sampled['observed_max']
-                average = sampled['total'] / sampled['count']
-
-            device_data = self.bg_device_data.get(device, {})
-            os_type = self.bg_device_os.get(device, 'linux')
+            device_info = self.real_sta_data_dict[device]
             entry = {
                 'device': device,
-                'name': device_data.get('user', '') or device_data.get('hostname', '') or device,
-                'os': BG_OS_TYPE_LABELS.get(os_type, os_type),
-                'mac': device_data.get('mac', ''),
-                'ssid': device_data.get('ssid', ''),
-                'channel': device_data.get('channel', ''),
-                'mode': device_data.get('mode', ''),
-                'target': self.target,
-                'command': endpoint_data.get('command', ''),
+                'name': device_info['name'],
+                'os': {'windows': 'Windows', 'macos': 'Mac', 'linux': 'Linux', 'android': 'Android'}[device_info['ostype']],
+                'command': data.get('command', ''),
                 'sent': sent,
                 'recv': received,
-                'dropped': dropped,
                 'loss_percent': round(((sent - received) / sent) * 100, 2) if sent else 0,
-                'min_rtt': round(minimum, 2) if minimum is not None else 0,
-                'avg_rtt': round(average, 2) if average is not None else 0,
-                'max_rtt': round(maximum, 2) if maximum is not None else 0,
-                'last_result': sampled.get('last_line', ''),
-                'remarks': [],
+                'min_rtt': min_rtt,
+                'avg_rtt': avg_rtt,
+                'max_rtt': max_rtt,
+                'last_result': last_result,
             }
             entry['remarks'] = self.generate_remarks(entry)
+            self.bg_stats[device] = entry
+            logger.info("Background ping result for {} ({}): sent={}, received={}, dropped={}, min/avg/max={}/{}/{}".format(
+                device, entry['name'], sent, received, dropped, min_rtt, avg_rtt, max_rtt))
 
-            if not sent and not received:
-                logger.warning("The background ping produced no output on {}. The client did not run the command {}, check "
-                               "that the ping is runnable there.".format(device, entry["command"]))
+            if not last_result:
+                eid = self.name_to_eid(device)
+                response = self.json_get('/port/{}/{}/{}?fields=phantom,down,ip'.format(eid[0], eid[1], eid[2]))
+                port_data = response.get('interface', {}) if response else {}
+                logger.warning("No background ping data for {} ({}): endpoint {} returned no output. Port manager shows phantom={}, down={}, ip={}. "
+                               "Remarks: {}".format(device, entry['name'], self.BG_NAME_PREFIX + '-' + device, port_data.get('phantom', 'unknown'),
+                                                    port_data.get('down', 'unknown'), port_data.get('ip', 'unknown'), entry['remarks']))
+            elif entry['remarks']:
+                logger.warning("Background ping on {} ({}) reported: {}".format(device, entry['name'], entry['remarks']))
 
-            stats[device] = entry
+        return self.bg_stats
 
-        return stats
+    def add_background_ping_to_report(self, report, device_info=None):
+        """Adds the background ping statistics table to the test's report. Safe to call when the background ping did not run.
 
-    @staticmethod
-    def as_int(value):
-        """Converts a value to an int, returning 0 when it is missing or invalid."""
-        try:
-            return int(value)
-        except (TypeError, ValueError):
-            return 0
-
-    def set_monitor_window(self, start_dt, end_dt):
-        """Sets the time window of the calling test's monitoring, used for the reported duration."""
-        if start_dt is None or end_dt is None:
-            return
-        try:
-            self.bg_monitor_window_start = start_dt.timestamp()
-            self.bg_monitor_window_end = end_dt.timestamp()
-        except (AttributeError, OSError, OverflowError, ValueError) as e:
-            logger.warning("Background ping could not use the given monitor window ({!r}, {!r}): {}".format(start_dt, end_dt, e))
-
-    def monitor_duration_string(self):
-        """Returns the monitored duration as HH:MM:SS."""
-        if self.bg_monitor_window_start is not None and self.bg_monitor_window_end is not None:
-            total_seconds = int(self.bg_monitor_window_end - self.bg_monitor_window_start)
-        else:
-            if not self.bg_start_time:
-                return ''
-            end = self.bg_stop_time if self.bg_stop_time else time.time()
-            total_seconds = int(end - self.bg_start_time)
-        minutes, seconds = divmod(total_seconds, 60)
-        hours, minutes = divmod(minutes, 60)
-        return '{:02d}:{:02d}:{:02d}'.format(hours, minutes, seconds)
-
-    def background_stats_dataframe(self, device_info=None):
-        """Builds the background ping statistics table.
-
-        device_info: optional {device: {'mac': ..., 'channel': ..., 'rssi': ...}} folded into the
-        "MAC", "Channel" and "RSSI (dBm)" columns, '' for any device or field not present.
+        device_info: optional {device: {'mac': ..., 'channel': ..., 'rssi': ...}} for the MAC, Channel and RSSI columns.
         """
         if not self.bg_stats:
-            return None
+            return False
 
         device_info = device_info or {}
         rows = list(self.bg_stats.values())
-        table = {
+        dataframe = pd.DataFrame({
             'Wireless Client': [row['name'] for row in rows],
             'MAC': [device_info.get(row['device'], {}).get('mac', '') for row in rows],
             'RSSI (dBm)': [device_info.get(row['device'], {}).get('rssi', '') for row in rows],
@@ -1759,41 +1310,12 @@ class Ping(Realm):
             'Packets Sent': [row['sent'] for row in rows],
             'Packets Received': [row['recv'] for row in rows],
             'Packet Loss %': [row['loss_percent'] for row in rows],
-            'AVG RTT (ms)': [row['avg_rtt'] for row in rows],
-        }
-
-        return pd.DataFrame(table)
-
-    def add_background_ping_to_report(self, report, device_info=None, timeline_labels=None):
-        """Adds the background ping connectivity graph and statistics table to the test's report.
-
-        Safe to call unconditionally, nothing is added when the background ping did not run.
-        """
-        dataframe = self.background_stats_dataframe(device_info=device_info)
-        if dataframe is None:
-            return False
-
+            'AVG RTT (ms)': [row['avg_rtt'] if row['avg_rtt'] == 'NA' else float(str(row['avg_rtt']).replace(',', '')) for row in rows],
+        })
+        duration = str(datetime.timedelta(seconds=int(self.bg_stop_time - self.bg_start_time)))
         try:
-            timeline = self.connectivity_timeline_payload()
-            if timeline and hasattr(report, 'build_echarts_chart'):
-                timeline.update(timeline_labels or {})
-                report.set_obj_html(
-                    _obj_title='Client Connectivity Results Throughout the Test Duration',
-                    _obj=('The graph illustrates the connectivity status of all wireless clients during the '
-                          'test based on connectivity monitoring during the test execution. Green segments '
-                          'represent successful responses, while red segments indicate packet loss or '
-                          'connectivity drops observed during the test.'))
-                report.build_objective()
-                report.build_echarts_chart(
-                    chart_id='background-ping-connectivity-timeline',
-                    chart_type='connectivity_timeline',
-                    payload=timeline,
-                    title='Wireless Client Connectivity Status vs Time')
-
-            report.set_table_title(
-                'Ping statistics collected for all wireless clients during the test '
-                '(target {}, duration {}, {}s interval)'.format(
-                    self.target, self.monitor_duration_string(), self.interval))
+            report.set_table_title("Ping statistics collected for all wireless clients during the test (target {}, duration {}, {}s interval)".format(
+                self.target, duration, self.interval))
             report.build_table_title()
             report.set_table_dataframe(dataframe)
             report.build_table()
@@ -1820,10 +1342,6 @@ def add_bg_ping_arguments(parser):
                        type=float,
                        default=1,
                        help='Packet interval of the background ping in seconds. Defaults to 1')
-    group.add_argument('--bg_ping_sample_interval',
-                       type=float,
-                       default=10,
-                       help='How often the background ping endpoints are sampled, in seconds. Defaults to 10')
     return parser
 
 
@@ -1852,8 +1370,7 @@ def bg_ping_from_args(args, host, port=8080, device_list=None, default_target=No
                            duration=0,
                            debug=getattr(args, 'debug', False))
 
-    if not background_ping.start_background_ping(device_list=device_list,
-                                                 sample_interval=getattr(args, 'bg_ping_sample_interval', 10)):
+    if not background_ping.start_background_ping(device_list=device_list):
         return None
 
     return background_ping
