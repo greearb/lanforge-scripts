@@ -1707,6 +1707,8 @@ class HttpDownload(Realm):
             else:
                 del test_setup_info["Traffic Duration "]
                 test_setup_info["No of Cycles"] = self.cycles
+        if self.test_name:
+            test_setup_info["Test Name"] = self.test_name
         if iot_summary:
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
             report.set_obj_html(
@@ -1725,6 +1727,11 @@ class HttpDownload(Realm):
                                 "download some amount of file from HTTP server and measures the "
                                 "time taken by the client to Download the file.")
 
+        for key in ("AP Name", "SSID", "Security"):
+            if not test_setup_info.get(key):
+                test_setup_info.pop(key, None)
+        if "Test Name" in test_setup_info:
+            test_setup_info = {"Test Name": test_setup_info.pop("Test Name"), **test_setup_info}
         report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
         report.build_objective()
@@ -2830,7 +2837,7 @@ def main():
     optional.add_argument('--threshold_5g', help="Enter the threshold value for 5G Pass/Fail criteria", default="60")
     optional.add_argument('--threshold_2g', help="Enter the threshold value for 2.4G Pass/Fail criteria", default="90")
     optional.add_argument('--threshold_both', help="Enter the threshold value for Both Pass/Fail criteria", default="50")
-    required.add_argument('--ap_name', help="specify the ap model ", default="TestAP")
+    required.add_argument('--ap_name', help="specify the ap model ", default=None)
     optional.add_argument('--lf_username', help="Enter the lanforge user name. Example : 'lanforge' ", default="lanforge")
     optional.add_argument('--lf_password', help="Enter the lanforge password. Example : 'lanforge' ", default="lanforge")
     optional.add_argument('--ssh_port', type=int, help="specify the ssh port eg 22", default=22)
@@ -3338,7 +3345,7 @@ times the file is downloaded.
             profile_names = ', '.join(configuration.values())
             configmap = "Groups:" + group_names + " -> Profiles:" + profile_names
             test_setup_info = {
-                "AP name": args.ap_name,
+                "AP Name": args.ap_name,
                 "Configuration": configmap,
                 "Configured Devices": ", ".join(all_devices_names),
                 "No of Devices": "Total" + f"({len(all_devices_names)})" + total_devices,

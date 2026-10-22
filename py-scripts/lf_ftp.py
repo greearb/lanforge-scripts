@@ -2582,6 +2582,9 @@ class FtpTest(LFCliBase):
                 del test_setup_info["Traffic Duration "]
                 test_setup_info["Total Cycles"] = self.cycles
 
+        if self.test_name:
+            test_setup_info["Test Name"] = self.test_name
+
         if iot_summary:
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
             self.report.set_obj_html(
@@ -2603,6 +2606,11 @@ class FtpTest(LFCliBase):
                 "simultaneously download some amount of file from FTP server and measuring the "
                 "time taken by client to Download the file."
             )
+        for key in ("AP Name", "SSID", "Security"):
+            if not test_setup_info.get(key):
+                test_setup_info.pop(key, None)
+        if "Test Name" in test_setup_info:
+            test_setup_info = {"Test Name": test_setup_info.pop("Test Name"), **test_setup_info}
         self.report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
         self.report.build_objective()
         if not self.do_bandsteering and self.robot_test:

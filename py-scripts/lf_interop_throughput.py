@@ -434,6 +434,13 @@ class Throughput(Realm):
             self.current_angle = None
             self.charge_point_name = None
             self.coordinates_completed = []
+            # One (coordinate, cycle) tuple per point actually visited, so a
+            # multi-cycle run can report every visit instead of just the last.
+            self.coordinate_visits = []
+            # Points whose measurement ran to the end (not cut short by Stop) - matches the
+            # webGUI's own "point finished" rule, which decides whether it captures a heatmap.
+            self.coordinates_finished = []
+            self.current_cycle = 1
             self.battery_log = {}
             self.robot.time_to_reach = int(duration_to_skip) * 60
             self.robot.coordinate_list = self.coordinate_list
@@ -691,8 +698,14 @@ class Throughput(Realm):
                 self.copy_reports_to_home_dir()
             exit(1)
 
-        # Loop through the coordinate list when coordinates are specified.
-        for coord in self.coordinate_list:
+        # 0/negative would skip every visit and leave the report inputs unset - run at least one cycle
+        total_cycles = max(1, int(self.total_cycles)) if self.total_cycles else 1
+        points_per_cycle = len(self.coordinate_list)
+        for visit_index, coord in enumerate(self.coordinate_list * total_cycles):
+            self.current_cycle = (visit_index // points_per_cycle) + 1
+            self.robot.current_cycle = self.current_cycle
+            if total_cycles > 1 and visit_index % points_per_cycle == 0:
+                logger.info("Starting cycle {} of {}".format(self.current_cycle, total_cycles))
             if self.stop_test:
                 logger.info("Stopping robot run because all CXs are missing or the test was stopped.")
                 break
@@ -705,8 +718,13 @@ class Throughput(Realm):
             matched, abort = self.robot.move_to_coordinate(coord)
             if matched:
                 self.current_coordinate = coord
-                self.coordinates_completed.append(coord)
-                logger.info("Reached the point {}".format(coord))
+                if coord not in self.coordinates_completed:
+                    self.coordinates_completed.append(coord)
+                self.coordinate_visits.append((coord, self.current_cycle))
+                if total_cycles > 1:
+                    logger.info("Reached the point {} (cycle {} of {})".format(coord, self.current_cycle, total_cycles))
+                else:
+                    logger.info("Reached the point {}".format(coord))
             if abort:
                 break
             # To skip a point if there is an obstacle
@@ -732,6 +750,13 @@ class Throughput(Realm):
                 individual_dataframe_column.extend(['Overall Download', 'Overall Upload', 'Overall Rx % Drop ', 'Overall Tx % Drop', 'Iteration',
                                                     'TIMESTAMP', 'Start_time', 'End_time', 'Remaining_Time', 'Incremental_list', 'status'])
             individual_df = pd.DataFrame(columns=individual_dataframe_column)
+
+            # Multi-cycle: wipe the previous cycle's rows from the per-coordinate CSV the webGUI polls, the moment we arrive
+            # before CX setup. Its last row still reads status 'Stopped' from the prior visit, so without this
+            # the webGUI charts that stale data and marks this visit finished before it has run.
+            if total_cycles > 1 and self.dowebgui and not self.group_name and self.result_dir:
+                individual_df.to_csv('{}/{}_throughput_data.csv'.format(self.result_dir, coord), index=False)
+                individual_df.to_csv('{}_throughput_data.csv'.format(coord), index=False)
 
             overall_start_time = datetime.now()
             overall_end_time = overall_start_time + timedelta(seconds=int(args.test_duration) * len(incremental_capacity_list))
@@ -800,9 +825,15 @@ class Throughput(Realm):
             # Stop the whole robot run on a user stop or an unrecoverable CX loss.
             if test_stopped_by_user:
                 break
+            if coord not in self.coordinates_finished:
+                self.coordinates_finished.append(coord)
 
-        #     logger.info("connections download {}".format(connections_download))
-        #     logger.info("connections upload {}".format(connections_upload))
+            # Beyond the first cycle, a later revisit to this same coordinate overwrites {coord}_throughput_data.csv
+            # before generate_report_robo reads it, so preserve this visit's data under a cycle-tagged name.
+            if total_cycles > 1:
+                visit_csv = '{}_throughput_data.csv'.format(self.current_coordinate)
+                if os.path.exists(visit_csv):
+                    shutil.copyfile(visit_csv, 'coordinate_{}_cycle_{}_throughput_data.csv'.format(self.current_coordinate, self.current_cycle))
             self.stop()
         if args.postcleanup:
             self.cleanup()
@@ -817,12 +848,28 @@ class Throughput(Realm):
                 navdata['Canbee_location'] = ''
                 navdata['Canbee_angle'] = ''
                 navdata['Test_status'] = 'Completed'
+                # Last cycle the robot actually reached a point in - the loop bumps current_cycle before its stop checks,
+                # so a stop at a cycle boundary must not report the cycle that never started.
+                navdata['current_cycle'] = self.coordinate_visits[-1][1] if self.coordinate_visits else 1
+                navdata['total_cycles'] = total_cycles
             with open(nav_data, 'w') as x:
                 json.dump(navdata, x, indent=4)
-        self.generate_report_robo(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
-        if self.dowebgui:
-            # copying to home directory i.e home/user_name
-            self.copy_reports_to_home_dir()
+        # Test_status=Completed above only means "measurements done" - the webGUI still has to
+        # upload the final heatmap screenshots. report_generated tells the webGUI when the report is actually on disk.
+        report_generated = False
+        try:
+            self.generate_report_robo(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
+            if self.dowebgui:
+                # copying to home directory i.e home/user_name
+                self.copy_reports_to_home_dir()
+            report_generated = True
+        finally:
+            if args.dowebgui:
+                with open(nav_data, 'r') as x:
+                    navdata = json.load(x)
+                navdata['report_generated'] = report_generated
+                with open(nav_data, 'w') as x:
+                    json.dump(navdata, x, indent=4)
 
     def os_type(self):
         """
@@ -1745,18 +1792,21 @@ class Throughput(Realm):
                 # Append data to individual_df and save to CSV
                 individual_df.loc[len(individual_df)] = individual_df_data
 
-                # Check if test was stopped by the user
-                with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name),
-                          'r') as file:
-                    data = json.load(file)
-                    if data["status"] != "Running":
-                        logger.warning('Test is stopped by the user')
-                        test_stopped_by_user = True
-                        self.stopped_by_user = True
-                        if self.do_bandsteering:
-                            self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
-                            return individual_df, test_stopped_by_user
-                        break
+                # Check if test was stopped by the user.
+                try:
+                    with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name),
+                              'r') as file:
+                        stopped_by_webui = json.load(file).get("status") != "Running"
+                except (FileNotFoundError, ValueError):
+                    stopped_by_webui = True
+                if stopped_by_webui:
+                    logger.warning('Test is stopped by the user')
+                    test_stopped_by_user = True
+                    self.stopped_by_user = True
+                    if self.do_bandsteering:
+                        self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
+                        return individual_df, test_stopped_by_user
+                    break
                 if self.do_bandsteering:
                     self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
                     return individual_df, test_stopped_by_user
@@ -2029,6 +2079,7 @@ class Throughput(Realm):
         # Iterate through rotation angles.
         # When no rotation is specified, angle_list defaults to [0],
         # ensuring a single execution similar to normal throughput tests.
+        measured_angle = None
         for j in range(len(self.angle_list)):
 
             # Check robot battery status before proceeding to monitor
@@ -2053,9 +2104,12 @@ class Throughput(Realm):
             if self.rotation_enabled:
                 rotation = self.robot.rotate_angle(self.angle_list[j])
                 if not rotation:
+                    if self.robot.runtime_dir is not None and self.robot.check_test_status():
+                        test_stopped_by_user = True
                     break
                 end_time = datetime.now() + timedelta(seconds=int(self.test_duration))
                 self.current_angle = self.angle_list[j]
+                measured_angle = self.angle_list[j]
 
             # Continuously collect data until end time is reached
             while datetime.now() < end_time:
@@ -2206,15 +2260,19 @@ class Throughput(Realm):
                     # Append data to individual_df and save to CSV
                     individual_df.loc[len(individual_df)] = individual_df_data
 
-                    # Check if test was stopped by the user
-                    with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name),
-                              'r') as file:
-                        data = json.load(file)
-                        if data["status"] != "Running":
-                            logger.warning('Test is stopped by the user')
-                            test_stopped_by_user = True
-                            self.stopped_by_user = True
-                            break
+                    # Check if test was stopped by the user. The webGUI STOP deletes the Running_instances JSON,
+                    # so a missing/unreadable file also means "stopped"
+                    try:
+                        with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name),
+                                  'r') as file:
+                            stopped_by_webui = json.load(file).get("status") != "Running"
+                    except (FileNotFoundError, ValueError):
+                        stopped_by_webui = True
+                    if stopped_by_webui:
+                        logger.warning('Test is stopped by the user')
+                        test_stopped_by_user = True
+                        self.stopped_by_user = True
+                        break
 
                     # Adjust time_gap based on elapsed time since start (for webui)
                     d = datetime.now()
@@ -2356,24 +2414,29 @@ class Throughput(Realm):
 
             if self.rotation_enabled:
                 self.stop()
+
+            if test_stopped_by_user:
+                break
         individual_df_data = []
-        upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
-        download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
-        drop_a_per = [float(round(sum(i) / len(i), 2)) for i in drop_a]
-        drop_b_per = [float(round(sum(i) / len(i), 2)) for i in drop_b]
+        stopped_row_angle = measured_angle if measured_angle is not None else self.angle_list[j]
+        upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in upload]
+        download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") if i else 0.0 for i in download]
+        drop_a_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in drop_a]
+        drop_b_per = [float(round(sum(i) / len(i), 2)) if i else 0.0 for i in drop_b]
         signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
         signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
 
         # Storing individual device throughput data(download, upload, Rx % drop , Tx % drop) to dataframe after test stopped
         for i in range(len(download_throughput)):
-            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i], avg_rtt[i][0], int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
+            individual_df_data.extend([download_throughput[i], upload_throughput[i], drop_a_per[i], drop_b_per[i],
+                                       avg_rtt[i][0] if avg_rtt[i] else 0, int(signal_list[i]), link_speed_list[i], rx_rate_list[i]])
         timestamp = datetime.now().strftime("%d/%m %I:%M:%S %p")
 
         # If it's the last iteration, append final metrics and 'Stopped' status
         if iteration + 1 == len(incremental_capacity_list):
             if self.rotation_enabled:
                 individual_df_data.extend([round(sum(download_throughput), 2), round(sum(upload_throughput), 2), sum(drop_a_per), sum(drop_a_per), iteration + 1, timestamp,
-                                           overall_start_time.strftime("%d/%m %I:%M:%S %p"), timestamp, 0, ', '.join(str(n) for n in incremental_capacity_list), self.angle_list[j], 'Stopped'])
+                                           overall_start_time.strftime("%d/%m %I:%M:%S %p"), timestamp, 0, ', '.join(str(n) for n in incremental_capacity_list), stopped_row_angle, 'Stopped'])
 
             else:
                 individual_df_data.extend([round(sum(download_throughput), 2), round(sum(upload_throughput), 2), sum(drop_a_per), sum(drop_a_per), iteration + 1, timestamp,
@@ -2383,7 +2446,7 @@ class Throughput(Realm):
         elif test_stopped_by_user:
             if self.rotation_enabled:
                 individual_df_data.extend([round(sum(download_throughput), 2), round(sum(upload_throughput), 2), sum(drop_a_per), sum(drop_a_per), iteration + 1, timestamp,
-                                           overall_start_time.strftime("%d/%m %I:%M:%S %p"), timestamp, 0, ', '.join(str(n) for n in incremental_capacity_list), self.angle_list[j], 'Stopped'])
+                                           overall_start_time.strftime("%d/%m %I:%M:%S %p"), timestamp, 0, ', '.join(str(n) for n in incremental_capacity_list), stopped_row_angle, 'Stopped'])
             else:
                 individual_df_data.extend([round(sum(download_throughput), 2), round(sum(upload_throughput), 2), sum(drop_a_per), sum(drop_a_per), iteration + 1, timestamp,
                                            overall_start_time.strftime("%d/%m %I:%M:%S %p"), timestamp, 0, ', '.join(str(n) for n in incremental_capacity_list), 'Stopped'])
@@ -2403,7 +2466,7 @@ class Throughput(Realm):
                                            overall_end_time.strftime("%d/%m %I:%M:%S %p"),
                                            remaining_minutes_instrf,
                                            ', '.join(str(n) for n in incremental_capacity_list),
-                                           self.angle_list[j],
+                                           stopped_row_angle,
                                            'Stopped'])
             else:
                 individual_df_data.extend([round(sum(download_throughput),
@@ -2435,17 +2498,21 @@ class Throughput(Realm):
         else:
             individual_df.to_csv('{}_throughput_data.csv'.format(self.current_coordinate), index=False)
 
-        # Update the running Web GUI JSON with list of coordinates completed
+        # Update the running Web GUI JSON with list of coordinates completed.
+        # If the webGUI already removed it (STOP), there's nothing to update.
         if self.dowebgui and self.robo_ip:
-            with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name),
-                      'r') as file:
-                data = json.load(file)
-                coordinate_list = data['current_coordinate']
-                if self.current_coordinate not in coordinate_list:
-                    coordinate_list.append(self.current_coordinate)
-                data['current_coordinate'] = coordinate_list
-            with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name), 'w') as file:
-                json.dump(data, file, indent=4)
+            try:
+                with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name),
+                          'r') as file:
+                    data = json.load(file)
+                    coordinate_list = data['current_coordinate']
+                    if self.current_coordinate not in coordinate_list:
+                        coordinate_list.append(self.current_coordinate)
+                    data['current_coordinate'] = coordinate_list
+                with open(runtime_dir + "/../../Running_instances/{}_{}_running.json".format(self.ip, self.test_name), 'w') as file:
+                    json.dump(data, file, indent=4)
+            except (FileNotFoundError, ValueError):
+                pass
 
         keys = list(connections_upload.keys())
         keys = list(connections_download.keys())
@@ -3915,55 +3982,108 @@ class Throughput(Realm):
             # Add robot IP, completed coordinates, and selected angles to the test summary
             test_setup_info["ROBOT IP"] = self.robo_ip
             test_setup_info["Selected Coordinates"] = ",".join(self.coordinates_completed)
+            multi_cycle = int(self.total_cycles) > 1 if self.total_cycles else False
+            if multi_cycle:
+                test_setup_info["Total Cycles"] = self.total_cycles
             if self.rotation_enabled:
                 test_setup_info["Selected Angles"] = ",".join(self.angle_list)
 
             report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
 
-            # Add live view images in case of robot testing from webui
+            # Add live view heatmaps in case of robot testing from webui.
             if self.dowebgui:
+                images_dir = os.path.join(self.result_dir, "live_view_images")
+                have_data = bool(self.coordinates_finished)
 
-                throughput_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_throughput.png")
-                rssi_image_path = os.path.join(self.result_dir, "live_view_images", f"{self.test_name}_rssi.png")
-                timeout = 300  # seconds
-                start_time = time.time()
-
-                while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)):
-                    if time.time() - start_time > timeout:
-                        print("Timeout: Images not found within 300 seconds.")
-                        break
-                    time.sleep(1)
-
-                if os.path.exists(throughput_image_path):
+                def embed_heatmap_or_placeholder(label, image_path, heading_suffix=""):
+                    # Always adds a visible section - a missing image used to just be silently skipped,
                     report.set_custom_html('<div style="page-break-before: always;"></div>')
                     report.build_custom()
-                    report.set_custom_html("<h2>Average Throughput Heatmap: </h2>")
+                    report.set_custom_html(f"<h2>{label} Heatmap{heading_suffix}: </h2>")
                     report.build_custom()
-                    report.set_custom_html(f'<img src="file://{throughput_image_path}" style="width:1500px; height:900px;"></img>')
+                    if os.path.exists(image_path):
+                        report.set_custom_html(f'<img src="file://{image_path}" style="width:1500px; height:900px;"></img>')
+                    elif have_data:
+                        report.set_custom_html(
+                            f'<p><i>{label} heatmap{heading_suffix} is not available - the capture may '
+                            'have failed or the browser was closed before it was uploaded.</i></p>')
+                    else:
+                        report.set_custom_html(
+                            f'<p><i>{label} heatmap{heading_suffix} is not available - the test did not '
+                            'complete any coordinate measurements.</i></p>')
                     report.build_custom()
-                    # os.remove(throughput_image_path)
 
-                if os.path.exists(rssi_image_path):
-                    report.set_custom_html('<div style="page-break-before: always;"></div>')
-                    report.build_custom()
-                    report.set_custom_html("<h2>Average RSSI Heatmap: </h2>")
-                    report.build_custom()
-                    report.set_custom_html(f'<img src="file://{rssi_image_path}" style="width:1500px; height:900px;"></img>')
-                    report.build_custom()
-            # Loop through each coordinate
-            for i, coordinate in enumerate(self.coordinates_completed):
+                if multi_cycle:
+                    # One averaged heatmap per cycle instead of a single overall one.
+                    # the final cycle's images arrive only after the webGUI sees Test_status=Completed
+                    last = self.coordinate_visits[-1][1] if self.coordinate_visits else 1
+                    last_imgs = [os.path.join(images_dir, f"{self.test_name}_{s}_cycle{last}.png")
+                                 for s in ("throughput", "rssi")]
+                    # Wait for the last cycle's webGUI screenshots.
+                    timeout = 60  # seconds, only hit when no capture happened at all
+                    grace = 20     # seconds to wait for the second image once the first lands
+                    if have_data:
+                        start_time = time.time()
+                        while not any(os.path.exists(p) for p in last_imgs):
+                            if time.time() - start_time > timeout:
+                                print("Timeout: cycle {} heatmap images not found within {}s".format(last, timeout))
+                                break
+                            time.sleep(1)
+                        if any(os.path.exists(p) for p in last_imgs):
+                            grace_end = time.time() + grace
+                            while not all(os.path.exists(p) for p in last_imgs) and time.time() < grace_end:
+                                time.sleep(1)
+                            if not all(os.path.exists(p) for p in last_imgs):
+                                print("Cycle {} heatmap: only a partial capture arrived, embedding what exists".format(last))
+                    else:
+                        print("No coordinate finished - skipping heatmap wait, nothing was ever captured")
+                    for cycle_num in range(1, last + 1):
+                        for label, suffix in (("Throughput", "throughput"), ("RSSI", "rssi")):
+                            cycle_img = os.path.join(images_dir, f"{self.test_name}_{suffix}_cycle{cycle_num}.png")
+                            embed_heatmap_or_placeholder(label, cycle_img, f" - Cycle {cycle_num}")
+                else:
+                    throughput_image_path = os.path.join(images_dir, f"{self.test_name}_throughput.png")
+                    rssi_image_path = os.path.join(images_dir, f"{self.test_name}_rssi.png")
 
+                    timeout = 60  # seconds
+                    grace = 20
+                    if have_data:
+                        start_time = time.time()
+                        while not (os.path.exists(throughput_image_path) or os.path.exists(rssi_image_path)):
+                            if time.time() - start_time > timeout:
+                                print("Timeout: heatmap images not found within {}s.".format(timeout))
+                                break
+                            time.sleep(1)
+                        if os.path.exists(throughput_image_path) or os.path.exists(rssi_image_path):
+                            grace_end = time.time() + grace
+                            while not (os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path)) and time.time() < grace_end:
+                                time.sleep(1)
+                    else:
+                        print("No coordinate finished - skipping heatmap wait, nothing was ever captured")
+
+                    embed_heatmap_or_placeholder("Average Throughput", throughput_image_path)
+                    embed_heatmap_or_placeholder("Average RSSI", rssi_image_path)
+            # Loop through each point actually visited: one entry per coordinate
+            # per cycle, so a multi-cycle run reports every visit rather than only
+            # the last. A single-cycle run has one (coord, 1) entry per coordinate.
+            visits = self.coordinate_visits if self.coordinate_visits else [(c, 1) for c in self.coordinates_completed]
+            for i, (coordinate, cycle_num) in enumerate(visits):
+
+                point_title = f"Point {coordinate}"
+                if multi_cycle:
+                    point_title += f" – Cycle {cycle_num}"
                 report.set_obj_html(
-                    _obj_title=f"<h3 style='text-decoration: underline;'>Throughput Test Details – Robot Position: Point {coordinate}</h3>",
+                    _obj_title=f"<h3 style='text-decoration: underline;'>Throughput Test Details – Robot Position: {point_title}</h3>",
                     _obj=" ")
                 report.build_objective()
-                coordinate_csv = f"{coordinate}_throughput_data.csv"
+                per_cycle_csv = 'coordinate_{}_cycle_{}_throughput_data.csv'.format(coordinate, cycle_num)
+                coordinate_csv = per_cycle_csv if (multi_cycle and os.path.exists(per_cycle_csv)) else f"{coordinate}_throughput_data.csv"
                 data = pd.read_csv(coordinate_csv)
 
                 if self.dowebgui is True and self.group_name:
                     shutil.move('{}_overall_throughput.csv', report_path_date_time)
                 else:
-                    shutil.move('{}_throughput_data.csv'.format(coordinate), report_path_date_time)
+                    shutil.move(coordinate_csv, report_path_date_time)
 
                 for angle in self.angle_list:
                     # Loop through iterations and build graphs, tables for each iteration
@@ -3987,6 +4107,13 @@ class Throughput(Realm):
                             logger.warning(
                                 "Skipping report section for iteration %s at coordinate %s because no monitoring data was collected.",
                                 i + 1, coordinate)
+                            continue
+                        # Every configured angle is walked here, but a stop (or failed rotation) can end a visit before
+                        # some angles run - those have no rows
+                        if self.rotation_enabled and data_iter[data_iter["Angle"] == float(angle)].empty:
+                            logger.warning(
+                                "Skipping report section for angle %s at coordinate %s because it was not measured.",
+                                angle, coordinate)
                             continue
 
                         # for sig in self.signal_list[0:int(incremental_capacity_list[i])]:
@@ -4205,12 +4332,15 @@ class Throughput(Realm):
                             _obj_title=f"{real_time_data}",
                             _obj=" ")
                         report.build_objective()
+                        # Tag the graph filename with the cycle for a multi-cycle
+                        # run, otherwise revisits of the same coordinate collide.
+                        cycle_tag = "_cycle{}".format(cycle_num) if multi_cycle else ""
                         if self.rotation_enabled:
                             xaxis_categories = data_for_angle['TIMESTAMP'][data_for_angle['Iteration'] == i + 1].values.tolist()
-                            graph_image_name = "line_graph{}_{}_{}".format(coordinate, angle, i)
+                            graph_image_name = "line_graph{}_{}_{}{}".format(coordinate, angle, i, cycle_tag)
                         else:
                             xaxis_categories = data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist()
-                            graph_image_name = "line_graph{}_{}".format(coordinate, i)
+                            graph_image_name = "line_graph{}_{}{}".format(coordinate, i, cycle_tag)
                         graph_png = self.build_line_graph(
                             data_set=data_set_in_graph,
                             xaxis_name="Time",
@@ -4658,19 +4788,15 @@ class Throughput(Realm):
                     print("Timeout: Images not found within 60 seconds.")
                     break
                 time.sleep(1)
-            while not os.path.exists(throughput_image_path) and not os.path.exists(rssi_image_path):
-                if os.path.exists(throughput_image_path) and os.path.exists(rssi_image_path):
-                    break
-            if os.path.exists(throughput_image_path):
-                report.set_custom_html('<div style="page-break-before: always;"></div>')
-                report.build_custom()
-                report.set_custom_html(f'<img src="file://{throughput_image_path}"></img>')
-                report.build_custom()
-
-            if os.path.exists(rssi_image_path):
-                report.set_custom_html('<div style="page-break-before: always;"></div>')
-                report.build_custom()
-                report.set_custom_html(f'<img src="file://{rssi_image_path}"></img>')
+            for label, image_path in (("Throughput", throughput_image_path), ("RSSI", rssi_image_path)):
+                if os.path.exists(image_path):
+                    report.set_custom_html('<div style="page-break-before: always;"></div>')
+                    report.build_custom()
+                    report.set_custom_html(f'<img src="file://{image_path}"></img>')
+                else:
+                    report.set_custom_html(
+                        f'<p><i>{label} heatmap (Floor {floor + 1}) is not available - the capture may '
+                        'have failed or the browser was closed before it was uploaded.</i></p>')
                 report.build_custom()
 
     def build_iot_report_section(self, report, iot_summary):
@@ -5112,7 +5238,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     optional.add_argument("--interopability_config", action="store_true", help="To do individual configuration for each device in interoperability")
     optional.add_argument("--tput_mbps", action="store_true", help="Interpret rated download and upload values as Mbps instead of bytes")
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
-    optional.add_argument('--total_cycles', help='Enable bandsteering', default="1")
+    optional.add_argument('--total_cycles', help='No of cycles: how many times a robot test repeats the coordinate list', default="1")
     optional.add_argument('--duration_to_skip', help='Robot wait duration in seconds at obstacle', default="1")
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
     # IOT ARGS
