@@ -16,6 +16,20 @@ EXAMPLE:
     python3 lf_wifi_msgs.py --mgr 192.168.1.31 --between 1788159332090 1788161286054
     python3 lf_wifi_msgs.py --mgr 192.168.1.31 --poll --interval 2s
 
+    # check connection stats for given device_list for real clients:
+    python3 lf_wifi_msgs.py --mgr 192.168.245.117 --analyze_clients --device_list 1.10,1.13 \
+        --start_time 1699999999999
+
+    # check connection stats by querying the device_list from LANforge of real clients:
+    python3 lf_wifi_msgs.py --mgr 192.168.245.117 --analyze_clients --start_time 1699999999999
+
+    # check connection stats for selected device_list for real clients, between two timestamps:
+    python3 lf_wifi_msgs.py --mgr 192.168.245.117 --analyze_clients --start_time 1699999999999 --end_time 1700000000000
+
+    # check connection stats for the last 5 minutes, instead of giving --start_time:
+    python3 lf_wifi_msgs.py --mgr 192.168.245.117 --analyze_clients --duration 5m --device_list 1.10,1.13
+
+
     # importable
     from lf_wifi_msgs import WifiMessages
     wifi_msgs = WifiMessages(host="192.168.1.31")
@@ -48,9 +62,12 @@ import argparse
 import json
 import re
 import time
+import datetime
 import threading
 import logging
 from typing import Callable, Iterator, List, Optional
+import pandas as pd
+from DeviceConfig import DeviceConfig
 
 logger = logging.getLogger(__name__)
 if sys.version_info[0] != 3:
@@ -201,6 +218,21 @@ class WifiMessages(Realm):
         """
         return self.get_wifi_messages("/wifi-msgs/between=time/{}/{}".format(start, end))
 
+    def fetch_keyed_messages(self, start: int, end: Optional[int] = None) -> List[dict]:
+        """Fetches messages for a time window, each wrapped as '{"<resource>.<time-stamp>": entry}'.
+
+        Args:
+            start: window start, LANforge epoch-ms time-stamp.
+            end: window end, LANforge epoch-ms time-stamp, or None to go since 'start'.
+        """
+        entries = self.between(start, end) if end is not None else self.since(start)
+        keyed_entries = []
+        for entry in entries:
+            resource = entry.get("resource", "")
+            ts = entry.get("time-stamp", entry.get("timestamp", ""))
+            keyed_entries.append({"{}.{}".format(resource, ts): entry})
+        return keyed_entries
+
     def duration(self, seconds: float) -> List[dict]:
         """Messages from the last 'seconds': the newest message's stamp minus the window, via since=time.
            Falls back to last=time with no baseline.
@@ -299,6 +331,373 @@ class WifiMessages(Realm):
                 stream.write("{} {}  {}\n".format(ts, resource, line))
 
 
+class ClientAnalysis(Realm):
+    """Tracks each real client device's Wi-Fi connection stats: disconnects, scans,
+    connect attempts, rejections, and successful connections from wifi messages.
+    """
+
+    def __init__(self, host: Optional[str] = None, port: int = 8080,
+                 device_list: Optional[List[str]] = None, debug: bool = False) -> None:
+        """Sets up a new analyzer for checking real client devices' Wi-Fi connections.
+
+        Args:
+            host (str): LANforge manager IP.
+            port (int): LANforge GUI REST port (default 8080).
+            device_list (list): resource IDs (e.g. '1.10') to analyze.
+            debug (bool): turn on verbose logging.
+
+        Returns:
+            None
+
+        Example:
+            ClientAnalysis(host="192.168.1.31", device_list=["1.10", "1.13"])
+        """
+        super().__init__(host, port, debug_=debug)
+        self.host = host
+        self.port = port
+        self.device_list = list(device_list) if device_list else []
+        self.wifi_msgs = WifiMessages(host=host, port=port, debug=debug)
+        self.device_config_obj = DeviceConfig(lanforge_ip=host, port=port)
+        self.resource_id_to_abs = {}
+        self.windows_list = []
+        self.resource_id_list = []
+        self.device_messages = {}
+        self.android_device_names = set()
+
+    FILTER_SPECS = {
+        "android": {
+            "Disconnected": ["Terminating..."],
+            "Scanning": ["SCAN-STARTED"],
+            "ConnectAttempt": ["Trying to associate with"],
+            "Association Rejection": ["ASSOC_REJECT"],
+            "Connected": ["CTRL-EVENT-CONNECTED"],
+        },
+        "windows": {
+            "Disconnected": ["Wireless security stopped.",
+                             "WLAN AutoConfig service has successfully disconnected from a wireless network"],
+            "Scanning": ["service started"],
+            "ConnectAttempt": ["association started."],
+            "Association Rejection": ["failed to connect"],
+            "Connected": ["connected"],
+        },
+        "other": {  # linux, mac
+            "Disconnected": ["disconnected", "<3>CTRL-EVENT-DSCP-POLICY clear_all"],
+            "Scanning": ["<3>CTRL-EVENT-SCAN-STARTED"],
+            "ConnectAttempt": ["<3>Trying to associate with"],
+            "Association Rejection": ["NoneValue"],
+            # macOS reports connects as "en0: STA is connected to a wireless network."
+            "Connected": ["<3>CTRL-EVENT-CONNECTED", "STA is connected"],
+        },
+    }
+
+    def setup_device_entries(self) -> dict:
+        """Builds an empty counters entry for each device to analyze.
+
+        Returns:
+            dict: one empty counters entry per device to analyze.
+
+        Example:
+            analysis.setup_device_entries()
+            # {"1.10.wlan0": {"ConnectAttempt": None, "Disconnected": None, "Scanning": None,
+            #                 "Association Rejection": None, "Connected": None, "port_name": "1.10.wlan0"}}
+        """
+        if not self.resource_id_list and not self.resource_id_to_abs:
+            self.discover_devices()
+        adb_resources = self.json_get("/adb/")
+        android_devices = adb_resources["devices"]
+        local_dict = {}
+        port_name_list = []
+
+        single_device = isinstance(android_devices, dict)
+        if single_device:
+            android_devices = [android_devices]
+
+        for device in android_devices:
+            actual_device = device if single_device else list(device.values())[0]
+            res = actual_device.get("resource-id")
+            name = actual_device.get("name")
+            if name:
+                self.android_device_names.add(name)
+            for i in self.device_list:
+                if res in i and res != "":
+                    local_dict[name] = None
+                    port_name_list.append(res + ".wlan0")
+
+        for dev in self.resource_id_to_abs.values():
+            res_id = "{}.{}".format(dev.split('.')[0], dev.split('.')[1])
+            for i in self.device_list:
+                if res_id in i:
+                    local_dict[dev] = None
+                    port_name_list.append(dev)
+
+        keys_list = ["ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected", "port_name"]
+        sec_dict = dict.fromkeys(keys_list)
+        for i, key in enumerate(local_dict.keys()):
+            local_dict[key] = sec_dict.copy()
+            local_dict[key]["port_name"] = port_name_list[i]
+        logger.debug("local dict: %s", local_dict)
+        return local_dict
+
+    def build_devices_dataframe(self, all_devices: List[dict]):
+        """Builds a table of devices, with each one's resource ID, name, and OS.
+
+        Args:
+            all_devices (list): the discovered device dicts to show (each with 'shelf',
+                'resource', 'type', and either 'hostname' or 'serial').
+
+        Returns:
+            DataFrame: one row per device, with 'Resource ID', 'Name', and 'OS' columns.
+
+        Example:
+            analysis.build_devices_dataframe([{"shelf": "1", "resource": "10", "type": "laptop",
+                                           "hostname": "my-laptop", "os": "Win"}])
+            #   Resource ID        Name   OS
+            #   1.10        my-laptop  Win
+        """
+        rows = []
+        for device in all_devices:
+            res_id = device["shelf"] + '.' + device["resource"]
+            os_type = device.get("os", "Unknown")
+            if device["type"] == 'laptop':
+                dev_name = device.get("hostname", "Unknown")
+            else:  # adb
+                dev_name = device.get("serial", "Unknown")
+            rows.append({
+                "Resource ID": res_id,
+                "Name": dev_name,
+                "OS": os_type,
+            })
+        return pd.DataFrame(rows)
+
+    @staticmethod
+    def save_json_log(json_list, file_name: str = "empty.json") -> None:
+        """Saves json_list as a JSON log file under Wifi_Messages/.
+
+        Args:
+            json_list: the data to save -- anything json.dumps() can serialize.
+            file_name (str): the file name to save it under, inside Wifi_Messages/.
+
+        Returns:
+            None
+
+        Example:
+            ClientAnalysis.save_json_log({"1.10.wlan0": {"Connected": []}}, "2026-10-23.json")
+            # writes Wifi_Messages/2026-10-23.json
+        """
+        json_string = json.dumps(json_list)
+        new_folder = "Wifi_Messages"
+        if not (os.path.exists(new_folder) and os.path.isdir(new_folder)):
+            os.makedirs(new_folder)
+        with open(os.path.join(new_folder, file_name), 'w') as file:
+            file.write(json_string)
+
+    def find_messages_for_device_and_filter(self, value=None, keys_list=None, device=None, filter=None) -> List[dict]:
+        """Goes through one device's wifi messages and pulls out the ones that both
+        mention that device and match the given keyword (e.g. 'disconnected').
+
+        Args:
+            value (list): the wifi messages to search, e.g. from WifiMessages.fetch_keyed_messages().
+            keys_list (list): the keys of 'value', in the same order (one per message).
+            device (str): the LANforge port name (e.g. '1.10.wlan0') to look for messages about.
+            filter (str): the keyword (or phrase) that marks the event being searched for.
+
+        Returns:
+            list: each match as a {'timestamp', 'text'} dict, in the order they were found.
+
+        Example:
+            analysis.find_messages_for_device_and_filter(
+                value=values, keys_list=keys_list, device="1.10.wlan0", filter="CTRL-EVENT-CONNECTED")
+            # [{"timestamp": "1699999999999", "text": "wlan0: CTRL-EVENT-CONNECTED - ..."}]
+        """
+        matches = []
+        device_split = device.split(".")
+        device_name = device_split[2]
+        resource_id = "{}.{}".format(device_split[0], device_split[1])
+        ifname_marker = "IFNAME={}".format(device_name)
+        filter_words = filter.split(" ")
+
+        for i, y in zip(keys_list, range(len(keys_list))):
+            entry = value[y][i]
+            if entry['resource'] != resource_id:
+                continue
+            time_stamp = entry['time-stamp']
+            wifi_msg_text = entry['text']
+            is_android_message = isinstance(wifi_msg_text, list)
+            for text in (wifi_msg_text if is_android_message else [wifi_msg_text]):
+                words = text.split(" ")
+                message_mentions_device = (device_name in words) if is_android_message \
+                    else any(device_name in word for word in words)
+                message_mentions_device = message_mentions_device or ifname_marker in words
+                if message_mentions_device and (filter in words or all(word in words for word in filter_words)):
+                    matches.append({"timestamp": time_stamp, "text": text})
+        return matches
+
+    def count_wifi_events_for_device(self, local_dict, phn_name, values, keys_list) -> dict:
+        """Counts one device's connect/disconnect/scan/rejection events from wifi messages.
+
+        Args:
+            local_dict (dict): counters for every device, from setup_device_entries(). We only
+                update this device's entry.
+            phn_name (str): the device's LANforge port name, e.g. '1.10.wlan0'.
+            values (list): wifi messages already fetched, from WifiMessages.fetch_keyed_messages().
+            keys_list (list): the keys of 'values', in the same order (one per message).
+
+        Returns:
+            dict: the same local_dict, with this device's counts filled in.
+
+        Example:
+            analysis.count_wifi_events_for_device(local_dict, "1.10.wlan0", values, keys_list)
+            # {"1.10.wlan0": {"Disconnected": 1, "Scanning": 1, "ConnectAttempt": 1,
+            #                 "Association Rejection": 0, "Connected": 1, "Remarks": "NA"}}
+        """
+        logger.debug("Counting DISCONNECTIONS/SCANNING/ASSOC ATTEMPTS/ASSOC REJECTIONS/CONNECTS for device %s", phn_name)
+
+        android = any(phn_name in name for name in self.android_device_names)
+        os_key = "android" if android else ("windows" if phn_name in self.windows_list else "other")
+
+        device_messages = {}
+        for category, filters in self.FILTER_SPECS[os_key].items():
+            matches = []
+            for text_filter in filters:
+                matches = self.find_messages_for_device_and_filter(value=values, keys_list=keys_list, device=phn_name, filter=text_filter)
+                if matches:
+                    break
+            device_messages[category] = matches
+        counts = {category: len(msgs) for category, msgs in device_messages.items()}
+        disconnected = counts["Disconnected"]
+        scanning = counts["Scanning"]
+        attempt = counts["ConnectAttempt"]
+        rejection = counts["Association Rejection"]
+        connected = counts["Connected"]
+
+        if android:
+            if attempt > connected:
+                rejection = attempt - connected
+            remarks = "NA"
+        else:
+            if rejection:
+                actual_connects = attempt - rejection
+                connected = connected if actual_connects == connected else actual_connects
+            if attempt > connected:
+                rejection = attempt - connected
+            if disconnected == 0 and connected == 1:
+                remarks = "No Disconnections are seen but Client is UP and connected to SSID."
+            elif disconnected >= 1 and connected == 0:
+                remarks = "The Disconnections are seen but Client did not connected to SSID."
+            else:
+                remarks = "NA"
+
+        local_dict[phn_name].update({
+            "Disconnected": disconnected, "Scanning": scanning, "ConnectAttempt": attempt,
+            "Association Rejection": rejection, "Connected": connected,
+            "Remarks": remarks,
+        })
+
+        self.device_messages[phn_name] = device_messages
+        return local_dict
+
+    def get_connectivity_analysis(self, start_time, end_time, local_dict: dict) -> dict:
+        """Gets connectivity stats for every device in local_dict, and logs the evidence.
+
+        Args:
+            start_time (int): epoch-ms timestamp to start counting from.
+            end_time (int): epoch-ms timestamp to stop counting at. Leave as None to count
+                all the way up to now.
+            local_dict (dict): counters for every device, from setup_device_entries().
+
+        Returns:
+            dict: the same local_dict, with every device's counts filled in.
+
+        Example:
+            analysis.get_connectivity_analysis(1699999999999, None, local_dict)
+            # {"1.10.wlan0": {"Disconnected": 1, "Scanning": 1, "ConnectAttempt": 1,
+            #                 "Association Rejection": 0, "Connected": 1, "Remarks": "NA"}}
+        """
+        values = self.wifi_msgs.fetch_keyed_messages(start_time, end_time)
+        keys_list = [list(v.keys())[0] for v in values]
+        for phn_name in local_dict.keys():
+            local_dict = self.count_wifi_events_for_device(local_dict=local_dict, phn_name=phn_name,
+                                                           values=values, keys_list=keys_list)
+        file_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".json"
+        self.save_json_log(json_list=self.device_messages, file_name=file_name)
+        logger.info("Saved wifi message evidence for %d device(s) to %s",
+                    len(self.device_messages), os.path.join("Wifi_Messages", file_name))
+
+        totals = {"Disconnected": 0, "Scanning": 0, "ConnectAttempt": 0,
+                  "Association Rejection": 0, "Connected": 0}
+        for messages in self.device_messages.values():
+            for category in totals:
+                totals[category] += len(messages[category])
+        logger.info("Totals across all devices: Disconnected=%d Scanning=%d ConnectAttempt=%d "
+                    "Association Rejection=%d Connected=%d",
+                    totals["Disconnected"], totals["Scanning"], totals["ConnectAttempt"],
+                    totals["Association Rejection"], totals["Connected"])
+        return local_dict
+
+    def discover_devices(self) -> None:
+        """Discovers the devices LANforge knows about and fills the lookup lists.
+        If no device list was given, prompts the user to pick one.
+
+        Returns:
+            None
+
+        Example:
+            analysis.discover_devices()
+            # fills self.resource_id_list, self.windows_list, self.resource_id_to_abs,
+            # and self.device_list (e.g. ["1.10", "1.13"])
+        """
+        filtered_all_devices = []
+        all_devices = self.device_config_obj.get_all_devices()
+        dev_list_all = []
+        for data in all_devices:
+            res_id = "{}.{}".format(data["shelf"], data["resource"])
+            if data["shelf"] != "" and data["resource"] != "":
+                dev_list_all.append(res_id)
+            if data["type"].lower() == "laptop":
+                res_id_abs = "{}.{}.{}".format(data["shelf"], data["resource"], data["sta_name"])
+                self.resource_id_to_abs[res_id] = res_id_abs
+                if data["os"].lower() == "win":
+                    self.windows_list.append(res_id_abs)
+
+        response_port = self.json_get("/port/all")
+        if "interfaces" not in response_port.keys():
+            logger.error("'interfaces' key not found in /port/all response")
+            exit(1)
+        for interface in response_port['interfaces']:
+            for port, port_data in interface.items():
+                if not port_data['phantom'] and not port_data['down'] \
+                        and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0':
+                    for data in all_devices:
+                        res_id = "{}.{}".format(data["shelf"], data["resource"])
+                        if res_id + "." in port:
+                            self.resource_id_list.append(res_id)
+                            filtered_all_devices.append(data)
+
+        if self.device_list:
+            return
+
+        available_df = self.build_devices_dataframe(filtered_all_devices)
+        print("\nAvailable devices:")
+        print(available_df.to_string(index=False))
+        print()
+
+        dev_list = input("Enter the desired resource IDs to run the test (e.g. '1.10'): ").split(',')
+        if "all" in dev_list:
+            dev_list = dev_list_all.copy()
+
+        res_to_name = {}
+        name_to_res = {}
+        for device in filtered_all_devices:
+            if device["type"] == 'laptop':
+                res_to_name[device["shelf"] + '.' + device["resource"]] = device["hostname"]
+                name_to_res[device["hostname"]] = device["shelf"] + '.' + device["resource"]
+            else:  # adb
+                res_to_name[device["eid"]] = device["serial"]
+                name_to_res[device["serial"]] = device["eid"]
+
+        self.device_list = self.device_config_obj.filter_device_list(dev_list, name_to_res, res_to_name)
+
+
 def main() -> None:
     help_summary = ("Fetch LANforge Wi-Fi messages from the /wifi-msgs REST API: last/first N, all buffered, "
                     "since a time-stamp, from the last <duration>, between two stamps, or poll for new ones. "
@@ -320,16 +719,32 @@ def main() -> None:
                       help='every message between two epoch-ms stamps')
     mode.add_argument('--poll', '-p', action='store_true',
                       help='print new messages as they arrive (Ctrl-C to stop)')
+    wifi_msgs_args.add_argument('--analyze_clients', action='store_true',
+                                help='show connect/disconnect/scan/rejection counts per '
+                                     'device instead of raw wifi messages')
     wifi_msgs_args.add_argument('--interval', default='5s', metavar='WINDOW',
                                 help='--poll interval (e.g. 2s, 500ms; default: 5s)')
     wifi_msgs_args.add_argument('--output', choices=['raw', 'json'], default='raw',
                                 help='raw message text lines or json (default: raw)')
     wifi_msgs_args.add_argument('--outfile', metavar='PATH', help='write output to PATH instead of stdout')
 
+    analysis_args = parser.add_argument_group('--analyze_clients arguments')
+    analysis_args.add_argument('--device_list', default="", metavar='IDS',
+                               help="comma-separated resource IDs (e.g. '1.10') to analyze; "
+                                    "leave empty to be prompted interactively")
+    analysis_args.add_argument('--start_time', metavar='TIMESTAMP',
+                               help='epoch-ms time-stamp to start counting wifi messages from; '
+                                    'not needed if you give --duration instead')
+    analysis_args.add_argument('--end_time', metavar='TIMESTAMP',
+                               help='epoch-ms time-stamp to stop counting at (default: now)')
+
     args = parser.parse_args()
     if args.help_summary:
         print(help_summary)
         exit(0)
+
+    if args.analyze_clients and not args.start_time and args.duration is None:
+        parser.error('give either --start_time or --duration with --analyze_clients')
 
     try:
         interval = WifiMessages.to_seconds(args.interval)
@@ -340,6 +755,19 @@ def main() -> None:
     logger_config = lf_logger_config.lf_logger_config()
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
+
+    if args.analyze_clients:
+        start_time = args.start_time if args.start_time else str(int(time.time() * 1000) - int(duration * 1000))
+        analysis = ClientAnalysis(
+            host=args.mgr, port=args.mgr_port,
+            device_list=args.device_list.split(',') if args.device_list else [],
+            debug=args.debug)
+        local_dict = analysis.setup_device_entries()
+        if not local_dict:
+            print("None of the given devices resolved to a device LANforge knows about.")
+            exit(1)
+        analysis.get_connectivity_analysis(start_time, args.end_time, local_dict)
+        exit(0)
 
     wifi_msgs = WifiMessages(host=args.mgr, port=args.mgr_port, debug=args.debug)
     out_stream = open(args.outfile, 'w') if args.outfile else sys.stdout
