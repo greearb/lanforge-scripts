@@ -429,7 +429,6 @@ class Throughput(Realm):
         self.last_monitor_present_keys = []
         self.current_iteration_cxs = []
         self.monitor_start_time = None
-        self.monitor_end_time = None
         self.background_ping = None
         # Variables related to Robo
         self.robo_ip = robo_ip
@@ -701,7 +700,6 @@ class Throughput(Realm):
             self.ensure_monitoring_data_collected()
             iterations_before_test_stopped_by_user.append(0)
             if self.background_ping:
-                self.monitor_end_time = datetime.now()
                 self.background_ping.stop_background_ping()
             self.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
             if self.background_ping:
@@ -868,7 +866,6 @@ class Throughput(Realm):
             with open(nav_data, 'w') as x:
                 json.dump(navdata, x, indent=4)
         if self.background_ping:
-            self.monitor_end_time = datetime.now()
             self.background_ping.stop_background_ping()
         # Test_status=Completed above only means "measurements done" - the webGUI still has to
         # upload the final heatmap screenshots. report_generated tells the webGUI when the report is actually on disk.
@@ -1711,6 +1708,8 @@ class Throughput(Realm):
                 return individual_df, True
             index += 1
             current_time = datetime.now()
+            if self.background_ping and index > 0 and index % 10 == 0:
+                self.background_ping.monitor_endp_availability(self.background_ping.generic_endps_profile.created_endp, duration=0, interval=1)
             signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
             signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
             if self.stop_test:
@@ -2136,6 +2135,8 @@ class Throughput(Realm):
                     return individual_df, True
                 index += 1
                 current_time = datetime.now()
+                if self.background_ping and index > 0 and index % 10 == 0:
+                    self.background_ping.monitor_endp_availability(self.background_ping.generic_endps_profile.created_endp, duration=0, interval=1)
                 signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
                 signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
                 if self.stop_test:
@@ -3832,7 +3833,6 @@ class Throughput(Realm):
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
         if self.background_ping:
-            self.background_ping.set_monitor_window(self.monitor_start_time, self.monitor_end_time)
             self.background_ping.add_background_ping_to_report(report, device_info={
                 port_name: {"mac": mac, "channel": channel, "rssi": rssi}
                 for port_name, mac, channel, rssi in zip(
@@ -4494,7 +4494,6 @@ class Throughput(Realm):
                         report.build_custom()
 
         if self.background_ping:
-            self.background_ping.set_monitor_window(self.monitor_start_time, self.monitor_end_time)
             self.background_ping.add_background_ping_to_report(report, device_info={
                 port_name: {"mac": mac, "channel": channel, "rssi": rssi}
                 for port_name, mac, channel, rssi in zip(
@@ -5633,7 +5632,6 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     throughput.remove_missing_cx()
     throughput.stop()
     if throughput.background_ping:
-        throughput.monitor_end_time = datetime.now()
         throughput.background_ping.stop_background_ping()
     if args.postcleanup:
         throughput.cleanup()
