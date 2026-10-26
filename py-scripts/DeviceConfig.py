@@ -1581,6 +1581,11 @@ class DeviceConfig(Realm):
                 # stop app is now included in forget_all_networks
                 # await self.adb_obj.stop_app(port_list=selected_adb_devices)
                 await self.adb_obj.forget_all_networks(port_list=selected_adb_devices)
+                # wait for clear_wifi_profiles to finish before starting the app (same gap as webGUI),
+                # otherwise the profile created by the app can get cleared
+                logger.info("Waiting 5 seconds after clearing wifi profiles before configuring androids")
+                time.sleep(5)
+                logger.info("Wait complete, configuring androids")
                 await self.adb_obj.configure_wifi(port_list=selected_adb_devices)
 
                 if (selected_laptop_devices == []):
