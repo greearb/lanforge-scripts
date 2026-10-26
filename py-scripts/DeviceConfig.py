@@ -1443,8 +1443,14 @@ class DeviceConfig(Realm):
         # Read the CSV file into a DataFrame
         df = pd.read_csv(file_path)
 
-        # Convert NaN to None
-        df = df.where(pd.notnull(df), None)
+        # Empty enterprise fields are read as NaN, which is not JSON serializable in set_wifi_extra.
+        # Default them to 'NA', same as the CLI path
+        for field in ['pairwise', 'private_key', 'ca_cert', 'client_cert', 'pk_passwd', 'pac_file']:
+            if field in df.columns:
+                df[field] = df[field].astype(object).fillna('NA')
+
+        # Convert NaN to None (astype(object) so float columns can hold None)
+        df = df.astype(object).where(pd.notnull(df), None)
 
         # Replace empty strings with None
         df = df.map(lambda x: None if x == "" else x)
