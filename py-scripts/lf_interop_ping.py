@@ -89,6 +89,7 @@ import logging
 import asyncio
 import csv
 import re
+import threading
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
@@ -236,6 +237,9 @@ class Ping(Realm):
         self.bg_packet_results = {}
         self.bg_start_time = None
         self.bg_stop_time = None
+        self.bg_poll_interval = 20
+        self.bg_poll_stop = threading.Event()
+        self.bg_poll_thread = None
 
     def change_target_to_ip(self):
 
@@ -1206,8 +1210,27 @@ class Ping(Realm):
             return False
 
         self.bg_start_time = time.time()
+        self.bg_poll_interval = min(20, max(1, 50 * float(self.interval)))
+        self.bg_poll_stop.clear()
+        self.bg_poll_thread = threading.Thread(target=self.poll_background_ping, daemon=True)
+        self.bg_poll_thread.start()
         logger.info("Background ping started on {} towards {}".format(self.real_sta_list, self.target))
         return True
+
+    def poll_background_ping(self):
+        """Polls the background ping endpoints until the ping is stopped, warning when one is not running."""
+        reported_status = {}
+        while not self.bg_poll_stop.wait(self.bg_poll_interval):
+            try:
+                for entry in self.get_results():
+                    for endpoint, data in entry.items():
+                        status = str(data.get('status'))
+                        if time.time() - self.bg_start_time > 15:
+                            if status.lower() != 'run' and reported_status.get(endpoint) != status:
+                                logger.warning("Background ping endpoint {} is {} while the test is running".format(endpoint, status))
+                            reported_status[endpoint] = status
+            except Exception as e:
+                logger.warning("Background ping polling failed: {}".format(e))
 
     def record_packet_results(self, endpoint, last_results):
         """Records the RTT of each ping reply in an endpoint's output, and marks a sequence lost where the running drop count rises across a gap."""
@@ -1248,6 +1271,9 @@ class Ping(Realm):
 
     def stop_background_ping(self):
         """Stops the background ping and collects the per-client results. Warns for any client with no ping data."""
+        self.bg_poll_stop.set()
+        if self.bg_poll_thread:
+            self.bg_poll_thread.join(timeout=10)
         during_test = dict(self.latest_results)
 
         before_stop = {}
@@ -1335,6 +1361,7 @@ class Ping(Realm):
             'AVG RTT (ms)': [row['avg_rtt'] for row in rows],
         })
         test_seconds = self.bg_stop_time - self.bg_start_time
+        interval = float(self.interval)
         duration = str(datetime.timedelta(seconds=int(test_seconds)))
         clients, stations, segments = [], [], []
         for device in self.real_sta_list:
@@ -1344,7 +1371,7 @@ class Ping(Realm):
             spans = []
             covered_until = 0.0
             for sequence in sorted(sequences):
-                start, end = (sequence - 1) * self.interval, min(test_seconds, sequence * self.interval)
+                start, end = (sequence - 1) * interval, min(test_seconds, sequence * interval)
                 if end <= start:
                     continue
                 if start > covered_until:
@@ -1383,52 +1410,6 @@ class Ping(Realm):
             return False
 
         return True
-
-
-def add_bg_ping_arguments(parser):
-    """Adds the background ping arguments to the script's argument parser."""
-    group = parser.add_argument_group('Background ping')
-    group.add_argument('--enable_bg_ping',
-                       action='store_true',
-                       help='Run a ping on the real clients in the background while the test runs and report its '
-                            'statistics at the end of the report')
-    group.add_argument('--bg_ping_target',
-                       type=str,
-                       default=None,
-                       help='IP, domain name or LANforge port the background ping should target. Defaults to the '
-                            'upstream port of the test when not given')
-    group.add_argument('--bg_ping_interval',
-                       type=float,
-                       default=1,
-                       help='Packet interval of the background ping in seconds. Defaults to 1')
-    return parser
-
-
-def bg_ping_from_args(args, host, port=8080, device_list=None, default_target=None):
-    """Starts the background ping from the parsed arguments. Returns None when it is not requested or could not be started."""
-    if not getattr(args, 'enable_bg_ping', False):
-        return None
-
-    target = getattr(args, 'bg_ping_target', None) or default_target
-    if not target:
-        logger.error("--enable_bg_ping was given without --bg_ping_target and the test has no upstream to fall back on, "
-                     "skipping the background ping")
-        return None
-
-    background_ping = Ping(host=host,
-                           port=port,
-                           target=target,
-                           interval=getattr(args, 'bg_ping_interval', 1),
-                           sta_list=[],
-                           real=True,
-                           virtual=False,
-                           duration=0,
-                           debug=getattr(args, 'debug', False))
-
-    if not background_ping.start_background_ping(device_list=device_list):
-        return None
-
-    return background_ping
 
 
 def validate_args(args):
