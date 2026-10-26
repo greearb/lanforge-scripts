@@ -465,7 +465,7 @@ class LAPTOPS(Realm):
             # response.raise_for_status()  # Raise an HTTPError for bad responses
         except Exception as e:
             logger.error(e)
-            logger.error('Request failed for port {}'.format(data['port']))
+            logger.error('Request failed for port {}'.format(data.get('port') or data.get('sta_name') or 'unknown'))
             # method to get the station name from port manager
 
     # set encoding value
