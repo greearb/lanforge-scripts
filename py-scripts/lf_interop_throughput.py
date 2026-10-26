@@ -1700,8 +1700,6 @@ class Throughput(Realm):
                 return individual_df, True
             index += 1
             current_time = datetime.now()
-            if self.background_ping and index > 0 and index % 10 == 0:
-                self.background_ping.monitor_endp_availability(self.background_ping.generic_endps_profile.created_endp, duration=0, interval=1)
             signal_list, channel_list, mode_list, link_speed_list, rx_rate_list, bssid_list = self.get_signal_and_channel_data(self.input_devices_list)
             signal_list = [int(i) if str(i).lstrip('-').isdigit() else 0 for i in signal_list]
             if self.stop_test:
@@ -5297,7 +5295,18 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
     optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
 
-    lf_interop_ping.add_bg_ping_arguments(parser)
+    background_ping = parser.add_argument_group('Background ping')
+    background_ping.add_argument('--enable_bg_ping',
+                                 action='store_true',
+                                 help='Run a ping on the real clients in the background while the test runs and report its statistics at the end of the report')
+    background_ping.add_argument('--bg_ping_target',
+                                 type=str,
+                                 default=None,
+                                 help='IP, domain name or LANforge port the background ping should target. Defaults to the upstream port of the test when not given')
+    background_ping.add_argument('--bg_ping_interval',
+                                 type=float,
+                                 default=1,
+                                 help='Packet interval of the background ping in seconds. Defaults to 1')
 
     args = parser.parse_args()
 
@@ -5512,12 +5521,11 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
             throughput.stop()
             return
 
-        throughput.background_ping = lf_interop_ping.bg_ping_from_args(
-            args,
-            host=args.mgr,
-            port=args.mgr_port,
-            device_list=throughput.input_devices_list,
-            default_target=args.upstream_port)
+        if args.enable_bg_ping:
+            throughput.background_ping = lf_interop_ping.Ping(host=args.mgr, port=args.mgr_port, target=args.bg_ping_target or args.upstream_port, interval=args.bg_ping_interval,
+                                                              sta_list=[], real=True, virtual=False, duration=0)
+            if not throughput.background_ping.start_background_ping(throughput.input_devices_list):
+                throughput.background_ping = None
 
         individual_dataframe_column = []
 
