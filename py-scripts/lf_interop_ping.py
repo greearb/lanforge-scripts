@@ -1169,35 +1169,27 @@ class Ping(Realm):
         self.generic_endps_profile.dest = self.target
         self.generic_endps_profile.interval = self.interval
 
-        resources = self.json_get('/resource/all') or {}
-        resource_entries = resources.get('resources') or ([{resources['resource']['eid']: resources['resource']}] if 'resource' in resources else [])
-        resource_data = {}
-        for resource_entry in resource_entries:
-            resource_id, data = list(resource_entry.items())[0]
-            if isinstance(data, dict) and 'hw version' in data and not data.get('ct-kernel'):
-                resource_data[resource_id] = data
+        try:
+            devices = RealDevice(manager_ip=self.host, selected_bands=[])
+            devices.get_devices()
+        except Exception as e:
+            logger.error("Background ping could not read the devices from the LANforge, skipping it: {}".format(e))
+            return False
 
-        self.real_sta_list = []
-        self.real_sta_data_dict = {}
+        pingable = []
         for port in device_list or []:
-            data = resource_data.get('.'.join(str(port).split('.')[:2]))
-            if data is None:
-                logger.warning("Skipping {} for the background ping, it is not a real client on the LANforge".format(port))
-                continue
-            hw_version = data['hw version']
-            app_id = data.get('app-id', '')
-            if 'Apple' in hw_version and app_id != '' and (app_id != '0' or data.get('kernel', '') == ''):
-                logger.info("Skipping the iOS device {} for the background ping, a ping cannot be run on it".format(port))
-                continue
-            ostype = 'windows' if 'Win/x86' in hw_version else 'macos' if 'Apple/x86' in hw_version else 'linux' if 'Linux/x86' in hw_version else 'android'
-            self.real_sta_list.append(port)
-            self.real_sta_data_dict[port] = {'ostype': ostype, 'name': data.get('user', '') or data.get('hostname', '') or port}
-        self.sta_list = list(self.real_sta_list)
-        self.bg_packet_results = {device: {} for device in self.real_sta_list}
-
-        if not self.real_sta_list:
+            hw_version = devices.devices_data.get(port, {}).get('hw version', '')
+            if port not in devices.devices_data or (hw_version.startswith('Apple') and 'Apple/x86' not in hw_version):
+                logger.warning("Skipping {} for the background ping, it is not a real client that can run a ping".format(port))
+            else:
+                pingable.append(port)
+        if not pingable:
             logger.error("No real devices were found for the background ping, skipping it")
             return False
+
+        self.select_real_devices(real_devices=devices, real_sta_list=pingable, base_interop_obj=devices)
+        self.sta_list = list(self.real_sta_list)
+        self.bg_packet_results = {device: {} for device in self.real_sta_list}
 
         try:
             self.cleanup()
@@ -1315,7 +1307,7 @@ class Ping(Realm):
             device_info = self.real_sta_data_dict[device]
             entry = {
                 'device': device,
-                'name': device_info['name'],
+                'name': device_info['user'] or device_info['hostname'],
                 'mac': port_data.get('mac', ''),
                 'channel': port_data.get('channel', ''),
                 'rssi': str(port_data.get('signal', '')).split(' ')[0],
