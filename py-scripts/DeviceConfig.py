@@ -661,7 +661,7 @@ class LAPTOPS(Realm):
                 data = {
                     'shelf': shelf,
                     'resource': resource,
-                    "port": "wlan0",
+                    "port": port_data['sta_name'],
                     "key_mgmt": key_management,
                     "pairwise": pairwise,
                     "group": pairwise,
