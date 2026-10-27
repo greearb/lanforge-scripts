@@ -88,6 +88,11 @@
         python3 lf_interop_throughput.py --mgr 192.168.207.75 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_tcp
         --device_list 1.20,1.59,1.65 --enable_bg_ping --bg_ping_target 1.1.eth1
 
+        EXAMPLE-18:
+        Command Line Interface to run download scenario while the robot moves through the points (continuous robot run, no band steering)
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --download 1000000 --traffic_type lf_udp
+        --robot_ip 192.168.204.144 --coordinate 3,4 --measurement_mode continuous --total_cycles 2
+
     TO PERFORM INTEROPABILITY TEST:
 
         EXAMPLE-1:
@@ -300,7 +305,7 @@ class Throughput(Realm):
                  user_list=None, real_client_list=None, real_client_list1=None, hw_list=None, laptop_list=None, android_list=None, mac_list=None, windows_list=None, linux_list=None,
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None,
-                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None, duration_to_skip=None):
+                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None, duration_to_skip=None, measurement_mode="per_point"):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -409,6 +414,9 @@ class Throughput(Realm):
         self.configured_devices_check = {}
         self.interopability_config = interopability_config
         self.do_bandsteering = do_bandsteering
+        # measurement mode: 'per_point' stops and measures at each point, 'continuous' keeps traffic running while the robot moves.
+        # Band steering always moves continuously; do_bandsteering only adds the BSSID tracking report.
+        self.is_continuous_run = do_bandsteering or measurement_mode == "continuous"
         self.total_cycles = total_cycles
         self.bssids = bssids if bssids else []
         # Keep monitoring output stable when a client disconnects or temporarily disappears
@@ -477,7 +485,7 @@ class Throughput(Realm):
         logger.warning("All CXs active in the current iteration are missing from monitoring data.")
         if not self.wait_for_any_cx_recovery(active_cxs, timeout, poll_interval):
             logger.error("No active CX recovered after the retry window; skipping the current iteration.")
-            if self.do_bandsteering:
+            if self.is_continuous_run:
                 self.stop_test = True
                 self.all_devices_stopped = True
                 if self.robo_ip:
@@ -591,8 +599,8 @@ class Throughput(Realm):
             self.stop()
             return
 
-        # if band steering is enabled
-        if self.do_bandsteering:
+        # continuous robot run (band steering or measurement mode 'continuous'): traffic runs while the robot moves
+        if self.is_continuous_run:
             # checking the battery status of robot before moving to a point
             self.robot.wait_for_battery()
             self.robot.total_cycles = self.total_cycles
@@ -636,11 +644,11 @@ class Throughput(Realm):
             overall_start_time = datetime.now()
             overall_end_time = overall_start_time + timedelta(seconds=int(args.test_duration) * len(incremental_capacity_list))
             curr_cycle = 1
-            logger.info("Current Cycle: {}".format(curr_cycle))
+            logger.info("Starting cycle {} of {}".format(curr_cycle, self.total_cycles))
             # Iterate through all the points and monitoring throughput,bandsteering stats and as well as robot position
             for coord in coordinate_list_with_robo:
                 if self.stop_test:
-                    logger.info("Stopping band-steering run because all CXs are missing or the test was stopped.")
+                    logger.info("Stopping continuous robot run because all CXs are missing or the test was stopped.")
                     break
                 pause, stopped = self.robot.wait_for_battery(lambda: self.monitor(
                     0,
@@ -671,21 +679,22 @@ class Throughput(Realm):
                     break
 
                 if coord == self.coordinate_list[0]:
+                    logger.info("Completed cycle {} of {}".format(curr_cycle, self.total_cycles))
                     curr_cycle += 1
                     if curr_cycle > int(self.total_cycles):
                         logger.info("Completed all {} cycles".format(self.total_cycles))
                     else:
-                        logger.info("current cycle {}".format(curr_cycle))
+                        logger.info("Starting cycle {} of {}".format(curr_cycle, self.total_cycles))
 
                 if not matched:
                     continue
-            # Generate a band-steering report only when monitoring collected rows.
+            # Generate the report only when monitoring collected rows.
             collected_dataframes = [df for df in all_dataframes if isinstance(df, pd.DataFrame)]
             if not collected_dataframes or all(df.empty for df in collected_dataframes):
                 self.stop()
                 if args.postcleanup:
                     self.cleanup()
-                raise RuntimeError("All active CXs were missing; no band-steering monitoring data was collected.")
+                raise RuntimeError("All active CXs were missing; no continuous robot run monitoring data was collected.")
             all_dataframes = pd.concat(collected_dataframes, ignore_index=True)
             last_idx = all_dataframes.index[-1]
 
@@ -1638,7 +1647,7 @@ class Throughput(Realm):
 
     def monitor(self, iteration, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured):
         # Skip re-polling once a stop is already decided while the robot is still moving.
-        if self.do_bandsteering and self.stop_test:
+        if self.is_continuous_run and self.stop_test:
             return individual_df, True
         individual_df_for_webui = individual_df.copy()  # for webui
         throughput, upload, download, upload_throughput, download_throughput, connections_upload, connections_download = {}, [], [], [], [], {}, {}
@@ -1668,7 +1677,7 @@ class Throughput(Realm):
                     individual_df = self.append_stopped_monitor_row(
                         individual_df, iteration, incremental_capacity_list, overall_start_time)
                 # Propagate missing CX failure to stop band-steering coordinates.
-                return individual_df, True if self.do_bandsteering else self.stop_test
+                return individual_df, True if self.is_continuous_run else self.stop_test
             self.monitoring_started_with_available_cx = True
             missing_active_cxs = set(self.current_iteration_cxs).intersection(self.missing_cx_logged)
             if missing_active_cxs and not self.pre_monitoring_missing_logged:
@@ -1695,7 +1704,7 @@ class Throughput(Realm):
         time_break = 0
         # Continuously collect data until end time is reached
         while datetime.now() < end_time:
-            if self.all_devices_stopped and self.do_bandsteering:
+            if self.all_devices_stopped and self.is_continuous_run:
                 logger.info("All devices previously stopped during bandsteering; returning early.")
                 return individual_df, True
             index += 1
@@ -1709,7 +1718,7 @@ class Throughput(Realm):
             throughput[index] = self.get_layer3_endp_data(self.current_iteration_cxs)
             if self.current_iteration_cxs and self.should_stop_for_missing_cx(self.current_iteration_cxs):
                 # Propagate missing CX failure to stop band-steering coordinates.
-                test_stopped_by_user = True if self.do_bandsteering else self.stop_test
+                test_stopped_by_user = True if self.is_continuous_run else self.stop_test
                 break
             # Check if next sleep would overshoot the end_time
             is_last_iteration = ((current_time + timedelta(seconds=1 if self.dowebgui else self.report_timer)) >= end_time)
@@ -1780,7 +1789,7 @@ class Throughput(Realm):
                                            remaining_minutes_instrf,
                                            ', '.join(str(n) for n in incremental_capacity_list),
                                            'Running'])
-                if self.do_bandsteering:
+                if self.is_continuous_run:
                     robot_x, robot_y, from_coordinate, to_coordinate = self.robot.get_robot_pose()
                     individual_df_data.extend([robot_x, robot_y, from_coordinate, to_coordinate])
 
@@ -1810,11 +1819,11 @@ class Throughput(Realm):
                     logger.warning('Test is stopped by the user')
                     test_stopped_by_user = True
                     self.stopped_by_user = True
-                    if self.do_bandsteering:
+                    if self.is_continuous_run:
                         self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
                         return individual_df, test_stopped_by_user
                     break
-                if self.do_bandsteering:
+                if self.is_continuous_run:
                     self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
                     return individual_df, test_stopped_by_user
                 # Adjust time_gap based on elapsed time since start (for webui)
@@ -1909,12 +1918,12 @@ class Throughput(Realm):
                                            remaining_minutes_instrf,
                                            ', '.join(str(n) for n in incremental_capacity_list),
                                            'Running'])
-                if self.do_bandsteering:
+                if self.is_continuous_run:
                     robot_x, robot_y, from_coordinate, to_coordinate = self.robot.get_robot_pose()
                     individual_df_data.extend([robot_x, robot_y, from_coordinate, to_coordinate])
                 individual_df.loc[len(individual_df)] = individual_df_data
                 individual_df.to_csv('throughput_data.csv', index=False)
-                if self.do_bandsteering:
+                if self.is_continuous_run:
                     self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
                     return individual_df, test_stopped_by_user
 
@@ -2120,7 +2129,7 @@ class Throughput(Realm):
 
             # Continuously collect data until end time is reached
             while datetime.now() < end_time:
-                if self.all_devices_stopped and self.do_bandsteering:
+                if self.all_devices_stopped and self.is_continuous_run:
                     logger.info("All devices previously stopped during bandsteering; returning early.")
                     return individual_df, True
                 index += 1
@@ -2944,7 +2953,7 @@ class Throughput(Realm):
             # For groups and profiles configuration through webgui
             if self.dowebgui is True and self.group_name:
                 shutil.move('overall_throughput.csv', report_path_date_time)
-            elif self.do_bandsteering:
+            elif self.is_continuous_run:
                 pass
             else:
                 shutil.move('throughput_data.csv', report_path_date_time)
@@ -3078,8 +3087,8 @@ class Throughput(Realm):
                     "Load Type": load_type_name,
                     "Packet Size": packet_size_text
                 }
-            # Add bandsteering related info
-            if self.do_bandsteering:
+            # continuous robot run: no fixed duration, show the points and cycles
+            if self.is_continuous_run:
                 del test_setup_info["Traffic Duration in minutes"]
                 test_setup_info["Coordinates"] = self.coordinate_list
                 test_setup_info["Total Cycles"] = self.total_cycles
@@ -5251,7 +5260,11 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
     optional.add_argument("--interopability_config", action="store_true", help="To do individual configuration for each device in interoperability")
     optional.add_argument("--tput_mbps", action="store_true", help="Interpret rated download and upload values as Mbps instead of bytes")
-    optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
+    optional.add_argument('--do_bandsteering', help='Enable bandsteering (always a continuous robot run)', action='store_true')
+    optional.add_argument('--measurement_mode', choices=['per_point', 'continuous'], default='per_point',
+                          help="Robot measurement mode: 'per_point' stops and measures at each point (and angle), "
+                               "'continuous' keeps traffic running while the robot moves through the points --total_cycles times "
+                               "(--test_duration is not used and defaults to 1m)")
     optional.add_argument('--total_cycles', help='No of cycles: how many times a robot test repeats the coordinate list', default="1")
     optional.add_argument('--duration_to_skip', help='Robot wait duration in seconds at obstacle', default="1")
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
@@ -5365,6 +5378,10 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     if args.do_interopability:
         args.incremental_capacity = "1"
 
+    # Continuous robot run lasts until the robot finishes its laps, so --test_duration is optional there (default 1m)
+    if not args.test_duration and (args.do_bandsteering or args.measurement_mode == "continuous"):
+        args.test_duration = "1m"
+
     # Parsing test_duration
     if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
         args.test_duration = int(args.test_duration[0:-1])
@@ -5464,6 +5481,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                                 coordinate_list=args.coordinate.split(",") if args.coordinate else [],
                                 angle_list=args.rotation.split(",") if args.rotation else [],
                                 do_bandsteering=args.do_bandsteering,
+                                measurement_mode=args.measurement_mode,
                                 total_cycles=args.total_cycles,
                                 bssids=args.bssids.split(",") if args.bssids else [],
                                 duration_to_skip=args.duration_to_skip
