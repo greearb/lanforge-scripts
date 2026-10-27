@@ -40,6 +40,12 @@ EXAMPLE:
     # check connection stats for the last 5 minutes, instead of giving --start_time:
     python3 lf_wifi_msgs.py --mgr 192.168.245.117 --analyze_clients --duration 5m --device_list 1.10,1.13
 
+    # monitor live for a fixed duration, then show the connectivity stats:
+    python3 lf_wifi_msgs.py --mgr 192.168.245.117 --monitor_clients --duration 2m --device_list 1.10,1.13
+
+    # monitor live until Ctrl-C, then show the connectivity stats:
+    python3 lf_wifi_msgs.py --mgr 192.168.245.117 --monitor_clients --device_list 1.10,1.13
+
 
     # importable
     from lf_wifi_msgs import WifiMessages
@@ -356,9 +362,6 @@ class ClientAnalysis(Realm):
             device_list (list): resource IDs (e.g. '1.10') to analyze.
             debug (bool): turn on verbose logging.
 
-        Returns:
-            None
-
         Example:
             ClientAnalysis(host="192.168.1.31", device_list=["1.10", "1.13"])
         """
@@ -373,6 +376,10 @@ class ClientAnalysis(Realm):
         self.device_messages = {}
         self.android_device_names = set()
         self._devices_loaded = False
+        self._monitor_start_time = None
+        self._monitor_local_dict = None
+        self._monitor_file_name = None
+        self._monitor_thread = None
 
     FILTER_SPECS = {
         "android": {
@@ -454,9 +461,6 @@ class ClientAnalysis(Realm):
         Args:
             json_list: the data to save -- anything json.dumps() can serialize.
             file_name (str): the file name to save it under, inside Wifi_Messages/.
-
-        Returns:
-            None
 
         Example:
             ClientAnalysis.save_json_log({"1.10.wlan0": {"Connected": []}}, "2026-10-23.json")
@@ -557,8 +561,6 @@ class ClientAnalysis(Realm):
                 _finalize_device_counts, so totals match the printed stats.
             file_name (str): file to save under Wifi_Messages/ (default: a fresh timestamp).
 
-        Returns:
-            None
         """
         print("\nConnectivity Stats:")
         for phn_name, counts in local_dict.items():
@@ -646,11 +648,78 @@ class ClientAnalysis(Realm):
         self._save_evidence_and_log_totals(local_dict)
         return local_dict
 
-    def load_devices(self) -> None:
-        """Resolves which devices to analyze.
+    def _monitor_loop(self, interval: float) -> None:
+        """Watches for new wifi messages and records them against each monitored device.
+
+        Args:
+            interval (float): seconds to wait between polls.
+
+        """
+        for entry in self.wifi_msgs.poll(interval=interval, since_ts=int(self._monitor_start_time)):
+            key = "{}.{}".format(entry.get("resource", ""), entry.get("time-stamp", ""))
+            value, keys_list = [{key: entry}], [key]
+            for phn_name in self._monitor_local_dict:
+                android = any(phn_name in name for name in self.android_device_names)
+                os_key = "android" if android else ("windows" if phn_name in self.windows_list else "other")
+                for category, filters in self.FILTER_SPECS[os_key].items():
+                    for text_filter in filters:
+                        matches = self.find_messages_for_device_and_filter(
+                            value=value, keys_list=keys_list, device=phn_name, filter=text_filter)
+                        if matches:
+                            self.device_messages[phn_name][category].extend(matches)
+                            break
+            self.save_json_log(json_list=self.device_messages, file_name=self._monitor_file_name)
+
+    def start_monitoring(self, interval: float = POLL_INTERVAL) -> None:
+        """Starts watching the devices live. Call stop_monitoring() later to get the stats.
+
+        Args:
+            interval (float): seconds between live polls (default POLL_INTERVAL).
+
+        """
+        self._monitor_local_dict = self.setup_device_entries()
+        if not self._monitor_local_dict:
+            print("None of the given devices resolved to a device LANforge knows about.")
+            exit(1)
+        self.device_messages = {phn_name: {category: [] for category in
+                                           ("ConnectAttempt", "Disconnected", "Scanning",
+                                            "Association Rejection", "Connected")}
+                                for phn_name in self._monitor_local_dict}
+        self._monitor_start_time = str(int(time.time() * 1000))
+        self._monitor_file_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".json"
+        self.save_json_log(json_list=self.device_messages, file_name=self._monitor_file_name)
+        self._monitor_thread = threading.Thread(target=self._monitor_loop, args=(interval,), daemon=True)
+        self._monitor_thread.start()
+        logger.info("Monitoring started at %s for %d device(s); live evidence: %s",
+                    self._monitor_start_time, len(self._monitor_local_dict),
+                    os.path.join("Wifi_Messages", self._monitor_file_name))
+
+    def stop_monitoring(self) -> dict:
+        """Stops watching and returns the connectivity stats for the monitored window.
 
         Returns:
-            None
+            dict: per-device connectivity counts.
+        """
+        if self._monitor_thread is None:
+            print("No monitoring in progress. Call start_monitoring() first.")
+            exit(1)
+        self.wifi_msgs.stop_polling()
+        self._monitor_thread.join()
+        self._monitor_thread = None
+
+        local_dict = self._monitor_local_dict
+        for phn_name, messages in self.device_messages.items():
+            counts = {category: len(msgs) for category, msgs in messages.items()}
+            local_dict[phn_name].update(self._finalize_device_counts(phn_name, counts))
+        self._save_evidence_and_log_totals(local_dict, file_name=self._monitor_file_name)
+
+        self._monitor_start_time = None
+        self._monitor_local_dict = None
+        self._monitor_file_name = None
+        return local_dict
+
+    def load_devices(self) -> None:
+        """Resolves which devices to analyze.
 
         Example:
             analysis.load_devices()
@@ -674,7 +743,7 @@ def main() -> None:
     help_summary = '''\
     Fetch LANforge Wi-Fi messages from the /wifi-msgs REST API: last/first N, all buffered,
     since a time-stamp, from the last <duration>, between two stamps, or poll for new ones.
-    Also analyzes real client connectivity (--analyze_clients).
+    Also analyzes real client connectivity (--analyze_clients) and monitors it live (--monitor_clients).
     Importable as WifiMessages.
 
     Examples:
@@ -708,6 +777,12 @@ def main() -> None:
 
         # check connection stats for the last 5 minutes, instead of giving --start_time:
         python3 lf_wifi_msgs.py --mgr 192.168.245.117 --analyze_clients --duration 5m --device_list 1.10,1.13
+
+        # monitor live for a fixed duration, then show the connectivity stats:
+        python3 lf_wifi_msgs.py --mgr 192.168.245.117 --monitor_clients --duration 2m --device_list 1.10,1.13
+
+        # monitor live until Ctrl-C, then show the connectivity stats:
+        python3 lf_wifi_msgs.py --mgr 192.168.245.117 --monitor_clients --device_list 1.10,1.13
     '''
 
     parser = LFCliBase.create_basic_argparse(
@@ -729,6 +804,9 @@ def main() -> None:
     wifi_msgs_args.add_argument('--analyze_clients', action='store_true',
                                 help='show connect/disconnect/scan/rejection counts per '
                                      'device instead of raw wifi messages')
+    wifi_msgs_args.add_argument('--monitor_clients', action='store_true',
+                                help='start monitoring now, then block until --duration elapses '
+                                     'or Ctrl-C is pressed, and print the connectivity stats at the end')
     wifi_msgs_args.add_argument('--interval', default='5s', metavar='WINDOW',
                                 help='--poll interval (e.g. 2s, 500ms; default: 5s)')
     wifi_msgs_args.add_argument('--output', choices=['raw', 'json'], default='raw',
@@ -753,6 +831,9 @@ def main() -> None:
     if args.analyze_clients and not args.start_time and args.duration is None:
         parser.error('give either --start_time or --duration with --analyze_clients')
 
+    if args.analyze_clients and args.monitor_clients:
+        parser.error('--analyze_clients and --monitor_clients are mutually exclusive')
+
     try:
         interval = WifiMessages.to_seconds(args.interval)
         duration = WifiMessages.to_seconds(args.duration) if args.duration is not None else None
@@ -774,6 +855,23 @@ def main() -> None:
             print("None of the given devices resolved to a device LANforge knows about.")
             exit(1)
         analysis.get_connectivity_analysis(start_time, args.end_time, local_dict)
+        exit(0)
+
+    if args.monitor_clients:
+        analysis = ClientAnalysis(
+            host=args.mgr, port=args.mgr_port,
+            device_list=args.device_list.split(',') if args.device_list else [],
+            debug=args.debug)
+        analysis.start_monitoring(interval=interval)
+        if duration is not None:
+            print(f"Monitoring for {args.duration} (Ctrl-C to stop early)", file=sys.stderr)
+        else:
+            print("Monitoring... (Ctrl-C to stop)", file=sys.stderr)
+        try:
+            threading.Event().wait(timeout=duration)
+        except KeyboardInterrupt:
+            print("\nStopping monitoring", file=sys.stderr)
+        analysis.stop_monitoring()
         exit(0)
 
     wifi_msgs = WifiMessages(host=args.mgr, port=args.mgr_port, debug=args.debug)
