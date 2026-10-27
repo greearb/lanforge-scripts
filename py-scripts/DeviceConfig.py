@@ -36,6 +36,7 @@ Methods (Class LAPTOPS):
 Methods (Class DeviceConfig):
 - get_all_devices: Retrieves all ADB and laptop devices from the respective classes.
 - map_all_devices: Maps devices by serial or hostname for further usage.
+- discover_devices: Finds devices with an active wiphy0 station port and returns the selected device list, prompting the user if none was given.
 - read_groups_file: Reads a CSV file containing device group information.
 - get_all_available_devices: Retrieves all devices that have not been added to a group.
 - take_input: Takes user input to manage groups (add, remove, or edit groups).
@@ -1012,6 +1013,83 @@ class DeviceConfig(Realm):
             map_device["resource"] = device["resource"]
             self.all_mapped_devices[str(index)] = map_device
         return self.all_mapped_devices
+
+    def discover_devices(self, device_list=None):
+        """Discovers the devices LANforge knows about, filters down to the active
+        wiphy0 interfaces, and returns the selected device list. If device_list is
+        empty, prompts the user to pick resource IDs from the discovered devices.
+
+        Args:
+            device_list (list): resource IDs (e.g. '1.10') already selected. If
+                non-empty, the prompt is skipped and this list is validated against
+                the active devices instead.
+
+        Returns:
+            list: the selected device list (resource IDs and/or names).
+        """
+        device_list = list(device_list) if device_list else []
+
+        filtered_all_devices = []
+        all_devices = self.get_all_devices()
+        dev_list_all = []
+        for data in all_devices:
+            res_id = "{}.{}".format(data["shelf"], data["resource"])
+            if data["shelf"] != "" and data["resource"] != "":
+                dev_list_all.append(res_id)
+
+        response_port = self.json_get("/port/all")
+        if not response_port or "interfaces" not in response_port:
+            logger.error("'interfaces' key not found in /port/all response")
+            exit(1)
+        # Only offer devices whose wiphy0 station port is actually up right now.
+        seen_res_ids = set()
+        for interface in response_port['interfaces']:
+            for port, port_data in interface.items():
+                if not port_data['phantom'] and not port_data['down'] \
+                        and port_data['parent dev'] == "wiphy0" and port_data['alias'] != 'p2p0':
+                    for data in all_devices:
+                        res_id = "{}.{}".format(data["shelf"], data["resource"])
+                        if res_id + "." in port and res_id not in seen_res_ids:
+                            filtered_all_devices.append(data)
+                            seen_res_ids.add(res_id)
+
+        # Validate against every known device, not just the currently-active ones.
+        res_to_name = {}
+        name_to_res = {}
+        for device in all_devices:
+            if device["type"] == 'laptop':
+                res_to_name[device["shelf"] + '.' + device["resource"]] = device["hostname"]
+                name_to_res[device["hostname"]] = device["shelf"] + '.' + device["resource"]
+            else:  # adb
+                res_to_name[device["eid"]] = device["serial"]
+                name_to_res[device["serial"]] = device["eid"]
+
+        if device_list:
+            return self.filter_device_list(device_list, name_to_res, res_to_name)
+
+        rows = []
+        for device in filtered_all_devices:
+            res_id = device["shelf"] + '.' + device["resource"]
+            os_type = device.get("os", "Unknown")
+            if device["type"] == 'laptop':
+                dev_name = device.get("hostname", "Unknown")
+            else:  # adb
+                dev_name = device.get("serial", "Unknown")
+            rows.append({
+                "Resource ID": res_id,
+                "Name": dev_name,
+                "OS": os_type,
+            })
+        available_df = pd.DataFrame(rows)
+        print("\nAvailable devices:")
+        print(available_df.to_string(index=False))
+        print()
+
+        dev_list = [d.strip() for d in input("Enter the desired resource IDs to run the test (e.g. '1.10'): ").split(',')]
+        if "all" in dev_list:
+            dev_list = dev_list_all.copy()
+
+        return self.filter_device_list(dev_list, name_to_res, res_to_name)
 
     def read_groups_file(self):
         py_scripts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
