@@ -169,6 +169,8 @@ class ZoomAutomation(Realm):
         window_dir=WINDOWS_ZOOM_DIR,
         linux_dir=LINUX_ZOOM_DIR,
         mac_dir=MACOS_ZOOM_DIR,
+        bs_graph=False,
+        measurement_mode="per_point",
     ):
 
         super().__init__(lfclient_host=lanforge_ip)
@@ -254,6 +256,10 @@ class ZoomAutomation(Realm):
 
         self.do_robo = do_robo
         self.do_bs = do_bs
+        self.measurement_mode = "continuous" if do_bs else measurement_mode
+        self.continuous_robo = do_bs or (do_robo and self.measurement_mode == "continuous")
+        self.per_point_robo = do_robo and not self.continuous_robo
+        self.bs_graph = bs_graph
         if self.do_robo or self.do_bs:
             self.robo_ip = robo_ip
             self.robo_obj = robo_base_class.RobotClass(
@@ -263,7 +269,7 @@ class ZoomAutomation(Realm):
             self.angles_list = angles_list
             self.current_cord = current_cord
             self.current_angle = current_angle
-            self.rotations_enabled = rotations_enabled
+            self.rotations_enabled = rotations_enabled and not self.continuous_robo
             self.robo_csv_files = []
 
         self.account_id = None
@@ -276,7 +282,7 @@ class ZoomAutomation(Realm):
         self.to_cord = None
         self.bssids = bssids or []
         logger.info("Zoom Automation Initialized with the following parameters:")
-        if self.do_bs:
+        if self.continuous_robo:
             self.robo_obj.coordinate_list = self.coordinates_list
             self.robo_obj.total_cycles = self.cycles
             logger.info(
@@ -540,13 +546,13 @@ class ZoomAutomation(Realm):
                 self.get_live_data()
                 summary_data = self._get_summary_zoom_stats()
                 if summary_data:
-                    if self.do_bs:
+                    if self.continuous_robo:
                         lf_wifi_data = self.get_signal_and_channel_data_dict()
                     for hostname, stats in summary_data.items():
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         stats["timestamp"] = timestamp
 
-                        if self.do_bs:
+                        if self.continuous_robo:
                             x, y, _, _ = self.robo_obj.get_robot_pose()
                             stats["X"] = x
                             stats["Y"] = y
@@ -578,7 +584,7 @@ class ZoomAutomation(Realm):
                             else:
                                 stats["rotations_enabled"] = False
 
-                        if self.do_robo:
+                        if self.per_point_robo:
                             if self.rotations_enabled:
                                 csv_name = f"{hostname}_{self.current_cord}_{self.current_angle}.csv"
                             else:
@@ -607,7 +613,7 @@ class ZoomAutomation(Realm):
                 for hostname, stats in data.items():
                     self.data_store[hostname] = stats
                 for hostname, stats in data.items():
-                    if self.do_robo:
+                    if self.per_point_robo:
                         if self.rotations_enabled:
                             csv_file = os.path.join(
                                 self.path,
@@ -787,7 +793,7 @@ class ZoomAutomation(Realm):
 
                 # Force a safe filename to avoid path traversal from client-supplied hostname
                 hostname = os.path.basename(hostname.strip())
-                if self.do_robo:
+                if self.per_point_robo:
                     if self.rotations_enabled:
                         log_name = f"{hostname}_{self.current_cord}_{self.current_angle}.log"
                     else:
@@ -814,7 +820,7 @@ class ZoomAutomation(Realm):
 
     def shutdown(self):
         """Shut the application down gracefully."""
-        if self.do_robo and self.api_stats_collection:
+        if self.per_point_robo and self.api_stats_collection:
             self.generate_report_from_data()
         elif self.api_stats_collection:
             self.generate_report_from_api()
@@ -824,7 +830,7 @@ class ZoomAutomation(Realm):
 
     def set_start_time(self):
         self.start_time = datetime.now(self.tz) + timedelta(seconds=60)
-        if self.do_bs:
+        if self.continuous_robo:
             self.end_time = self.start_time + timedelta(minutes=300000)
         else:
             self.end_time = self.start_time + timedelta(minutes=self.duration)
@@ -1389,7 +1395,7 @@ class ZoomAutomation(Realm):
         host_failure_coords. Returns False if the host was never ready, True to
         carry on. A non-robo run exits with status 1 instead of returning.
         """
-        if self.do_robo:
+        if self.per_point_robo:
             if self.rotations_enabled:  # coordinate alone would not identify the round
                 where = (
                     f"coordinate {self.current_cord} at angle {self.current_angle}"
@@ -1552,7 +1558,7 @@ class ZoomAutomation(Realm):
                 )
                 sys.exit(1)
         self.test_start = False
-        if self.do_bs:
+        if self.continuous_robo:
             self.bs_coord_result = self.robo_obj.get_coordinates_list()
             logger.info(f"Total Coordinates to be Visited: {self.bs_coord_result}")
             if self.bs_coord_result:
@@ -1573,7 +1579,7 @@ class ZoomAutomation(Realm):
         self.host_ever_ready = True
         self.create_participants()
         if not self.wait_for_test_start():
-            if self.do_robo:
+            if self.per_point_robo:
                 logger.error(
                     f"Unable to get the start signal from the host device for coordinate {self.current_cord} — "
                     "skipping this coordinate and continuing with the next one."
@@ -1586,24 +1592,26 @@ class ZoomAutomation(Realm):
                 )
                 sys.exit(1)
 
-        if self.do_bs:
+        if self.continuous_robo:
             time.sleep(60)
 
             try:
                 logger.info(
-                    f"Band-Steering Test coordinates to be visited ({len(self.bs_coord_result)} total): {self.bs_coord_result}"
+                    f"Continuous Zoom test coordinates to be visited ({len(self.bs_coord_result)} total): {self.bs_coord_result}"
                 )
 
                 if not self.bs_coord_result:
                     logger.error(
-                        "No coordinates available (bs_coord_result is empty). Skipping BS test."
+                        "No coordinates available (bs_coord_result is empty). Skipping continuous Zoom test."
                     )
                     self.stop_signal = True
                     return
 
                 for _idx, coordinate in enumerate(self.bs_coord_result):
                     logger.info(f"Moving robot to coordinate: {coordinate}")
-                    self.from_cord = self.to_cord
+                    if self.stop_signal:
+                        break
+                    self.from_cord = self.current_cord
                     self.to_cord = coordinate
 
                     # Battery safety
@@ -1624,14 +1632,15 @@ class ZoomAutomation(Realm):
                         continue
 
                 logger.info(
-                    "All coordinates completed — stopping Band-Steering Test"
+                    "All coordinates completed — stopping continuous Zoom test"
                 )
                 self.stop_signal = True
                 time.sleep(5)
             except Exception as e:
-                logger.error(f"Error during band-steering operation: {e}", exc_info=True)
+                logger.error(f"Error during continuous Zoom operation: {e}", exc_info=True)
 
             finally:
+                self.stop_signal = True
                 count = 0
                 if self.download_csv:
                     while not self.is_csv_available:
@@ -1648,7 +1657,7 @@ class ZoomAutomation(Realm):
 
         else:
             while datetime.now(self.tz) < self.end_time or not self.check_gen_cx():
-                if self.do_robo:
+                if self.per_point_robo:
                     pause, _ = self.robo_obj.wait_for_battery()
                     if pause:
                         self.stop_signal = True
@@ -1678,7 +1687,7 @@ class ZoomAutomation(Realm):
                             self._record_round_issue(self.host_failure_coords)
                             return True
                 if not self.monitor_endpoint_status_changes():
-                    if self.do_robo:  # no endpoint answered (deleted, or manager unreachable); early return skips the normal teardown
+                    if self.per_point_robo:  # no endpoint answered (deleted, or manager unreachable); early return skips the normal teardown
                         self.generic_endps_profile.stop_cx()
                         self.cleanup_generic_endpoints()
                         self.start_time = None
@@ -1689,7 +1698,7 @@ class ZoomAutomation(Realm):
                     )
                 logger.info("Monitoring the Test")
                 time.sleep(5)
-        if self.do_robo:
+        if self.per_point_robo:
             self.generic_endps_profile.stop_cx()
             self.cleanup_generic_endpoints()
             self.start_time = None
@@ -2040,7 +2049,7 @@ class ZoomAutomation(Realm):
         raw_qos_data = self._get_raw_zoom_stats()
         summary_data = self.summarize_audio_video(raw_qos_data)
 
-        if self.do_robo:
+        if self.per_point_robo:
             json_name = (
                 f"{meeting_id}_{self.current_cord}_{self.current_angle}_qos.json"
             )
@@ -2054,7 +2063,7 @@ class ZoomAutomation(Realm):
                 logger.info("Writing final QoS data to CSV...")
 
                 lf_wifi_data = {}
-                if self.do_bs:
+                if self.continuous_robo:
                     try:
                         lf_wifi_data = self.get_signal_and_channel_data_dict()
                     except Exception as e:
@@ -2065,7 +2074,7 @@ class ZoomAutomation(Realm):
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     stats["timestamp"] = timestamp
 
-                    if self.do_bs:
+                    if self.continuous_robo:
                         x, y, _, _ = self.robo_obj.get_robot_pose()
                         stats["X"] = x
                         stats["Y"] = y
@@ -2095,7 +2104,7 @@ class ZoomAutomation(Realm):
                         else:
                             stats["rotations_enabled"] = False
 
-                    if self.do_robo:
+                    if self.per_point_robo:
                         if self.rotations_enabled:
                             csv_name = f"{final_filename}_{self.current_cord}_{self.current_angle}.csv"
                         else:
@@ -2251,7 +2260,7 @@ class ZoomAutomation(Realm):
             if source_key not in used_source_keys:
                 normalized_summary[source_key] = dict(stats)
         self._set_summary_zoom_stats(normalized_summary)
-        if self.do_robo:
+        if self.per_point_robo:
             self.save_json(
                 self._get_summary_zoom_stats(),
                 f"{self.remote_login_url}_{self.current_cord}_{self.current_angle}_qos.json",
@@ -3511,7 +3520,7 @@ class ZoomAutomation(Realm):
                         "PASSWORD": self.signin_passwd,
                         "HOST": self.real_sta_list[0],
                         "TEST TYPE": testtype,
-                        "Iterations": self.cycles,
+                        "Cycles": self.cycles,
                     }
                 ]
             )
@@ -3533,13 +3542,20 @@ class ZoomAutomation(Realm):
                         "Coordinates": self.coordinates_list,
                     }
                 )
-                if self.do_bs:
+                if self.continuous_robo:
                     test_params_list[0].update(
                         {
-                            "Iterations": self.cycles,
+                            "Cycles": self.cycles,
                         }
                     )
             test_parameters = pd.DataFrame(test_params_list)
+        if self.do_robo or self.do_bs:
+            test_parameters["Measurement Mode"] = (
+                "Continuous" if self.continuous_robo else "Per point"
+            )
+        if self.continuous_robo:
+            test_parameters["Test Duration"] = "Until route completes"
+            test_parameters["Cycles"] = self.cycles
         self.report.set_table_dataframe(test_parameters)
         self.report.build_table()
 
@@ -3638,7 +3654,7 @@ class ZoomAutomation(Realm):
             )
             self.report.build_text_simple()
 
-            self.report.set_graph_title("a. Audio Bitrate (Recevied/Sent)")
+            self.report.set_graph_title("a. Audio Bitrate (Received/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -3666,7 +3682,7 @@ class ZoomAutomation(Realm):
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Audio Bitrate(Recevied/Sent)",
+                _graph_title="Audio Bitrate(Received/Sent)",
                 _graph_image_name="Audio Bitrate(Recevied and Sent)",
                 _label=["Avg Recv", "Avg Sent"],
             )
@@ -3675,7 +3691,7 @@ class ZoomAutomation(Realm):
             self.report.move_graph_image()
             self.report.build_graph()
 
-            self.report.set_graph_title("b. Audio Latency (Recevied/Sent)")
+            self.report.set_graph_title("b. Audio Latency (Received/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -3711,7 +3727,7 @@ class ZoomAutomation(Realm):
             self.report.move_graph_image()
             self.report.build_graph()
 
-            self.report.set_graph_title("c. Audio Jitter (Recevied/Sent)")
+            self.report.set_graph_title("c. Audio Jitter (Received/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -3747,7 +3763,7 @@ class ZoomAutomation(Realm):
             self.report.move_graph_image()
             self.report.build_graph()
 
-            self.report.set_graph_title("d. Audio Packet Loss (Recevied/Sent)")
+            self.report.set_graph_title("d. Audio Packet Loss (Received/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -3774,7 +3790,7 @@ class ZoomAutomation(Realm):
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Audio Packet Loss(Recevied/Sent)",
+                _graph_title="Audio Packet Loss(Received/Sent)",
                 _graph_image_name="Audio Packet Loss(Recevied and Sent)",
                 _label=["Avg Recv", "Avg Sent"],
             )
@@ -3788,7 +3804,7 @@ class ZoomAutomation(Realm):
             audio_test_details = pd.DataFrame(
                 {
                     "Device Name": [client for client in self.real_sta_hostname],
-                    "Avg Bitrate (kbps) [Recevied/Sent]": [
+                    "Avg Bitrate (kbps) [Received/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -3805,7 +3821,7 @@ class ZoomAutomation(Realm):
                         )
                         for index, client in enumerate(self.real_sta_hostname)
                     ],
-                    "Avg Latency (ms) [Recevied/Sent]": [
+                    "Avg Latency (ms) [Received/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -3822,7 +3838,7 @@ class ZoomAutomation(Realm):
                         )
                         for index, client in enumerate(self.real_sta_hostname)
                     ],
-                    "Avg Jitter (ms) [Recevied/Sent]": [
+                    "Avg Jitter (ms) [Received/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -3839,7 +3855,7 @@ class ZoomAutomation(Realm):
                         )
                         for index, client in enumerate(self.real_sta_hostname)
                     ],
-                    "Avg Pkt Loss (%) [Recevied/Sent]": [
+                    "Avg Pkt Loss (%) [Received/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -3874,7 +3890,7 @@ class ZoomAutomation(Realm):
             )
             self.report.build_text_simple()
 
-            self.report.set_graph_title("a. Video Bitrate (Recevied/Sent)")
+            self.report.set_graph_title("a. Video Bitrate (Received/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -3901,7 +3917,7 @@ class ZoomAutomation(Realm):
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Video Bitrate(Recevied/Sent)",
+                _graph_title="Video Bitrate(Received/Sent)",
                 _graph_image_name="Video Bitrate(Recevied and Sent)",
                 _label=["Avg Recv", "Avg Sent"],
             )
@@ -3910,7 +3926,7 @@ class ZoomAutomation(Realm):
             self.report.move_graph_image()
             self.report.build_graph()
 
-            self.report.set_graph_title("b. Video Latency (Recevied/Sent)")
+            self.report.set_graph_title("b. Video Latency (Received/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -3937,7 +3953,7 @@ class ZoomAutomation(Realm):
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Video Latency(Recevied/Sent)",
+                _graph_title="Video Latency(Received/Sent)",
                 _graph_image_name="Video Latency(Recevied and Sent)",
                 _label=["Avg Recv", "Avg Sent"],
             )
@@ -3946,7 +3962,7 @@ class ZoomAutomation(Realm):
             self.report.move_graph_image()
             self.report.build_graph()
 
-            self.report.set_graph_title("c. Video Jitter (Recevied/Sent)")
+            self.report.set_graph_title("c. Video Jitter (Received/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -3973,7 +3989,7 @@ class ZoomAutomation(Realm):
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Video Jitter(Recevied/Sent)",
+                _graph_title="Video Jitter(Received/Sent)",
                 _graph_image_name="Video Jitter(Recevied and sent)",
                 _label=["Avg Recv", "Avg Sent"],
             )
@@ -3982,7 +3998,7 @@ class ZoomAutomation(Realm):
             self.report.move_graph_image()
             self.report.build_graph()
 
-            self.report.set_graph_title("d. Video Packet Loss (Recevied/Sent)")
+            self.report.set_graph_title("d. Video Packet Loss (Received/Sent)")
             self.report.build_graph_title()
             x_data_set = [
                 [
@@ -4009,7 +4025,7 @@ class ZoomAutomation(Realm):
                 _color_name=["blue", "orange"],
                 _show_bar_value=True,
                 _figsize=(x_fig_size, y_fig_size),
-                _graph_title="Video Packet Loss(Recevied/Sent)",
+                _graph_title="Video Packet Loss(Received/Sent)",
                 _graph_image_name="Video Packet Loss(Recevied and Sent)",
                 _label=["Avg Recv", "Avg Sent"],
             )
@@ -4023,7 +4039,7 @@ class ZoomAutomation(Realm):
             video_test_details = pd.DataFrame(
                 {
                     "Device Name": [client for client in self.real_sta_hostname],
-                    "Avg Bitrate (kbps) [Recevied/Sent]": [
+                    "Avg Bitrate (kbps) [Received/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -4040,7 +4056,7 @@ class ZoomAutomation(Realm):
                         )
                         for index, client in enumerate(self.real_sta_hostname)
                     ],
-                    "Avg Latency (ms) [Recevied/Sent]": [
+                    "Avg Latency (ms) [Received/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -4074,7 +4090,7 @@ class ZoomAutomation(Realm):
                         )
                         for index, client in enumerate(self.real_sta_hostname)
                     ],
-                    "Avg Pkt Loss (%) [Recevied/Sent]": [
+                    "Avg Pkt Loss (%) [Received/Sent]": [
                         "{}/{}".format(
                             (
                                 device_data.get(client, {}).get(
@@ -4098,7 +4114,7 @@ class ZoomAutomation(Realm):
                 index=False, justify="center", render_links=True, escape=False
             )
             self.report.html += self.report.dataframe_html
-        if self.do_bs:
+        if self.do_bs and self.bs_graph:
             self.add_bandsteering_report_section(report=self.report)
         self.report.write_html()
         self.report.write_pdf(_page_size="Legal", _orientation="Landscape")
@@ -4172,7 +4188,7 @@ class ZoomAutomation(Realm):
             ),
             "Test Duration": to_hms(self.duration),
             "TEST TYPE": testtype,
-            "Mode": "Robo Motion" if self.do_robo else "Static",
+            "Mode": "Per point" if self.per_point_robo else "Static",
         }
 
         if self.config:
@@ -4350,7 +4366,7 @@ class ZoomAutomation(Realm):
 
     def _move_report_files(self, report_path_date_time):
         """Move CSVs and robo JSONs into the report folder."""
-        if self.do_robo:
+        if self.per_point_robo:
             for coord in self.coordinates_list:
                 if self.rotations_enabled:
                     for angle in self.angles_list:
@@ -4367,7 +4383,7 @@ class ZoomAutomation(Realm):
                         if os.path.exists(csv_path):
                             self.move_files(csv_path, report_path_date_time)
 
-        if self.do_robo:
+        if self.per_point_robo:
             pattern = os.path.join(self.path, "zoom_api_responses", "*_qos.json")
             for f in glob.glob(pattern):
                 self.move_files(f, report_path_date_time)
@@ -4404,6 +4420,8 @@ class ZoomAutomation(Realm):
             logger.error(f"Error updating running_status.json: {e}")
 
     def run_robo_test(self):
+        if self.continuous_robo:
+            return self.run()
         logger.info(
             f"Robo test coordinates to be visited ({len(self.coordinates_list)} total): {self.coordinates_list}"
         )
@@ -4729,6 +4747,13 @@ def main():
             action="store_true",
         )
 
+        robo_group.add_argument(
+            "--measurement_mode",
+            choices=["per_point", "continuous"],
+            default="per_point",
+            help="Robot Zoom mode: a timed call at each point, or one call throughout the route",
+        )
+
         # Arguments related to band steering
         bandsteering_group = parser.add_argument_group(
             "Band Steering Arguments", "Arguments related to band steering tests"
@@ -4741,6 +4766,11 @@ def main():
         bandsteering_group.add_argument(
             "--do_bs",
             help="Specify this flag to perform the test with robo for band steering",
+            action="store_true",
+        )
+        bandsteering_group.add_argument(
+            "--bs_graph",
+            help="Include bandsteering graphs and tables in the report for --do_bs tests (hidden by default)",
             action="store_true",
         )
 
@@ -4906,6 +4936,8 @@ def main():
             participants_req=args.participants,
             env_file=args.env_file,
             do_bs=args.do_bs,
+            bs_graph=args.bs_graph,
+            measurement_mode=args.measurement_mode,
             api_stats_collection=args.api_stats_collection,
             do_webui=args.do_webUI,
             cycles=args.cycles,
@@ -5147,7 +5179,7 @@ def main():
             if zoom_automation.do_webui:
                 zoom_automation.stop_webui()
 
-            if args.do_robo and args.api_stats_collection:
+            if zoom_automation.per_point_robo and args.api_stats_collection:
                 zoom_automation.generate_report_from_data()
             elif args.api_stats_collection:
                 zoom_automation.generate_report_from_api()
