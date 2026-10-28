@@ -536,88 +536,50 @@ class Adb:
         """
         Extract clickable rows from YouTube bottom sheet / RecyclerView.
         """
-
         d = self.u2_sessions[serial]
-
-        logger.debug("[%s] Dumping UI hierarchy", serial)
-
         xml = d.dump_hierarchy(compressed=False)
+        safe_serial = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(serial))
+        (XML_OUTPUT_DIR / f"debug_ui_{safe_serial}.xml").write_text(xml, encoding="utf-8")
         root = ET.fromstring(xml)
 
-        # save xml for debugging
-        with open(f"debug_ui_{serial}.xml", "w", encoding="utf-8") as f:
-            f.write(xml)
+        def bounds_of(node):
+            values = re.findall(r"-?\d+", node.attrib.get("bounds", ""))
+            return tuple(map(int, values)) if len(values) == 4 else None
 
+        recycler = next((node for node in root.iter("node") if
+                         node.attrib.get("resource-id", "").endswith(":id/bottom_sheet_list")
+                         or node.attrib.get("class") in (
+                             "android.support.v7.widget.RecyclerView",
+                             "androidx.recyclerview.widget.RecyclerView")), None)
+        if recycler is None:
+            logger.warning("[%s] Resolution menu RecyclerView not found", serial)
+            return []
+
+        clip = bounds_of(recycler)
+        if clip is None:
+            return []
         rows = []
-        container_found = False
-
-        for node in root.iter("node"):
-
-            res_id = node.attrib.get("resource-id", "")
-            cls = node.attrib.get("class", "")
-
-            if (
-                "bottom_sheet" in res_id
-                or "recycler" in res_id
-                or cls in (
-                    "android.support.v7.widget.RecyclerView",
-                    "androidx.recyclerview.widget.RecyclerView",
-                )
-            ):
-
-                container_found = True
-                logger.debug("[%s] Resolution container found: %s", serial, res_id)
-
-                for child in node.iter("node"):
-
-                    if child.attrib.get("class") != "android.view.ViewGroup":
-                        continue
-
-                    if child.attrib.get("clickable") != "true":
-                        continue
-
-                    if visible_only and child.attrib.get("visible-to-user") != "true":
-                        continue
-
-                    bounds = child.attrib.get("bounds", "")
-                    nums = re.findall(r"\d+", bounds)
-
-                    if len(nums) != 4:
-                        continue
-
-                    x1, y1, x2, y2 = map(int, nums)
-
-                    # filter small rows
-                    if (y2 - y1) < 60:
-                        continue
-
-                    row = {
-                        "x1": x1,
-                        "y1": y1,
-                        "x2": x2,
-                        "y2": y2,
-                        "adapter_index": int(child.attrib.get("index", -1))
-                    }
-
-                    rows.append(row)
-
-                    logger.debug(
-                        "[%s] Resolution row detected: index=%s bounds=%s",
-                        serial, row["adapter_index"], bounds,
-                    )
-
-                break
-
-        if not container_found:
-            logger.warning("[%s] Resolution menu container not found", serial)
-
-        rows.sort(key=lambda r: r["adapter_index"])
-
-        logger.debug(
-            "[%s] Resolution row order: %s",
-            serial, [r["adapter_index"] for r in rows],
-        )
-
+        for child in recycler.iter("node"):
+            if child.attrib.get("class") != "android.view.ViewGroup":
+                continue
+            if child.attrib.get("clickable") != "true":
+                continue
+            rect = bounds_of(child)
+            if rect is None:
+                continue
+            x1, y1, x2, y2 = rect
+            vx1, vy1 = max(x1, clip[0]), max(y1, clip[1])
+            vx2, vy2 = min(x2, clip[2]), min(y2, clip[3])
+            if vx2 <= vx1 or vy2 <= vy1:
+                continue
+            if visible_only and child.attrib.get("visible-to-user") == "false":
+                continue
+            rows.append({
+                "x1": vx1, "y1": vy1, "x2": vx2, "y2": vy2,
+                "adapter_index": int(child.attrib.get("index", -1)),
+            })
+        rows.sort(key=lambda row: (row["y1"], row["x1"]))
+        logger.debug("[%s] Visible clickable row bounds: %s", serial, rows)
         return rows
 
     def click_row(self, serial, row):
@@ -650,16 +612,17 @@ class Adb:
 
         return True
 
-    def detect_resolutions_with_ocr(self, serial):
+    def detect_resolutions_with_ocr(self, serial, with_positions=False):
         """
         Capture device screen and use OCR to extract available video resolutions.
 
         Args:
             serial (str): Device serial number.
+            with_positions (bool): Include OCR screen coordinates when True.
 
         Returns:
-            list: List of detected resolution strings (e.g., ["144p", "360p", "720p"]).
-                Returns an empty list if screenshot capture or OCR fails.
+            list: Resolution strings, or resolution and coordinate dictionaries
+                when with_positions is True. Returns an empty list on failure.
 
         Notes:
             - Requires Tesseract OCR to be installed and accessible.
@@ -668,49 +631,44 @@ class Adb:
         """
         pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
-        screenshot_file = f"resolution_screen_{serial}.png"
-
-        logger.debug("[%s] Capturing resolution screenshot", serial)
-
+        safe_serial = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(serial))
+        screenshot_file = XML_OUTPUT_DIR / f"resolution_screen_{safe_serial}.png"
+        processed_file = XML_OUTPUT_DIR / f"processed_{safe_serial}.png"
         try:
             with open(screenshot_file, "wb") as f:
                 subprocess.run(
                     ["adb", "-s", serial, "exec-out", "screencap", "-p"],
-                    stdout=f,
-                    check=True
+                    stdout=f, check=True,
                 )
+            img = cv2.imread(str(screenshot_file))
+            if img is None:
+                logger.error("[%s] Resolution screenshot could not be read", serial)
+                return []
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
+            cv2.imwrite(str(processed_file), thresh)
+            data = pytesseract.image_to_data(
+                thresh, output_type=pytesseract.Output.DICT,
+                config="--psm 11",
+            )
         except Exception:
-            logger.exception("[%s] Resolution screenshot capture failed", serial)
+            logger.exception("[%s] Resolution screenshot/OCR failed", serial)
             return []
 
-        img = cv2.imread(screenshot_file)
+        found = []
+        for i, word in enumerate(data["text"]):
+            match = re.search(r"(?<!\d)(\d{3,4})\s*[pP](?:\d{2,3})?(?!\w)", word.strip())
+            if not match:
+                continue
+            label = f"{match.group(1)}p"
+            x = int(data["left"][i] + data["width"][i] / 2)
+            y = int(data["top"][i] + data["height"][i] / 2)
+            found.append({"resolution": label, "x": x, "y": y})
 
-        if img is None:
-            logger.error("[%s] Resolution screenshot could not be read", serial)
-            return []
-
-        logger.debug("[%s] Screenshot shape: %s", serial, img.shape)
-
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-        thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
-
-        cv2.imwrite(f"processed_{serial}.png", thresh)
-
-        text = pytesseract.image_to_string(thresh)
-
-        logger.debug("[%s] OCR text: %s", serial, " ".join(text.split()))
-
-        resolutions = re.findall(r"\d{3,4}p(?:\s*Premium)?", text)
-
-        if len(resolutions) > 1 and resolutions[0] in resolutions[1:]:
-            resolutions = resolutions[1:]
-
-        resolutions = list(dict.fromkeys(resolutions))
-
+        resolutions = list(dict.fromkeys(item["resolution"] for item in found))
         logger.info("[%s] Resolutions detected: %s", serial, resolutions)
-
-        return resolutions
+        logger.debug("[%s] OCR resolution coordinates: %s", serial, found)
+        return found if with_positions else resolutions
 
     def set_resolution(self, serial, resolution):
         """
@@ -778,36 +736,46 @@ class Adb:
 
         logger.debug("[%s] Detecting resolutions using OCR", serial)
 
-        resolutions = self.detect_resolutions_with_ocr(serial)
+        resolution = resolution.strip()
+        requested = re.match(r"^(\d{3,4})p(?:\d{2,3})?$", resolution, re.I)
+        target = f"{requested.group(1)}p" if requested else resolution
+        for attempt in range(2):
+            labels = self.detect_resolutions_with_ocr(serial, with_positions=True)
+            rows = self.get_rows(serial, visible_only=True)
+            logger.info("[%s] Resolution attempt %s: OCR=%s, rows=%s",
+                        serial, attempt + 1,
+                        [item["resolution"] for item in labels], len(rows))
 
-        rows = self.get_rows(serial, visible_only=True)
+            for item in labels:
+                if item["resolution"] != target:
+                    continue
+                matches = [row for row in rows if
+                           row["x1"] <= item["x"] <= row["x2"] and
+                           row["y1"] <= item["y"] <= row["y2"]]
+                if matches:
+                    row = min(matches, key=lambda match:
+                              (match["x2"] - match["x1"]) * (match["y2"] - match["y1"]))
+                    logger.info("[%s] Selecting %s at OCR=(%s,%s), row=%s",
+                                serial, target, item["x"], item["y"], row)
+                    return self.click_row(serial, row)
+                logger.warning("[%s] OCR found %s at (%s,%s) but matched no rows",
+                               serial, target, item["x"], item["y"])
 
-        logger.debug(
-            "[%s] Resolution mapping: OCR=%s row_indexes=%s",
-            serial, resolutions, [r["adapter_index"] for r in rows],
-        )
+            if attempt == 0:
+                logger.info("[%s] %s not mapped; scrolling once", serial, target)
+                resolution_list = d(resourceId="com.google.android.youtube:id/bottom_sheet_list")
+                if not resolution_list.exists:
+                    logger.warning("[%s] Resolution list not found", serial)
+                    return False
+                try:
+                    resolution_list.scroll.forward(steps=20)
+                except Exception:
+                    logger.exception("[%s] Failed to scroll resolution list", serial)
+                    return False
+                time.sleep(1.5)
 
-        if resolution not in resolutions:
-            logger.warning(
-                "[%s] Requested resolution %s not detected; available=%s",
-                serial, resolution, resolutions,
-            )
-            return False
-
-        target_index = resolutions.index(resolution)
-
-        if target_index >= len(rows):
-            logger.warning(
-                "[%s] Cannot map resolution %s: OCR index=%s, menu rows=%s",
-                serial, resolution, target_index, len(rows),
-            )
-            return False
-
-        logger.info("[%s] Selecting resolution %s", serial, resolution)
-
-        self.click_row(serial, rows[target_index])
-
-        return True
+        logger.warning("[%s] Requested resolution %s not mapped after one scroll", serial, target)
+        return False
 
 
 if __name__ == "__main__":
