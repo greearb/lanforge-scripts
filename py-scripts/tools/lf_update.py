@@ -155,10 +155,15 @@ class create_lanforge_object:
         # self.tear_down_mgmt()
 
     def tear_down_mgmt(self) -> None:
-        pass
-        if getattr(self, "conn", None) is not None:
-            self.conn.close()
-            self.conn = None
+        for attribute in ("conn", "conn_user"):
+            connection = getattr(self, attribute, None)
+            if connection is not None:
+                setattr(self, attribute, None)
+                try:
+                    connection.close()
+                except Exception as error:
+                    # A reboot may already have closed the remote SSH session.
+                    logger.warning("Could not close %s for %s: %s", attribute, self.mgr, error)
 
     # not used left in for reference
     def reboot_lf_with_paramiko(self):
@@ -334,8 +339,9 @@ class create_lanforge_object:
         while True:
             iterations = iterations + 1
             if iterations > self.max_iterations:
-                print(f"Connection failed: iterations {iterations} > max_iterations {self.max_iterations}")
-                break
+                raise TimeoutError(
+                    f"System {self.tb_name} {self.mgr} did not become ready "
+                    f"after {self.max_iterations} attempts")
 
             try:
                 # Create a new SSH client
@@ -359,6 +365,8 @@ class create_lanforge_object:
             except Exception as e:
                 print(f"An error occurred system down: {e}. Retrying in {self.interval} seconds...")
                 time.sleep(self.interval)  # Wait before retrying
+            finally:
+                ssh.close()
 
     def cmd_pwd(self):
         command = "pwd"

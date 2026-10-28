@@ -172,8 +172,28 @@ class create_update_lab_object:
 
     def worker(self):
         process_log_handler = self.start_process_logging()
-        self.lf_update_obj[self.obj_index].update_lanforge()
-        self.stop_process_logging(process_log_handler)
+        updater = self.lf_update_obj[self.obj_index]
+        failed = False
+        try:
+            updater.update_lanforge()
+            logger.info("Update completed for %s %s", updater.tb_name, updater.mgr)
+        except Exception as error:
+            failed = True
+            logger.error("Update failed for %s %s: %s: %s",
+                         updater.tb_name, updater.mgr, type(error).__name__, error)
+            logger.debug("Update failure details", exc_info=True)
+        finally:
+            try:
+                cleanup = getattr(updater, "tear_down_mgmt", None)
+                if cleanup is not None:
+                    cleanup()
+            except Exception as error:
+                failed = True
+                logger.error("Connection cleanup failed: %s", error)
+            finally:
+                self.stop_process_logging(process_log_handler)
+        if failed:
+            sys.exit(1)
 
     def config_root_logger(self, log_level):
 
@@ -239,6 +259,13 @@ class create_update_lab_object:
         # Wait for all processes to finish
         for process in processes:
             process.join()
+
+        failed_processes = [process.name for process in processes if process.exitcode != 0]
+        if failed_processes:
+            logger.error("Lab update failed for: %s", ", ".join(failed_processes))
+            return 1
+        logger.info("All lab updates completed successfully")
+        return 0
 
 
 def validate_args(args):
@@ -540,8 +567,8 @@ def main():
     log_level = str.upper(args.log_level)
     lf.config_root_logger(log_level)
 
-    lf.update_lab()
+    return lf.update_lab()
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
