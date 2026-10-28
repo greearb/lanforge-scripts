@@ -97,6 +97,11 @@
     --do_robo --robo_ip 192.168.200.101 --coordinates 3,2,1 --rotations "" --robot_wait_duration 1 --do_bandsteering --cycles 2
     --bssids 94:A6:7E:74:26:22,94:A6:7E:74:26:31
 
+    Example-10:
+    Command Line Interface to run the Test while the robot moves through the points (continuous robot run, no band steering)
+    python3 lf_interop_youtube.py --mgr 192.168.207.78 --url "https://youtu.be/BHACKCNDMW8?si=mjPduPJ5a7KmCUAS" --upstream_port 192.168.204.90 --res 144p
+    --do_robo --robo_ip 192.168.200.101 --coordinates 3,2,1 --robot_wait_duration 1 --measurement_mode continuous --cycles 2
+
 
 
     SCRIPT CLASSIFICATION: Test
@@ -224,6 +229,7 @@ class Youtube(Realm):
                  cycles=None,
                  bssids=None,
                  do_bandsteering=False,
+                 measurement_mode="per_point",
                  current_cord="",
                  current_angle="NA",
                  rotations_enabled=False,
@@ -285,6 +291,9 @@ class Youtube(Realm):
         self.device_names = []
         self.resolution = resolution
         self.do_bandsteering = do_bandsteering
+        # measurement mode: 'per_point' plays at each point, 'continuous' keeps the video playing while the robot moves.
+        # Band steering always moves continuously; do_bandsteering only adds the BSSID tracking report.
+        self.is_continuous_run = do_bandsteering or (do_robo and measurement_mode == "continuous")
         self.bssids = bssids or []
         self.ap_name = ap_name
         self.ssid = ssid
@@ -325,9 +334,9 @@ class Youtube(Realm):
             "VideoCodec", "AudioCodec", "ConnectionSpeedKbps",
             "NetworkActivityKB", "LiveLatency(sec)", "bandwidth (kbps)"
         ]
-        if do_robo and not do_bandsteering:
+        if do_robo and not self.is_continuous_run:
             self.csv_headers.append("Angle")
-        if do_bandsteering:
+        if self.is_continuous_run:
             self.csv_headers.extend([
                 "BSSID", "Channel", "X", "Y", "From_Coord", "To_Coord"
             ])
@@ -1039,7 +1048,7 @@ class Youtube(Realm):
         logger.info("Waiting 10 seconds for client cleanup and log uploads")
         time.sleep(10)
         try:
-            if args.do_robo and not args.do_bandsteering:
+            if args.do_robo and not self.is_continuous_run:
                 self.create_robo_report()
             else:
                 self.create_report(
@@ -1218,7 +1227,7 @@ class Youtube(Realm):
                         self.stats_api_response[device_name]["rotations_enabled"] = self.rotations_enabled
                         stats["Angle"] = self.current_angle
 
-                    if self.do_robo and self.do_bandsteering:
+                    if self.do_robo and self.is_continuous_run:
                         lf_wifi_map = self.get_youtube_lf_wifi_stats()
                         sta_name = self.hostname_to_station_map.get(device_name)
                         if sta_name in lf_wifi_map:
@@ -1234,7 +1243,7 @@ class Youtube(Realm):
                         stats["From_Coord"] = self.from_coordinate
                         stats["To_Coord"] = self.to_coordinate
 
-                    if self.do_robo and self.current_cord != "" and not self.do_bandsteering:
+                    if self.do_robo and self.current_cord != "" and not self.is_continuous_run:
                         csv_filename = f"{self.current_cord}_{device_name}_youtube_stats_report.csv"
                     else:
                         csv_filename = f"{device_name}_youtube_stats_report.csv"
@@ -1457,8 +1466,17 @@ class Youtube(Realm):
             logging.info("Waiting for Running JSON file to be created")
             time.sleep(1)
         logging.info("Running JSON file created")
-        with open(file_path, 'r') as file:
-            data = json.load(file)
+        # the WebGUI may still be writing the file (it is created empty first); retry briefly
+        for attempt in range(10):
+            try:
+                with open(file_path, 'r') as file:
+                    data = json.load(file)
+                break
+            except ValueError:
+                if attempt == 9:
+                    logging.error("Running JSON file is not valid JSON: %s. Skipping this status update.", file_path)
+                    return
+                time.sleep(0.5)
 
         for key in obj:
             data[key] = obj[key]
@@ -1726,7 +1744,7 @@ class Youtube(Realm):
             # Test setup info
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration,
+                'Duration (in Minutes)': self.duration if not self.is_continuous_run else "NA",
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
                 'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
@@ -1743,7 +1761,7 @@ class Youtube(Realm):
             # Test setup info
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration,
+                'Duration (in Minutes)': self.duration if not self.is_continuous_run else "NA",
                 'Resolution': self.resolution,
                 "Configuration": gp_map,
                 'Configured Devices': self.hostname_os_combination,
@@ -1755,13 +1773,17 @@ class Youtube(Realm):
             # Test setup info
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration,
+                'Duration (in Minutes)': self.duration if not self.is_continuous_run else "NA",
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
                 'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
                 "Video URL": self.url,
 
             }
+        # continuous robot run: no fixed duration (shown as NA), show the points and cycles
+        if self.is_continuous_run:
+            test_setup_info['Coordinates'] = self.coordinates_list
+            test_setup_info['Total Cycles'] = self.cycles
         if iot_summary:
             test_setup_info['Test Name'] = 'YouTube Streaming Test with IoT Devices'
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
@@ -2708,15 +2730,24 @@ class Youtube(Realm):
                 )
 
     def perform_robo_bandsteering_test(self):
-        logging.info(
-            "Starting band-steering robot YouTube test at %s",
-            datetime.now().astimezone().isoformat(timespec="seconds"),
-        )
+        # Continuous robot run: band steering keeps its own wording, otherwise it is a continuous measurement
+        if self.do_bandsteering:
+            logging.info(
+                "Starting band-steering robot YouTube test at %s",
+                datetime.now().astimezone().isoformat(timespec="seconds"),
+            )
+        else:
+            logging.info(
+                "Starting robot YouTube test with continuous measurement at %s",
+                datetime.now().astimezone().isoformat(timespec="seconds"),
+            )
 
         self.robo_obj.total_cycles = self.cycles
         self.robo_obj.coordinate_list = self.coordinates_list
         coordinate_list_with_robo = self.robo_obj.get_coordinates_list()
-        self.wait_stop_aware(5, "before band-steering coordinate traversal")
+        self.wait_stop_aware(5, "before coordinate traversal")
+        curr_cycle = 1
+        logger.info("Starting cycle {} of {}".format(curr_cycle, self.cycles))
         for coordinate in coordinate_list_with_robo:
             if self.stop_signal:
                 break
@@ -2742,6 +2773,13 @@ class Youtube(Realm):
                 logger.info("Reached the coordinate {}".format(coordinate))
             if abort:
                 break
+            if coordinate == self.coordinates_list[0]:
+                logger.info("Completed cycle {} of {}".format(curr_cycle, self.cycles))
+                curr_cycle += 1
+                if curr_cycle > int(self.cycles):
+                    logger.info("Completed all {} cycles".format(self.cycles))
+                else:
+                    logger.info("Starting cycle {} of {}".format(curr_cycle, self.cycles))
             if not matched:
                 continue
             self.current_cord = coordinate
@@ -2758,7 +2796,7 @@ class Youtube(Realm):
                 while time.monotonic() < dwell_poll_deadline:
                     if self.stop_signal:
                         logger.info(
-                            "WebUI stop requested during band-steering endpoint "
+                            "WebUI stop requested during endpoint "
                             "monitoring; unwinding directly to report generation."
                         )
                         raise WebUIStopRequested
@@ -2768,24 +2806,42 @@ class Youtube(Realm):
                     time.sleep(min(0.25, sleep_remaining))
 
         if self.stop_signal:
-            logging.info(
-                "Band-steering test stopped before all coordinates completed at %s",
-                datetime.now().astimezone().isoformat(timespec="seconds"),
-            )
+            if self.do_bandsteering:
+                logging.info(
+                    "Band-steering test stopped before all coordinates completed at %s",
+                    datetime.now().astimezone().isoformat(timespec="seconds"),
+                )
+            else:
+                logging.info(
+                    "Robot YouTube test with continuous measurement stopped before all coordinates completed at %s",
+                    datetime.now().astimezone().isoformat(timespec="seconds"),
+                )
         else:
-            logging.info(
-                "All band-steering coordinates completed at %s; stopping the test",
-                datetime.now().astimezone().isoformat(timespec="seconds"),
-            )
+            if self.do_bandsteering:
+                logging.info(
+                    "All band-steering coordinates completed at %s; stopping the test",
+                    datetime.now().astimezone().isoformat(timespec="seconds"),
+                )
+            else:
+                logging.info(
+                    "All coordinates completed for continuous measurement at %s; stopping the test",
+                    datetime.now().astimezone().isoformat(timespec="seconds"),
+                )
         self.stop_bandsteering_test()
 
     def stop_bandsteering_test(self):
-        logging.info("Stopping Band-Steering YouTube Test")
+        if self.do_bandsteering:
+            logging.info("Stopping Band-Steering YouTube Test")
+        else:
+            logging.info("Stopping robot YouTube test with continuous measurement")
 
         # Common finalization waits for client uploads and cleans endpoints once.
         self.stop_signal = True
 
-        logging.info("Band-Steering Test stopped")
+        if self.do_bandsteering:
+            logging.info("Band-Steering Test stopped")
+        else:
+            logging.info("Robot YouTube test with continuous measurement stopped")
 
     def remove_angle_data_from_csv(self, csv_file_path):
         if self.rotations_enabled:
@@ -2864,7 +2920,7 @@ class Youtube(Realm):
         if self.config:
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
+                'Duration (in Minutes)': self.duration if not self.is_continuous_run else "NA",
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
                 'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
@@ -2880,7 +2936,7 @@ class Youtube(Realm):
 
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
+                'Duration (in Minutes)': self.duration if not self.is_continuous_run else "NA",
                 'Resolution': self.resolution,
                 "Configuration": gp_map,
                 'Configured Devices': self.hostname_os_combination,
@@ -2891,7 +2947,7 @@ class Youtube(Realm):
         else:
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration if not self.do_bandsteering else "NA",
+                'Duration (in Minutes)': self.duration if not self.is_continuous_run else "NA",
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
                 'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
@@ -3274,7 +3330,7 @@ NOTES:
         # Add required arguments
         required.add_argument('--mgr', type=str, help="hostname where LANforge GUI is running", required=True)
         required.add_argument('--url', type=str, help='youtube url', required=True)
-        required.add_argument('--duration', type=int, help='duration to run the test in sec', required=True)
+        required.add_argument('--duration', type=int, help='duration to run the test in sec (not needed for a continuous robot run)')
         required.add_argument('--ap_name', type=str, default="TIP", help="Name of the AP in which we run the test")
         required.add_argument('--sec', type=str, default="wpa2", help="security type used")
         required.add_argument('--band', type=str, default="5GHZ", help="Name of the Frequency band used")
@@ -3358,7 +3414,11 @@ NOTES:
         robo.add_argument('--do_robo', help='Specify this flag to perform the test with robo', action='store_true')
         robo.add_argument('--do_bandsteering', help='Specify this flag to perform Bandsteering Scenario', action='store_true')
         robo.add_argument('--bssids', type=str, help='Comma-separated list of BSSIDs for bandsteering test')
-        robo.add_argument('--cycles', type=int, default=1, help='Number of cycles to perform bandsteering')
+        robo.add_argument('--measurement_mode', choices=['per_point', 'continuous'], default='per_point',
+                          help="Robot measurement mode: 'per_point' plays the video at each point (and angle), "
+                               "'continuous' keeps the video playing while the robot moves through the points --cycles times "
+                               "(--duration is not used)")
+        robo.add_argument('--cycles', type=int, default=1, help='Number of times the robot goes through the points in a continuous or bandsteering run')
 
         args = parser.parse_args()
 
@@ -3386,10 +3446,15 @@ NOTES:
         mgr_ip = args.mgr
         mgr_port = args.mgr_port
         url = args.url
+        # continuous robot run (band steering or measurement mode 'continuous'): the video plays until the robot finishes its laps
+        is_continuous_run = args.do_bandsteering or (args.do_robo and args.measurement_mode == "continuous")
+        if args.duration is None and not is_continuous_run:
+            parser.error("--duration is required unless the robot runs continuously")
         duration = args.duration
         bssids = None
-        if args.do_bandsteering:
+        if is_continuous_run:
             args.duration = 999999
+        if args.do_bandsteering:
             bssids = args.bssids.split(',') if args.bssids else []
 
         do_webUI = args.do_webUI
@@ -3482,6 +3547,7 @@ NOTES:
                 do_robo=args.do_robo,
                 cycles=args.cycles,
                 do_bandsteering=args.do_bandsteering,
+                measurement_mode=args.measurement_mode,
                 bssids=bssids,
                 rotations_enabled=rotations_enabled,
                 scoring=args.scoring,
@@ -3622,7 +3688,7 @@ NOTES:
             if args.do_webUI:
                 youtube.update_webui()
 
-            if args.do_bandsteering:
+            if is_continuous_run:
                 logging.info("YouTube streaming will run until all robot cycles finish")
             else:
                 logging.info(
@@ -3635,7 +3701,7 @@ NOTES:
 
             youtube.start_time = datetime.now()
             if args.do_robo:
-                if args.do_bandsteering:
+                if is_continuous_run:
                     youtube.perform_robo_bandsteering_test()
                 else:
                     youtube.perform_robo_test()
