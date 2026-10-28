@@ -37,6 +37,8 @@ class RobotClass:
         self.from_coordinate = ""
         self.to_coordinate = ""
         self.charging_timestamps = []
+        # last battery % written by wait_for_battery, so a steady level is logged once instead of every check
+        self.last_logged_battery = None
         # max time to reach a point in seconds
         self.time_to_reach = 60
         self.total_cycles = 1
@@ -192,7 +194,10 @@ class RobotClass:
                             last_battery_check = time.time()
                         time.sleep(1)
                 else:
-                    logging.info("[OK] Battery at {}%. Continuing test.".format(battery))
+                    # tests call this every few seconds while measuring; log only when the level changes
+                    if battery != self.last_logged_battery:
+                        logging.info("[OK] Battery at {}%. Continuing test.".format(battery))
+                        self.last_logged_battery = battery
                     if monitor_function:
                         return pause, stopped, {}
                     return pause, stopped
