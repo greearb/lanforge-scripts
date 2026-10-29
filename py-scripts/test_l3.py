@@ -2923,23 +2923,21 @@ class L3VariableTime(Realm):
 
         # looping though both A and B together,  upload direction will select A, download direction will select B
         # For each rate
+        traffic_started = False
         for ul, dl in itertools.zip_longest(
                 self.side_a_min_rate,
                 self.side_b_min_rate, fillvalue=256000):
+
+            # Scale each rate pair once; every PDU size uses the same rate.
+            if self.cx_count > 1 and self.rates_are_totals:
+                ul = str(int(ul) // self.cx_count)
+                dl = str(int(dl) // self.cx_count)
 
             # For each pdu size
             for ul_pdu, dl_pdu in itertools.zip_longest(
                 self.side_a_min_pdu,
                 self.side_b_min_pdu, fillvalue='AUTO'
             ):
-
-                # Adjust rate to take into account the number of connections we
-                # have.
-                if self.cx_count > 1 and self.rates_are_totals:
-                    # Convert from string to int to do math, then back to string
-                    # as that is what the cx_profile wants.
-                    ul = str(int(int(ul) / self.cx_count))
-                    dl = str(int(int(dl) / self.cx_count))
 
                 dl_pdu_str = dl_pdu
                 ul_pdu_str = ul_pdu
@@ -2978,6 +2976,13 @@ class L3VariableTime(Realm):
                 self.multicast_profile.side_b_min_pdu = dl_pdu
                 self.multicast_profile.side_b_max_pdu = dl_pdu
 
+                # Stop the previous configuration before updating its endpoints.
+                # Leave the final configuration running for --no_stop_traffic.
+                if traffic_started:
+                    self.cx_profile.stop_cx()
+                    self.multicast_profile.stop_mc()
+                    traffic_started = False
+
                 # Update connections with the new rate and pdu size config.
                 self.build(rebuild=True)
 
@@ -2999,6 +3004,7 @@ class L3VariableTime(Realm):
                     logger.info("Starting layer-3 traffic (if any configured)")
                     self.cx_profile.start_cx()
                     self.cx_profile.refresh_cx()
+                    traffic_started = True
                     passes = 0
                     expected_passes = 0
                     logger.info("Getting initial values.")
@@ -8574,6 +8580,32 @@ EXAMPLE:
 #########################################
 # Examples
 #########################################
+Example looping through multiple upload/download speeds and PDU sizes
+Creates four stations on 1.1.wiphy2 using WPA3 security. Adjust security if needed.
+Normal test mode creates the four stations from --radio stations==4, then runs
+the traffic loop. No toolbox or existing-station options are needed.
+Rates are in bits per second; PDU sizes are in bytes.
+Upload/download rates are paired by position, as are upload/download PDU sizes.
+Each rate pair runs with every PDU-size pair, giving four 30-second iterations:
+  1. UL 1 Mbps / DL 10 Mbps, UL/DL PDU 256 bytes
+  2. UL 1 Mbps / DL 10 Mbps, UL/DL PDU 1400 bytes
+  3. UL 5 Mbps / DL 50 Mbps, UL/DL PDU 256 bytes
+  4. UL 5 Mbps / DL 50 Mbps, UL/DL PDU 1400 bytes
+With --no_stop_traffic, only the last iteration is left running; earlier
+iterations stop before the next rate/PDU configuration is applied.
+
+python3 test_l3.py \\
+  --lfmgr 192.168.50.103 \\
+  --upstream_port 1.1.eth2 \\
+  --radio "radio==1.1.wiphy2,stations==4,ssid==TP-Link_8258_6G,ssid_pw==96487891,security==wpa3" \\
+  --endp_type lf_udp \\
+  --side_a_min_bps "1000000,5000000" \\
+  --side_b_min_bps "10000000,50000000" \\
+  --side_a_min_pdu "256,1400" \\
+  --side_b_min_pdu "256,1400" \\
+  --test_duration 30s \\
+  --polling_interval 5s
+
 Example running traffic with two radios
 1. Test duration 30 minutes
 2. Traffic IPv4 TCP, UDP
@@ -9454,7 +9486,7 @@ INCLUDE_IN_README: False
     test_l3_parser.add_argument(
         '--csv_data_to_report', help='collected interval data in csv for each cx will be put in report', action='store_true')
 
-    test_l3_parser.add_argument('--no_stop_traffic', help='leave traffic running',
+    test_l3_parser.add_argument('--no_stop_traffic', help='leave traffic running after the last iteration only; earlier rate/PDU iterations stop before the next configuration',
                                 action='store_true')
 
     test_l3_parser.add_argument('--quiesce_cx', help='--quiesce store true,  allow the cx to drain then stop so as to not have rx drop pkts',
@@ -11167,7 +11199,7 @@ Examples:
 
     # Admin down the stations
     if args.no_stop_traffic:
-        logger.info("Test complete, '--no_stop_traffic' specified, traffic continues to run")
+        logger.info("Test complete, '--no_stop_traffic' specified, leaving the last iteration running")
     else:
         if args.quiesce_cx:
             logger.info("Test complete, quiescing traffic")
