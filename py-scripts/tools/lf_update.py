@@ -53,6 +53,7 @@ from contextlib import contextmanager
 import scrapli
 from scrapli.driver import GenericDriver, Driver
 import paramiko
+import shlex
 import time
 
 import argparse
@@ -140,6 +141,13 @@ class create_lanforge_object:
 
         if "root_timeout" in kwargs:
             self.root_timeout = kwargs["root_timeout"]
+
+        self.do_all_ct = kwargs.get("do_all_ct", False)
+        install_from = kwargs.get("install_from")
+        self.install_from = {
+            "URL": "http://fs4.candelatech.com",
+            "URL_IP": "http://192.168.100.11",
+        }.get(install_from, install_from)
 
         self.gui_resourse = kwargs["gui_resourse"]
 
@@ -421,10 +429,16 @@ class create_lanforge_object:
         # disable the pci safe mode
         # command = f"curl -o lf_kinstall.pl www.candelatech.com/lf_kinstall.txt; chmod +x lf_kinstall.pl; ./lf_kinstall.pl --lfver {self.lfver} --kver {self.kver} --do_noaer 1 --do_upgrade --do_pci_bus=0" # noqa:
 
-        command = f"curl -o lf_kinstall.pl www.candelatech.com/lf_kinstall.txt; chmod +x lf_kinstall.pl; ./lf_kinstall.pl --lfver {self.lfver} --kver {self.kver} --do_noaer 1 --do_upgrade"
-        # command = f"curl -o lf_kinstall.pl www.candelatech.com/lf_kinstall.txt; chmod +x lf_kinstall.pl; ./lf_kinstall.pl --lfver {self.lfver} --kver {self.kver} --do_noaer 1 --do_all_ct"
-        # command = f"curl -o lf_kinstall.pl www.candelatech.com/lf_kinstall.txt; chmod +x lf_kinstall.pl; ./lf_kinstall.pl --lfver {self.lfver} --kver {self.kver} --do_noaer 1 --do_upgrade --from http://fs4.candelatech.com"  # noqa:
-        # command = f"curl -o lf_kinstall.pl www.candelatech.com/lf_kinstall.txt; chmod +x lf_kinstall.pl; ./lf_kinstall.pl --lfver {self.lfver} --kver {self.kver} --do_noaer 1 --do_upgrade --from http://192.168.100.11"  # noqa:
+        install_args = [
+            "./lf_kinstall.pl", "--lfver", self.lfver, "--kver", self.kver,
+            "--do_noaer", "1", "--do_all_ct" if self.do_all_ct else "--do_upgrade",
+        ]
+        if self.install_from is not None:
+            install_args.extend(["--from", self.install_from])
+        command = (
+            "curl -o lf_kinstall.pl www.candelatech.com/lf_kinstall.txt; "
+            "chmod +x lf_kinstall.pl; " + shlex.join(install_args)
+        )
         r = self.send_lf_command(command)
         if r.failed:
             raise Exception(r.result)
@@ -767,6 +781,20 @@ INCLUDE_IN_README
         '--gui_resourse',
         help='The lanforge has the resourse GUI running on it',
         action='store_true')
+
+    install_mode = parser.add_mutually_exclusive_group()
+    install_mode.add_argument(
+        '--do_upgrade', dest='do_all_ct', action='store_false',
+        help='Run lf_kinstall.pl with --do_upgrade (default)')
+    install_mode.add_argument(
+        '--do_all_ct', action='store_true',
+        help='Run lf_kinstall.pl with --do_all_ct instead of --do_upgrade')
+    parser.set_defaults(do_all_ct=False)
+    parser.add_argument(
+        '--from', dest='install_from', metavar='SOURCE',
+        help=('Optional installer download source: URL = http://fs4.candelatech.com; '
+              'URL_IP = http://192.168.100.11; or supply a custom address. '
+              'If omitted, --from is not passed to lf_kinstall.pl.'))
 
     parser.add_argument(
         '--kver',

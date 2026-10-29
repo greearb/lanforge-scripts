@@ -440,6 +440,20 @@ INCLUDE_IN_README
         help='The lanforge has the resourse GUI running on it',
         action='store_true')
 
+    install_mode = parser.add_mutually_exclusive_group()
+    install_mode.add_argument(
+        '--do_upgrade', dest='do_all_ct', action='store_false',
+        help='Run lf_kinstall.pl with --do_upgrade (default)')
+    install_mode.add_argument(
+        '--do_all_ct', action='store_true',
+        help='Run lf_kinstall.pl with --do_all_ct instead of --do_upgrade')
+    parser.set_defaults(do_all_ct=False)
+    parser.add_argument(
+        '--from', dest='install_from', metavar='SOURCE',
+        help=('Optional installer download source: URL = http://fs4.candelatech.com; '
+              'URL_IP = http://192.168.100.11; or supply a custom address. '
+              'If omitted, --from is not passed to lf_kinstall.pl.'))
+
     parser.add_argument(
         '--kver',
         help='kernel version  example: 6.15.6+',
