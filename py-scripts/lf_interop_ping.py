@@ -238,7 +238,7 @@ class Ping(Realm):
         self.bg_start_time = None
         self.bg_stop_time = None
         self.bg_poll_interval = 20
-        self.bg_poll_stop = threading.Event()
+        self.bg_poll_stop = None
         self.bg_poll_thread = None
 
     def change_target_to_ip(self):
@@ -1203,6 +1203,8 @@ class Ping(Realm):
 
         self.bg_start_time = time.time()
         self.bg_poll_interval = min(20, max(1, 50 * float(self.interval)))
+        if self.bg_poll_stop is None:
+            self.bg_poll_stop = threading.Event()
         self.bg_poll_stop.clear()
         self.bg_poll_thread = threading.Thread(target=self.poll_background_ping, daemon=True)
         self.bg_poll_thread.start()
@@ -1263,7 +1265,8 @@ class Ping(Realm):
 
     def stop_background_ping(self):
         """Stops the background ping and collects the per-client results. Warns for any client with no ping data."""
-        self.bg_poll_stop.set()
+        if self.bg_poll_stop is not None:
+            self.bg_poll_stop.set()
         if self.bg_poll_thread:
             self.bg_poll_thread.join(timeout=10)
         during_test = dict(self.latest_results)
