@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import tkinter
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import importlib
 import logging
 
@@ -196,10 +196,11 @@ lf_qa will compare performance over multiple runs for Chamber View tests and tes
 lf_inspect will compare performance between two individual runs for Chamber View tests and tests that include kpi''')
 
         self.lf_ap_auto_use_combined_var = tkinter.StringVar(value="Use")
-        self.lf_ap_auto_use_combined_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="across multiple radios", variable=self.lf_ap_auto_use_inspect_var,
+        self.lf_ap_auto_use_combined_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="across selected radios in each band", variable=self.lf_ap_auto_use_combined_var,
                                                                  onvalue="Use", offvalue="Do Not Use")
         self.lf_ap_auto_use_combined_check.grid(row=11, column=2)
-        self.window_tooltip.bind(self.lf_ap_auto_use_combined_check, '''This will create a test cast that uses all the radios selected for AP Auto''')
+        self.window_tooltip.bind(self.lf_ap_auto_use_combined_check, '''Create one test per band using all selected radios in that band.
+When unchecked, create one test per selected radio.''')
 
         # row 12
         self.lf_ap_auto_save = ttk.Button(self.lf_ap_auto_frame, text='Create AP Auto Test Suite Json', command=self.create_ap_auto_json)
@@ -236,6 +237,12 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_ap_auto_6g_dir_entry_var.set("")
 
     def create_ap_auto_json(self):
+        try:
+            self._create_ap_auto_json()
+        except (ValueError, OSError) as error:
+            messagebox.showerror(title="Cannot Create AP Auto Suite", message=str(error))
+
+    def _create_ap_auto_json(self):
         if not self.radio_frame.apply_lanforge_radio_information(show_confirmation=False):
             return
 
@@ -295,29 +302,33 @@ lf_inspect will compare performance between two individual runs for Chamber View
             _lf_ap_auto_stability=self.lf_ap_auto_stability_var,
             _lf_ap_auto_throughput_vs_pkt_size=self.lf_ap_auto_throughput_vs_pkt_size_var,
             _lf_ap_auto_multi_station_throughput_vs_pkt_size=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
-            # _lf_ap_auto_band_steering=self.lf_ap_auto_band_steering_var,
+            _lf_ap_auto_use_combined_var=self.lf_ap_auto_use_combined_var,
+            _use_idx_entry_var_dict=self.dut_tab.use_idx_entry_var_dict,
+            _upstream_port=self.dut_tab.lf_dut_upstream_port_entry_var.get(),
         )
 
+        ap_auto_json.validate_settings()
+        created = []
         if self.radio_frame.suite_radios_2g != "":
             ap_auto_json.test_suite_band = "2g"
             ap_auto_json.create_suite()
             self.lf_ap_auto_2g_file_entry_var.set(ap_auto_json.get_file_2g())
             self.lf_ap_auto_2g_dir_entry_var.set(ap_auto_json.get_dir_2g())
+            created.append(ap_auto_json.dir_file_2g)
         if self.radio_frame.suite_radios_5g != "":
             ap_auto_json.test_suite_band = "5g"
             ap_auto_json.create_suite()
             self.lf_ap_auto_5g_file_entry_var.set(ap_auto_json.get_file_5g())
             self.lf_ap_auto_5g_dir_entry_var.set(ap_auto_json.get_dir_5g())
+            created.append(ap_auto_json.dir_file_5g)
         if self.radio_frame.suite_radios_6g != "":
             ap_auto_json.test_suite_band = "6g"
             ap_auto_json.create_suite()
             self.lf_ap_auto_6g_file_entry_var.set(ap_auto_json.get_file_6g())
             self.lf_ap_auto_6g_dir_entry_var.set(ap_auto_json.get_dir_6g())
+            created.append(ap_auto_json.dir_file_6g)
 
         if self.radio_frame.suite_radios_2g == "" and self.radio_frame.suite_radios_5g == "" and self.radio_frame.suite_radios_6g == "":
             tkinter.messagebox.showinfo(title="message", message="Please Read or Select LANforge Radios on LANforge tab")
         else:
-            tkinter.messagebox.showinfo(title="success", message="created \n" +
-                                        self.lf_ap_auto_2g_dir_entry_var.get() + "/" + self.lf_ap_auto_2g_file_entry_var.get() + "\n" +
-                                        self.lf_ap_auto_5g_dir_entry_var.get() + "/" + self.lf_ap_auto_5g_file_entry_var.get() + "\n" +
-                                        self.lf_ap_auto_6g_dir_entry_var.get() + "/" + self.lf_ap_auto_6g_file_entry.get())
+            messagebox.showinfo(title="success", message="Created\n" + "\n".join(created))

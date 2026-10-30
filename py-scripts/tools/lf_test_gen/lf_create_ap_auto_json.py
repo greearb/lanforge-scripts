@@ -29,6 +29,9 @@ LICENSE:
 '''
 
 import argparse
+import json
+import re
+import shlex
 import logging
 import importlib
 import os
@@ -85,8 +88,18 @@ class lf_create_ap_auto_json():
                  _lf_ap_auto_stability,  # mix_stability
                  _lf_ap_auto_throughput_vs_pkt_size,  # tput_single_sta
                  _lf_ap_auto_multi_station_throughput_vs_pkt_size,  # tput_multi_sta
-                 # _lf_ap_auto_band_steering,
+                 _lf_ap_auto_use_combined_var=None,
+                 _use_idx_entry_var_dict=None,
+                 _upstream_port="1.1.eth2",
                  ):
+        self.upstream_port = _upstream_port.strip()
+        self.lf_radios = {"2g": _lf_radio_2g, "5g": _lf_radio_5g, "6g": _lf_radio_6g}
+        self.combined = (_lf_ap_auto_use_combined_var is not None
+                         and _lf_ap_auto_use_combined_var.get() == "Use")
+        self.number_dut_indexes = int(_lf_ap_auto_number_dut_indexes_combobox.get())
+        if not 1 <= self.number_dut_indexes <= 4:
+            raise ValueError("Number DUT Indexes must be between 1 and 4.")
+        self.use_idx_entry_var_dict = _use_idx_entry_var_dict
         self.test_suite_band = ""
         self.use_radio_dict = _use_radio_dict
         self.radio_dict = _radio_dict
@@ -132,24 +145,26 @@ class lf_create_ap_auto_json():
         self.dir_file_6g = ""
 
         if self.dir_2g != "":
-            self.dir_file_2g = self.dir_2g + "/" + self.file_2g
+            self.dir_file_2g = os.path.join(self.dir_2g, self.file_2g)
         else:
             self.dir_file_2g = self.file_2g
 
         if self.dir_5g != "":
-            self.dir_file_5g = self.dir_5g + "/" + self.file_5g
+            self.dir_file_5g = os.path.join(self.dir_5g, self.file_5g)
         else:
             self.dir_file_5g = self.file_5g
 
         if self.dir_6g != "":
-            self.dir_file_6g = self.dir_6g + "/" + self.file_6g
+            self.dir_file_6g = os.path.join(self.dir_6g, self.file_6g)
         else:
             self.dir_file_6g = self.file_6g
 
         if _ap_auto_duration == "":
             self.ap_auto_duration = '20000'
         else:
-            self.ap_auto_duration = _ap_auto_duration
+            self.ap_auto_duration = _ap_auto_duration.split()[0]
+        if not self.ap_auto_duration.isdigit() or int(self.ap_auto_duration) <= 0:
+            raise ValueError("AP Auto duration must be a positive number of milliseconds.")
 
         self.use_radio_2g_var_dict = _use_radio_2g_var_dict
         self.use_radio_5g_var_dict = _use_radio_5g_var_dict
@@ -189,166 +204,125 @@ class lf_create_ap_auto_json():
 
     # Helper methods
 
-    def create_suite(self):
+    def validate_settings(self):
+        """Check all active bands before creating any output files."""
+        if not re.fullmatch(r"[1-9][0-9]*\.[1-9][0-9]*\.[^\s.]+", self.upstream_port):
+            raise ValueError("Enter a DUT upstream port such as 1.1.eth2.")
+        if not any(var.get() == "Use" for var in self._test_options().values()):
+            raise ValueError("Select at least one AP Auto test.")
+        for band in ("2g", "5g", "6g"):
+            if self._selected_radios(band):
+                self._dut_index(band)
 
-        if self.test_suite_band == "2g":
-            file_band_fd = open(self.file_2g, 'w')
-            self.use_radio_band_var_dict = self.use_radio_2g_var_dict
-            self.suite_test_name_band_dict = self.suite_test_name_2g_dict
-            band = self.test_suite_band.upper()
-            self.suite_radios_band = self.suite_radios_2g
-            self.radio_index = "Radio-1"
-            radio_index = self.radio_index
-
-        elif self.test_suite_band == "5g":
-            file_band_fd = open(self.file_5g, 'w')
-            self.use_radio_band_var_dict = self.use_radio_5g_var_dict
-            self.suite_test_name_band_dict = self.suite_test_name_5g_dict
-            band = self.test_suite_band.upper()
-            self.suite_radios_band = self.suite_radios_5g
-            self.radio_index = "Radio-2"
-            radio_index = self.radio_index
-
-        elif self.test_suite_band == "6g":
-            file_band_fd = open(self.file_6g, 'w')
-            self.use_radio_band_var_dict = self.use_radio_6g_var_dict
-            self.suite_test_name_band_dict = self.suite_test_name_6g_dict
-            band = self.test_suite_band.upper()
-            self.suite_radios_band = self.suite_radios_6g
-            self.radio_index = "Radio-3"
-            radio_index = self.radio_index
-
-        self.ap_auto_band_json = """
-{{
-    "{wifi}":{{
-        "Notes":[
-            "This json file describes tests to be run by LANforge system",
-            "When doing a create_chamberview.py --create_scenario <name> ",
-            "has no correlation to the --instance_name , instance name is used ",
-            "as a unique identifier for tha chamber-view test run"
-        ]
-    }},
-    "test_suites":{{
-    """.format(wifi="ct_ap_auto_tests_scripts")
-        self.ap_auto_band_json += """
-        "{test_suite}":{{
-    """.format(test_suite=self.suite_radios_band)
-
-        # find the tests to enable
-        # find the last radio to include in test
-        count_band_radios = 0
-        for radio in range(0, self.radio_dict_size):
-            if self.use_radio_var_dict[radio].get() == "Use" and self.use_radio_band_var_dict[radio].get() == "Use":
-                self.last_band_radio = radio
-                count_band_radios += 1
-
-        if count_band_radios > 0:
-
-            for radio in range(0, self.radio_dict_size):
-                if self.use_radio_var_dict[radio].get() == "Use" and self.use_radio_band_var_dict[radio].get() == "Use":
-                    ap_auto_test_name = str(self.suite_test_name_band_dict[radio].get()) + f"_{band}_W{radio}"
-                    ap_auto_batch_size = str(self.radio_batch_dict[radio].get())
-                    ap_auto_sta_max = ap_auto_batch_size.rsplit(',', 1)
-                    if len(ap_auto_sta_max) == 1:
-                        ap_auto_sta_max_int = int(ap_auto_sta_max[0])
-                    else:
-                        ap_auto_sta_max_int = int(ap_auto_sta_max[1])
-                    ap_auto_duration = self.ap_auto_duration
-                    self.ap_auto_band_json += f"""
-            "CC_DUT_{ap_auto_test_name}":{{
-                "enabled":"TRUE",
-                "load_db":"skip",
-                "command":"create_chamberview_dut.py",
-                "args":"",
-                "args_list":[
-                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
-                    " --ssid 'ssid_idx=2 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
-                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME",
-                    " --dut_flag DHCPD-LAN"
-                ]
-                }},
-            "CC_{ap_auto_test_name}":{{
-                "enabled":"TRUE",
-                "load_db":"skip",
-                "command":"create_chamberview.py",
-                "args":"",
-                "args_list":[
-                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario {ap_auto_test_name} ",
-                    " --raw_line \\"profile_link 1.1 STA-AUTO {ap_auto_sta_max_int} 'DUT: USE_DUT_NAME {radio_index}' NA wiphy{radio},AUTO -1 NA\\" ",
-                    " --raw_line \\"profile_link 1.1 upstream 1 'DUT: USE_DUT_NAME LAN'  NA UPSTREAM_ALIAS,AUTO -1 NA\\""
-                ]
-            }},
-            "ap_auto_{ap_auto_test_name}":{{
-                "enabled":"TRUE",
-                "timeout":"600",
-                "iterations":"1",
-                "load_db":"skip",
-                "command":"lf_ap_auto_test.py",
-                "args":"",
-                "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name {ap_auto_test_name}",
-                    " --upstream UPSTREAM_PORT --batch_size {ap_auto_batch_size} --loop_iter 1 --protocol UDP-IPv4 --duration {ap_auto_duration}",
-                    " use_ssid_idx=0 --dut2_0 'USE_DUT_NAME lanforge BSSID_TO_USE (1)'",
-                    " use_ssid_idx=1 --dut5_0 'USE_DUT_NAME lanforge BSSID_TO_USE (2)'",
-                    " --max_stations_2 1 --max_stations_5 1 --max_stations_dual 1",
-                    " --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 --radio2 1.1.wiphy3 --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
-                    " --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
-                    " --set 'basic_cx' 0",
-                    " --set 'band_steering' 0",
-                    " --set 'capacity' 1",
-                    " --set 'channel_switch'  0,",
-                    " --set 'long_term' 0",
-                    " --set 'mix_stability' 0",
-                    " --set 'tput_single_sta' 0",
-                    " --set 'tput_multi_sta' 0",
-                    " --set 'tput_multi_band' 0",
-                    " --raw_line 'cx_psk_thresh: 500'",
-                    " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME",
-                    " --verbosity 11",
-                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag '{ap_auto_test_name}'"
-                ]
-            }}
-            """
-                    if radio != self.last_band_radio:
-                        self.ap_auto_band_json += ""","""
-
-                    if radio == self.last_band_radio:
-                        if self.lf_ap_auto_use_qa_var.get() == "Use":
-                            self.ap_auto_band_json += """,
-            "lf_qa":{
-                "enabled":"TRUE",
-                "timeout":"600",
-                "load_db":"skip",
-                "command":"./tools/lf_qa.py",
-                "args":"",
-                "args_list":[
-                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE --test_suite  TEST_SUITE"
-                ]
-            }"""
-                        if self.lf_ap_auto_use_inspect_var.get() == "Use":
-                            self.ap_auto_band_json += """,
-            "lf_inspect":{
-                "enabled":"TRUE",
-                "timeout":"600",
-                "load_db":"skip",
-                "command":"./tools/lf_inspect.py",
-                "args":"",
-                "args_list":[
-                    " --path REPORT_PATH --database DATABASE_SQLITE --test_suite  TEST_SUITE --db_index 1,0"
-                ]
-            }"""
-        self.ap_auto_band_json += """
+    def _test_options(self):
+        return {
+            "basic_cx": self.lf_ap_auto_basic_client_connectivity,
+            "band_steering": self.lf_ap_auto_band_steering,
+            "capacity": self.lf_ap_auto_capacity,
+            "channel_switch": self.lf_ap_auto_channel_switching_test,
+            "long_term": self.lf_ap_auto_long_term,
+            "mix_stability": self.lf_ap_auto_stability,
+            "tput_single_sta": self.lf_ap_auto_throughput_vs_pkt_size,
+            "tput_multi_sta": self.lf_ap_auto_multi_station_throughput_vs_pkt_size,
         }
-    }
-}
-    """
 
-        file_band_fd.write(self.ap_auto_band_json)
-        file_band_fd.close()
+    def _selected_radios(self, band):
+        selected = getattr(self, f"use_radio_{band}_var_dict")
+        return [radio for radio in self.radio_dict
+                if self.use_radio_var_dict[radio].get() == "Use" and selected[radio].get() == "Use"]
+
+    def _dut_index(self, band):
+        match = re.fullmatch(r"Radio-([1-4])", self.lf_radios[band])
+        if match is None:
+            raise ValueError(f"Select a DUT radio (Radio-1 through Radio-4) for {band}.")
+        index = int(match.group(1)) - 1
+        if index >= self.number_dut_indexes:
+            raise ValueError(f"{band} uses Radio-{index + 1}; increase Number DUT Indexes or change its DUT radio.")
+        if self.use_idx_entry_var_dict is not None:
+            for idx in range(self.number_dut_indexes):
+                if self.use_idx_entry_var_dict[idx].get() != "Use":
+                    raise ValueError(f"Enable DUT index {idx} or reduce Number DUT Indexes.")
+        return index
+
+    @staticmethod
+    def _entry(command, args, **options):
+        return {"enabled": "TRUE", "load_db": "skip", "command": command,
+                "args": "", "args_list": args, **options}
+
+    def create_suite(self):
+        self.validate_settings()
+        band = self.test_suite_band
+        if band not in ("2g", "5g", "6g"):
+            raise ValueError(f"Unknown AP Auto band: {band}")
+        selected = self._selected_radios(band)
+        if not selected:
+            raise ValueError(f"No radios selected for {band}.")
+        index = self._dut_index(band)
+        groups = [selected] if self.combined else [[radio] for radio in selected]
+        suite = {}
+        for radios in groups:
+            names = getattr(self, f"suite_test_name_{band}_dict")
+            suffix = "_".join(self.radio_dict[r].get().strip().replace(".", "_") for r in radios)
+            model = "combined" if self.combined else names[radios[0]].get()
+            name = f"{model}_{band.upper()}_{suffix}"
+            dut_args = [" --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME"]
+            dut_args.extend(
+                f" --ssid 'ssid_idx={idx} ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'"
+                for idx in range(self.number_dut_indexes))
+            dut_args.extend([
+                " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_MODEL",
+                " --dut_flag DHCPD-LAN",
+            ])
+            suite[f"CC_DUT_{name}"] = self._entry("create_chamberview_dut.py", dut_args)
+            scenario_args = [" --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                             f" --create_scenario {shlex.quote(name)}"]
+            station_count = 0
+            for radio in radios:
+                shelf, resource, phy = self.radio_dict[radio].get().strip().split(".")
+                count = max(int(n) for n in self.radio_batch_dict[radio].get().split(","))
+                station_count += count
+                line = (f"profile_link {shelf}.{resource} STA-AUTO {count} "
+                        f"'DUT: USE_DUT_NAME {self.lf_radios[band]}' NA {phy},AUTO -1 NA")
+                scenario_args.append(f" --raw_line {shlex.quote(line)}")
+            # The upstream may live on a different resource from the station radios.
+            scenario_args.append(
+                f" --raw_line \"profile_link {self.upstream_port.rsplit('.', 1)[0]} upstream 1 'DUT: USE_DUT_NAME LAN' NA UPSTREAM_ALIAS,AUTO -1 NA\"")
+            suite[f"CC_{name}"] = self._entry("create_chamberview.py", scenario_args)
+            args = [
+                f" --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name {shlex.quote(name)}",
+                " --upstream UPSTREAM_PORT",
+                f" use_ssid_idx={index} --dut{band[0]}_0 'USE_DUT_NAME SSID_USED BSSID_TO_USE ({index + 1})'",
+                f" --max_stations_{band[0]} {station_count}",
+            ]
+            args.extend(f" --radio{band[0]} {self.radio_dict[r].get().strip()}" for r in radios)
+            args.extend(f" --set '{key}' {int(var.get() == 'Use')}" for key, var in self._test_options().items())
+            args.append(" --set 'tput_multi_band' 0")
+            for other in ("2", "5", "5b", "6", "dual", "tri", "tri_5b"):
+                args.append(f" --set 'skip_{other}' {int(other != band[0])}")
+            seconds = format(int(self.ap_auto_duration) / 1000, "g")
+            for key, value in (("dur20", seconds), ("reset_duration_min", self.ap_auto_duration),
+                               ("reset_duration_max", self.ap_auto_duration), ("loop_iter", "1"),
+                               ("cx_psk_thresh", "500")):
+                args.append(f" --raw_line '{key}: {value}'")
+            args.extend([
+                " --test_rig TEST_RIG", " --set DUT_SET_NAME", " --verbosity 11",
+                f" --pull_report --local_lf_report_dir REPORT_PATH --test_tag {shlex.quote(name)}",
+            ])
+            suite[f"ap_auto_{name}"] = self._entry("lf_ap_auto_test.py", args, timeout="600", iterations="1")
+        if self.lf_ap_auto_use_qa_var.get() == "Use":
+            suite["lf_qa"] = self._entry("./tools/lf_qa.py", [
+                " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE --test_suite TEST_SUITE"
+            ], timeout="600")
+        if self.lf_ap_auto_use_inspect_var.get() == "Use":
+            suite["lf_inspect"] = self._entry("./tools/lf_inspect.py", [
+                " --path REPORT_PATH --database DATABASE_SQLITE --test_suite TEST_SUITE --db_index 1,0"
+            ], timeout="600")
+        data = {"ct_ap_auto_tests_scripts": {"Notes": ["AP Auto tests generated for lf_check.py"]},
+                "test_suites": {getattr(self, f"suite_radios_{band}"): suite}}
+        self.ap_auto_band_json = json.dumps(data, indent=4) + "\n"
+        path = getattr(self, f"dir_file_{band}")
+        with open(path, "w") as output:
+            output.write(self.ap_auto_band_json)
 
 
 def main():

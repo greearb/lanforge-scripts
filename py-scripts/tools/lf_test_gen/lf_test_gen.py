@@ -31,7 +31,6 @@ lf_wc_tab = importlib.import_module("lf_create_wc_tab")
 lf_ap_auto_tab = importlib.import_module("lf_create_ap_auto_tab")
 lf_dp_rvr_tab = importlib.import_module("lf_create_dp_rvr_tab")
 lf_create_wc_json = importlib.import_module("lf_create_wc_json")
-lf_create_ap_auto_json = importlib.import_module("lf_create_ap_auto_json")
 lf_create_dp_rvr_json = importlib.import_module("lf_create_dp_rvr_json")
 
 logger = logging.getLogger(__name__)
@@ -258,89 +257,6 @@ class json_gen_gui():
 
     def clear(self):
         self.textbox.delete('1.0', tkinter.END)
-
-    def ap_auto_clear_information(self):
-        self.lf_ap_auto_2g_file_entry_var.set("")
-        self.lf_ap_auto_5g_file_entry_var.set("")
-        self.lf_ap_auto_6g_file_entry_var.set("")
-        self.lf_ap_auto_duration_combobox.set("")
-
-    def create_ap_auto_json(self):
-        # use the auto generated name
-        self.ap_auto_clear_information()
-        self.lf_ap_auto_2g_file_entry_var.get()
-        self.lf_ap_auto_5g_file_entry_var.get()
-        self.lf_ap_auto_6g_file_entry_var.get()
-        ap_auto_duration = self.lf_ap_auto_duration_combobox.get()
-        if ap_auto_duration == "":
-            self.lf_ap_auto_duration_combobox.set("20000")
-
-        self.lf_ap_auto_basic_client_connectivity_var.get()
-        self.lf_ap_auto_multi_band_performance_var.get()
-        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var.get()
-        self.lf_ap_auto_stability_var.get()
-        self.lf_ap_auto_channel_switching_test_var.get()
-        self.lf_ap_auto_throughput_vs_pkt_size_var.get()
-        self.lf_ap_auto_capacity_var.get()
-        self.lf_ap_auto_band_steering_var.get()
-        self.lf_ap_auto_long_term_var.get()
-
-        self.lf_ap_auto_use_qa_var.get()
-        self.lf_ap_auto_use_inspect_var.get()
-
-        dictionary_length = len(self.radio_dict)
-        logger.debug("radio_dict length = {length}".format(length=dictionary_length))
-        ap_auto_json = lf_create_ap_auto_json.lf_create_ap_auto_json(
-            _file_2g=self.lf_ap_auto_2g_file_entry_var.get(),
-            _file_5g=self.lf_ap_auto_5g_file_entry_var.get(),
-            _file_6g=self.lf_ap_auto_6g_file_entry_var.get(),
-            _ap_auto_duration=self.lf_ap_auto_duration_combobox.get(),
-            _use_radio_dict=self.use_radio_var_dict,
-            _radio_dict=self.radio_dict,
-            _radio_type_dict=self.radio_type_dict,
-            _radio_max_sta_dict=self.radio_max_sta_dict,
-            _use_radio_var_dict=self.use_radio_var_dict,
-            _use_radio_2g_var_dict=self.use_radio_2g_var_dict,
-            _use_radio_5g_var_dict=self.use_radio_5g_var_dict,
-            _use_radio_6g_var_dict=self.use_radio_6g_var_dict,
-            _suite_radios_2g=self.suite_radios_2g,
-            _suite_radios_5g=self.suite_radios_5g,
-            _suite_radios_6g=self.suite_radios_6g,
-            _suite_test_name_2g_dict=self.suite_test_name_2g_dict,
-            _suite_test_name_5g_dict=self.suite_test_name_5g_dict,
-            _suite_test_name_6g_dict=self.suite_test_name_6g_dict,
-            _radio_count=self.radio_count,
-            _radio_batch_dict=self.radio_batch_dict,
-            _lf_ap_auto_basic_client_connectivity=self.lf_ap_auto_basic_client_connectivity_var,
-            _lf_ap_auto_multi_band_performance=self.lf_ap_auto_multi_band_performance_var,
-            _lf_ap_auto_multi_station_throughput_vs_pkt_size=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,
-            _lf_ap_auto_stability=self.lf_ap_auto_stability_var,
-            _lf_ap_auto_channel_switching_test=self.lf_ap_auto_channel_switching_test_var,
-            _lf_ap_auto_throughput_vs_pkt_size=self.lf_ap_auto_throughput_vs_pkt_size_var,
-            _lf_ap_auto_capacity=self.lf_ap_auto_capacity_var,
-            _lf_ap_auto_band_steering=self.lf_ap_auto_band_steering_var,
-            _lf_ap_auto_long_term=self.lf_ap_auto_long_term_var,
-            _lf_ap_auto_use_qa_var=self.lf_ap_auto_use_qa_var,
-            _lf_ap_auto_use_inspect_var=self.lf_ap_auto_use_inspect_var
-        )
-
-        if self.suite_radios_2g != "":
-            ap_auto_json.test_suite_band = "2g"
-            ap_auto_json.create_suite()
-            self.lf_ap_auto_2g_file_entry_var.set(ap_auto_json.get_file_2g())
-        if self.suite_radios_5g != "":
-            ap_auto_json.test_suite_band = "5g"
-            ap_auto_json.create_suite()
-            self.lf_ap_auto_5g_file_entry_var.set(ap_auto_json.get_file_5g())
-        if self.suite_radios_6g != "":
-            ap_auto_json.test_suite_band = "6g"
-            ap_auto_json.create_suite()
-            self.lf_ap_auto_6g_file_entry_var.set(ap_auto_json.get_file_6g())
-
-        if self.suite_radios_2g == "" and self.suite_radios_5g == "" and self.suite_radios_6g == "":
-            tkinter.messagebox.showinfo(title="message", message="Please Read or Select LANforge Radios on LANforge tab")
-        else:
-            tkinter.messagebox.showinfo(title="success", message="created \n" + self.lf_ap_auto_2g_file_entry_var.get() + "\n" + self.lf_ap_auto_5g_file_entry_var.get() + "\n" + self.lf_ap_auto_6g_file_entry.get())  # noqa: E501
 
 
 def main():
