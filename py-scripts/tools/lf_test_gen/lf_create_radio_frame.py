@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import tkinter
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import importlib
 import requests
 import logging
+import re
 
 
 logger = logging.getLogger(__name__)
@@ -332,28 +333,47 @@ or deselect to remove from the test json''')
 
                 radio += 1
 
-    def apply_lanforge_radio_information(self):
+    def apply_lanforge_radio_information(self, show_confirmation=True):
+        """Validate current selections and rebuild all derived radio information."""
+        suite_radios = {band: "" for band in ("2g", "5g", "6g")}
+        test_names = {band: {} for band in suite_radios}
+        errors = []
+        for radio in range(self.max_radios):
+            if self.use_radio_var_dict[radio].get() != "Use":
+                continue
+            bands = [band for band in suite_radios
+                     if getattr(self, f"use_radio_{band}_var_dict")[radio].get() == "Use"]
+            if not bands:
+                continue
 
-        radio = 0
-        self.suite_radios_2g = ""
-        self.suite_radios_5g = ""
-        self.suite_radios_6g = ""
-        for radio in range(0, self.max_radios):
-            if "Use" == self.use_radio_var_dict[radio].get():
-                # the radio location may not match the radio number
-                radio_number = self.radio_dict[radio].get()
-                radio_number = radio_number.split('wiphy')[-1]
-                if "Use" == self.use_radio_2g_var_dict[radio].get():
-                    self.suite_radios_2g += "_W{}".format(radio_number)
+            radio_id = self.radio_dict[radio].get().strip()
+            match = re.fullmatch(r"[1-9][0-9]*\.[1-9][0-9]*\.wiphy([0-9]+)", radio_id)
+            if match is None:
+                errors.append(f"Row {radio + 1}: enter a radio ID such as 1.1.wiphy0.")
+            if not self.radio_model_dict[radio].get().strip():
+                errors.append(f"Row {radio + 1}: enter a radio model.")
+            batch = self.radio_batch_dict[radio].get().strip()
+            if not re.fullmatch(r"[1-9][0-9]*(?:\s*,\s*[1-9][0-9]*)*", batch):
+                errors.append(f"Row {radio + 1}: enter positive station counts for Radio Batch (e.g. 1 or 1,2,4).")
+            if match is not None:
+                for band in bands:
+                    suite_radios[band] += f"_W{match.group(1)}"
+                    test_names[band][radio] = self.radio_model_dict[radio]
 
-                if "Use" == self.use_radio_5g_var_dict[radio].get():
-                    self.suite_radios_5g += "_W{}".format(radio_number)
+        if errors:
+            messagebox.showerror(title="Invalid Radio Information", message="\n".join(errors))
+            return False
 
-                if "Use" == self.use_radio_6g_var_dict[radio].get():
-                    self.suite_radios_6g += "_W{}".format(radio_number)
+        for band in suite_radios:
+            setattr(self, f"suite_radios_{band}", suite_radios[band])
+            names = getattr(self, f"suite_test_name_{band}_dict")
+            names.clear()
+            names.update(test_names[band])
 
-        radio_message = f"2g: {self.suite_radios_2g}\n5g: {self.suite_radios_5g}\n6g: {self.suite_radios_6g}"
-        tkinter.messagebox.showinfo(title="Updated", message=radio_message)
+        if show_confirmation:
+            radio_message = f"2g: {self.suite_radios_2g}\n5g: {self.suite_radios_5g}\n6g: {self.suite_radios_6g}"
+            messagebox.showinfo(title="Updated", message=radio_message)
+        return True
 
     def get_suite_radios_2g(self):
         return self.suite_radios_2g
@@ -365,6 +385,9 @@ or deselect to remove from the test json''')
         return self.suite_radios_6g
 
     def clear_lanforge_radio_information(self):
+
+        for band in ("2g", "5g", "6g"):
+            getattr(self, f"suite_test_name_{band}_dict").clear()
 
         for radio in range(0, self.max_radios):
 

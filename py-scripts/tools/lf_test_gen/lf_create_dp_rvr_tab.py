@@ -274,6 +274,9 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.create_dp_rvr_json()
 
     def create_dp_rvr_json(self):
+        if not self.radio_frame.apply_lanforge_radio_information(show_confirmation=False):
+            return
+
         # set file names
         self.lf_dp_rvr_2g_file_entry_var.get()
         self.lf_dp_rvr_5g_file_entry_var.get()

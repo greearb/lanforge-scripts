@@ -178,6 +178,9 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_wc_6g_dir_entry_var.set("")
 
     def create_wc_json(self):
+        if not self.radio_frame.apply_lanforge_radio_information(show_confirmation=False):
+            return
+
         # use the auto generated name
         # self.wc_clear_information()
 

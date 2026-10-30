@@ -236,6 +236,9 @@ lf_inspect will compare performance between two individual runs for Chamber View
         self.lf_ap_auto_6g_dir_entry_var.set("")
 
     def create_ap_auto_json(self):
+        if not self.radio_frame.apply_lanforge_radio_information(show_confirmation=False):
+            return
+
         # use the auto generated name
         # self.ap_auto_clear_information()
 
