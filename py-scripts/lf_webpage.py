@@ -74,6 +74,13 @@ Command Line Interface to run download scenario for Real clients with Robot with
 python3 lf_webpage.py --ap_name "Netgear" --mgr 192.168.204.75 --ssid NETGEAR_2G_wpa2 --security wpa2 --passwd Password@123 --upstream_port eth1
 --duration 1m --bands 5G --client_type Real --file_size 2MB --robot_test --coordinate 3,4 --robot_ip 192.168.204.101 --do_bandsteering --cycles 1 --bssids 7a:1d:35:c8:da:b9
 
+EXAMPLE-15:
+Command Line Interface to run download scenario for already connected Real clients while the Robot moves through the coordinates
+(continuous measurement, no band steering)
+python3 lf_webpage.py --ap_name "Netgear" --mgr 192.168.204.75 --ssid NETGEAR_2G_wpa2 --security wpa2 --upstream_port eth1
+--bands 5G --client_type Real --file_size 2MB --device_list 1.12 --robot_test --coordinate 3,4 --robot_ip 192.168.204.101
+--measurement_mode continuous --cycles 2
+
 SCRIPT_CLASSIFICATION : Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
@@ -154,7 +161,7 @@ class HttpDownload(Realm):
                  device_list=None, get_url_from_file=None, file_path=None, device_csv_name='', expected_passfail_value=None, file_name=None, group_name=None, profile_name=None, eap_method=None,
                  eap_identity=None, ieee80211=None, ieee80211u=None, ieee80211w=None, enable_pkc=None, bss_transition=None, power_save=None, disable_ofdma=None, roam_ft_ds=None, key_management=None,
                  pairwise=None, private_key=None, ca_cert=None, client_cert=None, pk_passwd=None, pac_file=None, config=False, wait_time=60, get_live_view=False, total_floors=0, robot_test=False,
-                 robot_ip=None, coordinate=None, rotation=None, duration=None, do_bandsteering=False, cycles=None, bssids=None, duration_to_skip=None):
+                 robot_ip=None, coordinate=None, rotation=None, duration=None, do_bandsteering=False, cycles=None, bssids=None, duration_to_skip=None, measurement_mode="per_point"):
         # super().__init__(lfclient_host=lfclient_host,
         #                  lfclient_port=lfclient_port)
         self.ssid_list = []
@@ -253,6 +260,9 @@ class HttpDownload(Realm):
         self.rx_rate_val = []
         self.max_bytes_rd = []
         self.do_bandsteering = do_bandsteering
+        # measurement mode: 'per_point' runs traffic at each point, 'continuous' keeps it running while the robot moves.
+        # Band steering always moves continuously; do_bandsteering only adds the BSSID tracking report.
+        self.is_continuous_run = do_bandsteering or (robot_test and measurement_mode == "continuous")
         self.cycles = cycles
         self.bssids = bssids.split(',') if bssids else []
         self.duration_to_skip = duration_to_skip
@@ -710,7 +720,7 @@ class HttpDownload(Realm):
             self.data["remaining_time"] = ["0"] * len(self.macid_list)
             df1 = pd.DataFrame(self.data)
             df1.to_csv("http_datavalues.csv", index=False)
-            if not self.do_bandsteering and self.robot_test:
+            if not self.is_continuous_run and self.robot_test:
                 # For Robot test, save data for each coordinate and rotation
                 if self.rotation_enabled:
                     self.robot_data.setdefault(self.current_coordinate, {})[self.current_angle] = self.data
@@ -850,12 +860,16 @@ class HttpDownload(Realm):
         while (datetime.now() - wait_start).total_seconds() < timeout:
             time.sleep(poll_interval)
             if self.dowebgui == "True":
-                with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(
-                        self.host, self.test_name), 'r') as file:
-                    data = json.load(file)
-                    if data["status"] != "Running":
-                        logger.info("Test is stopped by the user during the device-recovery wait.")
-                        return 'stopped'
+                # a missing or unreadable running file (test deleted on the WebGUI) is treated as a stop
+                try:
+                    with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(
+                            self.host, self.test_name), 'r') as file:
+                        stopped_by_webui = json.load(file).get("status") != "Running"
+                except (FileNotFoundError, ValueError):
+                    stopped_by_webui = True
+                if stopped_by_webui:
+                    logger.info("Test is stopped by the user during the device-recovery wait.")
+                    return 'stopped'
             self.get_layer4_data()
             elapsed = (datetime.now() - wait_start).total_seconds()
             if len(self.missing_cx_logged) < created_cx_count:
@@ -904,7 +918,7 @@ class HttpDownload(Realm):
         if self.all_devices_stopped:
             return True
 
-        if self.do_bandsteering:
+        if self.is_continuous_run:
             # Band steering calls this function once per tick within one continuous session,
             # so only start the CX-status grace period once for the whole session.
             if self.monitor_start_time is None:
@@ -931,7 +945,7 @@ class HttpDownload(Realm):
             # It simply ensures safe handling when the monitor is invoked from lf_base_robo.
             if port not in self.individual_device_data:
                 columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI', 'BSSID', 'Channel']
-                if self.do_bandsteering:
+                if self.is_continuous_run:
                     columns.append('From Coordinate')
                     columns.append('To Coordinate')
                     columns.append('Robot X')
@@ -1030,7 +1044,7 @@ class HttpDownload(Realm):
 
                 try:
                     row_data = [current_time, bytes_rd[i], url_times[i], rx_rate[i], rx_rate_list[i], tx_rate_list[i], rssi_list[i], bssid_list[i], channel_list[i]]
-                    if self.do_bandsteering:
+                    if self.is_continuous_run:
                         robo_x, robo_y, from_coord, to_coord = self.robot_obj.get_robot_pose()
                         row_data.extend([from_coord, to_coord, robo_x, robo_y])
                     self.individual_device_data[port].loc[len(self.individual_device_data[port])] = row_data
@@ -1084,35 +1098,38 @@ class HttpDownload(Realm):
                 exit(1)
             if self.dowebgui:
                 df1.to_csv('{}/http_datavalues.csv'.format(self.result_dir), index=False)
-                if not self.do_bandsteering and self.robot_test:
+                if not self.is_continuous_run and self.robot_test:
                     df1.to_csv(f"{self.result_dir}/{self.current_coordinate}_http_datavalues.csv", index=False)
             elif self.client_type == 'Real':
                 df1.to_csv("http_datavalues.csv", index=False)
                 # IF ROBOT TEST PERFORMED
-                if not self.do_bandsteering and self.robot_test:
+                if not self.is_continuous_run and self.robot_test:
                     # Save FTP data values for the current coordinate when in robot test
                     df1.to_csv(f"{self.current_coordinate}_http_datavalues.csv", index=False)
             if end_monitor_loop:
                 break
             # No sleep is added here for band steering, as we need to capture data every second.
             # The per-second sleep interval is already handled in lf_base_robo.
-            if not self.do_bandsteering:
+            if not self.is_continuous_run:
                 time.sleep(5)
             if self.dowebgui == "True":
-                with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
-                                                                                                 self.test_name),
-                          'r') as file:
-                    data = json.load(file)
-                    if data["status"] != "Running":
-                        print('Test is stopped by the user')
-                        self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.devices_list)
-                        test_stopped_by_user = True
-                        break
+                running_file = self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name)
+                # a missing or unreadable running file (test deleted on the WebGUI) is treated as a stop, so the report is still written
+                try:
+                    with open(running_file, 'r') as file:
+                        stopped_by_webui = json.load(file).get("status") != "Running"
+                except (FileNotFoundError, ValueError):
+                    stopped_by_webui = True
+                if stopped_by_webui:
+                    print('Test is stopped by the user')
+                    self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.devices_list)
+                    test_stopped_by_user = True
+                    break
 
             current_time = datetime.now()
             # Reusing monitor logic for band steering, but only need one record per call,
             # so break after first iteration instead of running for full duration.
-            if self.do_bandsteering:
+            if self.is_continuous_run:
                 break
         individual_device_csv_names = []  # To store individial device csv names
         # Iterate over each port and its corresponding DataFrame in the dictionary Saving the DataFrame to CSV
@@ -1506,22 +1523,22 @@ class HttpDownload(Realm):
     def add_live_view_images_to_report(self, report):
         for floor in range(0, int(self.total_floors)):
             http_img_path = os.path.join(self.result_dir, "live_view_images", f"http_{self.test_name}_{floor + 1}.png")
-            timeout = 60  # seconds
-            start_time = time.time()
-
-            while not (os.path.exists(http_img_path)):
-                if time.time() - start_time > timeout:
-                    print("Timeout: Images not found within 60 seconds.")
-                    break
+            # the WebGUI uploads the live view screenshot when the test ends; wait up to 60 seconds for it
+            deadline = time.time() + 60
+            while not os.path.exists(http_img_path) and time.time() < deadline:
                 time.sleep(1)
-            while not os.path.exists(http_img_path):
-                if os.path.exists(http_img_path):
-                    break
-            if os.path.exists(http_img_path):
-                report.set_custom_html('<div style="page-break-before: always;"></div>')
+            if not os.path.exists(http_img_path):
+                # the report is still generated, with a note in place of the missing image (as in the throughput report)
+                logger.warning("Live view image not found within 60 seconds: %s", http_img_path)
+                report.set_custom_html(
+                    f'<p><i>HTTP heatmap (Floor {floor + 1}) is not available - the capture may '
+                    'have failed or the browser was closed before it was uploaded.</i></p>')
                 report.build_custom()
-                report.set_custom_html(f'<img style="width:1200px" src="file://{http_img_path}"></img>')
-                report.build_custom()
+                continue
+            report.set_custom_html('<div style="page-break-before: always;"></div>')
+            report.build_custom()
+            report.set_custom_html(f'<img style="width:1200px" src="file://{http_img_path}"></img>')
+            report.build_custom()
 
     def get_bandsteering_stats(self, report):
         """
@@ -1702,7 +1719,7 @@ class HttpDownload(Realm):
             # If robot test, add robot specific info to test setup
             test_setup_info["Robot IP"] = self.robot_ip
             test_setup_info["Coordinates"] = self.coordinate
-            if not self.do_bandsteering:
+            if not self.is_continuous_run:
                 test_setup_info["Rotation"] = self.rotation
             else:
                 del test_setup_info["Traffic Duration "]
@@ -1735,7 +1752,7 @@ class HttpDownload(Realm):
         report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
 
         report.build_objective()
-        if not self.do_bandsteering and self.robot_test:
+        if not self.is_continuous_run and self.robot_test:
             if self.dowebgui and self.get_live_view:
                 # Add live view images to the report
                 self.add_live_view_images_to_report(report)
@@ -1982,8 +1999,8 @@ class HttpDownload(Realm):
             report.build_table()
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
-        # To add charging timestamps of robot in report when bandsteering is enabled
-        if self.do_bandsteering:
+        # To add charging timestamps of robot in report for a continuous robot run
+        if self.is_continuous_run:
             if len(self.robot_obj.charging_timestamps) != 0:
                 report.set_obj_html(_obj_title="Charging Timestamps",
                                     _obj="")
@@ -2108,11 +2125,16 @@ class HttpDownload(Realm):
     # Updates the status in the running.json file while running a test from the Web UI
     def updating_webui_runningjson(self, obj):
         data = {}
-        with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name),
-                  'r') as file:
-            data = json.load(file)
-            for key in obj:
-                data[key] = obj[key]
+        # the running file is gone when the test was deleted on the WebGUI; don't recreate it
+        try:
+            with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name),
+                      'r') as file:
+                data = json.load(file)
+        except (FileNotFoundError, ValueError):
+            logger.warning("Running JSON file is missing or unreadable; skipping this status update.")
+            return
+        for key in obj:
+            data[key] = obj[key]
         with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name),
                   'w') as file:
             json.dump(data, file, indent=4)
@@ -2428,13 +2450,15 @@ class HttpDownload(Realm):
         self.robot_obj.time_to_reach = self.duration_to_skip
         self.robot_obj.total_cycles = self.cycles
         test_stopped_by_user = False
-        if self.do_bandsteering:
+        if self.is_continuous_run:
             cycle_coords = self.robot_obj.get_coordinates_list()
             if (len(cycle_coords) == 0):
                 logger.info("Coordinate list is empty test execution is stopped")
                 return
             self.robot_obj.do_bandsteering = True
             self.start()
+            curr_cycle = 1
+            logger.info("Starting cycle {} of {}".format(curr_cycle, self.cycles))
             for coordinate in cycle_coords:
                 if test_stopped_by_user or self.all_devices_stopped:
                     break
@@ -2448,10 +2472,20 @@ class HttpDownload(Realm):
                 if abort:
                     break
                 if self.all_devices_stopped:
-                    logger.warning("Band-steering test stopped because no devices recovered within 40 seconds.")
+                    if self.do_bandsteering:
+                        logger.warning("Band-steering test stopped because no devices recovered within 40 seconds.")
+                    else:
+                        logger.warning("Robot HTTP test with continuous measurement stopped because no devices recovered within 40 seconds.")
                     break
                 if robo_moved:
                     logger.info("Reached the coordinate {}".format(coordinate))
+                if coordinate == self.coordinate_list[0]:
+                    logger.info("Completed cycle {} of {}".format(curr_cycle, self.cycles))
+                    curr_cycle += 1
+                    if curr_cycle > int(self.cycles):
+                        logger.info("Completed all {} cycles".format(self.cycles))
+                    else:
+                        logger.info("Starting cycle {} of {}".format(curr_cycle, self.cycles))
             self.stop()
             return
         for coordinate in range(len(self.coordinate_list)):
@@ -2941,7 +2975,11 @@ def main():
     optional.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")
     optional.add_argument('--rotation', type=str, default='', help="The set of angles to rotate at a particular point")
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
-    optional.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
+    optional.add_argument('--measurement_mode', choices=['per_point', 'continuous'], default='per_point',
+                          help="Robot measurement mode: 'per_point' runs the test at each point (and angle), "
+                               "'continuous' keeps the test running while the robot moves through the points --cycles times "
+                               "(--duration is not used and defaults to 1m)")
+    optional.add_argument('--cycles', type=int, default=1, help='No of times the robot goes through the points in a continuous or band steering run')
     optional.add_argument('--bssids', type=str, default='', help='hostname for where Robot server is running')
     optional.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
 
@@ -2982,6 +3020,9 @@ times the file is downloaded.
         iot_increment = args.iot_increment
 
     validate_args(args)
+    # Continuous robot run lasts until the robot finishes its laps, so --duration is optional there (default 1m)
+    if not args.duration and (args.do_bandsteering or (args.robot_test and args.measurement_mode == "continuous")):
+        args.duration = "1m"
     if args.duration.endswith('s') or args.duration.endswith('S'):
         args.duration = int(args.duration[0:-1])
     elif args.duration.endswith('m') or args.duration.endswith('M'):
@@ -3092,7 +3133,8 @@ times the file is downloaded.
                             do_bandsteering=args.do_bandsteering,
                             cycles=args.cycles,
                             bssids=args.bssids,
-                            duration_to_skip=args.duration_to_skip
+                            duration_to_skip=args.duration_to_skip,
+                            measurement_mode=args.measurement_mode
                             )
         if args.client_type == "Real":
             if not isinstance(args.device_list, list):
@@ -3158,6 +3200,13 @@ times the file is downloaded.
         if args.robot_test:
             # To perform robot test
             http.perform_robo()
+            # The robot could not reach any coordinate, so nothing was measured and there is no report to build
+            if not hasattr(http, 'data'):
+                logger.error("No data was collected because the robot could not reach any coordinate; ending the test.")
+                # tell the WebGUI the robot run is over (Test_status Aborted in nav_data.json)
+                http.robot_obj.update_nav_data_for_all_cxs_stopped()
+                http.postcleanup()
+                exit(1)
         else:
             http.start()
             if args.dowebgui:
