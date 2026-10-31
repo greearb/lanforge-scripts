@@ -20,6 +20,8 @@ pip_packages: list = [
     'pandas',
     'paramiko',
     'pdfkit',
+    'pypdf==6.18.1',
+    'playwright==1.62.0',
     'pexpect',
     'pexpect-serial',
     'plotly',
@@ -218,11 +220,28 @@ class UpdateDependencies:
 
         print("\nInstall complete.")
         print(f"Successfully installed : {self.packages_installed}\n")
+        if any(package.startswith('playwright') for package in self.packages_installed):
+            self.install_playwright_browser()
         if not self.packages_failed:
             return
         print(f"Failed to install: {self.packages_failed}\n"
               + "(Some scripts may not need these packages) "
               + "To see errors try: pip3 install $package", flush=True)
+
+    def install_playwright_browser(self):
+        """Installs Chromium, which lf_modern_report.py uses to create PDF reports.
+        """
+        browsers_path = os.environ.get('PLAYWRIGHT_BROWSERS_PATH') or str(
+            pathlib.Path.home() / '.cache' / 'lanforge' / 'report-browsers')
+        os.environ['PLAYWRIGHT_BROWSERS_PATH'] = browsers_path
+        print(f"Installing Chromium for PDF report export (into {browsers_path})...", flush=True)
+        res = call(f"{self.py} -m playwright install chromium", shell=True)
+        if res == 0:
+            print("✔ Chromium installed\n", flush=True)
+        else:
+            print("✘ Chromium installation failed; PDF report export will not work "
+                  "until this is resolved. Try: python3 -m playwright install chromium\n",
+                  flush=True)
 
 
 def main():
