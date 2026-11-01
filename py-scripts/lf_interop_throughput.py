@@ -193,7 +193,6 @@ import json
 import shutil
 import asyncio
 import csv
-import matplotlib.pyplot as plt
 import re
 import threading
 from collections import OrderedDict
@@ -213,10 +212,13 @@ import argparse  # noqa: E402
 from LANforge import LFUtils  # noqa: F401 E402
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-from lf_report import lf_report  # noqa: E402
-from lf_graph import lf_bar_graph_horizontal, lf_bar_graph  # noqa: E402
+# from lf_report import lf_report  # noqa: E402
 from lf_wifi_msgs import ClientAnalysis  # noqa: E402
+# from lf_graph import lf_bar_graph_horizontal, lf_bar_graph  # noqa: E402
 # from lf_graph import lf_line_graph  # noqa: E402
+from report_v2.lf_report_v2 import lf_report  # noqa: E402
+from report_v2.lf_graph_v2 import (lf_bar_graph, lf_bar_graph_horizontal,  # noqa: E402
+                                   lf_line_graph)
 
 from datetime import datetime, timedelta  # noqa: E402
 
@@ -2720,67 +2722,58 @@ class Throughput(Realm):
             cx_incremental_capacity_names_lists.append(new_cx_names_list)
         return cx_incremental_capacity_names_lists, cx_incremental_capacity_lists, created_cx_lists_keys, incremental_capacity_list_values
 
-    # Ensures maximum of 60 plots in line graph
-    def build_line_graph(self, data_set, xaxis_name, yaxis_name, xaxis_categories, label, graph_image_name):
-        """
-        Creates and saves a line graph showing throughput over time.
+    INTENDED_LOAD_COLOR = "#2f80ed"
 
-        - Plots each data point for all throughput data in dataset.
-        - Shows only up to 60 labels on the x-axis to keep it readable.
+    def filter_direction_fields(self, fields):
+        """Removes the fields that belong to the traffic direction that was not run, e.g. the
+        upload fields in a Download-only test. Bidirectional tests keep every field.
+
+        Args:
+            fields (dict): {label: value} for a report card or table.
 
         Returns:
-        The name of the saved image file.
+            dict: the same fields without the inactive direction's entries.
+
+        Example:
+            test_setup_info = self.filter_direction_fields(test_setup_info)
         """
-        figsize = (10, 5)
-        plt.figure(figsize=(figsize[0] + 5, figsize[1] + 2))
+        if self.direction not in ("Download", "Upload"):
+            return fields
+        excluded = ("upload", "(ul)", "ul score") if self.direction == "Download" else (
+            "download", "(dl)", "dl score")
+        excluded_drop = "average tx drop %" if self.direction == "Download" else "average rx drop %"
+        return {label: value for label, value in fields.items()
+                if label.strip().lower() != excluded_drop
+                and not any(token in label.strip().lower() for token in excluded)}
 
-        color = ['forestgreen', 'c', 'r', 'g', 'b', 'p']
-        marker = ['s', 'o', 'v']
-        xaxis_categories = xaxis_categories[:-1]
-        data_set = [data[:-1] for data in data_set]
-        # Plot each dataset
-        for i, data in enumerate(data_set):
-            plt.plot(
-                xaxis_categories,
-                data,
-                color=color[i % len(color)],  # Ensure no index error
-                label=label[i],
-                marker=marker[i % len(marker)]
-            )
+    def intended_rates_mbps(self, incremental_capacity):
+        """Works out the target (intended) throughput for one iteration. The configured rates are
+        multiplied by the number of active clients, except for the wc_intended_load load type.
 
-        plt.xlabel(xaxis_name, fontweight='bold', fontsize=15)
-        plt.ylabel(yaxis_name, fontweight='bold', fontsize=15)
+        Args:
+            incremental_capacity (int): number of clients running in this iteration.
 
-        # Handle x-axis ticks dynamically based on data size
-        data_size = len(xaxis_categories)
-        if data_size <= 60:
-            tick_positions = list(range(data_size))
-        else:
-            # Ensure 60 points including the first and last
-            tick_count = min(60, data_size)
-            interval = data_size / (tick_count - 1)
-            tick_positions = [round(i * interval) for i in range(tick_count)]
-            tick_positions = sorted(set(min(data_size - 1, max(0, pos)) for pos in tick_positions))
-        tick_labels = [xaxis_categories[i] for i in tick_positions]
+        Returns:
+            tuple: (download_mbps, upload_mbps); the inactive direction is 0.0, and
+            (None, None) is returned if the configured rates cannot be read as numbers.
 
-        plt.xticks(ticks=tick_positions, labels=tick_labels, rotation=90)
-
-        plt.grid(True, linestyle=':')  # Grid with dotted lines
-
-        # Legend settings
-        plt.legend(loc="best", ncol=1)
-
-        plt.suptitle("", fontsize=16)
-        plt.tight_layout()
-
-        # Save the graph as an image
-        plt.savefig(f"{graph_image_name}.png", dpi=96, bbox_inches="tight")
-        plt.close()
-
-        logger.debug("{}.png".format(graph_image_name))
-        logger.debug("{}.csv".format(graph_image_name))
-
-        return f"{graph_image_name}.png"
+        Example:
+            intended_download, intended_upload = self.intended_rates_mbps(incremental_capacity_list[i])
+        """
+        try:
+            upload_mbps = int(self.cx_profile.side_a_min_bps) / 1000000
+            download_mbps = int(self.cx_profile.side_b_min_bps) / 1000000
+        except (TypeError, ValueError):
+            return None, None
+        if self.load_type != "wc_intended_load":
+            client_count = max(int(incremental_capacity or 0), 1)
+            upload_mbps *= client_count
+            download_mbps *= client_count
+        if self.direction == "Download":
+            upload_mbps = 0.0
+        elif self.direction == "Upload":
+            download_mbps = 0.0
+        return download_mbps, upload_mbps
 
     def convert_to_table(self, configured_devices_check):
         """
@@ -2790,6 +2783,238 @@ class Throughput(Realm):
             "Username": list(configured_devices_check.keys()),
             "Configuration Status": ["Pass" if status else "Fail" for status in configured_devices_check.values()]
         }
+
+    RSSI_BUCKET_ORDER = ["Excellent (-30 to -50)", "Good (-50 to -65)", "Fair (-65 to -75)", "Poor (< -75)"]
+
+    @staticmethod
+    def _parse_mbps(value):
+        """Reads a rate like 9.5 or "9.5Mbps" as a number of Mbps.
+
+        Args:
+            value: the rate, as a number or as a string with or without "Mbps".
+
+        Returns:
+            float: the rate in Mbps, or 0.0 if it cannot be read.
+
+        Example:
+            rate = Throughput._parse_mbps("9.5Mbps")  # 9.5
+        """
+        try:
+            return float(str(value).strip().replace("Mbps", "").replace("mbps", "").strip())
+        except (TypeError, ValueError):
+            return 0.0
+
+    @classmethod
+    def _throughput_ratio_to_score(cls, achieved, offered):
+        """Scores the achieved throughput against the intended load on a 0-100 scale.
+
+        Args:
+            achieved: achieved rate in Mbps (number or "Mbps" string).
+            offered: intended rate in Mbps (number or "Mbps" string).
+
+        Returns:
+            float: achieved as a percentage of offered, kept within 0-100 and rounded to 2 decimals.
+            When nothing was offered: 100.0 if any traffic was achieved, else 0.0.
+
+        Example:
+            score = Throughput._throughput_ratio_to_score(95, 100)  # 95.0
+        """
+        achieved = cls._parse_mbps(achieved)
+        offered = cls._parse_mbps(offered)
+        if offered <= 0:
+            return 100.0 if achieved > 0 else 0.0
+        return max(0.0, min(100.0, round(achieved / offered * 100, 2)))
+
+    def build_client_scores(self, offered_download, achieved_download, offered_upload, achieved_upload):
+        """Scores each client's achieved throughput against its intended load and gives it a rating.
+        Only the configured direction counts; bidirectional tests average the download and upload scores.
+
+        Args:
+            offered_download (list): intended download rate per client.
+            achieved_download (list): achieved download rate per client.
+            offered_upload (list): intended upload rate per client.
+            achieved_upload (list): achieved upload rate per client.
+
+        Returns:
+            tuple: (dl_scores, ul_scores, overall_scores, ratings, rating_colors), one entry per client.
+
+        Example:
+            dl_scores, ul_scores, overall_scores, ratings, _ = self.build_client_scores(
+                download_list, download_data, upload_list, upload_data)
+        """
+        dl_scores = [self._throughput_ratio_to_score(achieved, offered) for achieved, offered in zip(achieved_download, offered_download)]
+        ul_scores = [self._throughput_ratio_to_score(achieved, offered) for achieved, offered in zip(achieved_upload, offered_upload)]
+        if self.direction == "Download":
+            overall_scores = dl_scores[:]
+        elif self.direction == "Upload":
+            overall_scores = ul_scores[:]
+        else:
+            overall_scores = [round((dl + ul) / 2, 2) for dl, ul in zip(dl_scores, ul_scores)]
+        ratings, rating_colors = [], []
+        for score in overall_scores:
+            label, color = lf_report.classify_score_rating(score)
+            ratings.append(label)
+            rating_colors.append(color)
+        return dl_scores, ul_scores, overall_scores, ratings, rating_colors
+
+    def build_overall_test_verdict(self, report, download_data, upload_data, download_list, upload_list, devices):
+        """Adds the "Overall Test Verdict" card: devices tested, intended vs. achieved load,
+        load achievement percentage, and an overall rating. The rating is also kept in
+        self.overall_rating for the Key Findings card.
+
+        Args:
+            report (lf_report): report to add the card to.
+            download_data (list): achieved download rate per client.
+            upload_data (list): achieved upload rate per client.
+            download_list (list): intended download rate per client.
+            upload_list (list): intended upload rate per client.
+            devices (list): names of the devices tested.
+
+        Example:
+            self.build_overall_test_verdict(report, download_data=download_data, upload_data=upload_data,
+                                            download_list=download_list, upload_list=upload_list,
+                                            devices=devices_on_running)
+        """
+        intended_dl = sum(self._parse_mbps(rate) for rate in download_list) if self.direction != "Upload" else 0.0
+        intended_ul = sum(self._parse_mbps(rate) for rate in upload_list) if self.direction != "Download" else 0.0
+        achieved_dl = sum(self._parse_mbps(rate) for rate in download_data) if self.direction != "Upload" else 0.0
+        achieved_ul = sum(self._parse_mbps(rate) for rate in upload_data) if self.direction != "Download" else 0.0
+        dl_pct = round((achieved_dl / intended_dl) * 100, 2) if intended_dl else 0
+        ul_pct = round((achieved_ul / intended_ul) * 100, 2) if intended_ul else 0
+        overall_score = self._throughput_ratio_to_score(achieved_dl + achieved_ul, intended_dl + intended_ul)
+        rating, rating_color = lf_report.classify_score_rating(overall_score)
+        self.overall_rating = rating if (intended_dl + intended_ul) else None
+        rating_html = "<span style='color:{color}; font-weight:800;'>{rating}</span>".format(
+            color=rating_color, rating=rating)
+        verdict_fields = {
+            "Total Devices Tested": len(devices),
+            "Intended Load (DL)": "{} Mbps".format(round(intended_dl, 1)),
+            "Intended Load (UL)": "{} Mbps".format(round(intended_ul, 1)),
+            "Achieved Load (DL)": "{} Mbps".format(round(achieved_dl, 1)),
+            "Achieved Load (UL)": "{} Mbps".format(round(achieved_ul, 1)),
+            "Load Achievement (DL)": "{}%".format(dl_pct),
+            "Load Achievement (UL)": "{}%".format(ul_pct),
+            "Overall Rating": rating_html,
+        }
+        report.build_info_card(
+            title="Overall Test Verdict",
+            items=[{"label": label, "value": value}
+                   for label, value in self.filter_direction_fields(verdict_fields).items()])
+
+    def add_test_summary_to_report(self, report, rssi_values=None):
+        """Adds the "Key Findings" card: a few plain-English sentences about connectivity,
+        packet loss, signal quality, and an overall verdict. Nothing is added when there is
+        nothing to summarize.
+
+        Args:
+            report (lf_report): report to add the card to.
+            rssi_values (list): client RSSI readings as positive numbers, e.g. 55 means -55 dBm.
+
+        Example:
+            self.add_test_summary_to_report(report, rssi_values=rssi_data)
+        """
+        summary = []
+        has_issue = False
+
+        # Connectivity
+        wifi_analysis_stats = getattr(self, 'wifi_analysis_stats', None)
+        wifi_analysis = getattr(self, 'wifi_analysis', None)
+        if wifi_analysis_stats and wifi_analysis:
+            try:
+                devices, connect_attempt, disconnected, scanning, association_rejection, connected, remarks, cx_time = \
+                    ClientAnalysis.stats_to_lists(wifi_analysis_stats)
+                total_devices = len(devices)
+                total_disconnects = sum(disconnected)
+                never_connected = sum(1 for connected_count in connected if connected_count == 0)
+                plural = "" if total_devices == 1 else "s"
+                if total_devices:
+                    if not total_disconnects:
+                        summary.append(
+                            "All {total} client{s} maintained a stable wireless connection throughout the "
+                            "test, with no disconnections observed.".format(total=total_devices, s=plural))
+                    elif not never_connected:
+                        summary.append(
+                            "During the test, clients experienced {n} connect/disconnect event(s); however, "
+                            "all {total} client{s} were able to reconnect successfully by the end of the "
+                            "test.".format(n=total_disconnects, total=total_devices, s=plural))
+                    else:
+                        has_issue = True
+                        summary.append(
+                            "During the test, clients experienced {n} connect/disconnect event(s); {never} "
+                            "of {total} client{s} did not reconnect by the end of the test.".format(
+                                n=total_disconnects, never=never_connected, total=total_devices, s=plural))
+            except Exception as error:
+                logger.warning("Test summary connectivity bullet could not be computed: %s", error)
+
+        # Packet loss
+        background_ping = getattr(self, 'background_ping', None)
+        if background_ping and background_ping.bg_stats:
+            rows = list(background_ping.bg_stats.values())
+            loss_values = [row['loss_percent'] for row in rows if row['sent']]
+            if loss_values:
+                avg_loss = sum(loss_values) / len(loss_values)
+                pinged = "{n} client{s} that sent pings".format(n=len(loss_values), s="" if len(loss_values) == 1 else "s")
+                if avg_loss <= 0:
+                    summary.append(
+                        "No packet loss was observed on the background ping for any client, indicating "
+                        "fully reliable communication under load.")
+                elif avg_loss < 2:
+                    summary.append(
+                        "Packet loss was minimal, averaging {avg:.1f}% across the {pinged}, indicating "
+                        "reliable communication under load.".format(avg=avg_loss, pinged=pinged))
+                elif avg_loss < 10:
+                    summary.append(
+                        "Packet loss was moderate, averaging {avg:.1f}% across the {pinged}.".format(avg=avg_loss, pinged=pinged))
+                else:
+                    has_issue = True
+                    summary.append(
+                        "Packet loss was significant, averaging {avg:.1f}% across the {pinged}, indicating "
+                        "unreliable communication under load.".format(avg=avg_loss, pinged=pinged))
+
+        # Signal quality
+        readings = [abs(rssi) for rssi in (rssi_values or []) if rssi]
+        if readings:
+            buckets = [self.RSSI_BUCKET_ORDER[0] if rssi <= 50 else self.RSSI_BUCKET_ORDER[1] if rssi <= 65
+                       else self.RSSI_BUCKET_ORDER[2] if rssi <= 75 else self.RSSI_BUCKET_ORDER[3] for rssi in readings]
+            weak = sum(1 for bucket in buckets if bucket in (self.RSSI_BUCKET_ORDER[2], self.RSSI_BUCKET_ORDER[3]))
+            if not weak and getattr(self, 'overall_rating', None) in (lf_report.SCORE_RATING_BANDS[2][1],
+                                                                      lf_report.SCORE_RATING_BANDS[3][1]):
+                summary.append(
+                    "Signal quality remained strong for all connected clients, so weak signal does not explain "
+                    "the low throughput.")
+            elif not weak:
+                summary.append(
+                    "Signal quality remained strong for all connected clients, ensuring throughput results "
+                    "were not impacted by poor wireless conditions.")
+            else:
+                has_issue = True
+                summary.append(
+                    "{weak} of {total} client(s) experienced weak signal (Fair or Poor RSSI) during the "
+                    "test, which may have impacted their throughput results.".format(weak=weak, total=len(buckets)))
+
+        # Overall verdict
+        overall_rating = getattr(self, 'overall_rating', None)
+        if overall_rating in (lf_report.SCORE_RATING_BANDS[2][1], lf_report.SCORE_RATING_BANDS[3][1]):
+            has_issue = True
+        rating_text = ", with an overall rating of {}".format(overall_rating) if overall_rating else ""
+        if summary:
+            if has_issue:
+                summary.append("Overall, the AP showed some instability or degraded performance during the test{}.".format(rating_text))
+            else:
+                summary.append("Overall, the AP demonstrated good performance and stable operation{}.".format(rating_text))
+
+        if not summary:
+            return
+        try:
+            items = "".join("<li style='font-size:14px; color:var(--ink); line-height:1.5;'>{}</li>".format(point)
+                            for point in summary)
+            report.set_custom_html(
+                "<div class='info-card'><div class='info-card-header'>Key Findings</div>"
+                "<ul style='margin:0; padding-left:20px; display:flex; flex-direction:column; "
+                "gap:10px;'>{}</ul></div>".format(items))
+            report.build_custom()
+        except Exception as error:
+            logger.warning("Test summary could not be added to the report: %s", error)
 
     def get_bandsteering_stats(self, report=None, df=None, data1=None):
         """
@@ -2919,7 +3144,7 @@ class Throughput(Realm):
             report.set_graph_image(graph_png)
             # need to move the graph image to the results directory
             report.move_graph_image()
-            report.set_csv_filename(graph_png)
+            report.set_csv_filename(graph.graph_image_name)
             report.move_csv_file()
             report.build_graph()
 
@@ -3020,21 +3245,23 @@ class Throughput(Realm):
 
             categories = ["Disconnected", "Scans", "Association Attempts", "Association Rejected", "Connected"]
             totals = [sum(disconnected), sum(scanning), sum(connect_attempt), sum(association_rejection), sum(connected)]
-            colors = ['#e67e22', '#1e824c', '#2980b9', '#8e44ad', '#27ae60']
+            # Colors per connection event
+            colors = ['#e74c3c', '#f1c40f', '#e67e22', '#95a5a6', '#27ae60']
 
             report.set_obj_html(
                 _obj_title="Client Connectivity Event Summary",
                 _obj="This graph summarizes connection-related events observed during the throughput test. "
                      "These metrics provide insight into client stability and wireless connectivity performance.")
             report.build_objective()
-            # One series across 5 categories so the bars spread across the chart's full width,
-            # each under its own x-axis label, instead of clustering together in the middle.
-            graph = lf_bar_graph(_data_set=[totals],
+            # One series per event for the legend
+            data_set = [[value if index == series_index else 0 for index, value in enumerate(totals)]
+                        for series_index in range(len(categories))]
+            graph = lf_bar_graph(_data_set=data_set,
                                  _xaxis_name="",
                                  _yaxis_name="Count",
                                  _xaxis_categories=categories,
                                  _graph_image_name="wifi_connectivity_status",
-                                 _label=["Client Connectivity Status"],
+                                 _label=categories,
                                  _graph_title="Client Connectivity Status",
                                  _title_size=16,
                                  _color_edge='black',
@@ -3044,6 +3271,7 @@ class Throughput(Realm):
                                  _dpi=96,
                                  _show_bar_value=True,
                                  _enable_csv=True,
+                                 _stacked=True,
                                  _color=colors,
                                  _color_name=colors)
             graph_png = graph.build_bar_graph()
@@ -3084,8 +3312,8 @@ class Throughput(Realm):
         if self.do_interopability is False:
             report = lf_report(_output_pdf="throughput.pdf", _output_html="throughput.html", _path=report_path,
                                _results_dir_name=result_dir_name)
-            report_path = report.get_path()
-            report_path_date_time = report.get_path_date_time()
+            report_path = report.path
+            report_path_date_time = report.path_date_time
             # df.to_csv(os.path.join(report_path_date_time, 'throughput_data.csv'))
             # For groups and profiles configuration through webgui
             if self.dowebgui is True and self.group_name:
@@ -3096,13 +3324,14 @@ class Throughput(Realm):
                 shutil.move('throughput_data.csv', report_path_date_time)
             logger.info("path: {}".format(report_path))
             logger.info("path_date_time: {}".format(report_path_date_time))
-            report.set_title("Throughput Test")
+            report.set_title("LANforge Interop<br>Throughput Test<br>"
+                             "<span style='font-size:0.45em; font-weight:400;'>(Real Client Performance Validation)</span>")
             report.build_banner()
 
-            # objective title and description
+            # Test Overview
             if iot_summary:
                 report.set_obj_html(
-                    _obj_title="Objective",
+                    _obj_title="Test Overview",
                     _obj=(
                         "The Candela Throughput Test Including IoT Devices is designed to evaluate an Access Point’s performance "
                         "and client handling capability across both Real clients (Android, Windows, Linux, MacBook, iOS) and IoT devices "
@@ -3115,16 +3344,14 @@ class Throughput(Realm):
                     )
                 )
             else:
-                report.set_obj_html(_obj_title="Objective",
-                                    _obj="The Candela Client Capacity test is designed to measure an Access Point’s client capacity and performance when handling different amounts of Real clients like android, Linux,"  # noqa: E501
-                                    " windows,MacOS and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for"  # noqa: E501
-                                    " this test, we aim to assess the capacity of network to handle high volumes of traffic while"
-                                    " each trial. Along with throughput other measurements made are client connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the"  # noqa: E501
-                                    " AP to be able to handle several stations (within the limitations of the AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that"  # noqa: E501
-                                    "scales well will not show a significant overall throughput decrease as more Real clients are added.")
-            report.build_objective()
-            report.set_obj_html(_obj_title="Input Parameters",
-                                _obj="The below tables provides the input parameters for the test")
+                report.set_obj_html(_obj_title="Test Overview",
+                                    _obj="The Candela throughput test is designed to measure an Access Point’s client capacity and performance"  # noqa: E501
+                                    " when handling different types of real clients, such as Android, Linux, Windows, and iOS. The test allows"  # noqa: E501
+                                    " the user to increase the number of clients in user-defined steps for each test iteration and measure the"  # noqa: E501
+                                    " per-client and overall throughput for each trial. The expected behavior is for the AP to be able to handle"  # noqa: E501
+                                    " several stations (within the limitations of the AP specifications) and ensure that all clients receive a"  # noqa: E501
+                                    " fair amount of airtime in both upstream and downstream directions. An AP that scales well should not show"  # noqa: E501
+                                    " a significant decrease in overall throughput as more real clients are added.")
             report.build_objective()
 
             # Initialize counts and lists for device types
@@ -3199,9 +3426,6 @@ class Throughput(Realm):
                 test_setup_info = {
                     "Test name": self.test_name,
                     "Configuration": configmap,
-                    "Configured Devices": ", ".join(all_devices_names),
-                    "No of Devices": "Total" + f"({str(self.num_stations)})" + total_devices,
-                    "Increment": incremental_capacity_data,
                     "Traffic Duration in minutes": round(int(self.test_duration) * len(incremental_capacity_list) / 60, 2),
                     "Traffic Type": (self.traffic_type.strip("lf_")).upper(),
                     "Traffic Direction": self.direction,
@@ -3213,9 +3437,6 @@ class Throughput(Realm):
             else:
                 test_setup_info = {
                     "Test name": self.test_name,
-                    "Device List": ", ".join(all_devices_names),
-                    "No of Devices": "Total" + f"({str(self.num_stations)})" + total_devices,
-                    "Increment": incremental_capacity_data,
                     "Traffic Duration in minutes": round(int(self.test_duration) * len(incremental_capacity_list) / 60, 2),
                     "Traffic Type": (self.traffic_type.strip("lf_")).upper(),
                     "Traffic Direction": self.direction,
@@ -3232,7 +3453,10 @@ class Throughput(Realm):
 
             if iot_summary:
                 test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
-            report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
+
+            # Increment details last
+            if incremental_capacity_data != "None":
+                test_setup_info["Increment"] = incremental_capacity_data
 
             # Loop through iterations and build graphs, tables for each iteration
             for i in range(len(iterations_before_test_stopped_by_user)):
@@ -3416,8 +3640,8 @@ class Throughput(Realm):
                     devices_data_to_create_bar_graph.append(upload_data)
                     label_data = ['Download', 'Upload']
                     real_time_data = (
-                        f"Real Time Throughput: Achieved Throughput: Download: {round(sum(download_data[0:int(incremental_capacity_list[i])]), 2)} Mbps, "
-                        f"Upload: {round(sum(upload_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
+                        f"Average Download Rate: {round(sum(download_data[0:int(incremental_capacity_list[i])]), 2)} Mbps | "
+                        f"Average Upload Rate: {round(sum(upload_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
                     )
 
                 elif self.direction == 'Download':
@@ -3425,64 +3649,81 @@ class Throughput(Realm):
                     data_set_in_graph.append(download_values_list)
                     devices_data_to_create_bar_graph.append(download_data)
                     label_data = ['Download']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Download : {round(((sum(download_data[0:int(incremental_capacity_list[i])]))), 2)} Mbps"
+                    real_time_data = f"Average Download Rate: {round(((sum(download_data[0:int(incremental_capacity_list[i])]))), 2)} Mbps"
 
                 elif self.direction == 'Upload':
                     upload_values_list = data['Overall Upload'][data['Iteration'] == i + 1].values.tolist()
                     data_set_in_graph.append(upload_values_list)
                     devices_data_to_create_bar_graph.append(upload_data)
                     label_data = ['Upload']
-                    real_time_data = f"Real Time Throughput: Achieved Throughput: Upload : {round((sum(upload_data[0:int(incremental_capacity_list[i])])), 2)} Mbps"
+                    real_time_data = f"Average Upload Rate: {round((sum(upload_data[0:int(incremental_capacity_list[i])])), 2)} Mbps"
+
+                # Dashed Intended Load line
+                line_graph_dashed = [False] * len(data_set_in_graph)
+                line_graph_colors = [None] * len(data_set_in_graph)
+                intended_download, intended_upload = self.intended_rates_mbps(incremental_capacity_list[i])
+                if intended_download is not None and data_set_in_graph:
+                    num_points = len(data_set_in_graph[0])
+                    if self.direction == "Bi-direction":
+                        data_set_in_graph.append([intended_download + intended_upload] * num_points)
+                        label_data.append("Intended Load")
+                        line_graph_dashed.append(True)
+                        line_graph_colors.append(self.INTENDED_LOAD_COLOR)
+                    elif self.direction == 'Download':
+                        data_set_in_graph.append([intended_download] * num_points)
+                        label_data.append("Intended Download")
+                        line_graph_dashed.append(True)
+                        line_graph_colors.append(None)
+                    elif self.direction == 'Upload':
+                        data_set_in_graph.append([intended_upload] * num_points)
+                        label_data.append("Intended Upload")
+                        line_graph_dashed.append(True)
+                        line_graph_colors.append(None)
 
                 if len(incremental_capacity_list) > 1:
                     report.set_custom_html(f"<h2><u>Iteration-{i + 1}: Number of Devices Running : {len(devices_on_running)}</u></h2>")
                     report.build_custom()
 
+                if i == 0 and not self.robo_ip:
+                    # Verdict and summary shown once
+                    self.build_overall_test_verdict(
+                        report,
+                        download_data=download_data[0:int(incremental_capacity_list[i])],
+                        upload_data=upload_data[0:int(incremental_capacity_list[i])],
+                        download_list=download_list,
+                        upload_list=upload_list,
+                        devices=devices_on_running)
+                    self.add_test_summary_to_report(report, rssi_values=rssi_data[0:int(incremental_capacity_list[i])])
+
                 report.set_obj_html(
-                    _obj_title=f"{real_time_data}",
-                    _obj=" ")
+                    _obj_title="Real Time Throughput",
+                    _obj="The graph below illustrates the aggregate real-time upload and download throughput "
+                         "observed during the test. The X-axis represents time, while the Y-axis indicates "
+                         f"throughput measured in Mbps.<br>{real_time_data}")
                 report.build_objective()
-                graph_png = self.build_line_graph(
-                    data_set=data_set_in_graph,
-                    xaxis_name="Time",
-                    yaxis_name="Throughput (Mbps)",
-                    xaxis_categories=data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist(),
-                    label=label_data,
-                    graph_image_name=f"line_graph{i}"
-                )
-                logger.info("graph name {}".format(graph_png))
+                graph_png = lf_line_graph(
+                    _data_set=data_set_in_graph,
+                    _xaxis_name="Time",
+                    _yaxis_name="Throughput (Mbps)",
+                    _xaxis_categories=data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist(),
+                    _label=label_data,
+                    _graph_image_name=f"line_graph{i}",
+                    _dashed=line_graph_dashed,
+                    _color=line_graph_colors
+                ).build_line_graph()
+                # logger.info("graph name {}".format(graph_png))
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
 
                 report.build_graph()
                 x_fig_size = 15
                 y_fig_size = len(devices_on_running) * .5 + 4
-                report.set_obj_html(
-                    _obj_title="Per Client Avg-Throughput",
-                    _obj=" ")
-                report.build_objective()
-                devices_on_running_trimmed = [n[:17] if len(n) > 17 else n for n in devices_on_running]
-                graph = lf_bar_graph_horizontal(_data_set=devices_data_to_create_bar_graph,
-                                                _xaxis_name="Avg Throughput(Mbps)",
-                                                _yaxis_name="Devices",
-                                                _graph_image_name=f"image_name{i}",
-                                                _label=label_data,
-                                                _yaxis_categories=devices_on_running_trimmed,
-                                                _legend_loc="best",
-                                                _legend_box=(1.0, 1.0),
-                                                _show_bar_value=True,
-                                                _figsize=(x_fig_size, y_fig_size)
-                                                )
-
-                graph_png = graph.build_bar_graph_horizontal()
-                logger.info("graph name {}".format(graph_png))
-                graph.build_bar_graph_horizontal()
-                report.set_graph_image(graph_png)
-                report.move_graph_image()
-                report.build_graph()
+                devices_on_running_trimmed = [device_name[:17] if len(device_name) > 17 else device_name for device_name in devices_on_running]
                 report.set_obj_html(
                     _obj_title="RSSI Of The Clients Connected",
-                    _obj=" ")
+                    _obj="The graph below illustrates the received signal strength (RSSI) of each Wi-Fi client "
+                         "connected during the test. The X-axis represents the signal strength in dBm, while the "
+                         "Y-axis lists the individual wireless client identifiers.")
                 report.build_objective()
                 graph = lf_bar_graph_horizontal(_data_set=[rssi_data],
                                                 _xaxis_name="Signal(-dBm)",
@@ -3497,7 +3738,35 @@ class Throughput(Realm):
                                                 #    _color=['lightcoral']
                                                 )
                 graph_png = graph.build_bar_graph_horizontal()
-                logger.info("graph name {}".format(graph_png))
+                # logger.info("graph name {}".format(graph_png))
+                graph.build_bar_graph_horizontal()
+                report.set_graph_image(graph_png)
+                report.move_graph_image()
+                report.build_graph()
+                report.set_obj_html(
+                    _obj_title="Per Client Average Throughput",
+                    _obj="The graph below illustrates the observed average upload and download throughput "
+                         "achieved by each Wi-Fi client during the test. The X-axis represents the average "
+                         "throughput attained, while the Y-axis lists the individual wireless client identifiers.")
+                report.build_objective()
+                # Download, Upload and Bidirectional bars
+                bidirectional_data = [round(download + upload, 2) for download, upload in zip(download_data, upload_data)]
+                per_client_data_set = [download_data, upload_data, bidirectional_data]
+                per_client_label_data = ['Download', 'Upload', 'Bidirectional(UL+DL)']
+                graph = lf_bar_graph_horizontal(_data_set=per_client_data_set,
+                                                _xaxis_name="Avg Throughput(Mbps)",
+                                                _yaxis_name="Devices",
+                                                _graph_image_name=f"image_name{i}",
+                                                _label=per_client_label_data,
+                                                _yaxis_categories=devices_on_running_trimmed,
+                                                _legend_loc="best",
+                                                _legend_box=(1.0, 1.0),
+                                                _show_bar_value=True,
+                                                _figsize=(x_fig_size, y_fig_size)
+                                                )
+
+                graph_png = graph.build_bar_graph_horizontal()
+                # logger.info("graph name {}".format(graph_png))
                 graph.build_bar_graph_horizontal()
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
@@ -3512,13 +3781,14 @@ class Throughput(Realm):
 
                 if self.group_name:
                     report.set_obj_html(
-                        _obj_title="Detailed Result Table For Groups ",
-                        _obj="The below tables provides detailed information for the throughput test on each group.")
+                        _obj_title="Overall Tabular Results for all Wi-Fi Clients",
+                        _obj="The below tables provide detailed per-group throughput results for all Wi-Fi clients.")
                 else:
 
                     report.set_obj_html(
-                        _obj_title="Detailed Result Table ",
-                        _obj="The below tables provides detailed information for the throughput test on each device.")
+                        _obj_title="Overall Tabular Results for all Wi-Fi Clients",
+                        _obj="The below table provides detailed per-client throughput results -- intended and "
+                             "attained throughput, drop percentage, and scoring -- for all Wi-Fi clients.")
                 report.build_objective()
                 self.mac_id_list = [item.split()[-1] if ' ' in item else item for item in self.mac_id_list]
                 if self.expected_passfail_value or self.device_csv_name:
@@ -3577,8 +3847,8 @@ class Throughput(Realm):
                             report.build_table()
                 else:
                     bk_dataframe = {
-                        " Device Type ": device_type[0:int(incremental_capacity_list[i])],
                         " Username": devices_on_running[0:int(incremental_capacity_list[i])],
+                        " Device Type ": device_type[0:int(incremental_capacity_list[i])],
                         " SSID ": self.ssid_list[0:int(incremental_capacity_list[i])],
                         " MAC ": self.mac_id_list[0:int(incremental_capacity_list[i])],
                         " Channel ": self.channel_list[0:int(incremental_capacity_list[i])],
@@ -3608,9 +3878,18 @@ class Throughput(Realm):
                     if self.expected_passfail_value or self.device_csv_name:
                         bk_dataframe[" Expected " + self.direction + " rate "] = [str(n) + " Mbps" for n in test_input_list]
                         bk_dataframe[" Status "] = pass_fail_list
-                    dataframe1 = pd.DataFrame(bk_dataframe)
+                    dl_scores, ul_scores, overall_scores, ratings, _ = self.build_client_scores(
+                        download_list[0:int(incremental_capacity_list[i])],
+                        download_data[0:int(incremental_capacity_list[i])],
+                        upload_list[0:int(incremental_capacity_list[i])],
+                        upload_data[0:int(incremental_capacity_list[i])])
+                    bk_dataframe["DL Score"] = dl_scores
+                    bk_dataframe["UL Score"] = ul_scores
+                    bk_dataframe["Overall Score"] = overall_scores
+                    bk_dataframe["Rating"] = ratings
+                    dataframe1 = pd.DataFrame(self.filter_direction_fields(bk_dataframe))
                     report.set_table_dataframe(dataframe1)
-                    report.build_table()
+                    report.rating_build_table("Rating", {label: color for _, label, color in lf_report.SCORE_RATING_BANDS})
 
                 report.set_custom_html('<hr>')
                 report.build_custom()
@@ -3619,10 +3898,10 @@ class Throughput(Realm):
 
             report = lf_report(_output_pdf="interopability.pdf", _output_html="interopability.html", _path=report_path,
                                _results_dir_name=result_dir_name)
-            report_path = report.get_path()
+            report_path = report.path
 
             # To store throughput_data.csv in report folder
-            report_path_date_time = report.get_path_date_time()
+            report_path_date_time = report.path_date_time
             shutil.move('throughput_data.csv', report_path_date_time)
 
             logger.info("path: {}".format(report_path))
@@ -3637,9 +3916,6 @@ class Throughput(Realm):
                                 " Handshake time, DHCP times, and more. The expected behavior is for the AP to be able to handle several stations (within the limitations of the"
                                 " AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that scales well will not show a"
                                 " significant overall throughput decrease as more Real clients are added.")
-            report.build_objective()
-            report.set_obj_html(_obj_title="Input Parameters",
-                                _obj="The below tables provides the input parameters for the test")
             report.build_objective()
 
             # Initialize counts and lists for device types
@@ -3686,8 +3962,6 @@ class Throughput(Realm):
             # Construct test_setup_info dictionary for test setup table
             test_setup_info = {
                 "Test name": self.test_name,
-                "Device List": ", ".join(all_devices_names),
-                "No of Devices": "Total" + f"({str(self.num_stations)})" + total_devices,
                 "Traffic Duration in minutes": round(int(self.test_duration) * len(incremental_capacity_list) / 60, 2),
                 "Traffic Type": (self.traffic_type.strip("lf_")).upper(),
                 "Traffic Direction": self.direction,
@@ -3695,18 +3969,6 @@ class Throughput(Realm):
                 "Download Rate(Mbps)": str(round(int(self.cx_profile.side_b_min_bps) / 1000000, 2)) + "Mbps",
                 # "Packet Size" : str(self.cx_profile.side_a_min_pdu) + " Bytes"
             }
-            report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
-
-            if self.interopability_config:
-
-                report.set_obj_html(_obj_title="Configuration Status of Devices",
-                                    _obj="The table below shows the configuration status of each device (except iOS) with respect to the SSID connection.")
-                report.build_objective()
-
-                configured_dataframe = self.convert_to_table(self.configured_devices_check)
-                dataframe1 = pd.DataFrame(configured_dataframe)
-                report.set_table_dataframe(dataframe1)
-                report.build_table()
 
             # Loop through iterations and build graphs, tables for each device
             for i in range(len(iterations_before_test_stopped_by_user)):
@@ -3834,6 +4096,28 @@ class Throughput(Realm):
                         f"{round(sum(upload_data[0:int(incremental_capacity_list[i])]) / len(upload_data[0:int(incremental_capacity_list[i])]), 2)} Mbps"
                     )
 
+                # Dashed Intended Load line
+                line_graph_dashed = [False] * len(data_set_in_graph)
+                line_graph_colors = [None] * len(data_set_in_graph)
+                intended_download, intended_upload = self.intended_rates_mbps(incremental_capacity_list[i])
+                if intended_download is not None and data_set_in_graph:
+                    num_points = len(data_set_in_graph[0])
+                    if self.direction == "Bi-direction":
+                        data_set_in_graph.append([intended_download + intended_upload] * num_points)
+                        label_data.append("Intended Load")
+                        line_graph_dashed.append(True)
+                        line_graph_colors.append(self.INTENDED_LOAD_COLOR)
+                    elif self.direction == 'Download':
+                        data_set_in_graph.append([intended_download] * num_points)
+                        label_data.append("Intended Download")
+                        line_graph_dashed.append(True)
+                        line_graph_colors.append(None)
+                    elif self.direction == 'Upload':
+                        data_set_in_graph.append([intended_upload] * num_points)
+                        label_data.append("Intended Upload")
+                        line_graph_dashed.append(True)
+                        line_graph_colors.append(None)
+
                 report.set_custom_html(f"<h2><u>{i + 1}. Test On Device {', '.join(devices_on_running)}:</u></h2>")
                 report.build_custom()
 
@@ -3841,15 +4125,17 @@ class Throughput(Realm):
                     _obj_title=f"{real_time_data}",
                     _obj=" ")
                 report.build_objective()
-                graph_png = self.build_line_graph(
-                    data_set=data_set_in_graph,
-                    xaxis_name="Time",
-                    yaxis_name="Throughput (Mbps)",
-                    xaxis_categories=data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist(),
-                    label=label_data,
-                    graph_image_name=f"line_graph{i}"
-                )
-                logger.info("graph name {}".format(graph_png))
+                graph_png = lf_line_graph(
+                    _data_set=data_set_in_graph,
+                    _xaxis_name="Time",
+                    _yaxis_name="Throughput (Mbps)",
+                    _xaxis_categories=data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist(),
+                    _label=label_data,
+                    _graph_image_name=f"line_graph{i}",
+                    _dashed=line_graph_dashed,
+                    _color=line_graph_colors
+                ).build_line_graph()
+                # logger.info("graph name {}".format(graph_png))
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
 
@@ -3857,15 +4143,21 @@ class Throughput(Realm):
                 x_fig_size = 15
                 y_fig_size = len(devices_on_running) * .5 + 4
                 report.set_obj_html(
-                    _obj_title="Per Client Avg-Throughput",
-                    _obj=" ")
+                    _obj_title="Per Client Average Throughput",
+                    _obj="The graph below illustrates the observed average upload and download throughput "
+                         "achieved by each Wi-Fi client during the test. The X-axis represents the average "
+                         "throughput attained, while the Y-axis lists the individual wireless client identifiers.")
                 report.build_objective()
                 devices_on_running_trimmed = [n[:17] if len(n) > 17 else n for n in devices_on_running]
-                graph = lf_bar_graph_horizontal(_data_set=devices_data_to_create_bar_graph,
+                # Download, Upload and Bidirectional bars
+                bidirectional_data = [round(download + upload, 2) for download, upload in zip(download_data, upload_data)]
+                per_client_data_set = [download_data, upload_data, bidirectional_data]
+                per_client_label_data = ['Download', 'Upload', 'Bidirectional(UL+DL)']
+                graph = lf_bar_graph_horizontal(_data_set=per_client_data_set,
                                                 _xaxis_name="Avg Throughput(Mbps)",
                                                 _yaxis_name="Devices",
                                                 _graph_image_name=f"image_name{i}",
-                                                _label=label_data,
+                                                _label=per_client_label_data,
                                                 _yaxis_categories=devices_on_running_trimmed,
                                                 _legend_loc="best",
                                                 _legend_box=(1.0, 1.0),
@@ -3874,14 +4166,16 @@ class Throughput(Realm):
                                                 )
 
                 graph_png = graph.build_bar_graph_horizontal()
-                logger.info("graph name {}".format(graph_png))
+                # logger.info("graph name {}".format(graph_png))
                 graph.build_bar_graph_horizontal()
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
                 report.build_graph()
                 report.set_obj_html(
                     _obj_title="RSSI Of The Clients Connected",
-                    _obj=" ")
+                    _obj="The graph below illustrates the received signal strength (RSSI) of each Wi-Fi client "
+                         "connected during the test. The X-axis represents the signal strength in dBm, while the "
+                         "Y-axis lists the individual wireless client identifiers.")
                 report.build_objective()
                 graph = lf_bar_graph_horizontal(_data_set=[rssi_data],
                                                 _xaxis_name="Signal(-dBm)",
@@ -3896,15 +4190,16 @@ class Throughput(Realm):
                                                 #    _color=['lightcoral']
                                                 )
                 graph_png = graph.build_bar_graph_horizontal()
-                logger.info("graph name {}".format(graph_png))
+                # logger.info("graph name {}".format(graph_png))
                 graph.build_bar_graph_horizontal()
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
                 report.build_graph()
 
                 report.set_obj_html(
-                    _obj_title="Detailed Result Table ",
-                    _obj="The below tables provides detailed information for the throughput test on each device.")
+                    _obj_title="Overall Tabular Results for all Wi-Fi Clients",
+                    _obj="The below table provides detailed per-client throughput results -- intended and "
+                         "attained throughput, drop percentage, and scoring -- for all Wi-Fi clients.")
                 report.build_objective()
                 self.mac_id_list = [item.split()[-1] if ' ' in item else item for item in self.mac_id_list]
                 if self.expected_passfail_value or self.device_csv_name:
@@ -3955,9 +4250,17 @@ class Throughput(Realm):
                 if self.expected_passfail_value or self.device_csv_name:
                     bk_dataframe[" Expected " + self.direction + " rate "] = test_input_list
                     bk_dataframe[" Status "] = pass_fail_list
-                dataframe1 = pd.DataFrame(bk_dataframe)
+                dl_scores, ul_scores, overall_scores, ratings, _ = self.build_client_scores(
+                    [download_list[-1]], [download_data[-1]], [upload_list[-1]], [upload_data[-1]])
+                dl_score, ul_score = dl_scores[0], ul_scores[0]
+                overall_score, rating = overall_scores[0], ratings[0]
+                bk_dataframe["DL Score"] = dl_score
+                bk_dataframe["UL Score"] = ul_score
+                bk_dataframe["Overall Score"] = overall_score
+                bk_dataframe["Rating"] = rating
+                dataframe1 = pd.DataFrame(self.filter_direction_fields(bk_dataframe))
                 report.set_table_dataframe(dataframe1)
-                report.build_table()
+                report.rating_build_table("Rating", {label: color for _, label, color in lf_report.SCORE_RATING_BANDS})
 
                 report.set_custom_html('<hr>')
                 report.build_custom()
@@ -3973,6 +4276,21 @@ class Throughput(Realm):
         if self.device_issue_log:
             pd.DataFrame(self.device_issue_log).to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         # report.build_custom()
+        # Configuration and Devices at the end
+        report.build_info_card(
+            title="Test Configuration",
+            items=[{"label": label, "value": value} for label, value in self.filter_direction_fields(test_setup_info).items()])
+        if self.do_interopability and self.interopability_config:
+            report.set_obj_html(_obj_title="Configuration Status of Devices",
+                                _obj="The table below shows the configuration status of each device (except iOS) with respect to the SSID connection.")
+            report.build_objective()
+            configured_dataframe = self.convert_to_table(self.configured_devices_check)
+            dataframe1 = pd.DataFrame(configured_dataframe)
+            report.set_table_dataframe(dataframe1)
+            report.build_table()
+        report.build_device_summary_card(
+            [{"name": name.split("(")[0], "platform": platform}
+             for name, platform in zip(all_devices_names, device_type)])
         report.build_footer()
         report.write_html()
         report.write_pdf(_orientation="Landscape")
@@ -4017,8 +4335,8 @@ class Throughput(Realm):
         if self.do_interopability is False:
             report = lf_report(_output_pdf="throughput.pdf", _output_html="throughput.html", _path=report_path,
                                _results_dir_name=result_dir_name)
-            report_path = report.get_path()
-            report_path_date_time = report.get_path_date_time()
+            report_path = report.path
+            report_path_date_time = report.path_date_time
             # df.to_csv(os.path.join(report_path_date_time, 'throughput_data.csv'))
             # For groups and profiles configuration through webgui
 
@@ -4028,15 +4346,13 @@ class Throughput(Realm):
             report.build_banner()
 
             report.set_obj_html(_obj_title="Objective",
-                                _obj="The Candela Client Capacity test is designed to measure an Access Point’s client capacity and performance when handling different amounts of Real clients like android, Linux,"  # noqa: E501
-                                " windows,MacOS and IOS. The test allows the user to increase the number of clients in user-defined steps for each test iteration and measure the per client and the overall throughput for"  # noqa: E501
-                                " this test, we aim to assess the capacity of network to handle high volumes of traffic while"
-                                " each trial. Along with throughput other measurements made are client connection times, Station 4-Way Handshake time, DHCP times, and more. The expected behavior is for the"  # noqa: E501
-                                " AP to be able to handle several stations (within the limitations of the AP specs) and make sure all Clients get a fair amount of airtime both upstream and downstream. An AP that"  # noqa: E501
-                                "scales well will not show a significant overall throughput decrease as more Real clients are added.")
-            report.build_objective()
-            report.set_obj_html(_obj_title="Input Parameters",
-                                _obj="The below tables provides the input parameters for the test")
+                                _obj="The Candela throughput test is designed to measure an Access Point’s client capacity and performance"  # noqa: E501
+                                " when handling different types of real clients, such as Android, Linux, Windows, and iOS. The test allows"  # noqa: E501
+                                " the user to increase the number of clients in user-defined steps for each test iteration and measure the"  # noqa: E501
+                                " per-client and overall throughput for each trial. The expected behavior is for the AP to be able to handle"  # noqa: E501
+                                " several stations (within the limitations of the AP specifications) and ensure that all clients receive a"  # noqa: E501
+                                " fair amount of airtime in both upstream and downstream directions. An AP that scales well should not show"  # noqa: E501
+                                " a significant decrease in overall throughput as more real clients are added.")
             report.build_objective()
 
             # Initialize counts and lists for device types
@@ -4111,9 +4427,6 @@ class Throughput(Realm):
                 test_setup_info = {
                     "Test name": self.test_name,
                     "Configuration": configmap,
-                    "Configured Devices": ", ".join(all_devices_names),
-                    "No of Devices": "Total" + f"({str(self.num_stations)})" + total_devices,
-                    "Increment": incremental_capacity_data,
                     "Traffic Duration in minutes": round(int(self.test_duration) * len(incremental_capacity_list) / 60, 2),
                     "Traffic Type": (self.traffic_type.strip("lf_")).upper(),
                     "Traffic Direction": self.direction,
@@ -4125,9 +4438,6 @@ class Throughput(Realm):
             else:
                 test_setup_info = {
                     "Test name": self.test_name,
-                    "Device List": ", ".join(all_devices_names),
-                    "No of Devices": "Total" + f"({str(self.num_stations)})" + total_devices,
-                    "Increment": incremental_capacity_data,
                     "Traffic Duration in minutes": round(int(self.test_duration) * len(incremental_capacity_list) / 60, 2),
                     "Traffic Type": (self.traffic_type.strip("lf_")).upper(),
                     "Traffic Direction": self.direction,
@@ -4145,7 +4455,16 @@ class Throughput(Realm):
             if self.rotation_enabled:
                 test_setup_info["Selected Angles"] = ",".join(self.angle_list)
 
-            report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
+            # Increment details last
+            if incremental_capacity_data != "None":
+                test_setup_info["Increment"] = incremental_capacity_data
+
+            report.build_info_card(
+                title="Test Configuration",
+                items=[{"label": label, "value": value} for label, value in self.filter_direction_fields(test_setup_info).items()])
+            report.build_device_summary_card(
+                [{"name": name.split("(")[0], "platform": platform}
+                 for name, platform in zip(all_devices_names, device_type)])
 
             # Add live view heatmaps in case of robot testing from webui.
             if self.dowebgui:
@@ -4498,15 +4817,15 @@ class Throughput(Realm):
                         else:
                             xaxis_categories = data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist()
                             graph_image_name = "line_graph{}_{}{}".format(coordinate, i, cycle_tag)
-                        graph_png = self.build_line_graph(
-                            data_set=data_set_in_graph,
-                            xaxis_name="Time",
-                            yaxis_name="Throughput (Mbps)",
-                            xaxis_categories=xaxis_categories,
-                            label=label_data,
-                            graph_image_name=graph_image_name
-                        )
-                        logger.info("graph name {}".format(graph_png))
+                        graph_png = lf_line_graph(
+                            _data_set=data_set_in_graph,
+                            _xaxis_name="Time",
+                            _yaxis_name="Throughput (Mbps)",
+                            _xaxis_categories=xaxis_categories,
+                            _label=label_data,
+                            _graph_image_name=graph_image_name
+                        ).build_line_graph()
+                        # logger.info("graph name {}".format(graph_png))
                         report.set_graph_image(graph_png)
                         report.move_graph_image()
 
@@ -4514,13 +4833,14 @@ class Throughput(Realm):
 
                         if self.group_name:
                             report.set_obj_html(
-                                _obj_title="Detailed Result Table For Groups ",
-                                _obj="The below tables provides detailed information for the throughput test on each group.")
+                                _obj_title="Overall Tabular Results for all Wi-Fi Clients",
+                                _obj="The below tables provide detailed per-group throughput results for all Wi-Fi clients.")
                         else:
 
                             report.set_obj_html(
-                                _obj_title="Detailed Result Table ",
-                                _obj="The below tables provides detailed information for the throughput test on each device.")
+                                _obj_title="Overall Tabular Results for all Wi-Fi Clients",
+                                _obj="The below table provides detailed per-client throughput results -- intended and "
+                                     "attained throughput, drop percentage, and scoring -- for all Wi-Fi clients.")
                         report.build_objective()
                         self.mac_id_list = [item.split()[-1] if ' ' in item else item for item in self.mac_id_list]
                         if self.expected_passfail_value or self.device_csv_name:
@@ -4579,8 +4899,8 @@ class Throughput(Realm):
                                     report.build_table()
                         else:
                             bk_dataframe = {
-                                " Device Type ": device_type[0:int(incremental_capacity_list[i])],
                                 " Username": devices_on_running[0:int(incremental_capacity_list[i])],
+                                " Device Type ": device_type[0:int(incremental_capacity_list[i])],
                                 " SSID ": self.ssid_list[0:int(incremental_capacity_list[i])],
                                 " MAC ": self.mac_id_list[0:int(incremental_capacity_list[i])],
                                 " Channel ": self.channel_list[0:int(incremental_capacity_list[i])],
@@ -4610,7 +4930,7 @@ class Throughput(Realm):
                             if self.expected_passfail_value or self.device_csv_name:
                                 bk_dataframe[" Expected " + self.direction + " rate "] = [str(n) + " Mbps" for n in test_input_list]
                                 bk_dataframe[" Status "] = pass_fail_list
-                            dataframe1 = pd.DataFrame(bk_dataframe)
+                            dataframe1 = pd.DataFrame(self.filter_direction_fields(bk_dataframe))
                             report.set_table_dataframe(dataframe1)
                             report.build_table()
 
@@ -4724,8 +5044,8 @@ class Throughput(Realm):
         if devpacketsize != []:
             if len(username) != 0:
                 dataframe = {
-                    " Device Type ": device_type,
                     " Username": username,
+                    " Device Type ": device_type,
                     " SSID ": ssid,
                     " MAC ": mac,
                     " Channel ": channel,
@@ -4757,12 +5077,12 @@ class Throughput(Realm):
                 if self.expected_passfail_value or self.device_csv_name:
                     dataframe[" Expected " + self.direction + " rate "] = input_list
                     dataframe[" Status "] = statuslist
-                return dataframe
+                return self.filter_direction_fields(dataframe)
         else:
             if len(username) != 0:
                 dataframe = {
-                    " Device Type ": device_type,
                     " Username": username,
+                    " Device Type ": device_type,
                     " SSID ": ssid,
                     " MAC ": mac,
                     " Channel ": channel,
@@ -4792,7 +5112,7 @@ class Throughput(Realm):
                 if self.expected_passfail_value or self.device_csv_name:
                     dataframe[" Expected " + self.direction + " rate "] = input_list
                     dataframe[" Status "] = statuslist
-                return dataframe
+                return self.filter_direction_fields(dataframe)
 
         return None
 
