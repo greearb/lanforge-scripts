@@ -3296,6 +3296,66 @@ class Throughput(Realm):
         except Exception as error:
             logger.warning("Wifi connectivity analysis could not be added to the report: %s", error)
 
+    def add_background_ping_timeline_to_report(self, report):
+        """Adds the "Wireless Client Connectivity Status vs Time" graph, built from the background
+        ping results: green for replies, red for lost pings. Does nothing if the background
+        ping did not run.
+
+        Args:
+            report (lf_report): report to add the graph to.
+
+        Example:
+            self.add_background_ping_timeline_to_report(report)
+        """
+        background_ping = self.background_ping
+        if not background_ping or not background_ping.bg_stats or background_ping.bg_start_time is None \
+                or background_ping.bg_stop_time is None:
+            return
+        try:
+            test_seconds = background_ping.bg_stop_time - background_ping.bg_start_time
+            interval = float(background_ping.interval)
+            clients, stations, segments = [], [], []
+            for device in background_ping.real_sta_list:
+                sequences = background_ping.bg_packet_results.get(device) or {}
+                spans = []
+                covered_until = 0.0
+                for sequence in sorted(sequences):
+                    start, end = (sequence - 1) * interval, min(test_seconds, sequence * interval)
+                    if end <= start:
+                        continue
+                    if start > covered_until:
+                        spans.append(['up', covered_until, start])
+                    spans.append(['drop' if sequences[sequence] == 0 else 'up', start, end])
+                    covered_until = max(covered_until, end)
+                merged = []
+                for span in spans:
+                    if merged and merged[-1][0] == span[0]:
+                        merged[-1][2] = span[2]
+                    else:
+                        merged.append(span)
+                segments.extend({'clientIndex': len(clients), 'start': round(start, 3), 'end': round(end, 3), 'status': status} for status, start, end in merged)
+                clients.append(background_ping.bg_stats[device]['name'])
+                stations.append(device)
+            payload = {'clients': clients, 'stations': stations, 'segments': segments, 'duration': round(test_seconds, 3),
+                       'emptyMessage': "No time-series ping samples were collected"}
+            report.set_obj_html(
+                _obj_title="Client Connectivity Results Throughout the Test Duration",
+                _obj=("The graph illustrates the connectivity status of all wireless clients during the test based on connectivity monitoring during the test execution. "
+                      "Green segments represent successful responses, while red segments indicate packet loss or connectivity drops observed during the test."))
+            report.build_objective()
+            report.set_custom_html("""
+                <div class='chart-card'>
+                  <h3>Wireless Client Connectivity Status vs Time</h3>
+                  <div id='background-ping-connectivity-timeline' class='chart'></div>
+                  <script>
+                    window.__lfModernReport.renderConnectivityTimeline('background-ping-connectivity-timeline', {payload});
+                  </script>
+                </div>
+                """.format(payload=json.dumps(payload)))
+            report.build_custom()
+        except Exception as error:
+            logger.warning("Background ping timeline could not be added to the report: %s", error)
+
     def generate_report(self, iterations_before_test_stopped_by_user, incremental_capacity_list, data=None, data1=None, report_path='', result_dir_name='Throughput_Test_report',
                         selected_real_clients_names=None, iot_summary=None):
 
@@ -4272,6 +4332,7 @@ class Throughput(Realm):
         # Wi-Fi connectivity stats
         self.add_wifi_analysis_to_report(report)
         if self.background_ping:
+            self.add_background_ping_timeline_to_report(report)
             self.background_ping.add_background_ping_to_report(report)
         if self.device_issue_log:
             pd.DataFrame(self.device_issue_log).to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
@@ -6012,12 +6073,6 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
             throughput.stop()
             return
 
-        if args.enable_bg_ping:
-            throughput.background_ping = lf_interop_ping.Ping(host=args.mgr, port=args.mgr_port, target=args.bg_ping_target or args.upstream_port, interval=args.bg_ping_interval,
-                                                              sta_list=[], real=True, virtual=False, duration=0)
-            if not throughput.background_ping.start_background_ping(throughput.input_devices_list):
-                throughput.background_ping = None
-
         individual_dataframe_column = []
 
         to_run_cxs, to_run_cxs_len, created_cx_lists_keys, incremental_capacity_list = throughput.get_incremental_capacity_list()
@@ -6085,6 +6140,12 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
             else:
                 device_names = created_cx_lists_keys[:to_run_cxs_len[i][-1]]
 
+            if args.enable_bg_ping and i == 0:
+                throughput.background_ping = lf_interop_ping.Ping(host=args.mgr, port=args.mgr_port, target=args.bg_ping_target or args.upstream_port, interval=args.bg_ping_interval,
+                                                                  sta_list=[], real=True, virtual=False, duration=0)
+                if not throughput.background_ping.start_background_ping(throughput.input_devices_list):
+                    throughput.background_ping = None
+
             # Monitor throughput and capture all dataframes and test stop status
             all_dataframes, test_stopped_by_user = throughput.monitor(i, individual_df, device_names, incremental_capacity_list, overall_start_time, overall_end_time, is_device_configured)
             if args.do_interopability and "iOS" not in to_run_cxs[i][0] and args.interopability_config:
@@ -6103,10 +6164,10 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
 
     #     logger.info("connections download {}".format(connections_download))
     #     logger.info("connections upload {}".format(connections_upload))
-    throughput.remove_missing_cx()
-    throughput.stop()
     if throughput.background_ping:
         throughput.background_ping.stop_background_ping()
+    throughput.remove_missing_cx()
+    throughput.stop()
     if args.postcleanup:
         throughput.cleanup()
     throughput.ensure_monitoring_data_collected()
