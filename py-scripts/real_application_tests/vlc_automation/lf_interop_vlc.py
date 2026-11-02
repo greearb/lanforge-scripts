@@ -68,6 +68,10 @@ if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
 
+# Repo root is "../.." from py-scripts/ and "../../.." from py-scripts/real_application_tests/vlc_automation/,
+# so both locations of this script resolve "py-json" and "py-scripts".
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../..")))
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
