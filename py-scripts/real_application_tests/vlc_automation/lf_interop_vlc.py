@@ -68,7 +68,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
 
-sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../..")))
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
@@ -82,6 +82,10 @@ lf_bar_graph_horizontal = lf_graph.lf_bar_graph_horizontal
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 logger = logging.getLogger(__name__)
+
+# MACs Android reports when the interop app can't read the real one (no Location
+# permission / MAC randomisation). Every phone in that state shares them, so never match on them.
+PLACEHOLDER_MACS = {"", "00:00:00:00:00:00", "02:00:00:00:00:00", "none"}
 
 
 class VLCStream(Realm):
@@ -220,6 +224,9 @@ class VLCStream(Realm):
                 self.devices_data[port_id]['mac'] = port_data_dict['mac']
                 self.devices_data[port_id]['link rate'] = port_data_dict['rx-rate']
                 self.devices_data[port_id]['adb_id'] = None if resource_data[resource]['device type'] != 'Android' else resource_data[resource].get('adb_id')
+                # Used only by resolve_missing_adb_ids(); app-id exists in both /resource/all and /adb/devices.
+                self.devices_data[port_id]['res_eid'] = resource
+                self.devices_data[port_id]['app-id'] = str(resource_data[resource].get('app-id', '') or '').strip()
 
         # A selected resource can still silently vanish here if its WiFi station
         # port failed the phantom/down/wiphy0 checks above -- report exactly why.
@@ -363,37 +370,8 @@ class VLCStream(Realm):
         # Step 4: Proceed with port collection
         self.get_port_data(selected_resources)
 
-        # Fallback: match remaining Android devices by MAC address instead of
-        # resource-id, since both /adb/devices and get_port_data expose it -- no
-        # manual --adb_map needed for these devices.
-        mac_keys = ("mac", "mac address", "wifi mac", "sta mac", "station mac")
-
-        def _extract_mac(values):
-            for key in mac_keys:
-                val = values.get(key)
-                if val:
-                    return str(val).strip().lower()
-            return None
-
-        for port_id, info in self.devices_data.items():
-            if info.get("device type") != "Android" or info.get("adb_id"):
-                continue  # not Android, or already matched above
-            port_mac = str(info.get("mac", "")).strip().lower()
-            if not port_mac:
-                continue
-            for adb_device in adb_device_list:
-                adb_id = list(adb_device.keys())[0]
-                adb_values = adb_device[adb_id]
-                if not _is_not_phantom(adb_values.get("phantom")):
-                    continue
-                if _extract_mac(adb_values) == port_mac:
-                    info["adb_id"] = adb_id
-                    logger.info(f"[ADB] Matched {port_id} -> {adb_id} by MAC address ({port_mac})")
-                    break
-            else:
-                logger.warning(f"[ADB] {port_id}: still no adb_id after the MAC fallback. "
-                               f"Raw /adb/devices field names seen: "
-                               f"{[list(d[list(d.keys())[0]].keys()) for d in adb_device_list[:1]]}")
+        # Fallback chain for any Android the resource-id pass missed.
+        self.resolve_missing_adb_ids(adb_device_list)
 
         # Select one device as host
         device_ids = list(self.devices_data.keys())
@@ -816,10 +794,23 @@ class VLCStream(Realm):
                 logger.warning(f"[HOST] {label} -- no traffic detected. Check that this "
                                f"interface is on the network your clients are on.")
 
+        # Timer starts in begin_rotation_clock() once clients are running; device selection is
+        # interactive and would otherwise burn the first interval while the prompt waits.
+        self._rotation_args = (ip, port, host_duration)
+
+    def begin_rotation_clock(self):
+        """Start the rotation timer; no-op unless --host_rotate set up a host."""
+        if not getattr(self, "_rotation_args", None):
+            return
+        if self.rotate_thread and self.rotate_thread.is_alive():
+            return
+        ip, port, host_duration = self._rotation_args
         self.rotate_stop.clear()
         self.rotate_thread = threading.Thread(
             target=self._rotation_loop, args=(ip, port, host_duration), daemon=True)
         self.rotate_thread.start()
+        logger.info(f"[ROTATE] Clock started -- first switch in {self.switch_value}"
+                    f"{'s' if self.switch_mode == 'time' else ' poll cycles'}.")
 
     def stop_local_hosts(self):
         """Stop any VLC hosts this script started."""
@@ -926,6 +917,105 @@ class VLCStream(Realm):
             })
         return True, created_cx, created_endp
 
+    @staticmethod
+    def _adb_value(values, *names):
+        """First non-empty value among `names`, lower-cased and stripped."""
+        for n in names:
+            v = values.get(n)
+            if v not in (None, ""):
+                return str(v).strip().lower()
+        return ""
+
+    def resolve_missing_adb_ids(self, adb_device_list):
+        """Give every Android port an adb_id, trying weaker rules in turn: app-id, WiFi MAC
+        (placeholders ignored), model/name, then elimination. Only adb entries LANforge has
+        not bound to another resource are considered. Each match logs the rule that fired."""
+        def not_phantom(value):
+            if isinstance(value, bool):
+                return value is False
+            return str(value).strip().lower() == "false"
+
+        unmatched = [(pid, info) for pid, info in self.devices_data.items()
+                     if str(info.get("device type", "")).lower() == "android" and not info.get("adb_id")]
+        if not unmatched:
+            return
+
+        claimed = {i.get("adb_id") for i in self.devices_data.values() if i.get("adb_id")}
+        available = []
+        for entry in adb_device_list:
+            adb_id = list(entry.keys())[0]
+            if adb_id not in claimed and not_phantom(entry[adb_id].get("phantom")):
+                available.append((adb_id, entry[adb_id]))
+
+        if not available:
+            for pid, _info in unmatched:
+                logger.warning(f"[ADB] {pid}: no unclaimed, non-phantom /adb/devices entry left to match.")
+            return
+
+        def candidates(info):
+            mine = str(info.get("res_eid", "")).strip()
+            return [(a, v) for a, v in available
+                    if not str(v.get("resource-id", "") or "").strip()
+                    or str(v.get("resource-id")).strip() == mine]
+
+        def claim(info, pid, adb_id, rule, detail):
+            info["adb_id"] = adb_id
+            available[:] = [(a, v) for a, v in available if a != adb_id]
+            logger.info(f"[ADB] Matched {pid} -> {adb_id} by {rule} ({detail})")
+
+        def squash(text):
+            return "".join(ch for ch in str(text).lower() if ch.isalnum())
+
+        for pid, info in unmatched:                                   # 1. app-id
+            app_id = str(info.get("app-id", "") or "").strip()
+            if app_id and app_id != "0":
+                for adb_id, v in candidates(info):
+                    if self._adb_value(v, "app-id", "app_id") == app_id.lower():
+                        claim(info, pid, adb_id, "app-id", app_id)
+                        break
+
+        for pid, info in unmatched:                                   # 2. WiFi MAC
+            if info.get("adb_id"):
+                continue
+            port_mac = str(info.get("mac", "") or "").strip().lower()
+            if port_mac in PLACEHOLDER_MACS:
+                if port_mac:
+                    logger.info(f"[ADB] {pid}: MAC is a placeholder ({port_mac}); grant the interop "
+                                f"app Location permission to expose the real one.")
+                continue
+            for adb_id, v in candidates(info):
+                adb_mac = self._adb_value(v, "wifi mac", "mac", "mac address", "sta mac", "station mac")
+                if adb_mac and adb_mac not in PLACEHOLDER_MACS and adb_mac == port_mac:
+                    claim(info, pid, adb_id, "MAC address", port_mac)
+                    break
+
+        for pid, info in unmatched:                                   # 3. model / name
+            if info.get("adb_id"):
+                continue
+            haystack = squash(f"{info.get('hostname', '')} {info.get('hw version', '')}")
+            hits = []
+            for adb_id, v in candidates(info):
+                for field in ("model", "product", "name", "user-name", "device"):
+                    needle = squash(self._adb_value(v, field))
+                    if haystack and len(needle) >= 4 and needle in haystack:
+                        hits.append((adb_id, field, needle))
+                        break
+            if len(hits) == 1:   # two phones of one model would otherwise be paired by chance
+                claim(info, pid, hits[0][0], f"name ({hits[0][1]})", hits[0][2])
+            elif len(hits) > 1:
+                logger.info(f"[ADB] {pid}: name rule matched {len(hits)} entries -- too ambiguous.")
+
+        still = [(pid, info) for pid, info in unmatched if not info.get("adb_id")]   # 4. elimination
+        if len(still) == 1 and len(candidates(still[0][1])) == 1:
+            pid, info = still[0]
+            claim(info, pid, candidates(info)[0][0], "elimination", "sole unmatched phone and sole free adb entry")
+            still = []
+
+        for pid, info in still:
+            logger.warning(f"[ADB] {pid} ({info.get('hostname')}): no adb_id after all fallbacks. "
+                           f"Free adb entries: {[a for a, _v in available] or 'none'}. "
+                           f"Use --adb_map \"{info.get('res_eid', pid)}=<adb_id>\".")
+
     def expected_endpoint_names(self):
         """
         The endpoint/CX names this run will create, derived from the same
@@ -957,23 +1047,38 @@ class VLCStream(Realm):
             logger.info("[CLEANUP] No devices selected yet -- nothing to clean.")
             return
 
-        for cx_name, _ in pairs:
-            try:
-                self.json_post("cli-json/rm_cx",
-                               {"test_mgr": "default_tm", "cx_name": cx_name})
-            except Exception as e:
-                logger.warning(f"[CLEANUP] rm_cx {cx_name}: {e}")
+        # Deletes are sent for every expected name; LANforge answers rv 22 for ones that never
+        # existed and LFRequest logs a multi-line error for each. Hide just those during cleanup.
+        class _QuietDeletes(logging.Filter):
+            def filter(self, record):
+                return not (record.filename == "LFRequest.py" and
+                            ("rm_cx" in record.getMessage() or "rm_endp" in record.getMessage()))
 
-        # LANforge needs a moment to release endpoints from a removed CX.
-        time.sleep(3)
+        quiet = _QuietDeletes()
+        handlers = list(logging.getLogger().handlers)
+        for h in handlers:
+            h.addFilter(quiet)
+        try:
+            for cx_name, _ in pairs:
+                try:
+                    self.json_post("cli-json/rm_cx",
+                                   {"test_mgr": "default_tm", "cx_name": cx_name})
+                except Exception as e:
+                    logger.warning(f"[CLEANUP] rm_cx {cx_name}: {e}")
 
-        for _, endp_name in pairs:
-            try:
-                self.json_post("cli-json/rm_endp", {"endp_name": endp_name})
-            except Exception as e:
-                logger.warning(f"[CLEANUP] rm_endp {endp_name}: {e}")
+            # LANforge needs a moment to release endpoints from a removed CX.
+            time.sleep(3)
 
-        time.sleep(2)
+            for _, endp_name in pairs:
+                try:
+                    self.json_post("cli-json/rm_endp", {"endp_name": endp_name})
+                except Exception as e:
+                    logger.warning(f"[CLEANUP] rm_endp {endp_name}: {e}")
+
+            time.sleep(2)
+        finally:
+            for h in handlers:
+                h.removeFilter(quiet)
 
         # Confirm they're actually gone -- a surviving CX silently pins the device to
         # its original command, which is exactly the failure this cleanup prevents.
@@ -996,7 +1101,8 @@ class VLCStream(Realm):
             logger.warning("    created the CX -- new options will NOT take effect. Delete them by hand")
             logger.warning("    in the LANforge GUI (Generic tab), or stop the test manager, then re-run.")
         else:
-            logger.info(f"[CLEANUP] Cleared {len(pairs)} cross-connect/endpoint pair(s).")
+            logger.info(f"[CLEANUP] Sent delete for {len(pairs)} cross-connect/endpoint pair(s); "
+                        f"names that never existed are ignored by LANforge.")
 
         self.generic_endps_profile.created_cx = []
         self.generic_endps_profile.created_endp = []
@@ -1697,7 +1803,7 @@ class VLCStream(Realm):
             logger.error(f"Error in create_report function {e}", exc_info=True)
 
 
-SCRIPT_VERSION = "2026-09-11 (logging cleanup, help_summary, retries)"
+SCRIPT_VERSION = "2026-11-02 (adb fallback chain, quiet pre-clean, rotation clock)"
 
 
 def main():
@@ -1972,6 +2078,7 @@ NOTES:
             vlc_stream_obj.remove_stale_endpoints()
         vlc_stream_obj.create()
         vlc_stream_obj.start_generic()
+        vlc_stream_obj.begin_rotation_clock()
         logger.info("starting test")
         logger.info(vlc_stream_obj.start_time)
         start = datetime.now()
