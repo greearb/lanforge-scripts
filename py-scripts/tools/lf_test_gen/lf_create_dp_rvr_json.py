@@ -32,6 +32,7 @@ import argparse
 import logging
 import importlib
 import os
+import re
 import sys
 
 if sys.version_info[0] != 3:
@@ -132,9 +133,9 @@ class lf_create_dp_rvr_json():
         self.suite_5g_radios = _suite_radios_5g
         self.suite_6g_radios = _suite_radios_6g
 
-        self.file_2g = _file_2g
-        self.file_5g = _file_5g
-        self.file_6g = _file_6g
+        self.file_2g = self._suite_filename(_file_2g)
+        self.file_5g = self._suite_filename(_file_5g)
+        self.file_6g = self._suite_filename(_file_6g)
 
         self.dir_file_2g = ""
         self.dir_file_5g = ""
@@ -167,6 +168,19 @@ class lf_create_dp_rvr_json():
         self.use_radio_band_var_dict = {}
         self.suite_radios_band = ""
         self.last_band_radio = 0
+
+    def _suite_filename(self, filename):
+        """Keep the selected test type in both generated and custom filenames."""
+        if not filename:
+            return filename
+        directory, basename = os.path.split(filename)
+        stem, extension = os.path.splitext(basename)
+        pattern = r"(?<![a-z0-9])(dp|dataplane|rvr)(?![a-z0-9])"
+        if re.search(pattern, stem, flags=re.IGNORECASE):
+            stem = re.sub(pattern, self.suite_type, stem, flags=re.IGNORECASE)
+        else:
+            stem += f"_{self.suite_type}"
+        return os.path.join(directory, stem + (extension or ".json"))
 
     def get_file_2g(self):
         return self.file_2g

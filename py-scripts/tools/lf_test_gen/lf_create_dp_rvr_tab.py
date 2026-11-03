@@ -195,6 +195,17 @@ May also enter custom Example 0..+100..700''')
         self.lf_dp_rvr_6g_dir_entry.grid(row=row, column=4, columnspan=2)
         self.window_tooltip.bind(self.lf_dp_rvr_6g_dir_entry, '''directory to place json, if blank will auto gen''')
 
+        row += 1
+        self.lf_dp_rvr_clear_files = ttk.Button(self.lf_dp_rvr_frame, text='Clear JSON Filenames',
+                                                command=self.dp_rvr_clear_files)
+        self.lf_dp_rvr_clear_files.grid(row=row, column=1, columnspan=2, sticky="news")
+        self.window_tooltip.bind(self.lf_dp_rvr_clear_files, 'Clear 2g, 5g and 6g JSON filenames; keep directories')
+
+        self.lf_dp_rvr_clear_dirs = ttk.Button(self.lf_dp_rvr_frame, text='Clear JSON Directories',
+                                               command=self.dp_rvr_clear_directories)
+        self.lf_dp_rvr_clear_dirs.grid(row=row, column=4, columnspan=2, sticky="news")
+        self.window_tooltip.bind(self.lf_dp_rvr_clear_dirs, 'Clear 2g, 5g and 6g JSON directories; keep filenames')
+
         # row 10
         row += 1
         self.lf_dp_rvr_duration = tkinter.Label(self.lf_dp_rvr_frame, text='test duration')
@@ -243,7 +254,7 @@ lf_inspect will compare performance between two individual runs for Chamber View
 
         self.lf_dp_rvr_clear = ttk.Button(self.lf_dp_rvr_frame, text='Clear DP, RvR Info', command=self.dp_rvr_clear_information)
         self.lf_dp_rvr_clear.grid(row=row, column=2, sticky="news", padx=20, pady=10)
-        self.window_tooltip.bind(self.lf_dp_rvr_clear, 'Clear File Names , use between test suite generation')
+        self.window_tooltip.bind(self.lf_dp_rvr_clear, 'Clear all JSON filename and directory fields')
 
         # Max Stations
         for widget in self.lf_dp_rvr_frame.winfo_children():
@@ -256,14 +267,16 @@ lf_inspect will compare performance between two individual runs for Chamber View
         # ------------------------------------------------------------------------------------
 
     def dp_rvr_clear_information(self):
-        self.lf_dp_rvr_2g_file_entry_var.set("")
-        self.lf_dp_rvr_5g_file_entry_var.set("")
-        self.lf_dp_rvr_6g_file_entry_var.set("")
-        self.lf_dp_rvr_2g_dir_entry_var.set("")
-        self.lf_dp_rvr_5g_dir_entry_var.set("")
-        self.lf_dp_rvr_6g_dir_entry_var.set("")
+        self.dp_rvr_clear_files()
+        self.dp_rvr_clear_directories()
 
-        # self.lf_dp_rvr_duration_entry_var.set("")
+    def dp_rvr_clear_files(self):
+        for band in ("2g", "5g", "6g"):
+            getattr(self, f"lf_dp_rvr_{band}_file_entry_var").set("")
+
+    def dp_rvr_clear_directories(self):
+        for band in ("2g", "5g", "6g"):
+            getattr(self, f"lf_dp_rvr_{band}_dir_entry_var").set("")
 
     def create_dp_json(self):
         self.dp_rvr_suite_type = "dp"
