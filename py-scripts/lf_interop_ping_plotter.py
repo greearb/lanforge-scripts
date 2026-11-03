@@ -82,6 +82,11 @@
     python3 lf_interop_ping_plotter.py --mgr 192.168.207.78 --real --target 8.8.8.8 --ping_interval 1 --ping_duration 1m --use_default_config
     --robot_ip 192.168.204.76 --coordinate 3,4 --do_bandsteering --total_cycles 3 --bssids 94:A6:7E:74:26:33,94:A6:7E:74:26:22
 
+    EXAMPLE-17:
+    Command Line Interface to run ping plotter test while the robot moves through the points (continuous measurement, no band steering)
+    python3 lf_interop_ping_plotter.py --mgr 192.168.207.78 --real --target 8.8.8.8 --ping_interval 1 --use_default_config
+    --robot_ip 192.168.204.76 --coordinate 3,4 --measurement_mode continuous --total_cycles 2
+
 
     SCRIPT_CLASSIFICATION : Test
 
@@ -176,7 +181,7 @@ class Ping(Realm):
                  wait_time=60,
                  floors=None,
                  get_live_view=None, robo_ip=None, angle_list=None, coordinate_list=None, rotation_enabled=None, local_lf_report_dir=None, do_bandsteering=False, total_cycles=1, bssids=None,
-                 duration_to_skip=None):
+                 duration_to_skip=None, measurement_mode="per_point"):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.host = host
@@ -252,6 +257,9 @@ class Ping(Realm):
         self.local_lf_report_dir = local_lf_report_dir
         self.pingduration = None
         self.do_bandsteering = do_bandsteering
+        # measurement mode: 'per_point' pings at each point, 'continuous' keeps pinging while the robot moves.
+        # Band steering always moves continuously; do_bandsteering only adds the BSSID tracking report.
+        self.is_continuous_run = do_bandsteering or (bool(robo_ip) and measurement_mode == "continuous")
         self.total_cycles = total_cycles
         self.bssids = bssids if bssids else []
 
@@ -982,15 +990,21 @@ class Ping(Realm):
             self.ui_report_dir,
             "../../Running_instances/{}_{}_running.json".format(self.host, test_name))
 
+        # the running file is gone when the test was deleted on the WebGUI: treat it as a stop
         if not os.path.exists(file_path):
-            return False
+            logging.info("Running JSON file is missing; treating the test as stopped")
+            return True
 
-        with open(file_path, 'r') as f:
-            run_status = json.load(f)
-            # Check if 'status' key exists and if the test is no longer running
-            if 'status' in run_status.keys() and run_status["status"] != "Running":
-                logging.info("Test is stopped by the user")
-                return True
+        try:
+            with open(file_path, 'r') as f:
+                run_status = json.load(f)
+        except ValueError:
+            # the WebGUI may be rewriting the file; check again on the next call
+            return False
+        # Check if 'status' key exists and if the test is no longer running
+        if 'status' in run_status.keys() and run_status["status"] != "Running":
+            logging.info("Test is stopped by the user")
+            return True
 
         return False
 
@@ -1016,7 +1030,7 @@ class Ping(Realm):
                 #     new_dict[((int(seq) -1) * interval + self.start_time).strftime("%d/%m/%Y %H:%M:%S")] = rtt
                 data[device]['webui_rtts'] = new_dict
         # save runtime ping data based on robo_ip and bandsteering status
-        if (self.robo_ip and self.do_bandsteering) or (self.robo_ip is None):
+        if (self.robo_ip and self.is_continuous_run) or (self.robo_ip is None):
             with open(self.ui_report_dir + '/runtime_ping_data.json', 'w') as f:
                 json.dump(data, f, indent=4)
         else:
@@ -1027,15 +1041,22 @@ class Ping(Realm):
                 json.dump(data, f, indent=4)
 
         test_name = self.ui_report_dir.split("/")[-1]
-        with open(self.ui_report_dir + '/../../Running_instances/{}_{}_running.json'.format(self.host, test_name), 'r') as f:
-            run_status = json.load(f)
-            if run_status["status"] != "Running":
-                logging.info('Test is stopped by the user')
-                return False
+        # a missing running file (test deleted on the WebGUI) is treated as a stop, so the report is still written;
+        # a half-written file (the WebGUI may be rewriting it) is checked again on the next call
+        try:
+            with open(self.ui_report_dir + '/../../Running_instances/{}_{}_running.json'.format(self.host, test_name), 'r') as f:
+                stopped_by_webui = json.load(f).get("status") != "Running"
+        except FileNotFoundError:
+            stopped_by_webui = True
+        except ValueError:
+            stopped_by_webui = False
+        if stopped_by_webui:
+            logging.info('Test is stopped by the user')
+            return False
         return True
 
     def set_webUI_stop(self):
-        if self.robo_ip is None or self.do_bandsteering:
+        if self.robo_ip is None or self.is_continuous_run:
             filename = "runtime_ping_data.json"
         else:
             filename = "{}_runtime_ping_data.json".format(self.currentcoordinate)
@@ -1332,7 +1353,7 @@ class Ping(Realm):
                 'Duration': self.duration
             }
             # if bandsteering is enabled
-            if self.do_bandsteering:
+            if self.is_continuous_run:
                 del test_setup_info["Duration"]
                 test_setup_info["Robot IP"] = self.robo_ip
                 test_setup_info["Selected Coordinates"] = ",".join(self.coordinate_list)
@@ -1738,14 +1759,20 @@ class Ping(Realm):
                         break
                     time.sleep(1)
 
-                # Only proceed if all three images exist after waiting
-                if os.path.exists(packet_sent_image) and os.path.exists(packet_recv_image) and os.path.exists(packet_loss_image):
-                    report.set_custom_html(f"<h2>Floor {floor + 1} - Ping Packet Sent vs Received vs Lost:</h2>")
-                    report.build_custom()
-
-                    for image_path in [packet_sent_image, packet_recv_image, packet_loss_image]:
+                report.set_custom_html(f"<h2>Floor {floor + 1} - Ping Packet Sent vs Received vs Lost:</h2>")
+                report.build_custom()
+                # each image, or a note in its place (as in the throughput report) so the report shows what is missing
+                for label, image_path in (("Ping Packets Sent", packet_sent_image),
+                                          ("Ping Packets Received", packet_recv_image),
+                                          ("Ping Packet Loss", packet_loss_image)):
+                    if os.path.exists(image_path):
                         report.set_custom_html(f'<img src="file://{image_path}" style="width:1200px; height:800px;"></img>')
-                        report.build_custom()
+                    else:
+                        logging.warning("Live view image not found within %s seconds: %s", timeout, image_path)
+                        report.set_custom_html(
+                            f'<p><i>{label} heatmap (Floor {floor + 1}) is not available - the capture may '
+                            'have failed or the browser was closed before it was uploaded.</i></p>')
+                    report.build_custom()
 
     def store_bandsteeringcsv(self):
         """
@@ -1821,11 +1848,19 @@ class Ping(Realm):
                 stop_status is True if the WebUI requested an abort.
                 - In standard mode: returns None implicitly after the loop ends.
         """
-        logging.info("Monitoringcx")
+        # a continuous run calls monitor() on every tick, so log only its first call
+        if self.is_continuous_run:
+            if self.monitor_start_time is None:
+                logging.info("Monitoring ping on {} device(s) while the robot moves through the points".format(len(self.sta_list)))
+        elif coord is not None:
+            logging.info("Monitoring ping on {} device(s) at point {}{} for {} seconds".format(
+                len(self.sta_list), coord, " (angle {})".format(angle) if angle is not None else "", duration))
+        else:
+            logging.info("Monitoring ping on {} device(s)".format(len(self.sta_list)))
         if self.all_devices_stopped:
             # already gave up on recovery earlier; don't re-run the 40s wait on every bandsteering tick
-            return (individual_df, True) if self.do_bandsteering else None
-        if self.do_bandsteering:
+            return (individual_df, True) if self.is_continuous_run else None
+        if self.is_continuous_run:
             # one continuous session: start the grace period once, not every tick
             if self.monitor_start_time is None:
                 self.monitor_start_time = datetime.now()
@@ -1886,13 +1921,13 @@ class Ping(Realm):
                 break
             # logging.info(result_data)
             # Robot battery management — check every 300 seconds
-            if self.robot is not None and not self.do_bandsteering and monitor_charge_time is not None:
+            if self.robot is not None and not self.is_continuous_run and monitor_charge_time is not None:
                 if ((datetime.now() - monitor_charge_time).total_seconds() >= 300):
                     pause_monitor, stop_test = self.robot.wait_for_battery(stop=self.stop_generic)
                     if stop_test:
                         break
                     if pause_monitor:
-                        reached = self.robot.move_to_coordinate(coord)
+                        reached, _ = self.robot.move_to_coordinate(coord)  # (matched, abort): a bare tuple is always truthy
                         if not reached:
                             continue
                         self.start_generic()
@@ -2136,14 +2171,14 @@ class Ping(Realm):
                 # print("resultttjsonnn",self.result_json)
 
             # Robot result tracking (non-band-steering mode)
-            if self.robot is not None and not self.do_bandsteering:
+            if self.robot is not None and not self.is_continuous_run:
                 self.track_resultjson()
 
             # WebUI abort check — stop if the user requested a test abort
             if self.do_webUI:
                 if not self.store_csv():
                     logging.info('Aborted test from webUI')
-                    if self.do_bandsteering:
+                    if self.is_continuous_run:
                         individual_data, stop_status = self.store_bandsteeringcsv()
                         stop_status = True
                         individual_df.to_csv('bandsteering_data.csv', index=False)
@@ -2151,7 +2186,7 @@ class Ping(Realm):
                         return individual_df, stop_status
                     break
 
-            if self.do_bandsteering:
+            if self.is_continuous_run:
                 individual_data, stop_status = self.store_bandsteeringcsv()
                 if not stop_status:
                     individual_df.loc[len(individual_df)] = individual_data
@@ -2210,11 +2245,16 @@ class Ping(Realm):
         initial_duration = self.pingduration
         stop_test = False
         # Band-steering mode
-        if self.do_bandsteering:
+        if self.is_continuous_run:
             reached = False
             coordinate_list_with_robo = self.robot.get_coordinates_list()
             if (len(coordinate_list_with_robo) == 0):
-                logging.config("Coordinate list is empty")
+                # The robot could not reach any coordinate, so nothing was measured and there is no report to build
+                logging.error("No data was collected because the robot could not reach any coordinate; ending the test.")
+                # tell the WebGUI the robot run is over (Test_status Aborted in nav_data.json)
+                self.robot.update_nav_data_for_all_cxs_stopped()
+                self.cleanup()
+                return
 
             self.robot.do_bandsteering = True
             columns = []
@@ -2227,8 +2267,11 @@ class Ping(Realm):
             columns.extend(['TIMESTAMP', 'Robot X', 'Robot Y', 'To Coordinate', 'From Coordinate'])
             individual_df = pd.DataFrame(columns=columns)
 
+            curr_cycle = 1
+            logging.info("Starting cycle {} of {}".format(curr_cycle, self.total_cycles))
             for coord in coordinate_list_with_robo:
-                pause, stopped = self.robot.wait_for_battery(lambda: self.monitor(individual_df))
+                # keep monitoring while the robot goes to charge and charges
+                pause, stopped, _ = self.robot.wait_for_battery(monitor_function=lambda: self.monitor(individual_df))
 
                 if stopped:
                     break
@@ -2237,10 +2280,19 @@ class Ping(Realm):
                     coord,
                     monitor_function=lambda: self.monitor(individual_df))
 
-                if not matched:
-                    logging.info("Skipped moving to point {}".format(coord))
+                if matched:
+                    logging.info("Reached point {}".format(coord))
+                else:
+                    logging.info("Could not reach point {}, skipping it".format(coord))
                 if abort:
                     break
+                if coord == self.coordinate_list[0]:
+                    logging.info("Completed cycle {} of {}".format(curr_cycle, self.total_cycles))
+                    curr_cycle += 1
+                    if curr_cycle > int(self.total_cycles):
+                        logging.info("Completed all {} cycles".format(self.total_cycles))
+                    else:
+                        logging.info("Starting cycle {} of {}".format(curr_cycle, self.total_cycles))
 
             self.stop_generic()
 
@@ -2260,9 +2312,16 @@ class Ping(Realm):
                     break
             # Pause if battery is low, then navigate to the next coordinate
             pause, stop_test = self.robot.wait_for_battery()
+            # stopped from the WebGUI while the robot was charging
+            if stop_test:
+                break
             matched, abort = self.robot.move_to_coordinate(coord)
             if abort:
                 break
+            # the robot could not reach this point: skip it rather than label another location's results with it
+            if not matched:
+                logging.info("Could not reach point {}, skipping it".format(coord))
+                continue
             self.coordinates_completed.append(coord)
             self.currentcoordinate = coord
 
@@ -2290,7 +2349,7 @@ class Ping(Realm):
                     if stop_test:
                         break
                     if pause_angle:
-                        reached = self.robot.move_to_coordinate(coord)
+                        reached, _ = self.robot.move_to_coordinate(coord)  # (matched, abort): a bare tuple is always truthy
                         if not reached:
                             continue
                         self.start_generic()
@@ -2422,6 +2481,9 @@ class Ping(Realm):
             self.result_json = result_json
         if not self.coordinate_json:
             logger.error("No ping data was collected for any coordinate; skipping report generation.")
+            # tell the WebGUI the robot run is over (Test_status Aborted in nav_data.json), so its page stops waiting
+            if getattr(self, "robot", None) is not None:
+                self.robot.update_nav_data_for_all_cxs_stopped()
             return
         logging.info('Generating Report')
 
@@ -3112,6 +3174,11 @@ connectivity problems.
         python3 lf_interop_ping_plotter.py --mgr 192.168.207.78 --real --target 8.8.8.8 --ping_interval 1 --ping_duration 1m --use_default_config
         --robot_ip 192.168.204.76 --coordinate 3,4 --do_bandsteering --total_cycles 3 --bssids 94:A6:7E:74:26:33,94:A6:7E:74:26:22
 
+        EXAMPLE-17:
+        Command Line Interface to run ping plotter test while the robot moves through the points (continuous measurement, no band steering)
+        python3 lf_interop_ping_plotter.py --mgr 192.168.207.78 --real --target 8.8.8.8 --ping_interval 1 --use_default_config
+        --robot_ip 192.168.204.76 --coordinate 3,4 --measurement_mode continuous --total_cycles 2
+
 
 
         SCRIPT_CLASSIFICATION : Test
@@ -3281,7 +3348,10 @@ connectivity problems.
     optional.add_argument('--coordinate', help="The coordinate dictionary consists points and their respective x and y values")
     optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
-    optional.add_argument('--total_cycles', help='Iterations', default="1")
+    optional.add_argument('--measurement_mode', choices=['per_point', 'continuous'], default='per_point',
+                          help="Robot measurement mode: 'per_point' pings at each point (and angle), "
+                               "'continuous' keeps pinging while the robot moves through the points --total_cycles times")
+    optional.add_argument('--total_cycles', help='No of times the robot goes through the points in a continuous or band steering run', default="1")
     optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
     optional.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
 
@@ -3410,7 +3480,7 @@ connectivity problems.
                 ui_report_dir=ui_report_dir, csv_name=args.device_csv_name, expected_passfail_val=args.expected_passfail_value, wait_time=args.wait_time, group_name=group_name,
                 floors=args.floors, get_live_view=args.get_live_view, robo_ip=robo_ip, rotation_enabled=rotation_enabled, coordinate_list=coord_list, angle_list=angle_list,
                 local_lf_report_dir=args.local_lf_report_dir, do_bandsteering=args.do_bandsteering, total_cycles=args.total_cycles, bssids=args.bssids.split(",") if args.bssids else [],
-                duration_to_skip=args.duration_to_skip)
+                duration_to_skip=args.duration_to_skip, measurement_mode=args.measurement_mode)
     ping.pingduration = duration
     # creating virtual stations if --virtual flag is specified
     if args.virtual:
