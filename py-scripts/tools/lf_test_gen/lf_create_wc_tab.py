@@ -80,83 +80,93 @@ class lf_create_wc_tab():
         self.lf_wc_6g_dir_entry.grid(row=3, column=4, columnspan=2)
         self.window_tooltip.bind(self.lf_wc_6g_file_entry, '''Directory for Wifi Capacity Test Suite, if blank will show dir created in''')
 
+        self.lf_wc_clear_files = ttk.Button(
+            self.lf_wc_frame, text='Clear JSON Filenames', command=self.wc_clear_files)
+        self.lf_wc_clear_files.grid(row=4, column=1, columnspan=2, sticky="news")
+        self.window_tooltip.bind(self.lf_wc_clear_files, 'Clear 2g, 5g and 6g JSON filenames; keep directories')
+
+        self.lf_wc_clear_dirs = ttk.Button(
+            self.lf_wc_frame, text='Clear JSON Directories', command=self.wc_clear_directories)
+        self.lf_wc_clear_dirs.grid(row=4, column=4, columnspan=2, sticky="news")
+        self.window_tooltip.bind(self.lf_wc_clear_dirs, 'Clear 2g, 5g and 6g JSON directories; keep filenames')
+
         self.lf_wc_duration = tkinter.Label(self.lf_wc_frame, text='test duration (ms)')
-        self.lf_wc_duration.grid(row=4, column=0)
+        self.lf_wc_duration.grid(row=5, column=0)
         self.lf_wc_duration_combobox = ttk.Combobox(self.lf_wc_frame, values=["<Custom>", "5000 (5 sec)", "10000 (10 sec)", "15000 (15 sec)", "20000 (20 sec)", "30000 (30 sec)", "60000 (1 min)", "300000 (5min)"])  # noqa: E501
         self.lf_wc_duration_combobox.current(3)
-        self.lf_wc_duration_combobox.grid(row=4, column=1)
+        self.lf_wc_duration_combobox.grid(row=5, column=1)
         self.window_tooltip.bind(self.lf_wc_duration_combobox, '''Select the duration of each iteration  ''')
 
         self.lf_wc_number_dut_indexes = tkinter.Label(self.lf_wc_frame, text="Number DUT Indexes")
-        self.lf_wc_number_dut_indexes.grid(row=4, column=2)
+        self.lf_wc_number_dut_indexes.grid(row=5, column=2)
         self.lf_wc_number_dut_indexes_combobox = ttk.Combobox(self.lf_wc_frame, values=["1", "2", "3", "4"])
         self.lf_wc_number_dut_indexes_combobox.current(2)
-        self.lf_wc_number_dut_indexes_combobox.grid(row=4, column=3)
+        self.lf_wc_number_dut_indexes_combobox.grid(row=5, column=3)
         self.window_tooltip.bind(self.lf_wc_number_dut_indexes_combobox, '''Number of DUT indexes valid in the DUT json''')
 
         self.lf_wc_sta_profile = tkinter.Label(self.lf_wc_frame, text="Station Profile")
-        self.lf_wc_sta_profile.grid(row=5, column=0)
+        self.lf_wc_sta_profile.grid(row=6, column=0)
         self.lf_wc_sta_profile_combobox = ttk.Combobox(self.lf_wc_frame, values=["STA-AUTO", "STA-AC", "STA-AX", "STA-AX-160", "STA-BE", "STA-abg", "STA-n"])
         self.lf_wc_sta_profile_combobox.current(0)
-        self.lf_wc_sta_profile_combobox.grid(row=5, column=1)
+        self.lf_wc_sta_profile_combobox.grid(row=6, column=1)
         self.window_tooltip.bind(self.lf_wc_sta_profile_combobox, '''Station profile,  when using stations greater then 1 ,
 MU MIMO will perform poor for AX radios for virtual stations greater then one, use STA-AC''')
 
         self.lf_wc_sta_protocol = tkinter.Label(self.lf_wc_frame, text="Protocol")
-        self.lf_wc_sta_protocol.grid(row=5, column=2)
+        self.lf_wc_sta_protocol.grid(row=6, column=2)
         self.lf_wc_sta_protocol_combobox = ttk.Combobox(self.lf_wc_frame, values=["UDP", "TCP", "UDP-IPv4", "TCP and UDP"])
         self.lf_wc_sta_protocol_combobox.current(2)
-        self.lf_wc_sta_protocol_combobox.grid(row=5, column=3)
+        self.lf_wc_sta_protocol_combobox.grid(row=6, column=3)
         self.window_tooltip.bind(self.lf_wc_sta_protocol_combobox, '''The network traffic protocal type to be generated''')
 
         self.lf_wc_dl_rate = tkinter.Label(self.lf_wc_frame, text="dl_rate")
-        self.lf_wc_dl_rate.grid(row=6, column=0)
+        self.lf_wc_dl_rate.grid(row=7, column=0)
         self.lf_wc_dl_rate_combobox = ttk.Combobox(self.lf_wc_frame, values=["custom>", "0", "9.6K", "56K", "128K", "256K", "384K", "768K", "1M",
                                                                              "1.544M", "2M", "6M", "10M", "30M", "37M", "44.736M", "100M", "152M",
                                                                              "155.52M", "304M", "622.08M", "1G", "2.488G", "4.97664G",
                                                                              "5G", "9.94328G", "10G", "20G", "25G", "40G", "50G", "100G"])
         self.lf_wc_dl_rate_combobox.current(8)
-        self.lf_wc_dl_rate_combobox.grid(row=6, column=1)
+        self.lf_wc_dl_rate_combobox.grid(row=7, column=1)
         self.window_tooltip.bind(self.lf_wc_dl_rate_combobox, '''Download Rate enter number or number followed by K M or G''')
 
         self.lf_wc_ul_rate = tkinter.Label(self.lf_wc_frame, text="ul_rate")
-        self.lf_wc_ul_rate.grid(row=6, column=2)
+        self.lf_wc_ul_rate.grid(row=7, column=2)
         self.lf_wc_ul_rate_combobox = ttk.Combobox(self.lf_wc_frame, values=["custom>", "0", "9.6K", "56K", "128K", "256K", "384K", "768K", "1M",
                                                                              "1.544M", "2M", "6M", "10M", "30M", "37M", "44.736M", "100M",
                                                                              "152M", "155.52M", "304M", "622.08M", "1G", "2.488G", "4.97664G",
                                                                              "5G", "9.94328G", "10G", "20G", "25G", "40G", "50G", "100G"])
         self.lf_wc_ul_rate_combobox.current(8)
-        self.lf_wc_ul_rate_combobox.grid(row=6, column=3)
+        self.lf_wc_ul_rate_combobox.grid(row=7, column=3)
         self.window_tooltip.bind(self.lf_wc_ul_rate_combobox, '''Upload Rate enter number or number followed by K M or G''')
 
         self.lf_wc_dut_traffic_direction_label = tkinter.Label(self.lf_wc_frame, text="Traffic Direction")
-        self.lf_wc_dut_traffic_direction_label.grid(row=6, column=4)
+        self.lf_wc_dut_traffic_direction_label.grid(row=7, column=4)
         self.lf_wc_dut_traffic_direction_combobox = ttk.Combobox(self.lf_wc_frame, values=["DUT DL", "DUT UL", "DUT DL;DUT UL"])
         self.lf_wc_dut_traffic_direction_combobox.current(2)
-        self.lf_wc_dut_traffic_direction_combobox.grid(row=6, column=5)
+        self.lf_wc_dut_traffic_direction_combobox.grid(row=7, column=5)
         self.window_tooltip.bind(self.lf_wc_dut_traffic_direction_combobox, '''Select DUT Download or DUT Upload''')
 
         self.lf_wc_use_qa_var = tkinter.StringVar(value="Use")
         self.lf_wc_use_qa_check = tkinter.Checkbutton(self.lf_wc_frame, text="lf_qa", variable=self.lf_wc_use_qa_var,
                                                       onvalue="Use", offvalue="Do Not Use")
-        self.lf_wc_use_qa_check.grid(row=7, column=0)
+        self.lf_wc_use_qa_check.grid(row=8, column=0)
         self.window_tooltip.bind(self.lf_wc_use_qa_check, '''Recommended: Wifi Capacity Test Suite Json will include lf_qa.
 lf_qa will compare performance over multiple runs for Chamber View tests and tests that include kpi''')
 
         self.lf_wc_use_inspect_var = tkinter.StringVar(value="Use")
         self.lf_wc_use_inspect_check = tkinter.Checkbutton(self.lf_wc_frame, text="lf_inspect", variable=self.lf_wc_use_inspect_var,
                                                            onvalue="Use", offvalue="Do Not Use")
-        self.lf_wc_use_inspect_check.grid(row=7, column=1)
+        self.lf_wc_use_inspect_check.grid(row=8, column=1)
         self.window_tooltip.bind(self.lf_wc_use_inspect_check, '''Recommended: Wifi Capacity Test Suite Json will include lf_inspect.
 lf_inspect will compare performance between two individual runs for Chamber View tests and tests that include kpi''')
 
         self.lf_wc_save = ttk.Button(self.lf_wc_frame, text='Create Wifi Capacity Test Suite Json', command=self.create_wc_json)
-        self.lf_wc_save.grid(row=8, column=0, sticky="news", padx=20, pady=10)
+        self.lf_wc_save.grid(row=9, column=0, sticky="news", padx=20, pady=10)
         wc_tool_tip_text = "Save Wifi Capacity Json File in directory specified in 'json dir' entry or will create \n In Current Working Directory: {}".format(self.current_working_directory)
         self.window_tooltip.bind(self.lf_wc_save, wc_tool_tip_text)
 
         self.lf_wc_clear = ttk.Button(self.lf_wc_frame, text='Clear WC Info', command=self.wc_clear_information)
-        self.lf_wc_clear.grid(row=8, column=1, sticky="news", padx=20, pady=10)
+        self.lf_wc_clear.grid(row=9, column=1, sticky="news", padx=20, pady=10)
         self.window_tooltip.bind(self.lf_wc_clear, 'Clear Wifi Capacity Information, use between test suite generation')
 
         # Max Stations
@@ -170,12 +180,16 @@ lf_inspect will compare performance between two individual runs for Chamber View
         # ------------------------------------------------------------------------------------
 
     def wc_clear_information(self):
-        self.lf_wc_2g_file_entry_var.set("")
-        self.lf_wc_5g_file_entry_var.set("")
-        self.lf_wc_6g_file_entry_var.set("")
-        self.lf_wc_2g_dir_entry_var.set("")
-        self.lf_wc_5g_dir_entry_var.set("")
-        self.lf_wc_6g_dir_entry_var.set("")
+        self.wc_clear_files()
+        self.wc_clear_directories()
+
+    def wc_clear_files(self):
+        for band in ("2g", "5g", "6g"):
+            getattr(self, f"lf_wc_{band}_file_entry_var").set("")
+
+    def wc_clear_directories(self):
+        for band in ("2g", "5g", "6g"):
+            getattr(self, f"lf_wc_{band}_dir_entry_var").set("")
 
     def create_wc_json(self):
         if not self.radio_frame.apply_lanforge_radio_information(show_confirmation=False):

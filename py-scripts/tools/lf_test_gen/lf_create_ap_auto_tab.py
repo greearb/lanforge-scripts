@@ -26,9 +26,6 @@ class lf_create_ap_auto_tab():
         #
         # ------------------------------------------------------------------------------------
 
-        self.lf_ap_auto_tab_frame = tkinter.Frame(self.ap_auto_tab)
-        self.lf_ap_auto_tab_frame.pack()
-
         # file and directory
         self.lf_ap_auto_tab_frame = tkinter.Frame(self.ap_auto_tab)
         self.lf_ap_auto_tab_frame.pack()
@@ -37,66 +34,91 @@ class lf_create_ap_auto_tab():
         self.lf_ap_auto_frame = tkinter.LabelFrame(self.lf_ap_auto_tab_frame, text="AP Auto")
         self.lf_ap_auto_frame.grid(row=0, column=0, sticky="news", padx=20, pady=10)
 
-        self.lf_ap_auto_2g_file = tkinter.Label(self.lf_ap_auto_frame, text='2g json file')
+        # Size the file rows independently of the wider controls below them.
+        self.lf_ap_auto_files_frame = tkinter.Frame(self.lf_ap_auto_frame)
+        self.lf_ap_auto_files_frame.grid(row=0, column=0, columnspan=6)
+
+        self.lf_ap_auto_2g_file = tkinter.Label(self.lf_ap_auto_files_frame, text='2g json file')
         self.lf_ap_auto_2g_file.grid(row=1, column=0)
         self.lf_ap_auto_2g_file_entry_var = tkinter.StringVar()
         self.lf_ap_auto_2g_file_entry_var.set("")
-        self.lf_ap_auto_2g_file_entry = tkinter.Entry(self.lf_ap_auto_frame, textvariable=self.lf_ap_auto_2g_file_entry_var, width=48)
+        self.lf_ap_auto_2g_file_entry = tkinter.Entry(self.lf_ap_auto_files_frame, textvariable=self.lf_ap_auto_2g_file_entry_var, width=48)
         self.lf_ap_auto_2g_file_entry.grid(row=1, column=1, columnspan=2)
         self.window_tooltip.bind(self.lf_ap_auto_2g_file_entry, '''Auto generated name for AP Auto Test Suite''')
 
-        self.lf_ap_auto_2g_dir = tkinter.Label(self.lf_ap_auto_frame, text='2g json dir')
+        self.lf_ap_auto_2g_dir = tkinter.Label(self.lf_ap_auto_files_frame, text='2g json dir')
         self.lf_ap_auto_2g_dir.grid(row=1, column=3)
         self.lf_ap_auto_2g_dir_entry_var = tkinter.StringVar()
         self.lf_ap_auto_2g_dir_entry_var.set("")
-        self.lf_ap_auto_2g_dir_entry = tkinter.Entry(self.lf_ap_auto_frame, textvariable=self.lf_ap_auto_2g_dir_entry_var, width=48)
+        self.lf_ap_auto_2g_dir_entry = tkinter.Entry(self.lf_ap_auto_files_frame, textvariable=self.lf_ap_auto_2g_dir_entry_var, width=48)
         self.lf_ap_auto_2g_dir_entry.grid(row=1, column=4, columnspan=2)
         self.window_tooltip.bind(self.lf_ap_auto_2g_dir_entry, '''Directory for AP Auto Test Suite, if blank will show dir created in''')
 
-        self.lf_ap_auto_5g_file = tkinter.Label(self.lf_ap_auto_frame, text='5g json file')
+        self.lf_ap_auto_5g_file = tkinter.Label(self.lf_ap_auto_files_frame, text='5g json file')
         self.lf_ap_auto_5g_file.grid(row=2, column=0)
         self.lf_ap_auto_5g_file_entry_var = tkinter.StringVar()
         self.lf_ap_auto_5g_file_entry_var.set("")
-        self.lf_ap_auto_5g_file_entry = tkinter.Entry(self.lf_ap_auto_frame, textvariable=self.lf_ap_auto_5g_file_entry_var, width=48)
+        self.lf_ap_auto_5g_file_entry = tkinter.Entry(self.lf_ap_auto_files_frame, textvariable=self.lf_ap_auto_5g_file_entry_var, width=48)
         self.lf_ap_auto_5g_file_entry.grid(row=2, column=1, columnspan=2)
         self.window_tooltip.bind(self.lf_ap_auto_5g_file_entry, '''Auto generated name for AP Auto Test Suite''')
 
-        self.lf_ap_auto_5g_dir = tkinter.Label(self.lf_ap_auto_frame, text='5g json dir')
+        self.lf_ap_auto_5g_dir = tkinter.Label(self.lf_ap_auto_files_frame, text='5g json dir')
         self.lf_ap_auto_5g_dir.grid(row=2, column=3)
         self.lf_ap_auto_5g_dir_entry_var = tkinter.StringVar()
         self.lf_ap_auto_5g_dir_entry_var.set("")
-        self.lf_ap_auto_5g_dir_entry = tkinter.Entry(self.lf_ap_auto_frame, textvariable=self.lf_ap_auto_5g_dir_entry_var, width=48)
+        self.lf_ap_auto_5g_dir_entry = tkinter.Entry(self.lf_ap_auto_files_frame, textvariable=self.lf_ap_auto_5g_dir_entry_var, width=48)
         self.lf_ap_auto_5g_dir_entry.grid(row=2, column=4, columnspan=2)
         self.window_tooltip.bind(self.lf_ap_auto_5g_dir_entry, '''Directory for AP Auto Test Suite, if blank will show dir created in''')
 
-        self.lf_ap_auto_6g_file = tkinter.Label(self.lf_ap_auto_frame, text='6g json file')
+        self.lf_ap_auto_6g_file = tkinter.Label(self.lf_ap_auto_files_frame, text='6g json file')
         self.lf_ap_auto_6g_file.grid(row=3, column=0)
         self.lf_ap_auto_6g_file_entry_var = tkinter.StringVar()
         self.lf_ap_auto_6g_file_entry_var.set("")
-        self.lf_ap_auto_6g_file_entry = tkinter.Entry(self.lf_ap_auto_frame, textvariable=self.lf_ap_auto_6g_file_entry_var, width=48)
+        self.lf_ap_auto_6g_file_entry = tkinter.Entry(self.lf_ap_auto_files_frame, textvariable=self.lf_ap_auto_6g_file_entry_var, width=48)
         self.lf_ap_auto_6g_file_entry.grid(row=3, column=1, columnspan=2)
         self.window_tooltip.bind(self.lf_ap_auto_6g_file_entry, '''Auto generated name for AP Auto Test Suite''')
 
-        self.lf_ap_auto_6g_dir = tkinter.Label(self.lf_ap_auto_frame, text='6g json dir')
+        self.lf_ap_auto_6g_dir = tkinter.Label(self.lf_ap_auto_files_frame, text='6g json dir')
         self.lf_ap_auto_6g_dir.grid(row=3, column=3)
         self.lf_ap_auto_6g_dir_entry_var = tkinter.StringVar()
         self.lf_ap_auto_6g_dir_entry_var.set("")
-        self.lf_ap_auto_6g_dir_entry = tkinter.Entry(self.lf_ap_auto_frame, textvariable=self.lf_ap_auto_6g_dir_entry_var, width=48)
+        self.lf_ap_auto_6g_dir_entry = tkinter.Entry(self.lf_ap_auto_files_frame, textvariable=self.lf_ap_auto_6g_dir_entry_var, width=48)
         self.lf_ap_auto_6g_dir_entry.grid(row=3, column=4, columnspan=2)
         self.window_tooltip.bind(self.lf_ap_auto_6g_file_entry, '''Directory for AP Auto Test Suite, if blank will show dir created in''')
 
+        # Keep the button aligned with the entries even when other controls widen the columns.
+        self.lf_ap_auto_clear_files_frame = tkinter.Frame(self.lf_ap_auto_files_frame)
+        self.lf_ap_auto_clear_files_frame.grid(row=4, column=1, columnspan=2)
+        self.lf_ap_auto_clear_files = ttk.Button(
+            self.lf_ap_auto_clear_files_frame, text='Clear JSON Filenames', command=self.ap_auto_clear_files)
+        self.lf_ap_auto_clear_files_frame.configure(
+            width=self.lf_ap_auto_2g_file_entry.winfo_reqwidth(),
+            height=self.lf_ap_auto_clear_files.winfo_reqheight())
+        self.lf_ap_auto_clear_files_frame.pack_propagate(False)
+        self.lf_ap_auto_clear_files.pack(fill="both", expand=True)
+        self.window_tooltip.bind(self.lf_ap_auto_clear_files, 'Clear 2g, 5g and 6g JSON filenames; keep directories')
+
+        self.lf_ap_auto_clear_dirs = ttk.Button(
+            self.lf_ap_auto_files_frame, text='Clear JSON Directories', command=self.ap_auto_clear_directories)
+        self.lf_ap_auto_clear_dirs.grid(row=4, column=4, columnspan=2, sticky="news")
+        self.window_tooltip.bind(self.lf_ap_auto_clear_dirs, 'Clear 2g, 5g and 6g JSON directories; keep filenames')
+
         self.lf_ap_auto_duration = tkinter.Label(self.lf_ap_auto_frame, text='test duration (ms)')
-        self.lf_ap_auto_duration.grid(row=4, column=0)
+        self.lf_ap_auto_duration.grid(row=5, column=0)
         self.lf_ap_auto_duration_combobox = ttk.Combobox(self.lf_ap_auto_frame, values=["<Custom>", "5000 (5 sec)", "10000 (10 sec)", "15000 (15 sec)", "20000 (20 sec)", "30000 (30 sec)", "60000 (1 min)", "300000 (5min)"])  # noqa: E501
         self.lf_ap_auto_duration_combobox.current(3)
-        self.lf_ap_auto_duration_combobox.grid(row=4, column=1)
+        self.lf_ap_auto_duration_combobox.grid(row=5, column=1)
         self.window_tooltip.bind(self.lf_ap_auto_duration_combobox, '''Select the duration of each iteration  ''')
+
+        # Keep long test names out of the filename and duration column sizing.
+        self.lf_ap_auto_tests_frame = tkinter.Frame(self.lf_ap_auto_frame)
+        self.lf_ap_auto_tests_frame.grid(row=6, column=0, columnspan=6, sticky="w")
 
         # Column 0
         self.lf_ap_auto_basic_client_connectivity_var = tkinter.StringVar(value="Use")
-        self.lf_ap_auto_basic_client_connectivity_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Basic Client Connectivity (basic_cx)", variable=self.lf_ap_auto_basic_client_connectivity_var,  # noqa: E501
+        self.lf_ap_auto_basic_client_connectivity_check = tkinter.Checkbutton(self.lf_ap_auto_tests_frame, text="Basic Client Connectivity (basic_cx)", variable=self.lf_ap_auto_basic_client_connectivity_var,  # noqa: E501
                                                                               onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_basic_client_connectivity_check.grid(row=5, column=0, sticky="news")
+        self.lf_ap_auto_basic_client_connectivity_check.grid(row=0, column=0, sticky="w", padx=10, pady=5)
         self.window_tooltip.bind(self.lf_ap_auto_basic_client_connectivity_check, '''Basic Client Connectivity (basic_cx)
         Creates stations, associates them, and measures connection time.
         Supports multiple loops.
@@ -104,9 +126,9 @@ class lf_create_ap_auto_tab():
         Configuration key: basic_cx''')
 
         self.lf_ap_auto_band_steering_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_band_steering_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Band Steering (band_steering)", variable=self.lf_ap_auto_band_steering_var,
+        self.lf_ap_auto_band_steering_check = tkinter.Checkbutton(self.lf_ap_auto_tests_frame, text="Band Steering (band_steering)", variable=self.lf_ap_auto_band_steering_var,
                                                                   onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_band_steering_check.grid(row=6, column=0, sticky="news")
+        self.lf_ap_auto_band_steering_check.grid(row=1, column=0, sticky="w", padx=10, pady=5)
         self.window_tooltip.bind(self.lf_ap_auto_band_steering_check, '''Band Steering
         Test weather AP will direct stations to lesser utilized channel.
         Requires that SSID are the same for all DUT radios
@@ -115,9 +137,9 @@ class lf_create_ap_auto_tab():
         Configuration key: band_steering''')
 
         self.lf_ap_auto_capacity_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_capacity_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Capacity (capacity)", variable=self.lf_ap_auto_capacity_var,
+        self.lf_ap_auto_capacity_check = tkinter.Checkbutton(self.lf_ap_auto_tests_frame, text="Capacity (capacity)", variable=self.lf_ap_auto_capacity_var,
                                                              onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_capacity_check.grid(row=7, column=0)
+        self.lf_ap_auto_capacity_check.grid(row=2, column=0, sticky="w", padx=10, pady=5)
         self.window_tooltip.bind(self.lf_ap_auto_capacity_check, '''Capacity
 Throughput with different numbers of stations, and optionally,
 different /a/b/g/n/AC modes, NSS, and packet sizes.
@@ -126,25 +148,24 @@ Estimated duration: 27 minutes.
 Configuration key: capacity''')
 
         self.lf_ap_auto_channel_switching_test_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_channel_switching_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Channel Switching (channel_switch)", variable=self.lf_ap_auto_channel_switching_test_var,
+        self.lf_ap_auto_channel_switching_check = tkinter.Checkbutton(self.lf_ap_auto_tests_frame, text="Channel Switching (channel_switch)", variable=self.lf_ap_auto_channel_switching_test_var,
                                                                       onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_channel_switching_check.grid(row=8, column=0, sticky="news")
+        self.lf_ap_auto_channel_switching_check.grid(row=3, column=0, sticky="w", padx=10, pady=5)
         self.window_tooltip.bind(self.lf_ap_auto_channel_switching_check, '''Channel Switching
 Configuration key: channel_switch''')
 
         self.lf_ap_auto_long_term_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_long_term_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Long Term (long_term)", variable=self.lf_ap_auto_long_term_var,
+        self.lf_ap_auto_long_term_check = tkinter.Checkbutton(self.lf_ap_auto_tests_frame, text="Long Term (long_term)", variable=self.lf_ap_auto_long_term_var,
                                                               onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_long_term_check.grid(row=9, column=0)
+        self.lf_ap_auto_long_term_check.grid(row=0, column=1, sticky="w", padx=10, pady=5)
         self.window_tooltip.bind(self.lf_ap_auto_long_term_check, '''Long Term
 Bring up stations and start traffic, let system run in this configuration
 ''')
 
-        # column 2
         self.lf_ap_auto_stability_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_stability_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Stability (mix_stability)", variable=self.lf_ap_auto_stability_var,
+        self.lf_ap_auto_stability_check = tkinter.Checkbutton(self.lf_ap_auto_tests_frame, text="Stability (mix_stability)", variable=self.lf_ap_auto_stability_var,
                                                               onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_stability_check.grid(row=5, column=1, sticky="news")
+        self.lf_ap_auto_stability_check.grid(row=1, column=1, sticky="w", padx=10, pady=5)
         self.window_tooltip.bind(self.lf_ap_auto_stability_check, '''Stability
 Bring up stations, run VOIP, emulated video, and slow-speed UDP traffi.
 Reset stationsif so configured.
@@ -153,9 +174,9 @@ Configurationkey: mix_stability
 ''')
 
         self.lf_ap_auto_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Single STA Throughtput vs Pkt Size (tput_single_sta)", variable=self.lf_ap_auto_throughput_vs_pkt_size_var,  # noqa: E501
+        self.lf_ap_auto_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_tests_frame, text="Single STA Throughtput vs Pkt Size (tput_single_sta)", variable=self.lf_ap_auto_throughput_vs_pkt_size_var,  # noqa: E501
                                                                            onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_throughput_vs_pkt_size_check.grid(row=6, column=1, sticky="news")
+        self.lf_ap_auto_throughput_vs_pkt_size_check.grid(row=2, column=1, sticky="w", padx=10, pady=5)
         self.window_tooltip.bind(self.lf_ap_auto_throughput_vs_pkt_size_check, '''Single STA Throughput vs Pkt Size
 Hunt to find best throughput at different frames sizes using a single station.
 Supports multiple loops.
@@ -163,64 +184,59 @@ Estimbated duration: 49 minutes.
 Configuration key: tput_single_sta''')
 
         self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var = tkinter.StringVar(value="Do Not Use")
-        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Multi STA Throughput vs Pkt Size (tput_multi_sta)", variable=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,  # noqa: E501
+        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check = tkinter.Checkbutton(self.lf_ap_auto_tests_frame, text="Multi STA Throughput vs Pkt Size (tput_multi_sta)", variable=self.lf_ap_auto_multi_station_throughput_vs_pkt_size_var,  # noqa: E501
                                                                                          onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check.grid(row=7, column=1, sticky="news")
+        self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check.grid(row=3, column=1, sticky="w", padx=10, pady=5)
         self.window_tooltip.bind(self.lf_ap_auto_multi_station_throughput_vs_pkt_size_check, '''Multi STA Throughput vs Pkt Size
 Throughput vs Pkt Size Estimated duration: 50 minutes * number-of-stations-counts minutes.
 Hunt to find best throughput at different frame sizes and different numbers of stations.
 Supports multiple loops''')
 
-#        self.lf_ap_auto_band_steering_var = tkinter.StringVar(value="Do Not Use")
-#        self.lf_ap_auto_band_steering_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="Band-Steering", variable=self.lf_ap_auto_band_steering_var,
-#                                                                  onvalue="Use", offvalue="Do Not Use")
-#        self.lf_ap_auto_band_steering_check.grid(row=8, column=1)
-#        self.window_tooltip.bind(self.lf_ap_auto_band_steering_check, '''Band-Steering Estimated duration: 10 minutes.
-# Test weather AP will direct stations to lesser utilized channel.
-# Requires that SSID are same for all DUT radios
-# and that BSSIDs are configured properly in the DUT''')
+        self.lf_ap_auto_reports_frame = tkinter.Frame(self.lf_ap_auto_frame)
+        self.lf_ap_auto_reports_frame.grid(row=7, column=0, columnspan=6, sticky="w")
 
-        # row 11
         self.lf_ap_auto_use_qa_var = tkinter.StringVar(value="Use")
-        self.lf_ap_auto_use_qa_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="lf_qa (report)", variable=self.lf_ap_auto_use_qa_var,
+        self.lf_ap_auto_use_qa_check = tkinter.Checkbutton(self.lf_ap_auto_reports_frame, text="lf_qa (report)", variable=self.lf_ap_auto_use_qa_var,
                                                            onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_use_qa_check.grid(row=11, column=0)
+        self.lf_ap_auto_use_qa_check.grid(row=0, column=0, sticky="w", padx=10, pady=5)
         self.window_tooltip.bind(self.lf_ap_auto_use_qa_check, '''Recommended: AP Auto Test Suite Json will include lf_qa.
 lf_qa will compare performance over multiple runs for Chamber View tests and tests that include kpi''')
 
         self.lf_ap_auto_use_inspect_var = tkinter.StringVar(value="Use")
-        self.lf_ap_auto_use_inspect_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="lf_inspect (report)", variable=self.lf_ap_auto_use_inspect_var,
+        self.lf_ap_auto_use_inspect_check = tkinter.Checkbutton(self.lf_ap_auto_reports_frame, text="lf_inspect (report)", variable=self.lf_ap_auto_use_inspect_var,
                                                                 onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_use_inspect_check.grid(row=11, column=1)
+        self.lf_ap_auto_use_inspect_check.grid(row=0, column=1, sticky="w", padx=10, pady=5)
         self.window_tooltip.bind(self.lf_ap_auto_use_inspect_check, '''Recommended: AP Auto Test Suite Json will include lf_inspect.
 lf_inspect will compare performance between two individual runs for Chamber View tests and tests that include kpi''')
 
         self.lf_ap_auto_use_combined_var = tkinter.StringVar(value="Use")
-        self.lf_ap_auto_use_combined_check = tkinter.Checkbutton(self.lf_ap_auto_frame, text="across selected radios in each band", variable=self.lf_ap_auto_use_combined_var,
+        self.lf_ap_auto_use_combined_check = tkinter.Checkbutton(self.lf_ap_auto_reports_frame, text="across selected radios in each band", variable=self.lf_ap_auto_use_combined_var,
                                                                  onvalue="Use", offvalue="Do Not Use")
-        self.lf_ap_auto_use_combined_check.grid(row=11, column=2)
+        self.lf_ap_auto_use_combined_check.grid(row=0, column=2, sticky="w", padx=10, pady=5)
         self.window_tooltip.bind(self.lf_ap_auto_use_combined_check, '''Create one test per band using all selected radios in that band.
 When unchecked, create one test per selected radio.''')
 
-        # row 12
         self.lf_ap_auto_save = ttk.Button(self.lf_ap_auto_frame, text='Create AP Auto Test Suite Json', command=self.create_ap_auto_json)
-        self.lf_ap_auto_save.grid(row=12, column=0, sticky="news", padx=20, pady=10)
+        self.lf_ap_auto_save.grid(row=8, column=0, sticky="news", padx=20, pady=10)
         self.window_tooltip.bind(self.lf_ap_auto_save, 'Save Wifi Capacity Json File')
 
         self.lf_ap_auto_clear = ttk.Button(self.lf_ap_auto_frame, text='Clear AP Auto Info', command=self.ap_auto_clear_information)
-        self.lf_ap_auto_clear.grid(row=12, column=1, sticky="news", padx=20, pady=10)
+        self.lf_ap_auto_clear.grid(row=8, column=1, sticky="news", padx=20, pady=10)
         self.window_tooltip.bind(self.lf_ap_auto_clear, 'Clear AP Auto Information, use between test suite generation')
 
         self.lf_ap_auto_number_dut_indexes = tkinter.Label(self.lf_ap_auto_frame, text="Number DUT Indexes")
-        self.lf_ap_auto_number_dut_indexes.grid(row=4, column=2)
+        self.lf_ap_auto_number_dut_indexes.grid(row=5, column=2)
         self.lf_ap_auto_number_dut_indexes_combobox = ttk.Combobox(self.lf_ap_auto_frame, values=["1", "2", "3", "4"])
         self.lf_ap_auto_number_dut_indexes_combobox.current(2)
-        self.lf_ap_auto_number_dut_indexes_combobox.grid(row=4, column=3)
+        self.lf_ap_auto_number_dut_indexes_combobox.grid(row=5, column=3)
         self.window_tooltip.bind(self.lf_ap_auto_number_dut_indexes_combobox, '''Number of DUT indexes valid in the DUT json''')
 
         # Max Stations
         for widget in self.lf_ap_auto_frame.winfo_children():
             widget.grid_configure(padx=10, pady=5)
+
+        for widget in self.lf_ap_auto_files_frame.winfo_children():
+            widget.grid_configure(padx=5, pady=5)
 
         # -----------------------------------------------------------------------------------
         #
@@ -229,12 +245,16 @@ When unchecked, create one test per selected radio.''')
         # ------------------------------------------------------------------------------------
 
     def ap_auto_clear_information(self):
-        self.lf_ap_auto_2g_file_entry_var.set("")
-        self.lf_ap_auto_5g_file_entry_var.set("")
-        self.lf_ap_auto_6g_file_entry_var.set("")
-        self.lf_ap_auto_2g_dir_entry_var.set("")
-        self.lf_ap_auto_5g_dir_entry_var.set("")
-        self.lf_ap_auto_6g_dir_entry_var.set("")
+        self.ap_auto_clear_files()
+        self.ap_auto_clear_directories()
+
+    def ap_auto_clear_files(self):
+        for band in ("2g", "5g", "6g"):
+            getattr(self, f"lf_ap_auto_{band}_file_entry_var").set("")
+
+    def ap_auto_clear_directories(self):
+        for band in ("2g", "5g", "6g"):
+            getattr(self, f"lf_ap_auto_{band}_dir_entry_var").set("")
 
     def create_ap_auto_json(self):
         try:
