@@ -1455,24 +1455,21 @@ junit.xml path: allure serve {junit_path}
             self.logger.info("IsADirectoryError on execution of {command}".format(
                 command=command_to_run))
 
-        # This code will read the output as the script is running and log
-        for line in iter(summary.stdout.readline, ''):
-            self.logger.info(line)
-            summary_output += line
+        # Drain stdout while waiting so output cannot block timeout enforcement.
+        # A timeout of zero disables the deadline, including when read from JSON
+        # as a string.
         try:
-            if int(self.test_timeout != 0):
-                summary.wait(timeout=int(self.test_timeout))
-            else:
-                summary.wait()
+            summary_output, _ = summary.communicate(timeout=int(self.test_timeout) or None)
         except TimeoutExpired:
-            summary.terminate
+            summary.kill()
+            summary_output, _ = summary.communicate()
             self.test_result = "TIMEOUT"
         # TODO will change back to the scripts_wd since a script like tx_power.py will run in the parent directoy to
         # py-scripts
         os.chdir(self.scripts_wd)
         self.logger.info("Current Working Directory {}".format(os.getcwd()))
 
-        # Since using "wait" above the return code will be set.
+        # communicate() above sets the return code.
         try:
             return_code = summary.returncode
             if return_code == 0:
@@ -1613,7 +1610,6 @@ junit.xml path: allure serve {junit_path}
         if self.test_result == "TIMEOUT":
             self.logger.info(
                 "TIMEOUT FAILURE,  Check LANforge Radios")
-            self.test_result = "Time Out"
             background = self.background_purple
         elif return_code == 1:
             self.logger.error("Test returne fail  return code {return_code} for test: {command}".format(
@@ -1834,7 +1830,7 @@ junit.xml path: allure serve {junit_path}
         if self.test_result == "Failure":
             self.html_results += """<td><a href=""" + str(
                 stderr_log_link) + """ target=\"_blank\">STDERR</a></td>"""
-        elif self.test_result == "Time Out":
+        elif self.test_result == "TIMEOUT":
             self.html_results += """<td><a href=""" + str(
                 stderr_log_link) + """ target=\"_blank\">STDERR</a></td>"""
         else:
