@@ -57,6 +57,19 @@
     return (categories || []).length <= 6 ? 90 : 34;
   }
 
+  function wrapAxisLabel(maxChars) {
+    return function (value) {
+      var text = String(value);
+      if (text.length <= maxChars) { return text; }
+      var cut = Math.max(text.lastIndexOf(" ", maxChars), text.lastIndexOf("-", maxChars - 1) + 1,
+        text.lastIndexOf("_", maxChars - 1) + 1);
+      if (cut <= 0) { cut = maxChars; }
+      var rest = text.slice(cut).replace(/^ /, "");
+      if (rest.length > maxChars) { rest = rest.slice(0, maxChars - 1) + "…"; }
+      return text.slice(0, cut).replace(/ $/, "") + "\n" + rest;
+    };
+  }
+
   window.__lfModernReport.renderLineChart = function (id, payload, yName, xName) {
     var el = document.getElementById(id);
     if (!el || !payload || !payload.series) { renderFallback(id); return; }
@@ -104,6 +117,13 @@
     option.tooltip.axisPointer = { type: "shadow" };
     option.xAxis.data = payload.categories || [];
     dropDataZoomIfFewCategories(option, payload.categories);
+    if (!payload.categories || payload.categories.length < DATA_ZOOM_MIN_CATEGORIES) {
+      var slotChars = Math.floor((el.clientWidth - 120) / Math.max(1, option.xAxis.data.length) / 7.5);
+      option.xAxis.axisLabel.interval = 0;
+      option.xAxis.axisLabel.lineHeight = 16;
+      option.xAxis.axisLabel.formatter = wrapAxisLabel(Math.max(6, Math.min(18, slotChars)));
+      option.xAxis.nameGap = 52;
+    }
     var barMaxWidth = barMaxWidthFor(payload.categories);
     var perCategoryColor = payload.categories && payload.series.length === 1 &&
       payload.series[0].data.every(function (d) { return d && typeof d === "object" && d.itemStyle && d.itemStyle.color; });
