@@ -24,10 +24,9 @@ SCRIPT_CATEGORIES:   Monitoring, Functional, Report Generation.
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:
-Working date - 19/02/2024
-Build version - 5.4.7
-kernel version -  6.7.3+
+VERIFIED_ON:   01-NOV-2026,
+             Build Version:  5.5.4
+             Kernel Version: 7.2.10+
 
 LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
@@ -374,10 +373,9 @@ SCRIPT_CATEGORIES:   Monitoring,  Functional, Report Generation
 
 STATUS: BETA RELEASE
 
-VERIFIED_ON:
-Working date - 7/05/2024
-Build version - 5.4.7
-kernel version -  6.7.3+
+VERIFIED_ON:   01-NOV-2026,
+             Build Version:  5.5.4
+             Kernel Version: 7.2.10+
 
 LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
