@@ -648,6 +648,34 @@ class ClientAnalysis(Realm):
         self._save_evidence_and_log_totals(local_dict)
         return local_dict
 
+    @staticmethod
+    def stats_to_lists(client_connectivity_stats: dict) -> tuple:
+        """Splits the per-device connectivity stats into one list per column.
+
+        Args:
+            client_connectivity_stats (dict): stats per device, from get_connectivity_analysis()
+                or stop_monitoring().
+
+        Returns:
+            tuple: (devices, connect_attempt, disconnected, scanning, association_rejection,
+            connected, remarks, cx_time), each a list with one entry per device.
+
+        Example:
+            devices, connect_attempt, disconnected, *_ = ClientAnalysis.stats_to_lists(analysis.stop_monitoring())
+        """
+        devices, connect_attempt, disconnected, scanning = [], [], [], []
+        association_rejection, connected, remarks, cx_time = [], [], [], []
+        for stats in client_connectivity_stats.values():
+            connect_attempt.append(stats["ConnectAttempt"])
+            disconnected.append(stats["Disconnected"])
+            scanning.append(stats["Scanning"])
+            association_rejection.append(stats["Association Rejection"])
+            connected.append(stats["Connected"])
+            remarks.append(stats["Remarks"])
+            cx_time.append(stats.get("cx time (us)"))
+            devices.append(stats["port_name"])
+        return devices, connect_attempt, disconnected, scanning, association_rejection, connected, remarks, cx_time
+
     def _monitor_loop(self, interval: float) -> None:
         """Watches for new wifi messages and records them against each monitored device.
 
