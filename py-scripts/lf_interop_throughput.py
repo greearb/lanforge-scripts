@@ -191,6 +191,7 @@ import importlib
 import logging
 import json
 import shutil
+import base64
 import asyncio
 import csv
 import re
@@ -4539,7 +4540,9 @@ class Throughput(Realm):
                     report.set_custom_html(f"<h2>{label} Heatmap{heading_suffix}: </h2>")
                     report.build_custom()
                     if os.path.exists(image_path):
-                        report.set_custom_html(f'<img src="file://{image_path}" style="width:1500px; height:900px;"></img>')
+                        with open(image_path, "rb") as image_file:
+                            image_base64 = base64.b64encode(image_file.read()).decode("ascii")
+                        report.set_custom_html(f"<div class='chart-card'><img src='data:image/png;base64,{image_base64}' alt='' /></div>")
                     elif have_data:
                         report.set_custom_html(
                             f'<p><i>{label} heatmap{heading_suffix} is not available - the capture may '
@@ -5332,7 +5335,9 @@ class Throughput(Realm):
                 if os.path.exists(image_path):
                     report.set_custom_html('<div style="page-break-before: always;"></div>')
                     report.build_custom()
-                    report.set_custom_html(f'<img src="file://{image_path}"></img>')
+                    with open(image_path, "rb") as image_file:
+                        image_base64 = base64.b64encode(image_file.read()).decode("ascii")
+                    report.set_custom_html(f"<div class='chart-card'><img src='data:image/png;base64,{image_base64}' alt='' /></div>")
                 else:
                     report.set_custom_html(
                         f'<p><i>{label} heatmap (Floor {floor + 1}) is not available - the capture may '
