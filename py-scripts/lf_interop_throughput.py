@@ -219,7 +219,7 @@ from lf_wifi_msgs import ClientAnalysis  # noqa: E402
 # from lf_graph import lf_line_graph  # noqa: E402
 from report_v2.lf_report_v2 import lf_report  # noqa: E402
 from report_v2.lf_graph_v2 import (lf_bar_graph, lf_bar_graph_horizontal,  # noqa: E402
-                                   lf_line_graph)
+                                   lf_line_graph, lf_pie_graph)
 
 from datetime import datetime, timedelta  # noqa: E402
 
@@ -3017,6 +3017,46 @@ class Throughput(Realm):
         except Exception as error:
             logger.warning("Test summary could not be added to the report: %s", error)
 
+    def add_bandsteering_summary_to_report(self, report, df):
+        """Adds the "Overall Band Steer Events Occurred Per Client" pie chart to the report,
+        showing how many band-steer events each client had during the test.
+
+        Args:
+            report (lf_report): report to add the chart to.
+            df (pd.DataFrame): monitoring dataframe with per-client BSSID columns.
+
+        Example:
+            self.add_bandsteering_summary_to_report(report, df)
+        """
+        event_counts = {}
+        for col in (c for c in df.columns if c.startswith("BSSID")):
+            device_name = col.split()[-1]
+            bssid_series = df[col].astype(object)
+            previous_bssid = bssid_series.shift()
+            steered = bssid_series != previous_bssid
+            if self.bssids:
+                wanted = {bssid.strip().lower() for bssid in self.bssids}
+                normalised = bssid_series.map(lambda bssid: str(bssid).strip().lower())
+                steered &= normalised.shift().isin(wanted) & normalised.isin(wanted)
+            else:
+                steered &= previous_bssid.notna() & (previous_bssid != '-') & (bssid_series != '-')
+            event_counts[device_name] = int(steered.sum())
+
+        report.set_obj_html(
+            _obj_title="Overall Band Steer Events Occurred Per Client",
+            _obj="The chart below shows how many times each client was steered between the tracked "
+                 "BSSIDs during the test.")
+        report.build_objective()
+        pie = lf_pie_graph(
+            _data_set=list(event_counts.values()),
+            _label=list(event_counts.keys()),
+            _graph_title="Overall Band Steer Events Occurred Per Client",
+            _graph_image_name="bandsteer_events_summary",
+            _label_formatter="{c}",
+        )
+        report.set_graph_image(pie.build_pie_graph())
+        report.build_graph()
+
     def get_bandsteering_stats(self, report=None, df=None, data1=None):
         """
         Retrieves and adds bandsteering statistics to the report.
@@ -3093,13 +3133,23 @@ class Throughput(Realm):
 
             channel_col = bssid_to_channel[col]
 
-            # Detect BSSID changes
-            mask = df[col] != df[col].shift()
-            filtered_df = df.loc[mask]
+            # A steer moves between two tracked BSSIDs, so both the previous and current row must be one of them.
+            bssid_series = df[col].astype(object)
+            previous_bssid = bssid_series.shift()
+            previous_channel = df[channel_col].astype(object).shift()
+            steered = bssid_series != previous_bssid
             if self.bssids:
-                filtered_df = df.loc[mask & df[col].isin(self.bssids)]
+                # LANforge reports the AP in whatever case the driver gives it, so compare normalised.
+                wanted = {bssid.strip().lower() for bssid in self.bssids}
+                normalised = bssid_series.map(lambda bssid: str(bssid).strip().lower())
+                steered &= normalised.shift().isin(wanted) & normalised.isin(wanted)
+            else:
+                steered &= previous_bssid.notna() & (previous_bssid != '-') & (bssid_series != '-')
+            filtered_df = df.loc[steered]
 
+            from_bssid_list = previous_bssid[steered].tolist()
             bssid_list = filtered_df[col].tolist()
+            from_channel_list = previous_channel[steered].tolist()
             channel_list = filtered_df[channel_col].tolist()
             timestamp_list = filtered_df['TIMESTAMP'].tolist()
             from_coordinate_list = filtered_df['From Coordinate'].tolist()
@@ -3109,8 +3159,9 @@ class Throughput(Realm):
             x_axis = list(bssid_counts.keys())      # BSSID values
             y_axis = [[float(i)] for i in list(bssid_counts.values())]
             if len(self.bssids) > 0:
+                steered_counts = Counter(str(bssid).strip().lower() for bssid in bssid_list)
                 x_axis = self.bssids
-                y_axis = [[float(bssid_counts.get(bssid, 0))] for bssid in self.bssids]
+                y_axis = [[float(steered_counts.get(bssid.strip().lower(), 0))] for bssid in self.bssids]
             device_name = col.replace('BSSID ', '')
             device_name = col.split()[-1]
             report.set_obj_html(
@@ -3155,8 +3206,10 @@ class Throughput(Realm):
             report.build_objective()
             table_df = {
                 "Timestamp": timestamp_list,
-                "BSSID": bssid_list,
-                "Channel": channel_list,
+                "From BSSID": from_bssid_list,
+                "To BSSID": bssid_list,
+                "From Channel": from_channel_list,
+                "To Channel": channel_list,
                 "From Coordinate": from_coordinate_list,
                 "To Coordinate": to_coordinate_list
             }
@@ -3755,6 +3808,9 @@ class Throughput(Realm):
                         upload_list=upload_list,
                         devices=devices_on_running)
                     self.add_test_summary_to_report(report, rssi_values=rssi_data[0:int(incremental_capacity_list[i])])
+
+                    if self.do_bandsteering:
+                        self.add_bandsteering_summary_to_report(report, data)
 
                 report.set_obj_html(
                     _obj_title="Real Time Throughput",
