@@ -98,6 +98,18 @@
         python3 lf_interop_throughput.py --mgr 192.168.207.75 --mgr_port 8080 --security wpa2 --upstream_port eth1 --test_duration 2m --download 10000000
         --upload 10000000 --traffic_type lf_udp --wifi_analysis --enable_bg_ping --precleanup --postcleanup
 
+        EXAMPLE-20:
+        Command Line Interface to run download scenario with desired resources at desired points with roaming using robo
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --robot_ip 192.168.204.144 --coordinate root,node1,node2 --do_roaming --total_cycles 2
+        --bssids '{"root":{"2g":"94:A6:7E:74:26:11","5g":"94:A6:7E:74:26:12"},"node1":{"2g":"94:A6:7E:74:26:21","5g":"94:A6:7E:74:26:22"},"node2":{"2g":"94:A6:7E:74:26:31"}}'
+
+        EXAMPLE-21:
+        Command Line Interface to run download scenario with roaming using robo and per-client graphs
+        python3 lf_interop_throughput.py --mgr 192.168.207.78 --mgr_port 8080 --upstream_port eth1 --test_duration 1m --download 1000000 --traffic_type lf_udp
+        --robot_ip 192.168.204.144 --coordinate root,node1,node2 --do_roaming --total_cycles 2 --per_client_graphs
+        --bssids '{"root":{"2g":"94:A6:7E:74:26:11","5g":"94:A6:7E:74:26:12"},"node1":{"2g":"94:A6:7E:74:26:21","5g":"94:A6:7E:74:26:22"},"node2":{"2g":"94:A6:7E:74:26:31"}}'
+
     TO PERFORM INTEROPABILITY TEST:
 
         EXAMPLE-1:
@@ -314,7 +326,9 @@ class Throughput(Realm):
                  user_list=None, real_client_list=None, real_client_list1=None, hw_list=None, laptop_list=None, android_list=None, mac_list=None, windows_list=None, linux_list=None,
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None,
-                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None, do_bandsteering=False, total_cycles=1, bssids=None, duration_to_skip=None, measurement_mode="per_point"):
+                 coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None, do_bandsteering=False, do_roaming=False, total_cycles=1, bssids=None,
+                 roaming_bssids=None, duration_to_skip=None, measurement_mode="per_point",
+                 per_client_graphs=False):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
         self.ssid_list = []
@@ -423,11 +437,27 @@ class Throughput(Realm):
         self.configured_devices_check = {}
         self.interopability_config = interopability_config
         self.do_bandsteering = do_bandsteering
+        self.do_roaming = do_roaming
+        self.per_client_graphs = per_client_graphs
         # measurement mode: 'per_point' stops and measures at each point, 'continuous' keeps traffic running while the robot moves.
-        # Band steering always moves continuously; do_bandsteering only adds the BSSID tracking report.
-        self.is_continuous_run = do_bandsteering or measurement_mode == "continuous"
+        # Band steering and roaming always move continuously; do_bandsteering/do_roaming only add their own tracking report.
+        self.is_continuous_run = do_bandsteering or do_roaming or measurement_mode == "continuous"
         self.total_cycles = total_cycles
         self.bssids = bssids if bssids else []
+        # {node: {band: bssid}}, e.g. {"root": {"2g": "AA:..", "5g": "BB:.."}, "node1": {"2g": "CC:.."}}
+        self.roaming_bssids = roaming_bssids if roaming_bssids else {}
+        # bssid -> node, used to tell which AP/node a client is currently on
+        self.bssid_to_node = {
+            bssid.strip().lower(): node
+            for node, bands in self.roaming_bssids.items()
+            for bssid in bands.values()
+        }
+        # bssid -> band (e.g. "2g", "5g", "6g"), from the same --bssids mapping
+        self.bssid_to_band = {
+            bssid.strip().lower(): band
+            for bands in self.roaming_bssids.values()
+            for band, bssid in bands.items()
+        }
         # Keep monitoring output stable when a client disconnects or temporarily disappears
         # from LANforge.  Reports still retain one row per configured client.
         # Track CX availability and state changes across monitoring iterations.
@@ -465,6 +495,7 @@ class Throughput(Realm):
             # webGUI's own "point finished" rule, which decides whether it captures a heatmap.
             self.coordinates_finished = []
             self.current_cycle = 1
+            self.cycle_log = []
             self.battery_log = {}
             self.robot.time_to_reach = int(duration_to_skip) * 60
             self.robot.coordinate_list = self.coordinate_list
@@ -650,12 +681,22 @@ class Throughput(Realm):
             for cx in to_run_cxs:
                 self.start_specific(cx)
                 device_names = created_cx_lists_keys[:to_run_cxs_len[-1][-1]]
+
+            if args.enable_bg_ping:
+                self.background_ping = lf_interop_ping.Ping(host=args.mgr, port=args.mgr_port, target=args.bg_ping_target or args.upstream_port, interval=args.bg_ping_interval,
+                                                            sta_list=[], real=True, virtual=False, duration=0)
+                if not self.background_ping.start_background_ping(self.input_devices_list):
+                    self.background_ping = None
+
             overall_start_time = datetime.now()
             overall_end_time = overall_start_time + timedelta(seconds=int(args.test_duration) * len(incremental_capacity_list))
             curr_cycle = 1
+            cycle_start_time = datetime.now()
+            cycle_just_closed = False
             logger.info("Starting cycle {} of {}".format(curr_cycle, self.total_cycles))
             # Iterate through all the points and monitoring throughput,bandsteering stats and as well as robot position
-            for coord in coordinate_list_with_robo:
+            for coord_index, coord in enumerate(coordinate_list_with_robo):
+                cycle_just_closed = False
                 if self.stop_test:
                     logger.info("Stopping continuous robot run because all CXs are missing or the test was stopped.")
                     break
@@ -687,9 +728,13 @@ class Throughput(Realm):
                 if abort or self.stop_test:
                     break
 
-                if coord == self.coordinate_list[0]:
+                if coord == self.coordinate_list[0] and coord_index > 0:
+                    cycle_end_time = datetime.now()
+                    self.cycle_log.append((curr_cycle, cycle_start_time, cycle_end_time))
                     logger.info("Completed cycle {} of {}".format(curr_cycle, self.total_cycles))
                     curr_cycle += 1
+                    cycle_start_time = cycle_end_time
+                    cycle_just_closed = True
                     if curr_cycle > int(self.total_cycles):
                         logger.info("Completed all {} cycles".format(self.total_cycles))
                     else:
@@ -697,9 +742,13 @@ class Throughput(Realm):
 
                 if not matched:
                     continue
+            if curr_cycle <= int(self.total_cycles) and not cycle_just_closed:
+                self.cycle_log.append((curr_cycle, cycle_start_time, datetime.now()))
             # Generate the report only when monitoring collected rows.
             collected_dataframes = [df for df in all_dataframes if isinstance(df, pd.DataFrame)]
             if not collected_dataframes or all(df.empty for df in collected_dataframes):
+                if self.background_ping:
+                    self.background_ping.stop_background_ping()
                 self.stop()
                 if args.postcleanup:
                     self.cleanup()
@@ -712,6 +761,8 @@ class Throughput(Realm):
             last_row_df = all_dataframes.loc[[last_idx]]
             if self.dowebgui:
                 last_row_df.to_csv(f"{args.result_dir}/throughput_data.csv", mode="a", header=False, index=False)
+            if self.background_ping:
+                self.background_ping.stop_background_ping()
             self.stop()
             if args.postcleanup:
                 self.cleanup()
@@ -719,6 +770,8 @@ class Throughput(Realm):
             iterations_before_test_stopped_by_user.append(0)
             self.stop_wifi_analysis()
             self.generate_report(list(set(iterations_before_test_stopped_by_user)), incremental_capacity_list, data=all_dataframes, data1=to_run_cxs_len, report_path=self.result_dir)
+            if self.background_ping:
+                self.background_ping.cleanup()
             if self.dowebgui:
                 # copying to home directory i.e home/user_name
                 self.copy_reports_to_home_dir()
@@ -826,6 +879,12 @@ class Throughput(Realm):
                         else:
                             self.start_specific(created_cx_lists_keys[:incremental_capacity_list[i]])
 
+                if args.enable_bg_ping and i == 0:
+                    self.background_ping = lf_interop_ping.Ping(host=args.mgr, port=args.mgr_port, target=args.bg_ping_target or args.upstream_port, interval=args.bg_ping_interval,
+                                                                sta_list=[], real=True, virtual=False, duration=0)
+                    if not self.background_ping.start_background_ping(self.input_devices_list):
+                        self.background_ping = None
+
                 # Determine device names based on the current iteration
                 if args.do_interopability and args.load_type != "wc_intended_load":
                     device_names = list(to_run_cxs[i])
@@ -861,6 +920,8 @@ class Throughput(Realm):
                 if os.path.exists(visit_csv):
                     shutil.copyfile(visit_csv, 'coordinate_{}_cycle_{}_throughput_data.csv'.format(self.current_coordinate, self.current_cycle))
             self.stop()
+        if self.background_ping:
+            self.background_ping.stop_background_ping()
         if args.postcleanup:
             self.cleanup()
 
@@ -896,6 +957,8 @@ class Throughput(Realm):
                 navdata['report_generated'] = report_generated
                 with open(nav_data, 'w') as x:
                     json.dump(navdata, x, indent=4)
+        if self.background_ping:
+            self.background_ping.cleanup()
 
     def os_type(self):
         """
@@ -1830,11 +1893,11 @@ class Throughput(Realm):
                     test_stopped_by_user = True
                     self.stopped_by_user = True
                     if self.is_continuous_run:
-                        self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
+                        self.actual_monitoring_duration_seconds = (datetime.now() - self.monitor_start_time).total_seconds()
                         return individual_df, test_stopped_by_user
                     break
                 if self.is_continuous_run:
-                    self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
+                    self.actual_monitoring_duration_seconds = (datetime.now() - self.monitor_start_time).total_seconds()
                     return individual_df, test_stopped_by_user
                 # Adjust time_gap based on elapsed time since start (for webui)
                 d = datetime.now()
@@ -1934,7 +1997,7 @@ class Throughput(Realm):
                 individual_df.loc[len(individual_df)] = individual_df_data
                 individual_df.to_csv('throughput_data.csv', index=False)
                 if self.is_continuous_run:
-                    self.actual_monitoring_duration_seconds += (datetime.now() - start_time).total_seconds()
+                    self.actual_monitoring_duration_seconds = (datetime.now() - self.monitor_start_time).total_seconds()
                     return individual_df, test_stopped_by_user
 
             if self.stop_test:
@@ -3217,6 +3280,139 @@ class Throughput(Realm):
             report.set_table_dataframe(table_df)
             report.build_table()
 
+    def get_roaming_stats(self, report=None, df=None, data1=None):
+        """
+        Builds the roaming events table and the roam-count chart. A BSSID change to a
+        different node (self.bssid_to_node) is a roam; a BSSID change within the same
+        node (a band change) is a band steer. Both show up in the events table, tagged
+        by an "Event Type" column; only roams count toward the roam-count chart.
+        """
+        bssid_cols = [c for c in df.columns if c.startswith("BSSID")]
+        channel_cols = [c for c in df.columns if c.startswith("Channel")]
+
+        bssid_to_channel = {
+            bssid_col: next(
+                ch for ch in channel_cols
+                if ch.replace("Channel", "").strip() ==
+                bssid_col.replace("BSSID", "").strip()
+            )
+            for bssid_col in bssid_cols
+        }
+
+        def to_node(bssid):
+            return self.bssid_to_node.get(str(bssid).strip().lower())
+
+        report.set_obj_html(_obj_title="Roaming Results", _obj=" ")
+        report.build_objective()
+
+        node_names = list(self.roaming_bssids.keys())
+        if len(node_names) <= 1:
+            node_list_text = "".join(node_names)
+        elif len(node_names) == 2:
+            node_list_text = " and ".join(node_names)
+        else:
+            node_list_text = ", ".join(node_names[:-1]) + ", and " + node_names[-1]
+
+        report.set_obj_html(
+            _obj_title="Roaming Events Distribution Across Access Points",
+            _obj=(
+                "This chart illustrates the distribution of roaming events for each client across the "
+                "access points on the test floor. It provides a summary of client roaming behavior by "
+                "indicating how frequently each device transitioned between {node_list} during the "
+                "test.".format(node_list=node_list_text)
+            )
+        )
+        report.build_objective()
+        device_names = []
+        combined_counts = []
+        per_device_tables = []
+
+        for col in bssid_cols:
+
+            channel_col = bssid_to_channel[col]
+
+            bssid_series = df[col].astype(object)
+            previous_bssid = bssid_series.shift()
+            previous_channel = df[channel_col].astype(object).shift()
+            node_series = bssid_series.map(to_node)
+            previous_node = node_series.shift()
+
+            known = previous_node.notna() & node_series.notna()
+            roamed = known & (previous_node != node_series)
+            band_steered = known & (previous_node == node_series) & (previous_bssid != bssid_series)
+            transitioned = roamed | band_steered
+            filtered_df = df.loc[transitioned]
+
+            from_bssid_list = previous_bssid[transitioned].tolist()
+            bssid_list = filtered_df[col].tolist()
+            from_node_list = previous_node[transitioned].tolist()
+            node_list = node_series[transitioned].tolist()
+            from_channel_list = previous_channel[transitioned].tolist()
+            channel_list = filtered_df[channel_col].tolist()
+            timestamp_list = filtered_df['TIMESTAMP'].tolist()
+            from_coordinate_list = filtered_df['From Coordinate'].tolist()
+            to_coordinate_list = filtered_df['To Coordinate'].tolist()
+            event_type_list = ["Roaming" if is_roam else "Band Steering" for is_roam in roamed[transitioned].tolist()]
+
+            node_counts = Counter(node_series[roamed].tolist())
+            device_name = col.split()[-1]
+            device_names.append(device_name)
+            combined_counts.append([float(node_counts.get(node, 0)) for node in node_names])
+
+            per_device_tables.append((device_name, {
+                "Timestamp": timestamp_list,
+                "Event Type": event_type_list,
+                "From Node": from_node_list,
+                "From BSSID": from_bssid_list,
+                "To Node": node_list,
+                "To BSSID": bssid_list,
+                "From Channel": from_channel_list,
+                "To Channel": channel_list,
+                "From Coordinate": from_coordinate_list,
+                "To Coordinate": to_coordinate_list
+            }))
+
+        if device_names:
+            base_colors = ['steelblue', 'orange', 'seagreen', 'firebrick', 'purple',
+                           'saddlebrown', 'orchid', 'gray', 'olive', 'teal']
+            bar_colors = [base_colors[i % len(base_colors)] for i in range(len(device_names))]
+            graph = lf_bar_graph(_data_set=combined_counts,
+                                 _xaxis_name="Node",
+                                 _yaxis_name="Number of Roams",
+                                 _xaxis_categories=node_names,
+                                 _graph_image_name="roam_count_combined",
+                                 _label=device_names,
+                                 _xaxis_step=1,
+                                 _graph_title="Roam count – All Devices",
+                                 _title_size=16,
+                                 _color_edge='black',
+                                 _bar_width=min(0.8 / len(device_names), 0.25),
+                                 _figsize=(12, 6),
+                                 _legend_loc="best",
+                                 _legend_box=(1.0, 1.0),
+                                 _dpi=96,
+                                 _show_bar_value=True,
+                                 _enable_csv=True,
+                                 _color=bar_colors,
+                                 _color_name=bar_colors,
+                                 _force_series_colors=True,
+                                 )
+
+            graph_png = graph.build_bar_graph()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.set_csv_filename(graph.graph_image_name)
+            report.move_csv_file()
+            report.build_graph()
+
+        for device_name, table_df in per_device_tables:
+            report.set_obj_html(
+                _obj_title=f"Roaming Results for {device_name}",
+                _obj=" ")
+            report.build_objective()
+            report.set_table_dataframe(pd.DataFrame(table_df))
+            report.build_table()
+
     def start_wifi_analysis(self, host, port, device_list):
         """Starts live Wi-Fi message monitoring (ClientAnalysis) for the devices under test.
         If no device can be resolved, it logs a warning and skips the analysis instead of
@@ -3234,6 +3430,7 @@ class Throughput(Realm):
         self.wifi_analysis_stats = {}
         self.wifi_analysis_log = None
         self.wifi_analysis_monitoring = False
+
         if not device_list:
             return
         try:
@@ -3432,7 +3629,7 @@ class Throughput(Realm):
             # For groups and profiles configuration through webgui
             if self.dowebgui is True and self.group_name:
                 shutil.move('overall_throughput.csv', report_path_date_time)
-            elif self.is_continuous_run:
+            elif self.is_continuous_run and self.dowebgui:
                 pass
             else:
                 shutil.move('throughput_data.csv', report_path_date_time)
@@ -3455,6 +3652,22 @@ class Throughput(Realm):
                         "that the AP scales efficiently without significant performance degradation as more stations are added. "
                         "For IoT clients, the test concurrently executes device-specific actions (e.g., camera streaming, switch toggling, lock/unlock) "
                         "and monitors success rate, latency, and failure rate, ensuring the AP can reliably support multiple IoT devices alongside Real clients."
+                    )
+                )
+            elif self.do_roaming:
+                report.set_obj_html(
+                    _obj_title="Test Overview",
+                    _obj=(
+                        "The Candela Throughput with Roaming Test evaluates an Access Point's ability to deliver "
+                        "consistent throughput and maintain seamless client connectivity during roaming. Real "
+                        "client devices generate continuous traffic while moving between the coverage areas of "
+                        "multiple APs. "
+                        "The test measures key performance indicators including throughput, roaming success, "
+                        "RSSI, packet loss, and client connectivity to verify that the APs provide uninterrupted service "
+                        "and smooth handoffs throughout the test. "
+                        "An optimally performing AP deployment should enable clients to roam seamlessly between "
+                        "APs with minimal latency, stable throughput, and negligible packet loss, ensuring consistent "
+                        "user experience."
                     )
                 )
             else:
@@ -3798,7 +4011,7 @@ class Throughput(Realm):
                     report.set_custom_html(f"<h2><u>Iteration-{i + 1}: Number of Devices Running : {len(devices_on_running)}</u></h2>")
                     report.build_custom()
 
-                if i == 0 and not self.robo_ip:
+                if i == 0 and (not self.robo_ip or self.do_roaming or self.do_bandsteering):
                     # Verdict and summary shown once
                     self.build_overall_test_verdict(
                         report,
@@ -3811,6 +4024,36 @@ class Throughput(Realm):
 
                     if self.do_bandsteering:
                         self.add_bandsteering_summary_to_report(report, data)
+
+                    if self.do_roaming and self.roaming_bssids:
+                        report.set_table_title("Roaming APs / BSSIDs")
+                        report.build_table_title()
+                        nodes, bands, ap_bssids = [], [], []
+                        for node, band_map in self.roaming_bssids.items():
+                            for band, bssid in band_map.items():
+                                nodes.append(node)
+                                bands.append(band.upper())
+                                ap_bssids.append(bssid)
+                        report.set_table_dataframe(pd.DataFrame({
+                            'AP / Node': nodes,
+                            'Band': bands,
+                            'BSSID': ap_bssids,
+                        }))
+                        report.build_table()
+
+                    if self.do_bandsteering and self.bssids:
+                        band_order = ["2.4 GHz", "5 GHz", "6 GHz"]
+                        ap_bssids, bands = [], []
+                        for index, bssid in enumerate(self.bssids):
+                            ap_bssids.append(bssid)
+                            bands.append(band_order[index] if index < len(band_order) else "Unknown")
+                        report.set_table_title("Band Steering BSSIDs")
+                        report.build_table_title()
+                        report.set_table_dataframe(pd.DataFrame({
+                            'BSSID': ap_bssids,
+                            'Band': bands,
+                        }))
+                        report.build_table()
 
                 report.set_obj_html(
                     _obj_title="Real Time Throughput",
@@ -3888,13 +4131,148 @@ class Throughput(Realm):
                 report.set_graph_image(graph_png)
                 report.move_graph_image()
                 report.build_graph()
+
+                if (self.do_roaming or self.do_bandsteering) and self.per_client_graphs:
+                    client_timestamps = data_iter['TIMESTAMP'].values.tolist()
+                    band_categories = ["2.4 GHz", "5 GHz", "6 GHz"]
+                    band_key_to_index = {'2': 0, '5': 1, '6': 2}
+                    for client in devices_on_running:
+                        client_columns = data_iter[[col for col in data_iter.columns if client in col]]
+                        client_download = client_columns[[col for col in client_columns.columns if "Download" in col][0]].values.tolist()
+                        client_upload = client_columns[[col for col in client_columns.columns if "Upload" in col][0]].values.tolist()
+                        client_channel = client_columns[[col for col in client_columns.columns if "Channel" in col][0]].values.tolist()
+                        client_bssid = client_columns[[col for col in client_columns.columns if "BSSID" in col][0]].values.tolist()
+                        client_rssi = client_columns[[col for col in client_columns.columns if "RSSI" in col][0]].values.tolist()
+
+                        def band_index(bssid, channel, band_key_to_index=band_key_to_index):
+                            if self.do_roaming:
+                                band_key = self.bssid_to_band.get(str(bssid).strip().lower())
+                                digits = ''.join(ch for ch in (band_key or '') if ch.isdigit())
+                                if digits in band_key_to_index:
+                                    return band_key_to_index[digits]
+                            return 0 if int(channel) <= 14 else 1
+
+                        client_band = [band_index(bssid, channel) for bssid, channel in zip(client_bssid, client_channel)]
+
+                        if self.direction == "Bi-direction":
+                            throughput_data_set = [client_download, client_upload]
+                            throughput_labels = ["Download", "Upload"]
+                            throughput_desc = "upload and download throughput"
+                        elif self.direction == "Download":
+                            throughput_data_set = [client_download]
+                            throughput_labels = ["Download"]
+                            throughput_desc = "download throughput"
+                        else:
+                            throughput_data_set = [client_upload]
+                            throughput_labels = ["Upload"]
+                            throughput_desc = "upload throughput"
+
+                        report.set_obj_html(
+                            _obj_title=f"Real Time Throughput - {client}",
+                            _obj=f"The graph below illustrates the real-time {throughput_desc} observed for "
+                                 f"{client} during the test. The X-axis represents time, while the Y-axis "
+                                 f"indicates throughput measured in Mbps.")
+                        report.build_objective()
+                        graph_png = lf_line_graph(
+                            _data_set=throughput_data_set,
+                            _xaxis_name="Time",
+                            _yaxis_name="Throughput (Mbps)",
+                            _xaxis_categories=client_timestamps,
+                            _label=throughput_labels,
+                            _graph_image_name=f"line_graph_throughput_{client}_{i}",
+                        ).build_line_graph()
+                        report.set_graph_image(graph_png)
+                        report.move_graph_image()
+                        report.build_graph()
+
+                        report.set_obj_html(
+                            _obj_title=f"Real Time Band - {client}",
+                            _obj=f"The graph below illustrates the Wi-Fi band {client} was connected to "
+                                 f"throughout the test. The X-axis represents time, while the Y-axis "
+                                 f"indicates the band (2.4 GHz, 5 GHz, or 6 GHz).")
+                        report.build_objective()
+                        graph_png = lf_line_graph(
+                            _data_set=[client_band],
+                            _xaxis_name="Time",
+                            _yaxis_name="Band",
+                            _xaxis_categories=client_timestamps,
+                            _yaxis_categories=band_categories,
+                            _label=["Band"],
+                            _graph_image_name=f"line_graph_band_{client}_{i}",
+                        ).build_line_graph()
+                        report.set_graph_image(graph_png)
+                        report.move_graph_image()
+                        report.build_graph()
+
+                        report.set_obj_html(
+                            _obj_title=f"Real Time WiFi Channel - {client}",
+                            _obj=f"The graph below illustrates the Wi-Fi channel {client} was connected to "
+                                 f"throughout the test. The X-axis represents time, while the Y-axis "
+                                 f"indicates the channel number.")
+                        report.build_objective()
+                        graph_png = lf_line_graph(
+                            _data_set=[client_channel],
+                            _xaxis_name="Time",
+                            _yaxis_name="WiFi Channel",
+                            _xaxis_categories=client_timestamps,
+                            _label=["Channel"],
+                            _graph_image_name=f"line_graph_channel_{client}_{i}",
+                        ).build_line_graph()
+                        report.set_graph_image(graph_png)
+                        report.move_graph_image()
+                        report.build_graph()
+
+                        report.set_obj_html(
+                            _obj_title=f"Real Time RSSI - {client}",
+                            _obj=f"The graph below illustrates the received signal strength (RSSI) of "
+                                 f"{client} throughout the test, against a -75 dBm reference threshold. "
+                                 f"The X-axis represents time, while the Y-axis indicates the signal "
+                                 f"strength in dBm.")
+                        report.build_objective()
+                        graph_png = lf_line_graph(
+                            _data_set=[client_rssi, [-75] * len(client_rssi)],
+                            _xaxis_name="Time",
+                            _yaxis_name="RSSI (dBm)",
+                            _xaxis_categories=client_timestamps,
+                            _label=["RSSI", "-75 dBm threshold"],
+                            _dashed=[False, True],
+                            _graph_image_name=f"line_graph_rssi_{client}_{i}",
+                        ).build_line_graph()
+                        report.set_graph_image(graph_png)
+                        report.move_graph_image()
+                        report.build_graph()
+
                 # If band steering is enabled, collect and add band steering details to the report
                 if self.do_bandsteering:
                     self.get_bandsteering_stats(report, data, devices_on_running_trimmed)
+                # If roaming is enabled, collect and add roaming details to the report
+                if self.do_roaming:
+                    self.get_roaming_stats(report, data, devices_on_running_trimmed)
 
                 if self.dowebgui and self.get_live_view:
                     # To add live view images coming from the Web-GUI in report
                     self.add_live_view_images_to_report(report)
+
+                if (self.do_roaming or self.do_bandsteering) and i == 0 and self.cycle_log:
+                    report.set_table_title("{} Cycle Summary".format("Roaming" if self.do_roaming else "Band Steering"))
+                    report.build_table_title()
+                    report.set_custom_html("<p>Total Cycles Completed: {} of {}</p>".format(len(self.cycle_log), self.total_cycles))
+                    report.build_custom()
+                    cycle_numbers, start_times, end_times, time_taken = [], [], [], []
+                    for cycle_num, start, end in self.cycle_log:
+                        cycle_numbers.append(cycle_num)
+                        start_times.append(start.strftime("%d/%m %I:%M:%S %p"))
+                        end_times.append(end.strftime("%d/%m %I:%M:%S %p"))
+                        total_seconds = int((end - start).total_seconds())
+                        minutes, seconds = divmod(total_seconds, 60)
+                        time_taken.append("{} min {:02d} sec".format(minutes, seconds))
+                    report.set_table_dataframe(pd.DataFrame({
+                        "Iteration": cycle_numbers,
+                        "Start Time": start_times,
+                        "End Time": end_times,
+                        "Time Taken": time_taken,
+                    }))
+                    report.build_table()
 
                 if self.group_name:
                     report.set_obj_html(
@@ -5067,6 +5445,9 @@ class Throughput(Realm):
 
         # Wi-Fi connectivity stats
         self.add_wifi_analysis_to_report(report)
+        if self.background_ping:
+            self.add_background_ping_timeline_to_report(report)
+            self.background_ping.add_background_ping_to_report(report)
         if self.device_issue_log:
             pd.DataFrame(self.device_issue_log).to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
         # report.build_custom()
@@ -5849,6 +6230,12 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     optional.add_argument("--interopability_config", action="store_true", help="To do individual configuration for each device in interoperability")
     optional.add_argument("--tput_mbps", action="store_true", help="Interpret rated download and upload values as Mbps instead of bytes")
     optional.add_argument('--do_bandsteering', help='Enable bandsteering (always a continuous robot run)', action='store_true')
+    optional.add_argument('--do_roaming', help='Enable roaming (always a continuous robot run). --bssids must then be a JSON string mapping each node '
+                                               'to its band BSSIDs, e.g. \'{"root":{"2g":"AA:BB:CC:DD:EE:11","5g":"AA:BB:CC:DD:EE:22"},'
+                                               '"node1":{"2g":"AA:BB:CC:DD:EE:33"}}\'', action='store_true')
+    optional.add_argument('--per_client_graphs', action='store_true',
+                          help='Add per-client Throughput/Band/WiFi Channel/RSSI graphs during bandsteering/roaming runs. '
+                               'Off by default.')
     optional.add_argument('--measurement_mode', choices=['per_point', 'continuous'], default='per_point',
                           help="Robot measurement mode: 'per_point' stops and measures at each point (and angle), "
                                "'continuous' keeps traffic running while the robot moves through the points --total_cycles times "
@@ -5894,7 +6281,8 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     optional.add_argument('--robot_ip', help='hostname for where Robot server is running')
     optional.add_argument('--coordinate', help="Points at which the robot pauses")
     optional.add_argument('--rotation', help="The set of angles to rotate at a particular point")
-    optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
+    optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test. '
+                                                     'With --do_roaming, a JSON string of {node: {band: bssid}} instead - see --do_roaming help', default="")
     optional.add_argument('--wifi_analysis',
                           action='store_true',
                           help='Analyze real-client wifi-msgs (connects/disconnects/scans/association rejections) '
@@ -5918,6 +6306,18 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
     if args.help_summary:
         print(help_summary)
         exit(0)
+
+    roaming_bssids = {}
+    if args.do_roaming:
+        if args.bssids:
+            try:
+                roaming_bssids = json.loads(args.bssids)
+            except json.JSONDecodeError as e:
+                logger.error("--bssids must be a JSON string like "
+                             "'{\"root\":{\"2g\":\"AA:BB:CC:DD:EE:11\"},\"node1\":{\"2g\":\"AA:BB:CC:DD:EE:22\"}}' "
+                             "when --do_roaming is set: %s", e)
+                exit(1)
+        args.bssids = ""
 
     if args.dowebgui:
         if (args.upload == '0'):
@@ -5971,7 +6371,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
         args.incremental_capacity = "1"
 
     # Continuous robot run lasts until the robot finishes its laps, so --test_duration is optional there (default 1m)
-    if not args.test_duration and (args.do_bandsteering or args.measurement_mode == "continuous"):
+    if not args.test_duration and (args.do_bandsteering or args.do_roaming or args.measurement_mode == "continuous"):
         args.test_duration = "1m"
 
     # Parsing test_duration
@@ -6073,10 +6473,13 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                                 coordinate_list=args.coordinate.split(",") if args.coordinate else [],
                                 angle_list=args.rotation.split(",") if args.rotation else [],
                                 do_bandsteering=args.do_bandsteering,
+                                do_roaming=args.do_roaming,
                                 measurement_mode=args.measurement_mode,
                                 total_cycles=args.total_cycles,
                                 bssids=args.bssids.split(",") if args.bssids else [],
-                                duration_to_skip=args.duration_to_skip
+                                roaming_bssids=roaming_bssids,
+                                duration_to_skip=args.duration_to_skip,
+                                per_client_graphs=args.per_client_graphs
                                 )
 
         if gave_incremental:
