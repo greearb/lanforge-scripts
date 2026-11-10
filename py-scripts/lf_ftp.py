@@ -100,6 +100,13 @@ python3 lf_ftp.py --ssid Netgear-5g --passwd sharedsecret --file_sizes 10MB --mg
 --security wpa2 --directions Download --clients_type Real --ap_name Netgear --bands 5G --upstream_port eth1 --robot_test --robot_ip 192.168.204.101
 --coordinate 3,4 --do_bandsteering --cycles 1 --bssids 04:f0:21:94:dc:46
 
+EXAMPLE-19:
+Command Line Interface to run download scenario for already connected Real clients while the Robot moves through the coordinates
+(continuous measurement, no band steering)
+python3 lf_ftp.py --ssid Netgear-5g --security wpa2 --file_sizes 10MB --mgr 192.168.207.78 --directions Download --clients_type Real
+--ap_name Netgear --bands 5G --upstream_port eth1 --device_list 1.12 --robot_test --robot_ip 192.168.204.101 --coordinate 3,4
+--measurement_mode continuous --cycles 2
+
 SCRIPT_CLASSIFICATION : Test
 
 SCRIPT_CATEGORIES:   Performance,  Functional,  Report Generation
@@ -212,7 +219,8 @@ class FtpTest(LFCliBase):
                  do_bandsteering=False,
                  cycles=None,
                  bssids=None,
-                 duration_to_skip=None
+                 duration_to_skip=None,
+                 measurement_mode="per_point"
                  ):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
 
@@ -347,6 +355,9 @@ class FtpTest(LFCliBase):
         self.bssids = bssids.split(",") if bssids else []
         self.duration_to_skip = duration_to_skip
         self.do_bandsteering = do_bandsteering
+        # measurement mode: 'per_point' runs traffic at each point, 'continuous' keeps it running while the robot moves.
+        # Band steering always moves continuously; do_bandsteering only adds the BSSID tracking report.
+        self.is_continuous_run = do_bandsteering or (robot_test and measurement_mode == "continuous")
         self.cycles = cycles
         logger.info("Test is Initialized")
 
@@ -905,7 +916,8 @@ class FtpTest(LFCliBase):
                         "uc_max": self.uc_max
                     }
                 if self.dowebgui:
-                    df1.to_csv(f"{self.result_dir}/{self.current_coordinate}_ftp_datavalues.csv", index=False)
+                    if os.path.isdir(self.result_dir):
+                        df1.to_csv(f"{self.result_dir}/{self.current_coordinate}_ftp_datavalues.csv", index=False)
                 else:
                     df1.to_csv(f"{self.current_coordinate}_ftp_datavalues.csv", index=False)
 
@@ -915,7 +927,9 @@ class FtpTest(LFCliBase):
         df1 = pd.DataFrame(self.data)
         df1.to_csv("ftp_datavalues.csv", index=False)
         if self.dowebgui:
-            df1.to_csv(f"{self.result_dir}/{self.current_coordinate}_ftp_datavalues.csv", index=False)
+            # skipped when the test was force-deleted on the WebGUI (results folder removed), so postcleanup still runs
+            if os.path.isdir(self.result_dir):
+                df1.to_csv(f"{self.result_dir}/{self.current_coordinate}_ftp_datavalues.csv", index=False)
         else:
             df1.to_csv(f"{self.current_coordinate}_ftp_datavalues.csv", index=False)
 
@@ -1148,12 +1162,16 @@ class FtpTest(LFCliBase):
         while (datetime.now() - wait_start).total_seconds() < timeout:
             time.sleep(poll_interval)
             if self.dowebgui == "True":
-                with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(
-                        self.host, self.test_name), 'r') as file:
-                    data = json.load(file)
-                    if data["status"] != "Running":
-                        logger.info("Test is stopped by the user during the device-recovery wait.")
-                        return 'stopped'
+                # a missing or unreadable running file (test deleted on the WebGUI) is treated as a stop
+                try:
+                    with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(
+                            self.host, self.test_name), 'r') as file:
+                        stopped_by_webui = json.load(file).get("status") != "Running"
+                except (FileNotFoundError, ValueError):
+                    stopped_by_webui = True
+                if stopped_by_webui:
+                    logger.info("Test is stopped by the user during the device-recovery wait.")
+                    return 'stopped'
             self.get_device_details()
             elapsed = (datetime.now() - wait_start).total_seconds()
             if len(self.missing_cx_logged) < len(self.cx_list):
@@ -1165,10 +1183,10 @@ class FtpTest(LFCliBase):
     # FOR WEB-UI // function usd to fetch runtime values and fill the csv.
 
     def monitor_for_runtime_csv(self):
-        if self.do_bandsteering and self.all_devices_stopped:
+        if self.is_continuous_run and self.all_devices_stopped:
             # Exit early to preserve the last valid results.
             return False
-        if self.do_bandsteering:
+        if self.is_continuous_run:
             # Band steering invokes this function repeatedly as a per-tick callback within one
             # continuous session, so only set this once for the whole session.
             if self.monitoring_start_time is None:
@@ -1177,7 +1195,7 @@ class FtpTest(LFCliBase):
             # Non-bandsteering flows restart the grace period on every call.
             self.monitoring_start_time = datetime.now()
         time_now = datetime.now()
-        if self.do_bandsteering:
+        if self.is_continuous_run:
             # Report the session's start, not this tick's timestamp.
             if self.bandsteering_start_time is None:
                 self.bandsteering_start_time = time_now
@@ -1202,7 +1220,7 @@ class FtpTest(LFCliBase):
             # It simply ensures safe handling when the monitor is invoked from lf_base_robo.
             if port not in self.individual_device_data:
                 columns = ['TIMESTAMP', 'Bytes-rd', 'total urls', 'download_rate', 'rx_rate', 'tx_rate', 'RSSI', 'BSSID', 'Channel']
-                if self.do_bandsteering:
+                if self.is_continuous_run:
                     columns.append('From Coordinate')
                     columns.append('To Coordinate')
                     columns.append('Robot X')
@@ -1216,7 +1234,7 @@ class FtpTest(LFCliBase):
                 # An earlier call already gave up waiting for devices to recover. Band steering
                 # invokes this function repeatedly as its own monitor_function tick, so return
                 # immediately instead of re-running the 40s recovery wait on every tick.
-                if self.do_bandsteering:
+                if self.is_continuous_run:
                     return test_stopped_by_user
                 break
             # If robot test mode is enabled, periodically check if a battery pause is needed
@@ -1300,7 +1318,7 @@ class FtpTest(LFCliBase):
             for i, port in enumerate(self.input_devices_list):
                 try:
                     row_data = [current_time, self.bytes_rd[i], self.url_data[i], self.rx_rate[i], self.port_rx_rate[i], self.tx_rate[i], self.rssi_list[i], self.bssid_list[i], self.channel_list[i]]
-                    if self.do_bandsteering:
+                    if self.is_continuous_run:
                         robo_x, robo_y, from_coord, to_coord = self.robot_obj.get_robot_pose()
                         row_data.extend([from_coord, to_coord, robo_x, robo_y])
                     self.individual_device_data[port].loc[len(self.individual_device_data[port])] = row_data
@@ -1341,7 +1359,7 @@ class FtpTest(LFCliBase):
             total_hours = time_difference.total_seconds() / 3600
             remaining_minutes = (total_hours % 1) * 60
             self.data["start_time"] = [start_time] * len(self.cx_list)
-            if not self.do_bandsteering and self.robot_test:
+            if not self.is_continuous_run and self.robot_test:
                 # To update end time at each interval
                 end_time = endtime
             self.data["end_time"] = [end_time.strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
@@ -1363,32 +1381,44 @@ class FtpTest(LFCliBase):
                 logger.error("An exception occurred:\n%s", tb_str)
                 exit(1)
             if self.dowebgui:
+                # a force delete on the WebGUI removes the results folder (and the running file) while the script runs;
+                # stop the test instead of crashing here
+                if not os.path.isdir(self.result_dir):
+                    logger.info("Results folder is gone (test deleted on the WebGUI); stopping the test")
+                    test_stopped_by_user = True
+                    break
                 df1.to_csv('{}/ftp_datavalues.csv'.format(self.result_dir), index=False)
-                if not self.do_bandsteering and self.robot_test:
+                if not self.is_continuous_run and self.robot_test:
                     # Save FTP data values for the current coordinate when in robot test
                     df1.to_csv(f"{self.result_dir}/{self.current_coordinate}_ftp_datavalues.csv", index=False)
             if self.clients_type == 'Real':
                 df1.to_csv("ftp_datavalues.csv", index=False)
-                if not self.do_bandsteering and self.robot_test:
+                if not self.is_continuous_run and self.robot_test:
                     df1.to_csv(f"{self.current_coordinate}_ftp_datavalues.csv", index=False)
             # No sleep is added here for band steering, as we need to capture data every second.
             # The per-second sleep interval is already handled in lf_base_robo.
-            if not self.do_bandsteering:
+            if not self.is_continuous_run:
                 time.sleep(5)
             if self.dowebgui == "True":
-                with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host,
-                                                                                                 self.test_name),
-                          'r') as file:
-                    data = json.load(file)
-                    if data["status"] != "Running":
-                        # User has requested to stop the test
-                        test_stopped_by_user = True
-                        logging.info('Test is stopped by the user')
-                        self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
-                        break
+                running_file = self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name)
+                # a missing running file (test deleted on the WebGUI) is treated as a stop, so the report is still written;
+                # a half-written file (the WebGUI may be rewriting it) is checked again on the next call
+                try:
+                    with open(running_file, 'r') as file:
+                        stopped_by_webui = json.load(file).get("status") != "Running"
+                except FileNotFoundError:
+                    stopped_by_webui = True
+                except ValueError:
+                    stopped_by_webui = False
+                if stopped_by_webui:
+                    # User has requested to stop the test
+                    test_stopped_by_user = True
+                    logging.info('Test is stopped by the user')
+                    self.data["end_time"] = [datetime.now().strftime("%d/%m %I:%M:%S %p")] * len(self.cx_list)
+                    break
             # Reusing monitor logic for band steering, but only need one record per call,
             # so break after first iteration instead of running for full duration.
-            if self.do_bandsteering:
+            if self.is_continuous_run:
                 break
             if no_devices_data_found:
                 break
@@ -1405,7 +1435,10 @@ class FtpTest(LFCliBase):
         except Exception:
             logger.error("All l4 data not found")
 
-        self.actual_monitoring_duration_seconds += (datetime.now() - self.monitoring_start_time).total_seconds()
+        if self.is_continuous_run:
+            self.actual_monitoring_duration_seconds = (datetime.now() - self.monitoring_start_time).total_seconds()
+        else:
+            self.actual_monitoring_duration_seconds += (datetime.now() - self.monitoring_start_time).total_seconds()
         return test_stopped_by_user
 
     def get_layer4_data(self):
@@ -1565,11 +1598,16 @@ class FtpTest(LFCliBase):
     # Updates the status in the running.json file while running a test from the Web UI
     def updating_webui_runningjson(self, obj):
         data = {}
-        with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name),
-                  'r') as file:
-            data = json.load(file)
-            for key in obj:
-                data[key] = obj[key]
+        # the running file is gone when the test was deleted on the WebGUI; don't recreate it
+        try:
+            with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name),
+                      'r') as file:
+                data = json.load(file)
+        except (FileNotFoundError, ValueError):
+            logger.warning("Running JSON file is missing or unreadable; skipping this status update.")
+            return
+        for key in obj:
+            data[key] = obj[key]
         with open(self.result_dir + "/../../Running_instances/{}_{}_running.json".format(self.host, self.test_name),
                   'w') as file:
             json.dump(data, file, indent=4)
@@ -2133,22 +2171,22 @@ class FtpTest(LFCliBase):
         """
         for floor in range(0, int(self.total_floors)):
             ftp_img_path = os.path.join(self.result_dir, "live_view_images", f"ftp_{self.test_name}_{floor + 1}.png")
-            timeout = 60  # seconds
-            start_time = time.time()
-
-            while not (os.path.exists(ftp_img_path)):
-                if time.time() - start_time > timeout:
-                    print("Timeout: Images not found within 60 seconds.")
-                    break
+            # the WebGUI uploads the live view screenshot when the test ends; wait up to 60 seconds for it
+            deadline = time.time() + 60
+            while not os.path.exists(ftp_img_path) and time.time() < deadline:
                 time.sleep(1)
-            while not os.path.exists(ftp_img_path):
-                if os.path.exists(ftp_img_path):
-                    break
-            if os.path.exists(ftp_img_path):
-                self.report.set_custom_html('<div style="page-break-before: always;"></div>')
+            if not os.path.exists(ftp_img_path):
+                # the report is still generated, with a note in place of the missing image
+                logger.warning("Live view image not found within 60 seconds: %s", ftp_img_path)
+                self.report.set_custom_html(
+                    f'<p><i>FTP heatmap (Floor {floor + 1}) is not available - the capture may '
+                    'have failed or the browser was closed before it was uploaded.</i></p>')
                 self.report.build_custom()
-                self.report.set_custom_html(f'<img style="width:1200px" src="file://{ftp_img_path}"></img>')
-                self.report.build_custom()
+                continue
+            self.report.set_custom_html('<div style="page-break-before: always;"></div>')
+            self.report.build_custom()
+            self.report.set_custom_html(f'<img style="width:1200px" src="file://{ftp_img_path}"></img>')
+            self.report.build_custom()
 
     def build_single_graph(self, client_list, data, graph_name, title, x_label, color, direction):
         """Helper: Build a horizontal bar graph and attach to report.
@@ -2575,7 +2613,7 @@ class FtpTest(LFCliBase):
             # Added Robot details in Test setup information table
             test_setup_info["Robot IP"] = self.robot_ip
             test_setup_info["Coordinates"] = self.coordinate
-            if not self.do_bandsteering:
+            if not self.is_continuous_run:
                 if self.rotation_enabled:
                     test_setup_info["Rotations"] = self.rotation
             else:
@@ -2613,7 +2651,7 @@ class FtpTest(LFCliBase):
             test_setup_info = {"Test Name": test_setup_info.pop("Test Name"), **test_setup_info}
         self.report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
         self.report.build_objective()
-        if not self.do_bandsteering and self.robot_test:
+        if not self.is_continuous_run and self.robot_test:
             if self.dowebgui:
                 # To store heatmap images in report
                 self.add_live_view_images_to_report()
@@ -2788,8 +2826,8 @@ class FtpTest(LFCliBase):
             dataframe1 = pd.DataFrame(dataframe)
             self.report.set_table_dataframe(dataframe1)
             self.report.build_table()
-        # To add charging timestamps of robot in report when bandsteering is enabled
-        if self.do_bandsteering:
+        # To add charging timestamps of robot in report for a continuous robot run
+        if self.is_continuous_run:
             if len(self.robot_obj.charging_timestamps) != 0:
                 self.report.set_obj_html(_obj_title="Charging Timestamps",
                                          _obj="")
@@ -3357,30 +3395,42 @@ class FtpTest(LFCliBase):
         self.robot_obj.time_to_reach = self.duration_to_skip
         self.robot_obj.total_cycles = self.cycles
         self.robot_obj.coordinate_list = self.coordinate_list
-        if self.do_bandsteering:
+        if self.is_continuous_run:
             cycle_coords = self.robot_obj.get_coordinates_list()
             if (len(cycle_coords) == 0):
                 logger.info("Test aborted")
                 return
             self.robot_obj.do_bandsteering = True
             self.start(False, False)
+            curr_cycle = 1
+            logger.info("Starting cycle {} of {}".format(curr_cycle, self.cycles))
             for coordinate in cycle_coords:
                 if test_stopped_by_user or self.all_devices_stopped:
                     break
                 # Check for battery status before moving to next coordinate
                 if_paused, test_stopped_by_user, test_status = self.robot_obj.wait_for_battery(monitor_function=lambda: self.monitor_for_runtime_csv())
                 # If test is stopped by user during battery wait
-                if test_stopped_by_user or self.all_devices_stopped:
+                if test_stopped_by_user or test_status is True or self.all_devices_stopped:
                     break
                 robo_moved, abort, test_status = self.robot_obj.move_to_coordinate(coordinate, monitor_function=lambda: self.monitor_for_runtime_csv())
-                # If robot failed to reach the coordinate
-                if abort:
+                # If robot failed to reach the coordinate, or the test was stopped/deleted while it moved
+                if abort or test_status is True:
                     break
                 if self.all_devices_stopped:
-                    logger.warning("Band-steering test stopped because no devices recovered within 40 seconds.")
+                    if self.do_bandsteering:
+                        logger.warning("Band-steering test stopped because no devices recovered within 40 seconds.")
+                    else:
+                        logger.warning("Robot FTP test with continuous measurement stopped because no devices recovered within 40 seconds.")
                     break
                 if robo_moved:
                     logger.info("Reached the coordinate {}".format(coordinate))
+                if coordinate == self.coordinate_list[0]:
+                    logger.info("Completed cycle {} of {}".format(curr_cycle, self.cycles))
+                    curr_cycle += 1
+                    if curr_cycle > int(self.cycles):
+                        logger.info("Completed all {} cycles".format(self.cycles))
+                    else:
+                        logger.info("Starting cycle {} of {}".format(curr_cycle, self.cycles))
             self.my_monitor_for_real_devices()
             self.stop()
             return
@@ -3839,7 +3889,11 @@ INCLUDE_IN_README: False
     optional.add_argument('--coordinate', type=str, default='', help="The coordinate contains list of coordinates to be ")
     optional.add_argument('--rotation', type=str, default='', help="The set of angles to rotate at a particular point")
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
-    optional.add_argument('--cycles', type=int, default=1, help='No of cycles to perform band steering')
+    optional.add_argument('--measurement_mode', choices=['per_point', 'continuous'], default='per_point',
+                          help="Robot measurement mode: 'per_point' runs the test at each point (and angle), "
+                               "'continuous' keeps the test running while the robot moves through the points --cycles times "
+                               "(--traffic_duration is not used and defaults to 1m)")
+    optional.add_argument('--cycles', type=int, default=1, help='No of times the robot goes through the points in a continuous or band steering run')
     optional.add_argument('--bssids', type=str, default='', help='hostname for where Robot server is running')
     optional.add_argument("--duration_to_skip", type=int, help='Specify the maximum time in seconds to skip a point if there is an obstacle', default=60)
 
@@ -3970,6 +4024,9 @@ some amount of file data from the FTP server while measuring the time taken by c
         return duration
 
     validate_args(args)
+    # Continuous robot run lasts until the robot finishes its laps, so --traffic_duration is optional there (default 1m)
+    if not args.traffic_duration and (args.do_bandsteering or (args.robot_test and args.measurement_mode == "continuous")):
+        args.traffic_duration = "1m"
     if args.traffic_duration.endswith('s') or args.traffic_duration.endswith('S'):
         args.traffic_duration = int(args.traffic_duration[0:-1])
     elif args.traffic_duration.endswith('m') or args.traffic_duration.endswith('M'):
@@ -4041,7 +4098,8 @@ some amount of file data from the FTP server while measuring the time taken by c
                               do_bandsteering=args.do_bandsteering,
                               cycles=args.cycles,
                               bssids=args.bssids,
-                              duration_to_skip=args.duration_to_skip
+                              duration_to_skip=args.duration_to_skip,
+                              measurement_mode=args.measurement_mode
                               )
 
                 interation_num = interation_num + 1
@@ -4087,6 +4145,13 @@ some amount of file data from the FTP server while measuring the time taken by c
                 if args.robot_test:
                     # Perform robot-specific operations
                     obj.perform_robo()
+                    # The robot could not reach any coordinate, so nothing was measured and there is no report to build
+                    if not hasattr(obj, 'data'):
+                        logger.error("No data was collected because the robot could not reach any coordinate; ending the test.")
+                        # tell the WebGUI the robot run is over (Test_status Aborted in nav_data.json)
+                        obj.robot_obj.update_nav_data_for_all_cxs_stopped()
+                        obj.postcleanup()
+                        exit(1)
                 else:
                     obj.start(False, False)
                     # to fetch runtime values during the execution and fill the csv.
@@ -4114,6 +4179,10 @@ some amount of file data from the FTP server while measuring the time taken by c
                 time2 = datetime.now()
                 logger.info("Test ended at %s", time2)
 
+    if args.dowebgui and not os.path.isdir(obj.result_dir):
+        logger.warning("Results folder %s is gone (test deleted on the WebGUI); skipping the report", obj.result_dir)
+        exit(0)
+
     # 2nd time stamp for test duration
     # time_stamp2 = datetime.now()
 
@@ -4139,13 +4208,15 @@ some amount of file data from the FTP server while measuring the time taken by c
         # If robot test is enabled, add robot specific info to the report
         input_setup_info["Robot IP"] = args.robot_ip
         input_setup_info["Coordinate"] = args.coordinate
-        if not obj.do_bandsteering:
+        if not obj.is_continuous_run:
             input_setup_info["Rotation"] = args.rotation
-        else:
+        elif obj.do_bandsteering:
             input_setup_info["Band Steering Cycles"] = args.cycles
+        else:
+            input_setup_info["Cycles"] = args.cycles
 
     # FOR WEB-UI // to fetch the last logs of the execution.
-    if args.dowebgui and (not args.robot_test or args.do_bandsteering):
+    if args.dowebgui and (not args.robot_test or obj.is_continuous_run):
         obj.data_for_webui["status"] = ["STOPPED"] * len(obj.url_data)
 
         df1 = pd.DataFrame(obj.data_for_webui)
