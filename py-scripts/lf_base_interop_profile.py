@@ -1515,7 +1515,7 @@ class RealDevice(Realm):
         # mac_list = []
 
         adb_resources = self.json_get('/adb/')
-        all_resources = self.json_get('/resource/all')["resources"]
+        all_resources = self._resource_list(self.json_get('/resource/all'))
         all_ports = self.json_get('/ports/all')["interfaces"]
 
         exclude_androids = []
@@ -1669,6 +1669,19 @@ class RealDevice(Realm):
         print(df)
         return [selected_devices, report_labels, selected_macs, selected_usernames, selected_rssi, selected_channel]
 
+    @staticmethod
+    def _resource_list(response):
+        """Return /resource/all data as a list of {resource_id: {...}}, even with one resource."""
+        if not response:
+            return []
+        resources = response.get('resources')
+        if isinstance(resources, list):
+            return resources
+        resource = response.get('resource')
+        if isinstance(resource, dict) and resource.get('eid'):
+            return [{resource['eid']: resource}]
+        return []
+
     # getting data of all real devices already configured to an SSID
     def get_devices(self, only_androids=False):
         devices = []
@@ -1678,7 +1691,7 @@ class RealDevice(Realm):
         resources_data = {}
 
         # Get resources and OS types
-        resources_list = self.json_get("/resource/all")["resources"]
+        resources_list = self._resource_list(self.json_get("/resource/all"))
         for resource_data_dict in resources_list:
             # Need to unpack resource data dict of encapsulating dict that contains it
             resource_id = list(resource_data_dict.keys())[0]
