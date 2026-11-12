@@ -360,9 +360,8 @@ class lf_report:
         report.write_html()
         report.write_pdf()
     """
-    # Score band -> (label, color): Excellent 90-100, Good 80-89, Average 70-79, Poor <70.
-    SCORE_RATING_BANDS = [(90, "Excellent", "#1e7e34"), (80, "Good", "#28a745"),
-                          (70, "Average", "#f1c40f"), (0, "Poor", "#e74c3c")]
+    SCORE_RATING_BANDS = [(90, "Excellent", "#1e7e34"), (70, "Good", "#28a745"),
+                          (50, "Average", "#f1c40f"), (0, "Poor", "#e74c3c")]
 
     @classmethod
     def classify_score_rating(cls, score):
