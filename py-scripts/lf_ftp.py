@@ -1612,9 +1612,46 @@ class FtpTest(LFCliBase):
                   'w') as file:
             json.dump(data, file, indent=4)
 
+    def get_layer4_report_data(self, fields=('uc-avg', 'uc-max', 'uc-min', 'total-urls',
+                                             'bytes-rd', 'rx rate (1m)')):
+        """Read all report fields for every CX in one layer4 call, in cx_list order (0 if missing)."""
+        result = {field: [] for field in fields}
+        if not self.cx_list:
+            logger.warning("No CXs created; the report has nothing to read")
+            return result
+
+        data = self.json_get("layer4/%s/list?fields=%s" % (
+            ','.join(self.cx_list), ','.join(f.replace(' ', '+') for f in fields)))
+        endpoint = (data or {}).get('endpoint')
+        if endpoint is None:
+            logger.error("No layer4 endpoint data for the report; recording zeros")
+            endpoint = []
+        # LANforge returns a bare dict, not a list, when there is one endpoint.
+        if not isinstance(endpoint, list):
+            endpoint = [{self.cx_list[0]: endpoint}]
+
+        by_cx = {}
+        for entry in endpoint:
+            if isinstance(entry, dict):
+                by_cx.update(entry)
+
+        missing = []
+        for cx in self.cx_list:
+            values = by_cx.get(cx)
+            if values is None:
+                missing.append(cx)
+            for field in fields:
+                result[field].append(0 if values is None else values.get(field, 0))
+
+        if missing:
+            logger.warning("%d of %d CX(s) missing from the layer4 report data, recorded as 0: %s%s",
+                           len(missing), len(self.cx_list), missing[:5],
+                           " ..." if len(missing) > 5 else "")
+        return result
+
     def my_monitor(self):
         dataset = []
-        self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd = [], [], [], [], [], [], [], []
+        self.channel_list, self.mode_list, self.ssid_list, self.uc_avg, self.uc_max, self.url_data, self.uc_min, self.bytes_rd, self.rx_rate = [], [], [], [], [], [], [], [], []
         # Iterate station_list/input_devices_list in order so channel/mode/ssid/mac
         # stay index-aligned with them, instead of following /port/all's own order.
         url = "/port/all"
@@ -1651,71 +1688,31 @@ class FtpTest(LFCliBase):
                 self.mode_list.append(str(port_data.get('mode', '-')))
                 self.ssid_list.append(str(port_data.get('ssid', '-')))
 
-        # data in json format
-        # data = self.json_get("layer4/list?fields=bytes-rd")
-        uc_avg_data = self.json_get("layer4/list?fields=uc-avg")
-        uc_max_data = self.json_get("layer4/list?fields=uc-max")
-        uc_min_data = self.json_get("layer4/list?fields=uc-min")
-        total_url_data = self.json_get("layer4/list?fields=total-urls")
-        bytes_rd = self.json_get("layer4/list?fields=bytes-rd")
-        print(uc_avg_data)
-        print(total_url_data)
+        # One call for all fields so they stay aligned with self.cx_list
+        report_data = self.get_layer4_report_data()
         self.data_for_webui = {}
 
-        if 'endpoint' in uc_avg_data.keys():
+        if self.cx_list:
             # list of layer 4 connections name
             self.data_for_webui["client"] = self.cx_list
-            if type(uc_avg_data['endpoint']) is dict:
-                self.uc_avg.append(uc_avg_data['endpoint']['uc-avg'])
-                self.uc_max.append(uc_max_data['endpoint']['uc-max'])
-                self.uc_min.append(uc_min_data['endpoint']['uc-min'])
-                # reading uc-avg data in json format
-                self.url_data.append(total_url_data['endpoint']['total-urls'])
-                dataset.append(bytes_rd['endpoint']['bytes-rd'])
-                if self.dowebgui == "True":
-                    self.data_for_webui["url_data"] = self.url_data
-                    self.data_for_webui["start_time"] = self.data["start_time"]
-                    self.data_for_webui["end_time"] = self.data["end_time"]
-                    self.data_for_webui["remaining_time"] = [0] * len(self.cx_list)
-                    self.data_for_webui["status"] = ["STOPPED"] * len(self.url_data)
-                self.bytes_rd = [float(f"{(i / 1000000): .4f}") for i in dataset]
-            else:
-                for cx in uc_avg_data['endpoint']:
-                    for CX in cx:
-                        for created_cx in self.cx_list:
-                            if CX == created_cx:
-                                self.uc_avg.append(cx[CX]['uc-avg'])
-                for cx in uc_max_data['endpoint']:
-                    for CX in cx:
-                        for created_cx in self.cx_list:
-                            if CX == created_cx:
-                                self.uc_max.append(cx[CX]['uc-max'])
-                for cx in uc_min_data['endpoint']:
-                    for CX in cx:
-                        for created_cx in self.cx_list:
-                            if CX == created_cx:
-                                self.uc_min.append(cx[CX]['uc-min'])
-                for cx in total_url_data['endpoint']:
-                    for CX in cx:
-                        for created_cx in self.cx_list:
-                            if CX == created_cx:
-                                self.url_data.append(cx[CX]['total-urls'])
-                for cx in bytes_rd['endpoint']:
-                    for CX in cx:
-                        for created_cx in self.cx_list:
-                            if CX == created_cx:
-                                dataset.append(cx[CX]['bytes-rd'])
-                                self.bytes_rd = [float(f"{(i / 1000000): .4f}") for i in dataset]
-                if self.dowebgui == "True":
-                    # FOR WEB-UI // storing values in self which is used to update the csv at the end.
-                    self.data_for_webui["url_data"] = self.url_data
-                    self.data_for_webui["bytes_rd"] = self.bytes_rd
-                    self.data_for_webui["uc_min"] = self.uc_min
-                    self.data_for_webui["uc_max"] = self.uc_max
-                    self.data_for_webui["uc_avg"] = self.uc_avg
-                    self.data_for_webui["start_time"] = self.data["start_time"]
-                    self.data_for_webui["end_time"] = self.data["end_time"]
-                    self.data_for_webui["remaining_time"] = [0] * len(self.cx_list)
+            self.uc_avg = report_data['uc-avg']
+            self.uc_max = report_data['uc-max']
+            self.uc_min = report_data['uc-min']
+            self.url_data = report_data['total-urls']
+            self.rx_rate = report_data['rx rate (1m)']
+            dataset = report_data['bytes-rd']
+            self.bytes_rd = [float(f"{(i / 1000000): .4f}") for i in dataset]
+            if self.dowebgui == "True":
+                # FOR WEB-UI // storing values in self which is used to update the csv at the end.
+                self.data_for_webui["url_data"] = self.url_data
+                self.data_for_webui["bytes_rd"] = self.bytes_rd
+                self.data_for_webui["uc_min"] = self.uc_min
+                self.data_for_webui["uc_max"] = self.uc_max
+                self.data_for_webui["uc_avg"] = self.uc_avg
+                self.data_for_webui["start_time"] = self.data["start_time"]
+                self.data_for_webui["end_time"] = self.data["end_time"]
+                self.data_for_webui["remaining_time"] = [0] * len(self.cx_list)
+                self.data_for_webui["status"] = ["STOPPED"] * len(self.url_data)
             logger.info(f"uc_min,uc_max,uc_avg {self.uc_min},{self.uc_max},{self.uc_avg}")
             logger.info("total urls: %s", self.url_data)
         else:
