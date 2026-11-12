@@ -8,6 +8,13 @@ PURPOSE:
         This test allows the user to choose multiple types of traffic like client ping test, qos test, ftp test, http test,
         multicast test multicast test and run tests both serially and simultaneously.
 
+        Use --port_reset to run a Port Reset test in its own process, in parallel with the selected tests
+        (regardless of whether those tests run serially or via --parallel). When run via --parallel, Port
+        Reset waits until every selected test has signaled that its CXs are up (plus an additional
+        duration_min wait) before starting, so it overlaps steady-state traffic rather than connection setup.
+        Tune it with --pr_duration/--duration_min/--duration_max/--batch_size and pull the generated report
+        with --pull_report.
+
 EXAMPLE:
 
         # CLI for Mixed Traffic Test: Run with Real Clients without connecting to a specified SSID
@@ -88,6 +95,47 @@ EXAMPLE:
             --iot_test --iot_ip 127.0.0.1 --iot_port 8000 --iot_iterations 1 --iot_delay 5 --iot_device_list "switch.smart_plug_1_socket_1"
             --iot_testname "mixedtraffics_iot_parallel"
 
+        # CLI for Mixed Traffic Test: Build the stations from a Chamber View scenario
+
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100 --scenario <scenario_name> --virtual
+            --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1
+            --side_b_min_bps 3000000 --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_tcp --tos "VI"
+            --ftp_file_sizes 10MB --http_file_size 5MB --direction Download --mc_tos "BE"
+            --test_duration 1m --pre_cleanup
+
+        # CLI for Mixed Traffic Test: Chamber View scenario using WPA3 SAE (AES/CCMP) station security
+
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100 --scenario <scenario_name> --security_config wpa3_aes_sae
+            --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1 --virtual --test_duration 1m --pre_cleanup
+
+        # CLI for Mixed Traffic Test: Chamber View scenario using WPA3 SAE-EXT-KEY (GCMP-256) station security
+
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100 --scenario <scenario_name> --security_config wpa3_gcmp_sae
+            --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1 --virtual --test_duration 1m --pre_cleanup
+
+        # CLI for Mixed Traffic Test: Chamber View scenario using 802.1x / EAP station security
+
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100 --scenario <scenario_name> --security_config 1x
+            --eap_method EAP-PEAP --eap_identity user --eap_password pass --key_mgmt WPA-EAP
+            --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1 --virtual --test_duration 1m --pre_cleanup
+
+        # CLI for Mixed Traffic Test: Chamber View scenario with Port Reset running in parallel
+
+            python3 lf_mixed_traffic.py --mgr 192.168.204.71 --scenario <scenario_name> --virtual --parallel
+            --tests 1 2 3 4 5 --target 127.0.0.1 --ping_interval 1 --upstream_port 1.1.eth2
+            --side_b_min_bps 10000000 --side_a_min 0 --side_b_min 100000000 --traffic_type lf_tcp --tos "VO"
+            --ftp_file_sizes 5MB --http_file_size 5MB --direction Download --mc_tos "BK" --test_duration 2m
+            --port_reset --pr_duration 130s --duration_min 30s --duration_max 30s --pull_report
+
+        # CLI for Mixed Traffic Test: Chamber View scenario with all tests running in parallel
+
+            python3 lf_mixed_traffic.py --mgr 192.168.204.71 --scenario <scenario_name> --virtual --parallel
+            --tests 1 2 3 4 5 --target 127.0.0.1 --ping_interval 1 --upstream_port 1.1.eth2
+            --side_b_min_bps 10000000 --side_a_min 0 --side_b_min 100000000 --traffic_type lf_tcp --tos "VO"
+            --ftp_file_sizes 5MB --http_file_size 5MB --direction Download --mc_tos "BK"
+            --test_duration 2m --pre_cleanup
+
+
 SCRIPT_CLASSIFICATION:  Multiples Tests, Creation, Report Generation (Both individual & Overall)
 
 SCRIPT_CATEGORIES:  Performance, Functional
@@ -110,6 +158,7 @@ INCLUDE_IN_README: False
 """
 import argparse
 import asyncio
+import http.client
 import importlib
 import json
 import logging
@@ -120,7 +169,7 @@ import requests
 import time
 import datetime
 import pandas as pd
-from multiprocessing import Process, Pipe
+from multiprocessing import Process, Pipe, Event
 import shutil
 import threading
 from collections import OrderedDict
@@ -143,6 +192,9 @@ lf_cleanup = importlib.import_module("py-scripts.lf_cleanup")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 lf_base_interop_profile = importlib.import_module("py-scripts.lf_base_interop_profile")
+cv_test_manager = importlib.import_module("py-json.cv_test_manager")
+lf_port_reset_test = importlib.import_module("py-scripts.lf_port_reset_test")
+add_sta = importlib.import_module("py-json.LANforge.add_sta")
 
 # importing scripts
 ping_test = importlib.import_module("py-scripts.lf_interop_ping")
@@ -158,6 +210,21 @@ iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 if os.path.exists(iot_scripts_path):
     sys.path.insert(0, iot_scripts_path)
     from test_automation import Automation  # noqa: E402
+
+
+def convert_duration_to_ms(value):
+    """Convert a duration (ms number, or a 10s/5m/1h string) into milliseconds."""
+    duration_suffixes = {'s': 1000, 'S': 1000, 'm': 60000, 'M': 60000, 'h': 3600000, 'H': 3600000}
+    value = str(value)
+    if value.endswith(tuple(duration_suffixes.keys())):
+        return int(value[:-1]) * duration_suffixes[value[-1]]
+    return int(value)
+
+
+def add_ports_in_port_reset_args(sta_list, port_reset_args):
+    for idx in range(len(sta_list)):
+        port_reset_args["sel_port-{}".format(idx + 1)] = sta_list[idx]
+    return port_reset_args
 
 
 class Mixed_Traffic(Realm):
@@ -222,6 +289,8 @@ class Mixed_Traffic(Realm):
                  path='',
                  configure=True,
                  parallel=False,
+                 pull_report=False,
+                 port_reset=False,
                  target='192.168.1.3',
                  multicast_endp_types=None,
                  multicast_tos=None,
@@ -234,6 +303,7 @@ class Mixed_Traffic(Realm):
                  device_list=None,
                  get_live_view: bool = False,
                  total_floors: int = 0,
+                 cv_scenario=None,
                  debug=False):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
@@ -258,6 +328,8 @@ class Mixed_Traffic(Realm):
         self.ftp_test_obj = None
         self.http_obj = None
         self.multicast_test_obj = None
+        self.port_reset_test_obj = None
+        self.port_reset_test_status = None
         self.interval = ""
         self.target = ""
         self.eid_list = []
@@ -319,6 +391,17 @@ class Mixed_Traffic(Realm):
         self.selected_bands = selected_bands
 
         self.band = ''
+        # Chamber View scenario name; None means normal CLI station creation
+        self.cv_scenario = cv_scenario
+        # Filled by station_info() once a scenario is built
+        self.sta_info = {
+            'station_list': [],
+            'radio_list': [],
+            'ssid_list': [],
+            'key_list': [],
+            'security_list': [],
+            'band_list': '-',
+        }
         self.mode = mode
         # self.radio = radio
         self.number_template = number_template
@@ -354,6 +437,9 @@ class Mixed_Traffic(Realm):
         self.qos_serial_run = qos_serial
 
         self.parallel = parallel
+        self.pull_report = pull_report
+        self.port_reset = port_reset
+        self.port_reset_args = None
 
         self.target = target
         self.multicast_endp_types = multicast_endp_types
@@ -723,7 +809,7 @@ class Mixed_Traffic(Realm):
         return self.user_query
 
     def ping_test(self, ssid='', password='', security='', target='', interval='', _ping_test=ping_test,
-                  all_bands=False, conn=None):
+                  all_bands=False, conn=None, checkpoint_event=None, resume_event=None):
         try:
             # setting ping test duration & converting sec into minutes passing it float values for ping test
             if self.test_duration:
@@ -762,13 +848,15 @@ class Mixed_Traffic(Realm):
             elif self.virtual:
                 self.ping_test_obj.sta_list = self.station_list
                 print('Virtual Stations: {}'.format(self.station_list).replace('[', '').replace(']', '').replace('\'', ''))
-                self.ping_test_obj.cleanup()
+                # Stations are shared with the other parallel tests, so only clear stale endpoints
+                self.ping_test_obj.cleanup(clean_stations=False)
             # creating generic endpoints
             self.ping_test_obj.create_generic_endp()
             logger.info("Generic Cross-Connection List: {}".format(self.ping_test_obj.generic_endps_profile.created_cx))
             logger.info("Starting running the Ping Test for {} minutes".format(ping_test_duration))
             # start generate endpoint
             self.ping_test_obj.start_generic()
+            self.reached_checkpoint("ping", checkpoint_event, resume_event)
             time.sleep(10)
             if self.dowebgui:
                 start_time = datetime.datetime.now()
@@ -952,7 +1040,8 @@ class Mixed_Traffic(Realm):
                 conn.send(['', False])
 
     def qos_test(self, ssid, password, security, ap_name, upstream, tos, traffic_type, side_a_min=0, side_b_min=0,
-                 side_a_max=0, side_b_max=0, _qos_test=qos_test, _qos_test_virtual=qos_test_virtual, all_bands=False, conn=None):
+                 side_a_max=0, side_b_max=0, _qos_test=qos_test, _qos_test_virtual=qos_test_virtual, all_bands=False, conn=None,
+                 checkpoint_event=None, resume_event=None):
         try:
             if self.test_duration:
                 self.qos_test_duration = self.test_duration
@@ -996,6 +1085,7 @@ class Mixed_Traffic(Realm):
                 self.qos_test_obj.avg_drop_a = []
                 self.qos_test_obj.avg_drop_b = []
                 time.sleep(10)
+                self.reached_checkpoint("qos", checkpoint_event, resume_event)
                 connections_download, connections_upload, drop_a_per, drop_b_per = {}, {}, [], []
                 try:
                     connections_download, connections_upload, drop_a_per, drop_b_per, self.qos_test_obj.connections_download_avg, self.qos_test_obj.connections_upload_avg, self.qos_test_obj.avg_drop_a, self.qos_test_obj.avg_drop_b = self.qos_test_obj.monitor()  # noqa: E501
@@ -1055,7 +1145,9 @@ class Mixed_Traffic(Realm):
                                                                          port=self.port,
                                                                          number_template="0000",
                                                                          ap_name=ap_name,
-                                                                         num_stations=self.num_staions,
+                                                                         num_stations_2g=self.stations_on_band("2.4G"),
+                                                                         num_stations_5g=self.stations_on_band("5G"),
+                                                                         num_stations_6g=self.stations_on_band("6G"),
                                                                          sta_list=self.station_list,
                                                                          create_sta=False,
                                                                          name_prefix="TOS-",
@@ -1091,6 +1183,7 @@ class Mixed_Traffic(Realm):
 
                 self.throughput_qos_obj.start(False, False)
                 time.sleep(10)
+                self.reached_checkpoint("qos", checkpoint_event, resume_event)
                 try:
                     connections_download, connections_upload, drop_a_per, drop_b_per = self.throughput_qos_obj.monitor()
                 except Exception as e:
@@ -1187,7 +1280,8 @@ class Mixed_Traffic(Realm):
             if (conn):
                 conn.send(['', '', '', '', False])
 
-    def ftp_test(self, ssid, password, security, bands, directions, file_sizes, ftp_test=ftp_test, all_bands=False, conn=None):
+    def ftp_test(self, ssid, password, security, bands, directions, file_sizes, ftp_test=ftp_test, all_bands=False, conn=None,
+                 checkpoint_event=None, resume_event=None):
         try:
             if self.test_duration:
                 self.ftp_test_duration = self.test_duration
@@ -1250,6 +1344,9 @@ class Mixed_Traffic(Realm):
                         self.ftp_test_obj.num_sta = self.num_staions
                         self.ftp_test_obj.count = 0
                         self.ftp_test_obj.set_values()
+                        if self.cv_scenario:
+                            # Scenario stations already exist and are up; skip build()'s station re-create
+                            self.ftp_test_obj.radio = []
                         # no L4 pre cleanup: global sweep breaks parallel HTTP test
                         self.ftp_test_obj.build()
                     if not self.ftp_test_obj.passes():
@@ -1260,7 +1357,12 @@ class Mixed_Traffic(Realm):
                     logger.info("FTP traffic started running at {}".format(time1))
                     if self.real:
                         self.ftp_test_obj.monitor_cx()
-                    self.ftp_test_obj.start(False, False)
+                    if not self.cv_scenario:
+                        self.ftp_test_obj.start(False, False)
+                    else:
+                        # self.radio is empty here, so start all CXs directly
+                        self.ftp_test_obj.cx_profile.start_cx()
+                    self.reached_checkpoint("ftp", checkpoint_event, resume_event)
                     if self.dowebgui or self.real:
                         self.ftp_test_obj.monitor_for_runtime_csv()
                         self.ftp_test_obj.my_monitor_for_real_devices()
@@ -1268,6 +1370,8 @@ class Mixed_Traffic(Realm):
                         time.sleep(self.ftp_test_duration)
                         self.ftp_test_obj.my_monitor()
 
+                    # Stations are shared with other running tests; empty the list so stop() doesn't down them
+                    self.ftp_test_obj.station_profile.station_names = []
                     self.ftp_test_obj.stop()
                     logger.info("FTP traffic stopped running")
                     self.ftp_test_obj.cx_profile.cleanup()
@@ -1292,7 +1396,8 @@ class Mixed_Traffic(Realm):
             if (conn):
                 conn.send(['', False])
 
-    def http_test(self, ssid, password, security, http_file_size, target_per_ten, http_test=http_test, all_bands=False, conn=None):
+    def http_test(self, ssid, password, security, http_file_size, target_per_ten, http_test=http_test, all_bands=False, conn=None,
+                  checkpoint_event=None, resume_event=None):
         try:
             if self.test_duration:
                 self.http_test_duration = self.test_duration
@@ -1381,16 +1486,8 @@ class Mixed_Traffic(Realm):
                 # print(self.station_list)
                 # self.http_obj.station_list = [[self.station_list]]
                 # no L4 pre cleanup: global sweep breaks parallel FTP test
-                self.station_profile.admin_up()
-                logger.info("Waiting for all station ports to come up (maximum wait: 300 seconds)")
-                if not LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
-                                                         port_list=self.station_list,
-                                                         debug_=self.debug):
-                    self._fail("Unable to bring all stations up")
-                    return
-                logger.info("Waiting to get IP for all stations")
-                logger.info("Admin up all the stations")
-                Realm.wait_for_ip(self=self, station_list=self.station_list, timeout_sec=-1)
+
+                # Stations are already up with IPs before any test starts; no admin up / wait_for_ip here
 
                 # building layer4   #Todo: Since the lf_webpage script itself only support "download", so need to add upload functionality in future
                 self.http_obj.http_profile.direction = 'dl'
@@ -1416,6 +1513,7 @@ class Mixed_Traffic(Realm):
             if self.real:
                 self.http_obj.monitor_cx()
             self.http_obj.start()
+            self.reached_checkpoint("http", checkpoint_event, resume_event)
             if self.dowebgui or self.real:
                 self.http_obj.monitor_for_runtime_csv(self.http_test_duration)
             else:
@@ -1427,10 +1525,12 @@ class Mixed_Traffic(Realm):
                 rx_bytes_val = self.http_obj.data['bytes_rd']
                 rx_rate_val = self.http_obj.data['rx rate (1m)']
             else:
-                uc_avg_val = self.http_obj.my_monitor('uc-avg')
-                url_times = self.http_obj.my_monitor('total-urls')
-                rx_bytes_val = self.http_obj.my_monitor('bytes-rd')
-                rx_rate_val = self.http_obj.my_monitor('rx rate')
+                # One call for all fields so every list has one value per CX
+                report_data = self.http_obj.get_report_data()
+                uc_avg_val = report_data['uc-avg']
+                url_times = report_data['total-urls']
+                rx_bytes_val = report_data['bytes-rd']
+                rx_rate_val = report_data['rx rate']
             if self.dowebgui:
                 self.http_obj.data_for_webui["url_data"] = url_times
             if bands == "2.4G":
@@ -1563,7 +1663,7 @@ class Mixed_Traffic(Realm):
                 )
 
     def multicast_test(self, endp_types=None, mc_tos=None, side_a_min=0, side_b_min=0, side_a_pdu=0, side_b_pdu=0,
-                       _multicast_test=multicast_test, all_bands=False, conn=None):
+                       _multicast_test=multicast_test, all_bands=False, conn=None, checkpoint_event=None, resume_event=None):
         try:
             # use for creating multicast dictionary
             if self.test_duration:
@@ -1715,7 +1815,7 @@ class Mixed_Traffic(Realm):
                 return
             logger.info("Start the Multicast test")
             # TODO: Check return value of start()
-            self.multicast_test_obj.start(False)
+            self.multicast_test_obj.start(False, checkpoint_event=checkpoint_event, resume_event=resume_event)
             # csv_results_file = self.multicast_test_obj.get_results_csv()
             self.multicast_test_obj.get_results_csv()
             report.set_title("Multicast Test")
@@ -1799,6 +1899,335 @@ class Mixed_Traffic(Realm):
                                                  _label=['Download'])
         return graph.build_bar_graph_horizontal()
 
+    def reached_checkpoint(self, test_label, checkpoint_event=None, resume_event=None):
+        """Signal CXs started, then wait to continue. No-op unless --port_reset runs with --parallel."""
+        if checkpoint_event is not None:
+            logger.info("{} checkpoint reached at {}".format(test_label, datetime.datetime.now()))
+            checkpoint_event.set()
+        if resume_event is not None:
+            resume_event.wait()
+
+    def post_checkpoint_function(self):
+        clr_enp_data = {"endp_name": "all"}
+        clr_cx_data = {"cx_name": "all"}
+        logger.info("clearing CXs data")
+        self.json_post("cli-json/clear_cx_counters", clr_cx_data)
+        self.json_post("cli-json/clear_endp_counters", clr_enp_data)
+
+    def port_reset_test(self, port_reset_args=None, conn=None):
+        try:
+            self.port_reset_test_obj = lf_port_reset_test.PortResetTest(lf_host=self.host,
+                                                                        lf_port=self.port,
+                                                                        lf_user=self.lf_username,
+                                                                        lf_password=self.lf_password,
+                                                                        instance_name="mt_port_reset_inst",
+                                                                        config_name="mt_port_reset_cfg",
+                                                                        upstream="",
+                                                                        duration="",
+                                                                        upload_speed="",
+                                                                        download_speed="",
+                                                                        dut=self.dut_model,
+                                                                        pull_report=self.pull_report,
+                                                                        local_lf_report_dir=self.report_path,
+                                                                        port_reset_args=port_reset_args)
+            self.port_reset_test_obj.setup()
+            logger.info("Port Reset test started at {}".format(datetime.datetime.now()))
+            self.port_reset_test_obj.run()
+            logger.info("Port Reset test finished at {}, LANforge report location: {}".format(
+                datetime.datetime.now(), self.port_reset_test_obj.lf_report_dir))
+            self.port_reset_test_status = True
+            if conn:
+                conn.send([self.port_reset_test_obj, True])
+        except BaseException as e:
+            # BaseException: cv_test_manager may call exit(1); log why Port Reset is missing
+            logger.error("Port Reset test failed at {}: {!r}".format(datetime.datetime.now(), e))
+            logging.exception(e)
+            self.port_reset_test_status = False
+            if conn:
+                conn.send(['', False])
+
+    def station_info(self):
+        """Read back the scenario's virtual stations from /port/list, excluding real devices."""
+        self.sta_info = {
+            'station_list': list(),
+            'radio_list': list(),
+            'ssid_list': list(),
+            'key_list': list(),
+            'security_list': list(),
+            'band_list': list()
+        }
+        real_device_ports = set(self.base_interop_profile.get_devices())
+        real_device_resources = self._real_device_resources()
+
+        response = super().json_get(
+            "/port/list?fields=_links,parent+dev,ssid,alias,device,port+type,key/phrase,security,channel")
+        if response and 'interfaces' in response:
+            for x in range(len(response['interfaces'])):
+                for interface_name, interface_details in response['interfaces'][x].items():
+                    if not isinstance(interface_details, dict):
+                        logger.debug("Non-dictionary entry: {}".format(interface_name))
+                        continue
+                    if interface_name in real_device_ports or self._port_resource(interface_name) in real_device_resources:
+                        logger.debug("Skipping real device port: {}".format(interface_name))
+                        continue
+                    alias = interface_details.get('alias')
+                    if interface_details.get('port type') != "WIFI-STA" or not alias:
+                        continue
+                    # Append every field unconditionally so the lists stay index-aligned
+                    ssid = interface_details.get('ssid') or ''
+                    self.sta_info['station_list'].append(interface_name)
+                    self.sta_info['ssid_list'].append(ssid)
+                    self.sta_info['key_list'].append(interface_details.get('key/phrase') or '')
+                    self.sta_info['security_list'].append(interface_details.get('security') or '')
+                    self.sta_info['radio_list'].append(interface_details.get('parent dev') or '')
+                    self.sta_info['band_list'].append(self.band_for_port(interface_details))
+
+        # Keep per-band station counts for the QoS test (a scenario can span bands)
+        band_counts = {}
+        for station_band in self.sta_info['band_list']:
+            band_counts[station_band] = band_counts.get(station_band, 0) + 1
+        self.sta_info['band_counts'] = band_counts
+        self.sta_info['bands'] = [b for b in ('2.4G', '5G', '6G') if b in band_counts]
+
+        # Downstream code expects a single band; use the most common one, ignoring '-'
+        real_bands = {b: n for b, n in band_counts.items() if b != '-'}
+        self.sta_info['band_list'] = max(real_bands, key=real_bands.get) if real_bands else '-'
+
+        if real_device_ports:
+            logger.info("Excluded {} real device port(s) from scenario station discovery: {}".format(len(real_device_ports), sorted(real_device_ports)))
+        logger.info("Scenario stations: {}".format(self.sta_info['station_list']))
+        logger.info("Scenario radios: {}".format(self.sta_info['radio_list']))
+        logger.info("Scenario ssids: {}".format(self.sta_info['ssid_list']))
+        logger.info("Scenario securities: {}".format(self.sta_info['security_list']))
+        logger.info("Scenario band: {} (stations per band: {})".format(
+            self.sta_info['band_list'],
+            ", ".join("{} x{}".format(b, n) for b, n in sorted(self.sta_info['band_counts'].items()))))
+
+        return self.sta_info
+
+    @staticmethod
+    def parse_wait_time(value):
+        """'90', '90s', '5m', '1h' -> seconds. Raises ValueError on invalid or non-positive values."""
+        suffixes = {'s': 1, 'S': 1, 'm': 60, 'M': 60, 'h': 3600, 'H': 3600}
+        text = str(value).strip()
+        try:
+            seconds = int(text[:-1]) * suffixes[text[-1]] if text[-1:] in suffixes else int(text)
+        except ValueError:
+            raise ValueError("'{}' is not a valid time, use e.g. 90, 90s, 5m or 1h".format(value))
+        if seconds <= 0:
+            raise ValueError("'{}' must be greater than zero".format(value))
+        return seconds
+
+    def wait_for_scenario_built(self, cv_test_obj, timeout_sec):
+        """Poll "cv is_built" until the scenario is built; returns False on timeout."""
+        logger.info("Waiting up to {}s for the Chamber View scenario to be built".format(timeout_sec))
+        start = time.time()
+        while True:
+            cv_test_obj.get_popup_info_and_close()
+            if cv_test_obj.get_cv_is_built():
+                logger.info("Chamber View scenario built after {:.0f}s".format(time.time() - start))
+                return True
+            if time.time() - start >= timeout_sec:
+                return False
+            time.sleep(1)
+
+    def stations_on_band(self, band):
+        """Number of stations on this band (from the scenario, else all stations)."""
+        counts = self.sta_info.get('band_counts') if isinstance(self.sta_info, dict) else None
+        if counts:
+            return counts.get(band, 0)
+        return self.num_staions if band in (self.band or '') else 0
+
+    def _sta_port_fields(self):
+        """{port: {'down', 'ssid'}} for every WIFI-STA port, from a single /port/list read."""
+        ports = {}
+        response = super().json_get("/port/list?fields=alias,port+type,down,ssid")
+        for entry in (response or {}).get('interfaces', []):
+            for name, details in entry.items():
+                if isinstance(details, dict) and details.get('port type') == "WIFI-STA":
+                    ports[name] = {
+                        'down': bool(details.get('down', True)),
+                        'ssid': (details.get('ssid') or '').strip(),
+                    }
+        return ports
+
+    def _real_device_resources(self):
+        """Resource ids ('shelf.resource') of real devices, i.e. not running ct-kernel."""
+        resources = set()
+        response = super().json_get("/resource/all")
+        for entry in self.base_interop_profile._resource_list(response):
+            for resource_id, details in entry.items():
+                if isinstance(details, dict) and not details.get('ct-kernel', True):
+                    resources.add(resource_id)
+        return resources
+
+    @staticmethod
+    def _port_resource(port_name):
+        """'1.2.wlan0' -> '1.2'."""
+        return '.'.join(port_name.split('.')[:2])
+
+    def _sta_port_states(self):
+        """{port name: is it admin down?} for every WIFI-STA port."""
+        return {name: fields['down'] for name, fields in self._sta_port_fields().items()}
+
+    def admin_up_stations(self, station_list, attempts=25, settle_sec=5):
+        """Admin up scenario stations with retries; returns the ones that never came up."""
+        pending = list(station_list)
+        for attempt in range(1, attempts + 1):
+            states = self._sta_port_states()
+
+            missing = [sta for sta in pending if sta not in states]
+            if missing:
+                logger.warning("{} station(s) are not on the system, not admin upping: {}{}".format(
+                    len(missing), missing[:5], " ..." if len(missing) > 5 else ""))
+
+            for sta in pending:
+                if sta in states:
+                    self.admin_up(sta)
+
+            time.sleep(settle_sec)
+
+            # A missing station counts as pending; the scenario may still be rebuilding
+            states = self._sta_port_states()
+            pending = [sta for sta in pending if states.get(sta, True)]
+
+            if not pending:
+                # Return early once all stations are up
+                logger.info("All {} scenario station(s) admin up".format(len(station_list)))
+                return []
+            if attempt < attempts:
+                logger.info("{} station(s) still down after attempt {}/{}; retrying admin up".format(
+                    len(pending), attempt, attempts))
+
+        # Not fatal: wait_for_ip() runs next and gives slow stations longer.
+        logger.warning("{} of {} station(s) still down after {} attempts, continuing: {}{}".format(
+            len(pending), len(station_list), attempts, pending[:10],
+            " ..." if len(pending) > 10 else ""))
+        return pending
+
+    def wait_for_scenario_stations(self, timeout_sec=120, settle_polls=2, poll_sec=2):
+        """Wait for the scenario's station list to settle with SSIDs; returns False on timeout."""
+        deadline = time.time() + timeout_sec
+        previous = None
+        previous_blank = None
+        stable = 0
+        # Skip real devices; an unassociated one never gets an SSID
+        real_device_resources = self._real_device_resources()
+        if real_device_resources:
+            logger.info("Not waiting on real device resource(s): {}".format(sorted(real_device_resources)))
+        while True:
+            ports = {name: fields for name, fields in self._sta_port_fields().items()
+                     if self._port_resource(name) not in real_device_resources}
+            current = sorted(ports)
+            blank = [name for name in current if not ports[name]['ssid']]
+
+            if current and current == previous and not blank:
+                stable += 1
+                if stable >= settle_polls:
+                    logger.info("Scenario stations settled: {} station port(s)".format(len(current)))
+                    return True
+            else:
+                if previous is not None and current != previous:
+                    logger.info("Scenario stations still changing ({} -> {} port(s))".format(
+                        len(previous), len(current)))
+                elif blank and len(blank) != previous_blank:
+                    # Only on change, so a slow build does not fill the log.
+                    logger.info("Waiting for SSID on {} of {} station(s): {}".format(
+                        len(blank), len(current), blank))
+                stable = 0
+
+            previous = current
+            previous_blank = len(blank)
+            if time.time() >= deadline:
+                if blank:
+                    logger.warning("{} of {} station(s) still had no SSID after {}s; continuing "
+                                   "(band may read '-'): {}".format(len(blank), len(current), timeout_sec, blank))
+                else:
+                    logger.warning("Scenario stations had not settled after {}s; continuing with "
+                                   "{} station port(s)".format(timeout_sec, len(current)))
+                return False
+            time.sleep(poll_sec)
+
+    def wait_for_station_ips(self, station_list, timeout_sec=300, poll_sec=2):
+        """Wait until every station has an IPv4, one /port/list read per poll; False on timeout."""
+        waiting_states = ("0.0.0.0", "NA", "", "DELETED", "AUTO")
+        deadline = time.time() + timeout_sec
+        previous_pending = None
+        while True:
+            pending = list(station_list)
+            read_ok = False
+            try:
+                response = super().json_get("/port/list?fields=alias,ip,port+type")
+                ips = {}
+                for entry in (response or {}).get('interfaces', []):
+                    for name, details in entry.items():
+                        if isinstance(details, dict):
+                            ips[name] = str(details.get('ip') or '')
+                pending = [sta for sta in station_list if ips.get(sta, '') in waiting_states]
+                read_ok = True
+            except (OSError, http.client.HTTPException) as e:
+                # URLError, ConnectionError and RemoteDisconnected all land here.
+                logger.warning("Could not read station IPs from LANforge ({}); retrying".format(e))
+
+            if not pending:
+                return True
+            if read_ok:
+                if len(pending) != previous_pending:
+                    # Only on change, so a slow DHCP server does not fill the log.
+                    logger.info("Waiting for IP on {} of {} station(s): {}".format(
+                        len(pending), len(station_list), pending))
+                previous_pending = len(pending)
+            if time.time() >= deadline:
+                logger.warning("{} of {} station(s) still had no IP after {}s: {}".format(
+                    len(pending), len(station_list), timeout_sec, pending))
+                return False
+            time.sleep(poll_sec)
+
+    @staticmethod
+    def band_for_port(interface_details):
+        """Work out a station's band from its channel, falling back to the SSID."""
+        channel = str(interface_details.get('channel') or '').strip()
+        # 6E channels may carry an 'e' suffix (e.g. "1e"), which decides the band
+        if channel[-1:] in ('e', 'E'):
+            return '6G'
+        try:
+            channel = int(channel)
+        except (TypeError, ValueError):
+            channel = None
+
+        if channel is not None and channel > 0:
+            if channel <= 14:
+                return '2.4G'
+            # realm.py maps 6E channels from 191 (5955 MHz) upwards.
+            return '5G' if channel < 191 else '6G'
+
+        ssid = interface_details.get('ssid') or ''
+        if '2G' in ssid or '2g' in ssid:
+            return '2.4G'
+        if '5G' in ssid or '5g' in ssid:
+            return '5G'
+        if '6G' in ssid or '6g' in ssid:
+            return '6G'
+        return '-'
+
+    @staticmethod
+    def security_flag_for(security_str):
+        """Map a /port/list security string to the add_sta flag name currently set."""
+        if not security_str:
+            return None
+        security_str = security_str.lower()
+        if 'wpa3' in security_str:
+            return 'use-wpa3'
+        if 'wpa2' in security_str:
+            return 'wpa2_enable'
+        if 'wep' in security_str:
+            return 'wep_enable'
+        if 'owe' in security_str:
+            return 'use-owe'
+        if 'wpa' in security_str:
+            return 'wpa_enable'
+        return None
+
     def generate_all_report(self, iot_summary=None):
         logger.info("Generate the Mixed Traffic report with all tests")
         mode = "Parallel" if self.parallel else "Serial"
@@ -1818,6 +2247,11 @@ class Mixed_Traffic(Realm):
             "Security": self.security,
             "No of Devices": f"{len(self.user_query[0]) if self.real else len(self.station_list)} (Virtual Clients: {virtual_sta_count}, Windows: {windows_count}, Linux: {linux_count}, Mac: {mac_count}, Android: {android_count} ,iOS: {ios_count})",  # noqa: E501
             "Test Duration (HH:MM:SS)": self.time_formate}
+        if self.port_reset and self.port_reset_args:
+            test_setup_info["Port Reset Duration (ms)"] = self.port_reset_args.get("duration")
+            test_setup_info["Port Reset Duration Min (ms)"] = self.port_reset_args.get("duration_min")
+            test_setup_info["Port Reset Duration Max (ms)"] = self.port_reset_args.get("duration_max")
+            test_setup_info["Port Reset Batch Size"] = self.port_reset_args.get("batch_size")
         self.lf_report_mt.set_table_title("Test Setup Information")
         self.lf_report_mt.build_table_title()
         if iot_summary:
@@ -1938,6 +2372,44 @@ class Mixed_Traffic(Realm):
             })
             self.lf_report_mt.set_table_dataframe(df)
             self.lf_report_mt.build_table()
+
+            port_reset_lf_report_dir = getattr(self.port_reset_test_obj, 'lf_report_dir', None)
+            port_reset_missing_reason = None
+            if self.port_reset and self.port_reset_args and not self.port_reset_test_status:
+                port_reset_missing_reason = "The Port Reset test did not complete; see the console log for the error."
+            elif self.port_reset and self.port_reset_args and not port_reset_lf_report_dir:
+                port_reset_missing_reason = "The Port Reset test ended without LANforge reporting a report location."
+            elif self.port_reset and self.port_reset_args and not self.pull_report:
+                port_reset_missing_reason = ("The Port Reset report was left on LANforge at {}; run with --pull_report "
+                                             "to include its stats here.".format(port_reset_lf_report_dir))
+            if port_reset_missing_reason:
+                logger.error("Port Reset stats are not in the report: {}".format(port_reset_missing_reason))
+                self.lf_report_mt.set_obj_html(_obj_title="Port Reset Test", _obj=port_reset_missing_reason)
+                self.lf_report_mt.build_objective()
+            elif self.port_reset and self.port_reset_test_status and port_reset_lf_report_dir:
+                # Port Reset stats image reporting in mixed traffic, shown before the individual test reports
+                port_reset_report_dir = os.path.join(self.report_path, os.path.basename(port_reset_lf_report_dir))
+                port_reset_kpi_image = None
+                if os.path.isdir(port_reset_report_dir):
+                    for fname in sorted(os.listdir(port_reset_report_dir)):
+                        if fname.lower().endswith(".png") and "kpi" in fname.lower() and "print" not in fname.lower():
+                            port_reset_kpi_image = os.path.join(port_reset_report_dir, fname)
+                            break
+                if port_reset_kpi_image:
+                    self.lf_report_mt.set_obj_html(_obj_title="Port Reset Test", _obj="")
+                    self.lf_report_mt.build_objective()
+                    self.lf_report_mt.set_table_title("Port Reset Stats")
+                    self.lf_report_mt.build_table_title()
+                    port_reset_image_name = os.path.basename(port_reset_kpi_image)
+                    shutil.copy(port_reset_kpi_image, os.path.join(self.report_path, port_reset_image_name))
+                    self.lf_report_mt.set_graph_image(port_reset_image_name)
+                    self.lf_report_mt.build_graph()
+                else:
+                    logger.warning("Port Reset KPI image not found in {}".format(port_reset_report_dir))
+                    self.lf_report_mt.set_obj_html(
+                        _obj_title="Port Reset Test",
+                        _obj="The Port Reset report was pulled, but no KPI chart was found in {}.".format(port_reset_report_dir))
+                    self.lf_report_mt.build_objective()
 
             if "1" in self.tests and self.ping_test_status:
                 # 1.Ping test reporting in mixed traffic
@@ -2095,7 +2567,10 @@ class Mixed_Traffic(Realm):
                         if res:
                             self.data_set, self.load, res1 = qos_obj.generate_graph_data_set(res)
                             qos_obj.tos = tos
-                            qos_obj.generate_individual_graph(res1, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a, qos_obj.avg_drop_b)
+                            if self.virtual:
+                                qos_obj.generate_individual_graph(res1, self.lf_report_mt)
+                            else:
+                                qos_obj.generate_individual_graph(res1, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a, qos_obj.avg_drop_b)
                 else:
                     df_throughput = pd.DataFrame(self.res["throughput_table_df"])
                     self.lf_report_mt.set_table_dataframe(df_throughput)
@@ -2131,8 +2606,11 @@ class Mixed_Traffic(Realm):
                     self.lf_report_mt.build_graph()
                     # Helpful for testhouse when both QoS and multicast are checked, to avoid generating redundant RSSI heatmaps.
                     multicast_exists = "5" in self.tests and self.get_live_view
-                    qos_obj.generate_individual_graph(self.res, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a,
-                                                      qos_obj.avg_drop_b, self.total_floors, multicast_exists)
+                    if self.virtual:
+                        qos_obj.generate_individual_graph(self.res, self.lf_report_mt)
+                    else:
+                        qos_obj.generate_individual_graph(self.res, self.lf_report_mt, qos_obj.connections_download_avg, qos_obj.connections_upload_avg, qos_obj.avg_drop_a,
+                                                          qos_obj.avg_drop_b, self.total_floors, multicast_exists)
             if "3" in self.tests and self.ftp_test_status:
                 # 3.FTP test reporting in mixed traffic
                 self.lf_report_mt.set_obj_html(_obj_title="3. File Transfer Protocol (FTP) Test", _obj="")
@@ -2737,6 +3215,82 @@ def recv_or_default(pipe, proc, default, label):
     return result
 
 
+def setup_port_reset(mixed_obj, args, port_reset_args):
+    """Prepare the Port Reset process to run alongside the selected tests.
+
+    Returns (process, parent_conn, checkpoint_events, resume_event); process is None if skipped.
+    """
+    checkpoint_events = {}
+    if not args.port_reset:
+        return None, None, checkpoint_events, None
+    if not mixed_obj.station_list:
+        logger.warning("--port_reset needs LANforge stations to reset, but none were created; skipping Port Reset")
+        return None, None, checkpoint_events, None
+    # Copy so per-band entries don't carry over to the next band
+    port_reset_args = dict(port_reset_args)
+    if port_reset_args.get("batch_size") is None:
+        port_reset_args["batch_size"] = len(mixed_obj.station_list)
+    elif port_reset_args["batch_size"] > len(mixed_obj.station_list):
+        logger.info("Port Reset batch_size ({}) is greater than the number of stations ({}); "
+                    "capping batch_size to the number of stations".format(
+                        port_reset_args["batch_size"], len(mixed_obj.station_list)))
+        port_reset_args["batch_size"] = len(mixed_obj.station_list)
+    port_reset_args = add_ports_in_port_reset_args(mixed_obj.station_list, port_reset_args)
+    mixed_obj.port_reset_args = port_reset_args
+    port_reset_parent, port_reset_child = Pipe()
+    port_reset_process = Process(target=mixed_obj.port_reset_test,
+                                 kwargs={
+                                     'port_reset_args': port_reset_args,
+                                     'conn': port_reset_child
+                                 }
+                                 )
+    resume_event = None
+    if args.parallel:
+        for test_id in ("1", "2", "3", "4", "5"):
+            if test_id in args.tests:
+                checkpoint_events[test_id] = Event()
+        resume_event = Event()
+    else:
+        # Not parallel: start Port Reset right away
+        port_reset_process.start()
+    return port_reset_process, port_reset_parent, checkpoint_events, resume_event
+
+
+def start_port_reset_after_checkpoints(mixed_obj, port_reset_process, checkpoint_events, resume_event, test_processes):
+    """Wait for every parallel test to start its CXs, release them together, then start Port Reset."""
+    if port_reset_process is None or resume_event is None:
+        return
+    logger.info("Waiting for all parallel tests to start their CXs before starting Port Reset")
+    pending_checkpoints = dict(checkpoint_events)
+    while pending_checkpoints:
+        for test_id in list(pending_checkpoints):
+            event = pending_checkpoints[test_id]
+            if event.is_set():
+                logger.info(f"Test {test_id} reached its checkpoint")
+                del pending_checkpoints[test_id]
+            elif not test_processes[test_id].is_alive():
+                logger.warning(f"Test {test_id} exited before reaching its checkpoint; "
+                               "skipping it while waiting for the remaining checkpoints")
+                del pending_checkpoints[test_id]
+        if pending_checkpoints:
+            time.sleep(0.5)
+    logger.info("All parallel tests reached their checkpoint (or exited). Running post-checkpoint function.")
+    mixed_obj.post_checkpoint_function()
+    resume_event.set()
+    duration_min = mixed_obj.port_reset_args["duration_min"]
+    logger.info("Waiting duration_min ({} ms) before starting Port Reset".format(duration_min))
+    time.sleep(duration_min / 1000.0)
+    port_reset_process.start()
+
+
+def collect_port_reset(mixed_obj, port_reset_process, port_reset_parent):
+    """Wait for Port Reset to finish and keep its result for the overall report."""
+    if port_reset_process is None:
+        return
+    mixed_obj.port_reset_test_obj, mixed_obj.port_reset_test_status = recv_or_default(
+        port_reset_parent, port_reset_process, ('', False), "Port Reset test")
+
+
 def main():
     help_summary = '''\
     Mixed traffic test is designed to measure the access point performance and stability by running multiple traffic
@@ -2826,6 +3380,47 @@ EXAMPLE:
             --ping_test_duration 1m --qos_test_duration 30s --ftp_test_duration 30s --http_test_duration 30s --multicast_test_duration 30s
             --all_bands --pre_cleanup
 
+        # CLI for Mixed Traffic Test: Build the stations from a Chamber View scenario
+
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100 --scenario <scenario_name> --virtual
+            --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1
+            --side_b_min_bps 3000000 --side_a_min 1000000 --side_b_min 1000000 --traffic_type lf_tcp --tos "VI"
+            --ftp_file_sizes 10MB --http_file_size 5MB --direction Download --mc_tos "BE"
+            --test_duration 1m --pre_cleanup
+
+        # CLI for Mixed Traffic Test: Chamber View scenario using WPA3 SAE (AES/CCMP) station security
+
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100 --scenario <scenario_name> --security_config wpa3_aes_sae
+            --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1 --virtual --test_duration 1m --pre_cleanup
+
+        # CLI for Mixed Traffic Test: Chamber View scenario using WPA3 SAE-EXT-KEY (GCMP-256) station security
+
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100 --scenario <scenario_name> --security_config wpa3_gcmp_sae
+            --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1 --virtual --test_duration 1m --pre_cleanup
+
+        # CLI for Mixed Traffic Test: Chamber View scenario using 802.1x / EAP station security
+
+            python3 lf_mixed_traffic.py --mgr 192.168.212.100 --scenario <scenario_name> --security_config 1x
+            --eap_method EAP-PEAP --eap_identity user --eap_password pass --key_mgmt WPA-EAP
+            --tests 1 2 3 4 5 --target 10.0.0.10 --ping_interval 5 --upstream_port 1.1.eth1 --virtual --test_duration 1m --pre_cleanup
+
+        # CLI for Mixed Traffic Test: Chamber View scenario with Port Reset running in parallel
+
+            python3 lf_mixed_traffic.py --mgr 192.168.204.71 --scenario <scenario_name> --virtual --parallel
+            --tests 1 2 3 4 5 --target 127.0.0.1 --ping_interval 1 --upstream_port 1.1.eth2
+            --side_b_min_bps 10000000 --side_a_min 0 --side_b_min 100000000 --traffic_type lf_tcp --tos "VO"
+            --ftp_file_sizes 5MB --http_file_size 5MB --direction Download --mc_tos "BK" --test_duration 2m
+            --port_reset --pr_duration 130s --duration_min 30s --duration_max 30s --pull_report
+
+        # CLI for Mixed Traffic Test: Chamber View scenario with all tests running in parallel
+
+            python3 lf_mixed_traffic.py --mgr 192.168.204.71 --scenario <scenario_name> --virtual --parallel
+            --tests 1 2 3 4 5 --target 127.0.0.1 --ping_interval 1 --upstream_port 1.1.eth2
+            --side_b_min_bps 10000000 --side_a_min 0 --side_b_min 100000000 --traffic_type lf_tcp --tos "VO"
+            --ftp_file_sizes 5MB --http_file_size 5MB --direction Download --mc_tos "BK"
+            --test_duration 2m --pre_cleanup
+
+
 SCRIPT_CLASSIFICATION:  Multiples Tests, Creation, Report Generation (Both individual & Overall)
 
 SCRIPT_CATEGORIES:  Performance, Functional
@@ -2866,6 +3461,12 @@ INCLUDE_IN_README: False
                                           'eg: --tests 1 2 3 4 5', nargs="+", default=["1 2 3 4 5"])
     optional.add_argument('--parallel', action='store_true',
                           help='Use --parallel to run the all the traffics (ftp,http,qos,ping,multicast..) simultaeneously')
+    optional.add_argument('--port_reset', action='store_true',
+                          help='Use --port_reset to run a Port Reset test in parallel with the selected tests, '
+                               'regardless of whether those tests run serially or via --parallel. See Port Reset '
+                               'Test arguments to tune batch_size, duration, duration_min, duration_max, etc.')
+    optional.add_argument('-pull_report', '--pull_report', default=False, action='store_true',
+                          help='pull the Port Reset report from lanforge (by default: False)')
     # virtual stations
     # optional.add_argument('--start_id',
     #                       help='Specify the station starting id \n e.g: --start_id <value> default 0',
@@ -2916,6 +3517,55 @@ INCLUDE_IN_README: False
     optional.add_argument('--dut_firmware', help='Specify the dut firmware. eg: --dut_firmware V1.0.0.10',
                           default="NA")
     optional.add_argument('--mixed_traffic_loop', type=int, help='Specify the number of times mixed traffic test should run', default=1)
+
+    # Chamber View scenario based station creation
+    optional.add_argument('--scenario', type=str,
+                          help='Provide the Scenario name of the Chamber view for building the station '
+                               'creation scenario. When given, stations come from the scenario instead of '
+                               'the --twog_*/--fiveg_*/--sixg_* arguments.')
+    optional.add_argument('--scenario_wait_time', type=str, default='5m',
+                          help='Longest to wait for a --scenario to finish building before giving up, '
+                               'e.g. 90s, 5m, 1h (default 5m). The run continues as soon as the '
+                               'scenario reports built, so this is a limit, not a fixed delay.')
+    optional.add_argument('--admin_up_retries', type=int, default=25,
+                          help='How many passes to make bringing --scenario stations admin up '
+                               '(default 25). Each pass re-reads the port list, admin ups whatever '
+                               'is still down and waits 5s. The run moves on as soon as every '
+                               'station is up, so this is a limit, not a fixed cost.')
+    optional.add_argument('--station_ip_wait_time', type=str, default='300s',
+                          help='Longest to wait for --scenario stations to get an IPv4 address, '
+                               'e.g. 90s, 5m, 1h (default 300s). The run continues as soon as every '
+                               'station has an address, so this is a limit, not a fixed delay.')
+    optional.add_argument('--security_config',
+                          type=str,
+                          choices=['1x', 'wpa3_aes_sae', 'wpa3_gcmp_sae'],
+                          default=None,
+                          help='Station security setup to apply when building stations from a --scenario.\n'
+                               'If omitted, the scenario\'s own station security is left untouched:\n'
+                               '1x            --> 802.1x / EAP based station security\n'
+                               'wpa3_aes_sae  --> WPA3 SAE with AES/CCMP ciphers\n'
+                               'wpa3_gcmp_sae --> WPA3 SAE-EXT-KEY with GCMP-256 ciphers')
+    optional.add_argument('--security', type=str,
+                          help='Enter the security only when using --scenario to set the ieee80211w flag '
+                               'in additional config')
+    optional.add_argument('--key_mgmt', type=str, help='Enter the key management, e.g: WPA-EAP')
+    optional.add_argument('--pairwise_cipher', type=str, default='[BLANK]',
+                          help='Pairwise cipher, e.g: CCMP, GCMP-256, CCMP/GCMP-256 (wpa3)')
+    optional.add_argument('--groupwise_cipher', type=str, default='[BLANK]',
+                          help='Groupwise cipher, e.g: CCMP, GCMP-256 (wpa3), All')
+    optional.add_argument('--custom_wifi_cmd', type=str,
+                          help='Enter the custom wifi command to be used for station creation.')
+    optional.add_argument('--eap_method', type=str, help='Enter EAP method e.g: TLS')
+    optional.add_argument('--eap_identity', dest='eap_identity', type=str,
+                          help='This is synonymous with the RADIUS username.')
+    optional.add_argument('--eap_anonymous_identity', type=str, default='[BLANK]', help='')
+    optional.add_argument('--eap_password', '--radius_passwd', dest='eap_password', type=str,
+                          help='This is synonymous with the RADIUS password.')
+    optional.add_argument('--eap_phase1', type=str, default='[BLANK]', help='Enter the phase1 value')
+    optional.add_argument('--eap_phase2', type=str, default='[BLANK]', help='Enter the phase2 value')
+    optional.add_argument('--private_key', type=str, default='[BLANK]', help='Enter the private key path')
+    optional.add_argument('--ca_cert', type=str, default='[BLANK]', help='Enter the CA certificate path')
+    optional.add_argument('--pk_passwd', type=str, default='[BLANK]', help='Enter the private key password')
 
     # ping test args
     required.add_argument('--target', type=str, help='Target URL for ping test', default='192.168.1.3')
@@ -3021,7 +3671,104 @@ INCLUDE_IN_README: False
                           type=str,
                           default='',
                           help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
-    args = parser.parse_args()
+
+    # Port Reset test arguments (used with --port_reset)
+    port_reset_args = {}
+    # allow_abbrev=False so --real isn't treated as an ambiguous abbreviation
+    port_reset_parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
+    port_reset_parser.add_argument("--saved_at_ms", type=int, dest="__saved_at_ms", default=1783420011611)
+    port_reset_parser.add_argument("--pre_post_anon", type=int, default=0)
+    port_reset_parser.add_argument("--pre_post_inline", type=int, default=0)
+    port_reset_parser.add_argument("--do_pre_post", type=int, default=1)
+    port_reset_parser.add_argument("--anonymize_ap", type=int, default=0)
+    port_reset_parser.add_argument("--show_events", type=int, default=1)
+    port_reset_parser.add_argument("--show_log", type=int, default=0)
+    port_reset_parser.add_argument("--log_stdout", type=int, default=0)
+    port_reset_parser.add_argument("--port_sorting", type=int, default=2)
+    port_reset_parser.add_argument("--kpi_id", default="Port Reset")
+    port_reset_parser.add_argument("--get_csv_cb", type=int, default=0)
+    port_reset_parser.add_argument("--auto_save", type=int, default=0)
+    port_reset_parser.add_argument("--rpt_path", default="")
+    port_reset_parser.add_argument("--rpt_path_make_subdir", type=int, default=1)
+    port_reset_parser.add_argument("--show_inline_logs", type=int, default=1)
+    port_reset_parser.add_argument("--rpt_name", default="")
+    port_reset_parser.add_argument("--rpt_dir_prefix_textfield", default="")
+    port_reset_parser.add_argument("--bg", default="0xE0ECF8")
+    port_reset_parser.add_argument("--dut_info_override", default="")
+    port_reset_parser.add_argument("--dut_info_cmd", default="")
+    port_reset_parser.add_argument("--test_rig", default="")
+    port_reset_parser.add_argument("--test_tag", default="")
+    port_reset_parser.add_argument("--show_scan", type=int, default=1)
+    port_reset_parser.add_argument("--show_link_graphs", type=int, default=1)
+    port_reset_parser.add_argument("--auto_helper", type=int, default=1)
+    port_reset_parser.add_argument("--pause_on_failure", type=int, default=0)
+    port_reset_parser.add_argument("--allow_11w", type=int, default=0)
+    port_reset_parser.add_argument("--use_mcs_histograms", type=int, default=1)
+    port_reset_parser.add_argument("--use_mlo_histograms", type=int, default=1)
+    port_reset_parser.add_argument("--disable_mlo", type=int, default=0)
+    port_reset_parser.add_argument("--extra_tx_status", type=int, default=0)
+    port_reset_parser.add_argument("--extra_rx_status", type=int, default=0)
+    port_reset_parser.add_argument("--txs_all_status", type=int, default=0)
+    port_reset_parser.add_argument("--sae_pwe", type=int, default=2)
+    port_reset_parser.add_argument("--multi_cx", type=int, default=1)
+    port_reset_parser.add_argument("--skip_ac", type=int, default=0)
+    port_reset_parser.add_argument("--skip_be", type=int, default=0)
+    port_reset_parser.add_argument("--skip_ax", type=int, default=0)
+    port_reset_parser.add_argument("--skip_2", type=int, default=0)
+    port_reset_parser.add_argument("--skip_5", type=int, default=0)
+    port_reset_parser.add_argument("--skip_5b", type=int, default=1)
+    port_reset_parser.add_argument("--skip_6", type=int, default=0)
+    port_reset_parser.add_argument("--skip_mlo", type=int, default=0)
+    port_reset_parser.add_argument("--skip_dual", type=int, default=0)
+    port_reset_parser.add_argument("--skip_tri", type=int, default=1)
+    port_reset_parser.add_argument("--skip_tri_5b", type=int, default=1)
+    port_reset_parser.add_argument("--skip_rebuild", type=int, default=0)
+    port_reset_parser.add_argument("--udp_gro", type=int, default=0)
+    port_reset_parser.add_argument("--udp_burst", type=int, default=0)
+    port_reset_parser.add_argument("--show_mcs_unidirectional", type=int, default=0)
+    port_reset_parser.add_argument("--default_verbosity_cb", type=int, default=-1)
+    port_reset_parser.add_argument("--report_limit_cb", type=int, default=20)
+    port_reset_parser.add_argument("--payload_pattern", default="0")
+    port_reset_parser.add_argument("--sndbuf_tcp", default="0")
+    port_reset_parser.add_argument("--sndbuf_udp", default="0")
+    port_reset_parser.add_argument("--rcvbuf_tcp", default="0")
+    port_reset_parser.add_argument("--rcvbuf_udp", default="0")
+    port_reset_parser.add_argument("--show_per_loop_totals", type=int, default=1)
+    port_reset_parser.add_argument("--clear_ports_too", type=int, default=0)
+    port_reset_parser.add_argument("--show_lat_distrib", type=int, default=1)
+    port_reset_parser.add_argument("--show_log_scale", type=int, default=0)
+    port_reset_parser.add_argument("--show_adv_lat_graph", type=int, default=0)
+    port_reset_parser.add_argument("--realtime_per_port", type=int, default=0)
+    port_reset_parser.add_argument("--realtime_per_cx", type=int, default=0)
+    port_reset_parser.add_argument("--batch_size", type=int, default=None,
+                                   help='Number of ports to reset per batch. Defaults to the number of stations '
+                                        'created for the test when not specified.')
+    # --pr_duration avoids clashing with --port_reset; dest "duration" is the Port Reset key
+    port_reset_parser.add_argument("--duration", "--pr_duration", dest="duration", default="600000",
+                                   help='Port Reset traffic duration in ms, or with a unit suffix like 10m, 30s, 1h')
+    port_reset_parser.add_argument("--duration_min", default="180000",
+                                   help='Port Reset minimum duration in ms, or with a unit suffix like 10m, 30s, 1h')
+    port_reset_parser.add_argument("--duration_max", default="180000",
+                                   help='Port Reset maximum duration in ms, or with a unit suffix like 10m, 30s, 1h')
+    port_reset_parser.add_argument("--downtime", type=int, default=0)
+    port_reset_parser.add_argument("--random_sel", type=int, default=0)
+    port_reset_parser.add_argument("--change_mac", type=int, default=0)
+    port_reset_parser.add_argument("--no_deauth", type=int, default=0)
+    port_reset_parser.add_argument("--run_traffic", type=int, default=0)
+    # --traffic_type is used by QoS, so expose --pr_traffic_type stored as "traffic_type"
+    port_reset_parser.add_argument("--pr_traffic_type", dest="traffic_type", default="UDP")
+    port_reset_parser.add_argument("--dl_rate", type=int, default=10000000)
+    port_reset_parser.add_argument("--ul_rate", type=int, default=0)
+
+    port_reset_arguments, remaining = port_reset_parser.parse_known_args()
+    port_reset_args.update(vars(port_reset_arguments))
+    # Durations are in ms, or with an s/m/h suffix
+    for duration_key in ("duration", "duration_min", "duration_max"):
+        port_reset_args[duration_key] = convert_duration_to_ms(port_reset_args[duration_key])
+
+    args = parser.parse_args(remaining)
+    # Port Reset shares the same upstream port as the rest of the mixed traffic test.
+    port_reset_args["upstream_port"] = args.upstream_port
 
     # help summary
     if args.help_summary:
@@ -3042,17 +3789,68 @@ INCLUDE_IN_README: False
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
+    try:
+        scenario_wait_secs = Mixed_Traffic.parse_wait_time(args.scenario_wait_time)
+    except ValueError as err:
+        print("--scenario_wait_time: {}".format(err))
+        exit(1)
+
+    try:
+        station_ip_wait_secs = Mixed_Traffic.parse_wait_time(args.station_ip_wait_time)
+    except ValueError as err:
+        print("--station_ip_wait_time: {}".format(err))
+        exit(1)
+
+    if args.admin_up_retries < 1:
+        print("--admin_up_retries: must be at least 1")
+        exit(1)
+
     # checking multicast test tos separation
     if ',' in args.mc_tos:
         print(argparse.ArgumentTypeError(
             "--mc_tos <input> should not contain single value not multiple values. eg : --mc_tos \"BE"))
         exit(0)
 
+    # LANforge GUI security labels -> CLI values; unknown values pass through
+    EAP_METHOD_MAP = {
+        "DEFAULT": "DEFAULT", "EAP-MD5": "MD5", "MSCHAPV2": "MSCHAPV2", "EAP-OTP": "OTP",
+        "EAP-GTC": "GTC", "EAP-TLS": "TLS", "EAP-PEAP": "PEAP", "EAP-TTLS": "TTLS",
+        "EAP-SIM": "SIM", "EAP-AKA": "AKA", "EAP-PSK": "PSK", "EAP-IKEV2": "IKEV2",
+        "EAP-FAST": "FAST", "WFA-UNAUTH-TLS": "WFA-UNAUTH-TLS", "TTLS PEAP TLS": "TTLS PEAP TLS",
+    }
+    KEY_MGMT_MAP = {
+        "DEFAULT": "DEFAULT", "NONE": "NONE", "WPA-PSK": "WPA-PSK", "FT-PSK (11r)": "FT-PSK",
+        "FT-EAP (11r)": "FT-EAP", "FT-SAE (11r)": "FT-SAE", "FT-SAE-EXT-KEY (11r)": "FT-SAE-EXT-KEY",
+        "FT-EAP-SHA384 (11r)": "FT-EAP-SHA-384", "WPA-EAP": "WPA-EAP", "OSEN": "OSEN",
+        "IEEE8021X": "IEEE8021X", "WPA-PSK-SHA256": "WPA-PSK-SHA256", "WPA-EAP-SHA256": "WPA-EAP-SHA256",
+        "PSK & EAP 128": "WPA-PSK WPA-EAP", "PSK & EAP 256": "WPA-PSK-256 WPA-EAP-256",
+        "PSK & EAP 128/256": "WPA-PSK WPA-EAP WPA-PSK-256 WPA-EAP-256", "SAE": "SAE",
+        "SAE-EXT-KEY": "SAE-EXT-KEY", "WPA-EAP-SUITE-B": "WPA-EAP-SUITE-B",
+        "WPA-EAP-SUITE-B-192": "WPA-EAP-SUITE-B-192", "FILS-SHA256": "FILS-SHA256",
+        "FILS-SHA384": "FILS-SHA384", "OWE": "OWE",
+    }
+    PAIRWISE_CIPHER_MAP = {
+        "DEFAULT": "DEFAULT", "CCMP": "CCMP", "TKIP": "TKIP", "NONE": "NONE",
+        "CCMP TKIP": "CCMP TKIP", "CCMP-256": "CCMP-256", "GCMP (wpa3)": "GCMP",
+        "GCMP-256 (wpa3)": "GCMP-256", "CCMP/GCMP-256 (wpa3)": "GCMP-256 CCMP-256",
+    }
+    GROUPWISE_CIPHER_MAP = {
+        "DEFAULT": "DEFAULT", "CCMP": "CCMP", "WEP104": "WEP104", "WEP40": "WEP40",
+        "GTK_NOT_USED": "GTK_NOT_USED", "GCMP-256 (wpa3)": "GCMP-256", "CCMP-256 (wpa3)": "CCMP-256",
+        "GCMP/CCMP-256 (wpa3)": "GCMP-256 CCMP-256",
+        "All": "CCMP TKIP WEP104 WEP40 CCMP-256 GCMP-256",
+    }
+    eap_method = EAP_METHOD_MAP.get(args.eap_method, args.eap_method)
+    key_mgmt = KEY_MGMT_MAP.get(args.key_mgmt, args.key_mgmt)
+    pairwise_cipher = PAIRWISE_CIPHER_MAP.get(args.pairwise_cipher, args.pairwise_cipher)
+    groupwise_cipher = GROUPWISE_CIPHER_MAP.get(args.groupwise_cipher, args.groupwise_cipher)
+
     radio, ssid, security, password = [], [], [], []
     Bands = args.band[0].split(',')
 
     # checking all required arguments for wifi config
-    if (args.use_default_config is False):
+    # --scenario supplies ssid/passwd/security, so per-band args aren't required
+    if (args.use_default_config is False) and (not args.scenario):
         if ('2.4G' in Bands):
             if (args.twog_ssid is None):
                 print('--twog_ssid is required')
@@ -3174,6 +3972,8 @@ INCLUDE_IN_README: False
                               multicast_test_duration=args.multicast_test_duration,
                               configure=configure,
                               parallel=args.parallel,
+                              pull_report=args.pull_report,
+                              port_reset=args.port_reset,
 
                               target=args.target,
                               multicast_endp_types=args.mc_traffic_type,
@@ -3186,12 +3986,243 @@ INCLUDE_IN_README: False
                               result_dir=args.result_dir,
                               get_live_view=args.get_live_view,
                               total_floors=args.total_floors,
+                              cv_scenario=args.scenario,
                               # path=path
                               )
     # pre-cleaning & creating / selecting clients for both real and virtual
     twog_selected_devices, fiveg_selected_devices, sixg_selected_devices = None, None, None
     if args.pre_cleanup:
         mixed_obj.pre_cleanup()
+    if args.scenario:
+        # Build the stations from a Chamber View scenario instead of the per-band args
+        cv_test_obj = cv_test_manager.cv_test(lfclient_host=args.mgr)
+        cv_test_obj.apply_cv_scenario(args.scenario)
+        cv_test_obj.build_cv_scenario()
+        # Retry while Chamber View reports BUSY tearing down the previous scenario
+        create_deadline = time.time() + scenario_wait_secs
+        while True:
+            create_response = cv_test_obj.create_test(test_name='Scenario Test', instance=args.scenario,
+                                                      load_old_cfg=False)
+            try:
+                response_text = str(create_response[0]["LAST"]["response"])
+            except (IndexError, KeyError, TypeError):
+                response_text = str(create_response)
+            if response_text == "OK":
+                break
+            if "BUSY" not in response_text.upper():
+                logger.warning("Chamber View did not report the test as created: {}".format(create_response))
+                break
+            if time.time() >= create_deadline:
+                logger.error("Chamber View stayed busy for {}s; scenario '{}' was never created. "
+                             "Exiting rather than testing whatever ports are left over.".format(
+                                 scenario_wait_secs, args.scenario))
+                exit(1)
+            logger.info("Chamber View is busy clearing ports; retrying scenario create")
+            time.sleep(2)
+        logger.info("Stations Initiated and waits until adminup and gets IP")
+        if not mixed_obj.wait_for_scenario_built(cv_test_obj, scenario_wait_secs):
+            logger.error("Scenario '{}' was not built within --scenario_wait_time {}. Exiting.".format(
+                args.scenario, args.scenario_wait_time))
+            exit(1)
+        # Wait for the station list to settle; "cv is_built" may be stale
+        mixed_obj.wait_for_scenario_stations(timeout_sec=scenario_wait_secs)
+        mixed_obj.station_info()
+        mixed_obj.station_list = mixed_obj.sta_info['station_list']
+        mixed_obj.station_profile.station_names = mixed_obj.sta_info['station_list']
+        mixed_obj.num_staions = len(mixed_obj.sta_info['station_list'])
+
+        # --security_config re-applies station security on top of the scenario
+        if args.security_config in ('wpa3_aes_sae', 'wpa3_gcmp_sae'):
+            for (stat, rad, ssids, pass_key) in zip(mixed_obj.sta_info['station_list'],
+                                                    mixed_obj.sta_info['radio_list'],
+                                                    mixed_obj.sta_info['ssid_list'],
+                                                    mixed_obj.sta_info['key_list']):
+                # flags 1099511627776 clears the station's "Disable MLO" bit.
+                add_sta_data = {
+                    'radio': rad,
+                    'sta_name': stat.split('.')[2],
+                    'ssid': ssids,
+                    'key': pass_key,
+                    'mode': 0,
+                    'flags': 1099511627776,
+                    'ieee80211w': 1,
+                    'shelf': stat.split('.')[0],
+                    'resource': stat.split('.')[1],
+                }
+                response = mixed_obj.json_post("cli-json/add_sta", add_sta_data, debug_=mixed_obj.debug)
+                time.sleep(3)
+                logger.info(response)
+
+                if args.security_config == 'wpa3_gcmp_sae':
+                    set_wifi_extra_data = {
+                        'shelf': stat.split('.')[0],
+                        'resource': stat.split('.')[1],
+                        'port': stat.split('.')[2],
+                        'key_mgmt': "SAE-EXT-KEY",
+                        'pairwise': "GCMP-256",
+                        'group': "GCMP-256",
+                    }
+                    response = mixed_obj.json_post("cli-json/set_wifi_extra", set_wifi_extra_data,
+                                                   debug_=mixed_obj.debug)
+                    time.sleep(3)
+                    logger.info(response)
+                elif args.security_config == 'wpa3_aes_sae':
+                    # Only send user-specified fields; skip set_wifi_extra if none
+                    set_wifi_extra_data = {
+                        'shelf': stat.split('.')[0],
+                        'resource': stat.split('.')[1],
+                        'port': stat.split('.')[2],
+                    }
+                    if key_mgmt:
+                        set_wifi_extra_data['key_mgmt'] = key_mgmt
+                    if pairwise_cipher and pairwise_cipher != '[BLANK]':
+                        set_wifi_extra_data['pairwise'] = pairwise_cipher
+                    if groupwise_cipher and groupwise_cipher != '[BLANK]':
+                        set_wifi_extra_data['group'] = groupwise_cipher
+                    if eap_method:
+                        set_wifi_extra_data['eap'] = eap_method
+                        if args.eap_identity:
+                            set_wifi_extra_data['identity'] = args.eap_identity
+                        if args.eap_anonymous_identity and args.eap_anonymous_identity != '[BLANK]':
+                            set_wifi_extra_data['anonymous_identity'] = args.eap_anonymous_identity
+                        if args.eap_password:
+                            set_wifi_extra_data['password'] = args.eap_password
+                        if args.eap_phase1 and args.eap_phase1 != '[BLANK]':
+                            set_wifi_extra_data['phase1'] = args.eap_phase1
+                        if args.eap_phase2 and args.eap_phase2 != '[BLANK]':
+                            set_wifi_extra_data['phase2'] = args.eap_phase2
+                        if eap_method == 'TLS':
+                            if args.private_key:
+                                set_wifi_extra_data['private_key'] = args.private_key
+                            if args.ca_cert:
+                                set_wifi_extra_data['ca_cert'] = args.ca_cert
+                            if args.pk_passwd:
+                                set_wifi_extra_data['pk_passwd'] = args.pk_passwd
+
+                    if len(set_wifi_extra_data) > 3:  # more than just shelf/resource/port
+                        response = mixed_obj.json_post("cli-json/set_wifi_extra", set_wifi_extra_data,
+                                                       debug_=mixed_obj.debug)
+                        time.sleep(3)
+                        logger.info(response)
+
+        elif args.security_config == '1x':  # 802.1x / EAP based station security
+            for (stat, rad, ssids, sta_security) in zip(mixed_obj.sta_info['station_list'],
+                                                        mixed_obj.sta_info['radio_list'],
+                                                        mixed_obj.sta_info['ssid_list'],
+                                                        mixed_obj.sta_info['security_list']):
+                # Clear the scenario's security bit and enable 8021x_radius
+                current_flag = mixed_obj.security_flag_for(sta_security)
+                # 8021x_radius also needs a WPA flag, or the station never reports WPA2/WPA3
+                security_target = (args.security or sta_security or 'wpa2').lower()
+                wpa_tier_flag = 'use-wpa3' if 'wpa3' in security_target else 'wpa2_enable'
+                desired_flags = ["8021x_radius", wpa_tier_flag]
+                desired_flags_mask = {"8021x_radius", wpa_tier_flag} | ({current_flag} if current_flag else set())
+                flags_value = sum(add_sta.add_sta_flags[name] for name in desired_flags)
+                flags_mask_value = sum(add_sta.add_sta_flags[name] for name in desired_flags_mask)
+                logger.info("Station {}: current security='{}' -> enabling 8021x_radius + {} "
+                            "(flags={}, flags_mask={})".format(stat, sta_security, wpa_tier_flag,
+                                                               flags_value, flags_mask_value))
+                iee80211w_flag = 2 if args.security == 'wpa3' or (args.scenario and sta_security.lower() == 'wpa3') else 1
+
+                add_sta_data = {
+                    'shelf': stat.split('.')[0],
+                    'resource': stat.split('.')[1],
+                    'sta_name': stat.split('.')[2],
+                    'radio': rad,
+                    'ssid': ssids,
+                    # 'NA' leaves a field unchanged; omitted fields get blanked by add_sta
+                    'key': 'NA',
+                    'mode': 0,
+                    'ap': 'NA',
+                    'mac': 'NA',
+                    'flags': flags_value,
+                    'flags_mask': flags_mask_value,
+                    'ieee80211w': iee80211w_flag,
+                }
+                response = mixed_obj.json_post("cli-json/add_sta", add_sta_data, debug_=mixed_obj.debug)
+                logger.info(response)
+
+                set_wifi_extra_data = None
+                if not eap_method:
+                    if args.key_mgmt:
+                        set_wifi_extra_data = {
+                            'shelf': stat.split('.')[0],
+                            'resource': stat.split('.')[1],
+                            'port': stat.split('.')[2],
+                            'key_mgmt': args.key_mgmt,
+                            'pairwise': pairwise_cipher,
+                            'group': groupwise_cipher,
+                            'password': "[BLANK]",
+                        }
+                else:
+                    if eap_method == 'TLS':
+                        set_wifi_extra_data = {
+                            'shelf': stat.split('.')[0],
+                            'resource': stat.split('.')[1],
+                            'port': stat.split('.')[2],
+                            'key_mgmt': key_mgmt,
+                            'pairwise': pairwise_cipher,
+                            'group': groupwise_cipher,
+                            'eap': eap_method,
+                            'identity': args.eap_identity,
+                            'password': args.eap_password,
+                            'private_key': args.private_key,
+                            'ca_cert': args.ca_cert,
+                            'pk_passwd': args.pk_passwd,
+                            'phase1': args.eap_phase1,
+                            'phase2': args.eap_phase2,
+                        }
+                    elif eap_method == 'TTLS' or eap_method == 'PEAP':
+                        set_wifi_extra_data = {
+                            'shelf': stat.split('.')[0],
+                            'resource': stat.split('.')[1],
+                            'port': stat.split('.')[2],
+                            'key_mgmt': key_mgmt,
+                            'pairwise': pairwise_cipher,
+                            'group': groupwise_cipher,
+                            'eap': eap_method,
+                            'identity': args.eap_identity,
+                            'anonymous_identity': args.eap_anonymous_identity,
+                            'password': args.eap_password,
+                            'phase1': args.eap_phase1,
+                            'phase2': args.eap_phase2,
+                        }
+
+                # Custom wifi setting
+                if args.custom_wifi_cmd:
+                    mixed_obj.set_custom_wifi(resource=int(stat.split('.')[1]),
+                                              station=str(stat.split('.')[2]),
+                                              cmd=args.custom_wifi_cmd)
+                # Skip when there's nothing to send; an empty payload would blank the station
+                if set_wifi_extra_data:
+                    response = mixed_obj.json_post("cli-json/set_wifi_extra", set_wifi_extra_data,
+                                                   debug_=mixed_obj.debug)
+                    logger.info(response)
+                time.sleep(3)
+
+        # Admin up scenario stations and wait for IPs before any test uses them
+        logger.info("Admin up on {} scenario station(s)".format(len(mixed_obj.station_list)))
+        mixed_obj.admin_up_stations(mixed_obj.station_list, attempts=args.admin_up_retries)
+
+        logger.info("Waiting for scenario stations to get an IP (up to {})".format(
+            args.station_ip_wait_time))
+        if mixed_obj.wait_for_station_ips(mixed_obj.station_list, timeout_sec=station_ip_wait_secs):
+            mixed_obj._pass("All stations got IPs", print_=True)
+            mixed_obj._pass("Station build finished", print_=True)
+        else:
+            mixed_obj._fail("Stations failed to get IPs", print_=True)
+            mixed_obj._fail("FAIL: Station build failed", print_=True)
+            logger.info("Please re-check the configuration applied")
+
+        # Re-read stations now that they're up, so channel/SSID/band are filled in
+        previous_stations = list(mixed_obj.station_list)
+        mixed_obj.station_info()
+        if mixed_obj.sta_info['station_list'] != previous_stations:
+            logger.warning("Station list changed while coming up: {} -> {} station(s)".format(
+                len(previous_stations), len(mixed_obj.sta_info['station_list'])))
+        mixed_obj.station_list = mixed_obj.sta_info['station_list']
+        mixed_obj.station_profile.station_names = mixed_obj.sta_info['station_list']
+        mixed_obj.num_staions = len(mixed_obj.sta_info['station_list'])
     if args.real:
         if (configure):
             selected_serial_list = mixed_obj.selecting_devices_from_available()
@@ -3249,8 +4280,14 @@ INCLUDE_IN_README: False
         if (not configure):
             args.all_bands = True
         if not args.all_bands:
-            for band in Bands:  # band-based logic
-                mixed_obj.band = band
+            # Scenario mode: one pass with band None, skipping per-band station creation
+            for band in ([None] if args.scenario else Bands):  # band-based logic
+                if args.scenario:
+                    mixed_obj.band = mixed_obj.sta_info['band_list']
+                    mixed_obj.radio = mixed_obj.sta_info['radio_list'][0] if mixed_obj.sta_info['radio_list'] else ''
+                    directory = str(' Scenario')
+                else:
+                    mixed_obj.band = band
                 path = os.path.join(parent_dir, directory)
                 if band == "2.4G":
                     security = args.twog_security
@@ -3291,12 +4328,19 @@ INCLUDE_IN_README: False
                 path = os.path.join(multiple_directory_path, directory)
                 os.mkdir(path)
                 mixed_obj.report_obj(band=band, path=path)  # setting a report object
+                if args.scenario:
+                    # Scenario mode: take these from the scenario's stations
+                    ssid = ','.join(sorted({v for v in mixed_obj.sta_info['ssid_list'] if v}))
+                    security = ','.join(sorted({v for v in mixed_obj.sta_info['security_list'] if v}))
                 # updating ssid, security's for report
                 mixed_obj.ssid = ssid
                 mixed_obj.security = security
 
                 logger.info(f"List of selected Tests: {args.tests}")
                 if args.tests:
+                    test_processes = {}
+                    port_reset_process, port_reset_parent, checkpoint_events, resume_event = setup_port_reset(
+                        mixed_obj, args, port_reset_args)
                     if args.parallel:
                         if "1" in args.tests:
                             t1_parent, t1_child = Pipe()
@@ -3307,10 +4351,13 @@ INCLUDE_IN_README: False
                                              'security': security,
                                              'target': args.target,
                                              'interval': args.ping_interval,
-                                             'conn': t1_child
+                                             'conn': t1_child,
+                                             'checkpoint_event': checkpoint_events.get("1"),
+                                             'resume_event': resume_event
                                          }
                                          )
                             t1.start()
+                            test_processes["1"] = t1
                             # mixed_obj.ping_test(ssid=ssid, password=password, security=security, target=args.target,
                             #                     interval=args.ping_interval)
                         if "2" in args.tests:
@@ -3328,10 +4375,13 @@ INCLUDE_IN_README: False
                                              'side_b_min': args.side_b_min,
                                              'side_a_max': args.side_a_max,
                                              'side_b_max': args.side_b_min,
-                                             'conn': t2_child
+                                             'conn': t2_child,
+                                             'checkpoint_event': checkpoint_events.get("2"),
+                                             'resume_event': resume_event
                                          }
                                          )
                             t2.start()
+                            test_processes["2"] = t2
                             # mixed_obj.qos_test(ssid=ssid, password=password, security=security, ap_name=args.dut_model,
                             #                 upstream=args.upstream_port, tos=args.tos, traffic_type=args.traffic_type,
                             #                 side_a_min=args.side_a_min, side_b_min=args.side_b_min,
@@ -3343,13 +4393,16 @@ INCLUDE_IN_README: False
                                              'ssid': ssid,
                                              'password': password,
                                              'security': security,
-                                             'bands': band,
+                                             'bands': mixed_obj.band,
                                              'directions': args.direction,
                                              'file_sizes': args.ftp_file_sizes,
-                                             'conn': t3_child
+                                             'conn': t3_child,
+                                             'checkpoint_event': checkpoint_events.get("3"),
+                                             'resume_event': resume_event
                                          }
                                          )
                             t3.start()
+                            test_processes["3"] = t3
                             # mixed_obj.ftp_test(ssid=ssid, password=password, security=security, bands=band,
                             #                 directions=args.direction, file_sizes=args.ftp_file_sizes)
                         if "4" in args.tests:
@@ -3361,10 +4414,13 @@ INCLUDE_IN_README: False
                                              'security': security,
                                              'http_file_size': args.http_file_size,
                                              'target_per_ten': args.target_per_ten,
-                                             'conn': t4_child
+                                             'conn': t4_child,
+                                             'checkpoint_event': checkpoint_events.get("4"),
+                                             'resume_event': resume_event
                                          }
                                          )
                             t4.start()
+                            test_processes["4"] = t4
                             # mixed_obj.http_test(ssid=ssid, password=password, security=security,
                             #                     http_file_size=args.http_file_size, target_per_ten=args.target_per_ten)
                         if "5" in args.tests:
@@ -3377,20 +4433,29 @@ INCLUDE_IN_README: False
                                              'side_b_min': args.side_b_min_bps,
                                              'side_a_pdu': args.side_a_min_pdu,
                                              'side_b_pdu': args.side_b_min_pdu,
-                                             'conn': t5_child
+                                             'conn': t5_child,
+                                             'checkpoint_event': checkpoint_events.get("5"),
+                                             'resume_event': resume_event
                                          }
                                          )
                             t5.start()
+                            test_processes["5"] = t5
                             # mixed_obj.multicast_test(endp_types=args.mc_traffic_type, mc_tos=args.mc_tos,
                             #                         side_a_min=args.side_a_min_bps, side_b_min=args.side_b_min_bps,
                             #                         side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu)
+
+                        start_port_reset_after_checkpoints(mixed_obj, port_reset_process, checkpoint_events,
+                                                           resume_event, test_processes)
 
                         if "1" in args.tests:
                             mixed_obj.ping_test_obj, mixed_obj.ping_test_status = recv_or_default(
                                 t1_parent, t1, ('', False), "Ping test")
                         if "2" in args.tests:
-                            mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = recv_or_default(
-                                t2_parent, t2, ('', '', '', '', False), "QoS test")
+                            qos_result = recv_or_default(t2_parent, t2, ('', '', '', '', False), "QoS test")
+                            if mixed_obj.virtual:
+                                mixed_obj.throughput_qos_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = qos_result
+                            else:
+                                mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = qos_result
                         if "3" in args.tests:
                             mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = recv_or_default(
                                 t3_parent, t3, ('', False), "FTP test")
@@ -3417,7 +4482,8 @@ INCLUDE_IN_README: False
                                                side_a_min=args.side_a_min, side_b_min=args.side_b_min,
                                                side_a_max=args.side_a_max, side_b_max=args.side_b_min)
                         if "3" in args.tests:
-                            mixed_obj.ftp_test(ssid=ssid, password=password, security=security, bands=band,
+                            mixed_obj.ftp_test(ssid=ssid, password=password, security=security,
+                                               bands=mixed_obj.band,
                                                directions=args.direction, file_sizes=args.ftp_file_sizes)
                         if "4" in args.tests:
                             mixed_obj.http_test(ssid=ssid, password=password, security=security,
@@ -3426,6 +4492,7 @@ INCLUDE_IN_README: False
                             mixed_obj.multicast_test(endp_types=args.mc_traffic_type, mc_tos=args.mc_tos,
                                                      side_a_min=args.side_a_min_bps, side_b_min=args.side_b_min_bps,
                                                      side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu)
+                    collect_port_reset(mixed_obj, port_reset_process, port_reset_parent)
                     # generating overall report
                     mixed_obj.generate_all_report()
                 else:
@@ -3433,8 +4500,12 @@ INCLUDE_IN_README: False
                     exit(0)
         else:
             # the tests will run irrespective to bands
-            mixed_obj.band = Bands[0]   # since all the test are band specific, passing band first item in the list #Todo: need to modify this , for now hardcoded
-            mixed_obj.radio = args.twog_radio   # taking a first twog-radio in a list as a default radio #Todo: need to modify this , for now hardcoded
+            if args.scenario:
+                mixed_obj.band = mixed_obj.sta_info['band_list']
+                mixed_obj.radio = mixed_obj.sta_info['radio_list'][0] if mixed_obj.sta_info['radio_list'] else ''
+            else:
+                mixed_obj.band = Bands[0]   # since all the test are band specific, passing band first item in the list #Todo: need to modify this , for now hardcoded
+                mixed_obj.radio = args.twog_radio   # taking a first twog-radio in a list as a default radio #Todo: need to modify this , for now hardcoded
             path = os.path.join(multiple_directory_path)
             mixed_obj.report_obj(band=None, path=path)  # setting a report object
             if args.real:
@@ -3448,7 +4519,7 @@ INCLUDE_IN_README: False
                     mixed_obj.base_interop_profile.get_devices()
                     mixed_obj.select_real_devices(real_devices=mixed_obj.base_interop_profile)
 
-            elif args.virtual:
+            elif args.virtual and not args.scenario:
                 sta_list_2g, sta_list_5g, sta_list_6g = [], [], []
                 if args.twog_num_stations:
                     sta_list_2g = mixed_obj.virtual_client_creation(ssid=args.twog_ssid, password=args.twog_passwd,
@@ -3467,10 +4538,14 @@ INCLUDE_IN_README: False
                                                                     start_id=args.sixg_start_id, all_sta=True)
                 # updating num stations and station list
                 virtual_station_list = sta_list_2g + sta_list_5g + sta_list_6g
-                logger.info("List of selected virtual stations:", virtual_station_list)
+                logger.info("List of selected virtual stations: {}".format(virtual_station_list))
                 mixed_obj.station_list = virtual_station_list
                 mixed_obj.num_staions = args.twog_num_stations + args.fiveg_num_stations + args.sixg_num_stations
-            if (args.use_default_config):
+            if args.scenario:
+                # Scenario mode: take these from the scenario's stations
+                ssid = ','.join(sorted({s for s in mixed_obj.sta_info['ssid_list'] if s}))
+                security = ','.join(sorted({s for s in mixed_obj.sta_info['security_list'] if s}))
+            elif (args.use_default_config):
                 ssid = 'Test Configured'
                 security = 'Test Configured'
             else:
@@ -3481,6 +4556,9 @@ INCLUDE_IN_README: False
             # tests will run with respect to bands
             logger.info(f"List of selected tests: {args.tests}")
             if args.tests:
+                test_processes = {}
+                port_reset_process, port_reset_parent, checkpoint_events, resume_event = setup_port_reset(
+                    mixed_obj, args, port_reset_args)
                 if args.parallel:
                     if "1" in args.tests:
                         t1_parent, t1_child = Pipe()
@@ -3492,10 +4570,13 @@ INCLUDE_IN_README: False
                                          'target': args.target,
                                          'interval': args.ping_interval,
                                          'conn': t1_child,
-                                         'all_bands': True
+                                         'all_bands': True,
+                                         'checkpoint_event': checkpoint_events.get("1"),
+                                         'resume_event': resume_event
                                      }
                                      )
                         t1.start()
+                        test_processes["1"] = t1
                         # mixed_obj.ping_test(ssid=ssid, password=password, security=security, target=args.target,
                         #                     interval=args.ping_interval)
                     if "2" in args.tests:
@@ -3514,10 +4595,13 @@ INCLUDE_IN_README: False
                                          'side_a_max': args.side_a_max,
                                          'side_b_max': args.side_b_max,
                                          'conn': t2_child,
-                                         'all_bands': True
+                                         'all_bands': True,
+                                         'checkpoint_event': checkpoint_events.get("2"),
+                                         'resume_event': resume_event
                                      }
                                      )
                         t2.start()
+                        test_processes["2"] = t2
                         # mixed_obj.qos_test(ssid=ssid, password=password, security=security, ap_name=args.dut_model,
                         #                 upstream=args.upstream_port, tos=args.tos, traffic_type=args.traffic_type,
                         #                 side_a_min=args.side_a_min, side_b_min=args.side_b_min,
@@ -3533,10 +4617,13 @@ INCLUDE_IN_README: False
                                          'directions': args.direction,
                                          'file_sizes': args.ftp_file_sizes,
                                          'conn': t3_child,
-                                         'all_bands': True
+                                         'all_bands': True,
+                                         'checkpoint_event': checkpoint_events.get("3"),
+                                         'resume_event': resume_event
                                      }
                                      )
                         t3.start()
+                        test_processes["3"] = t3
                         # mixed_obj.ftp_test(ssid=ssid, password=password, security=security, bands=band,
                         #                 directions=args.direction, file_sizes=args.ftp_file_sizes)
                     if "4" in args.tests:
@@ -3549,10 +4636,13 @@ INCLUDE_IN_README: False
                                          'http_file_size': args.http_file_size,
                                          'target_per_ten': args.target_per_ten,
                                          'conn': t4_child,
-                                         'all_bands': True
+                                         'all_bands': True,
+                                         'checkpoint_event': checkpoint_events.get("4"),
+                                         'resume_event': resume_event
                                      }
                                      )
                         t4.start()
+                        test_processes["4"] = t4
                         # mixed_obj.http_test(ssid=ssid, password=password, security=security,
                         #                     http_file_size=args.http_file_size, target_per_ten=args.target_per_ten)
                     if "5" in args.tests:
@@ -3566,10 +4656,13 @@ INCLUDE_IN_README: False
                                          'side_a_pdu': args.side_a_min_pdu,
                                          'side_b_pdu': args.side_b_min_pdu,
                                          'conn': t5_child,
-                                         'all_bands': True
+                                         'all_bands': True,
+                                         'checkpoint_event': checkpoint_events.get("5"),
+                                         'resume_event': resume_event
                                      }
                                      )
                         t5.start()
+                        test_processes["5"] = t5
                         # mixed_obj.multicast_test(endp_types=args.mc_traffic_type, mc_tos=args.mc_tos,
                         #                         side_a_min=args.side_a_min_bps, side_b_min=args.side_b_min_bps,
                         #                         side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu)
@@ -3585,12 +4678,18 @@ INCLUDE_IN_README: False
                     # if "1" in args.tests:
                     #     t1.start()
 
+                    start_port_reset_after_checkpoints(mixed_obj, port_reset_process, checkpoint_events,
+                                                       resume_event, test_processes)
+
                     if "1" in args.tests:
                         mixed_obj.ping_test_obj, mixed_obj.ping_test_status = recv_or_default(
                             t1_parent, t1, ('', False), "Ping test")
                     if "2" in args.tests:
-                        mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = recv_or_default(
-                            t2_parent, t2, ('', '', '', '', False), "QoS test")
+                        qos_result = recv_or_default(t2_parent, t2, ('', '', '', '', False), "QoS test")
+                        if mixed_obj.virtual:
+                            mixed_obj.throughput_qos_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = qos_result
+                        else:
+                            mixed_obj.qos_test_obj, mixed_obj.data_set, mixed_obj.load, mixed_obj.res, mixed_obj.qos_test_status = qos_result
                     if "3" in args.tests:
                         mixed_obj.ftp_test_obj, mixed_obj.ftp_test_status = recv_or_default(
                             t3_parent, t3, ('', False), "FTP test")
@@ -3768,6 +4867,7 @@ INCLUDE_IN_README: False
                                                      side_a_min=args.side_a_min_bps, side_b_min=args.side_b_min_bps,
                                                      side_a_pdu=args.side_a_min_pdu, side_b_pdu=args.side_b_min_pdu,
                                                      all_bands=True)
+                collect_port_reset(mixed_obj, port_reset_process, port_reset_parent)
                 iot_summary = None
                 if args.iot_test and args.iot_testname:
                     base = os.path.join("results", args.iot_testname)
