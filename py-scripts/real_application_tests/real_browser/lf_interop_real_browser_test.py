@@ -56,6 +56,12 @@ Pre-requisites: Real clients should be connected to the LANforge MGR and Interop
             --upstream_port 192.168.204.90 --expected_passfail_value 5 --do_robo --robo_ip 192.168.200.140 --coordinates 3,2,1 --rotations ""
             --duration_to_skip 1 --do_bandsteering --cycles 1 --bssids 94:A6:7E:74:26:31,94:A6:7E:74:26:22
 
+            Example-10:
+            Command Line Interface to run the Real Browser Test while the robot moves through the points (continuous robot run, no band steering)
+            python3 lf_interop_real_browser_test.py --mgr 192.168.207.78 --url https://google.com --device_list 1.11,1.10 --count 10
+            --upstream_port 192.168.204.90 --do_robo --robo_ip 192.168.200.140 --coordinates 3,2,1 --duration_to_skip 1
+            --measurement_mode continuous --cycles 2
+
 
             SCRIPT CLASSIFICATION: Test
 
@@ -197,6 +203,7 @@ class RealBrowserTest(Realm):
                  selected_profiles=None,
                  robo_ip="127.0.0.1",
                  do_bandsteering=False,
+                 measurement_mode="per_point",
                  cycles=1,
                  bssids=None,
                  coordinates_list=None,
@@ -330,6 +337,9 @@ class RealBrowserTest(Realm):
         self.serial_list = []
         self.do_robo = do_robo
         self.do_bandsteering = do_bandsteering
+        # measurement mode: 'per_point' browses at each point, 'continuous' keeps browsing while the robot moves.
+        # Band steering always moves continuously; do_bandsteering only adds the BSSID tracking report.
+        self.is_continuous_run = do_bandsteering or (do_robo and measurement_mode == "continuous")
         if self.do_robo:
             self.robo_ip = robo_ip
             self.robo_obj = robo_base_class.RobotClass(robo_ip=self.robo_ip, angle_list=angles_list)
@@ -1130,7 +1140,7 @@ class RealBrowserTest(Realm):
                     if getattr(self, "report_already_generated", False):
                         return
 
-                    if self.do_robo and not self.do_bandsteering:
+                    if self.do_robo and not self.is_continuous_run:
                         self.create_robo_report()
                     else:
                         self.create_report()
@@ -1467,8 +1477,8 @@ class RealBrowserTest(Realm):
         """
         Convert duration string to minutes.
         """
-        if self.do_robo and self.do_bandsteering:
-            # setting some long duration for bandsteering
+        if self.do_robo and self.is_continuous_run:
+            # setting some long duration for a continuous robot run (it ends when the robot finishes its laps)
             self.duration = 24 * 60
             logging.info("[BANDSTEERING] Duration overridden to large value (24h)")
             return
@@ -1800,6 +1810,7 @@ class RealBrowserTest(Realm):
         logging.info("[BANDSTEERING] Starting robo band-steering test")
         # build cyclic coordinate list
         base_coords = list(self.coordinates_list)
+        self.bandsteering_base_coords = base_coords
         starting_coord = base_coords[0]
         self.bandsteering_start_coord = base_coords[0]
         self.bandsteering_end_coord = base_coords[-1]
@@ -1896,6 +1907,8 @@ class RealBrowserTest(Realm):
         self.bandsteering_cx_list = cx_batch.copy()
         # cx_started = False
 
+        curr_cycle = 1
+        logger.info("Starting cycle {} of {}".format(curr_cycle, self.cycles))
         try:
             for _idx, coordinate in enumerate(self.coordinates_list):
                 logging.info(f"[BANDSTEERING] Moving to coordinate {coordinate}")
@@ -1906,6 +1919,9 @@ class RealBrowserTest(Realm):
                     break
 
                 def monitor_wrapper():
+                    # a force delete on the WebGUI removes the results folder but does not stop this script
+                    if self.dowebgui and not os.path.isdir(self.result_dir):
+                        self.results_dir_removed = True
                     rows = self.collect_bandsteering_values()
 
                     for row in rows:
@@ -1964,6 +1980,17 @@ class RealBrowserTest(Realm):
 
                 if stopped:
                     break
+                if getattr(self, "results_dir_removed", False):
+                    logging.warning("[ROBO] Results folder is gone (test deleted on the WebGUI); stopping the robot run")
+                    break
+                # each lap ends back at the starting point
+                if coordinate == starting_coord:
+                    logger.info("Completed cycle {} of {}".format(curr_cycle, self.cycles))
+                    curr_cycle += 1
+                    if curr_cycle > int(self.cycles):
+                        logger.info("Completed all {} cycles".format(self.cycles))
+                    else:
+                        logger.info("Starting cycle {} of {}".format(curr_cycle, self.cycles))
                 if not moved:
                     continue
 
@@ -2040,7 +2067,7 @@ class RealBrowserTest(Realm):
 
         cx_order_list = self.calculate_cx_order_list()
         cx_batch = cx_order_list[0]
-        if self.do_robo and self.do_bandsteering:
+        if self.do_robo and self.is_continuous_run:
             self.run_robo_bandsteering_test(cx_batch)
             return
 
@@ -2049,7 +2076,7 @@ class RealBrowserTest(Realm):
             base_dir = os.path.dirname(os.path.dirname(self.result_dir))
             nav_data = os.path.join(base_dir, 'nav_data.json')
             self.robo_obj.nav_data_path = nav_data
-        if self.do_robo and not self.do_bandsteering:
+        if self.do_robo and not self.is_continuous_run:
             for coordinate in self.coordinates_list:
                 # self.robo_obj.ensure_battery_for_test(duration_min=self.duration, mins_per_percent=self.mins_per_percent)
                 self.robo_obj.wait_for_battery()
@@ -2514,8 +2541,17 @@ class RealBrowserTest(Realm):
             logging.info("Waiting for the Running Json file to be created")
             time.sleep(1)
         logging.info("Running Json file created")
-        with open(file_path, 'r') as file:
-            data = json.load(file)
+        # the WebGUI may still be writing the file (it is created empty first); retry briefly
+        for attempt in range(10):
+            try:
+                with open(file_path, 'r') as file:
+                    data = json.load(file)
+                break
+            except ValueError:
+                if attempt == 9:
+                    logging.error("Running JSON file is not valid JSON: %s. Skipping this status update.", file_path)
+                    return
+                time.sleep(0.5)
         for key in obj:
             data[key] = obj[key]
         with open(file_path, 'w') as file:
@@ -2681,8 +2717,12 @@ class RealBrowserTest(Realm):
                 'URL': self.url,
                 'Test Duration (min)': self.duration,
             }
-        if self.do_bandsteering and 'Test Duration (min)' in test_setup_info:
+        if self.is_continuous_run and 'Test Duration (min)' in test_setup_info:
             del test_setup_info['Test Duration (min)']
+        # continuous robot run: no fixed duration, show the points and cycles
+        if self.do_robo and self.is_continuous_run:
+            test_setup_info['Coordinates'] = getattr(self, 'bandsteering_base_coords', self.coordinates_list)
+            test_setup_info['Total Cycles'] = self.cycles
         return test_setup_info
 
     def generate_pass_fail_list(self, device_type_data, device_names, total_urls):
@@ -2831,7 +2871,7 @@ class RealBrowserTest(Realm):
                 self.csv_file_names.insert(0, "real_time_data.csv")
 
             # Keep only last iteration for normal full run
-            if not self.webui_stop_clicked and not self.do_bandsteering:
+            if not self.webui_stop_clicked and not self.is_continuous_run:
                 if len(self.csv_file_names) > 1:
                     self.csv_file_names = [self.csv_file_names[-1]]
 
@@ -2932,7 +2972,7 @@ class RealBrowserTest(Realm):
             if self.do_bandsteering:
                 self.add_bandsteering_bssid_section(report)
             # robot charging timestamps section
-            if self.do_bandsteering:
+            if self.is_continuous_run:
                 charging_ts = getattr(self.robo_obj, "charging_timestamps", [])
 
                 if charging_ts:
@@ -3133,7 +3173,7 @@ class RealBrowserTest(Realm):
                         except Exception as e:
                             logging.warning(f"Could not move {filename}: {e}")
 
-                if self.do_bandsteering and hasattr(self, "bandsteering_dir"):
+                if self.is_continuous_run and hasattr(self, "bandsteering_dir"):
                     for fname in os.listdir(self.bandsteering_dir):
                         src = os.path.join(self.bandsteering_dir, fname)
                         dst = os.path.join(destination_dir, fname)
@@ -3270,6 +3310,11 @@ class RealBrowserTest(Realm):
             )
 
             self.report.set_custom_html(html_content)
+        else:
+            # the report is still generated, with a note in place of the missing image (as in the throughput report)
+            self.report.set_custom_html(
+                '<p><i>Real Browser heatmap is not available - the capture may '
+                'have failed or the browser was closed before it was uploaded.</i></p>')
 
     def get_robo_stats(self, duration, file_path, initial_target_urls, angle=None):
         """
@@ -3573,6 +3618,13 @@ class RealBrowserTest(Realm):
         try:
 
             _, mac_data, channel_data, signal_data, ssid_data, tx_rate_data, device_names, device_type_data = self.extract_device_data(csv_file)
+            # no device sent stats at this point (e.g. the devices could not reach the stats server): note it instead of an empty graph
+            if not device_names:
+                position = f"coordinate {coordinate} and angle {angle}" if self.rotations_enabled else f"coordinate {coordinate}"
+                logging.warning("No device data at %s; skipping its graphs", position)
+                self.report.set_custom_html(f'<p><i>No device data was collected at {position}.</i></p>')
+                self.report.build_custom()
+                return
             if self.rotations_enabled:
                 self.report.set_graph_title(f"Successful URL's per Device at coordinate {coordinate} and angle {angle}")
             else:
@@ -4006,10 +4058,18 @@ def main():
             help="Enable continuous robo band-steering test"
         )
         robo.add_argument(
+            '--measurement_mode',
+            choices=['per_point', 'continuous'],
+            default='per_point',
+            help="Robot measurement mode: 'per_point' runs the test at each point (and angle), "
+                 "'continuous' keeps the test running while the robot moves through the points --cycles times "
+                 "(--duration and --rotations are not used)"
+        )
+        robo.add_argument(
             "--cycles",
             type=int,
             default=1,
-            help="Number of cycles to repeat coordinates for band-steering"
+            help="Number of times the robot goes through the points in a continuous or band-steering run"
         )
         robo.add_argument(
             '--bssids',
@@ -4089,6 +4149,7 @@ def main():
                               angles_list=args.rotations,
                               do_robo=args.do_robo,
                               do_bandsteering=args.do_bandsteering,
+                              measurement_mode=args.measurement_mode,
                               cycles=args.cycles,
                               bssids=args.bssids,
                               rotations_enabled=rotations_enabled,
@@ -4161,7 +4222,10 @@ def main():
     finally:
         if '--help' not in sys.argv and '-h' not in sys.argv:
             obj.stop()
-            if args.do_robo and args.do_bandsteering:
+            # test force-deleted on the WebGUI: there is no results folder to write the report to, but still clean up
+            if args.dowebgui and obj.result_dir and not os.path.isdir(obj.result_dir):
+                logging.warning("Results folder %s is gone (test deleted on the WebGUI); skipping the report", obj.result_dir)
+            elif args.do_robo and obj.is_continuous_run:
                 if args.dowebgui:
                     obj.stop_webui_test()
                 obj.create_report(iot_summary=iot_summary)
