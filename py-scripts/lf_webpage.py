@@ -1188,6 +1188,44 @@ class HttpDownload(Realm):
 
         return result
 
+    def get_report_data(self, fields=('uc-avg', 'total-urls', 'bytes-rd', 'rx rate')):
+        """Read all report fields for every CX in one layer4 call, in created_cx order (0 if missing)."""
+        cx_list = list(self.http_profile.created_cx.keys())
+        result = {field: [] for field in fields}
+        if not cx_list:
+            logger.warning("No CXs created; the report has nothing to read")
+            return result
+
+        url = "layer4/%s/list?fields=%s" % (
+            ','.join(cx_list), ','.join(field.replace(' ', '+') for field in fields))
+        response = self.local_realm.json_get(url)
+        endpoint_data = (response or {}).get('endpoint')
+        if endpoint_data is None:
+            logger.error("No layer4 endpoint data for the report; recording zeros. URL: %s", url)
+            endpoint_data = []
+        # LANforge returns a bare dict, not a list, when there is one endpoint.
+        if not isinstance(endpoint_data, list):
+            endpoint_data = [{endpoint_data.get('name', cx_list[0]): endpoint_data}]
+
+        by_cx = {}
+        for entry in endpoint_data:
+            if isinstance(entry, dict):
+                by_cx.update(entry)
+
+        missing = []
+        for cx in cx_list:
+            values = by_cx.get(cx)
+            if values is None:
+                missing.append(cx)
+            for field in fields:
+                result[field].append(0 if values is None else values.get(field, 0))
+
+        if missing:
+            logger.warning("%d of %d CX(s) missing from the layer4 report data, recorded as 0: %s%s",
+                           len(missing), len(cx_list), missing[:5],
+                           " ..." if len(missing) > 5 else "")
+        return result
+
     def my_monitor(self, data_mon):
         # data in json format
         data = self.local_realm.json_get("layer4/%s/list?fields=%s" %
@@ -1201,10 +1239,22 @@ class HttpDownload(Realm):
             if self.num_sta == 1:
                 data1.append(data[data_mon])
             else:
+                # One value per CX in created_cx order (0 if missing) so lists match the client list
+                missing = []
                 for cx in self.http_profile.created_cx.keys():
+                    value = None
                     for info in data:
                         if cx in info:
-                            data1.append(info[cx][data_mon])
+                            value = info[cx][data_mon]
+                            break
+                    if value is None:
+                        missing.append(cx)
+                        value = 0
+                    data1.append(value)
+                if missing:
+                    logger.warning("%s missing for %d of %d CX(s), recorded as 0: %s%s",
+                                   data_mon, len(missing), len(self.http_profile.created_cx),
+                                   missing[:5], " ..." if len(missing) > 5 else "")
             return data1
         except Exception as e:
             total_data = self.local_realm.json_get("layer4/all")
@@ -1397,6 +1447,18 @@ class HttpDownload(Realm):
     def check_station_ip(self):
         pass
 
+    @staticmethod
+    def align_to_labels(dataset, labels, what):
+        """Pad (with 0) or trim a graph dataset to match its label count."""
+        dataset = list(dataset or [])
+        if len(dataset) == len(labels):
+            return dataset
+        logger.warning("%s has %d value(s) for %d client(s); reconciling so the report still builds",
+                       what, len(dataset), len(labels))
+        if len(dataset) < len(labels):
+            return dataset + [0] * (len(labels) - len(dataset))
+        return dataset[:len(labels)]
+
     def generate_graph(self, dataset, lis, bands, graph_image_name="ucg-avg_http"):
         bands = ['Download']
         if self.client_type == "Real":
@@ -1404,6 +1466,7 @@ class HttpDownload(Realm):
         elif self.client_type == "Virtual":
             lis = self.station_list[0]
         logger.info("%s %s", dataset, lis)
+        dataset = self.align_to_labels(dataset, lis, "Average download time")
         x_fig_size = 18
         y_fig_size = len(lis) * .5 + 4
         # graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Stations", _yaxis_name="Time in Seconds",
@@ -1446,6 +1509,7 @@ class HttpDownload(Realm):
             lis = self.station_list[0]
         print(dataset2)
         print(lis)
+        dataset2 = self.align_to_labels(dataset2, lis, "Total URL count")
         x_fig_size = 18
         y_fig_size = len(lis) * .5 + 4
         graph_2 = lf_bar_graph_horizontal(_data_set=[dataset2], _xaxis_name="No of times file Download",
@@ -3225,10 +3289,12 @@ times the file is downloaded.
             rx_bytes_val = http.data['bytes_rd']
             rx_rate_val = list(http.data['rx rate (1m)'])
         else:
-            uc_avg_val = http.my_monitor('uc-avg')
-            url_times = http.my_monitor('total-urls')
-            rx_bytes_val = http.my_monitor('bytes-rd')
-            rx_rate_val = http.my_monitor('rx rate')
+            # One call for all fields so each holds one value per CX
+            report_data = http.get_report_data()
+            uc_avg_val = report_data['uc-avg']
+            url_times = report_data['total-urls']
+            rx_bytes_val = report_data['bytes-rd']
+            rx_rate_val = report_data['rx rate']
         if args.dowebgui:
             http.data_for_webui["url_data"] = url_times  # storing the layer-4 url data at the end of test
         if args.client_type == 'Real':  # for real clients
