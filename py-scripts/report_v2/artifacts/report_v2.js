@@ -77,6 +77,7 @@
     var option = baseOption(yName, xName);
     if (payload.categories) { option.xAxis.data = payload.categories; option.xAxis.type = "category"; }
     if (payload.xAxisType === "value") { option.xAxis.type = "value"; }
+    if (payload.yAxisCategories) { option.yAxis.type = "category"; option.yAxis.data = payload.yAxisCategories; }
     if (payload.clockOffsetSeconds !== undefined) {
       var clockLabel = function (value) {
         var seconds = ((Math.round(Number(value) + payload.clockOffsetSeconds) % 86400) + 86400) % 86400;
