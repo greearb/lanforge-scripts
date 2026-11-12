@@ -265,7 +265,7 @@ class Ping(Realm):
         else:
             logger.info(self.target)
 
-    def cleanup(self):
+    def cleanup(self, clean_stations=True):
         expected_endp_names = []
         # setting the created_cx and created_endp to empty list and adding the existing endpoints to the list for cleanup
         self.generic_endps_profile.created_cx = []
@@ -297,7 +297,7 @@ class Ping(Realm):
                     self.generic_endps_profile.created_endp.append(endp_name)
                     self.generic_endps_profile.created_cx.append('CX_{}'.format(endp_name))
 
-        if (self.enable_virtual):
+        if (self.enable_virtual and clean_stations):
             # removing virtual stations if existing
             for station in self.sta_list:
                 logger.info('Removing the station {} if exists'.format(station))
@@ -569,6 +569,14 @@ class Ping(Realm):
             time.sleep(interval)
             start_time = time.time()
         return False
+
+    @staticmethod
+    def validate_count(value):
+        """Return a packet counter as int, 0 when empty, so lists stay aligned with device_names."""
+        try:
+            return int(float(str(value).replace(',', '').strip()))
+        except (TypeError, ValueError):
+            return 0
 
     @staticmethod
     def validate_rtt(min_rtt, avg_rtt, max_rtt):
@@ -845,11 +853,12 @@ class Ping(Realm):
         # packet_count_data = {}
         os_type = []
         for device, device_data in self.result_json.items():
-            logger.debug('Device data: {} {}'.format(device, device_data))
+            if device_data['sent'] == '' or device_data['recv'] == '' or device_data['dropped'] == '':
+                logger.info('Device data: {} {}'.format(device, device_data))
             os_type.append(device_data['os'])
-            self.packets_sent.append(int(device_data['sent']))
-            self.packets_received.append(int(device_data['recv']))
-            self.packets_dropped.append(int(device_data['dropped']))
+            self.packets_sent.append(self.validate_count(device_data['sent']))
+            self.packets_received.append(self.validate_count(device_data['recv']))
+            self.packets_dropped.append(self.validate_count(device_data['dropped']))
             self.device_names.append(device_data['name'] + ' ' + device_data['os'])
             self.device_modes.append(device_data['mode'])
             self.device_channels.append(device_data['channel'])
