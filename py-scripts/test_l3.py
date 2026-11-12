@@ -1714,6 +1714,17 @@ class L3VariableTime(Realm):
         return self.csv_results_file.name
 
     # Find avg latency, jitter for connections using specified port.
+    @staticmethod
+    def to_number(value, default=0, ndigits=None):
+        """Return a LANforge endpoint stat as a number, or `default` if empty/non-numeric."""
+        try:
+            number = float(str(value).strip())
+        except (TypeError, ValueError):
+            logger.debug("Expected a number for an endpoint stat, got {!r}; using {}".format(
+                value, default))
+            return default
+        return round(number, ndigits) if ndigits is not None else int(number)
+
     def get_endp_stats_for_port(self, port_eid, endps):
         lat = 0
         jit = 0
@@ -1731,7 +1742,7 @@ class L3VariableTime(Realm):
         eid = port_eid
         eid = self.name_to_eid(port_eid)
         if not self.dowebgui:
-            logger.info("endp-stats-for-port, port-eid: {}".format(port_eid))
+            # logger.info("endp-stats-for-port, port-eid: {}".format(port_eid))
             logger.debug(
                 "eid: {eid}".format(eid=eid))
 
@@ -1743,7 +1754,7 @@ class L3VariableTime(Realm):
         for endp in endps:
             # pprint(endp)
             if not self.dowebgui:
-                logging.info(pformat(endp))
+                pass
             eid_endp = endp["eid"].split(".")
             logger.debug(
                 "Comparing eid:{eid} to endp-id {eid_endp}".format(eid=eid, eid_endp=eid_endp))
@@ -1753,19 +1764,8 @@ class L3VariableTime(Realm):
             # Note: the endp eid is shelf.resource.port.endp-id, the eid can be treated somewhat as
             # child class of port-eid , and look up the port the eid is using.
             if eid[0] == eid_endp[0] and eid[1] == eid_endp[1] and eid[2] == eid_endp[2]:
-                if ((isinstance(endp['delay'], str) and not endp['delay'].isnumeric()) or endp['delay'] is None):
-                    logging.debug(
-                        'Expected integer response for delay, received non-numeric string instead. Replacing with 0')
-                    lat += 0
-                else:
-                    lat += int(endp['delay'])
-
-                if ((isinstance(endp['jitter'], str) and not endp['jitter'].isnumeric()) or endp['jitter'] is None):
-                    logging.debug(
-                        'Expected integer response for jitter, received non-numeric string instead. Replacing with 0')
-                    jit += 0
-                else:
-                    jit += int(endp["jitter"])
+                lat += self.to_number(endp['delay'])
+                jit += self.to_number(endp['jitter'])
                 # lat += int(endp["delay"])
                 # jit += int(endp["jitter"])
                 name = endp["name"]
@@ -1795,71 +1795,23 @@ class L3VariableTime(Realm):
                 if name.endswith("-A"):
                     logger.info("name has -A")
 
-                    if (isinstance(endp['rx rate'], str)
-                            and not endp['rx rate'].isnumeric()) or endp['rx rate'] is None:
-                        logging.debug(
-                            'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
-                        total_dl_rate += 0
-                    else:
-                        total_dl_rate += int(endp["rx rate"])
+                    total_dl_rate += self.to_number(endp["rx rate"])
 
-                    if (isinstance(endp['rx rate ll'], str)
-                            and not endp['rx rate ll'].isnumeric()) or endp['rx rate ll'] is None:
-                        logging.debug(
-                            'Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
-                        total_dl_rate_ll += 0
-                    else:
-                        total_dl_rate_ll += int(endp["rx rate ll"])
+                    total_dl_rate_ll += self.to_number(endp["rx rate ll"])
 
-                    if (isinstance(endp['rx pkts ll'], str)
-                            and not endp['rx pkts ll'].isnumeric()) or endp['rx pkts ll'] is None:
-                        logging.debug(
-                            'Expected integer response for rx pkts ll, received non-numeric string instead. Replacing with 0')
-                        total_dl_pkts_ll += 0
-                    else:
-                        total_dl_pkts_ll += int(endp["rx pkts ll"])
+                    total_dl_pkts_ll += self.to_number(endp["rx pkts ll"])
 
-                    if (isinstance(endp['rx drop %'], str)
-                            and not endp['rx drop %'].isnumeric()) or endp['rx drop %'] is None:
-                        logging.debug(
-                            'Expected integer response for rx drop %, received non-numeric string instead. Replacing with 0')
-                        dl_rx_drop_percent = 0
-                    else:
-                        dl_rx_drop_percent = round(endp["rx drop %"], 2)
+                    dl_rx_drop_percent = self.to_number(endp["rx drop %"], ndigits=2)
 
                 # -B upload side
                 else:
-                    if (isinstance(endp['rx rate'], str)
-                            and not endp['rx rate'].isnumeric()) or endp['rx rate'] is None:
-                        logging.debug(
-                            'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
-                        total_ul_rate += 0
-                    else:
-                        total_ul_rate += int(endp["rx rate"])
+                    total_ul_rate += self.to_number(endp["rx rate"])
 
-                    if (isinstance(endp['rx rate ll'], str)
-                            and not endp['rx rate ll'].isnumeric()) or endp['rx rate ll'] is None:
-                        logging.debug(
-                            'Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
-                        total_ul_rate_ll += 0
-                    else:
-                        total_ul_rate_ll += int(endp["rx rate ll"])
+                    total_ul_rate_ll += self.to_number(endp["rx rate ll"])
 
-                    if (isinstance(endp['rx pkts ll'], str)
-                            and not endp['rx pkts ll'].isnumeric()) or endp['rx pkts ll'] is None:
-                        logging.debug(
-                            'Expected integer response for rx pkts ll, received non-numeric string instead. Replacing with 0')
-                        total_ul_pkts_ll += 0
-                    else:
-                        total_ul_pkts_ll += int(endp["rx pkts ll"])
+                    total_ul_pkts_ll += self.to_number(endp["rx pkts ll"])
 
-                    if (isinstance(endp['rx drop %'], str)
-                            and not endp['rx drop %'].isnumeric()) or endp['rx drop %'] is None:
-                        logging.debug(
-                            'Expected integer response for rx drop %, received non-numeric string instead. Replacing with 0')
-                        ul_rx_drop_percent = 0
-                    else:
-                        ul_rx_drop_percent = round(endp["rx drop %"], 2)
+                    ul_rx_drop_percent = self.to_number(endp["rx drop %"], ndigits=2)
 
                     # total_ul_rate += int(endp["rx rate"])
                     # total_ul_rate_ll += int(endp["rx rate ll"])
@@ -1916,20 +1868,16 @@ class L3VariableTime(Realm):
                         "multicast endpoint: {item} value:\n".format(item=item))
                     logger.debug(endp_value)
                     for value_name, value in endp_value.items():
-                        if isinstance(value, str) and not value.isnumeric():
-                            logging.debug(
-                                'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
-                            value = 0
                         if value_name == 'rx rate':
                             if "-mrx-" in item:
-                                total_dl += int(value)
+                                total_dl += self.to_number(value)
                             else:
-                                total_ul += int(value)
+                                total_ul += self.to_number(value)
                         if value_name == 'rx rate ll':
                             if "-mrx-" in item:
-                                total_dl_ll += int(value)
+                                total_dl_ll += self.to_number(value)
                             else:
-                                total_ul_ll += int(value)
+                                total_ul_ll += self.to_number(value)
 
         # Unicast endpoints
         for e in self.cx_profile.created_endp.keys():
@@ -1944,23 +1892,15 @@ class L3VariableTime(Realm):
 
                     for value_name, value in endp_value.items():
                         if value_name == 'rx rate':
-                            if isinstance(value, str) and not value.isnumeric():
-                                logging.debug(
-                                    'Expected integer response for rx rate, received non-numeric string instead. Replacing with 0')
-                                value = 0
                             if item.endswith("-A"):
-                                total_dl += int(value)
+                                total_dl += self.to_number(value)
                             elif item.endswith("-B"):
-                                total_ul += int(value)
+                                total_ul += self.to_number(value)
                         if value_name == 'rx rate ll':
-                            if isinstance(value, str) and not value.isnumeric():
-                                logging.debug(
-                                    'Expected integer response for rx rate ll, received non-numeric string instead. Replacing with 0')
-                                value = 0
                             if item.endswith("-A"):
-                                total_dl_ll += int(value)
+                                total_dl_ll += self.to_number(value)
                             elif item.endswith("-B"):
-                                total_ul_ll += int(value)
+                                total_ul_ll += self.to_number(value)
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return True, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
     # This script supports resetting ports, allowing one to test AP/controller under data load
@@ -2887,12 +2827,18 @@ class L3VariableTime(Realm):
                 "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
                 (ul, dl, ul_pdu, dl_pdu), print_pass)
 
-    def start(self, print_pass=False, coordinate=None, rotation=None) -> int:
+    def start(self, print_pass=False, coordinate=None, rotation=None, checkpoint_event=None, resume_event=None) -> int:
         """Run configured Layer-3 variable time test.
 
         Args:
             print_pass (bool, optional): Enable printing test pass upon completion.
                                          Defaults to False.
+            checkpoint_event (multiprocessing.Event, optional): if provided, set once CXs are
+                                         started, so callers (e.g. Port Reset orchestration) can
+                                         wait until traffic is up before proceeding.
+            resume_event (multiprocessing.Event, optional): if provided, waited on right after
+                                         signaling checkpoint_event, so callers can hold this test
+                                         at the checkpoint until they are ready for it to continue.
 
         Returns:
             int: 0 on success, non-zero on failure.
@@ -3005,6 +2951,10 @@ class L3VariableTime(Realm):
                     self.cx_profile.start_cx()
                     self.cx_profile.refresh_cx()
                     traffic_started = True
+                    if checkpoint_event is not None:
+                        checkpoint_event.set()
+                    if resume_event is not None:
+                        resume_event.wait()
                     passes = 0
                     expected_passes = 0
                     logger.info("Getting initial values.")
@@ -3805,10 +3755,7 @@ class L3VariableTime(Realm):
             # The dictionary only has one key
             endp_data_key = list(endp_data.keys())[0]
             if not self.dowebgui:
-                logger.info("endp_data type {endp_type} endp_data {endp_data}".format(
-                    endp_type=type(endp_data), endp_data=endp_data))
-                logger.info("endpoint_data key: {key}  name: {name} a/b {ab} rx rate {rx_rate}".format(
-                    key=endp_data_key, name=endp_data[endp_data_key]['name'], ab=endp_data[endp_data_key]['a/b'], rx_rate=endp_data[endp_data_key]['rx rate']))
+               pass
 
             # Gather data for upload , download for the four data types BK, BE, VI, VO, place the
             # the data_set will be the upload and download rates for each client
