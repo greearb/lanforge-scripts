@@ -111,6 +111,7 @@ INCLUDE_IN_README: False
 # from lf_interop_qos import ThroughputQOS
 import sys
 import os
+import base64
 import importlib
 import time
 import argparse
@@ -121,7 +122,6 @@ import logging
 import requests
 import shutil
 import json
-from lf_graph import lf_bar_graph_horizontal, lf_bar_graph
 import traceback
 import threading
 from collections import OrderedDict, Counter
@@ -129,6 +129,9 @@ import asyncio
 from typing import List, Optional
 import csv
 from lf_base_robo import RobotClass
+from lf_wifi_msgs import ClientAnalysis
+from report_v2.lf_report_v2 import lf_report
+from report_v2.lf_graph_v2 import lf_bar_graph, lf_bar_graph_horizontal
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -138,8 +141,7 @@ LFCliBase = lfcli_base.LFCliBase
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 PortUtils = realm.PortUtils
-lf_report = importlib.import_module("py-scripts.lf_report")
-lf_graph = importlib.import_module("py-scripts.lf_graph")
+lf_interop_ping = importlib.import_module("py-scripts.lf_interop_ping")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
@@ -257,6 +259,9 @@ class HttpDownload(Realm):
         self.robot_data = {}
         self.robot_obj = {}
         self.individual_device_data = {}
+        self.background_ping = None
+        self.wifi_analysis_stats = {}
+        self.wifi_analysis_log = None
         self.rx_rate_val = []
         self.max_bytes_rd = []
         self.do_bandsteering = do_bandsteering
@@ -1521,6 +1526,7 @@ class HttpDownload(Realm):
                     self.ssid_list.append('-')
 
     def add_live_view_images_to_report(self, report):
+        """Adds the live view heatmap of each floor to the report, with a note in place of any image that is missing."""
         for floor in range(0, int(self.total_floors)):
             http_img_path = os.path.join(self.result_dir, "live_view_images", f"http_{self.test_name}_{floor + 1}.png")
             # the WebGUI uploads the live view screenshot when the test ends; wait up to 60 seconds for it
@@ -1537,7 +1543,9 @@ class HttpDownload(Realm):
                 continue
             report.set_custom_html('<div style="page-break-before: always;"></div>')
             report.build_custom()
-            report.set_custom_html(f'<img style="width:1200px" src="file://{http_img_path}"></img>')
+            with open(http_img_path, "rb") as image_file:
+                image_base64 = base64.b64encode(image_file.read()).decode("ascii")
+            report.set_custom_html(f"<div class='chart-card'><img src='data:image/png;base64,{image_base64}' alt='' /></div>")
             report.build_custom()
 
     def get_bandsteering_stats(self, report):
@@ -1654,7 +1662,7 @@ class HttpDownload(Realm):
             graph_png = graph.build_bar_graph()
             report.set_graph_image(graph_png)
             report.move_graph_image()
-            report.set_csv_filename(graph_png)
+            report.set_csv_filename(graph.graph_image_name + ".csv")
             report.move_csv_file()
             report.build_graph()
 
@@ -1684,20 +1692,180 @@ class HttpDownload(Realm):
             report.set_table_dataframe(table_df)
             report.build_table()
 
+    # (minimum score %, rating, badge colour), highest first
+    SCORE_RATING_BANDS = [
+        (90, "Excellent", "#1a7a2e"),
+        (80, "Good", "#4caf50"),
+        (55, "Average", "#f0c040"),
+        (0, "Poor", "#e53935")
+    ]
+
+    @classmethod
+    def _classify_score_rating(cls, score):
+        for threshold, label, color in cls.SCORE_RATING_BANDS:
+            if score >= threshold:
+                return label, color
+        return cls.SCORE_RATING_BANDS[-1][1], cls.SCORE_RATING_BANDS[-1][2]
+
+    # Packet loss (%) up to which a client's wireless connectivity is considered stable
+    LOW_PACKET_LOSS_PERCENT = 5.0
+    # How the overall rating is described in the closing summary line
+    RATING_PERFORMANCE_DESCRIPTION = {
+        "Excellent": "excellent",
+        "Good": "good",
+        "Average": "inconsistent",
+        "Poor": "poor"
+    }
+
+    def add_wifi_analysis_to_report(self, report):
+        """Append the wifi connectivity event summary graph and stats table to the report."""
+        if self.wifi_analysis_log and os.path.exists(self.wifi_analysis_log):
+            try:
+                shutil.copy(self.wifi_analysis_log, os.path.join(report.path_date_time, "wifi_analysis_messages.json"))
+            except OSError as error:
+                logger.warning("Wifi analysis messages could not be copied to the report folder: %s", error)
+        if not self.wifi_analysis_stats:
+            return
+        try:
+            devices, connect_attempt, disconnected, scanning, association_rejection, connected, remarks, cx_time = \
+                ClientAnalysis.stats_to_lists(self.wifi_analysis_stats)
+            port_to_name = {port: str(entry).split(" ")[-1] for port, entry in zip(self.port_list, self.devices_list)}
+            devices = [port_to_name.get(port_name, port_name) for port_name in devices]
+
+            categories = ["Disconnected", "Scans", "Association Attempts", "Association Rejected", "Connected"]
+            totals = [sum(disconnected), sum(scanning), sum(connect_attempt), sum(association_rejection), sum(connected)]
+            # Red=Disconnected, Yellow=Scans, Orange=Association Attempts, Grey=Rejected, Green=Connected.
+            colors = ['#e74c3c', '#f1c40f', '#e67e22', '#95a5a6', '#27ae60']
+
+            report.set_custom_html('<div style="page-break-before: always;"></div>')
+            report.build_custom()
+            report.set_obj_html(
+                _obj_title="Client Connectivity Event Summary",
+                _obj="This graph summarizes connection-related events observed during the HTTP test. "
+                     "These metrics provide insight into client stability and wireless connectivity performance.")
+            report.build_objective()
+            # One series per event, stacked, so every event has its own colour and legend entry
+            data_set = [[value if index == series_index else 0 for index, value in enumerate(totals)]
+                        for series_index in range(len(categories))]
+            graph = lf_bar_graph(_data_set=data_set,
+                                 _xaxis_name="",
+                                 _yaxis_name="Count",
+                                 _xaxis_categories=categories,
+                                 _graph_image_name="wifi_connectivity_status",
+                                 _label=categories,
+                                 _graph_title="Client Connectivity Status",
+                                 _title_size=16,
+                                 _color_edge='black',
+                                 _bar_width=0.5,
+                                 _figsize=(10, 6),
+                                 _legend_loc="best",
+                                 _dpi=96,
+                                 _show_bar_value=True,
+                                 _enable_csv=True,
+                                 _stacked=True,
+                                 _color=colors,
+                                 _color_name=colors)
+            report.set_graph_image(graph.build_bar_graph())
+            report.set_csv_filename(graph.graph_image_name)
+            report.move_csv_file()
+            report.build_graph()
+
+            report.set_table_title("Wifi Connectivity Analysis")
+            report.build_table_title()
+            report.set_table_dataframe(pd.DataFrame({
+                "Device": devices,
+                "Association Attempts": connect_attempt,
+                "Disconnected": disconnected,
+                "Scanning": scanning,
+                "Association Rejection": association_rejection,
+                "Connected": connected,
+            }))
+            report.build_table()
+        except Exception as error:
+            logger.warning("Wifi connectivity analysis could not be added to the report: %s", error)
+
+    def add_background_ping_timeline_to_report(self, report):
+        """Adds the "Wireless Client Connectivity Status vs Time" graph built from the background ping:
+        green for replies, red for lost pings. Does nothing if the background ping did not run."""
+        background_ping = self.background_ping
+        if not background_ping or not background_ping.bg_stats or background_ping.bg_start_time is None \
+                or background_ping.bg_stop_time is None:
+            return
+        try:
+            test_seconds = background_ping.bg_stop_time - background_ping.bg_start_time
+            interval = float(background_ping.interval)
+            clients, stations, segments = [], [], []
+            for device in background_ping.real_sta_list:
+                sequences = background_ping.bg_packet_results.get(device) or {}
+                spans = []
+                covered_until = 0.0
+                for sequence in sorted(sequences):
+                    start, end = (sequence - 1) * interval, min(test_seconds, sequence * interval)
+                    if end <= start:
+                        continue
+                    if start > covered_until:
+                        spans.append(['up', covered_until, start])
+                    spans.append(['drop' if sequences[sequence] == 0 else 'up', start, end])
+                    covered_until = max(covered_until, end)
+                merged = []
+                for span in spans:
+                    if merged and merged[-1][0] == span[0]:
+                        merged[-1][2] = span[2]
+                    else:
+                        merged.append(span)
+                segments.extend({'clientIndex': len(clients), 'start': round(start, 3), 'end': round(end, 3), 'status': status} for status, start, end in merged)
+                clients.append(background_ping.bg_stats[device]['name'])
+                stations.append(device)
+            payload = {'clients': clients, 'stations': stations, 'segments': segments, 'duration': round(test_seconds, 3),
+                       'emptyMessage': "No time-series ping samples were collected"}
+            report.set_custom_html('<div style="page-break-before: always;"></div>')
+            report.build_custom()
+            report.set_obj_html(
+                _obj_title="Client Connectivity Results Throughout the Test Duration",
+                _obj=("The graph illustrates the connectivity status of all wireless clients during the test based on connectivity monitoring during the test execution. "
+                      "Green segments represent successful responses, while red segments indicate packet loss or connectivity drops observed during the test."))
+            report.build_objective()
+            report.set_custom_html("""
+                <div class='chart-card'>
+                  <h3>Wireless Client Connectivity Status vs Time</h3>
+                  <div id='background-ping-connectivity-timeline' class='chart'></div>
+                  <script>
+                    window.__lfModernReport.renderConnectivityTimeline('background-ping-connectivity-timeline', {payload});
+                  </script>
+                </div>
+                """.format(payload=json.dumps(payload)))
+            report.build_custom()
+        except Exception as error:
+            logger.warning("Background ping timeline could not be added to the report: %s", error)
+
+    def add_client_graph(self, report, data, labels, xaxis_name, title, image_name, color):
+        """Adds an interactive graph with one bar per client."""
+        graph = lf_bar_graph_horizontal(_data_set=[[float(v) for v in data]],
+                                        _xaxis_name=xaxis_name,
+                                        _yaxis_name="Wireless Clients",
+                                        _yaxis_categories=[str(i) for i in labels],
+                                        _graph_title=title,
+                                        _graph_image_name=image_name,
+                                        _label=['Download'],
+                                        _color=[color],
+                                        _show_bar_value=True)
+        report.set_graph_image(graph.build_bar_graph_horizontal())
+        report.build_graph()
+
     def generate_report(self, date, num_stations, duration, test_setup_info, dataset, lis, bands, threshold_2g,
                         threshold_5g, threshold_both, dataset2, dataset1,  # summary_table_value,
                         result_data, test_rig, rx_rate,
                         test_tag, dut_hw_version, dut_sw_version, dut_model_num, dut_serial_num, test_id,
                         test_input_infor, csv_outfile, _results_dir_name='webpage_test', report_path='', iot_summary=None):
         if self.dowebgui == "True" and report_path == '':
-            report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html",
-                                         _output_pdf="Webpage.pdf", _path=self.result_dir)
+            report = lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html",
+                               _output_pdf="Webpage.pdf", _path=self.result_dir)
         else:
-            report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html",
-                                         _output_pdf="Webpage.pdf", _path=report_path)
+            report = lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html",
+                               _output_pdf="Webpage.pdf", _path=report_path)
 
         # To store http_datavalues.csv in report folder
-        report_path_date_time = report.get_path_date_time()
+        report_path_date_time = report.path_date_time
         # It ensures no blocker for virtual clients
         if self.client_type == 'Real':
             shutil.move('http_datavalues.csv', report_path_date_time)
@@ -1710,11 +1878,14 @@ class HttpDownload(Realm):
                 shutil.move(f"{csv_name}.csv", report_path_date_time)
         if bands == "Both":
             num_stations = num_stations * 2
-        report.set_title("HTTP TEST Including IoT Devices" if iot_summary else "HTTP DOWNLOAD TEST")
-        report.set_date(date)
+        if self.client_type == "Real":
+            report.set_title("LANforge Interop<br>HTTP Test{iot}<br>"
+                             "<span style='font-size:0.45em; font-weight:400;'>(Real Client Performance Validation)</span>".format(
+                                 iot=" Including IoT Devices" if iot_summary else ""))
+        else:
+            report.set_title("HTTP TEST Including IoT Devices" if iot_summary else "HTTP DOWNLOAD TEST")
+        report.date = date
         report.build_banner()
-        report.set_table_title("Test Setup Information")
-        report.build_table_title()
         if self.robot_test:
             # If robot test, add robot specific info to test setup
             test_setup_info["Robot IP"] = self.robot_ip
@@ -1739,6 +1910,11 @@ class HttpDownload(Realm):
                 "failure rate. The goal is to ensure that the AP can reliably manage HTTP traffic for multiple Real "
                 "clients while maintaining responsive and consistent control of IoT devices."
             )
+        elif self.client_type == "Real":
+            report.set_obj_html("Test Overview",
+                                "The HTTP test evaluates the Access Point’s ability to support multiple real Wi-Fi clients "
+                                "performing concurrent file downloads from an HTTP server. The test measures download success, "
+                                "download time, throughput, and client reliability to assess overall HTTP performance under load.")
         else:
             report.set_obj_html("Objective", "The HTTP Download Test is designed to verify that N clients connected on specified band can "
                                 "download some amount of file from HTTP server and measures the "
@@ -1749,7 +1925,10 @@ class HttpDownload(Realm):
                 test_setup_info.pop(key, None)
         if "Test Name" in test_setup_info:
             test_setup_info = {"Test Name": test_setup_info.pop("Test Name"), **test_setup_info}
-        report.test_setup_table(value="Test Setup Information", test_setup_data=test_setup_info)
+        # real clients get their test configuration at the end of the report instead
+        if self.client_type != "Real" or self.robot_test:
+            report.build_info_card(title="Test Setup Information",
+                                   items=[{"label": label, "value": str(value)} for label, value in test_setup_info.items()])
 
         report.build_objective()
         if not self.is_continuous_run and self.robot_test:
@@ -1765,16 +1944,242 @@ class HttpDownload(Realm):
                 for coord, _ in self.robot_data.items():
                     # Build graphs and table for each coordinate
                     self.build_graphs_and_table(coord, "", report, lis, bands)
+            self.add_wifi_analysis_to_report(report)
+            if self.background_ping:
+                self.add_background_ping_timeline_to_report(report)
+                self.background_ping.add_background_ping_to_report(report)
             if self.device_issue_log:
                 issues_df = pd.DataFrame(self.device_issue_log)
                 issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
             report.build_footer()
             html_file = report.write_html()
-            report.write_pdf()
+            report.write_pdf(_orientation="Landscape")
             logger.info("Monitoring Duration: %s", self.format_monitoring_duration())
             return
         if self.do_bandsteering:
             self.get_bandsteering_stats(report)
+        if self.client_type == "Real":
+            # Keep channel/mode/ssid/mac index-aligned with self.devices
+            self.get_device_port_details()
+            kpi_csv = lf_kpi_csv.lf_kpi_csv(
+                _kpi_path=report.path_date_time,
+                _kpi_test_rig=test_rig,
+                _kpi_test_tag=test_tag,
+                _kpi_dut_hw_version=dut_hw_version,
+                _kpi_dut_sw_version=dut_sw_version,
+                _kpi_dut_model_num=dut_model_num,
+                _kpi_dut_serial_num=dut_serial_num,
+                _kpi_test_id=test_id)
+            kpi_csv.kpi_dict['Units'] = "Mbps"
+            kpi_scores = {stat: [str(round(value / 1000, 1)) for band_data in result_data.values() for value in band_data[stat]]
+                          for stat in ("min", "max", "avg")}
+            for index, band in enumerate(bands):
+                kpi_csv.kpi_csv_get_dict_update_time()
+                kpi_csv.kpi_dict['Graph-Group'] = "Webpage Download {band}".format(band=band)
+                for stat, label in (("min", "Minimum"), ("max", "Maximum"), ("avg", "Average")):
+                    kpi_csv.kpi_dict['short-description'] = "Webpage download {band} {label}".format(band=band, label=label)
+                    kpi_csv.kpi_dict['numeric-score'] = kpi_scores[stat][index]
+                    kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
+
+            # the device entry looks like '1.5 Win DESKTOP-JQD13SJ'
+            os_labels = {"android": "Android", "Win": "Windows", "Lin": "Linux", "Mac": "Mac"}
+            client_labels = list(self.devices_list)
+            client_names = [str(entry).split(" ")[-1] for entry in client_labels]
+            device_types = [next((label for key, label in os_labels.items() if key in str(entry).split(" ")), "-") for entry in client_labels]
+            downloads = [int(x) for x in dataset2]
+            avg_time_ms = [float(t) for t in dataset]
+            total_err = list(self.data["total_err"])
+            avg_time_sec = [round(t / 1000.0, 2) for t in avg_time_ms]
+            background_ping = self.background_ping
+
+            # Download Score (0-5), Time Stability Score (0-5), Reliability Score (0-5), Final Score (%) and Rating per client
+            max_downloads = max(downloads) if downloads else 0
+            active_times = [t for d, t in zip(downloads, avg_time_ms) if d > 0 and t > 0]
+            group_avg_time = sum(active_times) / len(active_times) if active_times else 0.0
+            download_scores, time_scores, reliability_scores, final_pcts, ratings = [], [], [], [], []
+            for count, avg_time, failures in zip(downloads, avg_time_ms, total_err):
+                download_score = (count / max_downloads) * 5.0 if max_downloads > 0 else 0.0
+                reliability_score = max(0.0, min(5.0, 5.0 - (int(failures) * 0.1)))
+                if count > 0 and avg_time > 0:
+                    time_score = 5.0 if avg_time <= group_avg_time else 5.0 * (group_avg_time / avg_time)
+                else:
+                    time_score = 0.0
+                final_score = (download_score * 0.7) + (time_score * 0.2) + (reliability_score * 0.1)
+                final_pct = int(round((final_score / 5.0) * 100))
+                download_scores.append(round(download_score, 1))
+                time_scores.append(round(time_score, 1))
+                reliability_scores.append(round(reliability_score, 1))
+                final_pcts.append(final_pct)
+                ratings.append(self._classify_score_rating(final_pct)[0])
+            efficiency_pct = int(round(sum(final_pcts) / len(final_pcts))) if final_pcts else 0
+            overall_rating, overall_color = self._classify_score_rating(efficiency_pct)
+            zero_download_count = downloads.count(0)
+            rating_colors = {label: color for _, label, color in self.SCORE_RATING_BANDS}
+
+            # Hide global table search bar in the report
+            report.set_custom_html('<style>.table-search-bar { display: none !important; }'
+                                   '@media print { .table-wrap { overflow: visible !important; } '
+                                   '.chart-card, .table-wrap, .info-card { page-break-inside: avoid; } '
+                                   'table.data-table { font-size: 10px; } table.data-table th, table.data-table td { padding: 4px; } }</style>')
+            report.build_custom()
+
+            report.build_info_card(
+                title="Overall Test Verdict",
+                items=[
+                    {"label": "Total Devices Tested", "value": str(len(client_labels))},
+                    {"label": "Clients with Zero Downloads", "value": str(zero_download_count)},
+                    {"label": "Maximum Downloads (Single Client)", "value": str(max_downloads)},
+                    {"label": "Overall HTTP Efficiency", "value": "{}%".format(efficiency_pct)},
+                    {"label": "Overall Rating",
+                     "value": "<span style='color:{}; font-weight:800;'>{}</span>".format(overall_color, overall_rating)},
+                ])
+
+            # Key findings: a short plain-English summary of the test results
+            total = len(client_names)
+            platforms = sorted(set(device_types) - {"-"})
+            platform_text = "the tested"
+            if platforms:
+                platform_text = platforms[0] if len(platforms) == 1 else "{} and {}".format(", ".join(platforms[:-1]), platforms[-1])
+            summary = ["The test was conducted with {} Wi-Fi client{} across {} platform{}.".format(
+                total, "" if total == 1 else "s", platform_text, "" if len(platforms) == 1 else "s")]
+            failed = [name for name, count in zip(client_names, downloads) if count == 0]
+            active = [count for count in downloads if count > 0]
+            if failed:
+                summary.append("{} client{} completed HTTP downloads, while {} client{} ({}) recorded no successful downloads.".format(
+                    total - len(failed), "" if total - len(failed) == 1 else "s", len(failed), "" if len(failed) == 1 else "s",
+                    ", ".join(failed)))
+            else:
+                summary.append("All {} client{} completed HTTP downloads successfully.".format(total, "" if total == 1 else "s"))
+            if active:
+                summary.append("HTTP performance {} across clients, with successful downloads ranging from {} to {} per client.".format(
+                    "varied significantly" if min(active) < 0.5 * max(active) else "was consistent", min(active), max(active)))
+            if background_ping and background_ping.bg_stats:
+                loss = [row['loss_percent'] for row in background_ping.bg_stats.values() if row['sent']]
+                if loss:
+                    stable = sum(1 for value in loss if value <= self.LOW_PACKET_LOSS_PERCENT)
+                    if stable * 2 > len(loss):
+                        summary.append("Most clients maintained stable wireless connectivity during the test, with generally low packet loss.")
+                    else:
+                        summary.append("Several clients experienced unstable wireless connectivity during the test, with high packet loss.")
+            summary.append("Overall, the test demonstrated {} HTTP performance across clients, resulting in an overall {} rating.".format(
+                self.RATING_PERFORMANCE_DESCRIPTION.get(overall_rating, overall_rating.lower()), overall_rating))
+            items = "".join("<li style='font-size:14px; line-height:1.5;'>{}</li>".format(point) for point in summary)
+            report.set_custom_html("<div class='info-card'><div class='info-card-header'>Key Findings</div>"
+                                   "<ul style='margin:0; padding-left:20px;'>{}</ul></div>".format(items))
+            report.build_custom()
+
+            report.set_custom_html('<div style="page-break-before: always;"></div>')
+            report.build_custom()
+            report.set_obj_html(_obj_title="Test Results", _obj="")
+            report.build_objective()
+
+            report.set_obj_html(
+                _obj_title="File Download Count per Wi-Fi Client",
+                _obj="The graph below illustrates the number of successful file downloads recorded for each Wi-Fi client "
+                     "during the test. The X-axis represents the total download count, while the Y-axis lists the individual "
+                     "client identifiers.")
+            report.build_objective()
+            self.add_client_graph(
+                report, downloads, client_labels, "Number of times file downloaded", "File Download Count per Wi-Fi Client",
+                "Total-url_http", '#f2994a')
+
+            report.set_custom_html('<div style="page-break-before: always;"></div>')
+            report.build_custom()
+            report.set_obj_html(
+                _obj_title="Average File Download Time per Wi-Fi Client",
+                _obj="The graph below shows the average time taken by each Wi-Fi client to complete a file download during "
+                     "the test. The X-axis represents the average download time in seconds, while the Y-axis lists the "
+                     "individual client identifiers.")
+            report.build_objective()
+            self.add_client_graph(
+                report, avg_time_sec, client_labels, "Average Time Taken to Download file (s)", "Average File Download Time per Wi-Fi Client",
+                "ucg-avg_http", '#2f80ed')
+
+            if self.dowebgui and self.get_live_view:
+                self.add_live_view_images_to_report(report)
+
+            report.set_table_title("Overall Tabular Results for all Wi-Fi Clients")
+            report.build_table_title()
+            if self.expected_passfail_value or self.device_csv_name:
+                test_input_list, pass_fail_list = self.get_pass_fail_list(downloads)
+            dataframe = {
+                "Device Type": device_types,
+                "Device Name": client_names,
+                "MAC Address": self.macid_list,
+                "Channel": self.channel_list,
+                "SSID": self.ssid_list,
+                "File Downloads": downloads,
+                "Download Completion Ratio": download_scores,
+                "Average Download Time (sec)": avg_time_sec,
+                "Average Download Time Stability": time_scores,
+                "Transfer Reliability (Failures)": reliability_scores,
+                "Final Score (%)": final_pcts,
+                "Rating": ratings,
+            }
+            if self.expected_passfail_value or self.device_csv_name:
+                dataframe["Expected value of no of times file downloaded"] = test_input_list
+                dataframe["Status"] = pass_fail_list
+            report.set_table_dataframe(pd.DataFrame(dataframe))
+            report.rating_build_table("Rating", rating_colors)
+
+            # To add charging timestamps of robot in report for a continuous robot run
+            if self.is_continuous_run:
+                if len(self.robot_obj.charging_timestamps) != 0:
+                    report.set_obj_html(_obj_title="Charging Timestamps", _obj="")
+                    report.build_objective()
+                    df = pd.DataFrame(self.robot_obj.charging_timestamps,
+                                      columns=["charge_dock_arrival_timestamp", "charging_completion_timestamp"])
+                    df.insert(0, "S.No", range(1, len(df) + 1))
+                    report.set_table_dataframe(df)
+                    report.build_table()
+                else:
+                    report.set_obj_html(_obj_title="Charging Timestamps",
+                                        _obj="Robot did not went to charge during this test")
+                    report.build_objective()
+            if iot_summary:
+                self.build_iot_report_section(report, iot_summary)
+
+            self.add_wifi_analysis_to_report(report)
+            if background_ping:
+                self.add_background_ping_timeline_to_report(report)
+                background_ping.add_background_ping_to_report(report)
+
+            try:
+                dur_sec = int(duration)
+                formatted_duration = "{:02d}:{:02d}:{:02d}".format(dur_sec // 3600, (dur_sec % 3600) // 60, dur_sec % 60)
+            except (TypeError, ValueError):
+                formatted_duration = str(duration)
+            file_info = {key: value for key, value in test_setup_info.items() if key.startswith("File")}
+            # Test Name comes first; AP Name, SSID and Security are only shown when they were given
+            config_items = {
+                "Test Name": test_setup_info.get("Test Name"),
+                "DUT Model": test_setup_info.get("AP Name"),
+                "SSID": test_setup_info.get("SSID"),
+                "Security": test_setup_info.get("Security"),
+                "No of Devices": test_setup_info.get("No of Devices", len(client_labels)),
+            }
+            config_items = {label: value for label, value in config_items.items() if value}
+            config_items.update(file_info)
+            config_items["Traffic Direction"] = "Download"
+            config_items["Traffic Duration (hh:mm:ss)"] = formatted_duration
+            report.build_info_card(
+                title="Test Configuration",
+                items=[{"label": label, "value": str(value)} for label, value in config_items.items()])
+
+            # Device summary card (device type breakdown plus per device table), same as the other modern reports
+            report.build_device_summary_card(
+                [{"name": name, "platform": platform} for name, platform in zip(client_names, device_types)])
+            if self.device_issue_log:
+                issues_df = pd.DataFrame(self.device_issue_log)
+                issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
+            report.build_footer()
+            html_file = report.write_html()
+            print("returned file {}".format(html_file))
+            print(html_file)
+            report.write_pdf(_orientation="Landscape")
+            logger.info("Monitoring Duration: %s", self.format_monitoring_duration())
+            return
+
         report.set_obj_html("No of times file Downloads", "The below graph represents number of times a file downloads for each client"
                             ". X- axis shows “No of times file downloads and Y-axis shows "
                             "Client names.")
@@ -1782,7 +2187,7 @@ class HttpDownload(Realm):
         graph2 = self.graph_2(dataset2, lis=lis, bands=bands)
         print("graph name {}".format(graph2))
         report.set_graph_image(graph2)
-        report.set_csv_filename(graph2)
+        report.set_csv_filename("Total-url_http")
         report.move_csv_file()
         report.move_graph_image()
         report.build_graph()
@@ -1792,7 +2197,7 @@ class HttpDownload(Realm):
         report.build_objective()
         graph = self.generate_graph(dataset=dataset, lis=lis, bands=bands)
         report.set_graph_image(graph)
-        report.set_csv_filename(graph)
+        report.set_csv_filename("ucg-avg_http")
         report.move_csv_file()
         report.move_graph_image()
         report.build_graph()
@@ -1885,7 +2290,7 @@ class HttpDownload(Realm):
         }
 
         # Get the report path to create the kpi.csv path
-        kpi_path = report.get_report_path()
+        kpi_path = report.path_date_time
         print("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
 
         kpi_csv = lf_kpi_csv.lf_kpi_csv(
@@ -1919,7 +2324,7 @@ class HttpDownload(Realm):
             current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
             csv_outfile = "{}_{}-test_l3_longevity.csv".format(
                 csv_outfile, current_time)
-            csv_outfile = report.file_add_path(csv_outfile)
+            csv_outfile = os.path.join(report.path_date_time, csv_outfile)
             print("csv output file : {}".format(csv_outfile))
 
         test_setup = pd.DataFrame(download_table_value_dup)
@@ -2565,9 +2970,10 @@ class HttpDownload(Realm):
         if self.rotation_enabled:
             robot_data = robot_data.get(rotation, {})
 
-        graph2 = self.graph_2(robot_data['url_data'], lis=lis, bands=bands, graph_name=f"Total-url_http_{coord}{rotation_suffix}")
+        graph_name = f"Total-url_http_{coord}{rotation_suffix}"
+        graph2 = self.graph_2(robot_data['url_data'], lis=lis, bands=bands, graph_name=graph_name)
         report.set_graph_image(graph2)
-        report.set_csv_filename(graph2)
+        report.set_csv_filename(graph_name + ".csv")
         report.move_csv_file()
         report.move_graph_image()
         report.build_graph()
@@ -2576,9 +2982,10 @@ class HttpDownload(Realm):
                             ".  X- axis shows “Average time taken to download a file ” and Y-axis shows "
                             "Client names.")
         report.build_objective()
-        graph = self.generate_graph(dataset=robot_data['uc_avg'], lis=lis, bands=bands, graph_image_name=f"ucg-avg_http_{coord}{rotation_suffix}")
+        graph_name = f"ucg-avg_http_{coord}{rotation_suffix}"
+        graph = self.generate_graph(dataset=robot_data['uc_avg'], lis=lis, bands=bands, graph_image_name=graph_name)
         report.set_graph_image(graph)
-        report.set_csv_filename(graph)
+        report.set_csv_filename(graph_name + ".csv")
         report.move_csv_file()
         report.move_graph_image()
         report.build_graph()
@@ -2934,6 +3341,26 @@ def main():
     optional.add_argument("--wait_time", type=int, help='Specify the maximum time to wait for Configuration', default=60)
     optional.add_argument("--config", action="store_true", help="Specify for configuring the devices")
 
+    optional.add_argument('--wifi_analysis', '--wifi-analysis',
+                          dest='wifi_analysis',
+                          action='store_true',
+                          help='Analyze real-client wifi-msgs (connects/disconnects/scans/association rejections) for the '
+                               'duration of the test. Always enabled for real clients, accepted for consistency with the other interop tests')
+    background_ping = parser.add_argument_group('Background ping')
+    background_ping.add_argument('--enable_bg_ping', '--bg_ping',
+                                 dest='enable_bg_ping',
+                                 action='store_true',
+                                 help='Run a ping on the real clients in the background while the test runs and report its statistics at the end of the report. '
+                                      'Always enabled for real clients, accepted for consistency with the other interop tests')
+    background_ping.add_argument('--bg_ping_target',
+                                 type=str,
+                                 default=None,
+                                 help='IP, domain name or LANforge port the background ping should target. Defaults to the upstream port of the test when not given')
+    background_ping.add_argument('--bg_ping_interval',
+                                 type=float,
+                                 default=1,
+                                 help='Packet interval of the background ping in seconds. Defaults to 1')
+
     optional.add_argument('--get_live_view', help="If true will heatmap will be generated from testhouse automation WebGui ", action='store_true')
     optional.add_argument('--total_floors', help="Total floors from testhouse automation WebGui ", default="0")
     # IOT ARGS
@@ -3059,6 +3486,10 @@ times the file is downloaded.
     avg5 = []
     avg_both = []
     port_list, device_list, macid_list = [], [], []
+    background_ping = None
+    # real client reports always include the ping and wifi connectivity results
+    background_ping_requested = wifi_analysis_requested = args.client_type == 'Real'
+    wifi_analysis_obj = None
     for bands in args.bands:
         # For real devices while ensuring no blocker for Virtual devices
         if args.client_type == 'Real':
@@ -3192,6 +3623,29 @@ times the file is downloaded.
         if args.client_type == 'Real':
             http.monitor_cx()
             logger.info(f'Test started on the devices : {http.port_list}')
+            # the ping and the wifi analysis cover every band of the test, so they are only started once
+            if background_ping_requested:
+                background_ping_requested = False
+                background_ping = lf_interop_ping.Ping(host=args.mgr, port=args.mgr_port, target=args.bg_ping_target or args.upstream_port,
+                                                       interval=args.bg_ping_interval, sta_list=[], real=True, virtual=False, duration=0)
+                if not background_ping.start_background_ping(http.port_list):
+                    background_ping = None
+            http.background_ping = background_ping
+            if wifi_analysis_requested:
+                wifi_analysis_requested = False
+                try:
+                    # ClientAnalysis needs resource IDs like '1.10'
+                    resource_ids = list(dict.fromkeys(".".join(name.split(".")[:2]) for name in http.port_list))
+                    wifi_analysis_obj = ClientAnalysis(host=args.mgr, port=args.mgr_port, device_list=resource_ids, debug=http.debug)
+                    # start_monitoring() exits if no device is found
+                    if wifi_analysis_obj.setup_device_entries():
+                        wifi_analysis_obj.start_monitoring()
+                    else:
+                        logger.warning("None of the wifi connectivity analysis devices resolved to a device LANforge knows about")
+                        wifi_analysis_obj = None
+                except (Exception, SystemExit) as error:
+                    logger.warning("Wifi connectivity analysis could not be started: %s", error)
+                    wifi_analysis_obj = None
         test_time = datetime.now()
         # Solution For Leap Year conflict changed it to %Y
         test_time = test_time.strftime("%Y %d %H:%M:%S")
@@ -3485,6 +3939,17 @@ times the file is downloaded.
         df1 = pd.DataFrame(http.data_for_webui)
         df1.to_csv('{}/http_datavalues.csv'.format(http.result_dir), index=False)
 
+    if background_ping:
+        background_ping.stop_background_ping()
+        http.background_ping = background_ping
+    if wifi_analysis_obj:
+        if wifi_analysis_obj._monitor_file_name:
+            http.wifi_analysis_log = os.path.join("Wifi_Messages", wifi_analysis_obj._monitor_file_name)
+        try:
+            http.wifi_analysis_stats = wifi_analysis_obj.stop_monitoring()
+        except (Exception, SystemExit) as error:
+            logger.warning("Wifi connectivity analysis results could not be collected: %s", error)
+
     http.generate_report(date, num_stations=args.num_stations,
                          duration=args.duration, test_setup_info=test_setup_info, dataset=dataset, lis=lis,
                          bands=args.bands, threshold_2g=args.threshold_2g, threshold_5g=args.threshold_5g,
@@ -3495,6 +3960,8 @@ times the file is downloaded.
                          dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
                          dut_serial_num=args.dut_serial_num, test_id=args.test_id,
                          test_input_infor=test_input_infor, csv_outfile=args.csv_outfile, iot_summary=iot_summary)
+    if background_ping:
+        background_ping.cleanup()
     http.postcleanup()
     # FOR WEBGUI, filling csv at the end to get the last terminal logs
     if args.dowebgui:
