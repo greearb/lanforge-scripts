@@ -89,6 +89,9 @@ import logging
 import asyncio
 import csv
 import re
+import shutil
+import base64
+import statistics
 import threading
 
 if 'py-json' not in sys.path:
@@ -98,8 +101,9 @@ if 'py-scripts' not in sys.path:
     sys.path.append('/home/lanforge/lanforge-scripts/py-scripts')
 
 from lf_base_interop_profile import RealDevice
-from lf_graph import lf_bar_graph_horizontal
-from lf_report import lf_report
+from lf_wifi_msgs import ClientAnalysis
+from report_v2.lf_report_v2 import lf_report
+from report_v2.lf_graph_v2 import lf_bar_graph, lf_bar_graph_horizontal
 from station_profile import StationProfile
 from typing import List, Optional
 from LANforge import LFUtils
@@ -119,6 +123,15 @@ Realm = realm.Realm
 
 class Ping(Realm):
     BG_NAME_PREFIX = 'bgping'
+    # Average RTT (ms) up to which the latency score is 100, and from which it is 0
+    LATENCY_FULL_SCORE_MS = 100
+    LATENCY_ZERO_SCORE_MS = 300
+    # Share of the ping score given to the delivery score and to the latency score
+    DELIVERY_WEIGHT = 0.7
+    LATENCY_WEIGHT = 0.3
+    # Average packet loss (%) up to which the loss is described as minimal, and as moderate
+    MINIMAL_PACKET_LOSS_PERCENT = 1.0
+    MODERATE_PACKET_LOSS_PERCENT = 5.0
 
     def __init__(self,
                  host=None,
@@ -240,6 +253,13 @@ class Ping(Realm):
         self.bg_poll_interval = 20
         self.bg_poll_stop = None
         self.bg_poll_thread = None
+        self.test_packet_results = {}
+        self.test_start_time = None
+        self.test_stop_time = None
+        self.wifi_analysis = None
+        self.wifi_analysis_stats = {}
+        self.wifi_analysis_log = None
+        self.wifi_analysis_monitoring = False
 
     def change_target_to_ip(self):
 
@@ -398,8 +418,18 @@ class Ping(Realm):
 
     def start_generic(self):
         self.generic_endps_profile.start_cx()
+        self.test_start_time = time.time()
+        # one entry per endpoint, named after the endpoint's client, to record the result of every ping for the connectivity timeline
+        self.test_packet_results = {}
+        if self.enable_virtual:
+            for station in set(self.sta_list).difference(set(self.real_sta_list)):
+                self.test_packet_results[station.split('.')[2]] = {}
+        if self.enable_real:
+            for station in self.real_sta_list:
+                self.test_packet_results[station] = {}
 
     def stop_generic(self):
+        self.test_stop_time = time.time()
         if self.missing_endp_logged:
             missing_cx_names = {'CX_{}'.format(endp) for endp in self.missing_endp_logged}
             self.generic_endps_profile.created_endp = [
@@ -768,14 +798,356 @@ class Ping(Realm):
                     break
                 time.sleep(1)
 
-            report.set_custom_html("<h2>Ping Packet Sent vs Recevied vs Lost: </h2>")
+            report.set_custom_html('<div style="page-break-before: always;"></div>')
             report.build_custom()
+            report.set_obj_html(_obj_title="Ping Packets Sent vs Received vs Lost",
+                                _obj="Heatmaps of the packets sent, received and lost by the Wi-Fi clients on floor {}.".format(floor + 1))
+            report.build_objective()
 
-            # Generate report sections for each image if it exists
+            # Generate report sections for each image if it exists, embedding it so the report stays a single file
             for image_path in [packet_sent_image, packet_recv_image, packet_loss_image]:
                 if os.path.exists(image_path):
-                    report.set_custom_html(f'<img src="file://{image_path}"  style="width:1200px; height:800px;"></img>')
+                    with open(image_path, "rb") as image_file:
+                        image_base64 = base64.b64encode(image_file.read()).decode("ascii")
+                    report.set_custom_html("<div class='chart-card'><img src='data:image/png;base64,{}' alt='' /></div>".format(image_base64))
                     report.build_custom()
+                else:
+                    logger.warning("Heatmap image {} was not found, skipping it in the report".format(image_path))
+
+    def start_wifi_analysis(self, host, port, device_list):
+        """Starts live Wi-Fi message monitoring (ClientAnalysis) for the real clients under test.
+        If no device can be resolved, it logs a warning and skips the analysis instead of
+        stopping the test.
+
+        Args:
+            host (str): LANforge manager IP.
+            port (int): LANforge GUI REST port.
+            device_list (list): port names of the devices under test, e.g. ["1.10.wlan0"].
+        """
+        self.wifi_analysis = None
+        self.wifi_analysis_stats = {}
+        self.wifi_analysis_log = None
+        self.wifi_analysis_monitoring = False
+        if not device_list:
+            return
+        try:
+            # ClientAnalysis needs resource IDs like '1.10'
+            resource_ids = list(dict.fromkeys(".".join(name.split(".")[:2]) for name in device_list))
+            self.wifi_analysis = ClientAnalysis(host=host, port=port, device_list=resource_ids, debug=self.debug)
+            # start_monitoring() exits if no device is found
+            if not self.wifi_analysis.setup_device_entries():
+                logger.warning("None of the wifi connectivity analysis devices resolved to a device LANforge knows about")
+                self.wifi_analysis = None
+                return
+            self.wifi_analysis.start_monitoring()
+            self.wifi_analysis_monitoring = True
+            logger.info("Wi-Fi connectivity analysis started for devices: {}".format(device_list))
+        except (Exception, SystemExit) as error:
+            logger.warning("Wifi connectivity analysis could not be started: {}".format(error))
+            self.wifi_analysis = None
+
+    def stop_wifi_analysis(self):
+        """Stops the live Wi-Fi monitoring and stores the per-device stats in
+        self.wifi_analysis_stats. Does nothing if monitoring was not started."""
+        if not self.wifi_analysis_monitoring:
+            return
+        self.wifi_analysis_monitoring = False
+        if self.wifi_analysis._monitor_file_name:
+            self.wifi_analysis_log = os.path.join("Wifi_Messages", self.wifi_analysis._monitor_file_name)
+        try:
+            self.wifi_analysis_stats = self.wifi_analysis.stop_monitoring()
+        except (Exception, SystemExit) as error:
+            logger.warning("Wifi connectivity analysis results could not be collected: {}".format(error))
+
+    @staticmethod
+    def add_client_graph(report, data_set, series_labels, categories, xaxis_name, title, image_name, colors):
+        """Adds an interactive graph with one group of bars per client, and saves its data as a csv in the report folder."""
+        graph = lf_bar_graph_horizontal(_data_set=data_set,
+                                        _xaxis_name=xaxis_name,
+                                        _yaxis_name="Wireless Clients",
+                                        _yaxis_categories=categories,
+                                        _graph_title=title,
+                                        _graph_image_name=image_name,
+                                        _label=series_labels,
+                                        _color=colors,
+                                        _show_bar_value=True,
+                                        _enable_csv=True)
+        report.set_graph_image(graph.build_bar_graph_horizontal())
+        report.set_csv_filename(image_name)
+        report.move_csv_file()
+        report.build_graph()
+
+    def add_wifi_analysis_to_report(self, report):
+        """Adds the Wi-Fi connectivity event summary graph and stats table to the report. Does nothing if there are no Wi-Fi analysis stats."""
+        self.build_wifi_analysis_section(report, self.wifi_analysis_stats, self.wifi_analysis_log,
+                                         {port: data['name'] for port, data in self.result_json.items()})
+
+    @staticmethod
+    def build_wifi_analysis_section(report, wifi_analysis_stats, wifi_analysis_log, port_to_name):
+        """Adds the Wi-Fi connectivity event summary graph and stats table to the report, port_to_name maps a port to the name shown for it.
+        Also copies the Wi-Fi messages the analysis was based on to the report folder. Does nothing if there are no Wi-Fi analysis stats."""
+        if wifi_analysis_log and os.path.exists(wifi_analysis_log):
+            try:
+                shutil.copy(wifi_analysis_log, os.path.join(report.path_date_time, "wifi_analysis_messages.json"))
+            except OSError as error:
+                logger.warning("Wifi analysis messages could not be copied to the report folder: {}".format(error))
+        if not wifi_analysis_stats:
+            return
+        try:
+            devices, connect_attempt, disconnected, scanning, association_rejection, connected, remarks, cx_time = \
+                ClientAnalysis.stats_to_lists(wifi_analysis_stats)
+            devices = [port_to_name.get(port_name, port_name) for port_name in devices]
+
+            categories = ["Disconnected", "Scans", "Association Attempts", "Association Rejected", "Connected"]
+            totals = [sum(disconnected), sum(scanning), sum(connect_attempt), sum(association_rejection), sum(connected)]
+            # Red=Disconnected, Yellow=Scans, Orange=Association Attempts, Grey=Rejected, Green=Connected.
+            colors = ['#e74c3c', '#f1c40f', '#e67e22', '#95a5a6', '#27ae60']
+
+            report.set_custom_html('<div style="page-break-before: always;"></div>')
+            report.build_custom()
+            report.set_obj_html(
+                _obj_title="Client Connectivity Event Summary",
+                _obj="This graph summarizes connection-related events observed during the ping test. "
+                     "These metrics provide insight into client stability and wireless connectivity performance.")
+            report.build_objective()
+            # One series per event, stacked, so every event has its own colour and legend entry
+            data_set = [[value if index == series_index else 0 for index, value in enumerate(totals)]
+                        for series_index in range(len(categories))]
+            graph = lf_bar_graph(_data_set=data_set,
+                                 _xaxis_name="",
+                                 _yaxis_name="Count",
+                                 _xaxis_categories=categories,
+                                 _graph_image_name="wifi_connectivity_status",
+                                 _label=categories,
+                                 _graph_title="Client Connectivity Status",
+                                 _title_size=16,
+                                 _color_edge='black',
+                                 _bar_width=0.5,
+                                 _figsize=(10, 6),
+                                 _legend_loc="best",
+                                 _dpi=96,
+                                 _show_bar_value=True,
+                                 _enable_csv=True,
+                                 _stacked=True,
+                                 _color=colors,
+                                 _color_name=colors)
+            report.set_graph_image(graph.build_bar_graph())
+            report.set_csv_filename(graph.graph_image_name)
+            report.move_csv_file()
+            report.build_graph()
+
+            report.set_table_title("Wifi Connectivity Analysis")
+            report.build_table_title()
+            report.set_table_dataframe(pd.DataFrame({
+                "Device": devices,
+                "Association Attempts": connect_attempt,
+                "Disconnected": disconnected,
+                "Scanning": scanning,
+                "Association Rejection": association_rejection,
+                "Connected": connected,
+            }))
+            report.build_table()
+        except Exception as error:
+            logger.warning("Wifi connectivity analysis could not be added to the report: {}".format(error))
+
+    def add_connectivity_timeline_to_report(self, report):
+        """Adds the "Wireless Client Connectivity Status vs Time" graph built from the result of every ping of the test:
+        green for replies, red for lost pings. Does nothing if no ping result was recorded."""
+        if not self.test_packet_results or self.test_start_time is None or self.test_stop_time is None:
+            return
+        try:
+            test_seconds = self.test_stop_time - self.test_start_time
+            interval = float(self.interval)
+            clients, stations, segments = [], [], []
+            for port, device_data in self.result_json.items():
+                sequences = self.test_packet_results.get(port.split('.')[2] if device_data['os'] == 'Virtual' else port)
+                if sequences is None:
+                    continue
+                spans = []
+                if int(device_data['recv']) == 0:
+                    # no reply was ever received (for example, the client has no IP), so it never had connectivity
+                    spans.append(['drop', 0.0, test_seconds])
+                else:
+                    covered_until = 0.0
+                    for sequence in sorted(sequences):
+                        start, end = (sequence - 1) * interval, min(test_seconds, sequence * interval)
+                        if end <= start:
+                            continue
+                        if start > covered_until:
+                            spans.append(['up', covered_until, start])
+                        spans.append(['drop' if sequences[sequence] == 0 else 'up', start, end])
+                        covered_until = max(covered_until, end)
+                merged = []
+                for span in spans:
+                    if merged and merged[-1][0] == span[0]:
+                        merged[-1][2] = span[2]
+                    else:
+                        merged.append(span)
+                segments.extend({'clientIndex': len(clients), 'start': round(start, 3), 'end': round(end, 3), 'status': status} for status, start, end in merged)
+                clients.append(device_data['name'])
+                stations.append(port)
+            if not segments:
+                return
+            payload = {'clients': clients, 'stations': stations, 'segments': segments, 'duration': round(test_seconds, 3),
+                       'emptyMessage': "No time-series ping samples were collected"}
+            report.set_custom_html('<div style="page-break-before: always;"></div>')
+            report.build_custom()
+            report.set_obj_html(
+                _obj_title="Client Connectivity Results Throughout the Test Duration",
+                _obj=("The graph illustrates the connectivity status of all wireless clients during the test based on connectivity monitoring during the test execution. "
+                      "Green segments represent successful responses, while red segments indicate packet loss or connectivity drops observed during the test."))
+            report.build_objective()
+            report.set_custom_html("""
+                <div class='chart-card'>
+                  <h3>Wireless Client Connectivity Status vs Time</h3>
+                  <div id='ping-connectivity-timeline' class='chart'></div>
+                  <script>
+                    window.__lfModernReport.renderConnectivityTimeline('ping-connectivity-timeline', {payload});
+                  </script>
+                </div>
+                """.format(payload=json.dumps(payload)))
+            report.build_custom()
+        except Exception as error:
+            logger.warning("Connectivity timeline could not be added to the report: {}".format(error))
+
+    @classmethod
+    def build_client_scores(cls, packets_sent, packets_received, device_avg):
+        """Packet loss, delivery, latency and ping score and the rating of every client."""
+        scores = {'loss': [], 'delivery': [], 'latency': [], 'ping': [], 'rating': []}
+        for sent, received, avg_rtt in zip(packets_sent, packets_received, device_avg):
+            delivery = min(100.0, received / sent * 100) if sent > 0 else 0.0
+            if received <= 0 or avg_rtt == 'NA':
+                latency = 0.0
+            else:
+                latency_span = cls.LATENCY_ZERO_SCORE_MS - cls.LATENCY_FULL_SCORE_MS
+                latency = max(0.0, min(100.0, (cls.LATENCY_ZERO_SCORE_MS - avg_rtt) / latency_span * 100))
+            ping_score = round(cls.DELIVERY_WEIGHT * delivery + cls.LATENCY_WEIGHT * latency, 2)
+            scores['loss'].append(round(100.0 - delivery, 2))
+            scores['delivery'].append(round(delivery, 2))
+            scores['latency'].append(round(latency, 2))
+            scores['ping'].append(ping_score)
+            scores['rating'].append(lf_report.classify_score_rating(ping_score)[0])
+        return scores
+
+    @classmethod
+    def add_key_findings_to_report(cls, report, packets_sent, packets_received, device_avg, scores, overall_score, overall_rating):
+        """Adds a short plain-English summary of the test results to the report."""
+        total = len(packets_sent)
+        responding = [i for i in range(total) if packets_received[i] > 0]
+        no_reply = total - len(responding)
+        if total == 0:
+            findings = ['No ping results were collected for any client during the test.']
+        else:
+            if no_reply == 0:
+                findings = ['All {} client(s) received ping replies from the target during the test.'.format(total)]
+            elif not responding:
+                findings = ['None of the {} client(s) received ping replies from the target; all recorded 100% packet loss.'.format(total)]
+            else:
+                findings = ['{} of {} clients ({:.1f}%) received ping replies from the target during the test; {} client(s) received no replies and recorded 100% packet loss.'.format(
+                    len(responding), total, len(responding) / total * 100, no_reply)]
+            if responding:
+                avg_loss = sum(scores['loss'][i] for i in responding) / len(responding)
+                if avg_loss <= cls.MINIMAL_PACKET_LOSS_PERCENT:
+                    findings.append('Packet loss was minimal for responding clients, averaging {:.2f}% across the {} client(s), indicating reliable communication for connected clients.'.format(
+                        avg_loss, len(responding)))
+                elif avg_loss <= cls.MODERATE_PACKET_LOSS_PERCENT:
+                    findings.append('Packet loss was moderate for responding clients, averaging {:.2f}% across the {} client(s).'.format(
+                        avg_loss, len(responding)))
+                else:
+                    findings.append('Packet loss was high for responding clients, averaging {:.2f}% across the {} client(s), indicating unstable communication.'.format(
+                        avg_loss, len(responding)))
+            rtts = [device_avg[i] for i in responding if device_avg[i] != 'NA']
+            if rtts:
+                slow = sum(1 for rtt in rtts if rtt > cls.LATENCY_FULL_SCORE_MS)
+                if slow == 0:
+                    findings.append('Latency was low for all responding clients, with an average RTT of {:.1f} ms.'.format(sum(rtts) / len(rtts)))
+                else:
+                    findings.append('Latency {} for most clients, with an average RTT of {:.1f} ms across responding clients; {} client(s) exceeded {} ms.'.format(
+                        'remained stable' if slow * 2 <= len(rtts) else 'was high', sum(rtts) / len(rtts), slow, cls.LATENCY_FULL_SCORE_MS))
+            findings.append('Overall, the network achieved a ping score of {:.2f} out of 100, giving an overall rating of {}.'.format(overall_score, overall_rating))
+        items = ''.join("<li style='font-size:14px; line-height:1.5;'>{}</li>".format(point) for point in findings)
+        report.set_custom_html("<div class='info-card'><div class='info-card-header'>Key Findings</div>"
+                               "<ul style='margin:0; padding-left:20px;'>{}</ul></div>".format(items))
+        report.build_custom()
+
+    @classmethod
+    def add_client_graphs_to_report(cls, report, names, packets_sent, packets_received, device_avg, scores, suffix=''):
+        """Adds the per client average RTT, packet loss and packets sent vs received graphs.
+        suffix is added to the graph ids, so that the graphs of several sections of one report do not share an id."""
+        responding = sorted((device_avg[i], names[i]) for i in range(len(names))
+                            if device_avg[i] != 'NA' and packets_received[i] > 0)
+        if responding:
+            rtts = [rtt for rtt, _ in responding]
+            no_reply = len(names) - len(responding)
+            report.set_custom_html('<div style="page-break-before: always;"></div>')
+            report.build_custom()
+            report.set_obj_html(
+                _obj_title="Per Client Average RTT",
+                _obj='The graph below illustrates the average round-trip time observed by each Wi-Fi client during the test. The X-axis represents '
+                     'the average RTT in milliseconds, while the Y-axis lists the individual wireless client identifiers.{}<br>'
+                     'Average RTT: {:.2f} ms | Median RTT: {:.2f} ms | RTT Range: {:.2f} – {:.2f} ms'.format(
+                         ' The {} client(s) that received no replies are not plotted.'.format(no_reply) if no_reply else '',
+                         sum(rtts) / len(rtts), statistics.median(rtts), min(rtts), max(rtts)))
+            report.build_objective()
+            cls.add_client_graph(report, [rtts], ['Average RTT (ms)'], [name for _, name in responding], 'Average RTT (ms)',
+                                 'Per Client Average RTT', 'per_client_rtt' + suffix, ['#2f80ed'])
+
+        lossy = sorted((scores['loss'][i], names[i]) for i in range(len(names)) if scores['loss'][i] > 0)
+        report.set_custom_html('<div style="page-break-before: always;"></div>')
+        report.build_custom()
+        if lossy:
+            report.set_obj_html(
+                _obj_title="Per Client Packet Loss",
+                _obj='The graph below illustrates the packet loss percentage observed by each Wi-Fi client during the test. The X-axis represents '
+                     'the percentage of sent packets that were not received, while the Y-axis lists the wireless clients that experienced packet loss. '
+                     'All other clients recorded 0% packet loss.')
+            report.build_objective()
+            cls.add_client_graph(report, [[loss for loss, _ in lossy]], ['Packet Loss %'], [name for _, name in lossy], 'Packet Loss (%)',
+                                 'Per Client Packet Loss', 'per_client_loss' + suffix, ['#8e44ad'])
+        elif names:
+            report.set_obj_html(_obj_title="Per Client Packet Loss", _obj='All clients recorded 0% packet loss.')
+            report.build_objective()
+
+        if names:
+            report.set_custom_html('<div style="page-break-before: always;"></div>')
+            report.build_custom()
+            report.set_obj_html(
+                _obj_title="Per Client Packets Sent vs Received",
+                _obj='The graph below compares the number of ICMP packets sent and received by each Wi-Fi client during the test. The X-axis represents '
+                     'the packet count, while the Y-axis lists the individual wireless client identifiers. A gap between the two bars indicates lost packets.')
+            report.build_objective()
+            cls.add_client_graph(report, [packets_sent, packets_received], ['Packets Sent', 'Packets Received'], names, 'Packets',
+                                 'Per Client Packets Sent vs Received', 'per_client_packets' + suffix, ['#2f80ed', '#1d9a8a'])
+
+    def get_group_indices(self, groupdevlist: List[str]) -> List[int]:
+        """Positions, in the report's device lists, of the devices that belong to a group."""
+        indices = []
+        adb_url = '/adb/'
+        response = self.json_get(adb_url)
+        if not response:
+            logger.error("Failed to fetch adb data.\nRequested URL: '{}'\nResponse: {}".format(adb_url, response))
+            interop_tab_data = None
+        else:
+            interop_tab_data = response['devices']
+            if isinstance(interop_tab_data, dict):
+                interop_tab_data = [{interop_tab_data['name']: interop_tab_data}]
+        for i in range(len(self.device_names)):
+            for j in groupdevlist:
+                # For a string like "test3 Linux":
+                # - device_names[i].split(" ")[0:-1][0] gives 'test3' (device name)
+                # - device_names[i].split(" ")[-1] gives 'Linux' (OS type)
+                # This condition filters out Android clients and matches device name with j
+                if j == self.device_names[i].split(" ")[0:-1][0] and self.device_names[i].split(" ")[-1] != 'Android':
+                    indices.append(i)
+                elif interop_tab_data is not None:
+                    for dev in interop_tab_data:
+                        for item in dev.values():
+                            # For a string like "samsungmob Android":
+                            # - device_names[i].split(' ')[0:-1][0] (e.g., 'samsungmob') matches item['user-name']
+                            # - The group name (e.g., 'RZCTA09CTXF') matches with item['name'].split('.')[-1]
+                            if item['user-name'] == self.device_names[i].split(' ')[0:-1][0] and j == item['name'].split('.')[-1]:
+                                indices.append(i)
+        return sorted(set(indices))
 
     def generate_report(self, result_json=None, result_dir='Ping_Test_Report', report_path='', config_devices='', group_device_map=None):
         if result_json is not None:
@@ -786,8 +1158,8 @@ class Ping(Realm):
                            _output_html='interop_ping.html',
                            _results_dir_name=result_dir,
                            _path=report_path)
-        report_path = report.get_path()
-        report_path_date_time = report.get_path_date_time()
+        report_path = report.path
+        report_path_date_time = report.path_date_time
 
         self.write_client_issue_csv(report_path_date_time)
 
@@ -795,46 +1167,16 @@ class Ping(Realm):
         logger.info('path_date_time: {}'.format(report_path_date_time))
 
         # setting report title
-        report.set_title('Ping Test Report')
+        client_kind = 'Real' if self.real and not self.enable_virtual else 'Virtual' if self.enable_virtual and not self.real else 'Real and Virtual'
+        report.set_title("LANforge Interop<br>Ping Test<br>"
+                         "<span style='font-size:0.45em; font-weight:400;'>({} Client Connectivity Validation)</span>".format(client_kind))
         report.build_banner()
+        report.set_custom_html('<style>.table-search-bar { display: none !important; }'
+                               '@media print { .table-wrap { overflow: visible !important; } '
+                               '.chart-card, .table-wrap, .info-card { page-break-inside: avoid; } '
+                               'table.data-table { font-size: 9px; } table.data-table th, table.data-table td { padding: 3px 4px; } }</style>')
+        report.build_custom()
 
-        # Test setup information table for devices in device list
-        if config_devices == '':
-            test_setup_info = {
-                'SSID': self.ssid,
-                'Security': self.security,
-                'Website / IP': self.target,
-                'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
-                'Duration (in minutes)': self.duration
-            }
-        # Test setup information table for devices in groups
-        else:
-            group_names = ', '.join(config_devices.keys())
-            profile_names = ', '.join(config_devices.values())
-            configmap = "Groups:" + group_names + " -> Profiles:" + profile_names
-            test_setup_info = {
-                'Configuration': configmap,
-                'Website / IP': self.target,
-                'No of Devices': '{} (V:{}, A:{}, W:{}, L:{}, M:{})'.format(len(self.sta_list), len(self.sta_list) - len(self.real_sta_list), self.android, self.windows, self.linux, self.mac),
-                'Duration (in minutes)': self.duration
-            }
-        report.test_setup_table(
-            test_setup_data=test_setup_info, value='Test Setup Information')
-
-        # objective and description
-        report.set_obj_html(_obj_title='Objective',
-                            _obj='''The objective of the ping test is to evaluate network connectivity and measure the round-trip time taken for
-                            data packets to travel from the source to the destination and back. It helps assess the reliability and latency of the network,
-                            identifying any packet loss, delays, or variations in response times. The test aims to ensure that devices can communicate
-                            effectively over the network and pinpoint potential issues affecting connectivity.
-                            ''')
-        report.build_objective()
-
-        # packets sent vs received vs dropped
-        report.set_table_title(
-            'Packets sent vs packets received vs packets dropped')
-        report.build_table_title()
-        # graph for the above
         self.packets_sent = []
         self.packets_received = []
         self.packets_dropped = []
@@ -845,12 +1187,13 @@ class Ping(Realm):
         self.device_max = []
         self.device_avg = []
         self.device_mac = []
+        self.device_ip = []
+        self.device_bssid = []
         self.device_names_with_errors = []
         self.devices_with_errors = []
         self.report_names = []
         self.remarks = []
         self.device_ssid = []
-        # packet_count_data = {}
         os_type = []
         for device, device_data in self.result_json.items():
             if device_data['sent'] == '' or device_data['recv'] == '' or device_data['dropped'] == '':
@@ -863,9 +1206,10 @@ class Ping(Realm):
             self.device_modes.append(device_data['mode'])
             self.device_channels.append(device_data['channel'])
             self.device_mac.append(device_data['mac'])
+            self.device_ip.append(device_data.get('ip') or 'N/A')
+            self.device_bssid.append(device_data.get('bssid') or 'N/A')
             self.device_ssid.append(device_data['ssid'])
-            # NA (failed ping) is kept as text here for the Latency table; the bar
-            # graph below converts NA to 0 right before it's plotted.
+            # NA (failed ping) is kept as text for the tables and skipped by the graphs
             self.device_min.append(device_data['min_rtt'] if device_data['min_rtt'] == 'NA' else float(device_data['min_rtt'].replace(',', '')))
             self.device_max.append(device_data['max_rtt'] if device_data['max_rtt'] == 'NA' else float(device_data['max_rtt'].replace(',', '')))
             self.device_avg.append(device_data['avg_rtt'] if device_data['avg_rtt'] == 'NA' else float(device_data['avg_rtt'].replace(',', '')))
@@ -877,182 +1221,104 @@ class Ping(Realm):
                 self.device_names_with_errors.append(device_data['name'])
                 self.devices_with_errors.append(device)
                 self.remarks.append(','.join(device_data['remarks']))
-            # logging.info(self.packets_sent,
-            #       self.packets_received,
-            #       self.packets_dropped)
-            # logging.info(self.device_min,
-            #       self.device_max,
-            #       self.device_avg)
 
-            # packet_count_data[device] = {
-            #     'MAC': device_data['mac'],
-            #     'Channel': device_data['channel'],
-            #     'Mode': device_data['mode'],
-            #     'Packets Sent': device_data['sent'],
-            #     'Packets Received': device_data['recv'],
-            #     'Packets Loss': device_data['dropped'],
-            # }
-        x_fig_size = 15
-        y_fig_size = len(self.device_names) * .5 + 4
-        graph = lf_bar_graph_horizontal(_data_set=[self.packets_dropped, self.packets_received, self.packets_sent],
-                                        _xaxis_name='Packets Count',
-                                        _yaxis_name='Wireless Clients',
-                                        _label=[
-                                            'Packets Loss', 'Packets Received', 'Packets Sent'],
-                                        _graph_image_name='Packets sent vs received vs dropped',
-                                        _yaxis_label=self.report_names,
-                                        _yaxis_categories=self.report_names,
-                                        _yaxis_step=1,
-                                        _yticks_font=8,
-                                        _graph_title='Packets sent vs received vs dropped',
-                                        _title_size=16,
-                                        _color=['lightgrey',
-                                                'orange', 'steelblue'],
-                                        _color_edge=['black'],
-                                        _bar_height=0.15,
-                                        _figsize=(x_fig_size, y_fig_size),
-                                        _legend_loc="best",
-                                        _legend_box=(1.0, 1.0),
-                                        _dpi=96,
-                                        _show_bar_value=False,
-                                        _enable_csv=True,
-                                        _color_name=['lightgrey', 'orange', 'steelblue'])
+        ports = list(self.result_json)
+        client_names = [device_data['name'] for device_data in self.result_json.values()]
+        scores = self.build_client_scores(self.packets_sent, self.packets_received, self.device_avg)
+        overall_score = round(sum(scores['ping']) / len(scores['ping']), 2) if scores['ping'] else 0.0
+        overall_rating, overall_color = lf_report.classify_score_rating(overall_score)
+        rating_colors = {label: color for _, label, color in lf_report.SCORE_RATING_BANDS}
 
-        graph_png = graph.build_bar_graph_horizontal()
-        logger.info('graph name {}'.format(graph_png))
-        report.set_graph_image(graph_png)
-        # need to move the graph image to the results directory
-        report.move_graph_image()
-        report.set_csv_filename(graph_png)
-        report.move_csv_file()
-        report.build_graph()
+        # objective and description
+        report.set_obj_html(_obj_title='Test Overview',
+                            _obj='''The ping test assesses network connectivity for wireless clients, such as Android, Linux, Windows, and macOS
+                            devices and virtual stations, by sending ICMP echo requests from each client to a target host and measuring the round-trip
+                            time (RTT) of every reply. The test detects packet loss, delays, and response-time variations across clients, ensuring
+                            effective device communication and helping identify connectivity problems. The expected behavior is for every associated
+                            client to receive replies consistently, with low packet loss and stable RTT for the duration of the test.
+                            ''')
+        report.build_objective()
 
+        report.build_info_card(
+            title='Overall Test Verdict',
+            items=[
+                {'label': 'Total Devices Tested', 'value': str(len(ports))},
+                {'label': 'Ping Target', 'value': str(self.target)},
+                {'label': 'Overall Ping Score', 'value': '{:.2f} / 100'.format(overall_score)},
+                {'label': 'Overall Rating', 'value': "<span style='color:{}; font-weight:800;'>{}</span>".format(overall_color, overall_rating)},
+            ])
+        self.add_key_findings_to_report(report, self.packets_sent, self.packets_received, self.device_avg, scores, overall_score, overall_rating)
+        self.add_client_graphs_to_report(report, self.report_names, self.packets_sent, self.packets_received, self.device_avg, scores)
+
+        report.set_custom_html('<div style="page-break-before: always;"></div>')
+        report.build_custom()
+        report.set_obj_html(
+            _obj_title='Overall Tabular Results for all Wi-Fi Clients',
+            _obj='The below table provides detailed per-client ping results -- IP and MAC address, BSSID, channel, packets sent and received, '
+                 'packet loss, average RTT, delivery and latency scores, ping score, and rating -- for all Wi-Fi clients. '
+                 'Channel is shown as N/A when the client does not report it.')
+        report.build_objective()
+        dataframe = pd.DataFrame({
+            'Port': ports,
+            'Device Type': os_type,
+            'Wireless Client': client_names,
+            'IP Address': self.device_ip,
+            'MAC': self.device_mac,
+            'BSSID': self.device_bssid,
+            'SSID': self.device_ssid,
+            'Channel': self.device_channels,
+            'Mode': self.device_modes,
+            'Packets Sent': self.packets_sent,
+            'Packets Received': self.packets_received,
+            'Packets Dropped': self.packets_dropped,
+            'Packet Loss %': ['{:.2f}'.format(loss) for loss in scores['loss']],
+            'Min RTT (ms)': self.device_min,
+            'Average RTT (ms)': self.device_avg,
+            'Max RTT (ms)': self.device_max,
+            'Delivery Score': ['{:.2f}'.format(delivery) for delivery in scores['delivery']],
+            'Latency Score': ['{:.2f}'.format(latency) for latency in scores['latency']],
+            'Ping Score': ['{:.2f}'.format(ping_score) for ping_score in scores['ping']],
+            'Rating': scores['rating'],
+        })
         if self.real:
             # Calculating the pass/fail criteria when either expected_passfail_val or csv_name is provided
             if self.expected_passfail_val or self.csv_name:
                 self.get_pass_fail_list(os_type)
-            # When groups are provided a seperate table will be generated for each group using generate_dataframe
-            if self.group_name:
+                dataframe['Expected Packet Loss %'] = self.test_input_list
+                dataframe['Status'] = ["<span style='color:{}; font-weight:700;'>{}</span>".format('#1a7a2e' if status == 'PASS' else '#e53935', status)
+                                       for status in self.pass_fail_list]
+            # When groups are provided a seperate table will be generated for each group
+            if self.group_name and group_device_map:
+                grouped_indices = set()
                 for key, val in group_device_map.items():
-                    if self.expected_passfail_val or self.csv_name:
-                        dataframe = self.generate_dataframe(
-                            val,
-                            self.device_names,
-                            self.device_mac,
-                            self.device_channels,
-                            self.device_ssid,
-                            self.device_modes,
-                            self.packets_sent,
-                            self.packets_received,
-                            self.packets_dropped,
-                            self.percent_pac_loss,
-                            self.test_input_list,
-                            self.pass_fail_list)
-                    else:
-                        dataframe = self.generate_dataframe(val, self.device_names, self.device_mac, self.device_channels, self.device_ssid,
-                                                            self.device_modes, self.packets_sent, self.packets_received, self.packets_dropped, [], [], [])
-                    if dataframe:
+                    indices = self.get_group_indices(val)
+                    grouped_indices.update(indices)
+                    if indices:
                         report.set_obj_html("", "Group: {}".format(key))
                         report.build_objective()
-                        dataframe1 = pd.DataFrame(dataframe)
-                        report.set_table_dataframe(dataframe1)
-                        report.build_table()
-
+                        report.set_table_dataframe(dataframe.iloc[indices].reset_index(drop=True))
+                        report.rating_build_table('Rating', rating_colors)
+                # clients that are in none of the groups (for example, virtual stations) still get their results shown
+                other_indices = [index for index in range(len(dataframe)) if index not in grouped_indices]
+                if other_indices:
+                    report.set_obj_html("", "Clients not in a group")
+                    report.build_objective()
+                    report.set_table_dataframe(dataframe.iloc[other_indices].reset_index(drop=True))
+                    report.rating_build_table('Rating', rating_colors)
             else:
-                dataframe1 = pd.DataFrame({
-                    'Wireless Client': self.device_names,
-                    'MAC': self.device_mac,
-                    'Channel': self.device_channels,
-                    'SSID ': self.device_ssid,
-                    'Mode': self.device_modes,
-                    'Packets Sent': self.packets_sent,
-                    'Packets Received': self.packets_received,
-                    'Packets Loss': self.packets_dropped,
-                })
-                if self.expected_passfail_val or self.csv_name:
-                    dataframe1[" Percentage of Packet loss %"] = self.percent_pac_loss
-                    dataframe1['Expected Packet loss %'] = self.test_input_list
-                    dataframe1['Status'] = self.pass_fail_list
-                report.set_table_dataframe(dataframe1)
-                report.build_table()
+                report.set_table_dataframe(dataframe)
+                report.rating_build_table('Rating', rating_colors)
             if self.get_live_view:
                 self.add_live_view_images_to_report(report=report, report_path=report_path)
-
         else:
-            dataframe1 = pd.DataFrame({
-                'Wireless Client': self.device_names,
-                'MAC': self.device_mac,
-                'Channel': self.device_channels,
-                'SSID ': self.device_ssid,
-                'Mode': self.device_modes,
-                'Packets Sent': self.packets_sent,
-                'Packets Received': self.packets_received,
-                'Packets Loss': self.packets_dropped,
-            })
-            report.set_table_dataframe(dataframe1)
-            report.build_table()
-
-        # packets latency graph
-        report.set_table_title('Ping Latency Graph')
-        report.build_table_title()
-
-        # the graph can't plot the text 'NA', so failed-ping devices show as 0 here;
-        # the Latency table below (and the Notes table) keep 'NA' for those devices
-        plot_min = [0.0 if min_val == 'NA' else min_val for min_val in self.device_min]
-        plot_avg = [0.0 if avg_val == 'NA' else avg_val for avg_val in self.device_avg]
-        plot_max = [0.0 if max_val == 'NA' else max_val for max_val in self.device_max]
-
-        graph = lf_bar_graph_horizontal(_data_set=[plot_min, plot_avg, plot_max],
-                                        _xaxis_name='Time (ms)',
-                                        _yaxis_name='Wireless Clients',
-                                        _label=[
-                                            'Min Latency (ms)', 'Average Latency (ms)', 'Max Latency (ms)'],
-                                        _graph_image_name='Ping Latency per client',
-                                        _yaxis_label=self.report_names,
-                                        _yaxis_categories=self.report_names,
-                                        _yaxis_step=1,
-                                        _yticks_font=8,
-                                        _graph_title='Ping Latency per client',
-                                        _title_size=16,
-                                        _color=['lightgrey',
-                                                'orange', 'steelblue'],
-                                        _color_edge='black',
-                                        _bar_height=0.15,
-                                        _figsize=(x_fig_size, y_fig_size),
-                                        _legend_loc="best",
-                                        _legend_box=(1.0, 1.0),
-                                        _dpi=96,
-                                        _show_bar_value=False,
-                                        _enable_csv=True,
-                                        _color_name=['lightgrey', 'orange', 'steelblue'])
-
-        graph_png = graph.build_bar_graph_horizontal()
-        logger.info('graph name {}'.format(graph_png))
-        report.set_graph_image(graph_png)
-        # need to move the graph image to the results directory
-        report.move_graph_image()
-        report.set_csv_filename(graph_png)
-        report.move_csv_file()
-        report.build_graph()
-
-        dataframe2 = pd.DataFrame({
-            'Wireless Client': self.device_names,
-            'MAC': self.device_mac,
-            'Channel': self.device_channels,
-            'SSID ': self.device_ssid,
-            'Mode': self.device_modes,
-            'Min Latency (ms)': self.device_min,
-            'Average Latency (ms)': self.device_avg,
-            'Max Latency (ms)': self.device_max
-        })
-        report.set_table_dataframe(dataframe2)
-        report.build_table()
+            report.set_table_dataframe(dataframe)
+            report.rating_build_table('Rating', rating_colors)
 
         # only show the NA caveat when at least one device actually has NA latency
         if ('NA' in self.device_min):
-            report.set_text("Note: Stations which are not reachable to the internet, and the ping failed to receive any packets, "
-                            "resulting in 100% packet loss. Hence, the latency is reported as NA.")
-            report.build_text_simple()
+            report.set_custom_html("<p style='font-size:13px;'>Note: Stations which are not reachable to the internet, and the ping failed to receive any packets, "
+                                   "resulting in 100% packet loss. Hence, the latency is reported as NA.</p>")
+            report.build_custom()
 
         # check if there are remarks for any device. If there are remarks, build table else don't
         if (self.remarks != []):
@@ -1066,11 +1332,39 @@ class Ping(Realm):
             report.set_table_dataframe(dataframe3)
             report.build_table()
 
+        self.add_wifi_analysis_to_report(report)
+        self.add_connectivity_timeline_to_report(report)
+
+        # Test configuration for devices in device list
+        device_counts = ', '.join('{}: {}'.format(platform, os_type.count(platform))
+                                  for platform in ('Android', 'Windows', 'Linux', 'Mac', 'Virtual') if platform in os_type)
+        try:
+            duration_sec = int(round(float(self.duration) * 60))
+            formatted_duration = '{:02d}:{:02d}:{:02d}'.format(duration_sec // 3600, (duration_sec % 3600) // 60, duration_sec % 60)
+        except (TypeError, ValueError):
+            formatted_duration = str(self.duration)
+        config_items = []
+        if config_devices == '':
+            config_items.append({'label': 'SSID', 'value': self.ssid or ', '.join(sorted(set(str(ssid) for ssid in self.device_ssid)))})
+            config_items.append({'label': 'Security', 'value': self.security if self.ssid else 'N/A'})
+        # Test configuration for devices in groups
+        else:
+            config_items.append({'label': 'Configuration', 'value': 'Groups:{} -> Profiles:{}'.format(', '.join(config_devices.keys()), ', '.join(config_devices.values()))})
+        config_items += [
+            {'label': 'Website / IP', 'value': str(self.target)},
+            {'label': 'Ping Interval (s)', 'value': str(self.interval)},
+            {'label': 'No of Devices', 'value': '{} ({})'.format(len(ports), device_counts) if device_counts else str(len(ports))},
+            {'label': 'Test Duration (hh:mm:ss)', 'value': formatted_duration},
+        ]
+        report.build_info_card(title='Test Configuration', items=config_items)
+
+        # Device summary card (device type breakdown plus per device table), same as the other modern reports
+        report.build_device_summary_card([{'name': name, 'platform': platform} for name, platform in zip(client_names, os_type)])
+
         # closing
-        report.build_custom()
         report.build_footer()
         report.write_html()
-        report.write_pdf()
+        report.write_pdf(_orientation='Landscape')
 
     def generate_dataframe(self, groupdevlist: List[str], device_names: List[str], device_mac: List[str], device_channels: List[str], device_ssid: List[str], device_modes: List[str],
                            packets_sent: List[int], packets_received: List[int], packets_dropped: List[int], percent_pac_loss: List[float], test_input_list: List[str],
@@ -1237,7 +1531,10 @@ class Ping(Realm):
 
     def record_packet_results(self, endpoint, last_results):
         """Records the RTT of each ping reply in an endpoint's output, and marks a sequence lost where the running drop count rises across a gap."""
-        sequences = self.bg_packet_results.get(endpoint[len(self.BG_NAME_PREFIX) + 1:])
+        client = endpoint[len(self.generic_endps_profile.name_prefix) + 1:]
+        sequences = self.bg_packet_results.get(client)
+        if sequences is None:
+            sequences = self.test_packet_results.get(client)
         if sequences is None:
             return
         previous = None
@@ -1675,6 +1972,11 @@ effectively over the network and pinpoint potential issues affecting connectivit
     parser.add_argument('--expected_passfail_value', help='Enter the expected packet loss', default=None)
     parser.add_argument('--device_csv_name', type=str, help='Enter the csv name to store expected values', default=None)
     parser.add_argument('--wait_time', type=int, help="Enter the maximum wait time for configurations to apply", default=60)
+    parser.add_argument('--wifi_analysis', '--wifi-analysis',
+                        dest='wifi_analysis',
+                        action='store_true',
+                        help='Analyze real-client wifi-msgs (connects/disconnects/scans/association rejections) for the '
+                             'duration of the test and include the results in the report')
 
     args = parser.parse_args()
 
@@ -1853,6 +2155,8 @@ effectively over the network and pinpoint potential issues affecting connectivit
 
     # start generate endpoint
     ping.start_generic()
+    if args.real and args.wifi_analysis:
+        ping.start_wifi_analysis(host=mgr_ip, port=mgr_port, device_list=ping.real_sta_list)
     start_time = time.time()
     end_time = start_time + (duration * 60)
     while time.time() < end_time:
@@ -1863,6 +2167,7 @@ effectively over the network and pinpoint potential issues affecting connectivit
         time.sleep(3)
     logger.info('Stopping the test')
     ping.stop_generic()
+    ping.stop_wifi_analysis()
 
     result_data = ping.get_results()
     logger.info("Endpoint results after stopping the test: {}".format(result_data))
@@ -1917,6 +2222,8 @@ effectively over the network and pinpoint potential issues affecting connectivit
                                 'mode': current_device_data['mode'],
                                 'name': station,
                                 'os': 'Virtual',
+                                'ip': current_device_data.get('ip'),
+                                'bssid': current_device_data.get('ap'),
                                 'remarks': [],
                                 'last_result': last_result
                             }
@@ -1963,6 +2270,8 @@ effectively over the network and pinpoint potential issues affecting connectivit
                             'mode': current_device_data['mode'],
                             'name': [current_device_data['user'] if current_device_data['user'] != '' else current_device_data['hostname']][0],
                             'os': ['Windows' if 'Win' in current_device_data['hw version'] else 'Linux' if 'Linux' in current_device_data['hw version'] else 'Mac' if 'Apple' in current_device_data['hw version'] else 'Android'][0],  # noqa E501
+                            'ip': current_device_data.get('ip'),
+                            'bssid': current_device_data.get('ap'),
                             'remarks': [],
                             'last_result': last_result
                         }
