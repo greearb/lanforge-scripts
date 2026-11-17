@@ -121,7 +121,6 @@ import os
 import pandas as pd
 import importlib
 import logging
-import matplotlib.pyplot as plt
 import csv
 import asyncio
 import json
@@ -136,6 +135,7 @@ import signal
 import shlex
 import subprocess
 from collections import Counter
+from html import escape
 import re
 from urllib import error as urllib_error
 from urllib import request as urllib_request
@@ -143,6 +143,7 @@ logger = logging.getLogger(__name__)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 YOUTUBE_STATS_URL = "http://127.0.0.1:5002/youtube_stats"
+
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
@@ -306,7 +307,6 @@ class Youtube(Realm):
             self.base_dir = os.path.abspath(os.path.join(ui_report_dir, "../../"))
             self.test_name = test_name
 
-        self.mydatajson = {}
         self.final_data = None
         self.stats_api_response = {}
         self.upstream_port = upstream_port
@@ -323,8 +323,6 @@ class Youtube(Realm):
         self.android_log_received = Event()
         self.wifi_interface_list = []
         self.devices_list = []
-        self.max_buffer = {}
-        self.min_buffer = {}
         self.hostname_to_station_map = {}
         self.csv_headers = [
             "Instance Name", "TimeStamp", "Viewport", "DroppedFrames",
@@ -552,59 +550,6 @@ class Youtube(Realm):
             )
             logger.debug("Android YouTube command: %s", cmd)
             self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[-(i + 1)], cmd)
-
-    def get_test_results_data(self, test_results, group):
-        """
-        Filters the overall test results to include only the data belonging to a specific group.
-
-        This function maps hostnames to their respective groups using the configuration object
-        (`self.configobj.get_groups_devices`). It then filters the input `test_results` dictionary
-        so that only entries corresponding to devices in the specified `group` are retained.
-
-        Args:
-            test_results (dict): A dictionary containing lists of test result values for all devices.
-                Example:
-                    {
-                        "Hostname": ["Device1", "Device2"],
-                        "RSSI": [-45, -50],
-                        "Link Rate": [300, 150],
-                        ...
-                    }
-            group (str): The name of the group whose test result data needs to be extracted.
-
-        Returns:
-            dict: A dictionary in the same structure as `test_results`, but filtered to include
-            only entries for hostnames that belong to the given `group`.
-
-        Example:
-            >>> test_results = {
-            ...     "Hostname": ["D1", "D2", "D3"],
-            ...     "RSSI": [-40, -50, -55]
-            ... }
-            >>> self.get_test_results_data(test_results, "GroupA")
-            {
-                "Hostname": ["D1", "D3"],
-                "RSSI": [-40, -55]
-            }
-
-        Notes:
-            - Relies on `self.configobj.get_groups_devices()` to retrieve the mapping of
-            groups to device hostnames.
-            - Returns an empty dictionary if no hostnames from the group are found.
-        """
-        groups_devices_map = self.configobj.get_groups_devices(data=self.selected_groups, groupdevmap=True)
-        group_hostnames = groups_devices_map.get(group, [])
-        group_test_results = {}
-
-        for key in test_results:
-            group_test_results[key] = []
-
-        for idx, hostname in enumerate(test_results["Hostname"]):
-            if hostname in group_hostnames:
-                for key in test_results:
-                    group_test_results[key].append(test_results[key][idx])
-
-        return group_test_results
 
     def select_real_devices(self, real_devices, real_sta_list=None, base_interop_obj=None):
         final_device_list = []
@@ -908,7 +853,7 @@ class Youtube(Realm):
 
         Android devices use serial numbers as hostnames (mapped sequentially),
         while other OS types use their reported hostnames. Also builds a combined
-        hostname–OS list for display and updates OS counters.
+        hostname-OS list for display and updates OS counters.
 
         Returns:
             None
@@ -1198,21 +1143,6 @@ class Youtube(Realm):
                         continue
                     device_name = key
                     stats = value
-                    buffer_val = stats.get("BufferHealth")
-                    if buffer_val not in [None, "", "NA"]:
-                        try:
-                            buffer_val = float(buffer_val)
-
-                            # Initialize if first time
-                            if device_name not in self.max_buffer:
-                                self.max_buffer[device_name] = buffer_val
-                                self.min_buffer[device_name] = buffer_val
-                            else:
-                                self.max_buffer[device_name] = max(self.max_buffer[device_name], buffer_val)
-                                self.min_buffer[device_name] = min(self.min_buffer[device_name], buffer_val)
-
-                        except Exception:
-                            pass
                     stop = data.get("stop", False)
 
                     if device_name not in self.stats_api_response:
@@ -1258,6 +1188,21 @@ class Youtube(Realm):
                     first_sample_for_run = csv_file_path not in self.devices_list
                     if first_sample_for_run:
                         self.devices_list.append(csv_file_path)
+                    buffer_val = stats.get("BufferHealth")
+                    if buffer_val not in [None, "", "NA"]:
+                        try:
+                            buffer_val = float(buffer_val)
+
+                            # Initialize if first time
+                            if device_name not in self.max_buffer:
+                                self.max_buffer[device_name] = buffer_val
+                                self.min_buffer[device_name] = buffer_val
+                            else:
+                                self.max_buffer[device_name] = max(self.max_buffer[device_name], buffer_val)
+                                self.min_buffer[device_name] = min(self.min_buffer[device_name], buffer_val)
+
+                        except Exception:
+                            pass
 
                     file_exists = os.path.isfile(csv_file_path)
                     timestamp = stats.get("Timestamp", "")
@@ -1653,49 +1598,431 @@ class Youtube(Realm):
                                 _obj="Robot did not went to charge during this test")
             report.build_objective()
 
-    def get_report_frame_totals(self, hostname):
-        """Calculate reset-aware frame totals from a device's raw CSV rows."""
-        frame_data = {"TotalFrames": [], "DroppedFrames": []}
+    @staticmethod
+    def _resolution_label(value):
+        """Return a comparable vertical resolution label such as ``1080p``."""
+        dimensions = re.search(r"(\d+)\s*x\s*(\d+)", str(value), re.IGNORECASE)
+        label = re.fullmatch(r"\s*(\d+)p\s*", str(value), re.IGNORECASE)
+        if dimensions:
+            return f"{dimensions.group(2)}p"
+        if label:
+            return f"{label.group(1)}p"
+        return "Unknown"
 
+    @staticmethod
+    def _elapsed_seconds(values):
+        """Preserve sampling gaps and unwrap midnight in time-only CSV timestamps."""
+        times = pd.to_datetime(values, format="%H:%M:%S", errors="coerce")
+        seconds = times.dt.hour * 3600 + times.dt.minute * 60 + times.dt.second
+        rollover = (seconds.diff() < -43200).cumsum() * 86400
+        elapsed = seconds + rollover
+        valid = elapsed.dropna()
+        return elapsed - valid.iloc[0] if not valid.empty else elapsed
+
+    @staticmethod
+    def _score_rating(score):
+        """Rate scores as Excellent >=90, Good >=75, Average >=60, otherwise Poor."""
+        if score >= 90:
+            return "Excellent"
+        if score >= 75:
+            return "Good"
+        if score >= 60:
+            return "Average"
+        return "Poor"
+
+    @staticmethod
+    def _rating_html(rating):
+        """Use the same rating colors for the overall verdict and client tables."""
+        colors = {
+            "Excellent": "#1e7e34", "Good": "#28a745",
+            "Average": "#f1c40f", "Poor": "#e74c3c",
+        }
+        label = escape(str(rating))
+        color = colors.get(rating)
+        return (f"<span style='color:{color}; font-weight:800;'>{label}</span>"
+                if color else label)
+
+    def _build_client_metrics_table(self, rows):
+        frame = pd.DataFrame(rows)
+        for column in frame.columns:
+            frame[column] = frame[column].map(
+                self._rating_html if column == "Rating" else lambda value: escape(str(value)))
+        self.report.set_custom_html(frame.to_html(index=False, escape=False, justify="center"))
+        self.report.build_custom()
+        self.report.set_custom_html("")
+
+    @staticmethod
+    def _overall_score_rating(score):
+        """Rate the test average separately from individual client scores."""
+        if score >= 90:
+            return "Excellent"
+        if score >= 80:
+            return "Good"
+        if score >= 70:
+            return "Average"
+        return "Poor"
+
+    def _youtube_report_metrics(self):
+        """Build per-client report metrics strictly from collected raw CSV rows."""
+        # Cache each file only for this report build; preserve file and row order.
+        client_frames = {}
+        file_groups = {}
         for csv_file_path in self.devices_list:
             if not csv_file_path.endswith("_youtube_stats_report.csv"):
                 continue
-            try:
-                data = pd.read_csv(csv_file_path)
-            except (OSError, pd.errors.EmptyDataError, pd.errors.ParserError) as exc:
-                logger.warning("Unable to calculate frame totals from %s: %s", csv_file_path, exc)
+            if csv_file_path not in file_groups:
+                try:
+                    frame = pd.read_csv(csv_file_path)
+                except (OSError, pd.errors.EmptyDataError, pd.errors.ParserError) as exc:
+                    logger.warning("Unable to read report data %s: %s", csv_file_path, exc)
+                    file_groups[csv_file_path] = {}
+                    continue
+                file_groups[csv_file_path] = (
+                    dict(tuple(frame.groupby(frame["Instance Name"].astype(str), sort=False)))
+                    if "Instance Name" in frame.columns else {})
+            for name, frame in file_groups[csv_file_path].items():
+                client_frames.setdefault(name, []).append(frame)
+
+        metrics = {}
+        for hostname, os_type in zip(self.real_sta_hostname, self.real_sta_os_types):
+            frames = client_frames.get(str(hostname), [])
+
+            if not frames:
+                metrics[hostname] = None
                 continue
 
-            if "Instance Name" not in data or data.empty:
+            data = pd.concat(frames, ignore_index=True)
+            for column in ("BufferHealth", "ConnectionSpeedKbps", "NetworkActivityKB", "bandwidth (kbps)"):
+                if column in data:
+                    data[column] = pd.to_numeric(data[column], errors="coerce")
+            if "TotalFrames" not in data or self.sum_reset_counter(data["TotalFrames"]) <= 0:
+                logger.warning("Skipping %s report metrics: no rendered frames were recorded", hostname)
+                metrics[hostname] = None
                 continue
-            device_rows = data[data["Instance Name"].astype(str) == str(hostname)]
-            for column in frame_data:
-                if column in device_rows:
-                    frame_data[column].extend(device_rows[column].tolist())
+            required = ["BufferHealth", "DroppedFrames", "TotalFrames", "CurrentRes"]
+            required += (["bandwidth (kbps)"] if os_type.lower() == "android"
+                         else ["ConnectionSpeedKbps", "NetworkActivityKB", "OptimalRes"])
+            missing = [column for column in required
+                       if column not in data or data[column].isna().all()]
+            score_input = data.copy()
+            for column in required:
+                if column not in score_input:
+                    score_input[column] = float("nan")
+            score_data = self.calculate_device_score(score_input, os_type=os_type)
+            resolution_counts = {}
+            if "CurrentRes" in data and "TimeStamp" in data:
+                labels = data["CurrentRes"].map(self._resolution_label)
+                elapsed = self._elapsed_seconds(data["TimeStamp"])
+                # Attribute each observed interval to its starting resolution.
+                # Do not invent a duration after the final sample.
+                durations = elapsed.shift(-1) - elapsed
+                valid = durations.gt(0) & elapsed.notna()
+                if valid.any():
+                    totals = durations[valid].groupby(labels[valid]).sum()
+                    resolution_counts = (totals / totals.sum() * 100).to_dict()
+            network = data["NetworkActivityKB"].mean() if "NetworkActivityKB" in data else float("nan")
+            metrics[hostname] = {
+                "data": data,
+                "score": score_data["overall_score"] if not missing else None,
+                "rating": self._score_rating(score_data["overall_score"]) if not missing else "Incomplete data",
+                "missing": missing,
+                "drop_percent": score_data["drop_percent"],
+                "avg_buffer": score_data["avg_buffer"],
+                "network_activity": round(network, 2) if pd.notna(network) else None,
+                "resolutions": resolution_counts,
+            }
+        return metrics
 
-        if not any(frame_data.values()):
-            return None
+    def _client_observations(self, hostname, item, rssi):
+        """Reference-style observations; thresholds affect wording only, not scores.
 
-        return {
-            column: self.sum_reset_counter(values)
-            for column, values in frame_data.items()
+        RSSI: strong >=-67, moderate >=-75 dBm. Buffer reserve: >=10 s.
+        Frame drops: zero, <=0.1 negligible, <1 low, <10 elevated,
+        <50 very high, otherwise extremely high. Ping loss <=2% is low.
+        """
+        signal = pd.to_numeric(re.sub(r"\s*dBm\s*$", "", str(rssi), flags=re.IGNORECASE), errors="coerce")
+        valid_signal = pd.notna(signal) and -127 <= signal < 0
+        if valid_signal:
+            strength = "Strong" if signal >= -67 else "Moderate" if signal >= -75 else "Weak"
+            network_text = f"{strength} measured RSSI ({signal:g} dBm)"
+        else:
+            network_text = "RSSI unavailable"
+        station = self.hostname_to_station_map.get(hostname)
+        row = self._windowed_ping_results().get(station, {})
+        sent = pd.to_numeric(row.get("sent"), errors="coerce")
+        received = pd.to_numeric(row.get("recv"), errors="coerce")
+        loss = None
+        if pd.notna(sent) and pd.notna(received) and sent > 0 and 0 <= received <= sent:
+            loss = 100 * (sent - received) / sent
+            network_text += f"; {'low' if loss <= 2 else 'elevated'} ping packet loss ({loss:.2f}%)"
+        else:
+            network_text += "; connectivity unverified (no valid playback-window ping measurements)"
+        observations = [network_text]
+
+        data = item["data"]
+        values = pd.to_numeric(data.get("BufferHealth", pd.Series(dtype=float)), errors="coerce")
+        buffers = values.dropna()
+        healthy_buffer = not buffers.empty and not values.isna().any() and bool((buffers >= 10).all())
+        if buffers.empty:
+            observations.append("Buffer health unavailable")
+        elif healthy_buffer:
+            observations.append(f"Healthy sampled buffer reserve (average {buffers.mean():.2f}s; minimum {buffers.min():.2f}s)")
+        else:
+            text = f"Average buffer health {buffers.mean():.2f}s; minimum {buffers.min():.2f}s"
+            if (buffers < 10).any():
+                text += "; low-buffer samples below 10s observed"
+            if values.isna().any():
+                text += "; some buffer samples unavailable"
+            observations.append(text)
+
+        drop = None
+        if not {"DroppedFrames", "TotalFrames"}.intersection(item["missing"]):
+            total = self.sum_reset_counter(data["TotalFrames"])
+            if total > 0:
+                drop = 100 * self.sum_reset_counter(data["DroppedFrames"]) / total
+        if drop is None:
+            observations.append("Dropped-frame measurements unavailable")
+        else:
+            description = ("No" if drop == 0 else "Negligible" if drop <= 0.1 else
+                           "Low" if drop < 1 else "Elevated" if drop < 10 else
+                           "Very high" if drop < 50 else "Extremely high")
+            percentage = "<0.01" if 0 < drop < 0.005 else f"{drop:.2f}"
+            observations.append(f"{description} dropped frames ({percentage}%)")
+
+        if drop is not None and drop >= 10:
+            if healthy_buffer and valid_signal and signal >= -67 and loss is not None and loss <= 2:
+                observations.append("High frame loss indicates playback degradation despite healthy buffer reserve, strong measured RSSI, and low ping loss")
+            else:
+                observations.append("High frame loss indicates playback degradation; review client and network conditions")
+        elif drop is not None and drop < 1 and healthy_buffer:
+            observations.append("Sampled buffer and frame measurements are consistent with smooth playback; interruptions are not directly measured")
+        elif drop is not None and (drop >= 1 or (not buffers.empty and (buffers < 10).any())):
+            observations.append("Elevated frame loss or low buffer reserve may affect playback smoothness")
+        else:
+            observations.append("Available measurements are insufficient to assess playback smoothness")
+
+        if item["missing"]:
+            labels = {"ConnectionSpeedKbps": "connection speed", "NetworkActivityKB": "network activity",
+                      "BufferHealth": "buffer health", "DroppedFrames": "dropped frames",
+                      "TotalFrames": "total frames", "CurrentRes": "current resolution",
+                      "OptimalRes": "optimal resolution", "bandwidth (kbps)": "bandwidth"}
+            observations.append("Score unavailable; missing: " + ", ".join(
+                labels.get(column, column) for column in item["missing"]))
+        return observations
+
+    def _test_summary_findings(self, metrics, overall_rating):
+        """Describe this run in the reference's five-point order, without changing scores.
+
+        Summary-only thresholds: low buffer <10 s (the scorer's full-credit
+        boundary), minimal frame drops <1%, low ping loss <=2%, strong RSSI
+        >=-67 dBm. These describe observations, not proof of uninterrupted video
+        or a diagnosis of the AP. Zero transmitted packets are missing evidence.
+        """
+        names = self.real_sta_hostname
+        measured = [metrics[name] for name in names if metrics.get(name)]
+        scored = [item for item in measured if item["score"] is not None]
+        good = sum(item["rating"] in ("Good", "Excellent") for item in scored)
+        if scored:
+            ratings = (f"{good} of {len(scored)} scored clients ({100 * good / len(scored):.0f}%) "
+                       "achieved Good or Excellent ratings. ")
+        else:
+            ratings = "No clients had sufficient measurements for a streaming score. "
+        ratings += (f"{len(measured)} of {len(names)} configured clients supplied streaming data; "
+                    f"{len(scored)} of {len(names)} could be scored.")
+        drops = [item["drop_percent"] for item in measured
+                 if "DroppedFrames" not in item["missing"] and pd.notna(item["drop_percent"])]
+        if drops:
+            ratings += (f" Dropped frames remained below 1% on {sum(value < 1 for value in drops)} "
+                        f"of {len(drops)} clients with frame measurements.")
+
+        averages = [item["avg_buffer"] for item in measured if pd.notna(item["avg_buffer"])]
+        buffers = []
+        missing_buffer_samples = False
+        for item in measured:
+            data = item["data"]
+            if "BufferHealth" not in data:
+                missing_buffer_samples = True
+                continue
+            values = pd.to_numeric(data["BufferHealth"], errors="coerce")
+            missing_buffer_samples |= bool(values.isna().any())
+            if values.notna().any():
+                buffers.append(values.dropna())
+        low_buffer_clients = sum(bool((values < 10).any()) for values in buffers)
+        if averages:
+            buffer_text = (f"Per-client average buffer health ranged from {min(averages):.2f} to "
+                           f"{max(averages):.2f} seconds. ")
+            if low_buffer_clients:
+                buffer_text += (f"Buffer fell below 10 seconds on {low_buffer_clients} of "
+                                f"{len(buffers)} clients.")
+            else:
+                buffer_text += "All available buffer samples remained at or above 10 seconds, indicating healthy playback reserve."
+        else:
+            buffer_text = "Buffer health could not be assessed because no valid buffer measurements were collected."
+        if missing_buffer_samples:
+            buffer_text += " Some buffer samples were unavailable."
+
+        ping_stats = self._windowed_ping_results()
+        losses = []
+        for name in names:
+            station = self.hostname_to_station_map.get(name)
+            row = ping_stats.get(station, {})
+            sent = pd.to_numeric(row.get("sent"), errors="coerce")
+            received = pd.to_numeric(row.get("recv"), errors="coerce")
+            if pd.notna(sent) and pd.notna(received) and sent > 0 and 0 <= received <= sent:
+                losses.append(100 * (sent - received) / sent)
+        if losses:
+            low_loss = sum(loss <= 2 for loss in losses)
+            connectivity = (f"{len(losses)} clients had valid playback-window ping measurements. "
+                            f"Packet loss was 2% or less on {low_loss} of {len(losses)} measured clients "
+                            f"(loss range: {min(losses):.2f}% to {max(losses):.2f}%).")
+            if low_loss < len(losses):
+                connectivity += f" {len(losses) - low_loss} clients exceeded 2% packet loss."
+            if len(losses) < len(names):
+                connectivity += f" Connectivity could not be assessed for {len(names) - len(losses)} clients."
+        else:
+            connectivity = "Wireless connectivity could not be assessed because no valid transmitted-packet measurements were available."
+
+        signals = []
+        for index, _ in enumerate(names):
+            raw = self.rssi_list[index] if index < len(self.rssi_list) else None
+            value = pd.to_numeric(re.sub(r"\s*dBm\s*$", "", str(raw), flags=re.IGNORECASE), errors="coerce")
+            if pd.notna(value) and -127 <= value < 0:
+                signals.append(value)
+        if signals:
+            strong = sum(value >= -67 for value in signals)
+            signal = (f"Measured signal strength ranged from {min(signals):g} to {max(signals):g} dBm; "
+                      f"{strong} of {len(signals)} clients with RSSI measurements met the strong-signal "
+                      "summary threshold (at least -67 dBm).")
+            if len(signals) < len(names):
+                signal += f" RSSI was unavailable or invalid for {len(names) - len(signals)} configured clients."
+        else:
+            signal = "Signal strength could not be assessed because no valid RSSI measurements were available."
+
+        if overall_rating in ("Excellent", "Good", "Average", "Poor"):
+            overall = (f"Overall, the AP demonstrated {overall_rating.lower()} "
+                       "YouTube streaming performance.")
+        else:
+            overall = "Overall, insufficient scoring data was available to rate the AP's YouTube streaming performance."
+        return [ratings, buffer_text, connectivity, signal, overall]
+
+    def _build_dropped_frames_percentage_graph(self, report, metrics):
+        names = [name for name in self.real_sta_hostname if metrics.get(name)]
+        if not names:
+            return
+        values = [metrics[name]["drop_percent"] for name in names]
+        graph = lf_bar_graph_horizontal(
+            _data_set=[values],
+            _xaxis_name="Dropped Frames (%)",
+            _yaxis_name="Wireless Clients",
+            _yaxis_categories=names,
+            _graph_image_name="youtube-dropped-frames",
+            _label=["Dropped Frames (%)"])
+        report.set_graph_image(graph.build_bar_graph_horizontal())
+        report.build_graph()
+
+    def _build_resolution_distribution_graph(self, report, metrics):
+        names = [name for name in self.real_sta_hostname if metrics.get(name)]
+        observed = {resolution for name in names for resolution in metrics[name]["resolutions"]}
+        resolutions = sorted(observed - {"Unknown"}, key=lambda value: int(value[:-1]))
+        if "Unknown" in observed:
+            resolutions.append("Unknown")
+        if not names or not any(metrics[name]["resolutions"] for name in names):
+            return
+        graph = lf_bar_graph_horizontal(
+            _data_set=[
+                [round(metrics[name]["resolutions"].get(resolution, 0.0), 2) for name in names]
+                for resolution in resolutions],
+            _xaxis_name="VIDEO RESOLUTION PERCENTAGE",
+            _yaxis_name="WIRELESS CLIENTS",
+            _yaxis_categories=names,
+            _graph_image_name="youtube-resolution-distribution",
+            _label=resolutions,
+            _stacked=True)
+        report.set_graph_image(graph.build_bar_graph_horizontal())
+        report.build_graph()
+
+    def _build_buffer_health_graph(self, report, hostname, timestamps, buffer_health, suffix="", clock_times=None):
+        """Use numeric elapsed seconds so irregular sampling gaps remain visible."""
+        values = pd.to_numeric(buffer_health, errors="coerce")
+        valid = timestamps.notna() & values.notna()
+        if not valid.any():
+            return
+        chart_id = re.sub(r"[^A-Za-z0-9_-]+", "_", f"youtube-buffer-{hostname}{suffix}")
+        clock_options = {}
+        if clock_times is not None:
+            clocks = pd.to_datetime(clock_times, format="%H:%M:%S", errors="coerce").dropna()
+            if not clocks.empty:
+                first = clocks.iloc[0]
+                clock_options["clockOffsetSeconds"] = first.hour * 3600 + first.minute * 60 + first.second
+        payload = {
+            "xAxisType": "value", **clock_options,
+            "series": [{"name": "Buffer Health", "data": [
+                [float(timestamp), float(value)]
+                for timestamp, value in zip(timestamps[valid], values[valid])
+            ]}],
         }
+        x_name = "Time (HH:MM:SS)" if clock_options else "Elapsed Time (s)"
+        chart_html = """
+            <div class='chart-card'>
+              <h3>{title}</h3>
+              <div id='{chart_id}' class='chart'></div>
+              <script>
+                window.__lfModernReport.renderLineChart({chart_id_json}, {payload}, {y_name}, {x_name});
+              </script>
+            </div>
+            """.format(
+                title=escape(f"Buffer Health vs Time Graph for {hostname}"),
+                chart_id=chart_id,
+                chart_id_json=json.dumps(chart_id),
+                payload=json.dumps(payload),
+                y_name=json.dumps("Buffer Health (Seconds)"),
+                x_name=json.dumps(x_name))
+        report.set_graph_image(chart_html)
+        report.build_graph()
+
+    def _windowed_ping_results(self):
+        """Return no ping measurements until optional monitoring is enabled."""
+        return {}
+
+    def _build_configuration_card(self, report, configuration):
+        items = []
+        for label, value in configuration.items():
+            if label in {"Configured Devices", "Number of Devices", "No of Devices :"}:
+                continue
+            if isinstance(value, (list, tuple)):
+                value = ", ".join(str(part) for part in value)
+            items.append({"label": escape(str(label)), "value": escape(str(value))})
+        report.build_info_card(title="Test Configuration", items=items)
+        platforms = {"android": "Android", "windows": "Windows", "linux": "Linux",
+                     "macos": "macOS", "ios": "iOS"}
+        report.build_device_summary_card([
+            {"name": name, "platform": platforms.get(str(platform).lower(), str(platform))}
+            for name, platform in zip(self.real_sta_hostname, self.real_sta_os_types)
+        ])
+
+    @staticmethod
+    def _add_youtube_report_style(report):
+        report.set_custom_html("""<style>
+            .table-wrap { width: 100%; box-shadow: var(--shadow); }
+            .youtube-observations { width: 100%; table-layout: fixed; }
+            .youtube-observations th:nth-child(1) { width: 23%; }
+            .youtube-observations th:nth-child(2) { width: 60%; }
+            .youtube-observations th:nth-child(3) { width: 17%; }
+            table.data-table.youtube-observations td { overflow-wrap: anywhere; text-align: left; }
+            .info-item-value { overflow-wrap: anywhere; }
+            .youtube-results-heading {
+                margin: 24px 0 12px; padding-bottom: 8px;
+                font-size: 24px; font-weight: 700;
+                border-bottom: 1px solid #dbe2ea;
+                break-after: avoid; page-break-after: avoid;
+            }
+            .youtube-results-heading + .info-card { margin-top: 0; padding-top: 8px; }
+        </style>""")
+        report.build_custom()
+        report.set_custom_html("")
 
     def create_report(self, data=None, ui_report_dir=None, iot_summary=None):
-        data = data or self.stats_api_response
         ui_report_dir = ui_report_dir or self.ui_report_dir
-
-        result_data = data
-        for device, stats in result_data.items():
-            self.mydatajson.setdefault(device, {}).update({
-                "Viewport": stats.get("Viewport", ""),
-                "DroppedFrames": stats.get("DroppedFrames", "0"),
-                "TotalFrames": stats.get("TotalFrames", "0"),
-                "CurrentRes": stats.get("CurrentRes", ""),
-                "OptimalRes": stats.get("OptimalRes", ""),
-                "BufferHealth": stats.get("BufferHealth", "0.0"),
-                "Timestamp": stats.get("Timestamp", ""),
-            })
 
         if self.do_webUI:
             self.report = lf_report(_output_pdf='youtube_streaming.pdf',
@@ -1711,15 +2038,19 @@ class Youtube(Realm):
         self.report_path_date_time = self.report.path_date_time
 
         # setting report title
-        self.report.set_title('Youtube Streaming Report Including IoT Devices ' if iot_summary else 'Youtube Streaming Report')
+        self.report.set_title(
+            'LANforge Interop<br>YouTube Streaming Test Including IoT Devices'
+            if iot_summary else
+            'LANforge Interop<br>YouTube Streaming Test<br>'
+            '<span style="font-size:0.55em;">(Real Client Performance Validation)</span>')
         self.report.build_banner()
-
+        self._add_youtube_report_style(self.report)
         # objective and description
         if iot_summary:
             self.report.set_obj_html(
-                _obj_title='Objective',
+                _obj_title='Test Overview',
                 _obj=(
-                    "The Candela YouTube Streaming Test Including IoT Devices is designed to evaluate an Access Point’s "
+                    "The Candela YouTube Streaming Test Including IoT Devices is designed to evaluate an Access Point's "
                     "performance and stability when handling both Real clients (Windows, Linux, MacBook, Android, iOS) and IoT "
                     "devices (controlled via Home Assistant). "
                     "For Real clients, the test simulates real-world streaming scenarios by playing YouTube videos and "
@@ -1733,11 +2064,11 @@ class Youtube(Realm):
             )
         else:
             self.report.set_obj_html(
-                _obj_title='Objective',
+                _obj_title='Test Overview',
                 _obj=(
-                    "The Objective is to conduct automated Youtube Video Streaming test across multiple laptops to gather "
-                    "statistics. The test will collect these statistics. Additionally, automated graphs will be generated "
-                    "using the collected data."
+                    "The objective is to conduct an automated YouTube streaming test across multiple Android devices and laptops "
+                    "to gather streaming performance statistics. The test will collect key metrics related to video playback "
+                    "behavior, quality, buffering, and stability. Additionally, automated graphs will be generated using the collected data."
                 )
             )
         self.report.build_objective()
@@ -1747,7 +2078,7 @@ class Youtube(Realm):
             # Test setup info
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration if not self.is_continuous_run else "NA",
+                'Duration (in Minutes)': self.duration,
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
                 'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
@@ -1764,7 +2095,7 @@ class Youtube(Realm):
             # Test setup info
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration if not self.is_continuous_run else "NA",
+                'Duration (in Minutes)': self.duration,
                 'Resolution': self.resolution,
                 "Configuration": gp_map,
                 'Configured Devices': self.hostname_os_combination,
@@ -1776,154 +2107,146 @@ class Youtube(Realm):
             # Test setup info
             test_setup_info = {
                 'Test Name': 'YouTube Streaming Test',
-                'Duration (in Minutes)': self.duration if not self.is_continuous_run else "NA",
+                'Duration (in Minutes)': self.duration,
                 'Resolution': self.resolution,
                 'Configured Devices': self.hostname_os_combination,
                 'No of Devices :': f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})',
                 "Video URL": self.url,
 
             }
-        # continuous robot run: no fixed duration (shown as NA), show the points and cycles
-        if self.is_continuous_run:
-            test_setup_info['Coordinates'] = self.coordinates_list
-            test_setup_info['Total Cycles'] = self.cycles
         if iot_summary:
             test_setup_info['Test Name'] = 'YouTube Streaming Test with IoT Devices'
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
-
-        self.report.test_setup_table(
-            test_setup_data=test_setup_info, value='Test Parameters')
-
-        viewport_list = []
-        current_res_list = []
-        optimal_res_list = []
-
-        dropped_frames_list = []
-        total_frames_list = []
-        max_buffer_health_list = []
-        min_buffer_health_list = []
-
-        for hostname in self.real_sta_hostname:
-            if hostname in self.mydatajson:
-                stats = self.mydatajson[hostname]
-                frame_totals = self.get_report_frame_totals(hostname)
-                viewport_list.append(stats.get("Viewport", ""))
-                current_res_list.append(stats.get("CurrentRes", ""))
-                optimal_res_list.append(stats.get("OptimalRes", ""))
-
-                dropped_frames = (
-                    frame_totals["DroppedFrames"]
-                    if frame_totals is not None
-                    else stats.get("DroppedFrames", "0")
-                )
-                total_frames = (
-                    frame_totals["TotalFrames"]
-                    if frame_totals is not None
-                    else stats.get("TotalFrames", "0")
-                )
-                max_buffer_health_list.append(self.max_buffer.get(hostname, 0.0))
-                min_buffer_health_list.append(self.min_buffer.get(hostname, 0.0))
-                try:
-                    dropped_frames_list.append(int(dropped_frames))
-                except ValueError:
-                    dropped_frames_list.append(0)
-
-                try:
-                    total_frames_list.append(int(total_frames))
-                except ValueError:
-                    total_frames_list.append(0)
-            else:
-                viewport_list.append("NA")
-                current_res_list.append("NA")
-                optimal_res_list.append("NA")
-                dropped_frames_list.append(0)
-                total_frames_list.append(0)
-                max_buffer_health_list.append(0.0)
-                min_buffer_health_list.append(0.0)
-
-        # graph of frames dropped
-        self.report.set_graph_title("Total Frames vs Frames dropped")
-        self.report.build_graph_title()
-        x_fig_size = 25
-        y_fig_size = len(self.device_names) * .5 + 4
-
-        graph = lf_bar_graph_horizontal(_data_set=[dropped_frames_list, total_frames_list],
-                                        _xaxis_name="No of Frames",
-                                        _yaxis_name="Devices",
-                                        _yaxis_categories=self.real_sta_hostname,
-                                        _graph_image_name="Dropped Frames vs Total Frames",
-                                        _label=["dropped Frames", "Total Frames"],
-                                        _color=None,
-                                        _color_edge='red',
-                                        _figsize=(x_fig_size, y_fig_size),
-                                        _show_bar_value=True,
-                                        _text_font=6,
-                                        _text_rotation=True,
-                                        _enable_csv=True,
-                                        _legend_loc="upper right",
-                                        _legend_box=(1.1, 1),
-                                        )
-        graph_image = graph.build_bar_graph_horizontal()
-        self.report.set_graph_image(graph_image)
-        self.report.move_graph_image()
-        self.report.build_graph()
-
-        self.report.set_table_title('Test Results')
-        self.report.build_table_title()
-
-        test_results = {
-            "Hostname": self.real_sta_hostname,
-            "OS Type": self.real_sta_os_types,
-            "MAC": self.mac_list,
-            "RSSI": self.rssi_list,
-            "Link Rate": self.link_rate_list,
-            "ViewPort": viewport_list,
-            "SSID": self.ssid_list,
-            "Video Resoultion": current_res_list,
-            "Max Buffer Health (Seconds)": max_buffer_health_list,
-            "Min Buffer health (Seconds)": min_buffer_health_list,
-            "Total Frames": total_frames_list,
-            "Dropped Frames": dropped_frames_list,
-
-
-        }
-        # If both groups and profiles are selected, generate separate result tables per group.
-        if self.selected_groups and self.selected_profiles:
-            for group in self.selected_groups:
-                group_specific_test_results = self.get_test_results_data(test_results, group)
-                if not group_specific_test_results['Hostname']:
-                    continue
-                self.report.set_table_title(f"{group}")
-                self.report.build_table_title()
-                test_results_df = pd.DataFrame(group_specific_test_results)
-                self.report.set_table_dataframe(test_results_df)
-                self.report.build_table()
-        # If no groups or profiles are selected, build a single combined table for all results.
+        if self.is_continuous_run:
+            test_setup_info['Traffic Duration (hh:mm:ss)'] = "NA"
         else:
-            test_results_df = pd.DataFrame(test_results)
-            self.report.set_table_dataframe(test_results_df)
-            self.report.build_table()
+            total_seconds = int(float(self.duration) * 60)
+            test_setup_info['Traffic Duration (hh:mm:ss)'] = (
+                f"{total_seconds // 3600:02d}:{total_seconds % 3600 // 60:02d}:{total_seconds % 60:02d}")
+        test_setup_info['Video Resolution'] = test_setup_info.pop('Resolution')
+        test_setup_info['Number of Devices'] = test_setup_info.pop('No of Devices :')
+        test_setup_info.pop('Duration (in Minutes)', None)
+        if self.is_continuous_run:
+            test_setup_info['Coordinates'] = self.coordinates_list
+            test_setup_info['Total Cycles'] = self.cycles
+
+        metrics = self._youtube_report_metrics()
+        measured = [(name, item) for name, item in metrics.items() if item]
+        scored = [(name, item) for name, item in measured if item["score"] is not None]
+        average_score = sum(item["score"] for _, item in scored) / len(scored) if scored else None
+        average_text = f"{average_score:.2f}%" if average_score is not None else "Unavailable"
+        # Rate the same scored clients used in the average, even if others lack data.
+        overall_rating = (self._overall_score_rating(average_score)
+                          if scored else "Incomplete data")
+        rating_html = self._rating_html(overall_rating)
+        self.report.build_info_card(title="Overall Test Verdict", items=[
+            {"label": "Total Devices Configured", "value": len(self.real_sta_hostname)},
+            {"label": "Devices with Streaming Data", "value": len(measured)},
+            {"label": "Devices with Complete Scoring Data", "value": len(scored)},
+            {"label": "Average YouTube Streaming Score (Scored Devices)", "value": average_text},
+            {"label": "Overall Rating", "value": rating_html},
+        ])
+        findings = self._test_summary_findings(metrics, overall_rating)
+        self.report.set_obj_html(_obj_title="Key Findings", _obj="<ul>" + "".join(
+            f"<li>{escape(finding)}</li>" for finding in findings) + "</ul>")
+        self.report.build_objective()
+
+        self.report.set_custom_html('<h2 class="youtube-results-heading">Test Results</h2>')
+        self.report.build_custom()
+        self.report.set_custom_html("")
+        self.report.set_obj_html(
+            _obj_title="Dropped Frames per Device (%)",
+            _obj="The graph below illustrates the percentage of dropped video frames observed for each wireless "
+                 "device during the test. The X-axis represents the dropped frame percentage, while the Y-axis lists "
+                 "the individual wireless client devices.")
+        self.report.build_objective()
+        self._build_dropped_frames_percentage_graph(self.report, metrics)
+
+        self.report.set_obj_html(
+            _obj_title="Video Playback Resolution Distribution Across Devices",
+            _obj="Each stacked bar shows the percentage of observed playback time at each resolution. "
+                 "Intervals use the resolution at their starting sample; no duration is assumed after the last sample. "
+                 "Hover over a segment to inspect its resolution and percentage.")
+        self.report.build_objective()
+        self._build_resolution_distribution_graph(self.report, metrics)
+
+        table_rows = []
+        observation_rows = []
+        for index, hostname in enumerate(self.real_sta_hostname):
+            item = metrics.get(hostname)
+            mac = self.mac_list[index] if index < len(self.mac_list) else "NA"
+            ssid = self.ssid_list[index] if index < len(self.ssid_list) else "NA"
+            rssi = self.rssi_list[index] if index < len(self.rssi_list) else "NA"
+            rssi = re.sub(r"\s*dBm\s*$", "", str(rssi), flags=re.IGNORECASE)
+            if not item:
+                table_rows.append({"Device Name": hostname, "MAC": mac, "SSID": ssid, "RSSI (dBm)": rssi,
+                                   "Avg Buffer Health (s)": "Unavailable", "Dropped Frames (%)": "Unavailable",
+                                   "Avg Network Activity (KB)": "Unavailable", "Score": "Unavailable",
+                                   "Rating": "No streaming data"})
+                observation_rows.append({"Device Name": hostname, "Rating": "No streaming data",
+                                         "Observations": "No valid streaming samples were collected; inspect the client log."})
+                continue
+            network = item["network_activity"] if item["network_activity"] is not None else (
+                "Not applicable" if self.real_sta_os_types[index].lower() == "android" else "Unavailable")
+            table_rows.append({
+                "Device Name": hostname, "MAC": mac, "SSID": ssid, "RSSI (dBm)": rssi,
+                "Avg Buffer Health (s)": item["avg_buffer"],
+                "Dropped Frames (%)": item["drop_percent"], "Avg Network Activity (KB)": network,
+                "Score": item["score"] if item["score"] is not None else "Unavailable", "Rating": item["rating"],
+            })
+            observations = self._client_observations(hostname, item, rssi)
+            observation_rows.append({
+                "Device Name": hostname, "Rating": item["rating"],
+                "Observations": "<br>\u2022 " + "<br>\u2022 ".join(escape(text) for text in observations),
+            })
+
+        if table_rows and self.selected_groups and self.selected_profiles:
+            groups_devices_map = self.configobj.get_groups_devices(
+                data=self.selected_groups, groupdevmap=True)
+            for group in self.selected_groups:
+                group_rows = [row for row in table_rows
+                              if row["Device Name"] in groups_devices_map.get(group, [])]
+                if group_rows:
+                    self.report.set_table_title(
+                        f"Per-client Streaming Performance Metrics and Ratings - {group}")
+                    self.report.build_table_title()
+                    self._build_client_metrics_table(group_rows)
+        elif table_rows:
+            self.report.set_table_title("Per-client Streaming Performance Metrics and Ratings")
+            self.report.build_table_title()
+            self._build_client_metrics_table(table_rows)
+        self.report.set_table_title("Per-client Observations")
+        self.report.build_table_title()
+        if observation_rows:
+            observations_frame = pd.DataFrame(
+                observation_rows, columns=["Device Name", "Observations", "Rating"])
+            observations_frame["Device Name"] = observations_frame["Device Name"].map(lambda name: escape(str(name)))
+            observations_frame["Rating"] = observations_frame["Rating"].map(self._rating_html)
+            observations_html = observations_frame.to_html(
+                index=False, escape=False, justify="center", classes="data-table youtube-observations")
+            self.report.set_custom_html("<div class='table-wrap'>" + observations_html + "</div>")
+            self.report.build_custom()
+            self.report.set_custom_html("")
 
         for file_path in self.devices_list:
             self.move_files(file_path, self.report_path_date_time)
 
         original_dir = os.getcwd()
 
-        if self.do_webUI:
-            csv_files = [f for f in os.listdir(self.report_path_date_time) if f.endswith('_youtube_stats_report.csv')]
-            os.chdir(self.report_path_date_time)
-        else:
-            csv_files = [f for f in os.listdir(self.report_path_date_time) if f.endswith('_youtube_stats_report.csv')]
-            os.chdir(self.report_path_date_time)
+        csv_files = [f for f in os.listdir(self.report_path_date_time) if f.endswith('_youtube_stats_report.csv')]
+        os.chdir(self.report_path_date_time)
 
         for file_name in csv_files:
             data = pd.read_csv(file_name)
-            if self.scoring and file_name.endswith("_youtube_stats_report.csv"):
-                device_name = None
-                if "Instance Name" in data.columns and not data.empty:
-                    instance_names = data["Instance Name"].dropna().astype(str)
-                    if not instance_names.empty:
-                        device_name = instance_names.iloc[0]
+            report_device_name = file_name.removesuffix('_youtube_stats_report.csv')
+            if "Instance Name" in data.columns and not data.empty:
+                instance_names = data["Instance Name"].dropna().astype(str)
+                if not instance_names.empty:
+                    report_device_name = instance_names.iloc[0]
+            if (self.scoring and file_name.endswith("_youtube_stats_report.csv")
+                    and metrics.get(report_device_name)
+                    and metrics[report_device_name]["score"] is not None):
+                device_name = report_device_name
                 if device_name not in self.real_sta_hostname:
                     device_name = file_name.split('_youtube_stats_report.csv')[0]
 
@@ -2018,46 +2341,17 @@ class Youtube(Realm):
                     logging.warning(
                         f"Skipping scoring for {file_name}: device not found in configured hostnames"
                     )
-            self.report.set_graph_title('Buffer Health vs Time Graph for {}'.format(file_name.split('_')[0]))
-            self.report.build_graph_title()
-
-            try:
-                data['TimeStamp'] = pd.to_datetime(data['TimeStamp'], format="%H:%M:%S").dt.time
-            except Exception as e:
-                logging.error(f"Error in timestamp conversion for {file_name}: {e}")
+            timestamps = self._elapsed_seconds(data['TimeStamp'])
+            buffer_health = pd.to_numeric(data['BufferHealth'], errors='coerce')
+            valid_samples = buffer_health.notna() & timestamps.notna()
+            timestamps = timestamps[valid_samples]
+            buffer_health = buffer_health[valid_samples]
+            if buffer_health.empty:
+                logging.warning("No valid buffer-health samples found in %s", file_name)
                 continue
 
-            data = data.drop_duplicates(subset='TimeStamp', keep='first')
-            timestamps = data['TimeStamp'].apply(lambda t: t.strftime('%H:%M:%S'))
-            buffer_health = data['BufferHealth']
-
-            fig, ax = plt.subplots(figsize=(20, 10))
-            plt.plot(timestamps, buffer_health, color='blue', linewidth=2)
-
-            # Customize the plot
-            plt.xlabel('Time', fontweight='bold', fontsize=15)
-            plt.ylabel('Buffer Health', fontweight='bold', fontsize=15)
-            plt.title('Buffer Health vs Time Graph for {}'.format(file_name.split('_')[0]), fontsize=18)
-
-            if len(timestamps) > 30:
-                tick_interval = len(timestamps) // 30
-                selected_ticks = timestamps[::tick_interval]
-                ax.set_xticks(selected_ticks)
-            else:
-                ax.set_xticks(timestamps)
-
-            plt.xticks(rotation=45, ha='right')
-
-            output_file = '{}'.format(file_name.split('_')[0]) + 'buffer_health_vs_time.png'
-            plt.tight_layout()
-            plt.savefig(output_file, dpi=96)
-            plt.close()
-
-            logging.info(f"Graph saved for {file_name}: {output_file}")
-
-            self.report.set_graph_image(output_file)
-
-            self.report.build_graph()
+            self._build_buffer_health_graph(
+                self.report, report_device_name, timestamps, buffer_health, clock_times=data['TimeStamp'])
 
         os.chdir(original_dir)
         if iot_summary:
@@ -2066,8 +2360,10 @@ class Youtube(Realm):
         if self.do_bandsteering:
             self.add_bandsteering_report_section(report=self.report)
 
+        # Keep configuration last, matching the approved report sequence.
+        self._build_configuration_card(self.report, test_setup_info)
+
         # Closing
-        self.report.build_custom()
         self.report.build_footer()
         self.report.write_html()
         self.report.write_pdf(_page_width="420mm", _page_height="420mm")
@@ -2913,6 +3209,7 @@ class Youtube(Realm):
 
         self.report.set_title('Youtube Streaming Report')
         self.report.build_banner()
+        self._add_youtube_report_style(self.report)
 
         self.report.set_obj_html(_obj_title='Objective',
                                  _obj='''The Objective is to conduct automated Youtube Video Streaming test across multiple laptops to gather statistics. The test
@@ -2958,9 +3255,6 @@ class Youtube(Realm):
 
             }
 
-        self.report.test_setup_table(
-            test_setup_data=test_setup_info, value='Test Parameters')
-
         if self.do_webUI:
             for file_name in os.listdir(self.ui_report_dir):
                 if file_name.endswith('.csv'):
@@ -2988,6 +3282,8 @@ class Youtube(Realm):
 
         os.chdir(original_dir)
 
+        self._build_configuration_card(self.report, test_setup_info)
+
         self.report.build_custom()
         self.report.build_footer()
         self.report.write_html()
@@ -3001,7 +3297,7 @@ class Youtube(Realm):
             logging.warning(f"No CSV files found for hostname {hostname} to create buffer health graph")
             return
 
-        combined_data = pd.DataFrame()
+        frames = []
 
         for coord in self.coordinates_list:
             for file_name in filtered_csv_files:
@@ -3009,10 +3305,12 @@ class Youtube(Realm):
                     try:
                         df = pd.read_csv(file_name)
                         df["SourceFile"] = file_name
-                        combined_data = pd.concat([combined_data, df], ignore_index=True)
+                        frames.append(df)
                     except Exception as e:
                         logging.error(f"Error reading {file_name}: {e}")
                         continue
+
+        combined_data = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
         try:
             combined_data['TimeStamp'] = pd.to_datetime(combined_data['TimeStamp'], format="%H:%M:%S").dt.time
@@ -3025,33 +3323,9 @@ class Youtube(Realm):
         timestamps = combined_data['TimeStamp'].apply(lambda time_value: time_value.strftime('%H:%M:%S'))
         buffer_health = combined_data['BufferHealth']
 
-        _figure, axis = plt.subplots(figsize=(20, 10))
-        plt.plot(timestamps, buffer_health, color='blue', linewidth=2)
-
-        plt.xlabel('Time', fontweight='bold', fontsize=15)
-        plt.ylabel('Buffer Health', fontweight='bold', fontsize=15)
-        plt.title(f'Buffer Health vs Time Graph for {hostname}', fontsize=18)
-
-        if len(timestamps) > 30:
-            tick_interval = len(timestamps) // 30
-            selected_ticks = timestamps[::tick_interval]
-            axis.set_xticks(selected_ticks)
-        else:
-            axis.set_xticks(timestamps)
-
-        plt.xticks(rotation=45, ha='right')
-        plt.tight_layout()
-
-        output_file = f"{hostname}_combined_buffer_health_vs_time.png"
-        plt.savefig(output_file, dpi=96)
-        plt.close()
-
-        logging.info(f"Combined graph saved for {hostname}: {output_file}")
-
-        self.report.set_graph_title(f'Buffer Health vs Time Graph for {hostname}')
-        self.report.build_graph_title()
-        self.report.set_graph_image(output_file)
-        self.report.build_graph()
+        self._build_buffer_health_graph(
+            self.report, hostname, self._elapsed_seconds(timestamps), buffer_health,
+            suffix="-combined", clock_times=timestamps)
 
     def add_frames_graphs_to_report(self, current_cord, current_angle):
         """
@@ -3126,11 +3400,10 @@ class Youtube(Realm):
             except Exception as e:
                 logging.info(f"Error reading {csv_file}: {e}")
 
-        if current_angle == "NA":
-            self.report.set_graph_title(f"Total Frames vs Dropped Frames at coordinate: {current_cord}")
-        else:
-            self.report.set_graph_title(f"Total Frames vs Dropped Frames at coordinate: {current_cord} and angle: {current_angle}°")
-        self.report.build_graph_title()
+        graph_title = (
+            f"Total Frames vs Dropped Frames at coordinate: {current_cord}"
+            if current_angle == "NA" else
+            f"Total Frames vs Dropped Frames at coordinate: {current_cord} and angle: {current_angle}°")
         if not result_dict:
             if self.rotations_enabled:
                 logging.info(f"No valid data found for coordinate: {current_cord} and angle: {current_angle}. Skipping Frames graph generation.")
@@ -3152,6 +3425,7 @@ class Youtube(Realm):
                                         _xaxis_name="No of Frames",
                                         _yaxis_name="Devices",
                                         _yaxis_categories=hostnames,
+                                        _graph_title=graph_title,
                                         _graph_image_name=f"Dropped Frames vs Total Frames_{current_cord}_{current_angle}",
                                         _label=["dropped Frames", "Total Frames"],
                                         _color=None,
