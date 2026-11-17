@@ -133,6 +133,7 @@ from threading import Event, Thread
 import traceback
 import platform
 import signal
+import shlex
 import subprocess
 from collections import Counter
 import re
@@ -454,7 +455,7 @@ class Youtube(Realm):
         OS-specific command handling:
         - Windows: Executes 'youtube_stream.bat'
         - Linux: Executes 'ctyt.bash' as the 'lanforge' user
-        - macOS: Executes 'ctyt.bash' with elevated privileges
+        - macOS: Executes 'ctyt.bash' as the 'lanforge' user
 
         Dependencies:
         - self.real_sta_list: List of real client stations
@@ -497,30 +498,33 @@ class Youtube(Realm):
                 )
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
             elif self.real_sta_os_types[i] == 'linux':
-                cmd = (
-                    f"su -l lanforge {self.linux_dir}/ctyt.bash "
-                    "%s %s %s %s %s %s"
-                ) % (
+                linux_command = " ".join(shlex.quote(str(argument)) for argument in [
+                    os.path.join(self.linux_dir, "ctyt.bash"),
                     self.wifi_interface_list[i],
                     self.url,
                     self.upstream_port,
                     self.real_sta_hostname[i],
                     self.duration,
                     self.resolution,
-                )
+                ])
+                cmd = f"su -l lanforge -c {shlex.quote(linux_command)}"
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
             elif self.real_sta_os_types[i] == 'macos':
-                cmd = (
-                    f"sudo bash {self.mac_dir}/ctyt.bash "
-                    "--url %s --host %s --device_name %s --duration %s --res %s"
-                ) % (
+                cmd = " ".join(shlex.quote(str(argument)) for argument in [
+                    "sudo", "-H", "-u", "lanforge", "bash",
+                    os.path.join(self.mac_dir, "ctyt.bash"),
+                    "--url",
                     self.url,
+                    "--host",
                     self.upstream_port,
+                    "--device_name",
                     self.real_sta_hostname[i],
+                    "--duration",
                     self.duration,
+                    "--res",
                     self.resolution,
-                )
+                ])
                 self.generic_endps_profile.set_cmd(self.generic_endps_profile.created_endp[i], cmd)
 
         self.pre_cleanup_stale_youtube_endpoints(self.lanforge_port_list)
@@ -1254,15 +1258,17 @@ class Youtube(Realm):
                         current_path = os.path.dirname(os.path.abspath(__file__))
                         csv_file_path = os.path.join(current_path, csv_filename)
 
-                    if csv_file_path not in self.devices_list:
+                    first_sample_for_run = csv_file_path not in self.devices_list
+                    if first_sample_for_run:
                         self.devices_list.append(csv_file_path)
 
                     file_exists = os.path.isfile(csv_file_path)
                     timestamp = stats.get("Timestamp", "")
 
-                    with open(csv_file_path, mode='a', newline='') as file:
+                    mode = 'w' if first_sample_for_run else 'a'
+                    with open(csv_file_path, mode=mode, newline='') as file:
                         writer = csv.writer(file)
-                        if not file_exists:
+                        if first_sample_for_run or not file_exists:
                             writer.writerow(self.csv_headers)
                         row = [device_name, timestamp]
                         for header in self.csv_headers[2:]:
