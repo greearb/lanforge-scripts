@@ -27,7 +27,6 @@ import logging
 import time
 from time import sleep
 import pprint
-import telnetlib
 import argparse
 import pexpect
 
