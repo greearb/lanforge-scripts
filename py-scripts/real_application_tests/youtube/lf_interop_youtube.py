@@ -147,6 +147,7 @@ YOUTUBE_STATS_URL = "http://127.0.0.1:5002/youtube_stats"
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../py-json")))
 
 
 # Import LANforge-related modules
@@ -170,6 +171,7 @@ from report_v2.lf_graph_v2 import lf_bar_graph, lf_bar_graph_horizontal  # noqa:
 lf_base_interop_profile = importlib.import_module("py-scripts.lf_base_interop_profile")
 robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 lf_interop_ping = importlib.import_module("py-scripts.lf_interop_ping")
+ClientAnalysis = importlib.import_module("py-scripts.lf_wifi_msgs").ClientAnalysis
 
 # Accessing specific classes
 InteropPing = lf_interop_ping.Ping
@@ -1003,6 +1005,7 @@ class Youtube(Realm):
         logger.info("Waiting 10 seconds for client cleanup and log uploads")
         time.sleep(10)
         self.stop_connectivity_monitoring()
+        self.stop_wifi_analysis()
         try:
             if args.do_robo and not self.is_continuous_run:
                 self.create_robo_report()
@@ -1811,7 +1814,7 @@ class Youtube(Realm):
             else:
                 observations.append("High frame loss indicates playback degradation; review client and network conditions")
         elif drop is not None and drop < 1 and healthy_buffer:
-            observations.append("Sampled buffer and frame measurements are consistent with smooth playback; interruptions are not directly measured")
+            observations.append("Sampled buffer and frame measurements are consistent with smooth playback")
         elif drop is not None and (drop >= 1 or (not buffers.empty and (buffers < 10).any())):
             observations.append("Elevated frame loss or low buffer reserve may affect playback smoothness")
         else:
@@ -1888,8 +1891,7 @@ class Youtube(Realm):
                 losses.append(100 * (sent - received) / sent)
         if losses:
             low_loss = sum(loss <= 2 for loss in losses)
-            connectivity = (f"{len(losses)} clients had valid playback-window ping measurements. "
-                            f"Packet loss was 2% or less on {low_loss} of {len(losses)} measured clients "
+            connectivity = (f"Packet loss was 2% or less on {low_loss} of {len(losses)} measured clients "
                             f"(loss range: {min(losses):.2f}% to {max(losses):.2f}%).")
             if low_loss < len(losses):
                 connectivity += f" {len(losses) - low_loss} clients exceeded 2% packet loss."
@@ -1996,9 +1998,23 @@ class Youtube(Realm):
         report.set_graph_image(chart_html)
         report.build_graph()
 
+    def resolve_wifi_analysis_device_names(self, devices):
+        """Resolve analyzed station ports to the configured YouTube client names."""
+        station_to_hostname = {
+            station: hostname for hostname, station in self.hostname_to_station_map.items()
+        }
+        resource_to_hostname = {
+            ".".join(station.split(".")[:2]): hostname
+            for station, hostname in station_to_hostname.items()
+        }
+        return [station_to_hostname.get(
+            device, resource_to_hostname.get(".".join(device.split(".")[:2]), device))
+            for device in devices]
+
     def start_connectivity_monitoring(self, args):
         """Start requested connectivity monitoring once for this test."""
-        if self.connectivity_started or not args.enable_bg_ping:
+        wifi_analysis_requested = getattr(args, "wifi_analysis", False)
+        if self.connectivity_started or not (args.enable_bg_ping or wifi_analysis_requested):
             return
 
         self.connectivity_started = True
@@ -2017,6 +2033,9 @@ class Youtube(Realm):
             except (Exception, SystemExit) as error:
                 logger.warning("Background ping could not be started: %s", error)
                 self.background_ping = None
+        if wifi_analysis_requested:
+            self.start_wifi_analysis(
+                host=args.mgr, port=args.mgr_port, device_list=self.real_sta_list)
 
     def stop_connectivity_monitoring(self):
         """Freeze the Wi-Fi window and stop ping before report/cleanup work."""
@@ -2029,6 +2048,39 @@ class Youtube(Realm):
             except (Exception, SystemExit) as error:
                 logger.warning("Background ping could not be stopped cleanly: %s", error)
 
+    def start_wifi_analysis(self, host, port, device_list):
+        """Start live Wi-Fi message monitoring for the devices under test."""
+        self.wifi_analysis = None
+        self.wifi_analysis_stats = {}
+        self.wifi_analysis_log = None
+        self.wifi_analysis_monitoring = False
+        if not device_list:
+            return
+        try:
+            resource_ids = list(dict.fromkeys(
+                ".".join(device.split(".")[:2]) for device in device_list))
+            self.wifi_analysis = ClientAnalysis(
+                host=host, port=port, device_list=resource_ids,
+                debug=getattr(self, "debug", False))
+            self.wifi_analysis.start_monitoring()
+            self.wifi_analysis_monitoring = True
+        except (Exception, SystemExit) as error:
+            logger.warning("Wifi connectivity analysis could not be started: %s", error)
+            self.wifi_analysis = None
+
+    def stop_wifi_analysis(self):
+        """Stop live Wi-Fi monitoring and retain its per-device statistics."""
+        if not getattr(self, 'wifi_analysis_monitoring', False):
+            return
+        self.wifi_analysis_monitoring = False
+        if self.wifi_analysis._monitor_file_name:
+            self.wifi_analysis_log = os.path.join(
+                "Wifi_Messages", self.wifi_analysis._monitor_file_name)
+        try:
+            self.wifi_analysis_stats = self.wifi_analysis.stop_monitoring()
+        except (Exception, SystemExit) as error:
+            logger.warning("Wifi connectivity analysis results could not be collected: %s", error)
+
     def _playback_stats_window(self):
         """Return the server-observed first/latest playback-stat arrival times."""
         with self.playback_stats_lock:
@@ -2037,6 +2089,116 @@ class Youtube(Realm):
         if start_time is None or end_time is None or end_time < start_time:
             return None
         return start_time, end_time
+
+    def _filtered_wifi_analysis(self, window):
+        """Limit collected Wi-Fi messages and derived counts to the playback window."""
+        stats = getattr(self, 'wifi_analysis_stats', None)
+        analysis = getattr(self, 'wifi_analysis', None)
+        messages = getattr(analysis, 'device_messages', None) if analysis else None
+        if not stats or not messages:
+            return stats, None
+
+        start_ms, end_ms = (int(value * 1000) for value in window)
+        filtered_messages = {}
+        filtered_stats = {device: dict(values) for device, values in stats.items()}
+        for device, categories in messages.items():
+            filtered_messages[device] = {}
+            for category, entries in categories.items():
+                filtered_messages[device][category] = []
+                for entry in entries:
+                    try:
+                        timestamp = int(entry.get("timestamp"))
+                    except (TypeError, ValueError):
+                        continue
+                    if start_ms <= timestamp <= end_ms:
+                        filtered_messages[device][category].append(entry)
+
+            if device in filtered_stats:
+                counts = {
+                    category: len(entries)
+                    for category, entries in filtered_messages[device].items()
+                }
+                filtered_stats[device].update(
+                    analysis._finalize_device_counts(device, counts))
+        return filtered_stats, filtered_messages
+
+    def add_wifi_analysis_to_report(self, report, window):
+        """Append Wi-Fi events measured during the playback-stat window."""
+        wifi_stats, filtered_messages = self._filtered_wifi_analysis(window)
+        wifi_analysis_log = getattr(self, 'wifi_analysis_log', None)
+        if filtered_messages is not None:
+            try:
+                with open(os.path.join(report.path_date_time, "wifi_analysis_messages.json"),
+                          "w", encoding="utf-8") as log_file:
+                    json.dump(filtered_messages, log_file)
+            except OSError as error:
+                logger.warning("Filtered wifi analysis messages could not be saved: %s", error)
+        elif wifi_analysis_log and os.path.exists(wifi_analysis_log):
+            try:
+                shutil.copy(wifi_analysis_log, os.path.join(
+                    report.path_date_time, "wifi_analysis_messages.json"))
+            except OSError as error:
+                logger.warning("Wifi analysis messages could not be copied to the report folder: %s", error)
+        if not wifi_stats:
+            return
+        try:
+            devices, connect_attempt, disconnected, scanning, association_rejection, connected, remarks, cx_time = \
+                ClientAnalysis.stats_to_lists(wifi_stats)
+            devices = self.resolve_wifi_analysis_device_names(devices)
+
+            categories = ["Disconnected", "Scans", "Association Attempts", "Association Rejected", "Connected"]
+            totals = [sum(disconnected), sum(scanning), sum(connect_attempt), sum(association_rejection), sum(connected)]
+            # Red=Disconnected, Yellow=Scans, Orange=Association Attempts, Grey=Rejected, Green=Connected.
+            colors = ['#e74c3c', '#f1c40f', '#e67e22', '#95a5a6', '#27ae60']
+
+            report.set_obj_html(
+                _obj_title="Client Connectivity Event Summary",
+                _obj="This graph summarizes connection-related events observed between the first and latest "
+                     "YouTube playback statistics received by the test. "
+                     "These metrics provide insight into client stability and wireless connectivity performance.")
+            report.build_objective()
+            # One named+colored series per category (stacked, so still full bar width) instead of one combined series, so each category gets its own legend entry.
+            data_set = [[value if i == series_index else 0 for i, value in enumerate(totals)]
+                        for series_index in range(len(categories))]
+            graph = lf_bar_graph(_data_set=data_set,
+                                 _xaxis_name="",
+                                 _yaxis_name="Count",
+                                 _xaxis_categories=categories,
+                                 _graph_image_name="wifi_connectivity_status",
+                                 _label=categories,
+                                 _graph_title="Client Connectivity Status",
+                                 _title_size=16,
+                                 _color_edge='black',
+                                 _bar_width=0.5,
+                                 _figsize=(10, 6),
+                                 _legend_loc="best",
+                                 _dpi=96,
+                                 _show_bar_value=True,
+                                 _enable_csv=True,
+                                 _stacked=True,
+                                 _color=colors,
+                                 _color_name=colors)
+            graph_png = graph.build_bar_graph()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.set_csv_filename(f"{graph.graph_image_name}.csv")
+            report.move_csv_file()
+            report.build_graph()
+
+            dataframe = pd.DataFrame({
+                "Device": devices,
+                "Association Attempts": connect_attempt,
+                "Disconnected": disconnected,
+                "Scanning": scanning,
+                "Association Rejection": association_rejection,
+                "Connected": connected,
+            })
+            report.set_table_title("Wifi Connectivity Analysis")
+            report.build_table_title()
+            report.set_table_dataframe(dataframe)
+            report.build_table()
+        except Exception as e:
+            logger.warning("Wifi connectivity analysis could not be added to the report: %s", e)
 
     def _add_connectivity_report(self, report):
         """Include connectivity results limited to the observed playback-stat window."""
@@ -2049,6 +2211,7 @@ class Youtube(Realm):
             report.build_objective()
             return
 
+        self.add_wifi_analysis_to_report(report, window)
         ping = getattr(self, "background_ping", None)
         if not ping or not ping.bg_stats:
             report.set_obj_html(
@@ -3923,6 +4086,10 @@ NOTES:
         robo.add_argument('--cycles', type=int, default=1,
                           help='Number of times the robot goes through the points in a continuous or bandsteering run')
 
+        parser.add_argument(
+            '--wifi_analysis', action='store_true',
+            help='Analyze real-client Wi-Fi connection, disconnection, scan, and association '
+                 'rejection events during streaming and include them in the report')
         background_ping = parser.add_argument_group('Background ping')
         background_ping.add_argument(
             '--enable_bg_ping', action='store_true',
