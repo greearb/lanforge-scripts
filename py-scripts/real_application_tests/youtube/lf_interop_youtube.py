@@ -163,16 +163,13 @@ base_RealDevice = base.RealDevice
 
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 
-# Importing modules dynamically
-lf_report = importlib.import_module("py-scripts.lf_report")
-lf_graph = importlib.import_module("py-scripts.lf_graph")
+# Importing report and LANforge modules
+from report_v2.lf_report_v2 import lf_report  # noqa: E402
+from report_v2.lf_graph_v2 import lf_bar_graph, lf_bar_graph_horizontal  # noqa: E402
 lf_base_interop_profile = importlib.import_module("py-scripts.lf_base_interop_profile")
 robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
 
 # Accessing specific classes
-lf_report = lf_report.lf_report
-lf_bar_graph = lf_graph.lf_bar_graph
-lf_bar_graph_horizontal = lf_graph.lf_bar_graph_horizontal
 RealDevice = lf_base_interop_profile.RealDevice
 
 from IOT.iot_helper import start_iot_thread, with_iot_params_in_table, add_iot_report_section  # noqa: E402
@@ -1608,7 +1605,7 @@ class Youtube(Realm):
             graph_png = graph.build_bar_graph()
             report.set_graph_image(graph_png)
             report.move_graph_image()
-            report.set_csv_filename(graph_png)
+            report.set_csv_filename(f"{graph.graph_image_name}.csv")
             report.move_csv_file()
             report.build_graph()
 
@@ -1710,8 +1707,8 @@ class Youtube(Realm):
                                     _output_html='youtube_streaming.html',
                                     _results_dir_name="youtube_streaming_report",
                                     _path='')
-        self.report_path = self.report.get_path()
-        self.report_path_date_time = self.report.get_path_date_time()
+        self.report_path = self.report.path
+        self.report_path_date_time = self.report.path_date_time
 
         # setting report title
         self.report.set_title('Youtube Streaming Report Including IoT Devices ' if iot_summary else 'Youtube Streaming Report')
@@ -2073,7 +2070,7 @@ class Youtube(Realm):
         self.report.build_custom()
         self.report.build_footer()
         self.report.write_html()
-        self.report.write_pdf()
+        self.report.write_pdf(_page_width="420mm", _page_height="420mm")
 
     def json_get_with_retry(self, url, wait_time=40, poll_interval=5):
         """
@@ -2911,8 +2908,8 @@ class Youtube(Realm):
                                     _output_html='youtube_streaming.html',
                                     _results_dir_name="youtube_streaming_report",
                                     _path='')
-        self.report_path = self.report.get_path()
-        self.report_path_date_time = self.report.get_path_date_time()
+        self.report_path = self.report.path
+        self.report_path_date_time = self.report.path_date_time
 
         self.report.set_title('Youtube Streaming Report')
         self.report.build_banner()
@@ -2994,7 +2991,7 @@ class Youtube(Realm):
         self.report.build_custom()
         self.report.build_footer()
         self.report.write_html()
-        self.report.write_pdf()
+        self.report.write_pdf(_page_width="420mm", _page_height="420mm")
 
     def add_buffer_health_graphs_to_report(self, hostname):
         all_csv_files = glob.glob("*.csv")
