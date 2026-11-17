@@ -128,7 +128,7 @@ import shutil
 import glob
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
-from threading import Event, Thread
+from threading import Event, Lock, Thread
 import traceback
 import platform
 import signal
@@ -169,8 +169,10 @@ from report_v2.lf_report_v2 import lf_report  # noqa: E402
 from report_v2.lf_graph_v2 import lf_bar_graph, lf_bar_graph_horizontal  # noqa: E402
 lf_base_interop_profile = importlib.import_module("py-scripts.lf_base_interop_profile")
 robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
+lf_interop_ping = importlib.import_module("py-scripts.lf_interop_ping")
 
 # Accessing specific classes
+InteropPing = lf_interop_ping.Ping
 RealDevice = lf_base_interop_profile.RealDevice
 
 from IOT.iot_helper import start_iot_thread, with_iot_params_in_table, add_iot_report_section  # noqa: E402
@@ -321,6 +323,13 @@ class Youtube(Realm):
         self.lanforge_os_type = list()
         self.android = 0
         self.android_log_received = Event()
+        self.playback_stats_lock = Lock()
+        self.playback_stats_start_time = None
+        self.playback_stats_end_time = None
+        self.windowed_ping_stats = None
+        self.connectivity_started = False
+        self.connectivity_end_time = None
+        self.background_ping = None
         self.wifi_interface_list = []
         self.devices_list = []
         self.hostname_to_station_map = {}
@@ -993,6 +1002,7 @@ class Youtube(Realm):
             self.stop_webui_test()
         logger.info("Waiting 10 seconds for client cleanup and log uploads")
         time.sleep(10)
+        self.stop_connectivity_monitoring()
         try:
             if args.do_robo and not self.is_continuous_run:
                 self.create_robo_report()
@@ -1013,6 +1023,11 @@ class Youtube(Realm):
                     self.generic_endps_profile.cleanup()
                 except Exception:
                     logger.exception("Unable to clean up all YouTube endpoints")
+                if getattr(self, 'background_ping', None):
+                    try:
+                        self.background_ping.cleanup()
+                    except (Exception, SystemExit):
+                        logger.exception("Unable to clean up background ping endpoints")
 
     def get_youtube_lf_wifi_stats(self):
         """
@@ -1132,15 +1147,22 @@ class Youtube(Realm):
             """
             if request.method == 'POST':
                 data = request.json
+                received_at = time.time()
 
                 # Clear data if requested
                 if data.get("clear_data"):
                     self.stats_api_response = {}
+                    with self.playback_stats_lock:
+                        self.playback_stats_start_time = None
+                        self.playback_stats_end_time = None
+                        self.windowed_ping_stats = None
                     return jsonify({"message": "Data cleared"}), 200
 
+                received_stats = False
                 for key, value in data.items():
                     if key == "stop":
                         continue
+                    received_stats = True
                     device_name = key
                     stats = value
                     stop = data.get("stop", False)
@@ -1188,21 +1210,6 @@ class Youtube(Realm):
                     first_sample_for_run = csv_file_path not in self.devices_list
                     if first_sample_for_run:
                         self.devices_list.append(csv_file_path)
-                    buffer_val = stats.get("BufferHealth")
-                    if buffer_val not in [None, "", "NA"]:
-                        try:
-                            buffer_val = float(buffer_val)
-
-                            # Initialize if first time
-                            if device_name not in self.max_buffer:
-                                self.max_buffer[device_name] = buffer_val
-                                self.min_buffer[device_name] = buffer_val
-                            else:
-                                self.max_buffer[device_name] = max(self.max_buffer[device_name], buffer_val)
-                                self.min_buffer[device_name] = min(self.min_buffer[device_name], buffer_val)
-
-                        except Exception:
-                            pass
 
                     file_exists = os.path.isfile(csv_file_path)
                     timestamp = stats.get("Timestamp", "")
@@ -1216,6 +1223,15 @@ class Youtube(Realm):
                         for header in self.csv_headers[2:]:
                             row.append(stats.get(header, "NA"))
                         writer.writerow(row)
+
+                if received_stats:
+                    with self.playback_stats_lock:
+                        if (self.playback_stats_start_time is None
+                                or received_at < self.playback_stats_start_time):
+                            self.playback_stats_start_time = received_at
+                        if (self.playback_stats_end_time is None
+                                or received_at > self.playback_stats_end_time):
+                            self.playback_stats_end_time = received_at
 
                 return jsonify({"message": "Stats updated"}), 200
 
@@ -1980,9 +1996,211 @@ class Youtube(Realm):
         report.set_graph_image(chart_html)
         report.build_graph()
 
+    def start_connectivity_monitoring(self, args):
+        """Start requested connectivity monitoring once for this test."""
+        if self.connectivity_started or not args.enable_bg_ping:
+            return
+
+        self.connectivity_started = True
+        logger.info("Starting requested YouTube connectivity monitoring")
+        if args.enable_bg_ping:
+            try:
+                self.background_ping = InteropPing(
+                    host=args.mgr, port=args.mgr_port,
+                    target=args.bg_ping_target or args.upstream_port,
+                    interval=args.bg_ping_interval,
+                    sta_list=[], duration=0,
+                    real=True, virtual=False,
+                    debug=getattr(args, "debug", False))
+                if not self.background_ping.start_background_ping(self.real_sta_list):
+                    self.background_ping = None
+            except (Exception, SystemExit) as error:
+                logger.warning("Background ping could not be started: %s", error)
+                self.background_ping = None
+
+    def stop_connectivity_monitoring(self):
+        """Freeze the Wi-Fi window and stop ping before report/cleanup work."""
+        if self.connectivity_end_time is not None:
+            return
+        self.connectivity_end_time = int(time.time() * 1000)
+        if self.background_ping:
+            try:
+                self.background_ping.stop_background_ping()
+            except (Exception, SystemExit) as error:
+                logger.warning("Background ping could not be stopped cleanly: %s", error)
+
+    def _playback_stats_window(self):
+        """Return the server-observed first/latest playback-stat arrival times."""
+        with self.playback_stats_lock:
+            start_time = self.playback_stats_start_time
+            end_time = self.playback_stats_end_time
+        if start_time is None or end_time is None or end_time < start_time:
+            return None
+        return start_time, end_time
+
+    def _add_connectivity_report(self, report):
+        """Include connectivity results limited to the observed playback-stat window."""
+        window = self._playback_stats_window()
+        if window is None:
+            report.set_obj_html(
+                _obj_title="Client Connectivity Status Throughout the Test Duration",
+                _obj="No playback-statistics window is available, so connectivity results cannot be aligned "
+                     "with the actual YouTube playback period.")
+            report.build_objective()
+            return
+
+        ping = getattr(self, "background_ping", None)
+        if not ping or not ping.bg_stats:
+            report.set_obj_html(
+                _obj_title="Client Connectivity Status Throughout the Test Duration",
+                _obj="No background-ping results are available. Enable --enable_bg_ping and verify that ping starts "
+                     "successfully on the clients to collect the connectivity timeline and ping statistics.")
+            report.build_objective()
+            return
+        self._add_background_ping_timeline_to_report(report, window)
+        self._add_background_ping_stats_to_report(report, window)
+
+    @staticmethod
+    def _ping_window_offsets(ping, window):
+        """Return collector-relative start/end offsets for the playback window."""
+        if ping.bg_start_time is None or ping.bg_stop_time is None:
+            return None
+        start_time = max(window[0], ping.bg_start_time)
+        end_time = min(window[1], ping.bg_stop_time)
+        if end_time < start_time:
+            return None
+        return (start_time - ping.bg_start_time,
+                end_time - ping.bg_start_time,
+                end_time - start_time)
+
     def _windowed_ping_results(self):
-        """Return no ping measurements until optional monitoring is enabled."""
-        return {}
+        """Return cached per-client ping results for the playback-stat window."""
+        if self.windowed_ping_stats is not None:
+            return self.windowed_ping_stats
+
+        self.windowed_ping_stats = {}
+        ping = getattr(self, "background_ping", None)
+        window = self._playback_stats_window()
+        offsets = self._ping_window_offsets(ping, window) if ping and window else None
+        if offsets is None:
+            return self.windowed_ping_stats
+
+        window_start, window_end, _ = offsets
+        interval = float(ping.interval)
+        for device in ping.real_sta_list:
+            metadata = ping.bg_stats.get(device, {})
+            samples = {
+                sequence: value
+                for sequence, value in (ping.bg_packet_results.get(device) or {}).items()
+                if sequence * interval > window_start
+                and (sequence - 1) * interval < window_end
+            }
+            received_samples = [value for value in samples.values() if value > 0]
+            sent = len(samples)
+            received = len(received_samples)
+            self.windowed_ping_stats[device] = {
+                **metadata,
+                "samples": samples,
+                "sent": sent,
+                "recv": received,
+                "loss_percent": round(100 * (sent - received) / sent, 2) if sent else None,
+                "avg_rtt": round(sum(received_samples) / received, 3) if received else None,
+            }
+        return self.windowed_ping_stats
+
+    def _add_background_ping_stats_to_report(self, report, window):
+        """Build ping statistics only from samples inside the playback window."""
+        ping = self.background_ping
+        offsets = self._ping_window_offsets(ping, window)
+        if offsets is None:
+            return
+        _, _, duration = offsets
+        rows = []
+        for device in ping.real_sta_list:
+            result = self._windowed_ping_results().get(device, {})
+            rows.append({
+                "Wireless Client": result.get("name", device),
+                "MAC": result.get("mac", ""),
+                "RSSI (dBm)": result.get("rssi", ""),
+                "Channel": result.get("channel", ""),
+                "Packets Sent": result.get("sent", 0),
+                "Packets Received": result.get("recv", 0),
+                "Packet Loss %": result.get("loss_percent") if result.get("sent") else "NA",
+                "AVG RTT (ms)": result.get("avg_rtt") if result.get("recv") else "NA",
+            })
+        report.set_table_title(
+            "Ping statistics during observed YouTube playback "
+            "(target {}, duration {}, {}s interval)".format(
+                ping.target, str(timedelta(seconds=int(duration))), ping.interval))
+        report.build_table_title()
+        report.set_table_dataframe(pd.DataFrame(rows))
+        report.build_table()
+
+    def _add_background_ping_timeline_to_report(self, report, window):
+        """Add the ping timeline cropped to the playback-stat window."""
+        ping = self.background_ping
+        if not ping or not ping.bg_stats or ping.bg_start_time is None or ping.bg_stop_time is None:
+            return
+        try:
+            offsets = self._ping_window_offsets(ping, window)
+            if offsets is None:
+                return
+            window_start, window_end, test_seconds = offsets
+            interval = float(ping.interval)
+            clients, stations, segments = [], [], []
+            for device in ping.real_sta_list:
+                result = self._windowed_ping_results().get(device, {})
+                sequences = result.get("samples", {})
+                spans = []
+                for sequence in sorted(sequences):
+                    start = max(window_start, (sequence - 1) * interval)
+                    end = min(window_end, sequence * interval)
+                    if end <= start:
+                        continue
+                    spans.append([
+                        "drop" if sequences[sequence] == 0 else "up",
+                        start - window_start,
+                        end - window_start,
+                    ])
+                merged = []
+                for span in spans:
+                    if (merged and merged[-1][0] == span[0]
+                            and span[1] <= merged[-1][2]):
+                        merged[-1][2] = span[2]
+                    else:
+                        merged.append(span)
+                segments.extend({
+                    "clientIndex": len(clients), "start": round(start, 3),
+                    "end": round(end, 3), "status": status,
+                } for status, start, end in merged)
+                clients.append(result.get("name", device))
+                stations.append(device)
+            payload = {
+                "clients": clients, "stations": stations, "segments": segments,
+                "duration": round(test_seconds, 3),
+                "emptyMessage": "No time-series ping samples were collected",
+            }
+            report.set_obj_html(
+                _obj_title="Client Connectivity Results Throughout the Test Duration",
+                _obj="The graph illustrates connectivity between the first and latest YouTube playback "
+                     "statistics received by the test. Green segments represent "
+                     "successful responses, while red segments indicate packet loss or connectivity drops "
+                     "observed during the test.")
+            report.build_objective()
+            report.set_custom_html("""
+                <div class='chart-card'>
+                  <h3>Wireless Client Connectivity Status vs Time</h3>
+                  <div id='background-ping-connectivity-timeline' class='chart'></div>
+                  <script>
+                    window.__lfModernReport.renderConnectivityTimeline(
+                        'background-ping-connectivity-timeline', {payload});
+                  </script>
+                </div>
+                """.format(payload=json.dumps(payload)))
+            report.build_custom()
+            report.set_custom_html("")
+        except Exception as error:
+            logger.warning("Background ping timeline could not be added to the report: %s", error)
 
     def _build_configuration_card(self, report, configuration):
         items = []
@@ -2227,6 +2445,10 @@ class Youtube(Realm):
             self.report.set_custom_html("<div class='table-wrap'>" + observations_html + "</div>")
             self.report.build_custom()
             self.report.set_custom_html("")
+
+        # Match the report specification: connectivity analysis precedes the
+        # per-client buffer-health timelines.
+        self._add_connectivity_report(self.report)
 
         for file_path in self.devices_list:
             self.move_files(file_path, self.report_path_date_time)
@@ -3265,6 +3487,9 @@ class Youtube(Realm):
                 if file_name.endswith('.csv'):
                     self.move_files(file_name, self.report_path_date_time)
 
+        # Connectivity precedes playback timelines in the report specification.
+        self._add_connectivity_report(self.report)
+
         original_dir = os.getcwd()
         os.chdir(self.report_path_date_time)
 
@@ -3695,8 +3920,19 @@ NOTES:
                           help="Robot measurement mode: 'per_point' plays the video at each point (and angle), "
                                "'continuous' keeps the video playing while the robot moves through the points --cycles times "
                                "(--duration is not used)")
-        robo.add_argument('--cycles', type=int, default=1, help='Number of times the robot goes through the points in a continuous or bandsteering run')
+        robo.add_argument('--cycles', type=int, default=1,
+                          help='Number of times the robot goes through the points in a continuous or bandsteering run')
 
+        background_ping = parser.add_argument_group('Background ping')
+        background_ping.add_argument(
+            '--enable_bg_ping', action='store_true',
+            help='Run a ping on the real clients in the background while the test runs and report its statistics')
+        background_ping.add_argument(
+            '--bg_ping_target', type=str, default=None,
+            help='IP, domain name or LANforge port to ping; defaults to the upstream port')
+        background_ping.add_argument(
+            '--bg_ping_interval', type=float, default=1,
+            help='Background ping packet interval in seconds; defaults to 1')
         args = parser.parse_args()
 
         if args.help_summary:
@@ -3975,6 +4211,9 @@ NOTES:
 
             logging.info("Waiting 10 seconds before starting YouTube streaming")
             youtube.wait_stop_aware(10, "before YouTube streaming started")
+
+            # Start only the optional monitoring requested for this test.
+            youtube.start_connectivity_monitoring(args)
 
             youtube.start_time = datetime.now()
             if args.do_robo:
