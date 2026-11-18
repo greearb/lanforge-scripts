@@ -210,6 +210,7 @@ import re
 import threading
 from collections import OrderedDict
 from lf_base_robo import RobotClass
+from lf_floor_plan_markers import FloorPlanMarkers
 from collections import Counter
 logger = logging.getLogger(__name__)
 
@@ -327,7 +328,7 @@ class Throughput(Realm):
                  total_resources_list=None, working_resources_list=None, hostname_list=None, username_list=None, eid_list=None,
                  devices_available=None, input_devices_list=None, mac_id1_list=None, mac_id_list=None, overall_avg_rssi=None,
                  coordinate_list=None, rotation_enabled=None, robo_ip=None, angle_list=None, do_bandsteering=False, do_roaming=False, total_cycles=1, bssids=None,
-                 roaming_bssids=None, duration_to_skip=None, measurement_mode="per_point",
+                 roaming_bssids=None, duration_to_skip=None, measurement_mode="per_point", robo_coordinates_json=None,
                  per_client_graphs=False):
         super().__init__(lfclient_host=host,
                          lfclient_port=port)
@@ -439,6 +440,7 @@ class Throughput(Realm):
         self.do_bandsteering = do_bandsteering
         self.do_roaming = do_roaming
         self.per_client_graphs = per_client_graphs
+        self.robo_coordinates = FloorPlanMarkers(robo_coordinates_json, selected_coordinates=coordinate_list)
         # measurement mode: 'per_point' stops and measures at each point, 'continuous' keeps traffic running while the robot moves.
         # Band steering and roaming always move continuously; do_bandsteering/do_roaming only add their own tracking report.
         self.is_continuous_run = do_bandsteering or do_roaming or measurement_mode == "continuous"
@@ -3607,6 +3609,27 @@ class Throughput(Realm):
         except Exception as error:
             logger.warning("Background ping timeline could not be added to the report: %s", error)
 
+    def add_robo_coordinates_images_to_report(self, report):
+        """Adds the rendered floor-plan images (marked with each robot's coordinates) to the
+        report, one per floor that has usable robo_coordinates.
+
+        Args:
+            report (lf_report): report to add the images to.
+
+        Example:
+            self.add_robo_coordinates_images_to_report(report)
+        """
+        output_dir = os.path.abspath(report.path_date_time) if hasattr(report, 'path_date_time') else os.path.abspath(self.result_dir)
+        rendered_images = self.robo_coordinates.render_floor_images(output_dir)
+
+        for floor_id, image_path in rendered_images:
+            with open(image_path, "rb") as image_file:
+                image_base64 = base64.b64encode(image_file.read()).decode("ascii")
+            report.set_custom_html(
+                f"<h3>Floor Plan (Floor {floor_id})</h3>"
+                f"<div class='chart-card'><img src='data:image/png;base64,{image_base64}' alt='' /></div>")
+            report.build_custom()
+
     def generate_report(self, iterations_before_test_stopped_by_user, incremental_capacity_list, data=None, data1=None, report_path='', result_dir_name='Throughput_Test_report',
                         selected_real_clients_names=None, iot_summary=None):
 
@@ -4021,6 +4044,9 @@ class Throughput(Realm):
                         upload_list=upload_list,
                         devices=devices_on_running)
                     self.add_test_summary_to_report(report, rssi_values=rssi_data[0:int(incremental_capacity_list[i])])
+
+                    if (self.do_bandsteering or self.do_roaming) and self.robo_coordinates.has_valid_coordinates():
+                        self.add_robo_coordinates_images_to_report(report)
 
                     if self.do_bandsteering:
                         self.add_bandsteering_summary_to_report(report, data)
@@ -6242,6 +6268,9 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                                "(--test_duration is not used and defaults to 1m)")
     optional.add_argument('--total_cycles', help='No of cycles: how many times a robot test repeats the coordinate list', default="1")
     optional.add_argument('--duration_to_skip', help='Robot wait duration in seconds at obstacle', default="1")
+    optional.add_argument('--robo_coordinates_json', default=None,
+                          help='Path to a JSON file (or an inline JSON string) with floor/robot-coordinate data, used to draw robot '
+                               'markers on the floor-plan image in the report. Only used when --do_bandsteering or --do_roaming is also set.')
     parser.add_argument('--help_summary', help='Show summary of what this script does', action="store_true")
     # IOT ARGS
     parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
@@ -6318,6 +6347,8 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                              "when --do_roaming is set: %s", e)
                 exit(1)
         args.bssids = ""
+
+    robo_coordinates_json = FloorPlanMarkers.parse_json(args.robo_coordinates_json)
 
     if args.dowebgui:
         if (args.upload == '0'):
@@ -6479,6 +6510,7 @@ Copyright (C) 2020-2026 Candela Technologies Inc.
                                 bssids=args.bssids.split(",") if args.bssids else [],
                                 roaming_bssids=roaming_bssids,
                                 duration_to_skip=args.duration_to_skip,
+                                robo_coordinates_json=robo_coordinates_json,
                                 per_client_graphs=args.per_client_graphs
                                 )
 
