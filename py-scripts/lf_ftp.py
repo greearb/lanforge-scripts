@@ -108,8 +108,12 @@ python3 lf_ftp.py --ssid Netgear-5g --security wpa2 --file_sizes 10MB --mgr 192.
 --measurement_mode continuous --cycles 2
 
 EXAMPLE-20:
-Command Line Interface to run FTP download scenario for Real clients with background ping
-python3 lf_ftp.py --mgr 192.168.220.125 --upstream_port eth2 --clients_type Real --directions Download --bands 5G --file_sizes 10MB --traffic_duration 2m --enable_bg_ping
+Command Line Interface to run FTP download scenario for Real clients with wifi analysis
+python3 lf_ftp.py --mgr 192.168.220.125 --upstream_port eth2 --clients_type Real --directions Download --bands 5G --file_sizes 10MB --traffic_duration 2m --wifi_analysis
+
+EXAMPLE-21:
+Command Line Interface to run FTP download scenario for Real clients with background ping and wifi analysis
+python3 lf_ftp.py --mgr 192.168.220.125 --upstream_port eth2 --clients_type Real --directions Download --bands 5G --file_sizes 10MB --traffic_duration 2m --enable_bg_ping --wifi_analysis
 
 SCRIPT_CLASSIFICATION : Test
 
@@ -153,6 +157,7 @@ import logging
 import shutil
 from report_v2.lf_report_v2 import lf_report
 from report_v2.lf_graph_v2 import lf_bar_graph, lf_bar_graph_horizontal
+from lf_wifi_msgs import ClientAnalysis
 from typing import List, Optional
 import asyncio
 import csv
@@ -367,8 +372,13 @@ class FtpTest(LFCliBase):
         # Band steering always moves continuously; do_bandsteering only adds the BSSID tracking report.
         self.is_continuous_run = do_bandsteering or (robot_test and measurement_mode == "continuous")
         self.cycles = cycles
-        # Background ping (lf_interop_ping.Ping), opt-in and set from main()
+        # Background ping (lf_interop_ping.Ping) and Wi-Fi connectivity analysis (ClientAnalysis), both opt-in and set from main()
         self.background_ping = None
+        self.wifi_analysis = None
+        self.wifi_analysis_stats = {}
+        self.wifi_analysis_log = None
+        self.wifi_analysis_monitoring = False
+        self.wifi_analysis_start_time = None
         logger.info("Test is Initialized")
 
     def query_realclients(self):
@@ -2654,6 +2664,141 @@ class FtpTest(LFCliBase):
             self.report.set_table_dataframe(table_df)
             self.report.build_table()
 
+    def resolve_wifi_analysis_device_names(self, devices):
+        """Map each wifi-analysis device (a LANforge port name) to its display name."""
+        port_to_name = {}
+        if hasattr(self, 'input_devices_list') and hasattr(self, 'real_client_list'):
+            # real_client_list is empty when run from lf_mixed_traffic, which only fills real_client_list1
+            for port_name, entry in zip(self.input_devices_list, (self.real_client_list or self.real_client_list1)):
+                parts = entry.split(" ")
+                if parts and parts[-1]:
+                    port_to_name[port_name] = parts[-1]
+
+        return [port_to_name.get(port_name, port_name) for port_name in devices]
+
+    def start_wifi_analysis(self, host, port, device_list, ssid=None):
+        """Starts live Wi-Fi message monitoring (ClientAnalysis) for the devices under test.
+        If no device can be resolved, it logs a warning and skips the analysis instead of
+        stopping the test.
+
+        Args:
+            host (str): LANforge manager IP.
+            port (int): LANforge GUI REST port.
+            device_list (list): port names of the devices under test, e.g. ["1.10.wlan0"].
+            ssid (str): not used (ClientAnalysis does not take an SSID); accepted for compatibility.
+
+        Example:
+            self.start_wifi_analysis(host="192.168.1.31", port=8080, device_list=self.input_devices_list)
+        """
+        self.wifi_analysis = None
+        self.wifi_analysis_stats = {}
+        self.wifi_analysis_log = None
+        self.wifi_analysis_monitoring = False
+        if not device_list:
+            return
+        try:
+            # ClientAnalysis needs resource IDs like '1.10'
+            resource_ids = list(dict.fromkeys(".".join(name.split(".")[:2]) for name in device_list))
+            self.wifi_analysis = ClientAnalysis(host=host, port=port, device_list=resource_ids,
+                                                debug=self.debug)
+            # start_monitoring() exits if no device is found
+            if not self.wifi_analysis.setup_device_entries():
+                logger.warning("None of the wifi connectivity analysis devices resolved to a device LANforge knows about")
+                self.wifi_analysis = None
+                return
+            self.wifi_analysis.start_monitoring()
+            self.wifi_analysis_monitoring = True
+            self.wifi_analysis_start_time = int(time.time() * 1000)
+            logger.info("Wi-Fi connectivity analysis started for devices: %s", device_list)
+        except (Exception, SystemExit) as error:
+            logger.warning("Wifi connectivity analysis could not be started: %s", error)
+            self.wifi_analysis = None
+
+    def stop_wifi_analysis(self):
+        """Stops the live Wi-Fi monitoring and stores the per-device stats in
+        self.wifi_analysis_stats. Does nothing if monitoring was not started.
+
+        Example:
+            self.stop_wifi_analysis()
+        """
+        if not getattr(self, 'wifi_analysis_monitoring', False):
+            return
+        self.wifi_analysis_monitoring = False
+        if self.wifi_analysis._monitor_file_name:
+            self.wifi_analysis_log = os.path.join("Wifi_Messages", self.wifi_analysis._monitor_file_name)
+        try:
+            self.wifi_analysis_stats = self.wifi_analysis.stop_monitoring()
+            logger.info("Wi-Fi connectivity analysis completed: %s", self.wifi_analysis_stats)
+        except (Exception, SystemExit) as error:
+            logger.warning("Wifi connectivity analysis results could not be collected: %s", error)
+
+    def add_wifi_analysis_to_report(self, report):
+        """Append the wifi connectivity event summary graph and stats table to the report."""
+        wifi_analysis_log = getattr(self, 'wifi_analysis_log', None)
+        if wifi_analysis_log and os.path.exists(wifi_analysis_log):
+            try:
+                shutil.copy(wifi_analysis_log, os.path.join(report.path_date_time, "wifi_analysis_messages.json"))
+            except OSError as error:
+                logger.warning("Wifi analysis messages could not be copied to the report folder: %s", error)
+        if not getattr(self, 'wifi_analysis_stats', None) or not getattr(self, 'wifi_analysis', None):
+            return
+        try:
+            devices, connect_attempt, disconnected, scanning, association_rejection, connected, remarks, cx_time = \
+                ClientAnalysis.stats_to_lists(self.wifi_analysis_stats)
+            devices = self.resolve_wifi_analysis_device_names(devices)
+
+            categories = ["Disconnected", "Scans", "Association Attempts", "Association Rejected", "Connected"]
+            totals = [sum(disconnected), sum(scanning), sum(connect_attempt), sum(association_rejection), sum(connected)]
+            colors = ['#e67e22', '#1e824c', '#2980b9', '#8e44ad', '#27ae60']
+
+            report.set_custom_html('<div style="page-break-before: always;"></div>')
+            report.build_custom()
+
+            report.set_obj_html(
+                _obj_title="Client Connectivity Event Summary",
+                _obj="This graph summarizes connection-related events observed during the FTP test. "
+                     "These metrics provide insight into client stability and wireless connectivity performance.")
+            report.build_objective()
+
+            graph = lf_bar_graph(_data_set=[totals],
+                                 _xaxis_name="",
+                                 _yaxis_name="Count",
+                                 _xaxis_categories=categories,
+                                 _graph_image_name="wifi_connectivity_status",
+                                 _label=["Client Connectivity Status"],
+                                 _graph_title="Client Connectivity Status",
+                                 _title_size=16,
+                                 _color_edge='black',
+                                 _bar_width=0.5,
+                                 _figsize=(10, 6),
+                                 _legend_loc="best",
+                                 _dpi=96,
+                                 _show_bar_value=True,
+                                 _enable_csv=True,
+                                 _color=colors,
+                                 _color_name=colors)
+            graph_png = graph.build_bar_graph()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.set_csv_filename(graph.graph_image_name + ".csv")
+            report.move_csv_file()
+            report.build_graph()
+
+            dataframe = pd.DataFrame({
+                "Device": devices,
+                "Association Attempts": connect_attempt,
+                "Disconnected": disconnected,
+                "Scanning": scanning,
+                "Association Rejection": association_rejection,
+                "Connected": connected,
+            })
+            report.set_table_title("Wifi Connectivity Analysis")
+            report.build_table_title()
+            report.set_table_dataframe(dataframe)
+            report.build_table()
+        except Exception as e:
+            logger.warning("Wifi connectivity analysis could not be added to the report: %s", e)
+
     def add_background_ping_timeline_to_report(self, report):
         """Adds the "Wireless Client Connectivity Status vs Time" graph built from the background ping:
         green for replies, red for lost pings. Does nothing if the background ping did not run."""
@@ -2912,7 +3057,7 @@ class FtpTest(LFCliBase):
         if wifi_analysis_stats:
             try:
                 devices, connect_attempt, disconnected, scanning, association_rejection, connected, remarks, cx_time = \
-                    self.wifi_analysis_stats_to_lists if hasattr(self, 'wifi_analysis_stats_to_lists') else (lambda s: ([], [], [], []))(wifi_analysis_stats)
+                    ClientAnalysis.stats_to_lists(wifi_analysis_stats)
                 if devices:
                     total_disconnects = sum(disconnected)
                     if total_disconnects == 0:
@@ -3179,6 +3324,7 @@ class FtpTest(LFCliBase):
             if self.device_issue_log:
                 issues_df = pd.DataFrame(self.device_issue_log)
                 issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
+            self.add_wifi_analysis_to_report(self.report)
             if self.background_ping:
                 self.add_background_ping_timeline_to_report(self.report)
                 self.background_ping.add_background_ping_to_report(self.report)
@@ -3464,6 +3610,7 @@ class FtpTest(LFCliBase):
             # --- Page 3: Wi-Fi Client Connectivity Analysis & Continuous Ping ---
             # Wi-Fi connectivity analysis (connects/disconnects/scans/rejections) collected during test
             # Placed immediately before ping
+            self.add_wifi_analysis_to_report(self.report)
 
             if self.background_ping and self.background_ping.bg_stats:
                 # page break, objective and the connectivity timeline (drawn from the background ping samples),
@@ -3649,6 +3796,7 @@ class FtpTest(LFCliBase):
                 self.report.build_objective()
         if iot_summary:
             self.build_iot_report_section(self.report, iot_summary)
+        self.add_wifi_analysis_to_report(self.report)
         # --- Test Configuration ---
         self.report.set_custom_html('<div style="page-break-before: always;"></div>')
         self.report.build_custom()
@@ -4745,6 +4893,11 @@ INCLUDE_IN_README: False
                           type=str,
                           default='',
                           help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
+    optional.add_argument('--wifi_analysis', '--wifi-analysis',
+                          dest='wifi_analysis',
+                          action='store_true',
+                          help='Analyze real-client wifi-msgs (connects/disconnects/scans/association rejections) '
+                               'for the duration of the test and include the results in the report')
 
     bg_ping_args = parser.add_argument_group('Background ping')
     bg_ping_args.add_argument('--enable_bg_ping', '--bg_ping',
@@ -4859,6 +5012,23 @@ some amount of file data from the FTP server while measuring the time taken by c
     elif args.traffic_duration.endswith(''):
         args.traffic_duration = int(args.traffic_duration)
 
+    # Wi-Fi connectivity analysis (--wifi_analysis): started once on the first Real iteration and handed to every
+    # FtpTest created after it, so it covers all the bands, directions and file sizes
+    wifi_analysis_obj = None
+    wifi_analysis_start_time = None
+    wifi_analysis_requested = getattr(args, 'wifi_analysis', False)
+
+    def stop_wifi_analysis_on(test_obj):
+        '''Hands the running Wi-Fi connectivity analysis to test_obj and stops it there
+        (after all the iterations, or before the test ends early). Does nothing if it is not running.'''
+        nonlocal wifi_analysis_obj
+        if wifi_analysis_obj:
+            test_obj.wifi_analysis = wifi_analysis_obj
+            test_obj.wifi_analysis_start_time = wifi_analysis_start_time
+            test_obj.wifi_analysis_monitoring = True
+            test_obj.stop_wifi_analysis()
+            wifi_analysis_obj = None
+
     # Background ping (--enable_bg_ping): started once on the first Real iteration and handed to every FtpTest created
     # after it, so it covers all the bands, directions and file sizes. It is stopped after all the iterations (before the
     # report is built) and cleaned up after the report, or before the test ends early
@@ -4958,6 +5128,7 @@ some amount of file data from the FTP server while measuring the time taken by c
                         obj.device_list = obj.filter_iOS_devices(args.device_list)
                         if len(obj.device_list) == 0:
                             logger.info("There are no devices available")
+                            stop_wifi_analysis_on(obj)
                             stop_background_ping_on(obj, cleanup=True)
                             exit(1)
                     configured_device, configuration = obj.query_realclients()
@@ -4971,6 +5142,7 @@ some amount of file data from the FTP server while measuring the time taken by c
                             "configuration_status": "configured"
                         }
                         obj.updating_webui_runningjson(obj1)
+                        stop_wifi_analysis_on(obj)
                         stop_background_ping_on(obj, cleanup=True)
                         return
                     # If devices are configured, update the Web UI with the list of configured devices
@@ -4985,6 +5157,7 @@ some amount of file data from the FTP server while measuring the time taken by c
                 obj.build()
                 if not obj.passes():
                     logger.info(obj.get_fail_message())
+                    stop_wifi_analysis_on(obj)
                     stop_background_ping_on(obj, cleanup=True)
                     exit(1)
 
@@ -5014,6 +5187,19 @@ some amount of file data from the FTP server while measuring the time taken by c
                     if background_ping:
                         # Hand the running background ping to this iteration's FtpTest
                         obj.background_ping = background_ping
+                    if wifi_analysis_requested:
+                        # Start the Wi-Fi connectivity analysis once; it keeps running until all the iterations are done
+                        wifi_analysis_requested = False
+                        obj.start_wifi_analysis(host=args.mgr, port=args.mgr_port,
+                                                device_list=obj.input_devices_list)
+                        if obj.wifi_analysis_monitoring:
+                            wifi_analysis_obj = obj.wifi_analysis
+                            wifi_analysis_start_time = obj.wifi_analysis_start_time
+                    elif wifi_analysis_obj:
+                        # Hand the running Wi-Fi connectivity analysis to this iteration's FtpTest
+                        obj.wifi_analysis = wifi_analysis_obj
+                        obj.wifi_analysis_start_time = wifi_analysis_start_time
+                        obj.wifi_analysis_monitoring = True
                 # First time stamp
                 time1 = datetime.now()
                 logger.info("Traffic started running at %s", time1)
@@ -5026,6 +5212,7 @@ some amount of file data from the FTP server while measuring the time taken by c
                         # tell the WebGUI the robot run is over (Test_status Aborted in nav_data.json)
                         obj.robot_obj.update_nav_data_for_all_cxs_stopped()
                         obj.postcleanup()
+                        stop_wifi_analysis_on(obj)
                         stop_background_ping_on(obj, cleanup=True)
                         exit(1)
                 else:
@@ -5058,6 +5245,10 @@ some amount of file data from the FTP server while measuring the time taken by c
     # Stop the background ping after all the iterations (before the WebGUI check below, which can end the test),
     # on the last FtpTest, which builds the report
     stop_background_ping_on(obj)
+
+    # Stop the Wi-Fi connectivity analysis after all the iterations (before the WebGUI check below, which can end the test),
+    # on the last FtpTest, which builds the report
+    stop_wifi_analysis_on(obj)
 
     if args.dowebgui and not os.path.isdir(obj.result_dir):
         logger.warning("Results folder %s is gone (test deleted on the WebGUI); skipping the report", obj.result_dir)
