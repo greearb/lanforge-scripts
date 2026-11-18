@@ -168,6 +168,16 @@ def export_pdf(source, destination, page_size='A4', orientation='Portrait', page
                     width = (paper_mm[0] if custom_mm else
                              paper_mm[1 if orientation.lower() == 'landscape' else 0]) - 20
                     page.add_style_tag(content='@media print { .report-shell { width: ' + str(width) + 'mm; } }')
+                    page_height_mm = (paper_mm[1] if custom_mm else
+                                      paper_mm[0 if orientation.lower() == 'landscape' else 1])
+                    usable_height_px = max(float(page_height_mm) - 20, 1) * 96 / 25.4
+                    max_rows_per_panel = max(
+                        1, int((usable_height_px - 150 - 80) // 38))
+                else:
+                    max_rows_per_panel = 8
+                page.evaluate(
+                    '(capacity) => { window.__lfPdfMaxRowsPerPanel = capacity; }',
+                    max_rows_per_panel)
                 compact_height = '80mm' if orientation.lower() == 'landscape' else '95mm'
                 page.add_style_tag(content='@media print { :root { --pdf-chart-height: ' + compact_height + '; } }')
                 page.evaluate('''async () => {
@@ -186,6 +196,15 @@ def export_pdf(source, destination, page_size='A4', orientation='Portrait', page
                     document.querySelectorAll('.table-search-input').forEach(input => {
                         input.value = ''; input.dispatchEvent(new Event('input'));
                     });
+                    for (const chart of document.querySelectorAll('.chart-card > .chart')) {
+                        const card = chart.parentElement;
+                        const introduction = card.previousElementSibling;
+                        if (!introduction || !introduction.matches('.chart-card') ||
+                            introduction.querySelector('.chart, img') ||
+                            !introduction.querySelector('h3')) continue;
+                        card.prepend(...introduction.childNodes);
+                        introduction.remove();
+                    }
                     // Use rendered width, not column count, to decide whether to split.
                     for (const table of document.querySelectorAll('table.data-table, table.device-table')) {
                         const shell = table.closest('.report-shell');
@@ -272,38 +291,46 @@ def export_pdf(source, destination, page_size='A4', orientation='Portrait', page
                             if (axis.type === 'category') axis.axisLabel = Object.assign({}, axis.axisLabel,
                                 {formatter: null, overflow: 'break', width: 190});
                         });
-                        // Split category charts into readable page-sized panels.
+                        // Split rows evenly across PDF chart panels.
                         const categoryAxis = option.yAxis && option.yAxis.find(axis => axis.type === 'category');
                         const categories = categoryAxis && categoryAxis.data;
-                        const panelSize = 8;
-                        if (categories && categories.length > panelSize) {
+                        const maxRowsPerPanel = Math.max(1,
+                            Number(window.__lfPdfMaxRowsPerPanel) || 8);
+                        if (categories && categories.length > maxRowsPerPanel) {
                             const card = element.closest('.chart-card');
                             if (!card) throw new Error('Oversized chart has no card: ' + element.id);
-                            for (let start = 0; start < categories.length; start += panelSize) {
+                            const totalPanels = Math.ceil(categories.length / maxRowsPerPanel);
+                            const rowsPerPanel = Math.ceil(categories.length / totalPanels);
+                            for (let startIndex = 0; startIndex < categories.length; startIndex += rowsPerPanel) {
+                                const endIndex = Math.min(startIndex + rowsPerPanel, categories.length);
                                 const panel = card.cloneNode(true);
                                 panel.querySelectorAll('script').forEach(script => script.remove());
                                 const target = panel.querySelector('.chart');
                                 target.innerHTML = '';
                                 target.removeAttribute('_echarts_instance_');
-                                target.id = element.id + '-pdf-' + start;
-                                target.style.height = '410px';
+                                target.id = element.id + '-pdf-' + startIndex;
+                                target.style.height = Math.max(320, (endIndex - startIndex) * 38 + 150) + 'px';
                                 const heading = panel.querySelector('h3');
-                                if (heading && start) heading.textContent += ' (continued)';
+                                if (heading && startIndex) heading.textContent += ' (continued)';
                                 card.parentNode.insertBefore(panel, card);
                                 const panelOption = Object.assign({}, option);
                                 panelOption.yAxis = option.yAxis.map(axis => axis === categoryAxis
-                                    ? Object.assign({}, axis, {data: categories.slice(start, start + panelSize)}) : axis);
+                                    ? Object.assign({}, axis, {data: categories.slice(startIndex, endIndex)}) : axis);
                                 panelOption.series = option.series.map(series => Object.assign({}, series, {
                                     data: series.type === 'custom'
-                                        ? series.data.filter(point => point[0] >= start && point[0] < start + panelSize)
-                                            .map(point => [point[0] - start, ...point.slice(1)])
-                                        : series.data.slice(start, start + panelSize)
+                                        ? series.data.filter(point => point[0] >= startIndex && point[0] < endIndex)
+                                            .map(point => [point[0] - startIndex, ...point.slice(1)])
+                                        : series.data.slice(startIndex, endIndex)
                                 }));
                                 echarts.init(target, null, {renderer: 'svg'}).setOption(panelOption);
                             }
                             chart.dispose();
                             card.remove();
                         } else {
+                            if (categories) {
+                                element.style.height = Math.max(
+                                    320, categories.length * 38 + 150) + 'px';
+                            }
                             chart.setOption(option, true);
                             chart.resize();
                         }
