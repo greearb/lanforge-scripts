@@ -107,6 +107,9 @@ python3 lf_ftp.py --ssid Netgear-5g --security wpa2 --file_sizes 10MB --mgr 192.
 --ap_name Netgear --bands 5G --upstream_port eth1 --device_list 1.12 --robot_test --robot_ip 192.168.204.101 --coordinate 3,4
 --measurement_mode continuous --cycles 2
 
+EXAMPLE-20:
+Command Line Interface to run FTP download scenario for Real clients with background ping
+python3 lf_ftp.py --mgr 192.168.220.125 --upstream_port eth2 --clients_type Real --directions Download --bands 5G --file_sizes 10MB --traffic_duration 2m --enable_bg_ping
 
 SCRIPT_CLASSIFICATION : Test
 
@@ -164,6 +167,8 @@ if sys.version_info[0] != 3:
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+# lf_interop_ping (background ping) imports its py-json modules by their bare names, which it only resolves when run from py-scripts
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../"), 'py-json'))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -173,6 +178,8 @@ Realm = realm.Realm
 # Importing DeviceConfig to apply device configurations for ADB devices and laptops
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
+# Background ping on the real clients (--enable_bg_ping)
+lf_interop_ping = importlib.import_module("py-scripts.lf_interop_ping")
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
@@ -360,6 +367,8 @@ class FtpTest(LFCliBase):
         # Band steering always moves continuously; do_bandsteering only adds the BSSID tracking report.
         self.is_continuous_run = do_bandsteering or (robot_test and measurement_mode == "continuous")
         self.cycles = cycles
+        # Background ping (lf_interop_ping.Ping), opt-in and set from main()
+        self.background_ping = None
         logger.info("Test is Initialized")
 
     def query_realclients(self):
@@ -2645,6 +2654,120 @@ class FtpTest(LFCliBase):
             self.report.set_table_dataframe(table_df)
             self.report.build_table()
 
+    def add_background_ping_timeline_to_report(self, report):
+        """Adds the "Wireless Client Connectivity Status vs Time" graph built from the background ping:
+        green for replies, red for lost pings. Does nothing if the background ping did not run."""
+        background_ping = getattr(self, 'background_ping', None)
+        if not background_ping or not background_ping.bg_stats or background_ping.bg_start_time is None \
+                or background_ping.bg_stop_time is None:
+            return
+        try:
+            test_seconds = background_ping.bg_stop_time - background_ping.bg_start_time
+            interval = float(background_ping.interval)
+            clients, stations, segments = [], [], []
+            for device in background_ping.real_sta_list:
+                sequences = background_ping.bg_packet_results.get(device) or {}
+                spans = []
+                covered_until = 0.0
+                for sequence in sorted(sequences):
+                    start, end = (sequence - 1) * interval, min(test_seconds, sequence * interval)
+                    if end <= start:
+                        continue
+                    if start > covered_until:
+                        spans.append(['up', covered_until, start])
+                    spans.append(['drop' if sequences[sequence] == 0 else 'up', start, end])
+                    covered_until = max(covered_until, end)
+                merged = []
+                for span in spans:
+                    if merged and merged[-1][0] == span[0]:
+                        merged[-1][2] = span[2]
+                    else:
+                        merged.append(span)
+                segments.extend({'clientIndex': len(clients), 'start': round(start, 3), 'end': round(end, 3), 'status': status} for status, start, end in merged)
+                clients.append(background_ping.bg_stats[device]['name'])
+                stations.append(device)
+            # no samples -> no segments, so the timeline shows its emptyMessage instead of made-up "up" bars
+            payload = {'clients': clients, 'stations': stations, 'segments': segments, 'duration': round(test_seconds, 3),
+                       'emptyMessage': "No time-series ping samples were collected"}
+            report.set_custom_html('<div style="page-break-before: always;"></div>')
+            report.build_custom()
+            report.set_obj_html(
+                _obj_title="Client Connectivity Results Throughout the Test Duration",
+                _obj=("The graph illustrates the connectivity status of all wireless clients during the test based on connectivity monitoring during the test execution. "
+                      "Green segments represent successful responses, while red segments indicate packet loss or connectivity drops observed during the test."))
+            report.build_objective()
+            report.set_custom_html("""
+                <div class='chart-card'>
+                  <h3>Wireless Client Connectivity Status vs Time</h3>
+                  <div id='background-ping-connectivity-timeline' class='chart'></div>
+                  <script>
+                    window.__lfModernReport.renderConnectivityTimeline('background-ping-connectivity-timeline', {payload});
+                  </script>
+                </div>
+                """.format(payload=json.dumps(payload)))
+            report.build_custom()
+        except Exception as error:
+            logger.warning("Background ping timeline could not be added to the report: %s", error)
+
+    def add_background_ping_stats_to_report(self, report, client_names, rssi_vals):
+        """Adds the table with the ping statistics (one row per Wi-Fi client) collected by the background ping.
+        A client the background ping has no row for shows "-" instead of made-up numbers."""
+        background_ping = getattr(self, 'background_ping', None)
+        if not background_ping or not background_ping.bg_stats:
+            return
+        try:
+            report.set_obj_html(
+                _obj_title="",
+                _obj="The table below summarizes the ping statistics collected for all wireless clients during the test.")
+            report.build_objective()
+
+            bg_stats = background_ping.bg_stats
+            pkts_sent_list = []
+            pkts_recv_list = []
+            pkts_loss_pct_list = []
+            avg_rtt_list = []
+
+            for idx, client in enumerate(client_names):
+                row = None
+                client_str = str(client)
+                port_str = self.input_devices_list[idx] if idx < len(self.input_devices_list) else ""
+                if port_str in bg_stats:
+                    row = bg_stats[port_str]
+                else:
+                    for v in bg_stats.values():
+                        if v.get('name') == client_str or v.get('device') == port_str or (client_str and client_str in str(v.get('name'))):
+                            row = v
+                            break
+                if row:
+                    pkts_sent_list.append(row.get('sent', '-'))
+                    pkts_recv_list.append(row.get('recv', '-'))
+                    pkts_loss_pct_list.append(row.get('loss_percent', '-'))
+                    avg_rtt_list.append(row.get('avg_rtt', '-'))
+                else:
+                    pkts_sent_list.append('-')
+                    pkts_recv_list.append('-')
+                    pkts_loss_pct_list.append('-')
+                    avg_rtt_list.append('-')
+
+            ping_df = pd.DataFrame({
+                "Wireless Client": client_names,
+                "MAC": self.mac_id_list,
+                "RSSI": rssi_vals,
+                "Channel": self.channel_list,
+                "Packets Sent": pkts_sent_list,
+                "Packets Received": pkts_recv_list,
+                "Packet Loss %": pkts_loss_pct_list,
+                "AVG RTT (ms)": avg_rtt_list
+            })
+            report.set_table_dataframe(ping_df)
+            report.build_table()
+        except Exception as error:
+            logger.warning("Background ping statistics could not be added to the report: %s", error)
+
+    # Score band -> (label, color): Excellent 90-100, Good 80-89, Average 70-79, Poor <70.
+    SCORE_RATING_BANDS = [(90, "Excellent", "#1e7e34"), (80, "Good", "#28a745"),
+                          (70, "Average", "#f1c40f"), (0, "Poor", "#e74c3c")]
+
     @classmethod
     def classify_score_rating(cls, score):
         """Maps a numeric score (0-100) to a (label, color) rating using SCORE_RATING_BANDS."""
@@ -3056,6 +3179,9 @@ class FtpTest(LFCliBase):
             if self.device_issue_log:
                 issues_df = pd.DataFrame(self.device_issue_log)
                 issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
+            if self.background_ping:
+                self.add_background_ping_timeline_to_report(self.report)
+                self.background_ping.add_background_ping_to_report(self.report)
             self.build_test_configuration_card(test_setup_info, duration, no_of_stations, total_devices, all_devices_names, device_type)
             self.report.build_footer()
             html_file = self.report.write_html()
@@ -3336,6 +3462,15 @@ class FtpTest(LFCliBase):
                 self.build_iot_report_section(self.report, iot_summary)
 
             # --- Page 3: Wi-Fi Client Connectivity Analysis & Continuous Ping ---
+            # Wi-Fi connectivity analysis (connects/disconnects/scans/rejections) collected during test
+            # Placed immediately before ping
+
+            if self.background_ping and self.background_ping.bg_stats:
+                # page break, objective and the connectivity timeline (drawn from the background ping samples),
+                # then the ping statistics table
+                self.add_background_ping_timeline_to_report(self.report)
+                self.add_background_ping_stats_to_report(self.report, client_names, rssi_vals)
+
             # --- Page 4: Test Configuration ---
             self.build_test_configuration_card(test_setup_info, duration, no_of_stations, total_devices, all_devices_names, device_type)
 
@@ -4611,6 +4746,20 @@ INCLUDE_IN_README: False
                           default='',
                           help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
 
+    bg_ping_args = parser.add_argument_group('Background ping')
+    bg_ping_args.add_argument('--enable_bg_ping', '--bg_ping',
+                              dest='enable_bg_ping',
+                              action='store_true',
+                              help='Run a ping on the real clients in the background while the test runs and report its statistics at the end of the report')
+    bg_ping_args.add_argument('--bg_ping_target',
+                              type=str,
+                              default=None,
+                              help='IP, domain name or LANforge port the background ping should target. Defaults to the upstream port of the test when not given')
+    bg_ping_args.add_argument('--bg_ping_interval',
+                              type=float,
+                              default=1,
+                              help='Packet interval of the background ping in seconds. Defaults to 1')
+
     args = parser.parse_args()
 
     help_summary = '''\
@@ -4710,6 +4859,32 @@ some amount of file data from the FTP server while measuring the time taken by c
     elif args.traffic_duration.endswith(''):
         args.traffic_duration = int(args.traffic_duration)
 
+    # Background ping (--enable_bg_ping): started once on the first Real iteration and handed to every FtpTest created
+    # after it, so it covers all the bands, directions and file sizes. It is stopped after all the iterations (before the
+    # report is built) and cleaned up after the report, or before the test ends early
+    background_ping = None
+    background_ping_requested = getattr(args, 'enable_bg_ping', False)
+    background_ping_stopped = False
+
+    def stop_background_ping_on(test_obj, cleanup=False):
+        '''Hands the running background ping to test_obj and stops it there (only once, which fills its statistics).
+        With cleanup=True its endpoints are also removed and it is dropped. Does nothing if it is not running.'''
+        nonlocal background_ping, background_ping_stopped
+        if background_ping:
+            test_obj.background_ping = background_ping
+            if not background_ping_stopped:
+                background_ping_stopped = True
+                try:
+                    background_ping.stop_background_ping()
+                except (Exception, SystemExit) as error:
+                    logger.warning("Background ping results could not be collected: %s", error)
+            if cleanup:
+                try:
+                    background_ping.cleanup()
+                except (Exception, SystemExit) as error:
+                    logger.warning("Background ping could not be cleaned up: %s", error)
+                background_ping = None
+
     # For all combinations ftp_data of directions, file size and client counts, run the test
     for band in args.bands:
         for direction in args.directions:
@@ -4783,6 +4958,7 @@ some amount of file data from the FTP server while measuring the time taken by c
                         obj.device_list = obj.filter_iOS_devices(args.device_list)
                         if len(obj.device_list) == 0:
                             logger.info("There are no devices available")
+                            stop_background_ping_on(obj, cleanup=True)
                             exit(1)
                     configured_device, configuration = obj.query_realclients()
 
@@ -4795,6 +4971,7 @@ some amount of file data from the FTP server while measuring the time taken by c
                             "configuration_status": "configured"
                         }
                         obj.updating_webui_runningjson(obj1)
+                        stop_background_ping_on(obj, cleanup=True)
                         return
                     # If devices are configured, update the Web UI with the list of configured devices
                     else:
@@ -4808,11 +4985,35 @@ some amount of file data from the FTP server while measuring the time taken by c
                 obj.build()
                 if not obj.passes():
                     logger.info(obj.get_fail_message())
+                    stop_background_ping_on(obj, cleanup=True)
                     exit(1)
 
                 if obj.clients_type == 'Real':
                     obj.monitor_cx()
                     logger.info(f'Test started on the devices : {obj.input_devices_list}')
+                    if background_ping_requested:
+                        # Start the background ping once; it keeps running until all the iterations are done
+                        background_ping_requested = False
+                        try:
+                            background_ping = lf_interop_ping.Ping(host=args.mgr, port=args.mgr_port,
+                                                                   target=args.bg_ping_target or args.upstream_port,
+                                                                   interval=args.bg_ping_interval, sta_list=[], real=True,
+                                                                   virtual=False, duration=0)
+                            started = background_ping.start_background_ping(obj.input_devices_list)
+                        except (Exception, SystemExit) as error:
+                            logger.warning("Background ping could not be started: %s", error)
+                            started = False
+                        if not started:
+                            if background_ping:
+                                # remove whatever the failed start may have left on the LANforge
+                                try:
+                                    background_ping.cleanup()
+                                except (Exception, SystemExit) as error:
+                                    logger.warning("Background ping could not be cleaned up: %s", error)
+                            background_ping = None
+                    if background_ping:
+                        # Hand the running background ping to this iteration's FtpTest
+                        obj.background_ping = background_ping
                 # First time stamp
                 time1 = datetime.now()
                 logger.info("Traffic started running at %s", time1)
@@ -4825,6 +5026,7 @@ some amount of file data from the FTP server while measuring the time taken by c
                         # tell the WebGUI the robot run is over (Test_status Aborted in nav_data.json)
                         obj.robot_obj.update_nav_data_for_all_cxs_stopped()
                         obj.postcleanup()
+                        stop_background_ping_on(obj, cleanup=True)
                         exit(1)
                 else:
                     obj.start(False, False)
@@ -4853,8 +5055,13 @@ some amount of file data from the FTP server while measuring the time taken by c
                 time2 = datetime.now()
                 logger.info("Test ended at %s", time2)
 
+    # Stop the background ping after all the iterations (before the WebGUI check below, which can end the test),
+    # on the last FtpTest, which builds the report
+    stop_background_ping_on(obj)
+
     if args.dowebgui and not os.path.isdir(obj.result_dir):
         logger.warning("Results folder %s is gone (test deleted on the WebGUI); skipping the report", obj.result_dir)
+        stop_background_ping_on(obj, cleanup=True)
         exit(0)
 
     # 2nd time stamp for test duration
@@ -4916,6 +5123,9 @@ some amount of file data from the FTP server while measuring the time taken by c
                             dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
                             dut_serial_num=args.dut_serial_num, test_id=args.test_id,
                             bands=args.bands, csv_outfile=args.csv_outfile, local_lf_report_dir=args.local_lf_report_dir, iot_summary=iot_summary)
+
+    # The report is built, remove the background ping endpoints from the LANforge
+    stop_background_ping_on(obj, cleanup=True)
 
     if args.dowebgui:
         obj.copy_reports_to_home_dir()
