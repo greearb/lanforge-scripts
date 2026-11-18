@@ -1771,6 +1771,34 @@ class Mixed_Traffic(Realm):
                     ]
                 )
 
+    def build_http_graph(self, dataset, xaxis_name, graph_title, graph_image_name, color, what):
+        """Build a legacy PNG bar graph of per-client HTTP results for the combined mixed traffic report."""
+        if self.http_obj.client_type == "Real":
+            clients = self.http_obj.devices_list
+        else:
+            clients = self.http_obj.station_list[0]
+        dataset = self.http_obj.align_to_labels(dataset, clients, what)
+        graph = lf_graph.lf_bar_graph_horizontal(_data_set=[dataset],
+                                                 _xaxis_name=xaxis_name,
+                                                 _yaxis_name="Client names",
+                                                 _yaxis_categories=[i for i in clients],
+                                                 _yaxis_label=[i for i in clients],
+                                                 _yaxis_step=1,
+                                                 _yticks_font=8,
+                                                 _yticks_rotation=None,
+                                                 _graph_title=graph_title,
+                                                 _title_size=16,
+                                                 _figsize=(18, len(clients) * .5 + 4),
+                                                 _legend_loc="best",
+                                                 _legend_box=(1.0, 1.0),
+                                                 _color_name=[color],
+                                                 _show_bar_value=True,
+                                                 _enable_csv=True,
+                                                 _graph_image_name=graph_image_name, _color_edge=['black'],
+                                                 _color=[color],
+                                                 _label=['Download'])
+        return graph.build_bar_graph_horizontal()
+
     def generate_all_report(self, iot_summary=None):
         logger.info("Generate the Mixed Traffic report with all tests")
         mode = "Parallel" if self.parallel else "Serial"
@@ -2234,10 +2262,15 @@ class Mixed_Traffic(Realm):
                                                ". X- axis shows “No of times file downloads and Y-axis shows "
                                                "Client names.")
                 self.lf_report_mt.build_objective()
-                http_graph1 = self.http_obj.graph_2(self.dataset2, lis=self.lis, bands=[self.band])
-                logger.debug("Http Graph-1: {}".format(http_graph1))
-                self.lf_report_mt.set_graph_image(http_graph1)
-                self.lf_report_mt.set_csv_filename(http_graph1)
+                http_count_graph = self.build_http_graph(dataset=self.dataset2,
+                                                         xaxis_name="No of times file Download",
+                                                         graph_title="No of times file Download (Count)",
+                                                         graph_image_name="Total-url_http",
+                                                         color="orange",
+                                                         what="Total URL count")
+                logger.debug("Http count graph: {}".format(http_count_graph))
+                self.lf_report_mt.set_graph_image(http_count_graph)
+                self.lf_report_mt.set_csv_filename(http_count_graph)
                 self.lf_report_mt.move_csv_file()
                 self.lf_report_mt.move_graph_image()
                 self.lf_report_mt.build_graph()
@@ -2246,10 +2279,15 @@ class Mixed_Traffic(Realm):
                                                ".  X- axis shows “Average time taken to download a file ” and Y-axis shows "
                                                "Client names.")
                 self.lf_report_mt.build_objective()
-                http_graph2 = self.http_obj.generate_graph(dataset=self.dataset, lis=self.lis, bands=[self.band])
-                logger.debug("Http Graph-2: {}".format(http_graph2))
-                self.lf_report_mt.set_graph_image(http_graph2)
-                self.lf_report_mt.set_csv_filename(http_graph2)
+                http_time_graph = self.build_http_graph(dataset=self.dataset,
+                                                        xaxis_name="Average time taken to Download file in ms",
+                                                        graph_title="Average time taken to Download file",
+                                                        graph_image_name="ucg-avg_http",
+                                                        color="steelblue",
+                                                        what="Average download time")
+                logger.debug("Http time graph: {}".format(http_time_graph))
+                self.lf_report_mt.set_graph_image(http_time_graph)
+                self.lf_report_mt.set_csv_filename(http_time_graph)
                 self.lf_report_mt.move_csv_file()
                 self.lf_report_mt.move_graph_image()
                 self.lf_report_mt.build_graph()
