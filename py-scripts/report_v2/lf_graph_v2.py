@@ -107,7 +107,8 @@ class lf_bar_graph:
                  _alignment=None,
                  _stacked=False,
                  _extra_payload=None,
-                 _description=""
+                 _description="",
+                 _force_series_colors=False
                  ):
         """Stores the bar chart data and options.
 
@@ -127,6 +128,8 @@ class lf_bar_graph:
             _stacked (bool): stack the bars instead of placing them side by side.
             _extra_payload (dict): extra chart options merged into the chart payload.
             _description (str): text shown under the chart title.
+            _force_series_colors (bool): with exactly one series, still color/legend it by series
+                (its own _label entry, one color) instead of switching to one color per bar/category.
 
             Most other options (_bar_width, _color_edge, _font_weight, _figsize,
             _show_bar_value, _xaxis_step, _xticks_font, _xaxis_value_location,
@@ -178,6 +181,7 @@ class lf_bar_graph:
         self.stacked = _stacked
         self.extra_payload = _extra_payload
         self.description = _description
+        self.force_series_colors = _force_series_colors
 
     def build_bar_graph(self):
         """Returns the interactive bar chart as HTML for set_graph_image().
@@ -191,7 +195,7 @@ class lf_bar_graph:
         """
         colors = self.color if self.color is not None else self.color_name
         # One series: each bar gets its own color. Several series: one color per series.
-        if len(self.data_set) == 1:
+        if len(self.data_set) == 1 and not self.force_series_colors:
             series = [{
                 "name": self.label[0] if self.label else "series-0",
                 "data": [
@@ -463,6 +467,7 @@ class lf_line_graph:
                  _reverse_x=False,
                  _reverse_y=False,
                  _dashed=None,
+                 _yaxis_categories=None,
                  _description=""):
         """Stores the line chart data and options.
 
@@ -480,6 +485,7 @@ class lf_line_graph:
             _reverse_x (bool): flip the x-axis direction.
             _reverse_y (bool): flip the y-axis direction.
             _dashed (list): one True/False per line, to draw it dashed, e.g. a target line.
+            _yaxis_categories (list): category labels for a discrete y-axis (e.g. ["2.4 GHz", "5 GHz", "6 GHz"]); _data_set values are then the index into this list.
             _description (str): text shown under the chart title.
 
             Most other options (_title_size, _font_weight, _figsize, _xaxis_step,
@@ -527,6 +533,7 @@ class lf_line_graph:
         self.reverse_y = _reverse_y
         # Series can be drawn dashed, e.g. for a target line.
         self.dashed = _dashed or []
+        self.yaxis_categories = _yaxis_categories
         self.description = _description
 
     def build_line_graph(self):
@@ -554,6 +561,8 @@ class lf_line_graph:
             "inverseX": bool(self.reverse_x),
             "inverseY": bool(self.reverse_y),
         }
+        if self.yaxis_categories:
+            payload["yAxisCategories"] = list(self.yaxis_categories)
         extra_args = ", {y}, {x}".format(y=json.dumps(self.yaxis_name), x=json.dumps(self.xaxis_name))
         markup = """
                 <div class='chart-card'>
