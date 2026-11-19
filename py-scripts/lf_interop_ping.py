@@ -1679,6 +1679,8 @@ class Ping(Realm):
                     spans.append(['up', covered_until, start])
                 spans.append(['drop' if sequences[sequence] == 0 else 'up', start, end])
                 covered_until = max(covered_until, end)
+            if covered_until < test_seconds:
+                spans.append(['drop', covered_until, test_seconds])
             merged = []
             for span in spans:
                 if merged and merged[-1][0] == span[0]:
@@ -1689,18 +1691,23 @@ class Ping(Realm):
             clients.append(self.bg_stats[device]['name'])
             stations.append(device)
         try:
-            if segments and hasattr(report, 'build_echarts_chart'):
-                report.set_obj_html(
-                    _obj_title="Client Connectivity Results Throughout the Test Duration",
-                    _obj=("The graph illustrates the connectivity status of all wireless clients during the test based on connectivity monitoring during the test execution. "
-                          "Green segments represent successful responses, while red segments indicate packet loss or connectivity drops observed during the test."))
-                report.build_objective()
-                report.build_echarts_chart(
-                    chart_id="background-ping-connectivity-timeline",
-                    chart_type="connectivity_timeline",
-                    payload={'clients': clients, 'stations': stations, 'segments': segments, 'duration': round(test_seconds, 3),
-                             'emptyMessage': "No time-series ping samples were collected"},
-                    title="Wireless Client Connectivity Status vs Time")
+            report.set_obj_html(
+                _obj_title="Client Connectivity Results Throughout the Test Duration",
+                _obj=("The graph illustrates the connectivity status of all wireless clients during the test based on connectivity monitoring during the test execution. "
+                      "Green segments represent successful responses, while red segments indicate packet loss or connectivity drops observed during the test."))
+            report.build_objective()
+            payload = {'clients': clients, 'stations': stations, 'segments': segments, 'duration': round(test_seconds, 3),
+                       'emptyMessage': "No time-series ping samples were collected"}
+            report.set_custom_html("""
+                <div class='chart-card'>
+                  <h3>Wireless Client Connectivity Status vs Time</h3>
+                  <div id='background-ping-connectivity-timeline' class='chart'></div>
+                  <script>
+                    window.__lfModernReport.renderConnectivityTimeline('background-ping-connectivity-timeline', {payload});
+                  </script>
+                </div>
+                """.format(payload=json.dumps(payload)))
+            report.build_custom()
             report.set_table_title("Ping statistics collected for all wireless clients during the test (target {}, duration {}, {}s interval)".format(
                 self.target, duration, self.interval))
             report.build_table_title()
