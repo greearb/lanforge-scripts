@@ -107,6 +107,7 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
 from lf_base_robo import RobotClass
 import time
 import argparse
+import base64
 import sys
 import os
 import pandas as pd
@@ -134,8 +135,11 @@ if 'py-json' not in sys.path:
 from LANforge import LFUtils  # noqa: F401
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-from lf_report import lf_report  # noqa: E402
+# legacy PNG charts: only used for the legacy report objects lf_mixed_traffic / lf_multi_traffic / throughput_webgui hand in (see graph_classes())
 from lf_graph import lf_bar_graph, lf_bar_graph_horizontal  # noqa: E402
+# Modern reporting (report_v2): the same report / chart modules lf_ftp.py and lf_interop_throughput.py use
+from report_v2.lf_report_v2 import lf_report as lf_report_modern  # noqa: E402
+from report_v2 import lf_graph_v2  # noqa: E402
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -329,6 +333,9 @@ class ThroughputQOS(Realm):
         self.all_devices_stopped = False
         self.do_bandsteering = do_bandsteering
         self.bssids = bssids.split(",") if bssids else []
+        # Modern real-client report: only main() turns real_modern on (standalone real run, no robot / bandsteering), so direct callers
+        # (lf_mixed_traffic / lf_multi_traffic / webgui) keep the existing report content.
+        self.real_modern = False
         # Initializing robot test parameters
         self.robot_test = robot_test
         self.cycles = cycles
@@ -1534,6 +1541,365 @@ class ThroughputQOS(Realm):
                 ssid_list.append('-')
         return ssid_list
 
+    # ---- Modern reporting for the standalone real-client run (report_v2) ----
+    def get_channel_and_rssi_list(self, station_names):
+        """Live channel/RSSI snapshot per device port (mirrors get_ssid_list's /ports/all/
+        lookup); the RSSI values feed the signal-quality bullet of Key Findings."""
+        channel_list = []
+        rssi_list = []
+        port_data = self.json_get('/ports/all/')['interfaces']
+        interfaces_dict = dict()
+        for port in port_data:
+            interfaces_dict.update(port)
+        for sta in station_names:
+            data = interfaces_dict.get(sta)
+            if data:
+                sig = data.get('signal', '-')
+                rssi_list.append(str(sig).split(" ")[0] if "dBm" in str(sig) else str(sig))
+                channel_value = str(data.get('channel', ''))
+                channel_list.append('NA' if channel_value in ('', '0', '-1') else channel_value)
+            else:
+                rssi_list.append('-')
+                channel_list.append('-')
+        return channel_list, rssi_list
+
+    def build_test_summary(self, priority_order, overall_rating, vo_val, vi_val, be_val, bk_val, rssi_values=None):
+        """Builds a handful of plain-English narrative sentences giving an executive-level
+        overview of the whole QoS test -- traffic-class prioritization, achieved bandwidth,
+        connectivity/reconnection, packet loss, and signal quality -- each derived from this
+        test's actual measurements, plus an overall verdict. Mirrors
+        lf_interop_throughput.Throughput.build_test_summary()'s approach for the bullets that
+        aren't QoS-specific (connectivity, packet loss, signal quality).
+
+        Args:
+            priority_order: traffic classes ordered by achieved throughput, highest first
+                (e.g. ['VO', 'VI', 'BE', 'BK']), as computed in generate_report().
+            overall_rating: "Good"/"Acceptable"/"Poor", the same heuristic used for the
+                Overall Test Verdict card.
+            vo_val/vi_val/be_val/bk_val: achieved throughput (Mbps) per traffic class.
+            rssi_values: this test's client RSSI readings (same style as
+                get_channel_and_rssi_list()'s rssi_list -- signed dBm as str/float, '-' for unknown).
+
+        Returns:
+            A list of plain strings, most important first.
+        """
+        summary = []
+
+        # 1. Traffic-class priority ordering vs. the expected VO > VI > BE > BK.
+        if priority_order == ['VO', 'VI', 'BE', 'BK']:
+            summary.append(
+                "QoS prioritization was successfully validated: traffic classes were served in the "
+                "expected order (Voice > Video > Best Effort > Background).")
+        elif priority_order[:2] == ['VO', 'VI'] or priority_order[:2] == ['VI', 'VO']:
+            summary.append(
+                "QoS prioritization was partially validated: Voice and Video traffic led the observed "
+                "order ({order}), though Best Effort/Background were not fully deprioritized as "
+                "expected.".format(order=" > ".join(priority_order)))
+        else:
+            summary.append(
+                "QoS prioritization was not maintained: the observed throughput order was {order}, "
+                "which does not match the expected Voice > Video > Best Effort > Background "
+                "priority.".format(order=" > ".join(priority_order)))
+
+        # 2. Which class actually received the most bandwidth.
+        class_vals = {"Voice (VO)": vo_val, "Video (VI)": vi_val, "Best Effort (BE)": be_val, "Background (BK)": bk_val}
+        top_class = max(class_vals, key=class_vals.get)
+        if top_class in ("Voice (VO)", "Video (VI)"):
+            summary.append(
+                "{cls} traffic received the highest bandwidth ({val} Mbps), aligning with expected QoS "
+                "standards.".format(cls=top_class, val=class_vals[top_class]))
+        else:
+            summary.append(
+                "{cls} traffic received the highest bandwidth ({val} Mbps), which does not align with "
+                "expected QoS standards -- Voice/Video traffic should typically lead.".format(
+                    cls=top_class, val=class_vals[top_class]))
+
+        # 3. Connectivity / reconnection, from the wifi connectivity analysis.
+        wifi_analysis_stats = getattr(self, 'wifi_analysis_stats', None)
+        wifi_analysis = getattr(self, 'wifi_analysis', None)
+        if wifi_analysis_stats and wifi_analysis:
+            try:
+                devices, connect_attempt, disconnected, scanning, association_rejection, connected, remarks, cx_time = \
+                    wifi_analysis.stats_to_lists(wifi_analysis_stats)
+                total_devices = len(devices)
+                total_disconnects = sum(disconnected)
+                never_connected = sum(1 for c in connected if c == 0)
+                plural = "" if total_devices == 1 else "s"
+                if total_devices:
+                    if not total_disconnects:
+                        summary.append(
+                            "All {total} client{s} maintained a stable wireless connection throughout the "
+                            "test, with no disconnections observed.".format(total=total_devices, s=plural))
+                    elif not never_connected:
+                        summary.append(
+                            "During the test, clients experienced {n} connect/disconnect event(s); however, "
+                            "all {total} client{s} were able to reconnect successfully by the end of the "
+                            "test.".format(n=total_disconnects, total=total_devices, s=plural))
+                    else:
+                        summary.append(
+                            "During the test, clients experienced {n} connect/disconnect event(s); {never} "
+                            "of {total} client{s} did not reconnect by the end of the test.".format(
+                                n=total_disconnects, never=never_connected, total=total_devices, s=plural))
+            except Exception as e:
+                logger.warning("Key findings connectivity bullet could not be computed: %s", e)
+
+        # 4. Packet loss, from the background ping.
+        background_ping = getattr(self, 'background_ping', None)
+        if background_ping and background_ping.bg_stats:
+            rows = list(background_ping.bg_stats.values())
+            loss_values = [row['loss_percent'] for row in rows if row['sent']]
+            if loss_values:
+                avg_loss = sum(loss_values) / len(loss_values)
+                if avg_loss <= 0:
+                    summary.append(
+                        "No packet loss was observed on the background ping for any client, indicating "
+                        "fully reliable communication under load.")
+                elif avg_loss < 2:
+                    summary.append(
+                        "Packet loss was minimal, averaging {avg:.1f}% across all clients, indicating "
+                        "reliable communication under load.".format(avg=avg_loss))
+                elif avg_loss < 10:
+                    summary.append(
+                        "Packet loss was moderate, averaging {avg:.1f}% across all clients.".format(avg=avg_loss))
+                else:
+                    summary.append(
+                        "Packet loss was significant, averaging {avg:.1f}% across all clients, indicating "
+                        "unreliable communication under load.".format(avg=avg_loss))
+
+        # 5. Signal quality, from RSSI (same Excellent/Good/Fair/Poor cutoffs as the
+        # per-device RSSI table: weak means worse than -65 dBm).
+        readings = []
+        for v in (rssi_values or []):
+            try:
+                readings.append(abs(float(v)))
+            except (TypeError, ValueError):
+                continue
+        if readings:
+            weak = sum(1 for v in readings if v > 65)
+            if not weak:
+                summary.append(
+                    "Signal strength and link quality were consistent, with no clients showing weak "
+                    "signal (RSSI worse than -65 dBm) during the test.")
+            else:
+                summary.append(
+                    "{weak} of {total} client(s) showed weak signal (RSSI worse than -65 dBm) during "
+                    "the test, which may have impacted their throughput results.".format(
+                        weak=weak, total=len(readings)))
+
+        # 6. Overall verdict.
+        if overall_rating == "Good":
+            summary.append("Overall, the AP demonstrated stable QoS performance.")
+        elif overall_rating == "Acceptable":
+            summary.append("Overall, the AP demonstrated acceptable QoS performance.")
+        else:
+            summary.append("Overall, the AP showed some instability or degraded QoS performance during the test.")
+
+        return summary
+
+    def add_test_summary_to_report(self, report, priority_order, overall_rating, vo_val, vi_val, be_val, bk_val, rssi_values=None):
+        """Appends the "Key Findings" card (see build_test_summary()) to the report as a plain
+        bulleted list. Safe to call unconditionally.
+        """
+        try:
+            summary = self.build_test_summary(priority_order, overall_rating, vo_val, vi_val, be_val, bk_val,
+                                              rssi_values=rssi_values)
+            if not summary:
+                return
+            items = "".join("<li style='font-size:14px; color:var(--ink); line-height:1.5;'>{}</li>".format(point)
+                            for point in summary)
+            report.set_custom_html(
+                "<div class='info-card'><div class='info-card-header'>Key Findings</div>"
+                "<ul style='margin:0; padding-left:20px; display:flex; flex-direction:column; "
+                "gap:10px;'>{}</ul></div>".format(items))
+            report.build_custom()
+        except Exception as e:
+            logger.warning("Key findings could not be added to the report: %s", e)
+
+    def build_real_summary(self, report, data_set, load):
+        """Real-client report (tdr content): Overall Test Verdict card, Key Findings, QoS throughput distribution chart and
+        Priority Validation table. Only called for a standalone real-client run (self.real_modern); other scenarios keep their existing content.
+        """
+        # Hide global table search bar for cleaner report
+        report.set_custom_html('<style>.table-search-bar { display: none !important; }</style>')
+        report.build_custom()
+
+        # Determine VO, VI, BE, BK values
+        # data_set is always [BK_list, BE_list, VI_list, VO_list] regardless of
+        # direction (see generate_graph_data_set/set_report_data).
+        bk_val = data_set[0][0]
+        be_val = data_set[1][0]
+        vi_val = data_set[2][0]
+        vo_val = data_set[3][0]
+
+        total_aggregate = vo_val + vi_val + be_val + bk_val
+
+        # Figure out priority order
+        priority_dict = {'VO': vo_val, 'VI': vi_val, 'BE': be_val, 'BK': bk_val}
+        sorted_priority = sorted(priority_dict.items(), key=lambda item: item[1], reverse=True)
+        priority_order = [item[0] for item in sorted_priority if item[1] > 0]
+        if len(priority_order) == 0:
+            priority_order = ['VO', 'VI', 'BE', 'BK']  # fallback if all 0
+
+        # Heuristic for overall rating
+        overall_rating = "Good"
+        if priority_order == ['VO', 'VI', 'BE', 'BK']:
+            overall_rating = "Good"
+        elif priority_order[:2] == ['VO', 'VI'] or priority_order[:2] == ['VI', 'VO']:
+            overall_rating = "Acceptable"
+        else:
+            overall_rating = "Poor"
+
+        # Color-code only the rating text in the Overall Test Verdict card.
+        _rating_colors = {
+            "Excellent": "#1a7a2e",   # Dark Green
+            "Good":      "#4caf50",   # Light Green
+            "Acceptable": "#f0c040",  # Yellow
+            "Poor":       "#e53935",  # Red
+        }
+        _rating_color = _rating_colors.get(overall_rating, "#555555")
+        overall_rating_html = (
+            "<span style='color:{color}; font-weight:800;'>{rating}</span>".format(
+                color=_rating_color, rating=overall_rating)
+        )
+
+        # --- Overall Test Verdict Info Card ---
+        # Achieved Load gets its own box per TOS class instead of one cramped
+        # "X Mbps (VO) / Y Mbps (VI) / ..." string, so each value is readable at a glance.
+        verdict_data = {
+            "Total Devices Tested": str(self.num_stations),
+            "Intended Load": f"{load} per TOS per client" if "Upload" not in load else f"{load} per TOS",
+            "Achieved Load (VO)": f"{vo_val} Mbps",
+            "Achieved Load (VI)": f"{vi_val} Mbps",
+            "Achieved Load (BE)": f"{be_val} Mbps",
+            "Achieved Load (BK)": f"{bk_val} Mbps",
+            "Total Aggregate Throughput": f"{total_aggregate:.2f} Mbps",
+            "Priority Order Observed": " > ".join(priority_order),
+            "Overall Rating": overall_rating_html
+        }
+        report.build_info_card(
+            title="Overall Test Verdict",
+            items=[{"label": label, "value": value} for label, value in verdict_data.items()]
+        )
+
+        # live RSSI snapshot of the clients, only used by the signal-quality bullet of Key Findings
+        channel_list, rssi_list = self.get_channel_and_rssi_list(self.input_devices_list)
+        self.add_test_summary_to_report(report, priority_order=priority_order, overall_rating=overall_rating,
+                                        vo_val=vo_val, vi_val=vi_val, be_val=be_val, bk_val=bk_val,
+                                        rssi_values=rssi_list)
+
+        # --- Test Results - QoS Throughput Distribution ---
+        report.set_obj_html(
+            _obj_title="Test Results",
+            _obj="<b>QoS Throughput Distribution</b><br>The graph below illustrates the throughput "
+                 "distribution across different QoS traffic classes. The X axis represents the traffic "
+                 "classes (VO, VI, BE, BK), while the Y-axis indicates the achieved throughput in Mbps."
+        )
+        report.build_objective()
+
+        # One category per traffic class (not one category holding 4 series) so the
+        # bars spread across the full chart width instead of clustering in the middle.
+        overall_throughput_data = [
+            [vo_val, vi_val, be_val, bk_val]
+        ]
+
+        graph = lf_graph_v2.lf_bar_graph(_data_set=overall_throughput_data,
+                                         _xaxis_name="Traffic Class",
+                                         _yaxis_name="Throughput Attained (Mbps)",
+                                         _xaxis_categories=["VO", "VI", "BE", "BK"],
+                                         _xaxis_label=["VO", "VI", "BE", "BK"],
+                                         _graph_image_name="qos_throughput_dist",
+                                         _label=["Throughput (Mbps)"],
+                                         _xaxis_step=1,
+                                         _graph_title="",
+                                         _title_size=16,
+                                         _color=['#1f6f58', '#2f80ed', '#f1b24a', '#1d9a8a'],
+                                         _color_edge='black',
+                                         _bar_width=0.15,
+                                         _figsize=(10, 6),
+                                         _legend_loc="best",
+                                         _legend_box=(1.0, 1.0),
+                                         _dpi=96,
+                                         _show_bar_value=True,
+                                         _enable_csv=True,
+                                         _color_name=['#1f6f58', '#2f80ed', '#f1b24a', '#1d9a8a'])
+        graph_png = graph.build_bar_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.set_csv_filename(graph.graph_image_name + ".csv")
+        report.move_csv_file()
+        report.build_graph()
+
+        # --- Priority Validation Table ---
+        report.set_table_title("Priority Validation Table")
+        report.build_table_title()
+
+        def get_full_name(abbr):
+            mapping = {'VO': 'Voice (VO)', 'VI': 'Video (VI)', 'BE': 'Best Effort (BE)', 'BK': 'Background (BK)'}
+            return mapping.get(abbr, abbr)
+
+        pass_tag, fail_tag = "Pass", "Fail"
+
+        priority_validation_data = {
+            "Priority Level": ["Highest", "High", "Normal", "Low"],
+            "Expected Order": ["Voice (VO)", "Video (VI)", "Best Effort (BE)", "Background (BK)"],
+            "Observed Order": [f"{get_full_name(p)} ({priority_dict.get(p, 0.0)} Mbps)" for p in (priority_order + ['', '', '', ''])[:4]],
+            "Status": [
+                pass_tag if len(priority_order) > 0 and priority_order[0] == 'VO' else fail_tag,
+                pass_tag if len(priority_order) > 1 and priority_order[1] == 'VI' else fail_tag,
+                pass_tag if len(priority_order) > 2 and priority_order[2] == 'BE' else fail_tag,
+                pass_tag if len(priority_order) > 3 and priority_order[3] == 'BK' else fail_tag
+            ]
+        }
+        priority_df = pd.DataFrame(priority_validation_data)
+        report.set_table_dataframe(priority_df)
+        report.rating_build_table("Status", {pass_tag: "#1a7a2e", fail_tag: "#e53935"})
+
+    # Real-client report look per traffic class (tdr): name, bar colour, colour of the upload bar in Bi-direction
+    REAL_TOS_LOOK = {'VO': ('Voice (VO)', '#1f6f58', 'lightgrey'), 'VI': ('Video (VI)', '#2f80ed', 'lightskyblue'),
+                     'BE': ('Best Effort (BE)', '#f1b24a', 'mistyrose'), 'BK': ('Background (BK)', '#1d9a8a', 'wheat')}
+
+    def real_tos_look(self, tos, labels):
+        """Returns (title, description, colors, legend labels) of the per-client chart of one traffic class in the real-client report."""
+        name, color, upload_color = self.REAL_TOS_LOOK[tos]
+        title = "Per Client Average Throughput \u2013 {}".format(name)
+        text = ("The graph below illustrates the average throughput achieved by each client for {} traffic. "
+                "The X-axis represents individual client identifiers, while the Y-axis indicates throughput in Mbps.").format(name)
+        if self.direction == "Bi-direction":
+            return title, text, [color, upload_color], labels
+        return title, text, [color], [self.direction]
+
+    # Builds a per-TOS table dict, including only the UL or DL columns that were actually tested
+    # (Bi-direction includes both; Upload/Download only includes its own side).
+    def build_direction_dataframe(self, clients, macids, ssids, tos_list, uploads, downloads,
+                                  avg_uploads, avg_downloads, drop_b, drop_a):
+        dataframe = {
+            # e.g. "1.100 android GalaxyTabA9" -> "GalaxyTabA9", matching the FTP report style
+            "Client Name": [str(c).split(" ")[-1] for c in clients],
+            "MAC Address": macids,
+            "SSID": ssids,
+            "Traffic": tos_list,
+        }
+        if self.direction in ("Upload", "Bi-direction"):
+            dataframe["Offered UL Rate (Mbps)"] = uploads
+        if self.direction in ("Download", "Bi-direction"):
+            dataframe["Offered DL Rate (Mbps)"] = downloads
+        if self.direction in ("Upload", "Bi-direction"):
+            dataframe["Average UL Throughput Attained (Mbps)"] = avg_uploads
+        if self.direction in ("Download", "Bi-direction"):
+            dataframe["Average DL Throughput Attained (Mbps)"] = avg_downloads
+        if self.direction in ("Upload", "Bi-direction"):
+            dataframe["UL Drop (%)"] = drop_b
+        if self.direction in ("Download", "Bi-direction"):
+            dataframe["DL Drop (%)"] = drop_a
+        return dataframe
+
+    def build_qos_table(self, report):
+        """Builds the table set on the report; in the real-client report the PASS/FAIL cells are shown as coloured badges (report_v2 rating table)."""
+        if self.real_modern and ' Status ' in report.dataframe.columns:
+            report.rating_build_table(' Status ', {'PASS': '#1a7a2e', 'FAIL': '#e53935'})
+        else:
+            report.build_table()
+
     def generate_report(self, data, input_setup_info, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b, report_path='', result_dir_name='Qos_Test_report',
                         selected_real_clients_names=None, config_devices="", iot_summary=None):
         # getting ssid list for devices, on which the test ran
@@ -1542,13 +1908,19 @@ class ThroughputQOS(Realm):
         if selected_real_clients_names is not None:
             self.num_stations = selected_real_clients_names
         data_set, load, res = self.generate_graph_data_set(data)
-        report = lf_report(_output_pdf="interop_qos.pdf", _output_html="interop_qos.html", _path=report_path,
-                           _results_dir_name=result_dir_name)
-        report_path = report.get_path()
-        report_path_date_time = report.get_path_date_time()
+        # standalone real-client run (set by main()) -> tdr modern content; robo / bandsteering / mixed callers keep the existing content (built with report_v2)
+        real = self.real_modern
+        report = lf_report_modern(_output_pdf="interop_qos.pdf", _output_html="interop_qos.html", _path=report_path,
+                                  _results_dir_name=result_dir_name)
+        lf_bar_graph = graph_classes(report)[0]  # interactive report_v2 chart for this report
+        report_path = report.path
+        report_path_date_time = report.path_date_time
         print("path: {}".format(report_path))
         print("path_date_time: {}".format(report_path_date_time))
         report.set_title("Interop QOS")
+        if real:  # tdr modern title
+            report.set_title("LANforge Interop<br>QoS Test{}<br><span style='font-size:0.45em; font-weight:400;'>(Real Client Performance Validation)</span>"
+                             .format(" Including IoT Devices" if iot_summary else ""))
         report.build_banner()
         # objective title and description
         if iot_summary:
@@ -1574,7 +1946,17 @@ class ThroughputQOS(Realm):
                                 " this test, we aim to assess the capacity of network to handle high volumes of traffic while"
                                 " maintaining acceptable performance levels,ensuring that the network meets the required QoS"
                                 " standards and can adequately support the expected user demands.")
+        if real:  # tdr "Test Overview" wording (the IoT text stays as it is, only its heading changes)
+            report.set_obj_html(_obj_title="Test Overview",
+                                _obj=report.objective if iot_summary else
+                                "The Candela QoS test is designed to measure an Access Point's ability to prioritize different types of "
+                                "traffic across real clients such as Android, Linux, Windows, MacBook and iOS devices. The test "
+                                "generates simultaneous traffic for multiple QoS classes including Voice (VO), Video (VI), Best Effort "
+                                "(BE), and Background (BK), and evaluates how effectively the AP enforces traffic prioritization "
+                                "under load.")
         report.build_objective()
+        if real:  # Overall Test Verdict, Key Findings, QoS throughput chart and Priority Validation table (tdr)
+            self.build_real_summary(report, data_set, load)
         # Initialize counts and lists for device types
         android_devices, windows_devices, linux_devices, ios_devices, ios_mob_devices = 0, 0, 0, 0, 0
         all_devices_names = []
@@ -1620,10 +2002,7 @@ class ThroughputQOS(Realm):
             test_setup_info = {
                 "Device List": ", ".join(all_devices_names),
                 "Number of Stations": "Total" + f"({self.num_stations})" + total_devices,
-                "AP Model": self.ap_name,
-                "SSID": self.ssid,
                 "Traffic Duration in minutes": round(int(self.test_duration) / 60, 2),
-                "Security": self.security,
                 "Protocol": (self.traffic_type.strip("lf_")).upper(),
                 "Traffic Direction": self.direction,
                 "TOS": self.tos,
@@ -1635,15 +2014,26 @@ class ThroughputQOS(Realm):
             profile_names = ', '.join(config_devices.values())
             configmap = "Groups:" + group_names + " -> Profiles:" + profile_names
             test_setup_info = {
-                "AP Model": self.ap_name,
                 'Configuration': configmap,
                 "Traffic Duration in minutes": round(int(self.test_duration) / 60, 2),
-                "Security": self.security,
                 "Protocol": (self.traffic_type.strip("lf_")).upper(),
                 "Traffic Direction": self.direction,
                 "TOS": self.tos,
                 "Per TOS Load in Mbps": load
             }
+        ap_mentioned = any(arg.startswith("--ap_name") or arg.startswith("-ap_name") for arg in sys.argv) or (
+            self.ap_name and self.ap_name not in ("Test-AP", "None", "none", ""))
+        security_mentioned = any(arg.startswith("--security") for arg in sys.argv) or (
+            self.security and self.security not in ("open", "None", "none", ""))
+        ssid_mentioned = any(arg.startswith("--ssid") for arg in sys.argv) or bool(
+            self.ssid and self.ssid not in ("None", "none", ""))
+
+        if ap_mentioned and self.ap_name and self.ap_name not in ("None", "none", ""):
+            test_setup_info["AP Model"] = self.ap_name
+        if ssid_mentioned and self.ssid and self.ssid not in ("None", "none", ""):
+            test_setup_info["SSID"] = self.ssid
+        if security_mentioned and self.security and self.security not in ("None", "none", ""):
+            test_setup_info["Security"] = self.security
         print(res["throughput_table_df"])
         if self.do_bandsteering:
             del test_setup_info["Traffic Duration in minutes"]
@@ -1653,52 +2043,58 @@ class ThroughputQOS(Realm):
 
         if iot_summary:
             test_setup_info = with_iot_params_in_table(test_setup_info, iot_summary)
-        report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
-        report.set_table_title(
-            f"Overall observed average {self.direction.lower()} throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO)")
-        report.build_table_title()
-        df_throughput = pd.DataFrame(res["throughput_table_df"])
-        report.set_table_dataframe(df_throughput)
-        report.build_table()
-        for _key in res["graph_df"]:
-            report.set_obj_html(
-                _obj_title=f"Overall observed average {self.direction.lower()} throughput for {len(self.input_devices_list)} clients with different TOS.",
-                _obj=f"The below graph represents overall observed average {self.direction.lower()} throughput (averaged over the test duration) for all "
-                "connected stations running BK, BE, VO, VI traffic with different "
-                f"intended loads{load} per tos")
-        report.build_objective()
-        graph = lf_bar_graph(_data_set=data_set,
-                             _xaxis_name="Load per Type of Service",
-                             _yaxis_name="Throughput (Mbps)",
-                             _xaxis_categories=["BK,BE,VI,VO"],
-                             _xaxis_label=['1 Mbps', '2 Mbps', '3 Mbps', '4 Mbps', '5 Mbps'],
-                             _graph_image_name=f"tos_download_{_key}Hz",
-                             _label=["BK", "BE", "VI", "VO"],
-                             _xaxis_step=1,
-                             _graph_title=f"Overall observed average {self.direction.lower()} throughput – BK,BE,VO,VI traffic streams",
-                             _title_size=16,
-                             _color=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
-                             _color_edge='black',
-                             _bar_width=0.15,
-                             _figsize=(18, 6),
-                             _legend_loc="best",
-                             _legend_box=(1.0, 1.0),
-                             _dpi=96,
-                             _show_bar_value=True,
-                             _enable_csv=True,
-                             _color_name=['orange', 'lightcoral', 'steelblue', 'lightgrey'])
-        graph_png = graph.build_bar_graph()
-        print("graph name {}".format(graph_png))
-        report.set_graph_image(graph_png)
-        # need to move the graph image to the results directory
-        report.move_graph_image()
-        report.set_csv_filename(graph_png)
-        report.move_csv_file()
-        report.build_graph()
+        if real:  # tdr: devices are listed in the Device Summary card and this table moves to the end of the report
+            test_setup_info.pop("Device List", None)
+            test_setup_info.pop("Number of Stations", None)
+        else:  # existing content, the overall table / graph are replaced by the verdict card / QoS chart for real
+            if not self.robot_test:  # robot (band steering) runs show Test Configuration at the end of the report
+                add_setup_table(report, test_setup_info, "Test Configuration")
+            report.set_table_title(
+                f"Overall observed average {self.direction.lower()} throughput for all TOS i.e BK | BE | Video (VI) | Voice (VO)")
+            report.build_table_title()
+            df_throughput = pd.DataFrame(res["throughput_table_df"])
+            report.set_table_dataframe(df_throughput)
+            report.build_table()
+            for _key in res["graph_df"]:
+                report.set_obj_html(
+                    _obj_title=f"Overall observed average {self.direction.lower()} throughput for {len(self.input_devices_list)} clients with different TOS.",
+                    _obj=f"The below graph represents overall observed average {self.direction.lower()} throughput (averaged over the test duration) for all "
+                    "connected stations running BK, BE, VO, VI traffic with different "
+                    f"intended loads{load} per tos")
+            report.build_objective()
+            graph = lf_bar_graph(_data_set=data_set,
+                                 _xaxis_name="Load per Type of Service",
+                                 _yaxis_name="Throughput (Mbps)",
+                                 _xaxis_categories=["BK,BE,VI,VO"],
+                                 _xaxis_label=['1 Mbps', '2 Mbps', '3 Mbps', '4 Mbps', '5 Mbps'],
+                                 _graph_image_name=f"tos_download_{_key}Hz",
+                                 _label=["BK", "BE", "VI", "VO"],
+                                 _xaxis_step=1,
+                                 _graph_title=f"Overall observed average {self.direction.lower()} throughput – BK,BE,VO,VI traffic streams",
+                                 _title_size=16,
+                                 _color=['orange', 'lightcoral', 'steelblue', 'lightgrey'],
+                                 _color_edge='black',
+                                 _bar_width=0.15,
+                                 _figsize=(18, 6),
+                                 _legend_loc="best",
+                                 _legend_box=(1.0, 1.0),
+                                 _dpi=96,
+                                 _show_bar_value=True,
+                                 _enable_csv=True,
+                                 _color_name=['orange', 'lightcoral', 'steelblue', 'lightgrey'])
+            graph_png = graph.build_bar_graph()
+            print("graph name {}".format(graph.graph_image_name))
+            report.set_graph_image(graph_png)
+            # need to move the graph image to the results directory
+            report.move_graph_image()
+            report.set_csv_filename(graph.graph_image_name + ".csv")
+            report.move_csv_file()
+            report.build_graph()
         if self.do_bandsteering:
             self.get_bandsteering_stats(report=report, data=self.band_steering_df)
         self.generate_individual_graph(res, report, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b)
-        report.test_setup_table(test_setup_data=input_setup_info, value="Information")
+        if not real and not self.robot_test:  # robot runs add it at the end, after Test Configuration
+            add_setup_table(report, input_setup_info, "Information")
         # To add charging timestamps of robot in report when bandsteering is enabled
         if self.do_bandsteering:
             if len(self.robot.charging_timestamps) != 0:
@@ -1723,6 +2119,12 @@ class ThroughputQOS(Realm):
 
         if iot_summary:
             self.build_iot_report_section(report, iot_summary)
+        if self.robot_test:  # robot runs: Test Configuration and Information at the end of the report
+            add_setup_table(report, test_setup_info, "Test Configuration")
+            add_setup_table(report, input_setup_info, "Information")
+        if real:  # tdr: Test Configuration and Device Summary cards at the end
+            report.build_info_card(title="Test Configuration", items=[{"label": label, "value": str(value)} for label, value in test_setup_info.items()])
+            report.build_device_summary_card([{"name": name.split("(")[0], "platform": platform} for name, platform in zip(all_devices_names, device_type)])
         # recorded device issues in csv
         if self.device_issue_log:
             issues_df = pd.DataFrame(self.device_issue_log)
@@ -1821,6 +2223,9 @@ class ThroughputQOS(Realm):
                     bk_dataframe[" Observed average upload drop (%)"] = [0.0] * len(individual_a_drop)
                     bk_dataframe[" Observed average download drop (%)"] = individual_a_drop
 
+            if self.real_modern:  # tdr table style for the real-client report (short client names, only the tested direction's columns)
+                bk_dataframe = self.build_direction_dataframe(clients, macids, ssids, tos_a, uploads, downloads, individual_uploads,
+                                                              individual_downloads, individual_b_drop, individual_a_drop)
             if self.expected_passfail_val or self.csv_name:
                 bk_dataframe[" Expected " + self.direction + " rate(Mbps)"] = input_list
                 bk_dataframe[" Status "] = status
@@ -1887,6 +2292,14 @@ class ThroughputQOS(Realm):
         individual_drop_a_list, individual_drop_b_list = [], []
         list1 = [[], [], [], []]
         data_set = {}
+        # report_v2 report -> interactive charts; a legacy report handed in by lf_mixed_traffic / lf_multi_traffic / webgui keeps its PNG charts
+        lf_bar_graph_horizontal = graph_classes(report)[1]
+        # real-client report (tdr): per-class look, short client names, direction-only tables; never for robo / bandsteering / mixed callers
+        real = self.real_modern and hasattr(report, 'build_info_card')
+        # "1.100 android Pixel" -> "Pixel" for the chart labels (the real-client report also uses them as chart data / csv)
+        short_names = [str(c).split(" ")[-1] for c in self.real_client_list1]
+        cat_names = short_names if real else self.real_client_list1
+        marks = {}  # where each traffic class block starts in report.html (the real-client report lists them in tdr order)
         try:
             if (self.dowebgui and self.get_live_view) or multicast_exists:
                 tos_images, rssi_images = self.get_live_view_images()
@@ -2004,6 +2417,7 @@ class ThroughputQOS(Realm):
                 if not self.expected_passfail_val and self.csv_name:
                     test_input_list = self.get_csv_expected_val()
                 if "BK" in self.tos:
+                    marks['BK'] = len(report.html)
                     if self.direction == "Bi-direction":
                         individual_set = list1[2]
                         individual_download_list = avg_res['Download']['BK']
@@ -2026,12 +2440,15 @@ class ThroughputQOS(Realm):
                         _obj_title=f"Individual observed average {self.direction.lower()} throughput with intended load {load}/station for traffic BK.",
                         _obj=f"The below graph represents individual observed average throughput (averaged over the test duration) for {len(self.input_devices_list)} clients running BK "
                         f"traffic. X-axis shows “Throughput in Mbps” and Y-axis shows “Client names”.")
+                    if real:  # tdr look of this traffic class
+                        title, text, colors, labels = self.real_tos_look('BK', labels)
+                        report.set_obj_html(_obj_title=title, _obj=text)
                     report.build_objective()
                     # print(upload_list, download_list, individual_download_list, individual_upload_list)
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _xaxis_name="Throughput in Mbps",
                                                     _yaxis_name="Client names",
-                                                    _yaxis_categories=[i for i in self.real_client_list1],
-                                                    _yaxis_label=[i for i in self.real_client_list1],
+                                                    _yaxis_categories=cat_names,
+                                                    _yaxis_label=short_names,
                                                     _label=labels,
                                                     _yaxis_step=1,
                                                     _yticks_font=8,
@@ -2046,12 +2463,14 @@ class ThroughputQOS(Realm):
                                                     _enable_csv=True,
                                                     _graph_image_name="bk_{}{}".format(self.direction, graph_no), _color_edge=['black'],
                                                     _color=colors)
+                    if real:  # tdr axis names / chart title
+                        graph.xaxis_name, graph.yaxis_name, graph.title = "Average Throughput Attained", "Wireless Clients", title
                     graph_png = graph.build_bar_graph_horizontal()
-                    print("graph name {}".format(graph_png))
+                    print("graph name {}".format(graph.graph_image_name))
                     report.set_graph_image(graph_png)
                     # need to move the graph image to the results
                     report.move_graph_image()
-                    report.set_csv_filename(graph_png)
+                    report.set_csv_filename(graph.graph_image_name + ".csv")
                     report.move_csv_file()
                     report.build_graph()
                     if (self.dowebgui and self.get_live_view) or multicast_exists:
@@ -2111,7 +2530,7 @@ class ThroughputQOS(Realm):
                                 print("dataframe", dataframe)
                                 dataframe1 = pd.DataFrame(dataframe)
                                 report.set_table_dataframe(dataframe1)
-                                report.build_table()
+                                self.build_qos_table(report)
                     else:
                         bk_dataframe = {
                             " Client Name ": self.real_client_list,
@@ -2125,14 +2544,19 @@ class ThroughputQOS(Realm):
                         }
                         bk_dataframe[" Observed average upload drop (%)"] = individual_drop_b_list
                         bk_dataframe[" Observed average download drop (%)"] = individual_drop_a_list
+                        if real:  # tdr table style (short client names, only the tested direction's columns)
+                            bk_dataframe = self.build_direction_dataframe(
+                                self.real_client_list, self.mac_id_list, self.ssid_list, bk_tos_list, upload_list, download_list,
+                                individual_avgupload_list, individual_avgdownload_list, individual_drop_b_list, individual_drop_a_list)
                         if self.expected_passfail_val or self.csv_name:
                             bk_dataframe[" Expected " + self.direction + " rate(Mbps)"] = test_input_list
                             bk_dataframe[" Status "] = pass_fail_list
                         dataframe1 = pd.DataFrame(bk_dataframe)
                         report.set_table_dataframe(dataframe1)
-                        report.build_table()
+                        self.build_qos_table(report)
                 logger.info("Graph and table for BK tos are built")
                 if "BE" in self.tos:
+                    marks['BE'] = len(report.html)
                     if self.direction == "Bi-direction":
                         individual_set = list1[3]
                         individual_download_list = avg_res['Download']['BE']
@@ -2157,11 +2581,14 @@ class ThroughputQOS(Realm):
                         f"traffic. X-axis shows “Throughput in Mbps” and Y-axis shows "
                         f"“Client names”.")
                     # print("individual set",individual_set)
+                    if real:  # tdr look of this traffic class
+                        title, text, colors, labels = self.real_tos_look('BE', labels)
+                        report.set_obj_html(_obj_title=title, _obj=text)
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
                                                     _xaxis_name="Throughput in Mbps",
-                                                    _yaxis_categories=[i for i in self.real_client_list1],
-                                                    _yaxis_label=[i for i in self.real_client_list1],
+                                                    _yaxis_categories=cat_names,
+                                                    _yaxis_label=short_names,
                                                     _label=labels,
                                                     _yaxis_step=1,
                                                     _yticks_font=8,
@@ -2176,12 +2603,14 @@ class ThroughputQOS(Realm):
                                                     _enable_csv=True,
                                                     _graph_image_name="be_{}{}".format(self.direction, graph_no), _color_edge=['black'],
                                                     _color=colors)
+                    if real:  # tdr axis names / chart title
+                        graph.xaxis_name, graph.yaxis_name, graph.title = "Average Throughput Attained", "Wireless Clients", title
                     graph_png = graph.build_bar_graph_horizontal()
-                    print("graph name {}".format(graph_png))
+                    print("graph name {}".format(graph.graph_image_name))
                     report.set_graph_image(graph_png)
                     # need to move the graph image to the results
                     report.move_graph_image()
-                    report.set_csv_filename(graph_png)
+                    report.set_csv_filename(graph.graph_image_name + ".csv")
                     report.move_csv_file()
                     report.build_graph()
                     if (self.dowebgui and self.get_live_view) or multicast_exists:
@@ -2239,7 +2668,7 @@ class ThroughputQOS(Realm):
                                 report.build_objective()
                                 dataframe1 = pd.DataFrame(dataframe)
                                 report.set_table_dataframe(dataframe1)
-                                report.build_table()
+                                self.build_qos_table(report)
                     else:
                         be_dataframe = {
                             " Client Name ": self.real_client_list,
@@ -2253,14 +2682,19 @@ class ThroughputQOS(Realm):
                         }
                         be_dataframe[" Observed average upload drop (%)"] = individual_drop_b_list
                         be_dataframe[" Observed average download drop (%)"] = individual_drop_a_list
+                        if real:  # tdr table style (short client names, only the tested direction's columns)
+                            be_dataframe = self.build_direction_dataframe(
+                                self.real_client_list, self.mac_id_list, self.ssid_list, be_tos_list, upload_list, download_list,
+                                individual_avgupload_list, individual_avgdownload_list, individual_drop_b_list, individual_drop_a_list)
                         if self.expected_passfail_val or self.csv_name:
                             be_dataframe[" Expected " + self.direction + " rate(Mbps)"] = test_input_list
                             be_dataframe[" Status "] = pass_fail_list
                         dataframe2 = pd.DataFrame(be_dataframe)
                         report.set_table_dataframe(dataframe2)
-                        report.build_table()
+                        self.build_qos_table(report)
                 logger.info("Graph and table for BE tos are built")
                 if "VI" in self.tos:
+                    marks['VI'] = len(report.html)
                     if self.direction == "Bi-direction":
                         individual_set = list1[0]
                         individual_download_list = avg_res['Download']['VI']
@@ -2284,11 +2718,14 @@ class ThroughputQOS(Realm):
                         _obj=f"The below graph represents individual observed average throughput (averaged over the test duration) for {len(self.input_devices_list)} clients running VI "
                         f"traffic. X-axis shows “Throughput in Mbps” and Y-axis shows "
                         f"“Client names”.")
+                    if real:  # tdr look of this traffic class
+                        title, text, colors, labels = self.real_tos_look('VI', labels)
+                        report.set_obj_html(_obj_title=title, _obj=text)
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
                                                     _xaxis_name="Throughput in Mbps",
-                                                    _yaxis_categories=[i for i in self.real_client_list1],
-                                                    _yaxis_label=[i for i in self.real_client_list1],
+                                                    _yaxis_categories=cat_names,
+                                                    _yaxis_label=short_names,
                                                     _label=labels,
                                                     _yaxis_step=1,
                                                     _yticks_font=8,
@@ -2304,12 +2741,14 @@ class ThroughputQOS(Realm):
                                                     _graph_image_name="video_{}{}".format(self.direction, graph_no),
                                                     _color_edge=['black'],
                                                     _color=colors)
+                    if real:  # tdr axis names / chart title
+                        graph.xaxis_name, graph.yaxis_name, graph.title = "Average Throughput Attained", "Wireless Clients", title
                     graph_png = graph.build_bar_graph_horizontal()
-                    print("graph name {}".format(graph_png))
+                    print("graph name {}".format(graph.graph_image_name))
                     report.set_graph_image(graph_png)
                     # need to move the graph image to the results
                     report.move_graph_image()
-                    report.set_csv_filename(graph_png)
+                    report.set_csv_filename(graph.graph_image_name + ".csv")
                     report.move_csv_file()
                     report.build_graph()
                     if (self.dowebgui and self.get_live_view) or multicast_exists:
@@ -2367,7 +2806,7 @@ class ThroughputQOS(Realm):
                                 report.build_objective()
                                 dataframe1 = pd.DataFrame(dataframe)
                                 report.set_table_dataframe(dataframe1)
-                                report.build_table()
+                                self.build_qos_table(report)
                     else:
                         vi_dataframe = {
                             " Client Name ": self.real_client_list,
@@ -2381,14 +2820,19 @@ class ThroughputQOS(Realm):
                         }
                         vi_dataframe[" Observed average upload drop (%)"] = individual_drop_b_list
                         vi_dataframe[" Observed average download drop (%)"] = individual_drop_a_list
+                        if real:  # tdr table style (short client names, only the tested direction's columns)
+                            vi_dataframe = self.build_direction_dataframe(
+                                self.real_client_list, self.mac_id_list, self.ssid_list, vi_tos_list, upload_list, download_list,
+                                individual_avgupload_list, individual_avgdownload_list, individual_drop_b_list, individual_drop_a_list)
                         if self.expected_passfail_val or self.csv_name:
                             vi_dataframe[" Expected " + self.direction + " rate(Mbps)"] = test_input_list
                             vi_dataframe[" Status "] = pass_fail_list
                         dataframe3 = pd.DataFrame(vi_dataframe)
                         report.set_table_dataframe(dataframe3)
-                        report.build_table()
+                        self.build_qos_table(report)
                 logger.info("Graph and table for VI tos are built")
                 if "VO" in self.tos:
+                    marks['VO'] = len(report.html)
                     if self.direction == "Bi-direction":
                         individual_set = list1[1]
                         individual_download_list = avg_res['Download']['VO']
@@ -2412,11 +2856,14 @@ class ThroughputQOS(Realm):
                         _obj=f"The below graph represents individual observed average throughput (averaged over the test duration) for {len(self.input_devices_list)} clients running VO "
                         f"traffic. X-axis shows “Throughput in Mbps” and Y-axis shows "
                         f"“Client names”.")
+                    if real:  # tdr look of this traffic class
+                        title, text, colors, labels = self.real_tos_look('VO', labels)
+                        report.set_obj_html(_obj_title=title, _obj=text)
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
                                                     _xaxis_name="Throughput in Mbps",
-                                                    _yaxis_categories=[i for i in self.real_client_list1],
-                                                    _yaxis_label=[i for i in self.real_client_list1],
+                                                    _yaxis_categories=cat_names,
+                                                    _yaxis_label=short_names,
                                                     _label=labels,
                                                     _yaxis_step=1,
                                                     _yticks_font=8,
@@ -2432,12 +2879,14 @@ class ThroughputQOS(Realm):
                                                     _graph_image_name="voice_{}{}".format(self.direction, graph_no),
                                                     _color_edge=['black'],
                                                     _color=colors)
+                    if real:  # tdr axis names / chart title
+                        graph.xaxis_name, graph.yaxis_name, graph.title = "Average Throughput Attained", "Wireless Clients", title
                     graph_png = graph.build_bar_graph_horizontal()
-                    print("graph name {}".format(graph_png))
+                    print("graph name {}".format(graph.graph_image_name))
                     report.set_graph_image(graph_png)
                     # need to move the graph image to the results
                     report.move_graph_image()
-                    report.set_csv_filename(graph_png)
+                    report.set_csv_filename(graph.graph_image_name + ".csv")
                     report.move_csv_file()
                     report.build_graph()
                     if (self.dowebgui and self.get_live_view) or multicast_exists:
@@ -2496,7 +2945,7 @@ class ThroughputQOS(Realm):
                                 report.build_objective()
                                 dataframe1 = pd.DataFrame(dataframe)
                                 report.set_table_dataframe(dataframe1)
-                                report.build_table()
+                                self.build_qos_table(report)
                     else:
                         vo_dataframe = {
                             " Client Name ": self.real_client_list,
@@ -2510,13 +2959,22 @@ class ThroughputQOS(Realm):
                         }
                         vo_dataframe[" Observed average upload drop (%)"] = individual_drop_b_list
                         vo_dataframe[" Observed average download drop (%)"] = individual_drop_a_list
+                        if real:  # tdr table style (short client names, only the tested direction's columns)
+                            vo_dataframe = self.build_direction_dataframe(
+                                self.real_client_list, self.mac_id_list, self.ssid_list, vo_tos_list, upload_list, download_list,
+                                individual_avgupload_list, individual_avgdownload_list, individual_drop_b_list, individual_drop_a_list)
                         if self.expected_passfail_val or self.csv_name:
                             vo_dataframe[" Expected " + self.direction + " rate(Mbps)"] = test_input_list
                             vo_dataframe[" Status "] = pass_fail_list
                         dataframe4 = pd.DataFrame(vo_dataframe)
                         report.set_table_dataframe(dataframe4)
-                        report.build_table()
+                        self.build_qos_table(report)
                 logger.info("Graph and table for VO tos are built")
+            if real and marks:  # re-order the class blocks that were just built, nothing else in the report moves
+                built = [tos for tos in ('BK', 'BE', 'VI', 'VO') if tos in marks]
+                starts = [marks[tos] for tos in built] + [len(report.html)]
+                parts = {tos: report.html[starts[i]:starts[i + 1]] for i, tos in enumerate(built)}
+                report.html = report.html[:starts[0]] + ''.join(parts[tos] for tos in ('VO', 'VI', 'BE', 'BK') if tos in parts) + report.html[starts[-1]:]
             if self.dowebgui and self.get_live_view and not multicast_exists:
                 if not self.robot_test:
                     for _floor, rssi_image_path in rssi_images.items():
@@ -2610,6 +3068,7 @@ class ThroughputQOS(Realm):
         Processes QoS data and generates a report (table and bar graph) for a
         specific robot coordinate and rotation angle.
         """
+        lf_bar_graph = graph_classes(report)[0]  # interactive chart for a report_v2 report, PNG chart for the legacy report lf_multi_traffic passes in
         res = self.set_report_data(data)
         data_set, load, res = self.generate_graph_data_set(data)
         report.set_table_title(
@@ -2655,14 +3114,44 @@ class ThroughputQOS(Realm):
                              _enable_csv=True,
                              _color_name=['orange', 'lightcoral', 'steelblue', 'lightgrey'])
         graph_png = graph.build_bar_graph()
-        print("graph name {}".format(graph_png))
+        print("graph name {}".format(graph.graph_image_name))
         report.set_graph_image(graph_png)
         # need to move the graph image to the results directory
         report.move_graph_image()
-        report.set_csv_filename(graph_png)
+        report.set_csv_filename(graph.graph_image_name + ".csv")
         report.move_csv_file()
         report.build_graph()
         self.generate_individual_graph(res, report, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b, graph_no=graph_no)
+
+    def add_live_view_image_to_report(self, report, image_path, title):
+        """Adds one live view (heatmap) image to the report on a new page.
+
+        The image is embedded in the HTML as a base64 data URI, so the report is a single self-contained file.
+        A "file://" link only resolves for the PDF (rendered from the local file); the HTML report is served
+        over http by the WebGUI, where the browser blocks "file://" and the path would be the viewer's disk.
+        If the image is missing, a short note takes its place and the rest of the report is still built.
+
+        Args:
+            report (lf_report): report to add the image to.
+            image_path (str): path of the PNG, or None when no image was collected.
+            title (str): what the image shows, used in the "not available" note, e.g. "VO heatmap (Floor 1)".
+
+        Example:
+            self.add_live_view_image_to_report(report, "live_view_images/test_rssi_1.png", "RSSI heatmap (Floor 1)")
+        """
+        try:
+            with open(image_path, "rb") as image_file:
+                image_base64 = base64.b64encode(image_file.read()).decode("ascii")
+        except (OSError, TypeError):
+            logger.warning("Live view image not found for %s: %s", title, image_path)
+            report.set_custom_html("<p><i>{} is not available - the capture may have failed or the browser was "
+                                   "closed before it was uploaded.</i></p>".format(title))
+            report.build_custom()
+            return
+        # the chart-card style sizes the image for the screen and for the PDF page
+        report.set_custom_html("<div class='chart-card' style='page-break-before: always;'>"
+                               "<img src='data:image/png;base64,{}' alt='{}' /></div>".format(image_base64, title))
+        report.build_custom()
 
     def generate_report_for_robo(self, coordinate_list=None, angle_list=None, passed_coordinates=None):
         """
@@ -2684,10 +3173,10 @@ class ThroughputQOS(Realm):
         # if selected_real_clients_names is not None:
         #     self.num_stations = selected_real_clients_names
         # data_set, load, res = self.generate_graph_data_set(data)
-        report = lf_report(_output_pdf="interop_qos.pdf", _output_html="interop_qos.html", _path=self.result_dir,
-                           _results_dir_name="Qos_Test_report")
-        report_path = report.get_path()
-        report_path_date_time = report.get_path_date_time()
+        report = lf_report_modern(_output_pdf="interop_qos.pdf", _output_html="interop_qos.html", _path=self.result_dir,
+                                  _results_dir_name="Qos_Test_report")
+        report_path = report.path
+        report_path_date_time = report.path_date_time
         print("path: {}".format(report_path))
         print("path_date_time: {}".format(report_path_date_time))
         report.set_title("Interop QOS")
@@ -2745,10 +3234,7 @@ class ThroughputQOS(Realm):
             test_setup_info = {
                 "Device List": ", ".join(all_devices_names),
                 "Number of Stations": "Total" + f"({self.num_stations})" + total_devices,
-                "AP Model": self.ap_name,
-                "SSID": self.ssid,
                 "Traffic Duration in minutes": round(int(self.test_duration) / 60, 2),
-                "Security": self.security,
                 "Protocol": (self.traffic_type.strip("lf_")).upper(),
                 "Traffic Direction": self.direction,
                 "TOS": self.tos,
@@ -2763,37 +3249,40 @@ class ThroughputQOS(Realm):
             profile_names = ', '.join(self.qos_data["configuration"].values())
             configmap = "Groups:" + group_names + " -> Profiles:" + profile_names
             test_setup_info = {
-                "AP Model": self.ap_name,
                 'Configuration': configmap,
                 "Traffic Duration in minutes": round(int(self.test_duration) / 60, 2),
-                "Security": self.security,
                 "Protocol": (self.traffic_type.strip("lf_")).upper(),
                 "Traffic Direction": self.direction,
                 "TOS": self.tos,
                 "Per TOS Load in Mbps": load
             }
-        report.test_setup_table(test_setup_data=test_setup_info, value="Test Configuration")
+        ap_mentioned = any(arg.startswith("--ap_name") or arg.startswith("-ap_name") for arg in sys.argv) or (
+            self.ap_name and self.ap_name not in ("Test-AP", "None", "none", ""))
+        security_mentioned = any(arg.startswith("--security") for arg in sys.argv) or (
+            self.security and self.security not in ("open", "None", "none", ""))
+        ssid_mentioned = any(arg.startswith("--ssid") for arg in sys.argv) or bool(
+            self.ssid and self.ssid not in ("None", "none", ""))
+
+        if ap_mentioned and self.ap_name and self.ap_name not in ("None", "none", ""):
+            test_setup_info["AP Model"] = self.ap_name
+        if ssid_mentioned and self.ssid and self.ssid not in ("None", "none", ""):
+            test_setup_info["SSID"] = self.ssid
+        if security_mentioned and self.security and self.security not in ("None", "none", ""):
+            test_setup_info["Security"] = self.security
+        # The Test Configuration card is added at the end of the report (after the coordinate results)
         if self.dowebgui:
-            tos_for_report = self.tos
             tos_images, rssi_images = self.get_live_view_images()
-            for tos_val in tos_for_report:
-                # A missing image is expected after the collection timeout.  Do
-                # not prevent the remainder of the report from being created.
+            for tos_val in self.tos:
+                # A missing image is expected after the collection timeout. Do not prevent the
+                # remainder of the report from being created, a note is shown in its place.
                 image_paths = tos_images.get(tos_val, [])
                 if not image_paths:
-                    logger.warning("Skipping live-view image for TOS '%s': no image was collected.", tos_val)
+                    self.add_live_view_image_to_report(report, None, "{} heatmap".format(tos_val))
                     continue
-                for image_path in image_paths:
-                    report.set_custom_html('<div style="page-break-before: always;"></div>')
-                    report.build_custom()
-                    report.set_custom_html(f'<img src="file://{image_path}" style="width: 1200px; height: 800px;"></img>')
-                    report.build_custom()
-            for _floor, rssi_image_path in rssi_images.items():
-                if os.path.exists(rssi_image_path):
-                    report.set_custom_html('<div style="page-break-before: always;"></div>')
-                    report.build_custom()
-                    report.set_custom_html(f'<img src="file://{rssi_image_path}" style="width: 1000px; height: 800px;"></img>')
-                    report.build_custom()
+                for floor, image_path in enumerate(image_paths, start=1):
+                    self.add_live_view_image_to_report(report, image_path, "{} heatmap (Floor {})".format(tos_val, floor))
+            for floor, rssi_image_path in rssi_images.items():
+                self.add_live_view_image_to_report(report, rssi_image_path, "RSSI heatmap (Floor {})".format(floor))
 
         for coordinate in range(len(passed_coordinates)):
             if self.rotation_enabled:
@@ -2829,7 +3318,8 @@ class ThroughputQOS(Realm):
         input_setup_info = {
             "contact": "support@candelatech.com"
         }
-        report.test_setup_table(test_setup_data=input_setup_info, value="Information")
+        add_setup_table(report, test_setup_info, "Test Configuration")
+        add_setup_table(report, input_setup_info, "Information")
         # any recorded device issues in the report folder
         if self.device_issue_log:
             issues_df = pd.DataFrame(self.device_issue_log)
@@ -2875,6 +3365,7 @@ class ThroughputQOS(Realm):
             - Bar graph of BSSID change counts per device
             - Table of band steering transitions)
         """
+        lf_bar_graph = graph_classes(report)[0]  # interactive chart for a report_v2 report, PNG chart for the legacy report lf_multi_traffic passes in
 
         df = pd.DataFrame(data)
 
@@ -2957,7 +3448,7 @@ class ThroughputQOS(Realm):
             graph_png = graph.build_bar_graph()
             report.set_graph_image(graph_png)
             report.move_graph_image()
-            report.set_csv_filename(graph_png)
+            report.set_csv_filename(graph.graph_image_name + ".csv")
             report.move_csv_file()
             report.build_graph()
 
@@ -3433,6 +3924,22 @@ def validate_args(args):
         exit(1)
 
 
+def graph_classes(report):
+    """Chart classes matching the report: a report_v2 (modern) report gets interactive charts, while a legacy report handed in by
+    lf_mixed_traffic / lf_multi_traffic / throughput_webgui keeps its PNG charts (report_v2 chart markup would break a legacy report)."""
+    if hasattr(report, 'build_info_card'):
+        return lf_graph_v2.lf_bar_graph, lf_graph_v2.lf_bar_graph_horizontal
+    return lf_bar_graph, lf_bar_graph_horizontal
+
+
+def add_setup_table(report, test_setup_data, value):
+    """report_v2 has no test_setup_table(): show the same key / value rows as an info card; a legacy report keeps its table."""
+    if hasattr(report, 'test_setup_table'):
+        report.test_setup_table(test_setup_data=test_setup_data, value=value)
+    else:
+        report.build_info_card(title=value, items=[{"label": key, "value": str(val)} for key, val in test_setup_data.items()])
+
+
 def with_iot_params_in_table(base: dict, iot_summary) -> dict:
     """
     Append IoT params into the existing Throughput Input Parameters table.
@@ -3872,6 +4379,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
                                        bssids=args.bssids,
                                        duration_to_skip=args.duration_to_skip
                                        )
+        # tdr modern real-client report for the standalone run; robot / bandsteering runs keep their existing report content
+        throughput_qos.real_modern = not (args.robot_test or args.do_bandsteering)
         throughput_qos.os_type()
         _, configured_device, _, configuration = throughput_qos.phantom_check()
         throughput_qos.qos_data["configuration"] = configuration
