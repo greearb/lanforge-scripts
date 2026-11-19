@@ -87,6 +87,14 @@ EXAMPLES:   # Command Line Interface to run download scenario with tos : Voice
                 --tos "VI,VO,BE,BK" --ssid DLI-LPC992 --passwd Password@123 --security wpa2 --robot_ip 192.168.204.101 --coordinate 3,4 --robot_test --do_bandsteering
                 --cycles 1 --bssids 7a:1d:35:c8:da:b9
 
+            # Command Line Interface to run upload scenario for Real clients with background ping and wifi analysis
+            python3 lf_interop_qos.py --mgr 192.168.207.75 --upstream_port eth1 --tos "BK,BE,VI,VO" --traffic_type lf_udp
+                --download 0 --upload 10000000 --test_duration 2m --enable_bg_ping --wifi_analysis
+
+            # Command Line Interface to run download scenario for Real clients with background ping and wifi analysis
+            python3 lf_interop_qos.py --mgr 192.168.207.75 --upstream_port eth1 --tos "BK,BE,VI,VO" --traffic_type lf_udp
+                --download 10000000 --upload 0 --test_duration 2m --enable_bg_ping --wifi_analysis
+
 SCRIPT_CLASSIFICATION:
             Test
 
@@ -140,6 +148,7 @@ from lf_graph import lf_bar_graph, lf_bar_graph_horizontal  # noqa: E402
 # Modern reporting (report_v2): the same report / chart modules lf_ftp.py and lf_interop_throughput.py use
 from report_v2.lf_report_v2 import lf_report as lf_report_modern  # noqa: E402
 from report_v2 import lf_graph_v2  # noqa: E402
+from lf_wifi_msgs import ClientAnalysis  # noqa: E402
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -336,10 +345,14 @@ class ThroughputQOS(Realm):
         self.do_bandsteering = do_bandsteering
         self.bssids = bssids.split(",") if bssids else []
         # Modern real-client report: only main() turns real_modern on (standalone real run, no robot / bandsteering), so direct callers
-        # (lf_mixed_traffic / lf_multi_traffic / webgui) keep the existing report content. The ping object stays None
-        # unless main() starts them (--enable_bg_ping), which also keeps this object picklable for lf_mixed_traffic.
+        # (lf_mixed_traffic / lf_multi_traffic / webgui) keep the existing report content. The ping / wifi analysis objects stay None
+        # unless main() starts them (--enable_bg_ping / --wifi_analysis), which also keeps this object picklable for lf_mixed_traffic.
         self.real_modern = False
         self.background_ping = None
+        self.wifi_analysis = None
+        self.wifi_analysis_stats = {}
+        self.wifi_analysis_log = None
+        self.wifi_analysis_monitoring = False
         # Initializing robot test parameters
         self.robot_test = robot_test
         self.cycles = cycles
@@ -1546,7 +1559,140 @@ class ThroughputQOS(Realm):
         return ssid_list
 
     # ---- Modern reporting for the standalone real-client run (report_v2) ----
-    # Background ping (--enable_bg_ping): the same functions lf_interop_throughput.py uses
+    # Wi-Fi connectivity analysis (--wifi_analysis) and background ping (--enable_bg_ping): the same functions lf_interop_throughput.py uses
+    def start_wifi_analysis(self, host, port, device_list):
+        """Starts live Wi-Fi message monitoring (ClientAnalysis) for the devices under test.
+        If no device can be resolved, it logs a warning and skips the analysis instead of
+        stopping the test.
+
+        Args:
+            host (str): LANforge manager IP.
+            port (int): LANforge GUI REST port.
+            device_list (list): port names of the devices under test, e.g. ["1.10.wlan0"].
+
+        Example:
+            self.start_wifi_analysis(host="192.168.1.31", port=8080, device_list=self.input_devices_list)
+        """
+        self.wifi_analysis = None
+        self.wifi_analysis_stats = {}
+        self.wifi_analysis_log = None
+        self.wifi_analysis_monitoring = False
+        if not device_list:
+            return
+        try:
+            # ClientAnalysis needs resource IDs like '1.10'
+            resource_ids = list(dict.fromkeys(".".join(name.split(".")[:2]) for name in device_list))
+            self.wifi_analysis = ClientAnalysis(host=host, port=port, device_list=resource_ids,
+                                                debug=self.debug)
+            # start_monitoring() exits if no device is found
+            if not self.wifi_analysis.setup_device_entries():
+                logger.warning("None of the wifi connectivity analysis devices resolved to a device LANforge knows about")
+                self.wifi_analysis = None
+                return
+            self.wifi_analysis.start_monitoring()
+            self.wifi_analysis_monitoring = True
+        except (Exception, SystemExit) as error:
+            logger.warning("Wifi connectivity analysis could not be started: %s", error)
+            self.wifi_analysis = None
+
+    def stop_wifi_analysis(self):
+        """Stops the live Wi-Fi monitoring and stores the per-device stats in
+        self.wifi_analysis_stats. Does nothing if monitoring was not started.
+
+        Example:
+            self.stop_wifi_analysis()
+        """
+        if not getattr(self, 'wifi_analysis_monitoring', False):
+            return
+        self.wifi_analysis_monitoring = False
+        if self.wifi_analysis._monitor_file_name:
+            self.wifi_analysis_log = os.path.join("Wifi_Messages", self.wifi_analysis._monitor_file_name)
+        try:
+            self.wifi_analysis_stats = self.wifi_analysis.stop_monitoring()
+        except (Exception, SystemExit) as error:
+            logger.warning("Wifi connectivity analysis results could not be collected: %s", error)
+
+    def add_wifi_analysis_to_report(self, report):
+        """Adds the "Client Connectivity Event Summary" bar graph and the Wi-Fi connectivity
+        analysis table to the report. Does nothing if there are no Wi-Fi analysis stats.
+
+        Args:
+            report (lf_report): report to add the section to.
+
+        Example:
+            self.add_wifi_analysis_to_report(report)
+        """
+        wifi_analysis_log = getattr(self, 'wifi_analysis_log', None)
+        if wifi_analysis_log and os.path.exists(wifi_analysis_log):
+            try:
+                shutil.copy(wifi_analysis_log, os.path.join(report.path_date_time, "wifi_analysis_messages.json"))
+            except OSError as error:
+                logger.warning("Wifi analysis messages could not be copied to the report folder: %s", error)
+        if not getattr(self, 'wifi_analysis_stats', None):
+            return
+        try:
+            devices, connect_attempt, disconnected, scanning, association_rejection, connected, remarks, cx_time = \
+                ClientAnalysis.stats_to_lists(self.wifi_analysis_stats)
+            port_to_name = {}
+            for port_name, entry in zip(self.input_devices_list, self.real_client_list):
+                parts = entry.split(" ")
+                if parts and parts[-1]:
+                    port_to_name[port_name] = parts[-1]
+            devices = [port_to_name.get(port_name, port_name) for port_name in devices]
+
+            categories = ["Disconnected", "Scans", "Association Attempts", "Association Rejected", "Connected"]
+            totals = [sum(disconnected), sum(scanning), sum(connect_attempt), sum(association_rejection), sum(connected)]
+            # Colors per connection event
+            colors = ['#e74c3c', '#f1c40f', '#e67e22', '#95a5a6', '#27ae60']
+
+            report.set_obj_html(
+                _obj_title="Client Connectivity Event Summary",
+                _obj="This graph summarizes connection-related events observed during the QoS test. "
+                     "These metrics provide insight into client stability and wireless connectivity performance.")
+            report.build_objective()
+            # One series per event for the legend
+            data_set = [[value if index == series_index else 0 for index, value in enumerate(totals)]
+                        for series_index in range(len(categories))]
+            graph = lf_graph_v2.lf_bar_graph(_data_set=data_set,
+                                             _xaxis_name="",
+                                             _yaxis_name="Count",
+                                             _xaxis_categories=categories,
+                                             _graph_image_name="wifi_connectivity_status",
+                                             _label=categories,
+                                             _graph_title="Client Connectivity Status",
+                                             _title_size=16,
+                                             _color_edge='black',
+                                             _bar_width=0.5,
+                                             _figsize=(10, 6),
+                                             _legend_loc="best",
+                                             _dpi=96,
+                                             _show_bar_value=True,
+                                             _enable_csv=True,
+                                             _stacked=True,
+                                             _color=colors,
+                                             _color_name=colors)
+            graph_png = graph.build_bar_graph()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.set_csv_filename(graph.graph_image_name + ".csv")
+            report.move_csv_file()
+            report.build_graph()
+
+            dataframe = pd.DataFrame({
+                "Device": devices,
+                "Association Attempts": connect_attempt,
+                "Disconnected": disconnected,
+                "Scanning": scanning,
+                "Association Rejection": association_rejection,
+                "Connected": connected,
+            })
+            report.set_table_title("Wifi Connectivity Analysis")
+            report.build_table_title()
+            report.set_table_dataframe(dataframe)
+            report.build_table()
+        except Exception as error:
+            logger.warning("Wifi connectivity analysis could not be added to the report: %s", error)
+
     def add_background_ping_timeline_to_report(self, report):
         """Adds the "Wireless Client Connectivity Status vs Time" graph, built from the background
         ping results: green for replies, red for lost pings. Does nothing if the background
@@ -2187,7 +2333,8 @@ class ThroughputQOS(Realm):
         if self.robot_test:  # robot runs: Test Configuration and Information at the end of the report
             add_setup_table(report, test_setup_info, "Test Configuration")
             add_setup_table(report, input_setup_info, "Information")
-        if real:  # tdr: opt-in background ping section, then the Test Configuration and Device Summary cards at the end
+        if real:  # tdr: opt-in wifi analysis / background ping sections, then the Test Configuration and Device Summary cards at the end
+            self.add_wifi_analysis_to_report(report)
             if self.background_ping:
                 self.add_background_ping_timeline_to_report(report)
                 self.background_ping.add_background_ping_to_report(report)
@@ -2366,7 +2513,7 @@ class ThroughputQOS(Realm):
         real = self.real_modern and hasattr(report, 'build_info_card')
         # "1.100 android Pixel" -> "Pixel" for the chart labels (the real-client report also uses them as chart data / csv)
         short_names = [str(c).split(" ")[-1] for c in self.real_client_list1]
-        cat_names = short_names if real else self.real_client_list1
+        client_display_names = short_names if real else self.real_client_list1
         marks = {}  # where each traffic class block starts in report.html (the real-client report lists them in tdr order)
         try:
             if (self.dowebgui and self.get_live_view) or multicast_exists:
@@ -2515,8 +2662,8 @@ class ThroughputQOS(Realm):
                     # print(upload_list, download_list, individual_download_list, individual_upload_list)
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _xaxis_name="Throughput in Mbps",
                                                     _yaxis_name="Client names",
-                                                    _yaxis_categories=cat_names,
-                                                    _yaxis_label=short_names,
+                                                    _yaxis_categories=client_display_names,
+                                                    _yaxis_label=client_display_names,
                                                     _label=labels,
                                                     _yaxis_step=1,
                                                     _yticks_font=8,
@@ -2655,8 +2802,8 @@ class ThroughputQOS(Realm):
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
                                                     _xaxis_name="Throughput in Mbps",
-                                                    _yaxis_categories=cat_names,
-                                                    _yaxis_label=short_names,
+                                                    _yaxis_categories=client_display_names,
+                                                    _yaxis_label=client_display_names,
                                                     _label=labels,
                                                     _yaxis_step=1,
                                                     _yticks_font=8,
@@ -2792,8 +2939,8 @@ class ThroughputQOS(Realm):
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
                                                     _xaxis_name="Throughput in Mbps",
-                                                    _yaxis_categories=cat_names,
-                                                    _yaxis_label=short_names,
+                                                    _yaxis_categories=client_display_names,
+                                                    _yaxis_label=client_display_names,
                                                     _label=labels,
                                                     _yaxis_step=1,
                                                     _yticks_font=8,
@@ -2930,8 +3077,8 @@ class ThroughputQOS(Realm):
                     report.build_objective()
                     graph = lf_bar_graph_horizontal(_data_set=individual_set, _yaxis_name="Client names",
                                                     _xaxis_name="Throughput in Mbps",
-                                                    _yaxis_categories=cat_names,
-                                                    _yaxis_label=short_names,
+                                                    _yaxis_categories=client_display_names,
+                                                    _yaxis_label=client_display_names,
                                                     _label=labels,
                                                     _yaxis_step=1,
                                                     _yticks_font=8,
@@ -4326,6 +4473,9 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
                           help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
 
     # Real-client report extras (standalone run only), same options as lf_interop_throughput.py / lf_ftp.py
+    optional.add_argument('--wifi_analysis', '--wifi-analysis', dest='wifi_analysis', action='store_true',
+                          help='Analyze real-client wifi-msgs (connects/disconnects/scans/association rejections) '
+                               'for the duration of the test and include the results in the report')
     bg_ping_args = parser.add_argument_group('Background ping')
     bg_ping_args.add_argument('--enable_bg_ping', '--bg_ping', dest='enable_bg_ping', action='store_true',
                               help='Run a ping on the real clients in the background while the test runs and report its statistics at the end of the report')
@@ -4379,8 +4529,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
         direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_DL'
 
     validate_args(args)
-    if args.robot_test and args.enable_bg_ping:
-        logger.warning("--enable_bg_ping is not supported with --robot_test and is ignored")
+    if args.robot_test and (args.wifi_analysis or args.enable_bg_ping):
+        logger.warning("--wifi_analysis / --enable_bg_ping are not supported with --robot_test and are ignored")
     if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
         args.test_duration = int(args.test_duration[0:-1])
     elif args.test_duration.endswith('m') or args.test_duration.endswith('M'):
@@ -4524,6 +4674,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
         if args.robot_test:
             throughput_qos.perform_robo()
             exit(1)
+        if args.wifi_analysis:  # wifi events from just before the traffic starts, with the device list left after monitor_cx()
+            throughput_qos.start_wifi_analysis(host=args.mgr, port=args.mgr_port, device_list=throughput_qos.input_devices_list)
         throughput_qos.start(False, False)
         time.sleep(10)
         if args.enable_bg_ping:  # right before monitor(), so the ping window matches the monitored traffic window (same Ping setup as lf_interop_throughput.py)
@@ -4535,6 +4687,7 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
         if throughput_qos.background_ping:
             throughput_qos.background_ping.stop_background_ping()
         throughput_qos.stop()
+        throughput_qos.stop_wifi_analysis()
         time.sleep(5)
         test_results['test_results'].append(throughput_qos.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
         data.update(test_results)
