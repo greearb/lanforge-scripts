@@ -145,6 +145,8 @@ logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 # Importing DeviceConfig to apply device configurations for ADB devices and laptops
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
+# Background ping on the real clients (--enable_bg_ping), same as lf_interop_throughput.py
+lf_interop_ping = importlib.import_module("py-scripts.lf_interop_ping")
 
 iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
 if os.path.exists(iot_scripts_path):
@@ -334,8 +336,10 @@ class ThroughputQOS(Realm):
         self.do_bandsteering = do_bandsteering
         self.bssids = bssids.split(",") if bssids else []
         # Modern real-client report: only main() turns real_modern on (standalone real run, no robot / bandsteering), so direct callers
-        # (lf_mixed_traffic / lf_multi_traffic / webgui) keep the existing report content.
+        # (lf_mixed_traffic / lf_multi_traffic / webgui) keep the existing report content. The ping object stays None
+        # unless main() starts them (--enable_bg_ping), which also keeps this object picklable for lf_mixed_traffic.
         self.real_modern = False
+        self.background_ping = None
         # Initializing robot test parameters
         self.robot_test = robot_test
         self.cycles = cycles
@@ -1542,6 +1546,67 @@ class ThroughputQOS(Realm):
         return ssid_list
 
     # ---- Modern reporting for the standalone real-client run (report_v2) ----
+    # Background ping (--enable_bg_ping): the same functions lf_interop_throughput.py uses
+    def add_background_ping_timeline_to_report(self, report):
+        """Adds the "Wireless Client Connectivity Status vs Time" graph, built from the background
+        ping results: green for replies, red for lost pings. Does nothing if the background
+        ping did not run.
+
+        Args:
+            report (lf_report): report to add the graph to.
+
+        Example:
+            self.add_background_ping_timeline_to_report(report)
+        """
+        background_ping = self.background_ping
+        if not background_ping or not background_ping.bg_stats or background_ping.bg_start_time is None \
+                or background_ping.bg_stop_time is None:
+            return
+        try:
+            test_seconds = background_ping.bg_stop_time - background_ping.bg_start_time
+            interval = float(background_ping.interval)
+            clients, stations, segments = [], [], []
+            for device in background_ping.real_sta_list:
+                sequences = background_ping.bg_packet_results.get(device) or {}
+                spans = []
+                covered_until = 0.0
+                for sequence in sorted(sequences):
+                    start, end = (sequence - 1) * interval, min(test_seconds, sequence * interval)
+                    if end <= start:
+                        continue
+                    if start > covered_until:
+                        spans.append(['up', covered_until, start])
+                    spans.append(['drop' if sequences[sequence] == 0 else 'up', start, end])
+                    covered_until = max(covered_until, end)
+                merged = []
+                for span in spans:
+                    if merged and merged[-1][0] == span[0]:
+                        merged[-1][2] = span[2]
+                    else:
+                        merged.append(span)
+                segments.extend({'clientIndex': len(clients), 'start': round(start, 3), 'end': round(end, 3), 'status': status} for status, start, end in merged)
+                clients.append(background_ping.bg_stats[device]['name'])
+                stations.append(device)
+            payload = {'clients': clients, 'stations': stations, 'segments': segments, 'duration': round(test_seconds, 3),
+                       'emptyMessage': "No time-series ping samples were collected"}
+            report.set_obj_html(
+                _obj_title="Client Connectivity Results Throughout the Test Duration",
+                _obj=("The graph illustrates the connectivity status of all wireless clients during the test based on connectivity monitoring during the test execution. "
+                      "Green segments represent successful responses, while red segments indicate packet loss or connectivity drops observed during the test."))
+            report.build_objective()
+            report.set_custom_html("""
+                <div class='chart-card'>
+                  <h3>Wireless Client Connectivity Status vs Time</h3>
+                  <div id='background-ping-connectivity-timeline' class='chart'></div>
+                  <script>
+                    window.__lfModernReport.renderConnectivityTimeline('background-ping-connectivity-timeline', {payload});
+                  </script>
+                </div>
+                """.format(payload=json.dumps(payload)))
+            report.build_custom()
+        except Exception as error:
+            logger.warning("Background ping timeline could not be added to the report: %s", error)
+
     def get_channel_and_rssi_list(self, station_names):
         """Live channel/RSSI snapshot per device port (mirrors get_ssid_list's /ports/all/
         lookup); the RSSI values feed the signal-quality bullet of Key Findings."""
@@ -2122,7 +2187,10 @@ class ThroughputQOS(Realm):
         if self.robot_test:  # robot runs: Test Configuration and Information at the end of the report
             add_setup_table(report, test_setup_info, "Test Configuration")
             add_setup_table(report, input_setup_info, "Information")
-        if real:  # tdr: Test Configuration and Device Summary cards at the end
+        if real:  # tdr: opt-in background ping section, then the Test Configuration and Device Summary cards at the end
+            if self.background_ping:
+                self.add_background_ping_timeline_to_report(report)
+                self.background_ping.add_background_ping_to_report(report)
             report.build_info_card(title="Test Configuration", items=[{"label": label, "value": str(value)} for label, value in test_setup_info.items()])
             report.build_device_summary_card([{"name": name.split("(")[0], "platform": platform} for name, platform in zip(all_devices_names, device_type)])
         # recorded device issues in csv
@@ -4257,6 +4325,15 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
                           default='',
                           help='Comma-separated list of device counts to incrementally test (e.g., "1,3,5")')
 
+    # Real-client report extras (standalone run only), same options as lf_interop_throughput.py / lf_ftp.py
+    bg_ping_args = parser.add_argument_group('Background ping')
+    bg_ping_args.add_argument('--enable_bg_ping', '--bg_ping', dest='enable_bg_ping', action='store_true',
+                              help='Run a ping on the real clients in the background while the test runs and report its statistics at the end of the report')
+    bg_ping_args.add_argument('--bg_ping_target', type=str, default=None,
+                              help='IP, domain name or LANforge port the background ping should target. Defaults to the upstream port of the test when not given')
+    bg_ping_args.add_argument('--bg_ping_interval', type=float, default=1,
+                              help='Packet interval of the background ping in seconds. Defaults to 1')
+
     args = parser.parse_args()
 
     # help summary
@@ -4302,6 +4379,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
         direction = 'L3_' + args.traffic_type.split('_')[1].upper() + '_DL'
 
     validate_args(args)
+    if args.robot_test and args.enable_bg_ping:
+        logger.warning("--enable_bg_ping is not supported with --robot_test and is ignored")
     if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
         args.test_duration = int(args.test_duration[0:-1])
     elif args.test_duration.endswith('m') or args.test_duration.endswith('M'):
@@ -4447,7 +4526,14 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             exit(1)
         throughput_qos.start(False, False)
         time.sleep(10)
+        if args.enable_bg_ping:  # right before monitor(), so the ping window matches the monitored traffic window (same Ping setup as lf_interop_throughput.py)
+            throughput_qos.background_ping = lf_interop_ping.Ping(host=args.mgr, port=args.mgr_port, target=args.bg_ping_target or args.upstream_port, interval=args.bg_ping_interval,
+                                                                  sta_list=[], real=True, virtual=False, duration=0)
+            if not throughput_qos.background_ping.start_background_ping(throughput_qos.input_devices_list):
+                throughput_qos.background_ping = None
         connections_download, connections_upload, drop_a_per, drop_b_per, connections_download_avg, connections_upload_avg, avg_drop_a, avg_drop_b = throughput_qos.monitor()
+        if throughput_qos.background_ping:
+            throughput_qos.background_ping.stop_background_ping()
         throughput_qos.stop()
         time.sleep(5)
         test_results['test_results'].append(throughput_qos.evaluate_qos(connections_download, connections_upload, drop_a_per, drop_b_per))
@@ -4498,6 +4584,8 @@ LICENSE:    Free to distribute and modify. LANforge systems must be licensed.
             avg_drop_a=avg_drop_a,
             avg_drop_b=avg_drop_b, iot_summary=iot_summary)
 
+    if throughput_qos.background_ping:
+        throughput_qos.background_ping.cleanup()
     # Update webgui running json with latest entry and test status completed
     if throughput_qos.dowebgui == "True":
         # copying to home directory i.e home/user_name
