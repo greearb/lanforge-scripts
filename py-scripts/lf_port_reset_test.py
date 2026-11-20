@@ -113,7 +113,8 @@ class PortResetTest(cv_test):
                  graph_groups=None,
                  test_rig="",
                  test_tag="",
-                 verbosity='5'):
+                 verbosity='5',
+                 port_reset_args=None):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
         # NOTE: Do not move these into the function definition.
@@ -152,6 +153,21 @@ class PortResetTest(cv_test):
         self.test_rig = test_rig
         self.test_tag = test_tag
         self.verbosity = verbosity
+        self.port_reset_args = port_reset_args
+
+    def apply_cfg_options_dict(self, cfg_options: list, enables: list, disables: list, raw_lines: list, raw_lines_dict: dict):
+        """Update specified config options list with configuration provided as a dict of raw 'key: value' settings."""
+        for key, value in raw_lines_dict.items():
+            cfg_options.append(f"{key}: {value}\n")
+
+        for en in enables:
+            cfg_options.append(f"{en[0]}: 1\n")
+
+        for dis in disables:
+            cfg_options.append(f"{dis[0]}: 0\n")
+
+        for r in raw_lines:
+            cfg_options.append(r[0])
 
     def setup(self):
         # Nothing to do at this time.
@@ -174,11 +190,18 @@ class PortResetTest(cv_test):
         # Test related settings
         cfg_options = []
 
-        self.apply_cfg_options(cfg_options=cfg_options,
-                               enables=self.enables,
-                               disables=self.disables,
-                               raw_lines=self.raw_lines,
-                               raw_lines_file=self.raw_lines_file)
+        if self.port_reset_args:
+            self.apply_cfg_options_dict(cfg_options=cfg_options,
+                                        enables=self.enables,
+                                        disables=self.disables,
+                                        raw_lines=self.raw_lines,
+                                        raw_lines_dict=self.port_reset_args)
+        else:
+            self.apply_cfg_options(cfg_options=cfg_options,
+                                   enables=self.enables,
+                                   disables=self.disables,
+                                   raw_lines=self.raw_lines,
+                                   raw_lines_file=self.raw_lines_file)
 
         # cmd line args take precedence and so come last in the cfg array.
         if self.upstream != "":
@@ -219,7 +242,9 @@ class PortResetTest(cv_test):
                                  cv_cmds=cv_cmds,
                                  ssh_port=self.ssh_port,
                                  local_lf_report_dir=self.local_lf_report_dir,
-                                 graph_groups_file=self.graph_groups)
+                                 graph_groups_file=self.graph_groups,
+                                 # fixed instance name for caller-supplied config, so clear any stale one
+                                 force=bool(self.port_reset_args))
         # To delete old config with same name
         self.rm_text_blob(config_name=self.config_name,
                           blob_test_name=blob_test)
