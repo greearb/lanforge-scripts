@@ -41,10 +41,29 @@ then removes its own temporary directory, including the SQLite database and
 key profiles. Interrupted text-file writes remove the partial temporary file
 and preserve any earlier completed output at the requested destination.
 
-Forced termination such as SIGKILL or power loss cannot run Python cleanup and
-may leave a temporary workspace. The script does not delete other directories
-by prefix or age, which could affect concurrent runs. Requested output files
-are kept separately from the temporary cache.
+Concurrent calls use separate workspaces and databases. Give each call distinct
+output/report filenames too. Startup never reuses old DB rows or removes another
+run's cache.
+
+Forced termination such as SIGKILL or power loss can leave temporary files.
+When decoding is idle, remove recognized abandoned SQLite workspaces with:
+
+```sh
+python3 lf_wifi_decrypt.py --purge_sqlite
+```
+
+No capture or key file is needed. The command scans the current account's temporary directory
+(`tempfile.gettempdir()`), using the `lf_wifi_decrypt_` prefix, account marker
+and expected cache layout. It removes the database/sidecars and temporary key
+profiles together; requested output files are outside this scope. Unknown
+contents, other accounts and links/junctions are left alone.
+
+Each new run holds an OS file lock. If a recognized SQLite workspace is busy,
+purge stops before deleting any candidates. Older versions did not hold these
+locks: make sure those decoders and any leftover TShark children have stopped
+before purging. Old unmarked caches are recognized by their SQLite header and
+layout on Unix, with UID ownership checks. Unmarked Windows caches are skipped;
+review those manually. RAM-mode workspaces are outside this SQLite purge.
 
 ## Reconnects in one capture
 

@@ -25,22 +25,27 @@ NOTES:      Requires Python 3.8+ and TShark with the "tk" key type.
 
 import argparse
 import csv
+import getpass
 import hashlib
 import io
 import json
 import os
 import re
 import sqlite3
+import stat
 import subprocess
 import sys
 import tempfile
 from collections import Counter
-from contextlib import nullcontext
+from contextlib import ExitStack, contextmanager, nullcontext
 from pathlib import Path
 from urllib.parse import quote
 
 
 MAX_KEYS_PER_PASS = 64
+WORKSPACE_PREFIX = "lf_wifi_decrypt_"
+WORKSPACE_MARKER = ".workspace.json"
+WORKSPACE_LOCK = ".workspace.lock"
 COLUMNS = ('"No.","%m","Time","%t","Source","%s",'
            '"Destination","%d","Protocol","%p","Length","%L","Info","%i"')
 EVENT_RECORD = re.compile(r"^wifi_event\s+(\S+)\s+\S+\s+\S+\s+'(.*)'$")
@@ -189,6 +194,129 @@ def file_sha256(path):
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def lock_workspace(stream):
+    """Take a nonblocking OS lock; closing the stream/process releases it."""
+    if os.name == "nt":
+        import msvcrt
+        stream.seek(0)
+        msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+    else:
+        import fcntl
+        fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def workspace_identity(storage):
+    """Identify our workspace without putting any session keys in its marker."""
+    return {"tool": "lf_wifi_decrypt", "version": 1, "storage": storage,
+            "user": getpass.getuser(), "uid": os.getuid() if hasattr(os, "getuid") else None}
+
+
+@contextmanager
+def temporary_workspace(storage):
+    """Keep the workspace locked through child/store cleanup; close before removal."""
+    with tempfile.TemporaryDirectory(prefix=WORKSPACE_PREFIX) as directory:
+        root = Path(directory)
+        with (root / WORKSPACE_LOCK).open("xb+") as guard:
+            guard.write(b"0")
+            guard.flush()
+            lock_workspace(guard)
+            (root / WORKSPACE_MARKER).write_text(json.dumps(workspace_identity(storage)), encoding="utf-8")
+            yield root
+
+
+def owned_plain_path(path, directory=False):
+    """Reject links/junctions and, on Unix, entries belonging to another account."""
+    info = path.lstat()
+    reparse = getattr(info, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+    kind = stat.S_ISDIR if directory else stat.S_ISREG
+    return (not reparse and kind(info.st_mode)
+            and (not hasattr(os, "getuid") or info.st_uid == os.getuid()))
+
+
+def workspace_files(root):
+    """Recognize the entire cache layout before deleting any of its contents.
+
+    Only the DB, its sidecars, our metadata and numbered key profiles belong
+    here. An unexpected item leaves the whole directory untouched.
+    """
+    files, profiles = [], []
+    names = {"frames.sqlite", "frames.sqlite-journal", "frames.sqlite-wal", "frames.sqlite-shm",
+             WORKSPACE_MARKER, WORKSPACE_LOCK}
+    for item in root.iterdir():
+        if item.name in names and owned_plain_path(item):
+            files.append(item)
+        elif re.fullmatch(r"baseline|batch_\d+", item.name) and owned_plain_path(item, directory=True):
+            for key_file in item.iterdir():
+                if key_file.name != "80211_keys" or not owned_plain_path(key_file):
+                    raise ValueError("unrecognized key-profile contents")
+                files.append(key_file)
+            profiles.append(item)
+        else:
+            raise ValueError("unrecognized workspace contents")
+    return files, profiles
+
+
+def sqlite_workspace(root):
+    """Recognize marked caches, or old Unix caches with a valid SQLite header.
+
+    Old releases have no marker/lock: the operator must ensure they are idle.
+    Unmarked Windows directories are left alone because Unix UID ownership
+    checks are not available there.
+    """
+    if not owned_plain_path(root, directory=True):
+        return False
+    marker = root / WORKSPACE_MARKER
+    if marker.exists():
+        if not owned_plain_path(marker) or marker.stat().st_size > 1024:
+            return False
+        return json.loads(marker.read_text(encoding="utf-8")) == workspace_identity("sqlite")
+    database = root / "frames.sqlite"
+    if os.name == "nt" or not owned_plain_path(database):
+        return False
+    with database.open("rb") as stream:
+        return stream.read(16) == b"SQLite format 3\0"
+
+
+def purge_sqlite_workspaces(temp_root=None):
+    """Remove recognized abandoned SQLite workspaces, never user output files.
+
+    Scan the current temp root only. Lock every candidate before removing any;
+    a busy cache aborts the purge. Locks protect current releases, not legacy
+    unmarked caches. Run this maintenance operation when decoding is idle.
+    """
+    parent = Path(temp_root if temp_root is not None else tempfile.gettempdir()).resolve(strict=True)
+    removed, skipped, candidates = [], [], []
+    with ExitStack() as guards:
+        for root in sorted(parent.glob(WORKSPACE_PREFIX + "*")):
+            try:
+                if not sqlite_workspace(root):
+                    skipped.append(root.name)
+                    continue
+                workspace_files(root)
+                guard = guards.enter_context((root / WORKSPACE_LOCK).open("ab+"))
+                try:
+                    lock_workspace(guard)
+                except OSError as exc:
+                    raise RuntimeError("Cleanup stopped: a SQLite workspace is busy. Run purge when decoding is idle.") from exc
+                candidates.append((root, guard))
+            except (FileNotFoundError, ValueError):
+                skipped.append(root.name)
+        for root, guard in candidates:
+            # Recheck under the lock. Delete only enumerated files/directories,
+            # without following links or recursively removing unknown items.
+            files, profiles = workspace_files(root)
+            for item in files:
+                if item.name != WORKSPACE_LOCK:
+                    item.unlink()
+            for profile in profiles:
+                profile.rmdir()
+            guard.close()  # Windows cannot unlink an open lock file.
+            (root / WORKSPACE_LOCK).unlink()
+            root.rmdir()
+            removed.append(root.name)
+    return {"temp_root": str(parent), "removed": removed, "skipped": skipped}
 
 
 def make_profile(root, name, keys):
@@ -555,8 +683,7 @@ def decrypt_capture(pcap, *, events=(), temporal_keys=(), ssid=None, password=No
     batches = [keys[start:start + key_batch_size] for start in range(0, len(keys), key_batch_size)]
     digest = file_sha256(pcap)
     notify = progress or (lambda event: None)
-    with tempfile.TemporaryDirectory(prefix="lf_wifi_decrypt_") as temporary:
-        root = Path(temporary)
+    with temporary_workspace(storage) as root:
         store = None
         try:
             store = MemoryFrameStore() if storage == "memory" else SqliteFrameStore(root / "frames.sqlite")
@@ -633,7 +760,9 @@ def parse_args(argv=None):
                                  "LANforge Wi-Fi events or supplicant logs. Supports reconnects, "
                                  "multiple stations and brief/verbose TShark text."),
                         help="Show a short script summary and exit")
-    parser.add_argument("--pcap", required=True, type=Path)
+    parser.add_argument("--pcap", type=Path)
+    parser.add_argument("--purge_sqlite", action="store_true",
+                        help="Remove recognized abandoned SQLite workspaces from the current temp directory; run only when decoding is idle")
     parser.add_argument("--events", action="append", default=[], type=Path,
                         help="Matching Wi-Fi events or supplicant log; repeat for multiple files")
     parser.add_argument("--tk", action="append", default=[], type=valid_tk,
@@ -662,6 +791,11 @@ def parse_args(argv=None):
     parser.set_defaults(storage="sqlite")
     parser.add_argument("--quiet", action="store_true", help="Hide batch progress")
     args = parser.parse_args(argv)
+    if args.purge_sqlite:
+        if any([args.pcap, args.events, args.tk, args.ssid, args.password, args.output, args.report]):
+            parser.error("Use --purge_sqlite by itself, without capture/key/output arguments.")
+    elif args.pcap is None:
+        parser.error("--pcap is required for decoding.")
     if args.output is not None and args.report is None:
         args.report = Path(str(args.output) + ".json")
     return args
@@ -679,6 +813,11 @@ def main(argv=None):
             print(f"Checking key batch {event['batch']}/{event['batches']}", file=sys.stderr)
 
     try:
+        if args.purge_sqlite:
+            result = purge_sqlite_workspaces()
+            print(f"Removed {len(result['removed'])} SQLite workspace(s) from {result['temp_root']}. "
+                  f"Skipped {len(result['skipped'])} unrecognized or non-SQLite workspace(s).")
+            return 0
         report = decrypt_capture(
             args.pcap, events=args.events, temporal_keys=args.tk, ssid=args.ssid,
             password=args.password, key_source=args.key_source, mode=args.mode,
