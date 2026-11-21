@@ -13,6 +13,10 @@ We also support Toolbox mode (--toolbox), enabling modular, standalone operation
 For more information, see [these documentation links](../README.md#documentation-links) or email [`support@candelatech.com`](mailto:support@candelatech.com)
 with questions.
 
+To decode captures using keys from Wi-Fi events or supplicant logs, see
+[Wi-Fi decryption](./docs/wifi_decrypt.md). The tool supports multiple stations,
+reconnects, rekeys, brief/verbose text and a Python API for other callers.
+
 ## Setup
 
 Setup instructions have been moved to [this document](../README.md#installing-from-source).
