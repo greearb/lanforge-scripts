@@ -83,6 +83,7 @@ import sys
 import traceback
 import glob
 import shlex
+from html import escape
 from collections import Counter
 
 # Resolve helper scripts relative to this module, avoiding fixed paths.
@@ -97,6 +98,7 @@ TEAMS_ANDROID_APP_SCRIPT = os.path.join(
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../..'))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../py-json')))
 
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -104,15 +106,8 @@ LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-lf_report = importlib.import_module("py-scripts.lf_report")
-lf_report = lf_report.lf_report
-lf_graph = importlib.import_module("py-scripts.lf_graph")
-lf_bar_graph = lf_graph.lf_bar_graph
-lf_scatter_graph = lf_graph.lf_scatter_graph
-lf_bar_graph_horizontal = lf_graph.lf_bar_graph_horizontal
-lf_line_graph = lf_graph.lf_line_graph
-lf_stacked_graph = lf_graph.lf_stacked_graph
-lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
+from report_v2.lf_report_v2 import lf_report  # noqa: E402
+from report_v2.lf_graph_v2 import lf_bar_graph, lf_bar_graph_horizontal  # noqa: E402
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_base_interop_profile = importlib.import_module("py-scripts.lf_base_interop_profile")
 RealDevice = lf_base_interop_profile.RealDevice
@@ -1432,7 +1427,7 @@ class TeamsAutomation(Realm):
                     final_bssid_counts = bssid_counts
 
                 x_axis = list(final_bssid_counts.keys())
-                y_axis = [[float(v)] for v in final_bssid_counts.values()]
+                y_axis = [[float(value) for value in final_bssid_counts.values()]]
 
                 self.report.set_obj_html(
                     _obj_title=f"BSSID Change Count Of The Client {device_name}",
@@ -1444,10 +1439,9 @@ class TeamsAutomation(Realm):
                     _data_set=y_axis,
                     _xaxis_name="BSSID",
                     _yaxis_name="Number of Changes",
-                    _xaxis_categories=[""],
-                    _xaxis_label=x_axis,
+                    _xaxis_categories=x_axis,
                     _graph_image_name=f"teams_bssid_change_count_{device_name}",
-                    _label=x_axis,
+                    _label=["BSSID Changes"],
                     _xaxis_step=1,
                     _graph_title=f"Teams Bandsteering: BSSID change count for device : {device_name}",
                     _title_size=16,
@@ -1457,9 +1451,7 @@ class TeamsAutomation(Realm):
                     _show_bar_value=True,
                 )
 
-                graph_png = graph.build_bar_graph()
-                self.report.set_graph_image(graph_png)
-                self.report.move_graph_image()
+                self.report.set_graph_image(graph.build_bar_graph())
                 self.report.build_graph()
 
                 if skip_table:
@@ -1518,106 +1510,478 @@ class TeamsAutomation(Realm):
             logger.error(f"Exeception Occured {e}")
             logger.error("Error Occured ", exc_info=True)
 
-    def generate_report(self):
+    @staticmethod
+    def report_mos_rating(value):
+        """Display-only bands; never change stored MOS values or test status."""
         try:
+            score = float(value)
+        except (TypeError, ValueError):
+            return "N/A"
+        if not math.isfinite(score):
+            return "N/A"
+        for threshold, rating in [(4.0, "Excellent"), (3.5, "Good"), (3.0, "Fair"), (2.0, "Poor")]:
+            if score >= threshold:
+                return rating
+        return "Bad"
 
-            self.report = lf_report(
-                _output_pdf="teams_call_report.pdf",
-                _output_html="teams_call_report.html",
-                _results_dir_name="teams_call_report",
-                _path=self.path,
-            )
-            self.report_path_date_time = self.report.get_path_date_time()
+    def report_table(self, title, frame):
+        self.report.set_table_title(title)
+        self.report.build_table_title()
+        self.report.set_table_dataframe(frame.fillna("N/A"))
+        self.report.build_table()
 
-            self.report.set_title("Teams Call Automated Report")
-            self.report.build_banner()
+    def report_mos_rows(self, frame, item):
+        """Include every configured device without fabricating measurements."""
+        suffix = ""
+        if self.do_robo:
+            suffix = f"_{item.get('coord')}"
+            if self.rotations_enabled:
+                suffix += f"_{item.get('rotation')}"
+        rows = []
+        for name in self.real_sta_hostname:
+            found = frame[frame["Device Name"] == name + suffix] if "Device Name" in frame else pd.DataFrame()
+            row = {"Device Name": name}
+            for column, label in [("Audio_MOS", "Audio MOS"), ("Video_MOS", "Video MOS"), ("Overall_MOS", "Overall MOS")]:
+                row[label] = found.iloc[0].get(column, float("nan")) if not found.empty else float("nan")
+            row["Rating"] = self.report_mos_rating(row["Overall MOS"])
+            row["Data Status"] = "Statistics available" if not found.empty else "No statistics collected"
+            rows.append(row)
+        return pd.DataFrame(rows)
 
-            self.report.set_table_title("Objective:")
-            self.report.build_table_title()
-            self.report.set_text(
-                "The objective is to conduct automated Teams call tests across multiple laptops to gather statistics on sent audio, video, and received audio, video performance."
-                + "The test will collect these statistics and store them in a CSV file. Additionally, automated graphs will be generated using the collected data."
-            )
-            self.report.build_text_simple()
+    @staticmethod
+    def _numeric_report_values(report_frames, column):
+        """Return the finite, non-negative values collected for one report metric."""
+        values = []
+        for _item, frame in report_frames:
+            if column not in frame:
+                continue
+            for value in pd.to_numeric(frame[column], errors="coerce"):
+                if math.isfinite(value) and value >= 0:
+                    values.append(float(value))
+        return values
 
-            self.report.set_table_title("Test Parameters:")
-            self.report.build_table_title()
-            testtype = ""
+    def add_key_findings_to_report(self, combined, report_frames, average):
+        """Add a data-backed plain-English summary immediately after the verdict card."""
+        findings = []
+        configured = len(self.real_sta_hostname)
+        reporting = set(combined.loc[
+            combined["Data Status"] == "Statistics available", "Device Name"
+        ]) if not combined.empty else set()
+
+        wifi_stats = getattr(self, "wifi_analysis_stats", None)
+        if wifi_stats:
+            try:
+                _devices, _attempts, disconnected, _scans, rejected, _connected, _remarks, _cx_time = \
+                    ClientAnalysis.stats_to_lists(wifi_stats)
+                disconnect_count = sum(disconnected)
+                rejection_count = sum(rejected)
+                if disconnect_count == 0 and rejection_count == 0:
+                    findings.append(
+                        "All {} configured client{} maintained stable wireless connectivity; no disconnections "
+                        "or association rejections were observed.".format(
+                            configured, "" if configured == 1 else "s"))
+                else:
+                    findings.append(
+                        "Wireless monitoring recorded {} disconnection{} and {} association rejection{} "
+                        "during the test.".format(
+                            disconnect_count, "" if disconnect_count == 1 else "s",
+                            rejection_count, "" if rejection_count == 1 else "s"))
+            except Exception as error:
+                logger.warning("Teams connectivity finding could not be computed: %s", error)
+
+        missing = [name for name in self.real_sta_hostname if name not in reporting]
+        if not missing:
+            findings.append("Teams call statistics were collected for all {} configured client{}.".format(
+                configured, "" if configured == 1 else "s"))
+        else:
+            findings.append(
+                "Teams call statistics were collected for {} of {} clients; {} did not report call "
+                "statistics.".format(
+                    len(reporting), configured, ", ".join(escape(name) for name in missing)))
+
+        if self.audio:
+            audio_mos = [value for value in pd.to_numeric(combined.get("Audio MOS"), errors="coerce")
+                         if math.isfinite(value)] if "Audio MOS" in combined else []
+            packet_loss = self._numeric_report_values(report_frames, "Received Audio Packet Loss(%)")
+            jitter = self._numeric_report_values(report_frames, "Received Audio Jitter(ms)")
+            if packet_loss and jitter:
+                average_loss = sum(packet_loss) / len(packet_loss)
+                average_jitter = sum(jitter) / len(jitter)
+                if max(packet_loss) == 0 and average_jitter <= 30:
+                    findings.append(
+                        "Audio quality was strong on all reporting clients, with no received audio packet "
+                        "loss and {:.2f} ms average jitter.".format(average_jitter))
+                elif average_loss <= 1 and average_jitter <= 30:
+                    findings.append(
+                        "Audio quality remained strong, averaging {:.2f}% received packet loss and {:.2f} ms "
+                        "jitter across reporting clients.".format(average_loss, average_jitter))
+                else:
+                    findings.append(
+                        "Audio quality showed degradation, averaging {:.2f}% received packet loss and {:.2f} "
+                        "ms jitter across reporting clients.".format(average_loss, average_jitter))
+            elif audio_mos:
+                average_audio_mos = sum(audio_mos) / len(audio_mos)
+                findings.append(
+                    "Audio quality was rated {} with an average MOS of {:.2f} / 5 across reporting "
+                    "clients.".format(
+                        self.report_mos_rating(average_audio_mos).lower(), average_audio_mos))
+
+        if self.video:
+            video_mos = [value for value in pd.to_numeric(combined.get("Video MOS"), errors="coerce")
+                         if math.isfinite(value)] if "Video MOS" in combined else []
+            frame_rates = self._numeric_report_values(report_frames, "Sent Video Frame Rate(fps)")
+            if video_mos:
+                average_video_mos = sum(video_mos) / len(video_mos)
+                rating = self.report_mos_rating(average_video_mos)
+                frame_rate_text = (" and an average sent frame rate of {:.2f} fps".format(
+                    sum(frame_rates) / len(frame_rates)) if frame_rates else "")
+                findings.append(
+                    "Video quality was rated {} with an average MOS of {:.2f} / 5{}.".format(
+                        rating.lower(), average_video_mos, frame_rate_text))
+
+        ping = getattr(self, "background_ping", None)
+        if ping and ping.bg_stats:
+            rssi_values = []
+            for row in ping.bg_stats.values():
+                rssi = self._safe_float(row.get("rssi"))
+                if math.isfinite(rssi) and rssi != 0:
+                    rssi_values.append(abs(rssi))
+            if rssi_values:
+                weak = sum(value > 75 for value in rssi_values)
+                fair = sum(67 < value <= 75 for value in rssi_values)
+                if not weak and not fair:
+                    findings.append(
+                        "Signal quality remained strong for all monitored clients, so the call results were "
+                        "not affected by poor wireless signal.")
+                else:
+                    findings.append(
+                        "{} of {} monitored clients had fair or weak signal strength, which may have affected "
+                        "call quality.".format(weak + fair, len(rssi_values)))
+
+        if math.isfinite(average):
+            rating = self.report_mos_rating(average)
+            article = "an" if rating == "Excellent" else "a"
+            findings.append(
+                "Overall, the AP delivered {} {} Teams calling experience, with an average overall MOS of "
+                "{:.2f} / 5.".format(article, rating.lower(), average))
+        else:
+            findings.append(
+                "An overall Teams call verdict could not be calculated because no complete overall MOS data "
+                "was available.")
+
+        items = "".join(
+            "<li style='font-size:14px; color:var(--ink); line-height:1.5;'>{}</li>".format(finding)
+            for finding in findings)
+        self.report.set_custom_html(
+            "<div class='info-card'><div class='info-card-header'>Key Findings</div>"
+            "<ul style='margin:0; padding-left:20px; display:flex; flex-direction:column; "
+            "gap:10px;'>{}</ul></div>".format(items))
+        self.report.build_custom()
+        self.report.set_custom_html("")
+
+    def add_mos_report_sections(self, report_frames):
+        """Render the MOS explanation, per-client comparison chart and MOS results table."""
+        frames = report_frames or [({}, pd.DataFrame())]
+        for index, (item, frame) in enumerate(frames):
+            context = ""
+            if self.do_robo:
+                context = " — Coordinate {}".format(item.get("coord"))
+                if self.rotations_enabled:
+                    context += ", rotation {}".format(item.get("rotation"))
+
+            mos_rows = self.report_mos_rows(frame, item)
+            plotted = mos_rows[mos_rows["Data Status"] == "Statistics available"].copy()
+            missing = mos_rows.loc[mos_rows["Data Status"] != "Statistics available", "Device Name"].tolist()
+            missing_text = (" {} reported no Teams call statistics and {} therefore not shown.".format(
+                ", ".join(escape(name) for name in missing),
+                "is" if len(missing) == 1 else "are") if missing else "")
             if self.audio and self.video:
-                testtype = "AUDIO & VIDEO"
+                mos_scope = "audio, video and overall"
+                chart_scope = "Audio, Video &amp; Overall"
             elif self.audio:
-                testtype = "AUDIO"
+                mos_scope = "audio and overall"
+                chart_scope = "Audio &amp; Overall"
             elif self.video:
-                testtype = "VIDEO"
+                mos_scope = "video and overall"
+                chart_scope = "Video &amp; Overall"
+            else:
+                mos_scope = "overall"
+                chart_scope = "Overall"
+            self.report.set_obj_html(
+                _obj_title="Call Quality (MOS) Results" + context,
+                _obj="Mean Opinion Score (MOS) estimates how a user would rate the call on a 1–5 scale, "
+                     "where a higher score means better call quality. The graph below compares the {} MOS for "
+                     "each client. The X-axis represents the MOS value, while the Y-axis lists the individual "
+                     "wireless clients.".format(mos_scope) + missing_text)
+            self.report.build_objective()
 
-            test_parameters = pd.DataFrame(
-                [
-                    {
-                        "No of Clients": f"W({self.windows}),L({self.linux}),M({self.mac}),A({self.android})",
-                        "Test Duration(min)": self.duration,
-                        "HOST": self.real_sta_list[0],
-                        "TEST TYPE": testtype,
-                    }
-                ]
-            )
-            self.report.set_table_dataframe(test_parameters)
-            self.report.build_table()
-
-            self.report.set_table_title("Test Devices:")
-            self.report.build_table_title()
-
-            device_details = pd.DataFrame(
-                {
-                    "Hostname": self.real_sta_hostname,
-                    "OS Type": self.real_sta_os_types,
+            series = []
+            for column, label, color, enabled in [
+                    ("Audio MOS", "Audio MOS", "#1b6585", self.audio),
+                    ("Video MOS", "Video MOS", "#6da4b8", self.video),
+                    ("Overall MOS", "Overall MOS", "#1f6f58", True)]:
+                if not enabled:
+                    continue
+                values = [self._safe_float(value, None) for value in plotted[column]]
+                values = [value if value is not None and math.isfinite(value) else None for value in values]
+                if any(value is not None for value in values):
+                    series.append({"name": label, "data": values, "color": color})
+            if not plotted.empty and series:
+                payload = {
+                    "categories": plotted["Device Name"].tolist(),
+                    "series": series,
+                    "valueMax": 5,
                 }
+                chart_id = "teams-{}-mos".format(index)
+                self.report.set_custom_html("""
+                    <div class='chart-card'>
+                      <h3>Per Client {chart_scope} MOS{context}</h3>
+                      <div id='{chart_id}' class='chart'></div>
+                      <script>window.__lfModernReport.renderHorizontalBarChart(
+                        {chart_id_json}, {payload}, "MOS (1-5)", "Wireless Clients");</script>
+                    </div>
+                    """.format(
+                    chart_scope=chart_scope, context=escape(context), chart_id=chart_id,
+                    chart_id_json=json.dumps(chart_id),
+                    payload=json.dumps(payload).replace("</", "<\\/")))
+                self.report.build_custom()
+                self.report.set_custom_html("")
+            self.report_table("Per Client Device MOS Results" + context, mos_rows)
+
+    def add_rssi_report(self):
+        """Add the model report's per-client RSSI graph when ping captured signal data."""
+        ping = getattr(self, "background_ping", None)
+        if not ping or not ping.bg_stats:
+            return
+        names, values = [], []
+        for row in ping.bg_stats.values():
+            rssi = self._safe_float(row.get("rssi"))
+            if not math.isfinite(rssi) or rssi == 0:
+                continue
+            names.append(row.get("name") or row.get("device") or "Unknown client")
+            values.append(abs(rssi))
+        if not values:
+            return
+        payload = {
+            "categories": names,
+            "series": [{"name": "RSSI", "data": values, "color": "#1b6585"}],
+            "labelFormat": {"decimals": 0, "prefix": "−", "suffix": " dBm"},
+        }
+        self.report.set_obj_html(
+            _obj_title="RSSI Of The Clients Connected",
+            _obj="The graph below shows the signal strength of each wireless client during the test. "
+                 "Bars are plotted as −dBm, so a shorter bar means a stronger signal.")
+        self.report.build_objective()
+        self.report.set_custom_html("""
+            <div class='chart-card'>
+              <h3>Per Client RSSI (dBm)</h3>
+              <div id='teams-rssi' class='chart'></div>
+              <script>window.__lfModernReport.renderHorizontalBarChart(
+                "teams-rssi", {payload}, "Signal(-dBm)", "Wireless Clients");</script>
+            </div>
+            """.format(payload=json.dumps(payload).replace("</", "<\\/")))
+        self.report.build_custom()
+        self.report.set_custom_html("")
+
+    def generate_report(self):
+        self.stop_wifi_analysis()
+        try:
+            self.report = lf_report(
+                _output_pdf="teams_call_report.pdf", _output_html="teams_call_report.html",
+                _results_dir_name="teams_call_report", _path=self.path,
             )
-            self.report.set_table_dataframe(device_details)
-            self.report.build_table()
-
-            if self.audio:
-                metrics = [
-                    ("Audio RTT(ms)", "Audio RTT (ms)"),
-                    ("Received Audio Jitter(ms)", "Received Audio Jitter (ms)"),
-                    ("Sent Audio Bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
-                ]
-
-            if self.video:
-                # Create bar graphs for each metric
-                metrics = [
-                    ("Sent Video Bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
-                    ("Received Video Bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
-                    ("Sent Video Packets", "Sent Video Packets"),
-                ]
+            self.report_path_date_time = self.report.path_date_time
+            self.report.set_title(
+                "LANforge Interop<br>Microsoft Teams Call Test<br>"
+                "<span style='font-size:0.55em;'>(Real Client Performance Validation)</span>")
+            self.report.build_banner()
             if self.audio and self.video:
-                # Create bar graphs for each metric
-                metrics = [
-                    ("Audio RTT(ms)", "Audio RTT (ms)"),
-                    ("Received Audio Jitter(ms)", "Received Audio Jitter (ms)"),
-                    ("Sent Audio Bitrate(Kbps)", "Sent Audio Bitrate (Kbps)"),
-                    ("Sent Video Bitrate(Mbps)", "Sent Video Bitrate (Mbps)"),
-                    ("Received Video Bitrate(Mbps)", "Received Video Bitrate (Mbps)"),
-                    ("Sent Video Packets", "Sent Video Packets"),
-                ]
+                mos_scope = "audio, video and overall"
+            elif self.audio:
+                mos_scope = "audio and overall"
+            elif self.video:
+                mos_scope = "video and overall"
+            else:
+                mos_scope = "overall"
+            self.report.set_obj_html(_obj_title="Test Overview", _obj=(
+                "The objective is to conduct automated Microsoft Teams call tests across multiple laptops and "
+                "Android devices to gather statistics on audio and video performance. The test collects these "
+                "statistics, stores them in a CSV file and generates the graphs below. Call quality is summarised "
+                "as a Mean Opinion Score (MOS) on a 1–5 scale for {}.".format(mos_scope)))
+            self.report.build_objective()
 
-            # Read per-device average metrics
-            self.generate_graphs_and_tables(metrics)
+            report_frames = []
+            for item in self.avg_csv_files_list:
+                frame = pd.read_csv(item["file"])
+                report_frames.append((item, frame))
+            # Average each device's available run scores first, giving each device equal weight.
+            mos_frames = [self.report_mos_rows(frame, item) for item, frame in report_frames]
+            combined = pd.concat(mos_frames, ignore_index=True) if mos_frames else self.report_mos_rows(pd.DataFrame(), {})
+            scores = pd.to_numeric(combined["Overall MOS"], errors="coerce")
+            scores = scores.where(scores.map(math.isfinite))
+            per_device = combined.assign(score=scores).groupby("Device Name")["score"].mean().dropna()
+            average = per_device.mean() if not per_device.empty else float("nan")
+            measured = combined.loc[combined["Data Status"] == "Statistics available", "Device Name"].nunique()
+            rating = self.report_mos_rating(average)
+            rating_color = {
+                "Excellent": "#1e7e34", "Good": "#28a745", "Fair": "#f1c40f",
+                "Poor": "#e67e22", "Bad": "#e74c3c", "N/A": "#6c757d",
+            }[rating]
+            self.report.build_info_card(title="Overall Test Verdict", items=[
+                {"label": "Total Clients Configured", "value": len(self.real_sta_hostname)},
+                {"label": "Clients with Statistics", "value": measured},
+                {"label": "Average Overall MOS", "value": f"{average:.2f} / 5" if math.isfinite(average) else "N/A"},
+                {"label": "Overall Rating", "value": "<span style='color:{}; font-weight:800;'>{}</span>".format(
+                    rating_color, rating)},
+            ])
+            self.add_key_findings_to_report(combined, report_frames, average)
+            seconds = int((self.duration or 0) * 60)
+            duration = f"{seconds // 3600:02d}:{seconds % 3600 // 60:02d}:{seconds % 60:02d}"
+            config = {
+                "DUT Model": getattr(self, "dut_model", None) or "Not provided",
+                "DUT Firmware": getattr(self, "dut_firmware", None) or "Not provided",
+                "Number of Clients": f"Total: {len(self.real_sta_hostname)}, Windows: {self.windows}, Linux: {self.linux}, macOS: {self.mac}, Android: {self.android}",
+                "Test Duration(hh:mm:ss)": duration if not self.do_bs else "Band-steering traversal",
+                "Call Type": " & ".join(label for enabled, label in [(self.audio, "Audio"), (self.video, "Video")] if enabled),
+                "Host Interface": f"{self.real_sta_hostname[0]} ({self.real_sta_list[0]})" if self.real_sta_list else "N/A",
+            }
+            self.generate_graphs_and_tables(report_frames)
             if self.do_robo and self.do_webui:
                 self.add_live_view_images_to_report()
             if self.do_bs:
                 self.add_bandsteering_report_section()
-            # Save recorded device issues alongside the test report.
+            self.add_rssi_report()
+            self.add_wifi_analysis_to_report()
+            self.add_teams_ping_report()
             if self.device_issue_log:
                 issues_df = pd.DataFrame(self.device_issue_log)
                 issues_df.to_csv(os.path.join(self.report_path_date_time, "clients_issue.csv"), index=False)
+            self.report.build_info_card(title="Test Configuration",
+                                        items=[{"label": label, "value": value} for label, value in config.items()])
+            self.report.build_device_summary_card([
+                {"name": hostname, "platform": os_type}
+                for hostname, os_type in zip(self.real_sta_hostname, self.real_sta_os_types)
+            ])
+            self.report.build_footer()
             self.report.write_html()
             self.report.write_pdf()
         except Exception as e:
             logging.error(f"Error in generate_report function: {e}", exc_info=True)
         finally:
-            self.move_csv_files()
-            self.move_log_folder()
-            self.move_mobile_log_folder()
+            if getattr(self, "report_path_date_time", None):
+                self.move_csv_files()
+                self.move_log_folder()
+                self.move_mobile_log_folder()
+
+    def start_wifi_analysis(self, host, port=8080):
+        """Start the shared live Wi-Fi event monitor for the Teams clients."""
+        self.wifi_analysis = None
+        self.wifi_analysis_stats = {}
+        self.wifi_analysis_log = None
+        self.wifi_analysis_monitoring = False
+        if not self.real_sta_list:
+            return
+        try:
+            resource_ids = list(dict.fromkeys(
+                ".".join(device.split(".")[:2]) for device in self.real_sta_list))
+            self.wifi_analysis = ClientAnalysis(
+                host=host, port=port, device_list=resource_ids,
+                debug=logger.isEnabledFor(logging.DEBUG))
+            self.wifi_analysis.start_monitoring()
+            self.wifi_analysis_monitoring = True
+        except (Exception, SystemExit) as error:
+            logger.warning("Wifi connectivity analysis could not be started: %s", error)
+            self.wifi_analysis = None
+
+    def stop_wifi_analysis(self):
+        """Stop live Wi-Fi monitoring and retain its per-client statistics."""
+        if not getattr(self, "wifi_analysis_monitoring", False):
+            return
+        self.wifi_analysis_monitoring = False
+        if self.wifi_analysis._monitor_file_name:
+            self.wifi_analysis_log = os.path.join(
+                "Wifi_Messages", self.wifi_analysis._monitor_file_name)
+        try:
+            self.wifi_analysis_stats = self.wifi_analysis.stop_monitoring()
+        except (Exception, SystemExit) as error:
+            logger.warning("Wifi connectivity analysis results could not be collected: %s", error)
+
+    def stop_connectivity_monitoring(self):
+        """Finalize optional Wi-Fi and ping collectors before report generation."""
+        self.stop_wifi_analysis()
+        ping = getattr(self, "background_ping", None)
+        if ping and ping.bg_stop_time is None:
+            try:
+                ping.stop_background_ping()
+            except (Exception, SystemExit) as error:
+                logger.warning("Background ping could not be stopped cleanly: %s", error)
+
+    def add_wifi_analysis_to_report(self):
+        """Match the throughput connection-event graph and per-client table."""
+        wifi_analysis_log = getattr(self, "wifi_analysis_log", None)
+        if wifi_analysis_log and os.path.exists(wifi_analysis_log):
+            try:
+                shutil.copy(wifi_analysis_log, os.path.join(
+                    self.report_path_date_time, "wifi_analysis_messages.json"))
+            except OSError as error:
+                logger.warning("Wifi analysis messages could not be copied: %s", error)
+        if not getattr(self, "wifi_analysis_stats", None):
+            return
+        try:
+            devices, attempts, disconnected, scans, rejected, connected, _remarks, _cx_time = \
+                ClientAnalysis.stats_to_lists(self.wifi_analysis_stats)
+            display_names = {
+                ".".join(station.split(".")[:2]): hostname
+                for station, hostname in zip(self.real_sta_list, self.real_sta_hostname)
+            }
+            devices = [display_names.get(".".join(device.split(".")[:2]), device)
+                       for device in devices]
+            categories = ["Disconnected", "Scans", "Association Attempts", "Association Rejected", "Connected"]
+            totals = [sum(disconnected), sum(scans), sum(attempts), sum(rejected), sum(connected)]
+            colors = ["#e74c3c", "#f1c40f", "#e67e22", "#95a5a6", "#27ae60"]
+            self.report.set_obj_html(
+                _obj_title="Client Connectivity Event Summary",
+                _obj="This graph summarizes connection-related events observed during the Teams test. "
+                     "These metrics provide insight into client stability and wireless connectivity performance.")
+            self.report.build_objective()
+            if any(totals):
+                graph = lf_bar_graph(
+                    _data_set=[totals], _xaxis_name="Event", _yaxis_name="Count",
+                    _xaxis_categories=categories, _graph_image_name="teams-wifi-connectivity-status",
+                    _label=["Events"], _color=colors, _graph_title="Client Connectivity Status")
+                self.report.set_graph_image(graph.build_bar_graph())
+                self.report.build_graph()
+            else:
+                self.report.set_custom_html("""
+                    <div class='chart-card'>
+                      <h3>Client Connectivity Status</h3>
+                      <p style='color:var(--muted); margin:8px 0 4px;'>
+                        No disconnections, scans, association attempts or association rejections were
+                        recorded during the test.
+                      </p>
+                    </div>
+                    """)
+                self.report.build_custom()
+                self.report.set_custom_html("")
+            frame = pd.DataFrame({
+                "Device": [display_names.get(device, device) for device in devices],
+                "Association Attempts": attempts, "Disconnected": disconnected,
+                "Scanning": scans, "Association Rejection": rejected, "Connected": connected,
+            })
+            frame.to_csv(os.path.join(self.report_path_date_time, "wifi_connectivity_status.csv"), index=False)
+            self.report_table("Wifi Connectivity Analysis", frame)
+        except Exception as error:
+            logger.warning("Wifi connectivity analysis could not be added to the report: %s", error)
+
+    def add_teams_ping_report(self):
+        ping = getattr(self, "background_ping", None)
+        if not ping or not ping.bg_stats:
+            self.report.set_obj_html(_obj_title="Ping Test Results Throughout the Test Duration", _obj=(
+                "No background ping results are available. Enable --enable_bg_ping for future runs to collect "
+                "connectivity statistics. Missing ping data does not indicate successful connectivity."))
+            self.report.build_objective()
+            return
+        ping.add_background_ping_to_report(self.report)
 
     def add_live_view_images_to_report(self):
         """
@@ -1638,7 +2002,7 @@ class TeamsAutomation(Realm):
         # 1. Wait for the Video image (Primary trigger)
         while not (os.path.exists(video_path) and os.path.exists(audio_path)):
             if time.time() - start_time > timeout:
-                logger.error(f"Timeout: {video_img_name} not found within 60 seconds.")
+                logger.error(f"Timeout: heatmap images not found within {timeout} seconds.")
                 break
             time.sleep(1)
 
@@ -1657,18 +2021,22 @@ class TeamsAutomation(Realm):
 
         # Add Video Map (if found)
         if os.path.exists(video_path):
+            shutil.copy2(video_path, os.path.join(self.report_path_date_time, video_img_name))
             html_content += (
                 '<div style="page-break-before: always;"></div>'
                 '<h3 style="text-align:center;">Video Heatmap</h3>'
-                f'<div style="text-align:center;"><img src="file://{video_path}" style="width:1200px; height:800px;"></img></div>'
+                f'<div style="text-align:center;"><img src="{video_img_name}" '
+                'style="max-width:100%; height:auto;" /></div>'
             )
 
         # Add Audio Map (if found)
         if os.path.exists(audio_path):
+            shutil.copy2(audio_path, os.path.join(self.report_path_date_time, audio_img_name))
             html_content += (
                 '<div style="page-break-before: always;"></div>'
                 '<h3 style="text-align:center;">Audio Heatmap</h3>'
-                f'<div style="text-align:center;"><img src="file://{audio_path}" style="width:1200px; height:800px;"></img></div>'
+                f'<div style="text-align:center;"><img src="{audio_img_name}" '
+                'style="max-width:100%; height:auto;" /></div>'
             )
 
         # 3. Inject into Report
@@ -1676,142 +2044,64 @@ class TeamsAutomation(Realm):
             self.report.set_custom_html(html_content)
             self.report.build_custom()
 
-    def generate_graphs_and_tables(self, metrics):
-        """
-        Generate graphs and tables for the report based on the collected metrics.
-
-        This method reads the average metrics from the generated CSV files, creates
-        visualizations (bar graphs) for each specified metric, and compiles a summary
-        table of average values for all devices. The generated graphs and tables are
-        then added to the report.
-
-        Args:
-            metrics (list of tuples): A list of tuples where each tuple contains the metric name and its corresponding data.
-
-        """
-        for item in self.avg_csv_files_list:
-            csv_file = item.get("file")
-            coord = item.get("coord")
-            rotation = item.get("rotation")
-            df = pd.read_csv(csv_file)
-            df.columns = df.columns.str.strip()
-
-            logger.debug(
-                f"checking metrics {metrics} in dataframe columns {df.columns.tolist()}"
-            )
-            logger.debug(f"checking metrics dict {metrics}")
-
-            for column, title in metrics:
-                image_name = title.replace(" ", "_")
-                if self.do_robo:
-                    if self.rotations_enabled:
-                        self.report.set_graph_title(
-                            f"Average {title} for Coordinate {coord} with rotation {rotation}"
-                        )
-                        image_name = f"{image_name}_{coord}_{rotation}"
-                    else:
-                        self.report.set_graph_title(
-                            f"Average {title} for Coordinate {coord}"
-                        )
-                        image_name = f"{image_name}_{coord}"
-                else:
-                    self.report.set_graph_title(f"Average {title}")
-                self.report.build_graph_title()
-
-                bar_graph_horizontal = lf_bar_graph_horizontal(
-                    _data_set=[df[column].tolist()],
-                    _xaxis_name=f"AVG {title}",
-                    _yaxis_name="Devices",
-                    _yaxis_label=df["Device Name"].tolist(),
-                    _yaxis_categories=df["Device Name"].tolist(),
-                    _yaxis_step=1,
-                    _yticks_font=8,
-                    _bar_height=0.25,
-                    _color_name=["orange"],
-                    _show_bar_value=True,
-                    _figsize=(16, len(df) * 1 + 4),
-                    _graph_title=f"AVG {title} Per Device",
-                    _graph_image_name=image_name,
-                    _label=[title],
-                )
-                graph_image = bar_graph_horizontal.build_bar_graph_horizontal()
-                self.report.set_graph_image(graph_image)
-                self.report.move_graph_image()
-                self.report.build_graph()
-
-            if self.audio:
-                selected_columns = [
-                    "Device Name",
-                    "Sent Audio Bitrate(Kbps)",
-                    "Sent Audio Packets",
-                    "Audio RTT(ms)",
-                    "Received Audio Jitter(ms)",
-                    "Received Audio Packet Loss(%)",
-                ]
-
-                column_headings = {
-                    "Device Name": "Device Name",
-                    "Sent Audio Bitrate(Kbps)": "AVG Sent Audio Bitrate (Kbps)",
-                    "Sent Audio Packets": "AVG Sent Audio Packets",
-                    "Audio RTT(ms)": "AVG Audio RTT (ms)",
-                    "Received Audio Jitter(ms)": "AVG Received Audio Jitter (ms)",
-                    "Received Audio Packet Loss(%)": "AVG Received Audio Packet Loss (%)",
-                }
-
-                filtered_df = df[selected_columns].rename(columns=column_headings)
-
-                if self.do_robo:
-                    if self.rotations_enabled:
-                        self.report.set_table_title(
-                            f"Average Audio Metrics for {coord} with rotation {rotation}"
-                        )
-                    else:
-                        self.report.set_table_title(
-                            f"Average Audio Metrics for {coord}"
-                        )
-                else:
-                    self.report.set_table_title("Test Audio Results Table")
-
-                self.report.build_table_title()
-                self.report.set_table_dataframe(filtered_df)
-                self.report.build_table()
-
-            if self.video:
-                selected_columns = [
-                    "Device Name",
-                    "Sent Video Bitrate(Mbps)",
-                    "Received Video Bitrate(Mbps)",
-                    "Sent Video Frame Rate(fps)",
-                    "Video RTT (ms)",
-                    "Sent Video Packets",
-                ]
-
-                column_headings = {
-                    "Device Name": "Device Name",
-                    "Sent Video Bitrate(Mbps)": "AVG Sent Video Bitrate (Mbps)",
-                    "Received Video Bitrate(Mbps)": "AVG Received Video Bitrate (Mbps)",
-                    "Sent Video Frame Rate(fps)": "AVG Sent Video Frame Rate (fps)",
-                    "Video RTT (ms)": "AVG Video RTT (ms)",
-                    "Sent Video Packets": "AVG Sent Video Packets",
-                }
-
-                filtered_df = df[selected_columns].rename(columns=column_headings)
-
-                if self.do_robo:
-                    if self.rotations_enabled:
-                        self.report.set_table_title(
-                            f"Average Video Metrics for Coordinate {coord} with rotation {rotation}"
-                        )
-                    else:
-                        self.report.set_table_title(
-                            f"Average Video Metrics for Coordinate {coord}"
-                        )
-                else:
-                    self.report.set_table_title("Test Video Results Table")
-
-                self.report.build_table_title()
-                self.report.set_table_dataframe(filtered_df)
-                self.report.build_table()
+    def generate_graphs_and_tables(self, report_frames):
+        """Render existing summaries without recalculating or modifying measurements."""
+        self.add_mos_report_sections(report_frames)
+        for index, (item, df) in enumerate(report_frames):
+            context = ""
+            if self.do_robo:
+                context = f" — Coordinate {item.get('coord')}"
+                if self.rotations_enabled:
+                    context += f", rotation {item.get('rotation')}"
+            mos_rows = self.report_mos_rows(df, item)
+            missing = mos_rows.loc[
+                mos_rows["Data Status"] != "Statistics available", "Device Name"
+            ].tolist()
+            missing_text = (" {} reported no Teams call statistics and {} therefore not shown.".format(
+                ", ".join(escape(name) for name in missing),
+                "is" if len(missing) == 1 else "are") if missing else "")
+            for enabled, media, description, columns, charts in [
+                (self.audio, "Audio",
+                 "The graphs below show the average audio round-trip time, received audio jitter and sent "
+                 "audio bitrate measured by Teams for each client during the call. The X-axis represents "
+                 "the measured value, while the Y-axis lists the individual wireless clients.",
+                 ["Sent Audio Bitrate(Kbps)", "Sent Audio Packets", "Audio RTT(ms)",
+                  "Received Audio Jitter(ms)", "Received Audio Packet Loss(%)"],
+                 [(["Audio RTT(ms)"], "Per Client Avg Audio RTT (ms)", "Avg Audio RTT (ms)"),
+                  (["Received Audio Jitter(ms)"], "Per Client Avg Received Audio Jitter (ms)", "Avg Received Audio Jitter (ms)"),
+                  (["Sent Audio Bitrate(Kbps)"], "Per Client Avg Sent Audio Bitrate (Kbps)", "Avg Sent Audio Bitrate (kbps)")]),
+                (self.video, "Video",
+                 "The graphs below show the average video round-trip time, sent and received video bitrate "
+                 "and sent video frame rate measured by Teams for each client during the call. The X-axis "
+                 "represents the measured value, while the Y-axis lists the individual wireless clients.",
+                 ["Sent Video Bitrate(Mbps)", "Received Video Bitrate(Mbps)",
+                  "Sent Video Frame Rate(fps)", "Video RTT (ms)", "Sent Video Packets"],
+                 [(["Video RTT (ms)"], "Per Client Avg Video RTT (ms)", "Avg Video RTT (ms)"),
+                  (["Sent Video Bitrate(Mbps)", "Received Video Bitrate(Mbps)"], "Per Client Avg Sent & Received Video Bitrate (Mbps)", "Avg Sent & Received Video Bitrate (Mbps)"),
+                  (["Sent Video Frame Rate(fps)"], "Per Client Avg Sent Video Frame Rate (fps)", "Avg Sent Video Frame Rate (fps)")]),
+            ]:
+                if not enabled:
+                    continue
+                self.report.set_obj_html(
+                    _obj_title=f"{media} Test Results{context}",
+                    _obj=description + missing_text)
+                self.report.build_objective()
+                for chart_index, (fields, graph_title, x_name) in enumerate(charts):
+                    values = [pd.to_numeric(df.get(field, pd.Series(float("nan"), index=df.index)), errors="coerce").tolist() for field in fields]
+                    graph = lf_bar_graph_horizontal(
+                        _data_set=[
+                            [value if math.isfinite(value) else None for value in series]
+                            for series in values
+                        ],
+                        _xaxis_name=x_name, _yaxis_name="Wireless Clients",
+                        _yaxis_categories=df["Device Name"].tolist(),
+                        _graph_image_name=f"teams-{index}-{media}-{chart_index}",
+                        _label=fields, _color=["#1b6585", "#6da4b8"],
+                        _graph_title=graph_title + context)
+                    self.report.set_graph_image(graph.build_bar_graph_horizontal())
+                    self.report.build_graph()
+                table = df.reindex(columns=["Device Name"] + columns).rename(columns={col: "AVG " + col for col in columns})
+                self.report_table(f"{media} Results Table{context}", table)
 
     def record_device_issue(self, device, issue, api_response=None):
         """Record a timestamped device issue for inclusion in the test report."""
@@ -2306,7 +2596,8 @@ class TeamsAutomation(Realm):
 
     # Load the credentials on server startup
     def load_credentials(self):
-        with open('teams_cred.csv', newline='') as csvfile:
+        credentials_path = os.path.join(TEAMS_AUTOMATION_DIR, 'teams_cred.csv')
+        with open(credentials_path, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             self.credentials = list(reader)
 
@@ -3021,6 +3312,8 @@ def main():
             "--log_level", help="Level of the logs to be dispalyed", default="info"
         )
         optional.add_argument("--lf_logger_config_json", help="lf_logger config json")
+        optional.add_argument("--dut_model", default="", help="DUT model shown in the report only")
+        optional.add_argument("--dut_firmware", default="", help="DUT firmware shown in the report only")
         optional.add_argument("--audio", action="store_true")
         optional.add_argument("--video", action="store_true")
         optional.add_argument(
@@ -3141,6 +3434,8 @@ def main():
             mac_dir=args.mac_dir,
         )
 
+        teams.dut_model = args.dut_model
+        teams.dut_firmware = args.dut_firmware
         teams.upstream_port = teams.change_port_to_ip(args.upstream_port)
 
         teams.realdevice = RealDevice(
