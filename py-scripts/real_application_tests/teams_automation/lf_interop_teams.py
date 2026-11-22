@@ -61,6 +61,8 @@ NOTES:
 
 """
 import os
+import math
+import re
 import csv
 import time
 import signal
@@ -302,6 +304,144 @@ class TeamsAutomation(Realm):
                 self.robo_obj.total_cycles = self.cycles
             self.successful_coords = []
             self.failed_coords = []
+
+    def _safe_float(self, value, default=float("nan")):
+        if pd.isna(value):
+            return default
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+
+    def _extract_resolution_p(self, value):
+        if pd.isna(value):
+            return float("nan")
+        if isinstance(value, (int, float)):
+            return float(value)
+
+        text = str(value).strip().lower()
+        if not text or text == "na":
+            return float("nan")
+
+        match = re.search(r"(\d+)\s*[xX]\s*(\d+)", text)
+        if match:
+            return float(match.group(2))
+
+        single = re.search(r"(\d+)", text)
+        if single:
+            return float(single.group(1))
+
+        return float("nan")
+
+    def calculate_mos_scores(self, audio_rtt_ms, packet_loss_percent, video_rtt_ms,
+                             fps, resolution_p, bitrate_mbps):
+        audio_rtt_ms = self._safe_float(audio_rtt_ms)
+        packet_loss_percent = self._safe_float(packet_loss_percent)
+        video_rtt_ms = self._safe_float(video_rtt_ms)
+        fps = self._safe_float(fps)
+        resolution_p = self._safe_float(resolution_p)
+        bitrate_mbps = self._safe_float(bitrate_mbps)
+
+        audio_mos = float("nan")
+        if (self.audio and all(math.isfinite(value) for value in (audio_rtt_ms, packet_loss_percent))
+                and audio_rtt_ms >= 0 and packet_loss_percent >= 0):
+            delay = audio_rtt_ms / 2
+            delay_impairment = (0.024 * delay if delay < 177.3
+                                else 0.024 * delay + 0.11 * (delay - 177.3))
+            equipment_impairment = 5 + 90 * (packet_loss_percent / (packet_loss_percent + 20))
+            rating_factor = 94.2 - delay_impairment - equipment_impairment
+            if rating_factor < 0:
+                audio_mos = 1.0
+            elif rating_factor > 100:
+                audio_mos = 4.5
+            else:
+                audio_mos = 1 + 0.035 * rating_factor + (
+                    7e-6 * rating_factor * (rating_factor - 60) * (100 - rating_factor))
+
+        if video_rtt_ms <= 150:
+            rtt_score = 5
+        elif video_rtt_ms <= 250:
+            rtt_score = 4
+        elif video_rtt_ms <= 350:
+            rtt_score = 3
+        elif video_rtt_ms <= 450:
+            rtt_score = 2
+        else:
+            rtt_score = 1
+
+        if fps >= 30:
+            fps_score = 5
+        elif fps >= 25:
+            fps_score = 4
+        elif fps >= 15:
+            fps_score = 3
+        elif fps >= 10:
+            fps_score = 2
+        else:
+            fps_score = 1
+
+        if resolution_p >= 1080:
+            res_score = 5
+        elif resolution_p >= 900:
+            res_score = 4.7
+        elif resolution_p >= 720:
+            res_score = 4.2
+        elif resolution_p >= 600:
+            res_score = 3.8
+        elif resolution_p >= 540:
+            res_score = 3.6
+        elif resolution_p >= 480:
+            res_score = 3.2
+        elif resolution_p >= 432:
+            res_score = 2.9
+        elif resolution_p >= 360:
+            res_score = 2.4
+        elif resolution_p >= 240:
+            res_score = 1.8
+        elif resolution_p >= 180:
+            res_score = 1.3
+        else:
+            res_score = 1
+
+        if bitrate_mbps >= 2.5:
+            bitrate_score = 5
+        elif bitrate_mbps >= 2.0:
+            bitrate_score = 4.7
+        elif bitrate_mbps >= 1.2:
+            bitrate_score = 4.2
+        elif bitrate_mbps >= 0.9:
+            bitrate_score = 3.8
+        elif bitrate_mbps >= 0.8:
+            bitrate_score = 3.6
+        elif bitrate_mbps >= 0.6:
+            bitrate_score = 3.2
+        elif bitrate_mbps >= 0.45:
+            bitrate_score = 2.9
+        elif bitrate_mbps >= 0.30:
+            bitrate_score = 2.4
+        elif bitrate_mbps >= 0.15:
+            bitrate_score = 1.8
+        elif bitrate_mbps >= 0.08:
+            bitrate_score = 1.3
+        else:
+            bitrate_score = 1
+
+        video_values = (video_rtt_ms, fps, resolution_p, bitrate_mbps)
+        video_mos = float("nan")
+        if self.video and all(math.isfinite(value) and value >= 0 for value in video_values):
+            video_mos = (0.35 * fps_score) + (0.30 * bitrate_score) + (0.20 * res_score) + (0.15 * rtt_score)
+
+        if self.audio and self.video:
+            overall_mos = ((0.6 * audio_mos) + (0.4 * video_mos)
+                           if math.isfinite(audio_mos) and math.isfinite(video_mos) else float("nan"))
+        else:
+            overall_mos = audio_mos if self.audio else video_mos
+
+        return {
+            "Audio_MOS": round(audio_mos, 2) if math.isfinite(audio_mos) else float("nan"),
+            "Video_MOS": round(video_mos, 2) if math.isfinite(video_mos) else float("nan"),
+            "Overall_MOS": round(overall_mos, 2) if math.isfinite(overall_mos) else float("nan"),
+        }
 
     def updating_webui_runningjson(self, obj):
         data = {}
@@ -2392,17 +2532,17 @@ class TeamsAutomation(Realm):
                                 timestamp,
                                 audio.get("au_sent_bitrate", 0),
                                 audio.get("au_sent_pkts", 0),
-                                audio.get("au_rtt", 0),
+                                audio.get("au_rtt", None),
                                 audio.get("au_sent_codec", "NA"),
                                 audio.get("au_recv_jitter", 0),
-                                audio.get("au_recv_pkt_loss", 0),
+                                audio.get("au_recv_pkt_loss", None),
                                 audio.get("au_recv_pkts", 0),
                                 audio.get("au_recv_codec", "NA"),
                                 video.get("vi_sent_bitrate", 0),
-                                video.get("vi_recv_bitrate", 0),
-                                video.get("vi_sent_frame_rate", 0),
+                                video.get("vi_recv_bitrate", None),
+                                video.get("vi_sent_frame_rate", None),
                                 video.get("vi_sent_res", "NA"),
-                                video.get("vi_rtt", 0),
+                                video.get("vi_rtt", None),
                                 video.get("vi_sent_pkts", 0),
                                 video.get("vi_sent_codec", "NA"),
                                 video.get("vi_processing", "NA"),
@@ -2413,10 +2553,10 @@ class TeamsAutomation(Realm):
                                 timestamp,
                                 audio.get("au_sent_bitrate", 0),
                                 audio.get("au_sent_pkts", 0),
-                                audio.get("au_rtt", 0),
+                                audio.get("au_rtt", None),
                                 audio.get("au_sent_codec", "NA"),
                                 audio.get("au_recv_jitter", 0),
-                                audio.get("au_recv_pkt_loss", 0),
+                                audio.get("au_recv_pkt_loss", None),
                                 audio.get("au_recv_pkts", 0),
                                 audio.get("au_recv_codec", "NA"),
                             ]
@@ -2426,10 +2566,10 @@ class TeamsAutomation(Realm):
                             row = [
                                 timestamp,
                                 video.get("vi_sent_bitrate", 0),
-                                video.get("vi_recv_bitrate", 0),
-                                video.get("vi_sent_frame_rate", 0),
+                                video.get("vi_recv_bitrate", None),
+                                video.get("vi_sent_frame_rate", None),
                                 video.get("vi_sent_res", "NA"),
-                                video.get("vi_rtt", 0),
+                                video.get("vi_rtt", None),
                                 video.get("vi_sent_pkts", 0),
                                 video.get("vi_sent_codec", "NA"),
                                 video.get("vi_processing", "NA"),
@@ -2661,78 +2801,52 @@ class TeamsAutomation(Realm):
             output_file = os.path.join(self.path, "teams_call_avg_data.csv")
         summary_rows = []
 
+        # Use exact configured-device filenames for this run, never summaries,
+        # issue logs, ping CSVs, or files from other robot coordinates.
+        suffix = ""
         if self.do_robo:
+            suffix = f"_{self.current_coord}"
             if self.rotations_enabled:
-                logger.info(
-                    f"Creating average data for coordinate {self.current_coord} with rotation {self.current_rotation}"
-                )
-                for csv_path in glob.glob(
-                    os.path.join(
-                        self.path, f"*{self.current_coord}_{self.current_rotation}.csv"
-                    )
-                ):
-                    if csv_path.endswith("teams_cred.csv") or os.path.basename(
-                            csv_path).startswith("teams_call_avg_data"):
-                        continue
-                    df = pd.read_csv(csv_path)
-
-                    device_name = os.path.splitext(os.path.basename(csv_path))[0]
-                    df = df.drop(columns=exclude_cols, errors="ignore")
-
-                    df = df.apply(pd.to_numeric, errors="coerce")
-                    averages = df.mean().round(2)
-
-                    row = averages.to_dict()
-                    row["Device Name"] = device_name
-                    summary_rows.append(row)
-
-            else:
-                logger.info(
-                    f"Creating average data for coordinate {self.current_coord} with no rotation"
-                )
-
-                for csv_path in glob.glob(
-                    os.path.join(self.path, f"*{self.current_coord}.csv")
-                ):
-                    if csv_path.endswith("teams_cred.csv") or os.path.basename(
-                            csv_path).startswith("teams_call_avg_data"):
-                        continue
-                    df = pd.read_csv(csv_path)
-
-                    device_name = os.path.splitext(os.path.basename(csv_path))[0]
-                    df = df.drop(columns=exclude_cols, errors="ignore")
-
-                    df = df.apply(pd.to_numeric, errors="coerce")
-                    averages = df.mean().round(2)
-
-                    row = averages.to_dict()
-                    row["Device Name"] = device_name
-                    summary_rows.append(row)
-        else:
-            logger.info("Creating average data for all devices")
-
-            for csv_path in glob.glob(os.path.join(self.path, "*.csv")):
-                if csv_path.endswith("teams_cred.csv") or csv_path.endswith(
-                    "teams_call_avg_data.csv"
-                ):
-                    continue
+                suffix += f"_{self.current_rotation}"
+        metric_columns = set(self.audio_stats_header + self.video_stats_header)
+        for hostname in dict.fromkeys(self.real_sta_hostname):
+            csv_path = os.path.join(self.path, f"{hostname}{suffix}.csv")
+            if not os.path.isfile(csv_path):
+                continue
+            try:
                 df = pd.read_csv(csv_path)
+            except (pd.errors.EmptyDataError, pd.errors.ParserError) as error:
+                logger.warning("Skipping invalid statistics CSV %s: %s", csv_path, error)
+                continue
+            if df.empty or "timestamp" not in df.columns or not metric_columns.intersection(df.columns):
+                logger.warning("Skipping CSV without device statistics: %s", csv_path)
+                continue
 
-                device_name = os.path.splitext(os.path.basename(csv_path))[0]
-                df = df.drop(columns=exclude_cols, errors="ignore")
+            resolution = float("nan")
+            if "Sent Video Resolution(px)" in df.columns:
+                resolution = df["Sent Video Resolution(px)"].apply(self._extract_resolution_p).mean()
+            numeric = df.drop(columns=exclude_cols, errors="ignore")
+            numeric = numeric.apply(pd.to_numeric, errors="coerce")
+            numeric = numeric.replace([float("inf"), -float("inf")], float("nan"))
+            row = numeric.mean().round(2).to_dict()
+            row["Device Name"] = os.path.splitext(os.path.basename(csv_path))[0]
+            row.update(self.calculate_mos_scores(
+                audio_rtt_ms=row.get("Audio RTT(ms)"),
+                packet_loss_percent=row.get("Received Audio Packet Loss(%)"),
+                video_rtt_ms=row.get("Video RTT (ms)"),
+                fps=row.get("Sent Video Frame Rate(fps)"),
+                resolution_p=round(resolution, 2),
+                bitrate_mbps=row.get("Received Video Bitrate(Mbps)"),
+            ))
+            summary_rows.append(row)
 
-                df = df.apply(pd.to_numeric, errors="coerce")
-                averages = df.mean().round(2)
-
-                row = averages.to_dict()
-                row["Device Name"] = device_name
-                summary_rows.append(row)
-
-        # Skip averaging when a robot run ends before monitoring produces any CSV data.
+        # Skip averaging when a run ends before monitoring produces any CSV data.
         if not summary_rows:
-            location = f"coordinate {self.current_coord}"
-            if self.rotations_enabled:
-                location += f", rotation {self.current_rotation}"
+            location = "the test"
+            if self.do_robo:
+                location = f"coordinate {self.current_coord}"
+                if self.rotations_enabled:
+                    location += f", rotation {self.current_rotation}"
             logger.warning(
                 "No monitoring data was collected for %s; skipping average-data "
                 "generation for this run.",
@@ -2747,7 +2861,7 @@ class TeamsAutomation(Realm):
         ]
         summary_df = summary_df[cols]
 
-        summary_df.to_csv(output_file, index=False)
+        summary_df.to_csv(output_file, index=False, na_rep="N/A")
         logger.info(f"Avg data saved to {output_file}")
         self.avg_csv_files_list.append(
             {
