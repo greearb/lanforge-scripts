@@ -18,6 +18,34 @@ decryption is verified, 2 when none is verified, and 1 on a processing error.
 Check `protected_data_remaining` to distinguish partial from complete decoding.
 The report covers the whole capture even when `--filter` narrows the text.
 
+## Text display and beamforming reports
+
+The time column uses epoch seconds. Brief output also includes frequency/channel,
+RSSI in dBm, the Action category and EHT/HE/VHT action values when present in
+the packet. Missing radio metadata or action fields leave those columns empty.
+
+Use `--remove_beamforming` to hide HE/EHT/VHT compressed beamforming/CQI
+reports in either brief or verbose text:
+
+```sh
+python3 lf_wifi_decrypt.py --pcap capture.pcapng --events wifi_events.txt --remove_beamforming -o decoded.txt
+python3 lf_wifi_decrypt.py --pcap capture.pcapng --events wifi_events.txt --remove_beamforming --filter 'wlan.fc.type == 0' --mode verbose -o management.txt
+```
+
+The option adds `!(wlan.eht.action == 0 || wlan.he.action == 0 || wlan.vht.action == 0)`
+and combines it with the caller's `--filter` and `--decrypted-only` using AND.
+These reports use category-specific action fields; `wlan.fixed.action_code`
+does not identify them. This option does not remove HT feedback, sounding
+triggers or every other beamforming-related frame. Verification/decryption
+counts still cover the complete input capture. The report records the requested
+filter, `remove_beamforming` and the actual `effective_output_filter`.
+
+The CLI prints quoted TShark text-render commands to stderr, with key values
+redacted. `--quiet` hides those commands and batch progress; warnings and the
+final summary remain. Imported callers receive commands through the optional
+progress callback and control their own logging. Python callers select this
+filter with `remove_beamforming=True` in `decrypt_capture()`.
+
 ## Storage and cleanup
 
 By default `--storage sqlite` keeps frame metadata and decoded text in an

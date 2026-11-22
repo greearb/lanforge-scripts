@@ -19,6 +19,8 @@ NOTES:      Requires Python 3.8+ and TShark with the "tk" key type.
             Matching TK/GTK values allow decoding without captured EAPOL.
             Keys are tried across the capture, independent of event times.
             The report verifies frames; it does not label reconnect sessions.
+            Text time is epoch seconds. Brief output includes radio metadata
+            and Action fields; --remove_beamforming hides HE/EHT/VHT reports.
 
             Python callers can import decrypt_capture without running the CLI.
 """
@@ -31,6 +33,7 @@ import io
 import json
 import os
 import re
+import shlex
 import sqlite3
 import stat
 import subprocess
@@ -47,7 +50,11 @@ WORKSPACE_PREFIX = "lf_wifi_decrypt_"
 WORKSPACE_MARKER = ".workspace.json"
 WORKSPACE_LOCK = ".workspace.lock"
 COLUMNS = ('"No.","%m","Time","%t","Source","%s",'
-           '"Destination","%d","Protocol","%p","Length","%L","Info","%i"')
+           '"Destination","%d","Protocol","%p","Length","%L","Freq","%F",'
+           '"RSSI","%Cus:wlan_radio.signal_dbm","Info","%i",'
+           '"Category","%Cus:wlan.fixed.category_code","EHT Action","%Cus:wlan.eht.action",'
+           '"HE Action","%Cus:wlan.he.action","VHT Action","%Cus:wlan.vht.action"')
+BEAMFORMING_FILTER = "!(wlan.eht.action == 0 || wlan.he.action == 0 || wlan.vht.action == 0)"
 EVENT_RECORD = re.compile(r"^wifi_event\s+(\S+)\s+\S+\s+\S+\s+'(.*)'$")
 KEY_EVENT = re.compile(r"WPA:\s*(PMK|PTK|TK|GTK)\s+([0-9a-fA-F]+)\s*$")
 SCOPE = re.compile(r"(?:(?<![\d.])(\d{1,3}\.\d{1,3}):\s+)?IFNAME=(\S+)")
@@ -571,8 +578,30 @@ def packet_text(stream, mode):
         yield number, "".join(block)
 
 
+def text_filter(display_filter=None, decrypted_only=False, remove_beamforming=False):
+    """Combine text selections without changing capture-wide verification."""
+    filters = [f"({display_filter})"] if display_filter else []
+    if decrypted_only:
+        filters.append("(wlan.fc.type == 2 && wlan.fc.protected == 1 && llc)")
+    if remove_beamforming:
+        # Each generation has its own action field; the generic action code
+        # does not identify these compressed beamforming/CQI reports.
+        filters.append(BEAMFORMING_FILTER)
+    return " && ".join(filters) or None
+
+
+def command_text(command, secrets):
+    """Show a quoted render command, keeping this pass's keys out of logs."""
+    arguments = [str(argument) for argument in command]
+    for secret in secrets:
+        if secret:
+            arguments = [argument.replace(secret, "<redacted>") for argument in arguments]
+    return subprocess.list2cmdline(arguments) if os.name == "nt" else shlex.join(arguments)
+
+
 def render_batch(tshark, pcap, env, timeout, store, batch, mode,
-                 display_filter, decrypted_only, secrets):
+                 display_filter, decrypted_only, secrets, *, remove_beamforming=False,
+                 progress=None):
     """Store each frame's text from its first successful decoding batch.
 
     Other frames come from batch zero. Rendering follows verification, so an
@@ -580,14 +609,16 @@ def render_batch(tshark, pcap, env, timeout, store, batch, mode,
     TShark's stream reassembly remains local to each batch.
     """
     command = base_command(tshark, pcap, True)
-    command += ["-o", "gui.column.format:" + COLUMNS]
-    filters = [f"({display_filter})"] if display_filter else []
-    if decrypted_only:
-        filters.append("(wlan.fc.type == 2 && wlan.fc.protected == 1 && llc)")
-    if filters:
-        command += ["-Y", " && ".join(filters)]
+    command += ["-t", "e", "-o", "gui.column.format:" + COLUMNS]
+    selection = text_filter(display_filter, decrypted_only, remove_beamforming)
+    if selection:
+        command += ["-Y", selection]
     if mode == "verbose":
         command.append("-V")
+    # The CLI prints this callback event to stderr unless --quiet is set.
+    # Imported callers keep control of logging; the API never prints here.
+    if progress is not None:
+        progress({"stage": "command", "command": command_text(command, secrets)})
     with packet_buffer(store) as output:
         run_checked(command, env, timeout, secrets, output)
         output.seek(0)
@@ -629,7 +660,7 @@ def decrypt_capture(pcap, *, events=(), temporal_keys=(), ssid=None, password=No
                     decrypted_only=False, output=None, report_path=None,
                     tshark="tshark", timeout=120, key_batch_size=64,
                     interfaces=(), resources=(), progress=None, output_stream=None,
-                    storage="sqlite"):
+                    storage="sqlite", remove_beamforming=False):
     """Decode a capture and return a JSON-compatible verification report.
 
     Supply an output path for decoded text, or output_stream for a text stream.
@@ -645,6 +676,10 @@ def decrypt_capture(pcap, *, events=(), temporal_keys=(), ssid=None, password=No
     storage="memory" keeps packet records/text in Python containers and avoids
     SQLite. The default "sqlite" backend limits packet-text RAM usage. Both
     use private, per-call temporary key profiles and clean up on normal Ctrl-C.
+
+    remove_beamforming excludes HE/EHT/VHT compressed beamforming/CQI reports
+    from text only. Verification still scans the whole capture. Text timestamps
+    use epoch seconds; progress callbacks also receive redacted render commands.
     """
     pcap = Path(pcap)
     if isinstance(events, (str, Path)):
@@ -715,7 +750,8 @@ def decrypt_capture(pcap, *, events=(), temporal_keys=(), ssid=None, password=No
                 for index in sorted(owners):
                     notify({"stage": "text", "batch": index + 1, "batches": len(batches)})
                     render_batch(tshark, pcap, profiles[index], timeout, store, index, mode,
-                                 display_filter, decrypted_only, [value for _, value in batches[index]])
+                                 display_filter, decrypted_only, [value for _, value in batches[index]],
+                                 remove_beamforming=remove_beamforming, progress=notify)
             if file_sha256(pcap) != digest:
                 raise RuntimeError("Capture changed during decoding; use a completed capture.")
             report = {
@@ -731,6 +767,8 @@ def decrypt_capture(pcap, *, events=(), temporal_keys=(), ssid=None, password=No
                 "protected_data_remaining": before["protected_data"] - after["decoded_protected_llc"],
                 "verification_scope": "Full capture; newly decoded protected data with LLC versus decryption disabled",
                 "output_filter": display_filter, "decrypted_only": decrypted_only,
+                "remove_beamforming": bool(remove_beamforming),
+                "effective_output_filter": text_filter(display_filter, decrypted_only, remove_beamforming),
                 "text_frames_written": store.text_count(),
                 "text_reassembly_scope": "Per key batch; cross-batch stream reassembly is not combined",
             }
@@ -777,6 +815,8 @@ def parse_args(argv=None):
                         help="Keep keys from this resource, e.g. 1.1; requires resource-tagged logs")
     parser.add_argument("--mode", choices=("brief", "verbose"), default="brief")
     parser.add_argument("--filter", help="Display filter for text; verification scans the full capture")
+    parser.add_argument("--remove_beamforming", action="store_true",
+                        help="Exclude HE/EHT/VHT compressed beamforming/CQI reports from text; combines with --filter")
     parser.add_argument("--decrypted-only", action="store_true")
     parser.add_argument("-o", "--output", type=Path, help="Decoded text; default is standard output")
     parser.add_argument("--report", type=Path, help="JSON report; defaults to OUTPUT.json")
@@ -789,7 +829,7 @@ def parse_args(argv=None):
     storage_group.add_argument("--no-sqlite", dest="storage", action="store_const", const="memory",
                                help="Keep packet records and text in Python RAM instead of SQLite")
     parser.set_defaults(storage="sqlite")
-    parser.add_argument("--quiet", action="store_true", help="Hide batch progress")
+    parser.add_argument("--quiet", action="store_true", help="Hide batch progress and TShark render commands")
     args = parser.parse_args(argv)
     if args.purge_sqlite:
         if any([args.pcap, args.events, args.tk, args.ssid, args.password, args.output, args.report]):
@@ -811,6 +851,8 @@ def main(argv=None):
             return
         if event["stage"] == "keys":
             print(f"Checking key batch {event['batch']}/{event['batches']}", file=sys.stderr)
+        elif event["stage"] == "command":
+            print("tshark command: " + event["command"], file=sys.stderr)
 
     try:
         if args.purge_sqlite:
@@ -827,6 +869,7 @@ def main(argv=None):
             interfaces=args.interface, resources=args.resource, progress=progress,
             output_stream=sys.stdout if args.output is None else None,
             storage=args.storage,
+            remove_beamforming=args.remove_beamforming,
         )
         for warning in report["warnings"][:20]:
             print("Warning: " + warning, file=sys.stderr)
