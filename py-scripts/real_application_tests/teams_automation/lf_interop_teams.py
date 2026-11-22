@@ -114,6 +114,7 @@ RealDevice = lf_base_interop_profile.RealDevice
 
 # robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
 robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
+lf_interop_ping = importlib.import_module("py-scripts.lf_interop_ping")
 ClientAnalysis = importlib.import_module("py-scripts.lf_wifi_msgs").ClientAnalysis
 
 # Set up logging
@@ -2702,8 +2703,11 @@ class TeamsAutomation(Realm):
         time.sleep(10)
         self.create_avg_data()
         self.stop_connectivity_monitoring()
+        ping = getattr(self, "background_ping", None)
         self.generate_report()
         self.cleanup_generic_endpoints()
+        if ping:
+            ping.cleanup()
         self.stop_test_in_webui()
         logging.info("Exiting the application.")
         os._exit(0)
@@ -3388,6 +3392,16 @@ def main():
         optional.add_argument(
             "--wifi_analysis", action="store_true",
             help="Include real-client Wi-Fi connection events collected during the test")
+        background_ping = parser.add_argument_group("Background ping")
+        background_ping.add_argument(
+            "--enable_bg_ping", action="store_true",
+            help="Run ping continuously on the selected clients during the Teams test")
+        background_ping.add_argument(
+            "--bg_ping_target", default=None,
+            help="Ping target; defaults to --upstream_port")
+        background_ping.add_argument(
+            "--bg_ping_interval", type=float, default=1,
+            help="Background ping packet interval in seconds")
 
         args = parser.parse_args()
 
@@ -3468,6 +3482,21 @@ def main():
 
         if args.wifi_analysis:
             teams.start_wifi_analysis(host=args.mgr, port=8080)
+        teams.background_ping = None
+        if args.enable_bg_ping:
+            try:
+                teams.background_ping = lf_interop_ping.Ping(
+                    host=args.mgr, port=8080,
+                    target=args.bg_ping_target or args.upstream_port,
+                    interval=args.bg_ping_interval, sta_list=[], duration=0,
+                    real=True, virtual=False,
+                    debug=logger.isEnabledFor(logging.DEBUG))
+                if not teams.background_ping.start_background_ping(teams.real_sta_list):
+                    teams.background_ping = None
+            except (Exception, SystemExit) as error:
+                logger.warning("Background ping could not be started: %s", error)
+                teams.background_ping = None
+
         if args.do_robo:
             teams.run_robo_test()
         else:
@@ -3492,6 +3521,8 @@ def main():
                 teams.generate_report()
                 if not teams.no_post_cleanup:
                     teams.cleanup_generic_endpoints()
+                    if getattr(teams, 'background_ping', None):
+                        teams.background_ping.cleanup()
                 logger.info("Test Completed")
 
 
