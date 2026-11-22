@@ -114,6 +114,7 @@ RealDevice = lf_base_interop_profile.RealDevice
 
 # robo_base_class = importlib.import_module("py-scripts.lf_robo_base_class")
 robo_base_class = importlib.import_module("py-scripts.lf_base_robo")
+ClientAnalysis = importlib.import_module("py-scripts.lf_wifi_msgs").ClientAnalysis
 
 # Set up logging
 log = logging.getLogger("werkzeug")
@@ -2700,6 +2701,7 @@ class TeamsAutomation(Realm):
         self.stop_signal = True
         time.sleep(10)
         self.create_avg_data()
+        self.stop_connectivity_monitoring()
         self.generate_report()
         self.cleanup_generic_endpoints()
         self.stop_test_in_webui()
@@ -3383,6 +3385,10 @@ def main():
             help="Comma-separated list of BSSIDs for bandsteering test",
         )
 
+        optional.add_argument(
+            "--wifi_analysis", action="store_true",
+            help="Include real-client Wi-Fi connection events collected during the test")
+
         args = parser.parse_args()
 
         # set the logger level to debug
@@ -3459,6 +3465,9 @@ def main():
             teams.update_webui_data()
         teams.load_credentials()
         teams.handle_flask_server()
+
+        if args.wifi_analysis:
+            teams.start_wifi_analysis(host=args.mgr, port=8080)
         if args.do_robo:
             teams.run_robo_test()
         else:
@@ -3473,6 +3482,7 @@ def main():
         if args is not None and not ("--help" in sys.argv or "-h" in sys.argv):
             if teams is not None:
                 teams.stop_signal = True
+                teams.stop_connectivity_monitoring()
                 if args.do_webUI:
                     teams.stop_test_in_webui()
                 logger.info("Waiting for Browser Cleanup at Client Side")
