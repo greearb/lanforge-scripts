@@ -6329,6 +6329,14 @@ class MultiTraffic(Realm):
                     while obj_name in self.http_obj_dict[ce]:
                         if ce == "parallel":
                             obj_no = ''
+                        # No results (e.g. stopped early): leave this test out of the report instead of crashing
+                        if self.http_obj_dict[ce][obj_name]["data"] is None:
+                            logger.warning(f"{obj_name} has no results, so it is left out of the overall report")
+                            if ce == "series":
+                                obj_no += 1
+                                obj_name = f"http_test_{obj_no}"
+                                continue
+                            break
                         http_data = self.http_obj_dict[ce][obj_name]["data"]
 
                         self.overall_report.set_obj_html(_obj_title=f'HTTP Test {obj_no}', _obj="")
@@ -6549,6 +6557,14 @@ class MultiTraffic(Realm):
                     while obj_name in self.ftp_obj_dict[ce]:
                         if ce == "parallel":
                             obj_no = ''
+                        # No results (e.g. stopped early): leave this test out of the report instead of crashing
+                        if self.ftp_obj_dict[ce][obj_name]["data"] is None:
+                            logger.warning(f"{obj_name} has no results, so it is left out of the overall report")
+                            if ce == "series":
+                                obj_no += 1
+                                obj_name = f"ftp_test_{obj_no}"
+                                continue
+                            break
                         params = self.ftp_obj_dict[ce][obj_name]["data"].copy()
                         input_setup_info = params["input_setup_info"].copy() if isinstance(params["input_setup_info"], (list, dict, set)) else params["input_setup_info"]
                         csv_outfile = params["csv_outfile"].copy() if isinstance(params["csv_outfile"], (list, dict, set)) else params["csv_outfile"]
@@ -6867,6 +6883,14 @@ class MultiTraffic(Realm):
                     while obj_name in self.thput_obj_dict[ce]:
                         if ce == "parallel":
                             obj_no = ''
+                        # No results (e.g. stopped early): leave this test out of the report instead of crashing
+                        if self.thput_obj_dict[ce][obj_name]["data"] is None:
+                            logger.warning(f"{obj_name} has no results, so it is left out of the overall report")
+                            if ce == "series":
+                                obj_no += 1
+                                obj_name = f"thput_test_{obj_no}"
+                                continue
+                            break
                         self.overall_report.set_obj_html(_obj_title=f'THROUGHPUT Test {obj_no}', _obj="")
                         self.overall_report.build_objective()
                         # obj_name = f"thput_test_{obj_no}"
@@ -7198,7 +7222,7 @@ class MultiTraffic(Realm):
                                     _obj_title=f"{real_time_data}",
                                     _obj=" ")
                                 self.overall_report.build_objective()
-                                graph_png = curr_thpt_obj.build_line_graph(
+                                graph_png = build_throughput_line_graph(  # Throughput no longer has build_line_graph()
                                     data_set=data_set_in_graph,
                                     xaxis_name="Time",
                                     yaxis_name="Throughput (Mbps)",
@@ -7798,7 +7822,7 @@ class MultiTraffic(Realm):
                                             else:
                                                 xaxis_categories = data['TIMESTAMP'][data['Iteration'] == i + 1].values.tolist()
                                                 graph_image_name = "line_graph{}_{}".format(coordinate, i)
-                                            graph_png = curr_thpt_obj.build_line_graph(
+                                            graph_png = build_throughput_line_graph(  # Throughput no longer has build_line_graph()
                                                 data_set=data_set_in_graph,
                                                 xaxis_name="Time",
                                                 yaxis_name="Throughput (Mbps)",
@@ -8144,7 +8168,7 @@ class MultiTraffic(Realm):
                                     _obj_title=f"{real_time_data}",
                                     _obj=" ")
                                 self.overall_report.build_objective()
-                                graph_png = curr_thpt_obj.build_line_graph(
+                                graph_png = build_throughput_line_graph(  # Throughput no longer has build_line_graph()
                                     data_set=data_set_in_graph,
                                     xaxis_name="Time",
                                     yaxis_name="Throughput (Mbps)",
@@ -8284,6 +8308,14 @@ class MultiTraffic(Realm):
                     while obj_name in self.ping_obj_dict[ce]:
                         if ce == "parallel":
                             obj_no = ''
+                        # No results (e.g. stopped early): leave this test out of the report instead of crashing
+                        if self.ping_obj_dict[ce][obj_name]["data"] is None:
+                            logger.warning(f"{obj_name} has no results, so it is left out of the overall report")
+                            if ce == "series":
+                                obj_no += 1
+                                obj_name = f"ping_test_{obj_no}"
+                                continue
+                            break
                         params = self.ping_obj_dict[ce][obj_name]["data"].copy()
                         result_json = params["result_json"]
                         report_path = params["report_path"]
@@ -9115,6 +9147,14 @@ class MultiTraffic(Realm):
                         if ce == "parallel":
                             obj_no = ''
                         logging.debug("mcast_obj_dict: %s", self.mcast_obj_dict)
+                        # No results (e.g. stopped early): leave this test out of the report instead of crashing
+                        if self.mcast_obj_dict[ce][obj_name]["data"] is None:
+                            logger.warning(f"{obj_name} has no results, so it is left out of the overall report")
+                            if ce == "series":
+                                obj_no += 1
+                                obj_name = f"mcast_test_{obj_no}"
+                                continue
+                            break
                         params = self.mcast_obj_dict[ce][obj_name]["data"].copy()
                         config_devices = params["config_devices"].copy() if isinstance(params["config_devices"], (list, dict, set)) else params["config_devices"]
                         group_device_map = params["group_device_map"].copy() if isinstance(params["group_device_map"], (list, dict, set)) else params["group_device_map"]
@@ -9776,6 +9816,14 @@ class MultiTraffic(Realm):
                         curr_vs_obj = copy.copy(self.vs_obj_dict[ce][obj_name]["obj"])
                         if not self.robot_test or (self.robot_test and self.do_bandsteering):
                             if not self.do_bandsteering:
+                                # No results (e.g. stopped early): leave this test out of the report instead of crashing
+                                if self.vs_obj_dict[ce][obj_name]["data"] is None:
+                                    logger.warning(f"{obj_name} has no results, so it is left out of the overall report")
+                                    if ce == "series":
+                                        obj_no += 1
+                                        obj_name = f"vs_test_{obj_no}"
+                                        continue
+                                    break
                                 params = self.vs_obj_dict[ce][obj_name]["data"].copy()
                                 iterations_before_test_stopped_by_user = (
                                     params["iterations_before_test_stopped_by_user"].copy()
@@ -10833,6 +10881,7 @@ class MultiTraffic(Realm):
                             obj_no = ''
                         curr_yt_obj = copy.copy((self.yt_obj_dict[ce][obj_name]["obj"]))
                         result_data = curr_yt_obj.stats_api_response
+                        curr_yt_obj.mydatajson = {}   # this report's per-device stats, filled from stats_api_response below
                         for device, stats in result_data.items():
                             curr_yt_obj.mydatajson.setdefault(device, {}).update({
                                 "Viewport": stats.get("Viewport", ""),
@@ -12783,6 +12832,38 @@ def validate_time(n: str) -> str:
             return f"{seconds // 3600} hours"
     except ValueError:
         return "wrong type"
+
+
+def build_throughput_line_graph(data_set, xaxis_name, yaxis_name, xaxis_categories, label, graph_image_name):
+    """Save a throughput-over-time line graph and return its file name (was Throughput.build_line_graph())."""
+    plt.figure(figsize=(15, 7))
+
+    color = ['forestgreen', 'c', 'r', 'g', 'b', 'p']
+    marker = ['s', 'o', 'v']
+    xaxis_categories = xaxis_categories[:-1]
+    data_set = [data[:-1] for data in data_set]
+    for i, data in enumerate(data_set):
+        plt.plot(xaxis_categories, data, color=color[i % len(color)], label=label[i], marker=marker[i % len(marker)])
+
+    plt.xlabel(xaxis_name, fontweight='bold', fontsize=15)
+    plt.ylabel(yaxis_name, fontweight='bold', fontsize=15)
+
+    data_size = len(xaxis_categories)
+    if data_size <= 60:
+        tick_positions = list(range(data_size))
+    else:
+        interval = data_size / 59
+        tick_positions = [round(i * interval) for i in range(60)]
+        tick_positions = sorted(set(min(data_size - 1, max(0, pos)) for pos in tick_positions))
+    tick_labels = [xaxis_categories[i] for i in tick_positions]
+    plt.xticks(ticks=tick_positions, labels=tick_labels, rotation=90)
+
+    plt.grid(True, linestyle=':')
+    plt.legend(loc="best", ncol=1)
+    plt.tight_layout()
+    plt.savefig(f"{graph_image_name}.png", dpi=96, bbox_inches="tight")
+    plt.close()
+    return f"{graph_image_name}.png"
 
 
 def validate_args(args):

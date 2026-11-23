@@ -128,6 +128,7 @@ import shutil
 import glob
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
+import pickle
 from threading import Event, Lock, Thread
 import traceback
 import platform
@@ -1073,6 +1074,24 @@ class Youtube(Realm):
                 lf_stats_map[sta]["BSSID"] = data.get("ap", "NA")
 
         return lf_stats_map
+
+    def __getstate__(self):
+        """lf_multi_traffic.py copies this object to its main process (multiprocessing pickles it).
+        Attributes that can't be pickled (locks, events, live monitoring objects with threads) become None;
+        __setstate__ makes fresh locks. Collected results (stats, CSV paths, report paths) are kept."""
+        state = {}
+        for key, value in self.__dict__.items():
+            try:
+                pickle.dumps(value)
+                state[key] = value
+            except Exception:
+                state[key] = None
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.android_log_received = Event()
+        self.playback_stats_lock = Lock()
 
     def start_flask_server(self):
         """
