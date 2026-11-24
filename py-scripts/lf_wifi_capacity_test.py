@@ -291,6 +291,24 @@ class WiFiCapacityTest(cv_test):
             self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
 
+def validate_args(args):
+    if args.create_stations:
+        if not args.num_stations and not args.stations:
+            logger.error("Either mention names to stations to be created(--stations) or number of stations to be created(--num_stations). [Same precedence order]")
+            exit(1)
+        if not args.ssid:
+            logger.error("Requires ssid to create station, mention with --ssid")
+            exit(1)
+    if args.ssid:
+        if not args.security:
+            logger.error("Requires security to connect to wifi, mention with --security")
+            exit(1)
+    if args.security.lower() != 'open':
+        if not args.paswd:
+            logger.error("Requires password to connect to wifi whose security is not open, mention with --password")
+            exit(1)
+
+
 def main():
     help_summary = "The Candela WiFi Capacity test is designed to measure performance of an " \
                    "Access Point when handling different amounts of WiFi Stations. " \
@@ -448,6 +466,7 @@ INCLUDE_IN_README:
         exit(0)
 
     cv_base_adjust_parser(args)
+    validate_args(args)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
