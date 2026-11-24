@@ -366,26 +366,26 @@ INCLUDE_IN_README:
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
-    parser.add_argument("-u", "--upstream", type=str, default="",
+    parser.add_argument("-u", "--upstream", "--upstream_port", dest="upstream", type=str, default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth1")
     parser.add_argument("-b", "--batch_size", type=str, default="",
                         help="station increment ex. 1,2,3")
     parser.add_argument("-l", "--loop_iter", type=str, default="",
                         help="Loop iteration ex. 1")
-    parser.add_argument("-p", "--protocol", type=str, default="",
+    parser.add_argument("-p", "--protocol", "--type", "--types", "--traffic_type", "--traffic_types", dest="protocol", type=str, default="",
                         help="Protocol ex.TCP-IPv4")
     parser.add_argument("-d", "--duration", type=str, default="",
                         help="duration in ms. ex. 5000")
     parser.add_argument("--payload_size", default="", help="Specify payload size for the test")
     parser.add_argument("--sock_buffer_size", default="", help="Specify socket buffer size for the test")
     parser.add_argument("--verbosity", default="5", help="Specify verbosity of the report values 1 - 11 default 5")
-    parser.add_argument("--download_rate", type=str, default="",
+    parser.add_argument("--download_rate", "--download_speed", "--speed", "--rate", dest="download_rate", type=str, default="",
                         help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps")
-    parser.add_argument("--upload_rate", type=str, default="",
+    parser.add_argument("--upload_rate", "--upload_speed", "--opposite_speed", "--opposite_rate", dest="upload_rate", type=str, default="",
                         help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps")
     parser.add_argument("--sort", type=str, default="interleave",
                         help="Select station sorting behaviour:  none | interleave | linear  Default is interleave.")
-    parser.add_argument("-s", "--stations", type=str, default="",
+    parser.add_argument("-s", "--stations", "--station", dest="stations", type=str, default="",
                         help="If specified, these stations will be used.  If not specified, all available stations will be selected.  Example: 1.1.sta001,1.1.wlan0,...")
     parser.add_argument("-cs", "--create_stations", default=False, action='store_true',
                         help="create stations in lanforge (by default: False)")
@@ -395,7 +395,7 @@ INCLUDE_IN_README:
                         help="ssid name")
     parser.add_argument("-security", "--security", default="open",
                         help="ssid Security type")
-    parser.add_argument("-paswd", "--paswd", "-passwd", "--passwd", default="[BLANK]",
+    parser.add_argument("-paswd", "--paswd", "-passwd", "--passwd", "--password", "--key", dest="paswd", default="[BLANK]",
                         help="ssid Password")
     parser.add_argument("--report_dir", default="")
     parser.add_argument("--scenario", default="")
