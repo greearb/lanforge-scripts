@@ -855,6 +855,18 @@ class LFCliBase:
                               default=None,
                               action="store_true",
                               help='Show summary of what this script does')
+        # Silently support capitalized security types
+        optional.add_argument('--security',
+                              default="open",
+                              help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
+        optional.add_argument('--passwd',
+                              '--paswd',
+                              '--password',
+                              '--key',
+                              dest='passwd',
+                              default="[BLANK]",
+                              help='WiFi passphrase/password/key')
+        # please override this password argument using set_defaults(passwd='NA')
         if more_optional is not None:
             for argument in more_optional:
                 if 'default' in argument.keys():
@@ -865,20 +877,8 @@ class LFCliBase:
         # Required Args
         required.add_argument('--radio',
                               help='radio EID, e.g: 1.wiphy2')
-        # Silently support capitalized security types
-        required.add_argument('--security',
-                              default="open",
-                              help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
         required.add_argument('--ssid',
                               help='WiFi SSID for script objects to associate to')
-        required.add_argument('--passwd',
-                              '--paswd',
-                              '--password',
-                              '--key',
-                              dest='passwd',
-                              default="[BLANK]",
-                              help='WiFi passphrase/password/key')
-        # please override this password argument using set_defaults(passwd='NA')
 
         if more_required is not None:
             for argument in more_required:
