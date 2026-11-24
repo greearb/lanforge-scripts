@@ -402,25 +402,31 @@ INCLUDE_IN_README:
                         help="Select station sorting behaviour:  none | interleave | linear  Default is interleave.")
     parser.add_argument("-s", "--stations", "--station", dest="stations", type=str, default="",
                         help="If specified, these stations will be used.  If not specified, all available stations will be selected.\n"
-                             "Example: 1.1.sta001,1.1.wlan0,...  Format: <shelf>.<resource>.<alias>")
+                             "Example: 1.1.sta001,1.1.wlan0,...  Format: <shelf>.<resource>.<alias>\n"
+                             "Can also be used to specify custom names for the stations created with --create_stations")
     parser.add_argument("-cs", "--create_stations", default=False, action='store_true',
-                        help="create stations in lanforge (by default: False)")
+                        help="Create stations in LANforge (by default: False).\n"
+                             "If specified, mention either --stations or --num_stations to create stations.\n"
+                             "If both are specified, --stations is used.\n"
+                             "Also mention --radio, --ssid, --security and --paswd to create stations with these parameters")
     parser.add_argument("-radio", "--radio", default="wiphy0",
                         help="create stations in lanforge at this radio (by default: wiphy0)")
     parser.add_argument("-ssid", "--ssid", default="",
-                        help="SSID of the network the created stations connect to")
+                        help="SSID of the network the created stations connect to. Required if --create_stations is specified")
     parser.add_argument("-security", "--security", default="open",
-                        help="WiFi security type: open | wep | wpa | wpa2 | wpa3. Default: open")
+                        help="WiFi security type: open | wep | wpa | wpa2 | wpa3. Default: open. If not open, also mention --paswd")
     parser.add_argument("-paswd", "--paswd", "-passwd", "--passwd", "--password", "--key", dest="paswd", default="[BLANK]",
-                        help="WiFi passphrase/password/key. Default: [BLANK]")
+                        help="WiFi passphrase/password/key. Default: [BLANK]. Required when --security is not open")
     parser.add_argument("--report_dir", default="",
                         help="Directory name to use for the Chamber View report.")
     parser.add_argument("--scenario", default="",
                         help="Chamber View Scenario name to apply before running the test.")
     parser.add_argument("--graph_groups", help="Path to file to save graph_groups to on local system", default=None)
-    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' means put in current working directory", default="")
+    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' means put in current working directory.\n"
+                        "Requires --pull_report to be set", default="")
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> : Path to logger JSON configuration of logger")
-    parser.add_argument("--num_stations", help="Specify the number of stations to be created.", type=int,
+    parser.add_argument("--num_stations", help="Specify the number of stations to be created. Used with --create_stations.\n"
+                        "Use --start_id to specify the starting ID of the stations.", type=int,
                         default=None)
     parser.add_argument('--start_id', help='Specify the station starting id \n e.g: --start_id <value> default 0',
                         default=0)
