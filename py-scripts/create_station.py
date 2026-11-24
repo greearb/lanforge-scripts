@@ -855,7 +855,8 @@ INCLUDE_IN_README:
 """)
     parser.add_argument('--start_id',
                         type=int,
-                        help='Specify the station starting id \n e.g: --start_id <value> default 0',
+                        help='Specify the station starting id \n e.g: --start_id <value> default 0.\n'
+                        'Stations are named starting from this id, e.g. sta<start_id>, sta<start_id + 1> ...',
                         default=0)
     parser.add_argument("--prefix",
                         type=str,
@@ -886,7 +887,7 @@ INCLUDE_IN_README:
                         default="xx:xx:xx:*:*:xx")
     parser.add_argument("--radio_antenna",
                         help='Number of spatial streams: \n'
-                        ' default = -1 \n'
+                        ' default: 0 \n'
                         ' 0 Diversity (All) \n'
                         ' 1 Fixed-A (1x1) \n'
                         ' 4 AB (2x2) \n'
@@ -917,7 +918,7 @@ INCLUDE_IN_README:
                         help="This is synonymous with the RADIUS username.")
     parser.add_argument("--eap_anonymous_identity",
                         type=str,
-                        help="",
+                        help="Anonymous identity used in outer EAP authentication (EAP-TTLS/PEAP). Default: [BLANK]",
                         default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
     parser.add_argument("--eap_password",
                         "--radius_passwd",
