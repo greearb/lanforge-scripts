@@ -367,42 +367,60 @@ INCLUDE_IN_README:
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
     parser.add_argument("-u", "--upstream", "--upstream_port", dest="upstream", type=str, default="",
-                        help="Upstream port for wifi capacity test ex. 1.1.eth1")
+                        help="Upstream port used in the test, e.g. 1.1.eth2. This is the LANforge (non-station) port\n"
+                             "connected to the AP under test, through which traffic is sent to and received from the AP.\n"
+                             "Format: <shelf>.<resource>.<port>\n"
+                             "If not set, the port selection already in the test config is used (e.g. with --load_old_cfg).")
     parser.add_argument("-b", "--batch_size", type=str, default="",
-                        help="station increment ex. 1,2,3")
+                        help="Number of stations to add per iteration, or a comma separated list, e.g. 1,4,8.\n"
+                             "For example, with 10 stations and a batch size of 2, the test runs 5 iterations,\n"
+                             "adding 2 stations in each iteration.\n"
+                             "If not set, the value from the test config is used (the saved value with --load_old_cfg).")
     parser.add_argument("-l", "--loop_iter", type=str, default="",
-                        help="Loop iteration ex. 1")
+                        help="Number of times the test is run, e.g. 1.\n"
+                             "For example, with 10 stations and a loop iteration of 2, the test runs 2 times\n"
+                             "with all 10 stations in each run.\n"
+                             "If not set, the value from the test config is used (the saved value with --load_old_cfg).")
     parser.add_argument("-p", "--protocol", "--type", "--types", "--traffic_type", "--traffic_types", dest="traffic_type", type=str, default="",
-                        help="Protocol ex.TCP-IPv4")
+                        help="Traffic type for the test, e.g. UDP-IPv4, TCP-IPv4. Only one can be selected at a time.\n"
+                             "UDP, TCP, TCP&UDP and layer4-7 are available options.\n"
+                             "If not set, the value from the test config is used (the saved value with --load_old_cfg).")
     parser.add_argument("-d", "--duration", type=str, default="",
-                        help="duration in ms. ex. 5000")
+                        help="Duration of each traffic run, in ms or with units, e.g. 5000, 5s, 1m, 2h.\n"
+                             "Each iteration runs for this duration.\n"
+                             "If not set, the value from the test config is used (the saved value with --load_old_cfg).")
     parser.add_argument("--payload_size", default="", help="Specify payload size for the test")
     parser.add_argument("--sock_buffer_size", default="", help="Specify socket buffer size for the test")
-    parser.add_argument("--verbosity", default="5", help="Specify verbosity of the report values 1 - 11 default 5")
+    parser.add_argument("--verbosity", default="5",
+                        help="Verbosity of the report, a whole number in the range 1 - 11.\n"
+                             "The larger the number, the more verbose. Default: 5")
     parser.add_argument("--download_rate", "--download_speed", "--speed", "--rate", dest="download_rate", type=str, default="",
-                        help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps")
+                        help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps (with --load_old_cfg, the saved value is kept)")
     parser.add_argument("--upload_rate", "--upload_speed", "--opposite_speed", "--opposite_rate", dest="upload_rate", type=str, default="",
-                        help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps")
+                        help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps (with --load_old_cfg, the saved value is kept)")
     parser.add_argument("--sort", type=str, default="interleave",
                         help="Select station sorting behaviour:  none | interleave | linear  Default is interleave.")
     parser.add_argument("-s", "--stations", "--station", dest="stations", type=str, default="",
-                        help="If specified, these stations will be used.  If not specified, all available stations will be selected.  Example: 1.1.sta001,1.1.wlan0,...")
+                        help="If specified, these stations will be used.  If not specified, all available stations will be selected.\n"
+                             "Example: 1.1.sta001,1.1.wlan0,...  Format: <shelf>.<resource>.<alias>")
     parser.add_argument("-cs", "--create_stations", default=False, action='store_true',
                         help="create stations in lanforge (by default: False)")
     parser.add_argument("-radio", "--radio", default="wiphy0",
                         help="create stations in lanforge at this radio (by default: wiphy0)")
     parser.add_argument("-ssid", "--ssid", default="",
-                        help="ssid name")
+                        help="SSID of the network the created stations connect to")
     parser.add_argument("-security", "--security", default="open",
-                        help="ssid Security type")
+                        help="WiFi security type: open | wep | wpa | wpa2 | wpa3. Default: open")
     parser.add_argument("-paswd", "--paswd", "-passwd", "--passwd", "--password", "--key", dest="paswd", default="[BLANK]",
-                        help="ssid Password")
-    parser.add_argument("--report_dir", default="")
-    parser.add_argument("--scenario", default="")
-    parser.add_argument("--graph_groups", help="File to save graph groups to", default=None)
-    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from", default="")
-    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
-    parser.add_argument("--num_stations", help="Specify the number of stations need to be create.", type=int,
+                        help="WiFi passphrase/password/key. Default: [BLANK]")
+    parser.add_argument("--report_dir", default="",
+                        help="Directory name to use for the Chamber View report.")
+    parser.add_argument("--scenario", default="",
+                        help="Chamber View Scenario name to apply before running the test.")
+    parser.add_argument("--graph_groups", help="Path to file to save graph_groups to on local system", default=None)
+    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' means put in current working directory", default="")
+    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> : Path to logger JSON configuration of logger")
+    parser.add_argument("--num_stations", help="Specify the number of stations to be created.", type=int,
                         default=None)
     parser.add_argument('--start_id', help='Specify the station starting id \n e.g: --start_id <value> default 0',
                         default=0)
