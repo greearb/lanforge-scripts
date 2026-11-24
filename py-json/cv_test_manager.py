@@ -69,6 +69,7 @@ def cv_add_base_parser(parser):
 
     parser.add_argument("-r", "--pull_report",
                         dest="pull_report",
+                        default=False,
                         action='store_true',
                         help="Pull reports from LANforge system into the current system. Off by default.\n"
                              "Use --local_lf_report_dir to specify where reports are stored. "
@@ -125,6 +126,7 @@ def cv_add_base_parser(parser):
 
     parser.add_argument("-f", "--force",
                         dest="force",
+                        default=False,
                         action="store_true",
                         help="Force removal of any conflicting test instances. "
                              "Exercise caution with this option, as it will ungracefully stop "
