@@ -303,9 +303,9 @@ def validate_args(args):
         if not args.security:
             logger.error("Requires security to connect to wifi, mention with --security")
             exit(1)
-    if args.security.lower() != 'open':
+    if args.security.lower() not in ('open', 'owe'):
         if not args.paswd:
-            logger.error("Requires password to connect to wifi whose security is not open, mention with --password")
+            logger.error("Requires password to connect to wifi whose security is not open/owe, mention with --password")
             exit(1)
 
 
@@ -432,9 +432,9 @@ INCLUDE_IN_README:
     parser.add_argument("-ssid", "--ssid", default="",
                         help="SSID of the network the created stations connect to. Required if --create_stations is specified")
     parser.add_argument("-security", "--security", default="open",
-                        help="WiFi security type: open | wep | wpa | wpa2 | wpa3. Default: open. If not open, also mention --paswd")
+                        help="WiFi security type: open | owe | wep | wpa | wpa2 | wpa3. Default: open. If not open/owe, also mention --paswd")
     parser.add_argument("-paswd", "--paswd", "-passwd", "--passwd", "--password", "--key", dest="paswd", default="[BLANK]",
-                        help="WiFi passphrase/password/key. Default: [BLANK]. Required when --security is not open")
+                        help="WiFi passphrase/password/key. Default: [BLANK]. Required when --security is not open/owe")
     parser.add_argument("--report_dir", default="",
                         help="Directory name to use for the Chamber View report.")
     parser.add_argument("--scenario", default="",
