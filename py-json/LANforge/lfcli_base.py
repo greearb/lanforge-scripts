@@ -751,10 +751,10 @@ class LFCliBase:
         required = parser.add_argument_group('arguments with NO PRE-DEFINED DEFAULTS, arguments & defaults defined by create_bare_argparse found in  /lanforge-scripts/py-json/LANforge/lfcli_base.py')
         optional.add_argument('--mgr', '--m', '--lfmgr', '--lanforge_ip', dest='mgr',
                               default='localhost',
-                              help='hostname for where LANforge GUI is running')
+                              help='Hostname or IP address of the LANforge GUI machine (localhost is default, for when the script runs on the LANforge system)')
         optional.add_argument('--mgr_port', '--port', '--o', '--lanforge_port', dest='mgr_port',
                               default=8080,
-                              help='port LANforge GUI HTTP service is running on')
+                              help='IP Port the LANforge GUI is listening on (8080 is default)')
         optional.add_argument('--debug',
                               '-d',
                               default=False,
@@ -801,7 +801,7 @@ class LFCliBase:
                               '--lanforge_ip',
                               dest='mgr',
                               default='localhost',
-                              help='Hostname or IP address of the LANforge GUI machine (localhost is default)')
+                              help='Hostname or IP address of the LANforge GUI machine (localhost is default, for when the script runs on the LANforge system)')
         optional.add_argument('--mgr_port',
                               '--port',
                               '--lanforge_port',
@@ -813,7 +813,9 @@ class LFCliBase:
                               '--upstream',
                               dest='upstream_port',
                               default='1.eth1',
-                              help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1')
+                              help='Upstream port used in the test, e.g. 1.1.eth2. This is the LANforge (non-station) port\n'
+                                   'connected to the AP under test, through which traffic is sent to and received from the AP.\n'
+                                   'Format: <shelf>.<resource>.<port>. Default: 1.eth1')
         optional.add_argument('--num_stations',
                               type=int,
                               default=0,
@@ -858,7 +860,7 @@ class LFCliBase:
         # Silently support capitalized security types
         optional.add_argument('--security',
                               default="open",
-                              help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
+                              help='WiFi Security protocol: < open | owe | wep | wpa | wpa2 | wpa3 >. Default: open')
         optional.add_argument('--passwd',
                               '--paswd',
                               '--password',
@@ -876,7 +878,7 @@ class LFCliBase:
 
         # Required Args
         required.add_argument('--radio',
-                              help='radio EID, e.g: 1.wiphy2')
+                              help='Radio EID to create stations on, e.g: 1.1.wiphy2')
         required.add_argument('--ssid',
                               help='WiFi SSID for script objects to associate to')
 
