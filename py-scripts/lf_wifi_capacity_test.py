@@ -21,10 +21,11 @@ EXAMPLE:    # Run 60 second default DL/UL-rate UDP IPv4 traffic-based test with
                     --protocol      UDP \
                     --duration      60s
 
-            # Run 5 minute second 1 Gbps DL rate TCP IPv4 traffic-based test with
+            # Run 5 minute 1 Gbps DL rate TCP IPv4 traffic-based test with
             # pre-existing and pre-configured stations 'sta0000' and 'sta0001'
             # together
                 ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
                     --pull_report   \
                     --upstream      1.1.eth1 \
                     --stations      1.1.sta0000,1.1.sta0001 \
@@ -36,10 +37,71 @@ EXAMPLE:    # Run 60 second default DL/UL-rate UDP IPv4 traffic-based test with
             # Additional options like '--duration', '--batch_size', etc. can be used
             # to override values in the saved config
                 ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
                     --pull_report   \
                     --config_name   existing_wct_config \
                     --load_old_cfg  \
                     --batch_size    1,4,8
+
+            # Create 10 stations (sta1000 - sta1009) on radio wiphy0 that connect to a
+            # WPA2 network, then run the test on them with 1.1.eth1 as upstream port
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --create_stations \
+                    --radio         wiphy0 \
+                    --start_id      1000 \
+                    --num_stations  10 \
+                    --ssid          test_ssid \
+                    --security      wpa2 \
+                    --paswd         test_password
+
+            # Create stations with custom names that connect to an OWE network
+            # (no password needed for open or owe security), then run the test on them
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --create_stations \
+                    --radio         wiphy0 \
+                    --stations      1.1.sta1010,1.1.sta2020 \
+                    --ssid          test_owe_ssid \
+                    --security      owe
+
+            # Run test on multiple stations and report individual station upload and download rates
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001 \
+                    --per_station_upload_rate \
+                    --per_station_download_rate
+
+            # Run test on multiple stations, adding 2 stations in each iteration
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001,1.1.sta0002,1.1.sta0003,1.1.sta0004,1.1.sta0005 \
+                    --batch_size    2
+
+            # Run test and save the reports in a specific directory on the executing system
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001 \
+                    --local_lf_report_dir /home/user/lf_reports
+
+            # Run test with custom download / upload rates
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001 \
+                    --download_rate 100Mbps \
+                    --upload_rate   1Mbps
 
 SCRIPT_CLASSIFICATION:
             Test
@@ -347,10 +409,11 @@ EXAMPLE:    # Run 60 second default DL/UL-rate UDP IPv4 traffic-based test with
                     --protocol      UDP \
                     --duration      60s
 
-            # Run 5 minute second 1 Gbps DL rate TCP IPv4 traffic-based test with
+            # Run 5 minute 1 Gbps DL rate TCP IPv4 traffic-based test with
             # pre-existing and pre-configured stations 'sta0000' and 'sta0001'
             # together
                 ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
                     --pull_report   \
                     --upstream      1.1.eth1 \
                     --stations      1.1.sta0000,1.1.sta0001 \
@@ -362,10 +425,71 @@ EXAMPLE:    # Run 60 second default DL/UL-rate UDP IPv4 traffic-based test with
             # Additional options like '--duration', '--batch_size', etc. can be used
             # to override values in the saved config
                 ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
                     --pull_report   \
                     --config_name   existing_wct_config \
                     --load_old_cfg  \
                     --batch_size    1,4,8
+
+            # Create 10 stations (sta1000 - sta1009) on radio wiphy0 that connect to a
+            # WPA2 network, then run the test on them with 1.1.eth1 as upstream port
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --create_stations \
+                    --radio         wiphy0 \
+                    --start_id      1000 \
+                    --num_stations  10 \
+                    --ssid          test_ssid \
+                    --security      wpa2 \
+                    --paswd         test_password
+
+            # Create stations with custom names that connect to an OWE network
+            # (no password needed for open or owe security), then run the test on them
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --create_stations \
+                    --radio         wiphy0 \
+                    --stations      1.1.sta1010,1.1.sta2020 \
+                    --ssid          test_owe_ssid \
+                    --security      owe
+
+            # Run test on multiple stations and report individual station upload and download rates
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001 \
+                    --per_station_upload_rate \
+                    --per_station_download_rate
+
+            # Run test on multiple stations, adding 2 stations in each iteration
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001,1.1.sta0002,1.1.sta0003,1.1.sta0004,1.1.sta0005 \
+                    --batch_size    2
+
+            # Run test and save the reports in a specific directory on the executing system
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001 \
+                    --local_lf_report_dir /home/user/lf_reports
+
+            # Run test with custom download / upload rates
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001 \
+                    --download_rate 100Mbps \
+                    --upload_rate   1Mbps
 
 SCRIPT_CLASSIFICATION:
             Test
