@@ -819,7 +819,7 @@ class LFCliBase:
         optional.add_argument('--num_stations',
                               type=int,
                               default=0,
-                              help='Number of stations to create')
+                              help='Number of stations to create. Default: 0. Dependency: used together with --radio, --ssid, --security and --passwd when creating stations')
         optional.add_argument('--test_id',
                               default="webconsole",
                               help='Test ID (intended to use for ws events)')
@@ -867,7 +867,7 @@ class LFCliBase:
                               '--key',
                               dest='passwd',
                               default="[BLANK]",
-                              help='WiFi passphrase/password/key')
+                              help='WiFi passphrase/password/key for created stations. Default: [BLANK]. Dependency: REQUIRED when --security is not "open" or "owe"')
         # please override this password argument using set_defaults(passwd='NA')
         if more_optional is not None:
             for argument in more_optional:
@@ -880,7 +880,7 @@ class LFCliBase:
         required.add_argument('--radio',
                               help='Radio EID to create stations on, e.g: 1.1.wiphy2')
         required.add_argument('--ssid',
-                              help='WiFi SSID for script objects to associate to')
+                              help='WiFi SSID for created stations to associate to. Dependency: REQUIRED when creating stations')
 
         if more_required is not None:
             for argument in more_required:
