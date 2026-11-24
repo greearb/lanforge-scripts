@@ -500,16 +500,16 @@ class LFCliBase:
 
                         if expire_at < curr_time:
                             warnings.append("** License item %s EXPIRED on %s"
-                                            % ( hunks[0],
+                                            % (hunks[0],
                                                 time.strftime('%Y-%m-%d %H:%M', time.localtime(expire_at))))
                             naptime = abs(naptime)
                         elif expire_at <= in30d_time:
                             info.append("** License item %s WILL expire on %s"
-                                            % ( hunks[0],
-                                                time.strftime('%Y-%m-%d %H:%M', time.localtime(expire_at))))
+                                        % (hunks[0],
+                                           time.strftime('%Y-%m-%d %H:%M', time.localtime(expire_at))))
                     if len(warnings) > 0:
                         combined_warn = "\nScripts might fail because of unavailable features:\n" \
-                                        +("\n".join(warnings))
+                                        + ("\n".join(warnings))
                         if (naptime > 0):
                             logger.error(combined_warn)
                             time.sleep(naptime)
@@ -517,7 +517,7 @@ class LFCliBase:
                             logger.warning(combined_warn)
                     if len(info) > 0:
                         combined_info = "\nScripts active licenses:\n" \
-                                        +("\n".join(info))
+                                        + ("\n".join(info))
                         logger.debug(combined_info)
                     return True
                 else:
@@ -717,8 +717,8 @@ class LFCliBase:
                     duration_time = datetime.timedelta(seconds=dur_time)
             else:
                 if 'ms' in time_string:
-                    dur_time = int(time_string.replace("ms",""))
-                    duration_time = datetime.timedelta(microseconds=dur_time*1000)
+                    dur_time = int(time_string.replace("ms", ""))
+                    duration_time = datetime.timedelta(microseconds=dur_time * 1000)
                 else:
                     raise ValueError("Cannot compute time string provided: %s" % time_string)
         else:
@@ -749,10 +749,10 @@ class LFCliBase:
             parser = argparse.ArgumentParser()
         optional = parser.add_argument_group('arguments with PRE-DEFINED DEFAULTS, arguments & defaults defined by create_bare_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
         required = parser.add_argument_group('arguments with NO PRE-DEFINED DEFAULTS, arguments & defaults defined by create_bare_argparse found in  /lanforge-scripts/py-json/LANforge/lfcli_base.py')
-        optional.add_argument('--mgr',
+        optional.add_argument('--mgr', '--m', '--lfmgr', '--lanforge_ip', dest='mgr',
                               default='localhost',
                               help='hostname for where LANforge GUI is running')
-        optional.add_argument('--mgr_port',
+        optional.add_argument('--mgr_port', '--port', '--o', '--lanforge_port', dest='mgr_port',
                               default=8080,
                               help='port LANforge GUI HTTP service is running on')
         optional.add_argument('--debug',
@@ -798,14 +798,20 @@ class LFCliBase:
         # Optional Args
         optional.add_argument('--mgr',
                               '--lfmgr',
+                              '--lanforge_ip',
+                              dest='mgr',
                               default='localhost',
                               help='Hostname or IP address of the LANforge GUI machine (localhost is default)')
         optional.add_argument('--mgr_port',
                               '--port',
+                              '--lanforge_port',
+                              dest='mgr_port',
                               default=8080,
                               help='IP Port the LANforge GUI is listening on (8080 is default)')
         optional.add_argument('-u',
                               '--upstream_port',
+                              '--upstream',
+                              dest='upstream_port',
                               default='1.eth1',
                               help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1')
         optional.add_argument('--num_stations',
@@ -866,8 +872,10 @@ class LFCliBase:
         required.add_argument('--ssid',
                               help='WiFi SSID for script objects to associate to')
         required.add_argument('--passwd',
+                              '--paswd',
                               '--password',
                               '--key',
+                              dest='passwd',
                               default="[BLANK]",
                               help='WiFi passphrase/password/key')
         # please override this password argument using set_defaults(passwd='NA')
