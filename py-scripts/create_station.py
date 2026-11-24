@@ -111,7 +111,7 @@ EXAMPLE:    # Create a single station
                 --passwd    <password> \
                 --security  wpa2 \
                 --num_stations 10 \
-                --initial_band_pref 5G
+                --initial_band_pref 5GHz
 
             # Create multiple stations
             ./create_station.py \
@@ -716,7 +716,7 @@ EXAMPLE:    # Create a single station
                 --passwd    <password> \
                 --security  wpa2 \
                 --num_stations 10 \
-                --initial_band_pref 5G
+                --initial_band_pref 5GHz
 
             # Create multiple stations
             ./create_station.py \
