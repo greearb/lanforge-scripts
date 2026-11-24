@@ -33,12 +33,12 @@ def cv_base_adjust_parser(args):
 
 def cv_add_base_parser(parser):
     """Update provided argparse argument parser with Chamber View-specific arguments."""
-    parser.add_argument("-m", "--mgr",
+    parser.add_argument("-m", "--mgr", "--lfmgr", "--lanforge_ip",
                         dest="mgr",
                         type=str,
                         default="localhost",
                         help="Hostname or IP address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port",
+    parser.add_argument("-o", "--port", "--mgr_port", "--lanforge_port",
                         dest="port",
                         type=int,
                         default=8080,
@@ -134,6 +134,7 @@ def cv_add_base_parser(parser):
 
 class cv_test(Realm):
     """Utilities for configuring LANforge Chamber View tests and Scenarios."""
+
     def __init__(self,
                  lfclient_host: str = "localhost",
                  lfclient_port: int = 8080,
