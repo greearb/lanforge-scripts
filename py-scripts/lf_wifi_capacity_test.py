@@ -92,7 +92,7 @@ class WiFiCapacityTest(cv_test):
                  upstream="eth1",
                  batch_size="1",
                  loop_iter="1",
-                 protocol="UDP-IPv4",
+                 traffic_type="UDP-IPv4",
                  duration="5000",
                  pull_report=False,
                  load_old_cfg=False,
@@ -145,7 +145,7 @@ class WiFiCapacityTest(cv_test):
         self.test_name = "WiFi Capacity"
         self.batch_size = batch_size
         self.loop_iter = loop_iter
-        self.protocol = protocol
+        self.traffic_type = traffic_type
         self.duration = duration
         self.upload_rate = upload_rate
         self.download_rate = download_rate
@@ -236,8 +236,8 @@ class WiFiCapacityTest(cv_test):
             cfg_options.append("batch_size: " + self.batch_size)
         if self.loop_iter != "":
             cfg_options.append("loop_iter: " + self.loop_iter)
-        if self.protocol != "":
-            cfg_options.append("protocol: " + str(self.protocol))
+        if self.traffic_type != "":
+            cfg_options.append("protocol: " + str(self.traffic_type))
         if self.duration != "":
             cfg_options.append("duration: " + self.duration)
         if self.upload_rate != "":
@@ -372,7 +372,7 @@ INCLUDE_IN_README:
                         help="station increment ex. 1,2,3")
     parser.add_argument("-l", "--loop_iter", type=str, default="",
                         help="Loop iteration ex. 1")
-    parser.add_argument("-p", "--protocol", "--type", "--types", "--traffic_type", "--traffic_types", dest="protocol", type=str, default="",
+    parser.add_argument("-p", "--protocol", "--type", "--types", "--traffic_type", "--traffic_types", dest="traffic_type", type=str, default="",
                         help="Protocol ex.TCP-IPv4")
     parser.add_argument("-d", "--duration", type=str, default="",
                         help="duration in ms. ex. 5000")
