@@ -37,7 +37,7 @@ def cv_add_base_parser(parser):
                         dest="mgr",
                         type=str,
                         default="localhost",
-                        help="Hostname or IP address of the LANforge GUI machine (localhost is default)")
+                        help="Hostname or IP address of the LANforge GUI machine (localhost is default, for when the script runs on the LANforge system)")
     parser.add_argument("-o", "--port", "--mgr_port", "--lanforge_port",
                         dest="port",
                         type=int,
@@ -70,7 +70,9 @@ def cv_add_base_parser(parser):
     parser.add_argument("-r", "--pull_report",
                         dest="pull_report",
                         action='store_true',
-                        help="Pull reports from LANforge system. Off by default")
+                        help="Pull reports from LANforge system into the current system. Off by default.\n"
+                             "Use --local_lf_report_dir to specify where reports are stored. "
+                             "By default reports are stored in the current working directory.")
     parser.add_argument("--load_old_cfg",
                         action='store_true',
                         help="Load defaults from previous run of the test")
