@@ -159,6 +159,7 @@ port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
 lf_interop_ping = importlib.import_module("py-scripts.lf_interop_ping")
+ClientAnalysis = importlib.import_module("py-scripts.lf_wifi_msgs").ClientAnalysis
 iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
 if os.path.exists(iot_scripts_path):
     sys.path.insert(0, iot_scripts_path)
@@ -707,6 +708,134 @@ class VideoStreamingTest(Realm):
     def postcleanup(self):
         # Cleans the layer 4-7 traffic for created CX end points
         self.http_profile.cleanup()
+
+    def start_wifi_analysis(self, host, port, device_list):
+        """Starts live Wi-Fi message monitoring (ClientAnalysis) for the devices under test.
+        If no device can be resolved, it logs a warning and skips the analysis instead of
+        stopping the test.
+
+        Args:
+            host (str): LANforge manager IP.
+            port (int): LANforge GUI REST port.
+            device_list (list): port names of the devices under test, e.g. ["1.10.wlan0"].
+
+        Example:
+            self.start_wifi_analysis(host="192.168.1.31", port=8080, device_list=self.phone_data)
+        """
+        self.wifi_analysis = None
+        self.wifi_analysis_stats = {}
+        self.wifi_analysis_log = None
+        self.wifi_analysis_monitoring = False
+
+        if not device_list:
+            return
+        try:
+            # ClientAnalysis needs resource IDs like '1.10'
+            resource_ids = list(dict.fromkeys(".".join(name.split(".")[:2]) for name in device_list))
+            self.wifi_analysis = ClientAnalysis(host=host, port=port, device_list=resource_ids,
+                                                debug=self.debug)
+            # start_monitoring() exits if no device is found
+            if not self.wifi_analysis.setup_device_entries():
+                logging.warning("None of the wifi connectivity analysis devices resolved to a device LANforge knows about")
+                self.wifi_analysis = None
+                return
+            self.wifi_analysis.start_monitoring()
+            self.wifi_analysis_monitoring = True
+        except (Exception, SystemExit) as error:
+            logging.warning("Wifi connectivity analysis could not be started: %s", error)
+            self.wifi_analysis = None
+
+    def stop_wifi_analysis(self):
+        """Stops the live Wi-Fi monitoring and stores the per-device stats in
+        self.wifi_analysis_stats. Does nothing if monitoring was not started.
+
+        Example:
+            self.stop_wifi_analysis()
+        """
+        if not getattr(self, 'wifi_analysis_monitoring', False):
+            return
+        self.wifi_analysis_monitoring = False
+        if self.wifi_analysis._monitor_file_name:
+            self.wifi_analysis_log = os.path.join("Wifi_Messages", self.wifi_analysis._monitor_file_name)
+        try:
+            self.wifi_analysis_stats = self.wifi_analysis.stop_monitoring()
+        except (Exception, SystemExit) as error:
+            logging.warning("Wifi connectivity analysis results could not be collected: %s", error)
+
+    def add_wifi_analysis_to_report(self, report):
+        """Adds the "Client Connectivity Event Summary" bar graph and the Wi-Fi connectivity
+        analysis table to the report. Does nothing if there are no Wi-Fi analysis stats.
+
+        Args:
+            report (lf_report): report to add the section to.
+
+        Example:
+            self.add_wifi_analysis_to_report(report)
+        """
+        wifi_analysis_log = getattr(self, 'wifi_analysis_log', None)
+        if wifi_analysis_log and os.path.exists(wifi_analysis_log):
+            try:
+                shutil.copy(wifi_analysis_log, os.path.join(report.path_date_time, "wifi_analysis_messages.json"))
+            except OSError as error:
+                logging.warning("Wifi analysis messages could not be copied to the report folder: %s", error)
+        if not getattr(self, 'wifi_analysis_stats', None):
+            return
+        try:
+            devices, connect_attempt, disconnected, scanning, association_rejection, connected, remarks, cx_time = \
+                ClientAnalysis.stats_to_lists(self.wifi_analysis_stats)
+
+            categories = ["Disconnected", "Scans", "Association Attempts", "Association Rejected", "Connected"]
+            totals = [sum(disconnected), sum(scanning), sum(connect_attempt), sum(association_rejection), sum(connected)]
+            # Colors per connection event
+            colors = ['#e74c3c', '#f1c40f', '#e67e22', '#95a5a6', '#27ae60']
+
+            report.set_obj_html(
+                _obj_title="Client Connectivity Event Summary",
+                _obj="This graph summarizes connection-related events observed during the video streaming test. "
+                     "These metrics provide insight into client stability and wireless connectivity performance.")
+            report.build_objective()
+            # One series per event for the legend
+            data_set = [[value if index == series_index else 0 for index, value in enumerate(totals)]
+                        for series_index in range(len(categories))]
+            graph = lf_bar_graph(_data_set=data_set,
+                                 _xaxis_name="",
+                                 _yaxis_name="Count",
+                                 _xaxis_categories=categories,
+                                 _graph_image_name="wifi_connectivity_status",
+                                 _label=categories,
+                                 _graph_title="Client Connectivity Status",
+                                 _title_size=16,
+                                 _color_edge='black',
+                                 _bar_width=0.5,
+                                 _figsize=(10, 6),
+                                 _legend_loc="best",
+                                 _dpi=96,
+                                 _show_bar_value=True,
+                                 _enable_csv=True,
+                                 _stacked=True,
+                                 _color=colors,
+                                 _color_name=colors)
+            graph_png = graph.build_bar_graph()
+            report.set_graph_image(graph_png)
+            report.move_graph_image()
+            report.set_csv_filename(graph.graph_image_name)
+            report.move_csv_file()
+            report.build_graph()
+
+            dataframe = pd.DataFrame({
+                "Device": devices,
+                "Association Attempts": connect_attempt,
+                "Disconnected": disconnected,
+                "Scanning": scanning,
+                "Association Rejection": association_rejection,
+                "Connected": connected,
+            })
+            report.set_table_title("Wifi Connectivity Analysis")
+            report.build_table_title()
+            report.set_table_dataframe(dataframe)
+            report.build_table()
+        except Exception as error:
+            logging.warning("Wifi connectivity analysis could not be added to the report: %s", error)
 
     def port_label_from_cx_name(self, cx_name):
         # CX names embed the resource id right before the trailing "_l4" (e.g. "vs_wlan0_http10_l4"
@@ -1915,6 +2044,7 @@ class VideoStreamingTest(Realm):
         if self.device_issue_log:
             issues_df = pd.DataFrame(self.device_issue_log)
             issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
+        self.add_wifi_analysis_to_report(report)
         if self.background_ping:
             self.background_ping.add_background_ping_to_report(report)
         report.build_footer()
@@ -3469,6 +3599,10 @@ def main():
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
     optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
     optional.add_argument('--total_cycles', help='Enable bandsteering', default="1")
+    optional.add_argument('--wifi_analysis',
+                          action='store_true',
+                          help='Analyze real-client wifi-msgs (connects/disconnects/scans/association rejections) '
+                               'for the duration of the test and include the results in the report')
 
     background_ping = parser.add_argument_group('Background ping')
     background_ping.add_argument('--enable_bg_ping',
@@ -3758,6 +3892,9 @@ def main():
     # To create cx for selected devices
     obj.build()
 
+    if args.wifi_analysis:
+        obj.start_wifi_analysis(host=args.host, port=8080, device_list=obj.phone_data)
+
     if args.enable_bg_ping:
         obj.background_ping = lf_interop_ping.Ping(host=args.host, port=8080, target=args.bg_ping_target or obj.upstream_port, interval=args.bg_ping_interval,
                                                    sta_list=[], real=True, virtual=False, duration=0)
@@ -3927,6 +4064,8 @@ def main():
     if obj.background_ping:
         obj.background_ping.stop_background_ping()
     obj.stop()
+    if args.wifi_analysis:
+        obj.stop_wifi_analysis()
     date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
     iot_summary = None
     if args.iot_test and args.iot_testname:
