@@ -135,6 +135,7 @@ import platform
 import signal
 import shlex
 import subprocess
+from uuid import uuid4
 from collections import Counter
 from html import escape
 import re
@@ -159,6 +160,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 # Import realm module
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 # Import base interop profile module
 base = importlib.import_module('py-scripts.lf_base_interop_profile')
@@ -240,7 +242,14 @@ class Youtube(Realm):
                  scoring=False,
                  windows_dir=WINDOWS_REAL_APP_DIR,
                  linux_dir=LINUX_REAL_APP_DIR,
-                 mac_dir=MACOS_REAL_APP_DIR
+                 mac_dir=MACOS_REAL_APP_DIR,
+                 clients_type="real",
+                 num_sta=0,
+                 radio="wiphy0",
+                 existing_sta_list="",
+                 use_existing_sta_list=False,
+                 passwd=None,
+                 virtual_network=None,
                  ):
         """
         Initialize the YouTube streaming test parameters.
@@ -273,7 +282,21 @@ class Youtube(Realm):
         self.windows_dir = windows_dir
         self.linux_dir = linux_dir
         self.mac_dir = mac_dir
-        self.sta_list = sta_list
+        self.virtual = clients_type == "virtual"
+        self.mixed = clients_type == "both"
+        self.has_virtual_clients = self.virtual or self.mixed
+        self.sta_list = (sta_list or []) if self.has_virtual_clients else sta_list
+        self.num_sta = num_sta
+        self.radio = radio
+        self.existing_sta_list = existing_sta_list
+        self.use_existing_sta_list = use_existing_sta_list
+        self.virtual_network = virtual_network or (ssid, security, passwd)
+        self.virtual_ip_map = {}
+        self.virtual_stations_by_name = {}
+        self.virtual_run_id = uuid4().hex[:10] if self.has_virtual_clients else None
+        self.virtual_cxs_running = False
+        self.http_profile = self.new_http_profile() if self.has_virtual_clients else None
+        self.station_profile = self.new_station_profile() if self.has_virtual_clients else None
         self.real_sta_list = []
         self.real_sta_data_dict = {}
         self.linux = 0
@@ -291,7 +314,7 @@ class Youtube(Realm):
         self.stop_time = None
         self.do_webUI = do_webUI
         self.ui_report_dir = ui_report_dir
-        self.devices = base_RealDevice(manager_ip=self.host, selected_bands=[])
+        self.devices = None if self.virtual else base_RealDevice(manager_ip=self.host, selected_bands=[])
         self.device_names = []
         self.resolution = resolution
         self.do_bandsteering = do_bandsteering
@@ -349,6 +372,9 @@ class Youtube(Realm):
                 "BSSID", "Channel", "X", "Y", "From_Coord", "To_Coord"
             ])
 
+        if self.has_virtual_clients:
+            self.csv_headers.extend(["MAC", "BSSID", "RSSI", "Channel", "Mode", "SSID", "Link Rate"])
+
         self.do_robo = do_robo
         self.robo_ip = robo_ip
         self.coordinates_list = coordinates_list or []
@@ -366,6 +392,249 @@ class Youtube(Realm):
 
     def stop(self):
         self.stop_signal = True
+
+    def configure_virtual_stations(self):
+        """Create or validate stations for a standalone virtual-client test."""
+        if self.use_existing_sta_list:
+            requested = [
+                station.strip() for station in self.existing_sta_list.split(',')
+                if station.strip()
+            ]
+            valid_stations = []
+            for station in requested:
+                try:
+                    shelf, resource, port = self.name_to_eid(station)[:3]
+                    eid = f"{shelf}.{resource}.{port}"
+                    response = self.json_get(
+                        f"/port/{shelf}/{resource}/{port}?fields=ip,down,phantom,parent+dev,port+type"
+                    )
+                    interface = (response or {}).get("interface") or {}
+                    is_down = str(interface.get("down", True)).lower() == "true"
+                    is_phantom = str(interface.get("phantom", True)).lower() == "true"
+                    port_type = str(interface.get("port type", interface.get("type", "")))
+                    port_type = port_type.strip().upper().replace("_", "-").replace(" ", "-")
+                    if (eid not in self.real_sta_list
+                            and port_type in {"STA", "WIFI-STA", "WIFI-STATION"}
+                            and interface.get("ip") not in (None, "", "0.0.0.0")
+                            and not is_down
+                            and not is_phantom
+                            and interface.get("parent dev")):
+                        valid_stations.append(eid)
+                    else:
+                        logger.warning("Ignoring unavailable virtual station %s", station)
+                except (IndexError, TypeError, ValueError, KeyError):
+                    logger.warning("Ignoring invalid virtual station %s", station)
+            if not valid_stations:
+                raise RuntimeError("No usable stations were found in --existing_sta_list")
+            self.sta_list = list(dict.fromkeys(valid_stations))
+            logger.info("Using %d existing virtual station(s)", len(self.sta_list))
+            return
+
+        self.sta_list = LFUtils.port_name_series(
+            prefix=f"yt{self.virtual_run_id[:7]}-",
+            start_id=0,
+            end_id=self.num_sta - 1,
+            padding_number=100000,
+            radio=self.radio,
+        )
+        logger.info("Creating %d virtual station(s) on %s", len(self.sta_list), self.radio)
+        security_aliases = {
+            "psk": "wpa",
+            "psk2": "wpa2",
+            "sae": "wpa3",
+            "psk2jsae": "wpa2,wpa3",
+        }
+        station_ssid, security, station_password = self.virtual_network
+        station_security = security_aliases.get(security.lower(), security.lower())
+        supported_security = {
+            "open", "owe", "wep", "wpa", "wpa2", "wpa3", "wpa2,wpa3"
+        }
+        if station_security not in supported_security:
+            raise ValueError(
+                f"Unsupported virtual-station security type: {security}"
+            )
+        if station_security in {"open", "owe"} and not station_password:
+            station_password = "[BLANK]"
+        self.station_profile.use_security(
+            security_type=station_security,
+            ssid=station_ssid,
+            passwd=station_password,
+        )
+        self.station_profile.set_number_template("00000")
+        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_param("set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+        occupied = [station for station in self.sta_list if self.port_exists(station)]
+        if occupied:
+            raise RuntimeError(f"Station names already in use: {', '.join(occupied)}")
+        self.station_profile.create(
+            radio=self.radio,
+            sta_names_=self.sta_list,
+            debug=self.debug,
+        )
+        self.station_profile.admin_up()
+        if not self.wait_for_ip(self.sta_list):
+            raise RuntimeError("One or more virtual stations failed to obtain an IP address")
+
+    def build_virtual_l4(self):
+        """Create the YouTube L4 endpoints used by virtual stations."""
+        url = self.url.strip()
+        if url.startswith("https://"):
+            endpoint_url = f"dl https://{url[len('https://'):]} /dev/null"
+        else:
+            endpoint_url = f"dl http://{url.removeprefix('http://')} /dev/null"
+
+        logger.info("Creating YouTube L4 endpoints for %d virtual station(s)", len(self.sta_list))
+        cx_requests = []
+        for station in self.sta_list:
+            shelf, resource, port = self.name_to_eid(station)[:3]
+            if str(shelf) == "1":
+                self.http_profile.port_util.set_http(port_name=port, resource=resource, on=True)
+            else:
+                self.json_post("cli-json/set_port", {
+                    "shelf": shelf,
+                    "resource": resource,
+                    "port": port,
+                    "current_flags": 0x200000000000,
+                    "interest": 0x8000000,
+                }, debug_=self.debug)
+            resource_name = str(resource) if str(shelf) == "1" else f"{shelf}_{resource}"
+            endpoint_name = f"yt_{port}_http{resource_name}_{self.virtual_run_id}_l4"
+            cx_name = f"CX_{endpoint_name}"
+            response = self.json_post(
+                "cli-json/add_l4_endp",
+                {
+                    "alias": endpoint_name,
+                    "shelf": shelf,
+                    "resource": resource,
+                    "port": port,
+                    "type": "l4_generic",
+                    "timeout": 1000,
+                    "url_rate": 100,
+                    "url": endpoint_url,
+                    "proxy_auth_type": 0x12200,
+                    "quiesce_after": 0,
+                    "max_speed": 0,
+                },
+                debug_=self.debug,
+            )
+            if response is None:
+                raise RuntimeError(f"Unable to create virtual endpoint {endpoint_name} on {station}")
+            self.http_profile.created_endp.append(endpoint_name)
+            time.sleep(.5)
+            if self.mixed:
+                endpoint = self.json_get(f"/layer4/{endpoint_name}")
+                if not endpoint or "empty" in endpoint:
+                    raise RuntimeError(f"LANforge did not create virtual endpoint {endpoint_name}")
+            response = self.json_post(
+                "cli-json/set_l4_endp",
+                {
+                    "alias": endpoint_name,
+                    "media_source": "1",
+                    "media_quality": "0",
+                },
+                debug_=self.debug,
+            )
+            if response is None:
+                raise RuntimeError(f"Unable to configure YouTube media on {endpoint_name}")
+            cx_requests.append({
+                "alias": cx_name,
+                "test_mgr": "default_tm",
+                "tx_endp": endpoint_name,
+                "rx_endp": "NA",
+            })
+
+        for cx_request in cx_requests:
+            response = self.json_post("/cli-json/add_cx", cx_request, debug_=self.debug)
+            if response is None:
+                raise RuntimeError(f"Unable to create virtual CX {cx_request['alias']}")
+            self.http_profile.created_cx[cx_request["tx_endp"]] = cx_request["alias"]
+            time.sleep(.5)
+        logger.info("Created %d virtual YouTube CX(s)", len(self.http_profile.created_cx))
+
+    def start_virtual_cxs(self):
+        """Send the L4 playback start command for virtual and mixed runs."""
+        if not self.http_profile.created_cx:
+            raise RuntimeError("No virtual YouTube CXs were created")
+        self.wait_stop_aware(0, "before virtual YouTube CX startup")
+        self.virtual_cxs_running = True
+        self.http_profile.start_cx()
+
+    def stop_virtual_cxs(self):
+        if self.virtual_cxs_running:
+            try:
+                self.http_profile.stop_cx()
+                self.virtual_cxs_running = False
+            except Exception:
+                logger.exception("Unable to stop virtual YouTube CXs")
+
+    def map_virtual_station_ips(self):
+        """Map stats-source IP addresses to stable station aliases."""
+        self.virtual_ip_map = {}
+        for station in self.sta_list:
+            shelf, resource, port = self.name_to_eid(station)[:3]
+            response = self.json_get(f"/port/{shelf}/{resource}/{port}?fields=ip")
+            interface = (response or {}).get("interface") or {}
+            ip_address = interface.get("ip")
+            if not ip_address or ip_address == "0.0.0.0":
+                raise RuntimeError(f"Virtual station {station} does not have an IP address")
+            if ip_address in self.virtual_ip_map:
+                raise RuntimeError(f"Duplicate virtual station IP: {ip_address}")
+            if ip_address in getattr(self, "real_sta_hostname", []):
+                raise RuntimeError(f"Virtual station IP matches a real client name: {ip_address}")
+            self.virtual_ip_map[ip_address] = self.virtual_station_names[station]
+        logger.info("Mapped statistics for %d virtual station(s)", len(self.virtual_ip_map))
+
+    def register_virtual_clients(self):
+        """Assign report names without changing the real-client execution lists."""
+        aliases = [station.rsplit('.', 1)[-1] for station in self.sta_list]
+        counts = Counter(aliases)
+        used_names = set(getattr(self, "real_sta_hostname", []))
+        self.virtual_station_names = {}
+        for station, alias in zip(self.sta_list, aliases):
+            name = alias if counts[alias] == 1 and alias not in used_names else station
+            while name in used_names:
+                name = f"virtual-{name}"
+            used_names.add(name)
+            self.virtual_station_names[station] = name
+            self.virtual_stations_by_name[name] = station
+
+    def add_virtual_report_clients(self):
+        """Merge virtual client metadata into the common report inputs."""
+        wifi_stats = self.get_youtube_lf_wifi_stats()
+        if self.virtual:
+            for field in ("real_sta_hostname", "real_sta_os_types", "hostname_os_combination",
+                          "mac_list", "rssi_list", "link_rate_list", "ssid_list"):
+                setattr(self, field, [])
+        for name, station in self.virtual_stations_by_name.items():
+            self.real_sta_hostname.append(name)
+            self.real_sta_os_types.append("virtual")
+            self.hostname_os_combination.append(f"{name} (virtual)")
+            stats = wifi_stats.get(station, {})
+            self.mac_list.append(stats.get("MAC", "NA"))
+            self.rssi_list.append(stats.get("RSSI", "NA"))
+            self.link_rate_list.append(stats.get("RxRate", "NA"))
+            self.ssid_list.append(stats.get("SSID", "NA"))
+
+    def prepare_virtual_clients(self):
+        """Provision stations, register their report identities and create L4 CXs."""
+        self.configure_virtual_stations()
+        self.register_virtual_clients()
+        self.map_virtual_station_ips()
+        self.build_virtual_l4()
+
+    def run_virtual_test(self):
+        """Run standalone LANforge L4 YouTube playback."""
+        self.handle_flask_server()
+        self.prepare_virtual_clients()
+        if self.do_webUI:
+            self.update_webui()
+        self.wait_stop_aware(5, "before virtual YouTube CX startup")
+        self.start_virtual_cxs()
+        self.start_time = datetime.now()
+        self.wait_stop_aware(20, "for virtual YouTube playback initialization")
+        logger.info("Running virtual YouTube playback for %d minute(s)", self.duration)
+        self.wait_stop_aware(self.duration * 60, "during virtual YouTube playback")
 
     def cleanup(self):
         """
@@ -913,7 +1182,9 @@ class Youtube(Realm):
         Updates the WebUI with the current device configuration information.
         Displays the configured device list and operating system summary.
         """
-        if len(self.real_sta_hostname) == 0:
+        virtual_names = list(self.virtual_stations_by_name)
+        names = getattr(self, "real_sta_hostname", []) + virtual_names
+        if not names:
             logging.error("No device is available to run the test")
             obj = {
                 "status": "Stopped",
@@ -923,10 +1194,14 @@ class Youtube(Realm):
             return
         else:
             obj = {
-                "configured_devices": self.real_sta_hostname,
+                "configured_devices": names,
                 "configuration_status": "configured",
-                "no_of_devices": f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac})',
-                "device_list": self.hostname_os_combination
+                "no_of_devices": (
+                    f"Total({len(names)}) : Real({len(self.real_sta_list)}),"
+                    f" Virtual({len(self.sta_list)})" if self.has_virtual_clients else
+                    f' Total({len(self.real_sta_os_types)}) : W({self.windows}),L({self.linux}),M({self.mac})'
+                ),
+                "device_list": (self.hostname_os_combination or []) + [f"{name} (virtual)" for name in virtual_names]
 
             }
             self.updating_webui_runningjson(obj)
@@ -1000,14 +1275,20 @@ class Youtube(Realm):
     def finalize_test_run(self, args, iot_summary=None):
         """Stop clients, generate the report, then clean up the test."""
         self.stop()
-        # Stop collection before WebUI completion triggers the final live image.
-        if args.do_webUI:
-            self.stop_webui_test()
-        logger.info("Waiting 10 seconds for client cleanup and log uploads")
-        time.sleep(10)
-        self.stop_connectivity_monitoring()
-        self.stop_wifi_analysis()
+        if self.has_virtual_clients:
+            self.stop_virtual_cxs()
         try:
+            if args.do_webUI:
+                self.stop_webui_test()
+            if not self.virtual:
+                logger.info("Waiting 10 seconds for client cleanup and log uploads")
+                time.sleep(10)
+                self.stop_connectivity_monitoring()
+                self.stop_wifi_analysis()
+            if self.has_virtual_clients:
+                if self.start_time is None:
+                    return
+                self.add_virtual_report_clients()
             if args.do_robo and not self.is_continuous_run:
                 self.create_robo_report()
             else:
@@ -1018,20 +1299,41 @@ class Youtube(Realm):
                 )
             logger.info("YouTube report generated: %s", self.report_path_date_time)
         finally:
-            try:
-                self.generic_endps_profile.stop_cx()
-            except Exception:
-                logger.exception("Unable to stop all YouTube CXs during cleanup")
-            if not args.no_post_cleanup:
+            if not self.virtual:
                 try:
-                    self.generic_endps_profile.cleanup()
+                    self.generic_endps_profile.stop_cx()
                 except Exception:
-                    logger.exception("Unable to clean up all YouTube endpoints")
+                    logger.exception("Unable to stop all YouTube CXs during cleanup")
+            if not args.no_post_cleanup:
+                if self.has_virtual_clients:
+                    self.cleanup_virtual_clients()
+                if not self.virtual:
+                    try:
+                        self.generic_endps_profile.cleanup()
+                    except Exception:
+                        logger.exception("Unable to clean up all YouTube endpoints")
                 if getattr(self, 'background_ping', None):
                     try:
                         self.background_ping.cleanup()
                     except (Exception, SystemExit):
                         logger.exception("Unable to clean up background ping endpoints")
+
+    def cleanup_virtual_clients(self):
+        try:
+            self.http_profile.cleanup()
+        except Exception:
+            logger.exception("Unable to clean up virtual YouTube endpoints")
+        for endpoint in self.http_profile.created_endp:
+            if endpoint not in self.http_profile.created_cx:
+                try:
+                    self.json_post("cli-json/rm_endp", {"endp_name": endpoint})
+                except Exception:
+                    logger.exception("Unable to clean up virtual YouTube endpoint %s", endpoint)
+        if not self.use_existing_sta_list:
+            try:
+                self.station_profile.cleanup()
+            except Exception:
+                logger.exception("Unable to clean up virtual stations")
 
     def get_youtube_lf_wifi_stats(self):
         """
@@ -1048,7 +1350,7 @@ class Youtube(Realm):
             logger.error(f"Error fetching port data: {e}")
             return lf_stats_map
 
-        for sta in self.real_sta_list:
+        for sta in (self.sta_list if self.has_virtual_clients else self.real_sta_list):
             lf_stats_map[sta] = {
                 "BSSID": "NA",
                 "RSSI": "NA",
@@ -1056,6 +1358,8 @@ class Youtube(Realm):
                 "Mode": "NA",
                 "TxRate": "NA",
                 "RxRate": "NA",
+                "SSID": "NA",
+                "MAC": "NA",
             }
 
             if sta in interfaces_dict:
@@ -1072,6 +1376,8 @@ class Youtube(Realm):
                 lf_stats_map[sta]["TxRate"] = data.get("tx-rate", "NA")
                 lf_stats_map[sta]["RxRate"] = data.get("rx-rate", "NA")
                 lf_stats_map[sta]["BSSID"] = data.get("ap", "NA")
+                lf_stats_map[sta]["SSID"] = data.get("ssid", "NA")
+                lf_stats_map[sta]["MAC"] = data.get("mac", "NA")
 
         return lf_stats_map
 
@@ -1181,12 +1487,30 @@ class Youtube(Realm):
                     return jsonify({"message": "Data cleared"}), 200
 
                 received_stats = False
+                virtual_wifi = None
                 for key, value in data.items():
                     if key == "stop":
                         continue
-                    received_stats = True
                     device_name = key
                     stats = value
+                    if self.has_virtual_clients:
+                        device_name = self.virtual_ip_map.get(key, key)
+                        station = self.virtual_stations_by_name.get(device_name)
+                        if not isinstance(value, dict) or (self.virtual and station is None):
+                            continue
+                    else:
+                        station = None
+                    if station is not None:
+                        if virtual_wifi is None:
+                            virtual_wifi = self.get_youtube_lf_wifi_stats()
+                        wifi = virtual_wifi.get(station, {})
+                        stats = {
+                            **value,
+                            **{field: wifi.get(field, "NA") for field in
+                               ("MAC", "BSSID", "RSSI", "Channel", "Mode", "SSID")},
+                            "Link Rate": wifi.get("RxRate", "NA"),
+                        }
+                    received_stats = True
                     stop = data.get("stop", False)
 
                     if device_name not in self.stats_api_response:
@@ -2223,21 +2547,11 @@ class Youtube(Realm):
         """Include connectivity results limited to the observed playback-stat window."""
         window = self._playback_stats_window()
         if window is None:
-            report.set_obj_html(
-                _obj_title="Client Connectivity Status Throughout the Test Duration",
-                _obj="No playback-statistics window is available, so connectivity results cannot be aligned "
-                     "with the actual YouTube playback period.")
-            report.build_objective()
             return
 
         self.add_wifi_analysis_to_report(report, window)
         ping = getattr(self, "background_ping", None)
         if not ping or not ping.bg_stats:
-            report.set_obj_html(
-                _obj_title="Client Connectivity Status Throughout the Test Duration",
-                _obj="No background-ping results are available. Enable --enable_bg_ping and verify that ping starts "
-                     "successfully on the clients to collect the connectivity timeline and ping statistics.")
-            report.build_objective()
             return
         self._add_background_ping_timeline_to_report(report, window)
         self._add_background_ping_stats_to_report(report, window)
@@ -2438,11 +2752,12 @@ class Youtube(Realm):
         self.report_path_date_time = self.report.path_date_time
 
         # setting report title
+        client_label = "Mixed Real and Virtual" if self.mixed else ("Virtual" if self.virtual else "Real")
         self.report.set_title(
             'LANforge Interop<br>YouTube Streaming Test Including IoT Devices'
             if iot_summary else
             'LANforge Interop<br>YouTube Streaming Test<br>'
-            '<span style="font-size:0.55em;">(Real Client Performance Validation)</span>')
+            f'<span style="font-size:0.55em;">({client_label} Client Performance Validation)</span>')
         self.report.build_banner()
         self._add_youtube_report_style(self.report)
         # objective and description
@@ -2466,7 +2781,9 @@ class Youtube(Realm):
             self.report.set_obj_html(
                 _obj_title='Test Overview',
                 _obj=(
-                    "The objective is to conduct an automated YouTube streaming test across multiple Android devices and laptops "
+                    "The objective is to conduct an automated YouTube streaming test across "
+                    + ("real devices and LANforge virtual stations " if self.mixed else
+                       "LANforge virtual stations " if self.virtual else "multiple Android devices and laptops ") +
                     "to gather streaming performance statistics. The test will collect key metrics related to video playback "
                     "behavior, quality, buffering, and stability. Additionally, automated graphs will be generated using the collected data."
                 )
@@ -2525,6 +2842,16 @@ class Youtube(Realm):
                 f"{total_seconds // 3600:02d}:{total_seconds % 3600 // 60:02d}:{total_seconds % 60:02d}")
         test_setup_info['Video Resolution'] = test_setup_info.pop('Resolution')
         test_setup_info['Number of Devices'] = test_setup_info.pop('No of Devices :')
+        if self.has_virtual_clients:
+            test_setup_info['Number of Devices'] = (
+                f"Total({len(self.real_sta_hostname)}) : Real({len(self.real_sta_list)}), Virtual({len(self.sta_list)})"
+            )
+            test_setup_info['Video Resolution'] = (
+                f"Real: {self.resolution}; Virtual: Automatic (LANforge L4)" if self.mixed else
+                "Automatic (LANforge L4)"
+            )
+            if not self.use_existing_sta_list:
+                test_setup_info["Virtual Station SSID"], test_setup_info["Virtual Station Security"], _ = self.virtual_network
         test_setup_info.pop('Duration (in Minutes)', None)
         if self.is_continuous_run:
             test_setup_info['Coordinates'] = self.coordinates_list
@@ -2611,6 +2938,11 @@ class Youtube(Realm):
                         f"Per-client Streaming Performance Metrics and Ratings - {group}")
                     self.report.build_table_title()
                     self._build_client_metrics_table(group_rows)
+            virtual_rows = [row for row in table_rows if row["Device Name"] in self.virtual_stations_by_name]
+            if virtual_rows:
+                self.report.set_table_title("Per-client Streaming Performance Metrics and Ratings - Virtual Clients")
+                self.report.build_table_title()
+                self._build_client_metrics_table(virtual_rows)
         elif table_rows:
             self.report.set_table_title("Per-client Streaming Performance Metrics and Ratings")
             self.report.build_table_title()
@@ -3990,6 +4322,25 @@ python3 py-scripts/real_application_tests/youtube/lf_interop_youtube.py \
 --rotations 0,90,180,270
 
 
+Example-8:
+Run virtual clients only using an existing station.
+python3 lf_interop_youtube.py --mgr 192.168.214.219 --upstream_port 1.1.eth1 \
+  --url 'https://youtu.be/BHACKCNDMW8' --duration 1 --clients_type virtual \
+  --use_existing_sta_list --existing_sta_list 1.1.sta00000
+
+Example-9:
+Run a real client alongside an existing virtual station.
+python3 lf_interop_youtube.py --mgr 192.168.214.219 --upstream_port 1.1.eth1 \
+  --url 'https://youtu.be/BHACKCNDMW8' --duration 1 --clients_type both \
+  --resources 1.13 --res 480p --use_existing_sta_list --existing_sta_list 1.1.sta00000
+
+Example-10:
+Create and configure two virtual stations on a WPA2 network.
+python3 lf_interop_youtube.py --mgr 192.168.207.75 --upstream_port 1.1.eth1 \
+  --url 'https://youtu.be/08tDJtvpZTY?si=BRQNVvfSITgKD7HJ' --duration 2 \
+  --clients_type virtual --num_sta 2 --radio wiphy0 \
+  --ssid 'NETGEAR_2G_WPA2' --passwd 'PASSWORD@123' --encryp wpa2
+
 SCRIPT CLASSIFICATION: Test
 
 NOTES:
@@ -4014,7 +4365,7 @@ NOTES:
         # Add required arguments
         required.add_argument('--mgr', type=str, help="hostname where LANforge GUI is running", required=True)
         required.add_argument('--url', type=str, help='youtube url', required=True)
-        required.add_argument('--duration', type=int, help='duration to run the test in sec (not needed for a continuous robot run)')
+        required.add_argument('--duration', type=int, help='duration in minutes (not needed for a continuous robot run)')
         required.add_argument('--ap_name', type=str, default="TIP", help="Name of the AP in which we run the test")
         required.add_argument('--sec', type=str, default="wpa2", help="security type used")
         required.add_argument('--band', type=str, default="5GHZ", help="Name of the Frequency band used")
@@ -4074,6 +4425,16 @@ NOTES:
         parser.add_argument('--config', action='store_true', help='specify this flag whether to config devices or not')
         parser.add_argument('--scoring', action='store_true', help='Generate per-device YouTube scoring CSV files')
         parser.add_argument("--wait_time", type=int, help="Specify the time for configuration", default=60)
+        virtual_clients = parser.add_argument_group("Virtual clients")
+        virtual_clients.add_argument('--clients_type', choices=['real', 'virtual', 'both'], default='real',
+                                     help="Client types to run together in standalone mode")
+        virtual_clients.add_argument('--num_sta', type=int, help="Number of virtual stations to create")
+        virtual_clients.add_argument('--radio', default='wiphy0', help="Radio for new virtual stations")
+        virtual_clients.add_argument('--existing_sta_list', default='', help="Comma-separated station EIDs")
+        virtual_clients.add_argument('--use_existing_sta_list', action='store_true')
+        virtual_clients.add_argument('--virtual_ssid', help="SSID for new virtual stations, defaults to --ssid")
+        virtual_clients.add_argument('--virtual_encryp', help="Security for new virtual stations, defaults to --encryp")
+        virtual_clients.add_argument('--virtual_passwd', help="Password for new virtual stations, defaults to --passwd")
         # IOT ARGS
         parser.add_argument('--iot_test', help="If true will execute script for iot", action='store_true')
 
@@ -4169,6 +4530,49 @@ NOTES:
             debug:                    {}
             '''.format(mgr_ip, mgr_port, duration, debug))
 
+        youtube_options = dict(
+            host=mgr_ip, port=mgr_port, url=url, duration=args.duration, debug=debug,
+            do_webUI=do_webUI, ui_report_dir=ui_report_dir, upstream_port=args.upstream_port,
+            test_name=args.test_name, resolution=args.res, ap_name=args.ap_name, band=args.band,
+            ssid=args.ssid, security=args.encryp, scoring=args.scoring,
+        )
+        if args.clients_type != 'real':
+            if args.do_robo or args.do_bandsteering:
+                parser.error("Virtual and mixed client runs require standalone mode")
+            if args.clients_type == 'virtual' and (args.iot_test or args.wifi_analysis or args.enable_bg_ping):
+                parser.error("Virtual clients require standalone mode without real-client monitoring")
+            if args.duration is None or args.duration <= 0:
+                parser.error("--duration must be positive for virtual clients")
+            virtual_ssid = args.virtual_ssid or args.ssid
+            virtual_security = args.virtual_encryp or args.encryp
+            virtual_password = args.virtual_passwd if args.virtual_passwd is not None else args.passwd
+            if args.use_existing_sta_list:
+                if not any(station.strip() for station in args.existing_sta_list.split(',')):
+                    parser.error("--existing_sta_list is required with --use_existing_sta_list")
+            else:
+                if not args.num_sta or args.num_sta < 1:
+                    parser.error("--num_sta must be greater than zero")
+                if not virtual_ssid or not virtual_security:
+                    parser.error("Virtual station creation requires --virtual_ssid and --virtual_encryp (or --ssid and --encryp)")
+                if virtual_security.lower() not in {'open', 'owe'} and not virtual_password:
+                    parser.error("--virtual_passwd or --passwd is required unless virtual security is open or OWE")
+            youtube_options.update({
+                "clients_type": args.clients_type,
+                "num_sta": args.num_sta,
+                "radio": args.radio,
+                "existing_sta_list": args.existing_sta_list,
+                "use_existing_sta_list": args.use_existing_sta_list,
+                "virtual_network": (virtual_ssid, virtual_security, virtual_password),
+            })
+        if args.clients_type == 'virtual':
+            youtube_options.update(ssid=virtual_ssid, security=virtual_security)
+            youtube = Youtube(
+                config=not args.use_existing_sta_list, selected_groups=[], selected_profiles=[],
+                **youtube_options,
+            )
+            youtube.run_virtual_test()
+            return
+
         if True:
 
             if args.expected_passfail_value is not None and args.device_csv_name is not None:
@@ -4200,7 +4604,9 @@ NOTES:
             elif args.file_name is not None and (args.group_name is None or args.profile_name is None):
                 logging.error("Please enter the correct set of arguments")
                 exit(0)
-            elif args.config and ((args.ssid is None or (args.passwd is None and args.security.lower() != 'open') or (args.passwd is None and args.security is None))):
+            elif args.config and (
+                    args.ssid is None or args.encryp is None
+                    or (args.passwd is None and args.encryp.lower() not in {"open", "owe"})):
                 logging.error("Please provide ssid password and security for configuration of devices")
                 exit(0)
 
@@ -4221,22 +4627,7 @@ NOTES:
             # Create a YouTube object with the specified parameters
 
             youtube = Youtube(
-                host=mgr_ip,
-                port=mgr_port,
-                url=url,
-                duration=args.duration,
-                lanforge_password='lanforge',
                 sta_list=[],
-                do_webUI=args.do_webUI,
-                ui_report_dir=ui_report_dir,
-                debug=debug,
-                resolution=args.res,
-                ap_name=args.ap_name,
-                ssid=args.ssid,
-                security=args.encryp,
-                band=args.band,
-                test_name=args.test_name,
-                upstream_port=args.upstream_port,
                 config=args.config,
                 selected_groups=selected_groups,
                 selected_profiles=selected_profiles,
@@ -4249,10 +4640,10 @@ NOTES:
                 measurement_mode=args.measurement_mode,
                 bssids=bssids,
                 rotations_enabled=rotations_enabled,
-                scoring=args.scoring,
                 windows_dir=args.windows_dir,
                 linux_dir=args.linux_dir,
-                mac_dir=args.mac_dir)
+                mac_dir=args.mac_dir,
+                **youtube_options)
             youtube.handle_flask_server()
             args.upstream_port = youtube.change_port_to_ip(args.upstream_port)
 
@@ -4384,6 +4775,9 @@ NOTES:
                 logging.error("No usable real devices are available")
                 exit(0)
 
+            if youtube.mixed:
+                youtube.prepare_virtual_clients()
+
             if args.do_webUI:
                 youtube.update_webui()
 
@@ -4409,14 +4803,18 @@ NOTES:
                     youtube.perform_robo_test()
             else:
                 youtube.start_generic()
-
-                duration = args.duration
-                end_time = datetime.now() + timedelta(minutes=duration)
+                end_time = datetime.now() + timedelta(minutes=args.duration)
+                if youtube.mixed:
+                    youtube.start_virtual_cxs()
 
                 while (datetime.now() < end_time or not youtube.check_gen_cx()) and not youtube.stop_signal:
+                    if youtube.mixed and datetime.now() >= end_time:
+                        youtube.stop_virtual_cxs()
                     youtube.monitor_endpoint_status_changes()
                     time.sleep(1)
 
+                if youtube.mixed:
+                    youtube.stop_virtual_cxs()
                 if not youtube.stop_signal:
                     youtube.generic_endps_profile.stop_cx()
                 logging.info(
