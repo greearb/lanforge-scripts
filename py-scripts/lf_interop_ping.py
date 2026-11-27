@@ -1666,9 +1666,7 @@ class Ping(Realm):
         duration = str(datetime.timedelta(seconds=int(test_seconds)))
         clients, stations, segments = [], [], []
         for device in self.real_sta_list:
-            sequences = self.bg_packet_results.get(device)
-            if not sequences:
-                continue
+            sequences = self.bg_packet_results.get(device) or {}
             spans = []
             covered_until = 0.0
             for sequence in sorted(sequences):
