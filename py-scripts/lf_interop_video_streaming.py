@@ -158,6 +158,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
 DeviceConfig = importlib.import_module("py-scripts.DeviceConfig")
+lf_interop_ping = importlib.import_module("py-scripts.lf_interop_ping")
 iot_scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../local/interop-webGUI/IoT/scripts/"))
 if os.path.exists(iot_scripts_path):
     sys.path.insert(0, iot_scripts_path)
@@ -240,6 +241,7 @@ class VideoStreamingTest(Realm):
         self.get_live_view = get_live_view
         self.config_obj = None
         self.upstream_port = upstream_port
+        self.background_ping = None
         self.device_list = device_list
         self.webgui_incremental = webgui_incremental
         # Initializing robot test parameters
@@ -1913,6 +1915,8 @@ class VideoStreamingTest(Realm):
         if self.device_issue_log:
             issues_df = pd.DataFrame(self.device_issue_log)
             issues_df.to_csv(os.path.join(report_path_date_time, "clients_issue.csv"), index=False)
+        if self.background_ping:
+            self.background_ping.add_background_ping_to_report(report)
         report.build_footer()
         report.write_html()
         report.write_pdf()
@@ -3465,6 +3469,20 @@ def main():
     optional.add_argument('--do_bandsteering', help='Enable bandsteering', action='store_true')
     optional.add_argument('--bssids', type=str, help='Comma separated list of BSSIDs to be used for the test', default="")
     optional.add_argument('--total_cycles', help='Enable bandsteering', default="1")
+
+    background_ping = parser.add_argument_group('Background ping')
+    background_ping.add_argument('--enable_bg_ping',
+                                 action='store_true',
+                                 help='Run a ping on the real clients in the background while the test runs and report its statistics at the end of the report')
+    background_ping.add_argument('--bg_ping_target',
+                                 type=str,
+                                 default=None,
+                                 help='IP, domain name or LANforge port the background ping should target. Defaults to the upstream port of the test when not given')
+    background_ping.add_argument('--bg_ping_interval',
+                                 type=float,
+                                 default=1,
+                                 help='Packet interval of the background ping in seconds. Defaults to 1')
+
     args = parser.parse_args()
 
     if args.help_summary:
@@ -3740,6 +3758,12 @@ def main():
     # To create cx for selected devices
     obj.build()
 
+    if args.enable_bg_ping:
+        obj.background_ping = lf_interop_ping.Ping(host=args.host, port=8080, target=args.bg_ping_target or obj.upstream_port, interval=args.bg_ping_interval,
+                                                   sta_list=[], real=True, virtual=False, duration=0)
+        if not obj.background_ping.start_background_ping(obj.phone_data):
+            obj.background_ping = None
+
     # To set media source and media quality
     time.sleep(10)
 
@@ -3900,6 +3924,8 @@ def main():
                     # Append current iteration index to iterations_before_test_stopped_by_user
                     iterations_before_test_stopped_by_user.append(i)
                     break
+    if obj.background_ping:
+        obj.background_ping.stop_background_ping()
     obj.stop()
     date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
     iot_summary = None
