@@ -63,16 +63,15 @@ import requests
 from tabulate import tabulate
 from flask import Flask, request, jsonify
 import socket
+import json
+import shutil
+import tempfile
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
 
-# Repo root is "../.." from py-scripts/ and "../../.." from py-scripts/real_application_tests/vlc_automation/,
-# so both locations of this script resolve "py-json" and "py-scripts".
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../..")))
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
@@ -90,6 +89,34 @@ logger = logging.getLogger(__name__)
 # MACs Android reports when the interop app can't read the real one (no Location
 # permission / MAC randomisation). Every phone in that state shares them, so never match on them.
 PLACEHOLDER_MACS = {"", "00:00:00:00:00:00", "02:00:00:00:00:00", "none"}
+
+# Host-rotation switch statistics: the "post" snapshot is the first client sample this many
+# seconds after the new stream is confirmed; a sample older/later than SNAPSHOT_MAX_AGE_S
+# from its target is not used (the table then shows n/a instead of a misleading number).
+POST_SWITCH_DELAY_S = 8
+SNAPSHOT_MAX_AGE_S = 10
+SERIES_MAX_SAMPLES = 5000
+
+# Path of the run log mirrored by setup_run_log(); copied into <report>/log/ at the end.
+RUN_LOG_PATH = None
+
+
+def setup_run_log():
+    """Mirror everything logged during this run into one file, so it can be saved next to
+    the report for later debugging."""
+    global RUN_LOG_PATH
+    try:
+        path = os.path.join(tempfile.gettempdir(),
+                            f"vlc_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{os.getpid()}.log")
+        handler = logging.FileHandler(path, encoding="utf-8")
+        handler.setFormatter(logging.Formatter(
+            "%(asctime)s %(levelname)-8s %(message)s  [%(filename)s:%(lineno)d]"))
+        logging.getLogger().addHandler(handler)
+        if not logger.propagate:
+            logger.addHandler(handler)
+        RUN_LOG_PATH = path
+    except Exception as e:
+        logger.warning(f"[LOG] Could not start the run log file: {e}")
 
 
 class VLCStream(Realm):
@@ -118,6 +145,7 @@ class VLCStream(Realm):
                  android_script=None,
                  client_script_dir=None,
                  client_simple=False,
+                 post_switch_delay=POST_SWITCH_DELAY_S,
                  _debug_on=False):
         super().__init__(lfclient_host=manager_ip,
                          debug_=_debug_on)
@@ -176,11 +204,19 @@ class VLCStream(Realm):
         self.client_script_dir = (client_script_dir or "").rstrip("/")
         # Laptop clients play only -- no RC socket, no stats.
         self.client_simple = client_simple
+        # Seconds after a host-rotation switch before the post-switch stats snapshot.
+        self.post_switch_delay = post_switch_delay
+        self.run_stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        self.rotation_t0 = None
         self.rotate_stop = threading.Event()
         self.rotate_thread = None
         self.current_media_idx = 0
         self.app = Flask(__name__)
         self.stats = {}
+        # Every stats sample per client, stamped on arrival: [{"t": epoch, "stats": {...}}].
+        # self.stats keeps only the latest; transition pre/post snapshots come from this.
+        self.series = {}
+        self.series_lock = threading.Lock()
         self.transitions = {}
         self.android_errors = {}
 
@@ -712,19 +748,39 @@ class VLCStream(Realm):
                 logger.info(f"[HOST]   out {iface} (rc_port {4212 + i})")
         return procs
 
+    def _wait_stream_up(self, ip, port, timeout=10):
+        """Return the time the group was first seen transmitting again (accurate to ~1 s),
+        or None if nothing arrived within `timeout` seconds."""
+        iface = self.host_ifaces[0] if self.host_ifaces else None
+        iface_ip = self.local_ip_for_iface(iface) if iface else None
+        end = time.time() + timeout
+        while time.time() < end and not self.rotate_stop.is_set():
+            if self.multicast_has_traffic(ip, port, iface_ip, seconds=1):
+                return time.time()
+        return None
+
     def _rotation_loop(self, ip, port, host_duration):
         """Cycle through the media files on one multicast group, recording each switch
-        as a transition so it lands in the report."""
+        (scheduled / started / stopped / confirmed-up times) so it lands in the report."""
         interval = self.switch_value if self.switch_mode == "time" else max(self.switch_value * 3, 10)
         if self.switch_mode == "iteration":
             logger.info(f"[ROTATE] switch_mode=iteration -> switching every ~{interval}s "
                         f"({self.switch_value} poll cycles at ~3s each)")
 
+        t0 = self.rotation_t0 or time.time()
+        n = 0
         while not self.rotate_stop.is_set():
-            # Wait out this stream's turn, checking often so shutdown is prompt.
-            if self.rotate_stop.wait(timeout=interval):
+            n += 1
+            # Wait for an ABSOLUTE deadline (t0 + n*interval), not a fixed sleep, so the time
+            # each switch itself takes never pushes later switches back.
+            scheduled = t0 + n * interval
+            if self.rotate_stop.wait(timeout=max(0.0, scheduled - time.time())):
                 break
 
+            start = time.time()
+            if start - scheduled > 1.0:
+                logger.warning(f"[ROTATE] Switch #{n} is {start - scheduled:.1f}s behind schedule "
+                               f"(interval {interval}s is shorter than a switch takes).")
             from_idx = self.current_media_idx
             to_idx = (from_idx + 1) % len(self.host_media)
 
@@ -741,16 +797,31 @@ class VLCStream(Realm):
             time.sleep(1)
             subprocess.run(["pkill", "-9", "vlc"], capture_output=True)
             time.sleep(1)
+            stopped = time.time()
 
             self.host_procs = self._launch_on_all_ifaces(
                 self.host_media[to_idx], ip, port, host_duration)
             self.current_media_idx = to_idx
+            up = self._wait_stream_up(ip, port)
+            if up is None and not self.rotate_stop.is_set():
+                logger.warning(f"[ROTATE] Switch #{n}: new stream was not seen transmitting within 10s.")
 
-            # Record it for the report. The orchestrator knows exactly when it
-            # switched, so these timestamps are authoritative.
+            logger.info(f"[ROTATE] Switch #{n}: scheduled +{scheduled - t0:.1f}s, started "
+                        f"+{start - t0:.1f}s, new stream up "
+                        f"{'+%.1fs' % (up - t0) if up else 'NOT CONFIRMED'}")
+
+            # The orchestrator knows exactly when it switched, so these timestamps are
+            # authoritative. pre_switch_stats is kept for compatibility but is empty here;
+            # the report derives pre/post values from the per-client sample series instead.
             self.transitions.setdefault("host_rotation", []).append({
                 "transition": True,
-                "switch_time": time.time(),
+                "switch_number": n,
+                "switch_time": start,
+                "scheduled_time": scheduled,
+                "stopped_time": stopped,
+                "up_time": up,
+                "switch_delay_s": start - scheduled,
+                "outage_s": (up - start) if up else None,
                 "switch_mode": self.switch_mode,
                 "from_stream": from_idx + 1,
                 "to_stream": to_idx + 1,
@@ -810,6 +881,7 @@ class VLCStream(Realm):
             return
         ip, port, host_duration = self._rotation_args
         self.rotate_stop.clear()
+        self.rotation_t0 = time.time()
         self.rotate_thread = threading.Thread(
             target=self._rotation_loop, args=(ip, port, host_duration), daemon=True)
         self.rotate_thread.start()
@@ -1148,6 +1220,202 @@ class VLCStream(Realm):
         self.generic_endps_profile.created_cx = []
         self.generic_endps_profile.created_endp = []
 
+    def _record_stats(self, client_id, stats):
+        """Keep the latest sample (self.stats) AND append it, timestamped, to the series."""
+        self.stats[client_id] = stats
+        with self.series_lock:
+            samples = self.series.setdefault(client_id, [])
+            if len(samples) < SERIES_MAX_SAMPLES:
+                samples.append({"t": time.time(), "stats": stats})
+
+    @staticmethod
+    def _to_num(value):
+        """Leading number of a VLC stat such as '163 kb/s' or '355'; None if absent."""
+        try:
+            return float(str(value).replace(",", "").split()[0])
+        except Exception:
+            return None
+
+    def _sample_metrics(self, stats):
+        """The comparable counters from one sample. Laptops report frames/discontinuities;
+        Android (simple mode) reports only a throughput figure, so the rest are None."""
+        if not isinstance(stats, dict):
+            return {}
+        parsed = stats.get("parsed")
+        if isinstance(parsed, dict):
+            rate = self._to_num(parsed.get("demux_bitrate_kbps"))
+            if rate is None:
+                rate = self._to_num(parsed.get("input_bitrate_kbps"))
+            return {"frames_displayed": None, "frames_lost": None,
+                    "discontinuities": None, "bitrate": rate}
+        rate = self._to_num(stats.get("demux_bitrate"))
+        if rate is None:
+            rate = self._to_num(stats.get("input_bitrate"))
+        return {"frames_displayed": self._to_num(stats.get("frames_displayed")),
+                "frames_lost": self._to_num(stats.get("frames_lost")),
+                "discontinuities": self._to_num(stats.get("discontinuities")),
+                "bitrate": rate}
+
+    def _series_copy(self, eid):
+        with self.series_lock:
+            return list(self.series.get(eid, []))
+
+    def _sample_before(self, eid, t):
+        """Closest sample at or before time t, if it is recent enough to mean anything."""
+        best = None
+        for smp in self._series_copy(eid):
+            if smp["t"] <= t:
+                best = smp
+            else:
+                break
+        return best if best and t - best["t"] <= SNAPSHOT_MAX_AGE_S else None
+
+    def _sample_after(self, eid, t, not_after=None):
+        """First sample at or after time t (within SNAPSHOT_MAX_AGE_S), and before not_after."""
+        for smp in self._series_copy(eid):
+            if smp["t"] >= t:
+                if smp["t"] - t > SNAPSHOT_MAX_AGE_S:
+                    return None
+                if not_after is not None and smp["t"] >= not_after:
+                    return None
+                return smp
+        return None
+
+    @staticmethod
+    def _fmt_change(pre, post, unit=""):
+        """'355 -> 410 (+55)' -- missing pieces shown as n/a rather than as a false zero."""
+        if pre is None and post is None:
+            return "n/a"
+        if pre is None or post is None:
+            return f"{'n/a' if pre is None else format(pre, 'g')} -> " \
+                   f"{'n/a' if post is None else format(post, 'g')}{unit}"
+        return f"{pre:g} -> {post:g}{unit} ({post - pre:+g})"
+
+    @staticmethod
+    def _clock(t):
+        return datetime.fromtimestamp(t).strftime("%H:%M:%S.%f")[:-3] if t else "N/A"
+
+    def _stream_label(self, index):
+        """Media filename for a 1-based stream number when we know the files, else the number."""
+        try:
+            i = int(index)
+            if self.host_media and 1 <= i <= len(self.host_media):
+                return os.path.basename(self.host_media[i - 1])
+        except Exception:
+            pass
+        return index
+
+    def _media_playing_at(self, t):
+        """Which file the host was transmitting at time t (host rotation only)."""
+        if not self.host_media:
+            return None
+        name = os.path.basename(self.host_media[0])
+        for ev in self.transitions.get("host_rotation", []):
+            if t >= (ev.get("up_time") or ev.get("switch_time") or 0):
+                name = ev.get("to_url", name)
+            else:
+                break
+        return name
+
+    def extract_rotation_timeline_rows(self):
+        """One row per host-rotation switch: scheduled vs actual times, delay and outage."""
+        rows = []
+        for ev in self.transitions.get("host_rotation", []):
+            up = ev.get("up_time")
+            rows.append({
+                "Transition #": ev.get("switch_number", len(rows) + 1),
+                "Switch": f"{ev.get('from_url', '')} -> {ev.get('to_url', '')}",
+                "Scheduled": self._clock(ev.get("scheduled_time")),
+                "Switch Started": self._clock(ev.get("switch_time")),
+                "Old Stream Stopped": self._clock(ev.get("stopped_time")),
+                "New Stream Up": self._clock(up) if up else "not confirmed",
+                "Switch Delay (s)": f"{ev.get('switch_delay_s', 0):.2f}",
+                "Outage Gap (s)": f"{ev['outage_s']:.1f}" if ev.get("outage_s") is not None else "n/a",
+            })
+        return rows
+
+    def extract_rotation_transition_rows(self):
+        """One row per switch per device: counters just before vs shortly after the switch,
+        and the change. VLC's counters are cumulative, so the change is what is meaningful."""
+        events = self.transitions.get("host_rotation", [])
+        rows = []
+        for i, ev in enumerate(events):
+            start = ev.get("switch_time")
+            up = ev.get("up_time") or start
+            nxt = events[i + 1].get("switch_time") if i + 1 < len(events) else None
+            for eid, device in self.devices_data.items():
+                if self.host_res and self.host_res == eid:
+                    continue
+                pre_s = self._sample_before(eid, start) if start else None
+                post_s = self._sample_after(eid, up + self.post_switch_delay, nxt) if up else None
+                pre = self._sample_metrics(pre_s["stats"]) if pre_s else {}
+                post = self._sample_metrics(post_s["stats"]) if post_s else {}
+                rows.append({
+                    "Device Name": device.get("hostname", eid),
+                    "Transition #": ev.get("switch_number", i + 1),
+                    "Switched At": self._clock(start),
+                    "Switch": f"{ev.get('from_url', '')} -> {ev.get('to_url', '')}",
+                    "Frames Displayed (pre -> post)": self._fmt_change(
+                        pre.get("frames_displayed"), post.get("frames_displayed")),
+                    "Frames Lost (pre -> post)": self._fmt_change(
+                        pre.get("frames_lost"), post.get("frames_lost")),
+                    "Discontinuities (pre -> post)": self._fmt_change(
+                        pre.get("discontinuities"), post.get("discontinuities")),
+                    "Bitrate kb/s (pre -> post)": self._fmt_change(
+                        pre.get("bitrate"), post.get("bitrate")),
+                })
+        return rows
+
+    def _debug_snapshot(self):
+        """Everything the run collected, for offline debugging (written to <report>/log/)."""
+        def iso(t):
+            return datetime.fromtimestamp(t).isoformat(timespec="milliseconds") if t else None
+        with self.series_lock:
+            series = {eid: [{"t": smp["t"], "time": iso(smp["t"]), "stats": smp["stats"]}
+                            for smp in samples] for eid, samples in self.series.items()}
+        return {
+            "script_version": globals().get("SCRIPT_VERSION"),
+            "argv": sys.argv,
+            "run_started": str(getattr(self, "start_time", None)),
+            "run_stopped": str(getattr(self, "stop_time", None)),
+            "config": {
+                "mcast_addr": self.mcast_addr, "mcast_port": self.mcast_port,
+                "duration": self.duration, "switch_mode": self.switch_mode,
+                "switch_value": self.switch_value, "host_media": self.host_media,
+                "host_ifaces": self.host_ifaces, "host_rotate": self.host_rotate,
+                "external_source": self.external_source, "android_simple": self.android_simple,
+                "client_simple": self.client_simple, "post_switch_delay": self.post_switch_delay,
+                "rotation_t0": iso(self.rotation_t0),
+            },
+            "devices": self.devices_data,
+            "final_stats": self.stats,
+            "android_errors": self.android_errors,
+            "host_rotation_events": self.transitions.get("host_rotation", []),
+            "client_transition_events": {k: v for k, v in self.transitions.items()
+                                         if k != "host_rotation"},
+            "stats_series": series,
+        }
+
+    def save_run_artifacts(self):
+        """Copy the run log and a JSON dump of the collected data into <report>/log/. Safe to
+        call more than once (the last call, after shutdown, holds the complete log)."""
+        try:
+            base = getattr(self, "report_path_date_time", None) or f"VLC_Streaming_Run_{self.run_stamp}"
+            log_dir = os.path.join(base, "log")
+            os.makedirs(log_dir, exist_ok=True)
+            for h in logging.getLogger().handlers:
+                try:
+                    h.flush()
+                except Exception:
+                    pass
+            if RUN_LOG_PATH and os.path.isfile(RUN_LOG_PATH):
+                shutil.copyfile(RUN_LOG_PATH, os.path.join(log_dir, "vlc_run.log"))
+            with open(os.path.join(log_dir, "debug_data.json"), "w", encoding="utf-8") as fh:
+                json.dump(self._debug_snapshot(), fh, indent=2, default=str)
+            logger.info(f"[LOG] Run log and debug data saved in {log_dir}")
+        except Exception as e:
+            logger.warning(f"[LOG] Could not save run log / debug data: {e}")
+
     def start_flask_server(self):
 
         @self.app.route('/stats', methods=['POST'])
@@ -1162,7 +1430,7 @@ class VLCStream(Realm):
                     self.android_errors[client_id] = stats.get("error", "unknown error")
                     logger.error(f"[ANDROID] {client_id}: {self.android_errors[client_id]}")
                 else:
-                    self.stats[client_id] = stats
+                    self._record_stats(client_id, stats)
             logger.info(f"[STATS] received from {', '.join(temp_data.keys())} "
                         f"({len(self.stats)} client(s) reporting)")
             return jsonify({"status": "success"}), 200
@@ -1347,7 +1615,25 @@ class VLCStream(Realm):
             test_setup_info["Switch Value"] = (
                 f"{self.switch_value}s" if self.switch_mode == "time" else f"{self.switch_value} polls"
             )
+        if self.host_rotate and self.host_media:
+            test_setup_info["Host Media (rotation order)"] = ", ".join(
+                os.path.basename(m) for m in self.host_media)
+            test_setup_info["Switch Mode"] = self.switch_mode
+            test_setup_info["Switch Value"] = (
+                f"{self.switch_value}s" if self.switch_mode == "time" else f"{self.switch_value} polls"
+            )
         return test_setup_info
+
+    def _active_stream_for(self, eid, stats):
+        """Name of the stream a client was last seen on. Host rotation: the file the host was
+        transmitting at that client's last sample. Otherwise the client's own stream number,
+        shown as the media filename when we know which file maps to it."""
+        if self.host_rotate and self.host_media:
+            samples = self._series_copy(eid)
+            if samples:
+                return self._media_playing_at(samples[-1]["t"]) or "-"
+        value = stats.get("active_stream", "-")
+        return self._stream_label(value) if value != "-" else value
 
     def extract_data_for_reporting_for_laptop_clients(self):
 
@@ -1375,7 +1661,7 @@ class VLCStream(Realm):
                 audio_decoded.append(stats.get("audio_decoded", "0"))
                 frames_displayed.append(stats.get("frames_displayed", "0"))
                 frames_lost.append(stats.get("frames_lost", "0"))
-                active_stream.append(stats.get("active_stream", "-"))
+                active_stream.append(self._active_stream_for(eid, stats))
             else:
                 video_decoded.append("0")
                 audio_decoded.append("0")
@@ -1513,6 +1799,8 @@ class VLCStream(Realm):
         per device, for the 'Stream Transition Events' report table."""
         rows = []
         for eid, events in self.transitions.items():
+            if eid == "host_rotation":
+                continue  # host-rotation switches have their own tables, built from the series
             hostname = self.devices_data.get(eid, {}).get("hostname", eid)
             for i, ev in enumerate(events, start=1):
                 pre = ev.get("pre_switch_stats") or {}
@@ -1525,8 +1813,8 @@ class VLCStream(Realm):
                     "Device Name": hostname,
                     "Transition #": i,
                     "Time": time_str,
-                    "From Stream": ev.get("from_stream", ""),
-                    "To Stream": ev.get("to_stream", ""),
+                    "From Stream": self._stream_label(ev.get("from_stream", "")),
+                    "To Stream": self._stream_label(ev.get("to_stream", "")),
                     "Frames Displayed (pre-switch)": pre.get("frames_displayed", "0"),
                     "Frames Lost (pre-switch)": pre.get("frames_lost", "0"),
                     "Demux Bitrate (pre-switch)": pre.get("demux_bitrate", "0 kb/s"),
@@ -1787,6 +2075,31 @@ class VLCStream(Realm):
                     ]
                     self.build_device_metrics_table(report, device_info, metrics)
 
+            timeline_rows = self.extract_rotation_timeline_rows()
+            if timeline_rows:
+                report.set_table_title("Host Rotation Timeline")
+                report.build_table_title()
+                report.set_text("Each row is one switch of the hosted media. 'Switch Delay' is how late the switch "
+                                "started versus its schedule; 'Outage Gap' is the time from the switch starting "
+                                "until the new stream was seen transmitting again (accurate to about 1 s). "
+                                "The gap is the deliberate stop and relaunch of the host.")
+                report.build_text_simple()
+                report.set_table_dataframe(pd.DataFrame(timeline_rows))
+                report.build_table()
+
+            rotation_rows = self.extract_rotation_transition_rows()
+            if rotation_rows:
+                report.set_table_title("Stream Transition Events (Host Rotation)")
+                report.build_table_title()
+                report.set_text(f"Per device and per switch: the last sample before the switch compared with the first "
+                                f"sample at least {self.post_switch_delay}s after the new stream came up. Frame and "
+                                f"discontinuity counters are cumulative, so the number in brackets is the change over "
+                                f"that window. n/a means no usable sample was received in the window, or the device "
+                                f"(for example Android in simple mode) does not report that counter.")
+                report.build_text_simple()
+                report.set_table_dataframe(pd.DataFrame(rotation_rows))
+                report.build_table()
+
             transition_rows = self.extract_transition_data()
             if transition_rows:
                 report.set_table_title("Stream Transition Events")
@@ -1803,11 +2116,12 @@ class VLCStream(Realm):
             report.build_footer()
             report.write_html()
             report.write_pdf()
+            self.save_run_artifacts()
         except Exception as e:
             logger.error(f"Error in create_report function {e}", exc_info=True)
 
 
-SCRIPT_VERSION = "2026-11-02 (adb fallback chain, quiet pre-clean, rotation clock)"
+SCRIPT_VERSION = "2026-11-27 (rotation timeline, pre/post-switch stats, run log in report)"
 
 
 def main():
@@ -1929,6 +2243,11 @@ NOTES:
                           type=int,
                           help='seconds between switches (time mode) or poll cycles between switches (iteration mode)',
                           default=30)
+    optional.add_argument('--post_switch_delay',
+                          type=int,
+                          default=POST_SWITCH_DELAY_S,
+                          help='Host rotation: seconds after the new stream is confirmed before the post-switch '
+                               'stats snapshot is taken (default %(default)s)')
     optional.add_argument('--external_source',
                           action="store_true",
                           help='Multicast source is external (Nokia-provided or WAN/LANforge-hosted) -- '
@@ -2016,6 +2335,11 @@ NOTES:
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
+    # After the logger config is loaded, so the run-log handler is not discarded by it.
+    setup_run_log()
+    logger.info(f"[VERSION] lf_interop_vlc.py {SCRIPT_VERSION}")
+    logger.info(f"[RUN] command: {' '.join(sys.argv)}")
+
     if args.mgr is None:
         fetched_local_ip = socket.gethostbyname(socket.gethostname())
         logger.info(f"No --mgr provided. Using local IP address: {fetched_local_ip}")
@@ -2062,7 +2386,8 @@ NOTES:
         adb_map=adb_map, android_no_stats=args.android_no_stats, android_simple=args.android_simple,
         host_media=host_media, host_iface=args.host_iface, host_gui=args.host_gui, host_vb=args.host_vb,
         host_rotate=args.host_rotate, android_script=args.android_script,
-        client_script_dir=args.client_script_dir, client_simple=args.client_simple)
+        client_script_dir=args.client_script_dir, client_simple=args.client_simple,
+        post_switch_delay=args.post_switch_delay)
     vlc_stream_obj.preflight_checks()
     vlc_stream_obj.run_flask_server()
     try:
@@ -2098,6 +2423,8 @@ NOTES:
         # Always stop the hosts we started, including on Ctrl+C or an error --
         # otherwise stale VLC processes hold the RC ports for the next run.
         vlc_stream_obj.stop_local_hosts()
+        # Last, so the saved log includes the shutdown lines.
+        vlc_stream_obj.save_run_artifacts()
 
 
 if __name__ == "__main__":
