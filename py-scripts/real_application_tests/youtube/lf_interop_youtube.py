@@ -4322,6 +4322,25 @@ python3 py-scripts/real_application_tests/youtube/lf_interop_youtube.py \
 --rotations 0,90,180,270
 
 
+Example-8:
+Run virtual clients only using an existing station.
+python3 lf_interop_youtube.py --mgr 192.168.214.219 --upstream_port 1.1.eth1 \
+  --url 'https://youtu.be/BHACKCNDMW8' --duration 1 --clients_type virtual \
+  --use_existing_sta_list --existing_sta_list 1.1.sta00000
+
+Example-9:
+Run a real client alongside an existing virtual station.
+python3 lf_interop_youtube.py --mgr 192.168.214.219 --upstream_port 1.1.eth1 \
+  --url 'https://youtu.be/BHACKCNDMW8' --duration 1 --clients_type both \
+  --resources 1.13 --res 480p --use_existing_sta_list --existing_sta_list 1.1.sta00000
+
+Example-10:
+Create and configure two virtual stations on a WPA2 network.
+python3 lf_interop_youtube.py --mgr 192.168.207.75 --upstream_port 1.1.eth1 \
+  --url 'https://youtu.be/08tDJtvpZTY?si=BRQNVvfSITgKD7HJ' --duration 2 \
+  --clients_type virtual --num_sta 2 --radio wiphy0 \
+  --ssid 'NETGEAR_2G_WPA2' --passwd 'PASSWORD@123' --encryp wpa2
+
 SCRIPT CLASSIFICATION: Test
 
 NOTES:
@@ -4346,7 +4365,7 @@ NOTES:
         # Add required arguments
         required.add_argument('--mgr', type=str, help="hostname where LANforge GUI is running", required=True)
         required.add_argument('--url', type=str, help='youtube url', required=True)
-        required.add_argument('--duration', type=int, help='duration to run the test in sec (not needed for a continuous robot run)')
+        required.add_argument('--duration', type=int, help='duration in minutes (not needed for a continuous robot run)')
         required.add_argument('--ap_name', type=str, default="TIP", help="Name of the AP in which we run the test")
         required.add_argument('--sec', type=str, default="wpa2", help="security type used")
         required.add_argument('--band', type=str, default="5GHZ", help="Name of the Frequency band used")
