@@ -500,16 +500,16 @@ class LFCliBase:
 
                         if expire_at < curr_time:
                             warnings.append("** License item %s EXPIRED on %s"
-                                            % ( hunks[0],
+                                            % (hunks[0],
                                                 time.strftime('%Y-%m-%d %H:%M', time.localtime(expire_at))))
                             naptime = abs(naptime)
                         elif expire_at <= in30d_time:
                             info.append("** License item %s WILL expire on %s"
-                                            % ( hunks[0],
-                                                time.strftime('%Y-%m-%d %H:%M', time.localtime(expire_at))))
+                                        % (hunks[0],
+                                           time.strftime('%Y-%m-%d %H:%M', time.localtime(expire_at))))
                     if len(warnings) > 0:
                         combined_warn = "\nScripts might fail because of unavailable features:\n" \
-                                        +("\n".join(warnings))
+                                        + ("\n".join(warnings))
                         if (naptime > 0):
                             logger.error(combined_warn)
                             time.sleep(naptime)
@@ -517,7 +517,7 @@ class LFCliBase:
                             logger.warning(combined_warn)
                     if len(info) > 0:
                         combined_info = "\nScripts active licenses:\n" \
-                                        +("\n".join(info))
+                                        + ("\n".join(info))
                         logger.debug(combined_info)
                     return True
                 else:
@@ -717,8 +717,8 @@ class LFCliBase:
                     duration_time = datetime.timedelta(seconds=dur_time)
             else:
                 if 'ms' in time_string:
-                    dur_time = int(time_string.replace("ms",""))
-                    duration_time = datetime.timedelta(microseconds=dur_time*1000)
+                    dur_time = int(time_string.replace("ms", ""))
+                    duration_time = datetime.timedelta(microseconds=dur_time * 1000)
                 else:
                     raise ValueError("Cannot compute time string provided: %s" % time_string)
         else:
@@ -749,12 +749,12 @@ class LFCliBase:
             parser = argparse.ArgumentParser()
         optional = parser.add_argument_group('arguments with PRE-DEFINED DEFAULTS, arguments & defaults defined by create_bare_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
         required = parser.add_argument_group('arguments with NO PRE-DEFINED DEFAULTS, arguments & defaults defined by create_bare_argparse found in  /lanforge-scripts/py-json/LANforge/lfcli_base.py')
-        optional.add_argument('--mgr',
+        optional.add_argument('--mgr', '--m', '--lfmgr', '--lanforge_ip', dest='mgr',
                               default='localhost',
-                              help='hostname for where LANforge GUI is running')
-        optional.add_argument('--mgr_port',
+                              help='Hostname or IP address of the LANforge GUI machine (localhost is default, for when the script runs on the LANforge system)')
+        optional.add_argument('--mgr_port', '--port', '--o', '--lanforge_port', dest='mgr_port',
                               default=8080,
-                              help='port LANforge GUI HTTP service is running on')
+                              help='IP Port the LANforge GUI is listening on (8080 is default)')
         optional.add_argument('--debug',
                               '-d',
                               default=False,
@@ -798,20 +798,28 @@ class LFCliBase:
         # Optional Args
         optional.add_argument('--mgr',
                               '--lfmgr',
+                              '--lanforge_ip',
+                              dest='mgr',
                               default='localhost',
-                              help='Hostname or IP address of the LANforge GUI machine (localhost is default)')
+                              help='Hostname or IP address of the LANforge GUI machine (localhost is default, for when the script runs on the LANforge system)')
         optional.add_argument('--mgr_port',
                               '--port',
+                              '--lanforge_port',
+                              dest='mgr_port',
                               default=8080,
                               help='IP Port the LANforge GUI is listening on (8080 is default)')
         optional.add_argument('-u',
                               '--upstream_port',
+                              '--upstream',
+                              dest='upstream_port',
                               default='1.eth1',
-                              help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1')
+                              help='Upstream port used in the test, e.g. 1.1.eth2. This is the LANforge (non-station) port\n'
+                                   'connected to the AP under test, through which traffic is sent to and received from the AP.\n'
+                                   'Format: <shelf>.<resource>.<port>. Default: 1.eth1')
         optional.add_argument('--num_stations',
                               type=int,
                               default=0,
-                              help='Number of stations to create')
+                              help='Number of stations to create. Default: 0. Dependency: used together with --radio, --ssid, --security and --passwd when creating stations')
         optional.add_argument('--test_id',
                               default="webconsole",
                               help='Test ID (intended to use for ws events)')
@@ -849,6 +857,18 @@ class LFCliBase:
                               default=None,
                               action="store_true",
                               help='Show summary of what this script does')
+        # Silently support capitalized security types
+        optional.add_argument('--security',
+                              default="open",
+                              help='WiFi Security protocol: < open | owe | wep | wpa | wpa2 | wpa3 >. Default: open')
+        optional.add_argument('--passwd',
+                              '--paswd',
+                              '--password',
+                              '--key',
+                              dest='passwd',
+                              default="[BLANK]",
+                              help='WiFi passphrase/password/key for created stations. Default: [BLANK]. Dependency: REQUIRED when --security is not "open" or "owe"')
+        # please override this password argument using set_defaults(passwd='NA')
         if more_optional is not None:
             for argument in more_optional:
                 if 'default' in argument.keys():
@@ -858,19 +878,9 @@ class LFCliBase:
 
         # Required Args
         required.add_argument('--radio',
-                              help='radio EID, e.g: 1.wiphy2')
-        # Silently support capitalized security types
-        required.add_argument('--security',
-                              default="open",
-                              help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
+                              help='Radio EID to create stations on, e.g: 1.1.wiphy2')
         required.add_argument('--ssid',
-                              help='WiFi SSID for script objects to associate to')
-        required.add_argument('--passwd',
-                              '--password',
-                              '--key',
-                              default="[BLANK]",
-                              help='WiFi passphrase/password/key')
-        # please override this password argument using set_defaults(passwd='NA')
+                              help='WiFi SSID for created stations to associate to. Dependency: REQUIRED when creating stations')
 
         if more_required is not None:
             for argument in more_required:

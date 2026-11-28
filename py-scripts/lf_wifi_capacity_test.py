@@ -21,10 +21,11 @@ EXAMPLE:    # Run 60 second default DL/UL-rate UDP IPv4 traffic-based test with
                     --protocol      UDP \
                     --duration      60s
 
-            # Run 5 minute second 1 Gbps DL rate TCP IPv4 traffic-based test with
+            # Run 5 minute 1 Gbps DL rate TCP IPv4 traffic-based test with
             # pre-existing and pre-configured stations 'sta0000' and 'sta0001'
             # together
                 ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
                     --pull_report   \
                     --upstream      1.1.eth1 \
                     --stations      1.1.sta0000,1.1.sta0001 \
@@ -36,10 +37,71 @@ EXAMPLE:    # Run 60 second default DL/UL-rate UDP IPv4 traffic-based test with
             # Additional options like '--duration', '--batch_size', etc. can be used
             # to override values in the saved config
                 ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
                     --pull_report   \
                     --config_name   existing_wct_config \
                     --load_old_cfg  \
                     --batch_size    1,4,8
+
+            # Create 10 stations (sta1000 - sta1009) on radio wiphy0 that connect to a
+            # WPA2 network, then run the test on them with 1.1.eth1 as upstream port
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --create_stations \
+                    --radio         wiphy0 \
+                    --start_id      1000 \
+                    --num_stations  10 \
+                    --ssid          test_ssid \
+                    --security      wpa2 \
+                    --paswd         test_password
+
+            # Create stations with custom names that connect to an OWE network
+            # (no password needed for open or owe security), then run the test on them
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --create_stations \
+                    --radio         wiphy0 \
+                    --stations      1.1.sta1010,1.1.sta2020 \
+                    --ssid          test_owe_ssid \
+                    --security      owe
+
+            # Run test on multiple stations and report individual station upload and download rates
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001 \
+                    --per_station_upload_rate \
+                    --per_station_download_rate
+
+            # Run test on multiple stations, adding 2 stations in each iteration
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001,1.1.sta0002,1.1.sta0003,1.1.sta0004,1.1.sta0005 \
+                    --batch_size    2
+
+            # Run test and save the reports in a specific directory on the executing system
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001 \
+                    --local_lf_report_dir /home/user/lf_reports
+
+            # Run test with custom download / upload rates
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001 \
+                    --download_rate 100Mbps \
+                    --upload_rate   1Mbps
 
 SCRIPT_CLASSIFICATION:
             Test
@@ -92,7 +154,7 @@ class WiFiCapacityTest(cv_test):
                  upstream="eth1",
                  batch_size="1",
                  loop_iter="1",
-                 protocol="UDP-IPv4",
+                 traffic_type="UDP-IPv4",
                  duration="5000",
                  pull_report=False,
                  load_old_cfg=False,
@@ -145,7 +207,7 @@ class WiFiCapacityTest(cv_test):
         self.test_name = "WiFi Capacity"
         self.batch_size = batch_size
         self.loop_iter = loop_iter
-        self.protocol = protocol
+        self.traffic_type = traffic_type
         self.duration = duration
         self.upload_rate = upload_rate
         self.download_rate = download_rate
@@ -236,8 +298,8 @@ class WiFiCapacityTest(cv_test):
             cfg_options.append("batch_size: " + self.batch_size)
         if self.loop_iter != "":
             cfg_options.append("loop_iter: " + self.loop_iter)
-        if self.protocol != "":
-            cfg_options.append("protocol: " + str(self.protocol))
+        if self.traffic_type != "":
+            cfg_options.append("protocol: " + str(self.traffic_type))
         if self.duration != "":
             cfg_options.append("duration: " + self.duration)
         if self.upload_rate != "":
@@ -291,6 +353,24 @@ class WiFiCapacityTest(cv_test):
             self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
 
+def validate_args(args):
+    if args.create_stations:
+        if not args.num_stations and not args.stations:
+            logger.error("Either mention names to stations to be created(--stations) or number of stations to be created(--num_stations). [Same precedence order]")
+            exit(1)
+        if not args.ssid:
+            logger.error("Requires ssid to create station, mention with --ssid")
+            exit(1)
+    if args.ssid:
+        if not args.security:
+            logger.error("Requires security to connect to wifi, mention with --security")
+            exit(1)
+    if args.security.lower() not in ('open', 'owe'):
+        if not args.paswd:
+            logger.error("Requires password to connect to wifi whose security is not open/owe, mention with --password")
+            exit(1)
+
+
 def main():
     help_summary = "The Candela WiFi Capacity test is designed to measure performance of an " \
                    "Access Point when handling different amounts of WiFi Stations. " \
@@ -329,10 +409,11 @@ EXAMPLE:    # Run 60 second default DL/UL-rate UDP IPv4 traffic-based test with
                     --protocol      UDP \
                     --duration      60s
 
-            # Run 5 minute second 1 Gbps DL rate TCP IPv4 traffic-based test with
+            # Run 5 minute 1 Gbps DL rate TCP IPv4 traffic-based test with
             # pre-existing and pre-configured stations 'sta0000' and 'sta0001'
             # together
                 ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
                     --pull_report   \
                     --upstream      1.1.eth1 \
                     --stations      1.1.sta0000,1.1.sta0001 \
@@ -344,10 +425,71 @@ EXAMPLE:    # Run 60 second default DL/UL-rate UDP IPv4 traffic-based test with
             # Additional options like '--duration', '--batch_size', etc. can be used
             # to override values in the saved config
                 ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
                     --pull_report   \
                     --config_name   existing_wct_config \
                     --load_old_cfg  \
                     --batch_size    1,4,8
+
+            # Create 10 stations (sta1000 - sta1009) on radio wiphy0 that connect to a
+            # WPA2 network, then run the test on them with 1.1.eth1 as upstream port
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --create_stations \
+                    --radio         wiphy0 \
+                    --start_id      1000 \
+                    --num_stations  10 \
+                    --ssid          test_ssid \
+                    --security      wpa2 \
+                    --paswd         test_password
+
+            # Create stations with custom names that connect to an OWE network
+            # (no password needed for open or owe security), then run the test on them
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --create_stations \
+                    --radio         wiphy0 \
+                    --stations      1.1.sta1010,1.1.sta2020 \
+                    --ssid          test_owe_ssid \
+                    --security      owe
+
+            # Run test on multiple stations and report individual station upload and download rates
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001 \
+                    --per_station_upload_rate \
+                    --per_station_download_rate
+
+            # Run test on multiple stations, adding 2 stations in each iteration
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001,1.1.sta0002,1.1.sta0003,1.1.sta0004,1.1.sta0005 \
+                    --batch_size    2
+
+            # Run test and save the reports in a specific directory on the executing system
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001 \
+                    --local_lf_report_dir /home/user/lf_reports
+
+            # Run test with custom download / upload rates
+                ./lf_wifi_capacity_test.py \
+                    --mgr           192.168.1.101 \
+                    --pull_report   \
+                    --upstream      1.1.eth1 \
+                    --stations      1.1.sta0000,1.1.sta0001 \
+                    --download_rate 100Mbps \
+                    --upload_rate   1Mbps
 
 SCRIPT_CLASSIFICATION:
             Test
@@ -366,43 +508,67 @@ INCLUDE_IN_README:
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
-    parser.add_argument("-u", "--upstream", type=str, default="",
-                        help="Upstream port for wifi capacity test ex. 1.1.eth1")
+    parser.add_argument("-u", "--upstream", "--upstream_port", dest="upstream", type=str, default="",
+                        help="Upstream port used in the test, e.g. 1.1.eth2. This is the LANforge (non-station) port\n"
+                             "connected to the AP under test, through which traffic is sent to and received from the AP.\n"
+                             "Format: <shelf>.<resource>.<port>\n"
+                             "If not set, the port selection already in the test config is used (e.g. with --load_old_cfg).")
     parser.add_argument("-b", "--batch_size", type=str, default="",
-                        help="station increment ex. 1,2,3")
+                        help="Number of stations to add per iteration, or a comma separated list, e.g. 1,4,8.\n"
+                             "For example, with 10 stations and a batch size of 2, the test runs 5 iterations,\n"
+                             "adding 2 stations in each iteration.\n"
+                             "If not set, the value from the test config is used (the saved value with --load_old_cfg).")
     parser.add_argument("-l", "--loop_iter", type=str, default="",
-                        help="Loop iteration ex. 1")
-    parser.add_argument("-p", "--protocol", type=str, default="",
-                        help="Protocol ex.TCP-IPv4")
+                        help="Number of times the test is run, e.g. 1.\n"
+                             "For example, with 10 stations and a loop iteration of 2, the test runs 2 times\n"
+                             "with all 10 stations in each run.\n"
+                             "If not set, the value from the test config is used (the saved value with --load_old_cfg).")
+    parser.add_argument("-p", "--protocol", "--type", "--types", "--traffic_type", "--traffic_types", dest="traffic_type", type=str, default="",
+                        help="Traffic type for the test, e.g. UDP-IPv4, TCP-IPv4. Only one can be selected at a time.\n"
+                             "UDP, TCP, TCP&UDP and layer4-7 are available options.\n"
+                             "If not set, the value from the test config is used (the saved value with --load_old_cfg).")
     parser.add_argument("-d", "--duration", type=str, default="",
-                        help="duration in ms. ex. 5000")
+                        help="Duration of each traffic run, in ms or with units, e.g. 5000, 5s, 1m, 2h.\n"
+                             "Each iteration runs for this duration.\n"
+                             "If not set, the value from the test config is used (the saved value with --load_old_cfg).")
     parser.add_argument("--payload_size", default="", help="Specify payload size for the test")
     parser.add_argument("--sock_buffer_size", default="", help="Specify socket buffer size for the test")
-    parser.add_argument("--verbosity", default="5", help="Specify verbosity of the report values 1 - 11 default 5")
-    parser.add_argument("--download_rate", type=str, default="",
-                        help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps")
-    parser.add_argument("--upload_rate", type=str, default="",
-                        help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps")
+    parser.add_argument("--verbosity", default="5",
+                        help="Verbosity of the report, a whole number in the range 1 - 11.\n"
+                             "The larger the number, the more verbose. Default: 5")
+    parser.add_argument("--download_rate", "--download_speed", "--speed", "--rate", dest="download_rate", type=str, default="",
+                        help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps (with --load_old_cfg, the saved value is kept)")
+    parser.add_argument("--upload_rate", "--upload_speed", "--opposite_speed", "--opposite_rate", dest="upload_rate", type=str, default="",
+                        help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps (with --load_old_cfg, the saved value is kept)")
     parser.add_argument("--sort", type=str, default="interleave",
                         help="Select station sorting behaviour:  none | interleave | linear  Default is interleave.")
-    parser.add_argument("-s", "--stations", type=str, default="",
-                        help="If specified, these stations will be used.  If not specified, all available stations will be selected.  Example: 1.1.sta001,1.1.wlan0,...")
+    parser.add_argument("-s", "--stations", "--station", dest="stations", type=str, default="",
+                        help="If specified, these stations will be used.  If not specified, all available stations will be selected.\n"
+                             "Example: 1.1.sta001,1.1.wlan0,...  Format: <shelf>.<resource>.<alias>\n"
+                             "Can also be used to specify custom names for the stations created with --create_stations")
     parser.add_argument("-cs", "--create_stations", default=False, action='store_true',
-                        help="create stations in lanforge (by default: False)")
+                        help="Create stations in LANforge (by default: False).\n"
+                             "If specified, mention either --stations or --num_stations to create stations.\n"
+                             "If both are specified, --stations is used.\n"
+                             "Also mention --radio, --ssid, --security and --paswd to create stations with these parameters")
     parser.add_argument("-radio", "--radio", default="wiphy0",
                         help="create stations in lanforge at this radio (by default: wiphy0)")
     parser.add_argument("-ssid", "--ssid", default="",
-                        help="ssid name")
+                        help="SSID of the network the created stations connect to. Required if --create_stations is specified")
     parser.add_argument("-security", "--security", default="open",
-                        help="ssid Security type")
-    parser.add_argument("-paswd", "--paswd", "-passwd", "--passwd", default="[BLANK]",
-                        help="ssid Password")
-    parser.add_argument("--report_dir", default="")
-    parser.add_argument("--scenario", default="")
-    parser.add_argument("--graph_groups", help="File to save graph groups to", default=None)
-    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from", default="")
-    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
-    parser.add_argument("--num_stations", help="Specify the number of stations need to be create.", type=int,
+                        help="WiFi security type: open | owe | wep | wpa | wpa2 | wpa3. Default: open. If not open/owe, also mention --paswd")
+    parser.add_argument("-paswd", "--paswd", "-passwd", "--passwd", "--password", "--key", dest="paswd", default="[BLANK]",
+                        help="WiFi passphrase/password/key. Default: [BLANK]. Required when --security is not open/owe")
+    parser.add_argument("--report_dir", default="",
+                        help="Directory name to use for the Chamber View report.")
+    parser.add_argument("--scenario", default="",
+                        help="Chamber View Scenario name to apply before running the test.")
+    parser.add_argument("--graph_groups", help="Path to file to save graph_groups to on local system", default=None)
+    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' means put in current working directory.\n"
+                        "Requires --pull_report to be set", default="")
+    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> : Path to logger JSON configuration of logger")
+    parser.add_argument("--num_stations", help="Specify the number of stations to be created. Used with --create_stations.\n"
+                        "Use --start_id to specify the starting ID of the stations.", type=int,
                         default=None)
     parser.add_argument('--start_id', help='Specify the station starting id \n e.g: --start_id <value> default 0',
                         default=0)
@@ -424,6 +590,7 @@ INCLUDE_IN_README:
         exit(0)
 
     cv_base_adjust_parser(args)
+    validate_args(args)
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()

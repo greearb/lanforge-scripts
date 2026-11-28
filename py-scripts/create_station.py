@@ -111,7 +111,7 @@ EXAMPLE:    # Create a single station
                 --passwd    <password> \
                 --security  wpa2 \
                 --num_stations 10 \
-                --initial_band_pref 5G
+                --initial_band_pref 5GHz
 
             # Create multiple stations
             ./create_station.py \
@@ -716,7 +716,7 @@ EXAMPLE:    # Create a single station
                 --passwd    <password> \
                 --security  wpa2 \
                 --num_stations 10 \
-                --initial_band_pref 5G
+                --initial_band_pref 5GHz
 
             # Create multiple stations
             ./create_station.py \
@@ -855,7 +855,8 @@ INCLUDE_IN_README:
 """)
     parser.add_argument('--start_id',
                         type=int,
-                        help='Specify the station starting id \n e.g: --start_id <value> default 0',
+                        help='Specify the station starting id \n e.g: --start_id <value> default 0.\n'
+                        'Stations are named starting from this id, e.g. sta<start_id>, sta<start_id + 1> ...',
                         default=0)
     parser.add_argument("--prefix",
                         type=str,
@@ -886,7 +887,7 @@ INCLUDE_IN_README:
                         default="xx:xx:xx:*:*:xx")
     parser.add_argument("--radio_antenna",
                         help='Number of spatial streams: \n'
-                        ' default = -1 \n'
+                        ' default: 0 \n'
                         ' 0 Diversity (All) \n'
                         ' 1 Fixed-A (1x1) \n'
                         ' 4 AB (2x2) \n'
@@ -909,7 +910,7 @@ INCLUDE_IN_README:
                              'e.g: \t--country_code 840')
     parser.add_argument("--eap_method",
                         type=str,
-                        help='Enter EAP method e.g: TLS')
+                        help='Enter EAP method e.g: TLS. If specified, also mention --eap_identity and --key_mgmt')
     parser.add_argument("--eap_identity",
                         "--radius_identity",
                         dest="eap_identity",
@@ -917,13 +918,14 @@ INCLUDE_IN_README:
                         help="This is synonymous with the RADIUS username.")
     parser.add_argument("--eap_anonymous_identity",
                         type=str,
-                        help="",
+                        help="Anonymous identity used in outer EAP authentication (EAP-TTLS/PEAP). Default: [BLANK]. "
+                             "Dependency: used only when --eap_method is TTLS or PEAP",
                         default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
     parser.add_argument("--eap_password",
                         "--radius_passwd",
                         dest="eap_password",
                         type=str,
-                        help="This is synonymous with the RADIUS user's password.")
+                        help="This is synonymous with the RADIUS user's password. Needs to be specified when --eap_method is not TLS.")
     parser.add_argument("--eap_phase1",
                         type=str,
                         help="EAP Phase 1 (outer authentication, i.e. TLS tunnel) parameters.\n"
@@ -937,13 +939,13 @@ INCLUDE_IN_README:
                         default="[BLANK]")  # TODO: Fix root cause of 'null' when not set issue (REST server-side issue)
     parser.add_argument("--pk_passwd",
                         type=str,
-                        help='Enter the private key password')
+                        help='Enter the private key password. Needs to be specified when --eap_method is TLS')
     parser.add_argument("--ca_cert",
                         type=str,
-                        help='Enter path for certificate e.g: /home/lanforge/ca.pem')
+                        help='Enter path for certificate e.g: /home/lanforge/ca.pem. Needs to be specified when --eap_method is TLS')
     parser.add_argument("--private_key",
                         type=str,
-                        help='Enter private key path e.g: /home/lanforge/client.p12')
+                        help='Enter private key path e.g: /home/lanforge/client.p12. Needs to be specified when --eap_method is TLS')
     parser.add_argument("--key_mgmt",
                         type=str,
                         help="Authentication key management. Combinations are supported.\n")
